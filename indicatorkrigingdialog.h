@@ -37,6 +37,8 @@ private:
     CartesianGridSelector* m_cgSelector;
     PointSetSelector* m_psSelector;
     VariableSelector* m_PointSetVariableSelector;
+    PointSetSelector* m_psSoftSelector;
+    QList<VariableSelector*> m_SoftIndicatorVariablesSelectors;
     FileSelectorWidget* m_dfSelector;
     QList<VariogramModelSelector*> m_variogramSelectors;
     void addVariogramSelector();
@@ -46,6 +48,7 @@ private slots:
     void onUpdateVariogramSelectors();
     void onConfigureAndRun();
     void onIk3dCompletes();
+    void onUpdateSoftIndicatorVariablesSelectors();
 };
 
 #endif // INDICATORKRIGINGDIALOG_H

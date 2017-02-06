@@ -49,12 +49,22 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
     connect( m_psSelector, SIGNAL(pointSetSelected(DataFile*)),
              m_PointSetVariableSelector, SLOT(onListVariables(DataFile*)) );
 
+    //The list with existing point sets in the project (for the soft indicators)
+    m_psSoftSelector = new PointSetSelector( true );
+    ui->frmSoftIndicators->layout()->addWidget( m_psSoftSelector );
+    connect( m_psSoftSelector, SIGNAL(pointSetSelected(DataFile*)),
+             this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
+
     //The list with existing c.d.f./p.d.f. files in the project.
     if( varType == IKVariableType::CONTINUOUS )
         m_dfSelector = new FileSelectorWidget( FileSelectorType::CDFs );
     else
         m_dfSelector = new FileSelectorWidget( FileSelectorType::PDFs );
     ui->frmDistribution->layout()->addWidget( m_dfSelector );
+    connect( m_dfSelector, SIGNAL(fileSelected(File*)),
+             this, SLOT(onUpdateVariogramSelectors()) );
+    connect( m_dfSelector, SIGNAL(fileSelected(File*)),
+             this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
 
     //The list with existing cartesian grids in the project for the estimation.
     m_cgSelector = new CartesianGridSelector();
@@ -67,6 +77,9 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
 
     //call this slot to show the variogram selector widgets.
     onUpdateVariogramSelectors();
+
+    //call this slot to show the soft indicator variables selectors.
+    onUpdateSoftIndicatorVariablesSelectors();
 }
 
 IndicatorKrigingDialog::~IndicatorKrigingDialog()
@@ -82,7 +95,6 @@ void IndicatorKrigingDialog::addVariogramSelector(){
 
 void IndicatorKrigingDialog::onUpdateVariogramSelectors()
 {
-
     //clears the current variogram model selectors
     while( ! m_variogramSelectors.isEmpty() ){
         VariogramModelSelector* vms = m_variogramSelectors.takeLast();
@@ -233,4 +245,28 @@ void IndicatorKrigingDialog::onIk3dCompletes()
     GSLib::instance()->disconnect();
 
     //preview();
+}
+
+void IndicatorKrigingDialog::onUpdateSoftIndicatorVariablesSelectors()
+{
+    //clears the current soft indicator variable selectors
+    while( ! m_SoftIndicatorVariablesSelectors.isEmpty() ){
+        VariableSelector* vs = m_SoftIndicatorVariablesSelectors.takeLast();
+        ui->frmSoftIndicators->layout()->removeWidget( vs );
+        vs->setParent( nullptr );
+        delete vs;
+    }
+    //It is necessary to specify one soft indicator variable per c.d.f./p.d.f threshold/category
+    //get the c.d.f./p.d.f. value pairs
+    File* file = m_dfSelector->getSelectedFile();
+    if( file ){
+        file->readFromFS();
+        int tot = file->getContentsCount();
+        for( int i = 0; i < tot; ++i){
+            VariableSelector* vs = new VariableSelector();
+            ui->frmSoftIndicators->layout()->addWidget( vs );
+            vs->onListVariables( m_psSoftSelector->getSelectedDataFile() );
+            m_SoftIndicatorVariablesSelectors.append( vs );
+        }
+    }
 }

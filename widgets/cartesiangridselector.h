@@ -14,7 +14,7 @@ class CartesianGridSelector : public QWidget
     Q_OBJECT
 
 public:
-    /** @param If true, adds a "NOT SET" item as the first item. */
+    /** @param show_not_set If true, adds a "NOT SET" item as the first item. */
     explicit CartesianGridSelector(bool show_not_set = false, QWidget *parent = 0);
     ~CartesianGridSelector();
 
