@@ -1,0 +1,581 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>VariogramAnalysisDialog</class>
+ <widget class="QDialog" name="VariogramAnalysisDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>457</width>
+    <height>222</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Variogram Analysis</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QFrame" name="frmSelection">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <widget class="QLabel" name="label">
+        <property name="font">
+         <font>
+          <weight>75</weight>
+          <bold>true</bold>
+         </font>
+        </property>
+        <property name="text">
+         <string>Selected variables</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblHead">
+        <property name="text">
+         <string>head: </string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="lblTail">
+        <property name="text">
+         <string>tail:</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frmVarmap">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <property name="spacing">
+       <number>1</number>
+      </property>
+      <property name="leftMargin">
+       <number>1</number>
+      </property>
+      <property name="topMargin">
+       <number>1</number>
+      </property>
+      <property name="rightMargin">
+       <number>1</number>
+      </property>
+      <property name="bottomMargin">
+       <number>1</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lbl1">
+        <property name="text">
+         <string>1) Anisotropy analysis (variogram map):</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnVarmapPar">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>edit parameters</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnVarmapPlot">
+        <property name="toolTip">
+         <string>plot</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/plot16</normaloff>:/icons/plot16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnVarioMapSave">
+        <property name="toolTip">
+         <string>save varmap grid</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>85</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frmGamGamv">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <property name="spacing">
+       <number>1</number>
+      </property>
+      <property name="leftMargin">
+       <number>1</number>
+      </property>
+      <property name="topMargin">
+       <number>1</number>
+      </property>
+      <property name="rightMargin">
+       <number>1</number>
+      </property>
+      <property name="bottomMargin">
+       <number>1</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lbl2">
+        <property name="text">
+         <string>2) Experimental variogram:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnExpVarioPar">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>edit parameters</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnExpVarioPlot">
+        <property name="toolTip">
+         <string>plot</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/plot16</normaloff>:/icons/plot16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnExpVarioSave">
+        <property name="toolTip">
+         <string>save experimental variogram</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>94</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QFrame" name="frame_3">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <property name="spacing">
+       <number>1</number>
+      </property>
+      <property name="leftMargin">
+       <number>1</number>
+      </property>
+      <property name="topMargin">
+       <number>1</number>
+      </property>
+      <property name="rightMargin">
+       <number>1</number>
+      </property>
+      <property name="bottomMargin">
+       <number>1</number>
+      </property>
+      <item>
+       <widget class="QLabel" name="lbl3">
+        <property name="text">
+         <string>3) Variogram model fitting:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnModelVarioPar">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="toolTip">
+         <string>edit parameters</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnModelVarioPlot">
+        <property name="toolTip">
+         <string>plot</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/plot16</normaloff>:/icons/plot16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnModelVarioSave">
+        <property name="toolTip">
+         <string>save variogram model</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_3">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>94</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="widget" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <property name="spacing">
+       <number>1</number>
+      </property>
+      <property name="leftMargin">
+       <number>1</number>
+      </property>
+      <property name="topMargin">
+       <number>1</number>
+      </property>
+      <property name="rightMargin">
+       <number>1</number>
+      </property>
+      <property name="bottomMargin">
+       <number>1</number>
+      </property>
+      <item>
+       <spacer name="horizontalSpacer_6">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnDismiss">
+        <property name="text">
+         <string>Dismiss</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="horizontalSpacer_5">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>40</width>
+          <height>20</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+  <zorder>frmVarmap</zorder>
+  <zorder>widget</zorder>
+  <zorder>frmGamGamv</zorder>
+  <zorder>frame_3</zorder>
+  <zorder>frmSelection</zorder>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>btnDismiss</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>240</x>
+     <y>202</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>456</x>
+     <y>186</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnExpVarioPar</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onOpenExperimentalVariogramParamaters()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>155</x>
+     <y>134</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>457</x>
+     <y>143</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnExpVarioPlot</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onOpenExperimentalVariogramPlot()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>189</x>
+     <y>132</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>456</x>
+     <y>131</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnVarmapPar</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onOpenVarMapParameters()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>216</x>
+     <y>103</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>454</x>
+     <y>109</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnVarmapPlot</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onOpenVarMapPlot()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>98</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>455</x>
+     <y>98</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnVarioMapSave</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onSaveVarmapGrid()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>278</x>
+     <y>103</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>455</x>
+     <y>73</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnExpVarioSave</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onSaveExpVariogram()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>220</x>
+     <y>137</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>318</x>
+     <y>150</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnModelVarioPar</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onOpenVariogramModelParamateres()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>149</x>
+     <y>171</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>453</x>
+     <y>176</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnModelVarioPlot</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onVmodelCompletion()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>182</x>
+     <y>165</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>292</x>
+     <y>182</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnModelVarioSave</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onSaveVariogramModel()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>212</x>
+     <y>167</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>72</x>
+     <y>185</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onOpenExperimentalVariogramParamaters()</slot>
+  <slot>onOpenExperimentalVariogramPlot()</slot>
+  <slot>onOpenVarMapParameters()</slot>
+  <slot>onOpenVarMapPlot()</slot>
+  <slot>onSaveVarmapGrid()</slot>
+  <slot>onSaveExpVariogram()</slot>
+  <slot>onOpenVariogramModelParamateres()</slot>
+  <slot>onVmodelCompletion()</slot>
+  <slot>onSaveVariogramModel()</slot>
+ </slots>
+</ui>

@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PSWidget</class>
+ <widget class="QWidget" name="PSWidget">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>483</width>
+    <height>352</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QScrollArea" name="scrollImage">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="QWidget" name="scrollAreaWidgetContents">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>435</width>
+        <height>350</height>
+       </rect>
+      </property>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <widget class="QWidget" name="panelButtons" native="true">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QPushButton" name="btnZoomIn">
+        <property name="toolTip">
+         <string>Increase plot resolution</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/zoomin</normaloff>:/icons/zoomin</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnZoomOut">
+        <property name="toolTip">
+         <string>Lower plot resolution</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/zoomout</normaloff>:/icons/zoomout</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn80dpi">
+        <property name="toolTip">
+         <string>Set plot resolution to 80 dpi (screen)</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/80dpi</normaloff>:/icons/80dpi</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn150dpi">
+        <property name="toolTip">
+         <string>Set plot resolution to 150 dpi (on-line publication)</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/150dpi</normaloff>:/icons/150dpi</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn300dpi">
+        <property name="toolTip">
+         <string>Set plot resolution to 300 dpi (printed b/w publication)</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/300dpi</normaloff>:/icons/300dpi</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btn600dpi">
+        <property name="toolTip">
+         <string>Set plot resolution to 600 dpi (printed color publication)</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/600dpi</normaloff>:/icons/600dpi</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnSnapshot">
+        <property name="toolTip">
+         <string>Copy plot image to clipboard</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/snapshot</normaloff>:/icons/snapshot</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnCrossHairs">
+        <property name="toolTip">
+         <string>show/hide crosshairs</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/crosshairs16</normaloff>:/icons/crosshairs16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnChangeSettings">
+        <property name="toolTip">
+         <string>Change parameters...</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnSavePlot">
+        <property name="toolTip">
+         <string>Save plot</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources>
+  <include location="resources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>btnZoomIn</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onIncreasePlotResolution()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnZoomOut</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onDecreasePlotResolution()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>50</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSnapshot</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onTakeSnapshot()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>473</x>
+     <y>212</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn80dpi</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onSetPlotRes80dpi()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>80</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn150dpi</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onSetPlotRes150dpi()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>110</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn300dpi</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onSetPlotRes300dpi()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>140</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btn600dpi</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onSetPlotRes600dpi()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>459</x>
+     <y>170</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnChangeSettings</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onChangeParameters()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>473</x>
+     <y>272</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>241</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSavePlot</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onSavePlot()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>473</x>
+     <y>302</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>486</x>
+     <y>363</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnCrossHairs</sender>
+   <signal>clicked()</signal>
+   <receiver>PSWidget</receiver>
+   <slot>onShowHideCrossHairs()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>456</x>
+     <y>234</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>487</x>
+     <y>312</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onIncreasePlotResolution()</slot>
+  <slot>onDecreasePlotResolution()</slot>
+  <slot>onTakeSnapshot()</slot>
+  <slot>onSetPlotRes80dpi()</slot>
+  <slot>onSetPlotRes150dpi()</slot>
+  <slot>onSetPlotRes300dpi()</slot>
+  <slot>onSetPlotRes600dpi()</slot>
+  <slot>onChangeParameters()</slot>
+  <slot>onSavePlot()</slot>
+  <slot>onShowHideCrossHairs()</slot>
+ </slots>
+</ui>
