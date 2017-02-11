@@ -117,7 +117,8 @@ SOURCES += main.cpp\
     widgets/fileselectorwidget.cpp \
     scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
-    gslib/gslibparams/widgets/widgetgslibparvmodel.cpp
+    gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
+    domain/triads.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -216,7 +217,8 @@ HEADERS  += mainwindow.h \
     scripting.h \
     exprtk.hpp \
     gslib/gslibparams/gslibparvmodel.h \
-    gslib/gslibparams/widgets/widgetgslibparvmodel.h
+    gslib/gslibparams/widgets/widgetgslibparvmodel.h \
+    domain/triads.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \

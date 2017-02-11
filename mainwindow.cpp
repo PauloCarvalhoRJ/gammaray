@@ -291,6 +291,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         if ( index.isValid() && index.internalPointer() == project->getResourcesGroup()) {
             _projectContextMenu->addAction("Create threshold c.d.f. ...", this, SLOT(onCreateThresholdCDF()));
             _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
+            _projectContextMenu->addAction("Create categories definition ...", this, SLOT(onCreateCategoryDefinition()));
         }
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
@@ -1137,6 +1138,11 @@ void MainWindow::onCreateCategoryPDF()
     CategoryPDF* cpdf = new CategoryPDF("");
     ValuesPairsDialog* vpd = new ValuesPairsDialog( cpdf, this );
     vpd->show();
+}
+
+void MainWindow::onCreateCategoryDefinition()
+{
+
 }
 
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
