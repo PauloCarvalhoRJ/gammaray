@@ -41,6 +41,18 @@ void GSLibParMultiValuedVariable::assure(uint n)
     }
 }
 
+void GSLibParMultiValuedVariable::setSize(uint n)
+{
+    //first assures the count
+    assure( n );
+    //deletes the trailing elements until the count is met
+    while( _parameters.size() > n ){
+        QList<GSLibParType*>::iterator it = --_parameters.end();
+        delete (*it);
+        _parameters.erase( it );
+    }
+}
+
 void GSLibParMultiValuedVariable::save(QTextStream *out)
 {
     QString buffer;

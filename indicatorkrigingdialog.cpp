@@ -152,8 +152,8 @@ void IndicatorKrigingDialog::onConfigureAndRun()
     //thresolds/classes and c.d.f./p.d.f. values
     GSLibParMultiValuedVariable *par5 = m_gpf_ik3d->getParameter<GSLibParMultiValuedVariable*>(5);
     GSLibParMultiValuedVariable *par6 = m_gpf_ik3d->getParameter<GSLibParMultiValuedVariable*>(6);
-    par5->assure( ndist );
-    par6->assure( ndist );
+    par5->setSize( ndist );
+    par6->setSize( ndist );
     for( uint i = 0; i < ndist; ++i){
         if( m_varType == IKVariableType::CATEGORICAL ){
             CategoryPDF *pdf = (CategoryPDF*)distribution;
@@ -181,9 +181,29 @@ void IndicatorKrigingDialog::onConfigureAndRun()
     par8->getParameter<GSLibParUInt*>(3)->_value = pointSet->getZindex(); //Z
     par8->getParameter<GSLibParUInt*>(4)->_value = varIndex; //variable
 
+    //load the data file and get min./max.
     pointSet->loadData();
     double min = pointSet->min( varIndex - 1 );
     double max = pointSet->max( varIndex - 1 );
+
+    //the soft indicator file is surely a PointSet object
+    PointSet *psSoftData = (PointSet*)m_psSoftSelector->getSelectedDataFile();
+    if( psSoftData ){
+        //the soft data file
+        m_gpf_ik3d->getParameter<GSLibParFile*>(9)->_path = psSoftData->getPath();
+        GSLibParMultiValuedFixed *par10 = m_gpf_ik3d->getParameter<GSLibParMultiValuedFixed*>(10);
+        //x,y,z columns of the soft data file
+        par10->getParameter<GSLibParUInt*>(0)->_value = psSoftData->getXindex();
+        par10->getParameter<GSLibParUInt*>(1)->_value = psSoftData->getYindex();
+        par10->getParameter<GSLibParUInt*>(2)->_value = psSoftData->getZindex();
+        GSLibParMultiValuedVariable *par10_3 = par10->getParameter<GSLibParMultiValuedVariable*>(3);
+        //the soft data fields
+        par10_3->setSize( ndist );
+        for( uint i = 0; i < ndist; ++i){
+            par10_3->getParameter<GSLibParUInt*>(i)->_value =
+                    m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
+        }
+    }
 
     //trimming limits
     GSLibParMultiValuedFixed *par11 = m_gpf_ik3d->getParameter<GSLibParMultiValuedFixed*>(11);
@@ -224,19 +244,19 @@ void IndicatorKrigingDialog::onConfigureAndRun()
     GSLibParametersDialog gsd( m_gpf_ik3d, this );
     int result = gsd.exec();
 
-//    //if user didn't cancel the dialog
-//    if( result == QDialog::Accepted ){
-//        //Generate the parameter file
-//        QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
-//        m_gpf_ik3d->save( par_file_path );
+    //if user didn't cancel the dialog
+    if( result == QDialog::Accepted ){
+        //Generate the parameter file
+        QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
+        m_gpf_ik3d->save( par_file_path );
 
-//        //to be notified when ik3d completes.
+        //to be notified when ik3d completes.
 //        connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onIk3dCompletes()) );
 
-//        //run ik3d program asynchronously
+        //run ik3d program asynchronously
 //        Application::instance()->logInfo("Starting ik3d program...");
 //        GSLib::instance()->runProgramAsync( "ik3d", par_file_path );
-//    }
+    }
 }
 
 void IndicatorKrigingDialog::onIk3dCompletes()
