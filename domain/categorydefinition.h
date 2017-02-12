@@ -2,13 +2,23 @@
 #define CATEGORYDEFINITION_H
 
 #include "triads.h"
+#include <QList>
 
 typedef Triads<int,int,QString> IntIntQStringTriplets;
 
+class GSLibParType;
+
+/**
+ * @brief The CategoryDefinition class represents a file containing triplets of
+ * category code (an integer), a GSLib color code (an integer) and a category name (a string).
+ * The triplets are category definitions, for example, to define sandstone as having code 1,
+ * color yellow and name "Arenite".
+ */
 class CategoryDefinition : public IntIntQStringTriplets
 {
 public:
     CategoryDefinition( QString path );
+    ~CategoryDefinition();
 
     // ProjectComponent interface
 public:
@@ -21,6 +31,15 @@ public:
     QString getFileType(){ return "CATEGORYDEFINITION"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
+    QWidget *createContentElementWidget();
+    void addContentElementFromWidget( QWidget* w );
+
+protected:
+    /** This member stores the pointers to the created GSLibParTypes
+     * instantiated just to to get their automatically created editing widgets.
+     * They should be deleted at some time (destructor?).
+     */
+    QList<GSLibParType*> m_stashOfCreatedParameters;
 };
 
 #endif // CATEGORYDEFINITION_H

@@ -68,6 +68,9 @@ public:
     /** Adds the given category p.d.f. object to this project. */
     void addCategoryPDF( CategoryPDF *cpdf );
 
+    /** Adds the given generic file object as a resource. */
+    void addResourceFile( File *file );
+
     /** Creates a new plot object given path to a plot file and its new name once
      * in the project.  The file is copied into the project's directory, renamed
      * and registered in the project's metadata file.  from_path must be a complete
@@ -136,6 +139,12 @@ public:
      * or the referenced file is moved.
      */
     void registerCategoryPDF( CategoryPDF* cpdf );
+
+    /** Creates a new generic file object from a file assumed to be already present in the project's directory.
+     * If the object's path is elsewhere, then the project may contain an orphan reference if either the project
+     * or the referenced file is moved.
+     */
+    void registerFileAsResource( File* file );
 
     /** Returns a list of tree model indexes, which are references to the
      * objects references in the tree widget */

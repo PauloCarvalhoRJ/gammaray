@@ -4,6 +4,7 @@
 #include <QString>
 #include <QIcon>
 #include <vector>
+#include "exceptions/invalidmethodexception.h"
 
 /**
  * @brief The File class is the base class of all project components that are
@@ -70,6 +71,16 @@ public:
     /** Returns the number of content elements such as text lines, file records, tags, etc.
      */
     virtual long getContentsCount(){ return 0; }
+
+    /**
+     * Creates a widget adequate to edit a content element (e.g. file record).
+     */
+    virtual QWidget* createContentElementWidget() { return nullptr; }
+
+    /**
+     * Add content element (e.g. file record) using user-entered data in the given widget.
+     */
+    virtual void addContentElementFromWidget( QWidget* w ){ throw InvalidMethodException(); }
 
 protected:
     QString _path;

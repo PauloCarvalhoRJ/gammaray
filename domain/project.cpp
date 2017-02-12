@@ -294,6 +294,13 @@ void Project::addCategoryPDF(CategoryPDF *cpdf)
     this->save();
 }
 
+void Project::addResourceFile(File *file)
+{
+    this->_resources->addChild( file );
+    file->setParent( this->_resources );
+    this->save();
+}
+
 void Project::importPlot(const QString from_path, const QString new_file_name)
 {
     //create a new plot object from the generated .ps file
@@ -399,6 +406,13 @@ void Project::registerThresholdCDF(ThresholdCDF *tcdf)
 void Project::registerCategoryPDF(CategoryPDF *cpdf)
 {
     this->addCategoryPDF( cpdf );
+    //refreshes project tree display
+    Application::instance()->refreshProjectTree();
+}
+
+void Project::registerFileAsResource(File *file)
+{
+    this->addResourceFile( file );
     //refreshes project tree display
     Application::instance()->refreshProjectTree();
 }

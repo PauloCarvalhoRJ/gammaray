@@ -48,7 +48,7 @@ public:
     }
 
     /** Reads the value triplets from the file. */
-    void loadPairs(){
+    void loadTriplets(){
         //empties the triads list
         clear();
         //read file contents
@@ -70,7 +70,12 @@ public:
 protected:
     QList< QPair< T1, QPair< T2, T3 > > > m_triads;
 
-
+    // File interface
+public:
+    virtual void writeToFS(){ saveTriplets(); }
+    virtual void readFromFS(){ loadTriplets(); }
+    virtual void clearLoadedContents() { clear(); }
+    virtual long getContentsCount() { return getTripletCount(); }
 };
 
 #endif // VALUETRIADS_H

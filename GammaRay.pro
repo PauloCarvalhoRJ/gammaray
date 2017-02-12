@@ -119,7 +119,8 @@ SOURCES += main.cpp\
     gslib/gslibparams/gslibparvmodel.cpp \
     gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
     domain/triads.cpp \
-    domain/categorydefinition.cpp
+    domain/categorydefinition.cpp \
+    triadseditordialog.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -220,7 +221,8 @@ HEADERS  += mainwindow.h \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
     domain/triads.h \
-    domain/categorydefinition.h
+    domain/categorydefinition.h \
+    triadseditordialog.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
@@ -265,7 +267,8 @@ FORMS    += mainwindow.ui \
     valuespairsdialog.ui \
     indicatorkrigingdialog.ui \
     widgets/fileselectorwidget.ui \
-    gslib/gslibparams/widgets/widgetgslibparvmodel.ui
+    gslib/gslibparams/widgets/widgetgslibparvmodel.ui \
+    triadseditordialog.ui
 
 # The application version
 VERSION = 1.0

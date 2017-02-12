@@ -60,6 +60,7 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
 
 ValuesPairsDialog::~ValuesPairsDialog()
 {
+    Application::instance()->logInfo("ValuesPairsDialog destroyed.");
     delete ui;
 }
 

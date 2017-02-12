@@ -1,48 +1,50 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <QMessageBox>
-#include "aboutdialog.h"
-#include "setupdialog.h"
-#include <QFileDialog>
-#include "domain/project.h"
-#include "domain/application.h"
-#include <QtGlobal>
-#include <QSettings>
-#include "datafiledialog.h"
-#include "pointsetdialog.h"
-#include "cartesiangriddialog.h"
-#include "creategriddialog.h"
-#include "krigingdialog.h"
-#include "domain/pointset.h"
-#include "domain/cartesiangrid.h"
-#include <QModelIndex>
-#include <QModelIndexList>
 #include <typeinfo>
 #include <cmath>
+#include <QMessageBox>
+#include <QFileDialog>
+#include <QtGlobal>
+#include <QSettings>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QModelIndex>
+#include <QModelIndexList>
+#include "domain/pointset.h"
+#include "domain/cartesiangrid.h"
 #include "domain/projectcomponent.h"
 #include "domain/file.h"
-#include "filecontentsdialog.h"
+#include "domain/variogrammodel.h"
+#include "domain/experimentalvariogram.h"
+#include "domain/thresholdcdf.h"
+#include "domain/categorypdf.h"
+#include "domain/categorydefinition.h"
+#include "domain/project.h"
+#include "domain/application.h"
 #include "domain/attribute.h"
-#include "displayplotdialog.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslib.h"
 #include "gslib/gslibparametersdialog.h"
+#include "util.h"
 #include "variogramanalysisdialog.h"
 #include "declusteringdialog.h"
-#include <QInputDialog>
-#include <QLineEdit>
-#include "domain/variogrammodel.h"
-#include "domain/experimentalvariogram.h"
-#include "domain/thresholdcdf.h"
-#include "domain/categorypdf.h"
-#include "util.h"
+#include "filecontentsdialog.h"
+#include "displayplotdialog.h"
 #include "nscoredialog.h"
 #include "distributionmodelingdialog.h"
 #include "bidistributionmodelingdialog.h"
 #include "valuespairsdialog.h"
 #include "indicatorkrigingdialog.h"
+#include "triadseditordialog.h"
+#include "aboutdialog.h"
+#include "setupdialog.h"
+#include "datafiledialog.h"
+#include "pointsetdialog.h"
+#include "cartesiangriddialog.h"
+#include "creategriddialog.h"
+#include "krigingdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -1142,7 +1144,9 @@ void MainWindow::onCreateCategoryPDF()
 
 void MainWindow::onCreateCategoryDefinition()
 {
-
+    CategoryDefinition *cd = new CategoryDefinition("");
+    TriadsEditorDialog *ted = new TriadsEditorDialog( cd, this);
+    ted->show();
 }
 
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
