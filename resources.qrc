@@ -47,5 +47,6 @@
         <file alias="crosshairs16">art/crosshairs16x16.png</file>
         <file alias="catpdf16">art/catpdf16x16.png</file>
         <file alias="thrcdf16">art/thrcdf16x16.png</file>
+        <file alias="catdef16">art/catdef16x16.png</file>
     </qresource>
 </RCC>

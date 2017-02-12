@@ -46,6 +46,7 @@ public:
         }
         file.close();
     }
+
     /** Reads the value triplets from the file. */
     void loadPairs(){
         //empties the triads list

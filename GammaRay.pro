@@ -118,7 +118,8 @@ SOURCES += main.cpp\
     scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
     gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
-    domain/triads.cpp
+    domain/triads.cpp \
+    domain/categorydefinition.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -218,7 +219,8 @@ HEADERS  += mainwindow.h \
     exprtk.hpp \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
-    domain/triads.h
+    domain/triads.h \
+    domain/categorydefinition.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
