@@ -119,6 +119,7 @@ private slots:
     void onEdit();
     void onCreateCategoryPDF();
     void onCreateCategoryDefinition();
+    void onClassifyInto();
 private:
     /**
      * This method is used to create (vm == nullptr) or review (vm != nullptr)
@@ -130,6 +131,14 @@ private:
       * If none was selected, returns an empty list.
       */
     QList<Attribute*> getSelectedAttributes();
+    /**
+     * The pointer to the dynamic sub-menu "Classify into" of the project tree context menu.
+     */
+    QMenu* m_subMenuClassifyInto;
+    /**
+      * Creates the dynamic items of sub-menu "Classify into".
+      */
+    void makeMenuClassifyInto();
 };
 
 #endif // MAINWINDOW_H

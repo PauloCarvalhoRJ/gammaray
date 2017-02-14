@@ -22,6 +22,7 @@
 #include "domain/project.h"
 #include "domain/application.h"
 #include "domain/attribute.h"
+#include "domain/objectgroup.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
@@ -48,7 +49,8 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow)
+    ui(new Ui::MainWindow),
+    m_subMenuClassifyInto( new QMenu("Classify into", this) )
 {
     //arranges UI widgets.
     ui->setupUi(this);
@@ -346,6 +348,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
                 _projectContextMenu->addAction("Normal score...", this, SLOT(onNScore()));
                 _projectContextMenu->addAction("Model a distribution...", this, SLOT(onDistrModel()));
+            }
+            if( parent_file->getFileType().compare("POINTSET") == 0 ){
+                makeMenuClassifyInto();
+                _projectContextMenu->addMenu( m_subMenuClassifyInto );
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1154,6 +1160,29 @@ void MainWindow::onCreateCategoryDefinition()
     ted->show();
 }
 
+void MainWindow::onClassifyInto()
+{
+    //assuming sender() returns a QAction* if execution passes through here.
+    QAction *act = (QAction*)sender();
+
+    //assuming the text in the menu item is the name of a categorical definition file.
+    QString categoricalDefinitionFileName = act->text();
+
+    //try to get the corresponding project component.
+    ProjectComponent* pc = Application::instance()->getProject()->
+            getResourcesGroup()->getChildByName( categoricalDefinitionFileName );
+    if( ! pc ){
+        Application::instance()->logError("MainWindow::onClassifyInto(): File " + categoricalDefinitionFileName +
+                                          " not found in Resource Files group.");
+        return;
+    }
+
+    //Assuming the project componente is a CategoryDefinition
+    CategoryDefinition* cd = (CategoryDefinition*)pc;
+
+    //TODO: CALL UNIVARIATE CLASSIFICATION DIALOG HERE.
+}
+
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
 {
 
@@ -1307,6 +1336,24 @@ QList<Attribute *> MainWindow::getSelectedAttributes()
         }
     }
     return result;
+}
+
+void MainWindow::makeMenuClassifyInto()
+{
+    m_subMenuClassifyInto->clear(); //remove any previously added item actions
+    ObjectGroup* resources = Application::instance()->getProject()->getResourcesGroup();
+    for( uint i = 0; i < resources->getChildCount(); ++i){
+        ProjectComponent *pc = resources->getChildByIndex( i );
+        if( pc->isFile() ){
+            File *fileAspect = (File*)pc;
+            if( fileAspect->getFileType() == "CATEGORYDEFINITION" ){
+                m_subMenuClassifyInto->addAction( fileAspect->getIcon(),
+                                                  fileAspect->getName(),
+                                                  this,
+                                                  SLOT(onClassifyInto()));
+            }
+        }
+    }
 }
 
 QString MainWindow::strippedName(const QString &fullDirPath)
