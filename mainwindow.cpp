@@ -1132,6 +1132,11 @@ void MainWindow::onEdit()
         CategoryPDF* cpdf  = (CategoryPDF*)_right_clicked_file;
         ValuesPairsDialog* vpd = new ValuesPairsDialog( cpdf, this );
         vpd->show();
+    } else if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
+        //Get the category definition object.
+        CategoryDefinition* cdp  = (CategoryDefinition*)_right_clicked_file;
+        TriadsEditorDialog* ted = new TriadsEditorDialog( cdp, this );
+        ted->show();
     }
 }
 

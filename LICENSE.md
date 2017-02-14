@@ -7,7 +7,7 @@ Authors:
 Original: Paulo R. M. de Carvalho (paulo.r.m.carvalho@gmail.com)
 Code contributors:
 
-=========================================Complete transcription of the Licence====================================================
+=========================================Complete transcription of the License====================================================
 
 License
 
@@ -30,6 +30,7 @@ BY EXERCISING ANY RIGHTS TO THE WORK PROVIDED HERE, YOU ACCEPT AND AGREE TO BE B
 "Reproduce" means to make copies of the Work by any means including without limitation by sound or visual recordings and the right of fixation and reproducing fixations of the Work, including storage of a protected performance or phonogram in digital form or other electronic medium.
 
 2. Fair Dealing Rights. 
+
 Nothing in this License is intended to reduce, limit, or restrict any uses free from copyright or rights arising from limitations or exceptions that are provided for in connection with the copyright protection under copyright law or other applicable laws.
 
 3. License Grant. 

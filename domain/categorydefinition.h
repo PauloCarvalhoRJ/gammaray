@@ -32,6 +32,7 @@ public:
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
     QWidget *createContentElementWidget();
+    QWidget *createWidgetFilledWithContentElement( uint iContent );
     void addContentElementFromWidget( QWidget* w );
 
 protected:

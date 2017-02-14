@@ -34,7 +34,17 @@ TriadsEditorDialog::TriadsEditorDialog(File *triadsFile, QWidget *parent) :
 
     //add widgets for each file record.
     for( int i = 0; i < m_triadsFile->getContentsCount(); ++i){
-        //TODO: add widgets or each file record.
+        //get the widget filled with a triplet.
+        QWidget *w = m_triadsFile->createWidgetFilledWithContentElement( i );
+
+        //not all files reimplement File::createWidgetFilledWithContentElement(int), which returns nullptr by default.
+        if( ! w ){
+            QMessageBox::critical( this, "Error", QString("Files of type ") + m_triadsFile->getFileType() +
+                                   QString(" are not reimplementing File::createWidgetFilledWithContentElement(int)."));
+        } else {
+            m_tripletWidgets.push_back( w );
+            ui->frmTriplets->layout()->addWidget( w );
+        }
     }
 }
 

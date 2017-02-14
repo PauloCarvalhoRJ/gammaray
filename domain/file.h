@@ -78,6 +78,11 @@ public:
     virtual QWidget* createContentElementWidget() { return nullptr; }
 
     /**
+     * Creates a widget filled with a content element (e.g. file record) given by its index.
+     */
+    virtual QWidget* createWidgetFilledWithContentElement( uint iContent ) { return nullptr; }
+
+    /**
      * Add content element (e.g. file record) using user-entered data in the given widget.
      */
     virtual void addContentElementFromWidget( QWidget* w ){ throw InvalidMethodException(); }

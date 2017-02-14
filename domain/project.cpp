@@ -20,6 +20,7 @@
 #include "domain/application.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
+#include "domain/categorydefinition.h"
 #include "plot.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
@@ -54,6 +55,7 @@ Project::Project(const QString path) : QAbstractItemModel()
         for (int i = 0; !in.atEnd(); ++i)
         {
            QString line = in.readLine();
+           //TODO: THE IFs BELOW SIGNAL A REFACTORING OPPORTUNITY
            //found a point set file reference in gammaray.prj
            if( line.startsWith( "POINTSET:" ) ){
                //get file name
@@ -152,6 +154,18 @@ Project::Project(const QString path) : QAbstractItemModel()
                     file = new ThresholdCDF( file_obj.fileName() );
                 else
                     file = new CategoryPDF( file_obj.fileName() );
+                //add the object to project tree structure
+                this->_resources->addChild( file );
+                file->setParent( this->_resources );
+           }
+           //found a category definition file reference in gammaray.prj
+           if( line.startsWith( "CATEGORYDEFINITION:" )){
+                //get file name
+                QString file_name = line.split(":")[1];
+                //make file path
+                QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
+                //create category definition object from file
+                File *file = new CategoryDefinition( file_obj.fileName() );
                 //add the object to project tree structure
                 this->_resources->addChild( file );
                 file->setParent( this->_resources );
