@@ -14,6 +14,7 @@ class Attribute; //GammaRay API
 class CartesianGrid;
 class PointSet;
 class VariogramModel;
+class UnivariateCategoryClassification;
 
 class MainWindow : public QMainWindow
 {
@@ -120,6 +121,7 @@ private slots:
     void onCreateCategoryPDF();
     void onCreateCategoryDefinition();
     void onClassifyInto();
+    void onPerformClassifyInto();
 private:
     /**
      * This method is used to create (vm == nullptr) or review (vm != nullptr)
@@ -139,6 +141,10 @@ private:
       * Creates the dynamic items of sub-menu "Classify into".
       */
     void makeMenuClassifyInto();
+    /**
+     * The pointer to the categorical classification defined by the user upon calling onClassifyInto().
+     */
+    UnivariateCategoryClassification *m_ucc;
 };
 
 #endif // MAINWINDOW_H

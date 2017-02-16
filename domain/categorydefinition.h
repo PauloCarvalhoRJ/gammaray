@@ -20,6 +20,11 @@ public:
     CategoryDefinition( QString path );
     ~CategoryDefinition();
 
+    int getCategoryCount(){ return getTripletCount(); }
+    int getCategoryCode( int category_index ){ return get1stValue(category_index); }
+    int getColorCode( int category_index ){ return get2ndValue(category_index); }
+    QString getCategoryName( int category_index ){ return get3rdValue(category_index); }
+
     // ProjectComponent interface
 public:
     QIcon getIcon(){return QIcon(":icons/catdef16");}

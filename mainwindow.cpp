@@ -23,6 +23,7 @@
 #include "domain/application.h"
 #include "domain/attribute.h"
 #include "domain/objectgroup.h"
+#include "domain/univariatecategoryclassification.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
@@ -1180,7 +1181,41 @@ void MainWindow::onClassifyInto()
     //Assuming the project componente is a CategoryDefinition
     CategoryDefinition* cd = (CategoryDefinition*)pc;
 
-    //TODO: CALL UNIVARIATE CLASSIFICATION DIALOG HERE.
+    //Create a univariate classification table.
+    m_ucc = new UnivariateCategoryClassification( cd, "");
+
+    //Open the dialog to edit the classification intervals and category.
+    TriadsEditorDialog *ted = new TriadsEditorDialog( m_ucc, this );
+    ted->setWindowTitle( "Classify " + _right_clicked_attribute->getName() + " into " + cd->getName() );
+    ted->showOKbutton();
+    connect( ted, SIGNAL(accepted()), this, SLOT(onPerformClassifyInto()));
+    ted->show(); //show()->non-modal / execute()->modal
+    //method onPerformClassifyInto() will be called upon dilog accept.
+}
+
+void MainWindow::onPerformClassifyInto()
+{
+    //Assumes the attribute's parent file is a DataFile
+    DataFile* df = (DataFile*)_right_clicked_attribute->getContainingFile();
+
+    //Get the target attribute GEO-EAS index in the data file
+    uint index = df->getFieldGEOEASIndex( _right_clicked_attribute->getName() );
+
+    //propose a name for the new variable
+    QString proposed_name = m_ucc->getCategoryDefinition()->getName();
+
+    //user enters the name for the new variable
+    QString new_var_name = QInputDialog::getText(this, "Name the new categorical variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    //if the user didn't cancel the input box
+    if ( ! new_var_name.isEmpty() ){
+        //perfom de classification
+        df->classify( index-1, m_ucc );
+    }
+
+    //TODO: delete m_ucc.
 }
 
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)

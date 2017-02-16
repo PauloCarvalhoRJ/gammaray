@@ -13,6 +13,8 @@ TriadsEditorDialog::TriadsEditorDialog(File *triadsFile, QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->btnOK->hide();
+
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
 
@@ -27,9 +29,13 @@ TriadsEditorDialog::TriadsEditorDialog(File *triadsFile, QWidget *parent) :
         m_triadsFile->readFromFS();
 
     //prepare the interface according to the specific file
+    //TODO: REFACTOR: add method to return a presentation text in the File interface to remove this If.
     if( m_triadsFile->getFileType() == "CATEGORYDEFINITION" ){
         ui->lblCaption->setText("<html><strong>Categories definition.</strong></html>");
         this->setWindowTitle( "Create/Edit category definition file." );
+    } else if( m_triadsFile->getFileType() == "UNIVARIATECATEGORYCLASSIFICATION" ){
+        ui->lblCaption->setText("<html><strong>Univariate category classification.</strong></html>");
+        this->setWindowTitle( "Create/Edit Univariate category classification file." );
     }
 
     //add widgets for each file record.
@@ -52,6 +58,11 @@ TriadsEditorDialog::~TriadsEditorDialog()
 {
     Application::instance()->logInfo("TriadsEditorDialog destroyed.");
     delete ui;
+}
+
+void TriadsEditorDialog::showOKbutton()
+{
+    this->ui->btnOK->show();
 }
 
 void TriadsEditorDialog::onAddTriplet()

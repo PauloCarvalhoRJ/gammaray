@@ -187,6 +187,17 @@ public:
     */
     static void importUnivariateDistribution(Attribute *at, const QString path_from , QWidget *dialogs_owner);
 
+    /**
+     * Populates the passed list with QColor objects containing colors according to GSLib convention.
+     * The indexes in the list + 1 are the GSLib color codes.  For instance, red is the first color,
+     * list index == 0, thus the color code is 1.
+     */
+    static void makeGSLibColorsList( QList<QColor> &colors );
+
+    /**
+     * Creates a 16x16 pixel QIcon filled with a GSLib color given its code.
+     */
+    static QIcon makeGSLibColorIcon( uint color_code );
 };
 
 #endif // UTIL_H

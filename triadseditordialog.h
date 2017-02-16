@@ -17,6 +17,10 @@ public:
     explicit TriadsEditorDialog(File* triadsFile, QWidget *parent = 0);
     ~TriadsEditorDialog();
 
+    /** Displays an OK button, so the dialog closes with the QDialog::accept() slot, triggering
+     * the QDialog::accepted() signal.  This is useful to trigger actions upon dialog closing. */
+    void showOKbutton();
+
 private:
     Ui::TriadsEditorDialog *ui;
     QList<QWidget*> m_tripletWidgets;

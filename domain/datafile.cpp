@@ -10,6 +10,7 @@
 #include "weight.h"
 #include "normalvariable.h"
 #include "cartesiangrid.h"
+#include "domain/univariatecategoryclassification.h"
 
 DataFile::DataFile(QString path) : File( path )
 {
@@ -391,4 +392,23 @@ bool DataFile::isNDV(double value)
         double ndv = this->getNoDataValue().toDouble();
         return Util::almostEqual2sComplement( ndv, value, 1 );
     }
+}
+
+void DataFile::classify(uint column, UnivariateCategoryClassification *ucc)
+{
+    //load the current data from the file system
+    loadData();
+
+    //for each data row...
+    std::vector< std::vector <double> >::iterator it = _data.begin();
+    for( ; it != _data.end(); ++it){
+        //...get the input value
+        double value = (*it).at( column );
+        //...get the category code corresponding to the value
+        int categoryId = ucc->getCategory( value );
+        //...append the code to the current row.
+        (*it).push_back( categoryId );
+    }
+
+    TODO_SAVE_FILE_AND_UPDATE_PROJECT_TREE;
 }

@@ -6,6 +6,7 @@
 #include <QMap>
 
 class Attribute;
+class UnivariateCategoryClassification;
 
 /**
  * @brief The DataFile class is the base class of all project components that are
@@ -152,6 +153,14 @@ public:
      * TODO: possible performance bottleneck.
      */
     bool isNDV( double value );
+
+    /**
+     * Adds a new data column (variable/attribute) containing categorical values computed from the
+     * values of the given variable as a function of the univariate category classification
+     * map passed as parameter.  Nothing happens is nullptr is passed as parameter.
+     * First column is zero.
+     */
+    void classify( uint column, UnivariateCategoryClassification* ucc );
 
 //File interface
     void deleteFromFS();

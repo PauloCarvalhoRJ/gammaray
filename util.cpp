@@ -655,3 +655,24 @@ void Util::importUnivariateDistribution(Attribute *at, const QString path_from, 
                                                                                 QMap<uint, Roles::DistributionColumnRole>() ); //empty list
     }
 }
+
+void Util::makeGSLibColorsList(QList<QColor> &colors)
+{
+    colors << Qt::red << QColor(255,165,0) << Qt::yellow << Qt::green << QColor( Qt::green ).darker();
+    colors << Qt::cyan << Qt::blue <<  QColor(238,130,238) << Qt::white << Qt::black;
+    colors << QColor(128,0,128) << QColor(165,42,42) << QColor(255,20,147) << QColor(50,205,50);
+    colors << Qt::gray << QColor(26,26,26) << QColor(51,51,51) << QColor(77,77,77) << QColor(102,102,102);
+    colors << QColor(128,128,128) << QColor(154,154,154) << QColor(179,179,179) << QColor(205,205,205) << QColor(230,230,230);
+}
+
+QIcon Util::makeGSLibColorIcon(uint color_code)
+{
+    //make list of GSLib colors
+    QList<QColor> colors;
+    Util::makeGSLibColorsList( colors );
+
+    //make and return the icon.
+    QPixmap pixmap(16,16);
+    pixmap.fill( colors.at( color_code - 1 ) );
+    return QIcon( pixmap );
+}
