@@ -23,6 +23,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QInputDialog>
+#include <QSettings>
 #include <cmath>
 
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
@@ -653,5 +654,33 @@ void Util::importUnivariateDistribution(Attribute *at, const QString path_from, 
             Application::instance()->getProject()->importUnivariateDistribution( tmpPathOfDistr,
                                                                                 new_dist_model_name.append(".dst"),
                                                                                 QMap<uint, Roles::DistributionColumnRole>() ); //empty list
+    }
+}
+
+void Util::importSettingsFromPreviousVersion()
+{
+    //get the settings of this application
+    //Current application name and version are globbaly set in the main() funtion in main.cpp.
+    QSettings currentSettings;
+    //The list of previous versions (order from latest to oldest version is advised)
+    QStringList previousVersions;
+    previousVersions << "1.0";
+    //Iterate through the list of previous versions
+    QList<QString>::iterator itVersion = previousVersions.begin();
+    for(; itVersion != previousVersions.end(); ++itVersion){
+        //get the settings of a previous version application
+        QSettings previousSettings(APP_NAME, QString(APP_NAME) + " " + (*itVersion));
+        //the screen splitter setting signals the presence of a previous version setting
+        //copy settings only if there are previous version settings and no settings for this version
+        if( previousSettings.contains("cmsplitter") && ! currentSettings.contains("cmsplitter") ){
+            QStringList keys = previousSettings.allKeys();
+            QList<QString>::iterator it = keys.begin();
+            //Copy all keys/values from the previous version settings
+            for(; it != keys.end(); ++it){
+               currentSettings.setValue( (*it), previousSettings.value( (*it) ) );
+            }
+            //terminate import operation upon finding a previous version
+            return;
+        }
     }
 }

@@ -71,6 +71,8 @@ KrigingDialog::KrigingDialog(QWidget *parent) :
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
     m_psSelector->onSelection( 0 );
+
+    adjustSize();
 }
 
 KrigingDialog::~KrigingDialog()

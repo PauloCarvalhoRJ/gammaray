@@ -37,6 +37,8 @@ DisplayPlotDialog::DisplayPlotDialog(const QString path_to_postscript, const QSt
 
     //render the PostScript plot
     _psw->displayPS( _ps_file_path );
+
+    adjustSize();
 }
 
 DisplayPlotDialog::~DisplayPlotDialog()

@@ -11,6 +11,7 @@ SetupDialog::SetupDialog(QWidget *parent) :
     //read settings from OS registry.
     ui->txtGSLibPath->setText( Application::instance()->getGSLibPathSetting() );
     ui->txtGSPath->setText( Application::instance()->getGhostscriptPathSetting() );
+    adjustSize();
 }
 
 SetupDialog::~SetupDialog()

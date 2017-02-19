@@ -15,6 +15,7 @@ University of Alberta.\n\n").\
 GhostScript by Artifex Software Inc.\n\n").\
          append(APP_NAME).append(" by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com) and the code contributors (see LICENSE.md file)\n\n").\
          append(APP_NAME).append(" is licensed under the Creative Commons BY-SA license v3.0."));
+     adjustSize();
 }
 
 AboutDialog::~AboutDialog()

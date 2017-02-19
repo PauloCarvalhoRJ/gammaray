@@ -106,6 +106,12 @@
    </item>
    <item>
     <widget class="QPlainTextEdit" name="txtFileSample">
+     <property name="minimumSize">
+      <size>
+       <width>400</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="font">
       <font>
        <family>Courier New</family>

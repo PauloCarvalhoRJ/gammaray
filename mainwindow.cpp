@@ -48,6 +48,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
+    //Import any registry/home user settings of a previous version
+    Util::importSettingsFromPreviousVersion();
     //arranges UI widgets.
     ui->setupUi(this);
     //puts application name and version in window title bar.

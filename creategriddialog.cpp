@@ -67,6 +67,8 @@ CreateGridDialog::CreateGridDialog(PointSet *pointSet, QWidget *parent) :
     m_gridParameters->fillFields( m_par );
 
     connect( m_vModelList, SIGNAL(variogramClicked()), this, SLOT(onVariogramClicked()));
+
+    adjustSize();
 }
 
 CreateGridDialog::~CreateGridDialog()

@@ -187,6 +187,13 @@ public:
     */
     static void importUnivariateDistribution(Attribute *at, const QString path_from , QWidget *dialogs_owner);
 
+    /**
+     * Imports the registry/user home seetings from a previus version of GammaRay.
+     * The import happens only if there are no seetings for this version.
+     * Nothing happens if there no previous settings are found.
+     */
+    static void importSettingsFromPreviousVersion();
+
 };
 
 #endif // UTIL_H

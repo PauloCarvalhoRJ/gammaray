@@ -12,6 +12,8 @@ CartesianGridDialog::CartesianGridDialog(QWidget *parent, const QString file_pat
 
     //read file content sample
     Util::readFileSample( this->ui->txtFileSample, file_path );
+
+    adjustSize();
 }
 
 CartesianGridDialog::~CartesianGridDialog()

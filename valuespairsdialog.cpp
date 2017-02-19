@@ -56,6 +56,7 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
         }
     }
 
+    adjustSize();
 }
 
 ValuesPairsDialog::~ValuesPairsDialog()

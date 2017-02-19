@@ -15,6 +15,8 @@ DataFileDialog::DataFileDialog(QWidget *parent, const QString file_path) :
 
     //read file content sample
     Util::readFileSample( this->ui->txtFileContent, file_path );
+
+    adjustSize();
 }
 
 DataFileDialog::~DataFileDialog()
