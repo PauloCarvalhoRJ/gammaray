@@ -30,6 +30,8 @@ PointSetDialog::PointSetDialog(QWidget *parent, const QString file_path) :
     }catch ( InvalidGSLibDataFileException& ex ){
         QMessageBox::critical( this, "Error", "Invalid GSLib data file." );
     }
+
+    adjustSize();
 }
 
 PointSetDialog::~PointSetDialog()

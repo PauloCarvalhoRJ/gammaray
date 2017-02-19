@@ -53,6 +53,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     m_subMenuClassifyInto( new QMenu("Classify into", this) )
 {
+    //Import any registry/home user settings of a previous version
+    Util::importSettingsFromPreviousVersion();
     //arranges UI widgets.
     ui->setupUi(this);
     //puts application name and version in window title bar.

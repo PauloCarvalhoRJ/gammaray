@@ -31,6 +31,18 @@ private:
      */
     void addParamWidgets();
 
+    /**
+     * Saves the dialog's settings such as size to the registry/user home.
+     * For each GSLib program (different parameter set) there is a different save.
+     */
+    void rememberSettings();
+
+    /**
+     * Stores the dialog's settings such as size from the registry/user home.
+     * For each GSLib program (different parameter set) there is a different save.
+     */
+    void recallSettings();
+
 private slots:
     void onDialogAccepted();
     /**

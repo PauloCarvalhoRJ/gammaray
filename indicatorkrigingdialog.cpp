@@ -80,6 +80,8 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
 
     //call this slot to show the soft indicator variables selectors.
     onUpdateSoftIndicatorVariablesSelectors();
+    
+    adjustSize();
 }
 
 IndicatorKrigingDialog::~IndicatorKrigingDialog()

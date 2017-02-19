@@ -29,6 +29,8 @@ DistributionModelingDialog::DistributionModelingDialog(Attribute *at, QWidget *p
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     this->setWindowTitle("Model a distribution for " + at->getContainingFile()->getName() + ":" + at->getName());
+
+    adjustSize();
 }
 
 DistributionModelingDialog::~DistributionModelingDialog()

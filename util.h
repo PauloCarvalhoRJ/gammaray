@@ -198,6 +198,14 @@ public:
      * Creates a 16x16 pixel QIcon filled with a GSLib color given its code.
      */
     static QIcon makeGSLibColorIcon( uint color_code );
+    
+    /**
+     * Imports the registry/user home seetings from a previus version of GammaRay.
+     * The import happens only if there are no seetings for this version.
+     * Nothing happens if there no previous settings are found.
+     */
+    static void importSettingsFromPreviousVersion();
+
 };
 
 #endif // UTIL_H

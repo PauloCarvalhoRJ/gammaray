@@ -20,6 +20,7 @@ DistributionColumnRolesDialog::DistributionColumnRolesDialog(const QString pathT
         m_roleSelectors.append( new DistributionColumnRoleSelector( dc->getName() ) );
         ui->frmRoles->layout()->addWidget( m_roleSelectors.last() );
     }
+    adjustSize();
 }
 
 DistributionColumnRolesDialog::~DistributionColumnRolesDialog()

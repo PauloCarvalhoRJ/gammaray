@@ -5,6 +5,8 @@
 #include "../domain/application.h"
 #include "gslibparams/gslibparrepeat.h"
 
+#include <QSettings>
+
 GSLibParametersDialog::GSLibParametersDialog(GSLibParameterFile *gpf, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GSLibParametersDialog),
@@ -21,10 +23,15 @@ GSLibParametersDialog::GSLibParametersDialog(GSLibParameterFile *gpf, QWidget *p
     //-------------------end of GUI construction-------------------------------------------------------
 
     connect( this, SIGNAL( accepted() ), SLOT( onDialogAccepted() ) );
+
+    //restore the dialog settings from registry/user home
+    recallSettings();
 }
 
 GSLibParametersDialog::~GSLibParametersDialog()
 {
+    //save the dialog settings to registry/user home
+    rememberSettings();
     //-----------------------------------------------------------------------------------
     //this code block detaches the parameter-owned widgets
     //from their Qt object parents, preventing their undue deletion
@@ -79,6 +86,28 @@ void GSLibParametersDialog::addParamWidgets()
         }else
             Application::instance()->logError( QString("GSLibParametersDialog::addParamWidgets(): parameters of type \"").append( par->getTypeName() ).append("\" do not have a widget.") );
     }
+}
+
+void GSLibParametersDialog::rememberSettings()
+{
+    QSettings qsettings;
+    qsettings.beginGroup( "GSLibParametersDialog." + _gpf->getProgramName() );
+    qsettings.setValue( "geometry", saveGeometry() );
+    qsettings.setValue( "pos", pos() );
+    qsettings.setValue( "size", size() );
+    qsettings.endGroup();
+}
+
+void GSLibParametersDialog::recallSettings()
+{
+    QSettings qsettings;
+    qsettings.beginGroup( "GSLibParametersDialog." + _gpf->getProgramName()  );
+    if( qsettings.contains( "geometry" ) ){
+        restoreGeometry(qsettings.value( "geometry", saveGeometry() ).toByteArray());
+        move(qsettings.value( "pos", pos() ).toPoint());
+        resize(qsettings.value( "size", size() ).toSize());
+    }
+    qsettings.endGroup();
 }
 
 void GSLibParametersDialog::onDialogAccepted()

@@ -25,6 +25,8 @@ FileContentsDialog::FileContentsDialog(QWidget *parent, const QString file_path,
     QTextCursor tmpCursor = ui->txtFileContents->textCursor();
     tmpCursor.movePosition(QTextCursor::Start);
     ui->txtFileContents->setTextCursor(tmpCursor);
+
+    adjustSize();
 }
 
 FileContentsDialog::~FileContentsDialog()
