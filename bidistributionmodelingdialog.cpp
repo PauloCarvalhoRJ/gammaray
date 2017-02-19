@@ -45,6 +45,8 @@ BidistributionModelingDialog::BidistributionModelingDialog(Attribute *atX, Attri
     //smooth distributions for the variables
     ui->widDistrVar1->layout()->addWidget( m_cmbXDist );
     ui->widDistrVar2->layout()->addWidget( m_cmbYDist );
+
+    adjustSize();
 }
 
 BidistributionModelingDialog::~BidistributionModelingDialog()

@@ -67,6 +67,8 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
 
     //call this slot to show the variogram selector widgets.
     onUpdateVariogramSelectors();
+
+    adjustSize();
 }
 
 IndicatorKrigingDialog::~IndicatorKrigingDialog()

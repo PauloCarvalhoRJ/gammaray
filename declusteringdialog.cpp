@@ -24,6 +24,7 @@ DeclusteringDialog::DeclusteringDialog(Attribute *attribute, QWidget *parent) :
     ui->setupUi(this);
     ui->lblTitle->setText("variable: <font color=\"red\"><b>" + m_attribute->getName() + "</b></color>" );
     this->setWindowTitle( QString("Declustering ").append( m_attribute->getContainingFile()->getName() ) );
+    adjustSize();
 }
 
 DeclusteringDialog::~DeclusteringDialog()

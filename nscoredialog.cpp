@@ -32,6 +32,8 @@ NScoreDialog::NScoreDialog(Attribute *attribute, QWidget *parent) :
     vars_text.append( m_attribute->getName() ).append("<br>");
     vars_text.append( "<b>" );
     ui->lblVariable->setText( vars_text );
+
+    adjustSize();
 }
 
 NScoreDialog::~NScoreDialog()

@@ -16,6 +16,12 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <widget class="QLabel" name="label_4">
+     <property name="minimumSize">
+      <size>
+       <width>400</width>
+       <height>0</height>
+      </size>
+     </property>
      <property name="text">
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Declustering computes a new variable that is called the declustering weight. Declustering weights are used to get location unbiased statistics like mean and histogram, which can be used on geostatistics workflows so the results reflect the actual statistics. This is specially true for data sets that are not regularly spaced.&lt;/p&gt;&lt;p&gt;If the sampling prefered high values, for example gold grade, then one must look for the lowest mean while running declus. If lower values (e.g. water saturation in petroleum projects) were the target of the sampling, then one must find the weights that yield the highest mean.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>

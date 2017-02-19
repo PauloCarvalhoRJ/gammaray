@@ -264,7 +264,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibparvmodel.ui
 
 # The application version
-VERSION = 1.0
+VERSION = 1.0.1
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

@@ -39,6 +39,8 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(Attribute *head, Attribute *tai
     ui->lblTail->setText("Tail: <font color=\"blue\"><b>" + m_tail->getName() + "</b></color>");
 
     this->setWindowTitle( QString("Variogram analysis on ").append( m_head->getContainingFile()->getName() ) );
+
+    adjustSize();
 }
 
 VariogramAnalysisDialog::VariogramAnalysisDialog(ExperimentalVariogram *ev, QWidget *parent) :
