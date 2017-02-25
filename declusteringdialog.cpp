@@ -24,6 +24,16 @@ DeclusteringDialog::DeclusteringDialog(Attribute *attribute, QWidget *parent) :
     ui->setupUi(this);
     ui->lblTitle->setText("variable: <font color=\"red\"><b>" + m_attribute->getName() + "</b></color>" );
     this->setWindowTitle( QString("Declustering ").append( m_attribute->getContainingFile()->getName() ) );
+
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnParameters->setIcon( QIcon(":icons32/setting32") );
+        ui->btnHistogram->setIcon( QIcon(":icons32/histo32") );
+        ui->btnSave->setIcon( QIcon(":icons32/save32") );
+        ui->btnLocmap->setIcon( QIcon(":icons32/locmap32") );
+        ui->btnSummary->setIcon( QIcon(":icons32/summary32") );
+    }
+
+
     adjustSize();
 }
 

@@ -33,6 +33,12 @@ NScoreDialog::NScoreDialog(Attribute *attribute, QWidget *parent) :
     vars_text.append( "<b>" );
     ui->lblVariable->setText( vars_text );
 
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnParams->setIcon( QIcon(":icons32/setting32") );
+        ui->btnHistogram->setIcon( QIcon(":icons32/histo32") );
+        ui->btnSave->setIcon( QIcon(":icons32/save32") );
+    }
+
     adjustSize();
 }
 

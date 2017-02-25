@@ -72,6 +72,15 @@ KrigingDialog::KrigingDialog(QWidget *parent) :
     //if the desired sample file happens to be the first one in the list.
     m_psSelector->onSelection( 0 );
 
+     if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnParameters->setIcon( QIcon(":icons32/setting32") );
+        ui->btnSaveKVariances->setIcon( QIcon(":icons32/save32") );
+        ui->btnSave->setIcon( QIcon(":icons32/save32") );
+        ui->btnSaveOrUpdateVModel->setIcon( QIcon(":icons32/save32") );
+        ui->btnXValidation->setIcon( QIcon(":icons32/xplot32") );
+    }
+
+
     adjustSize();
 }
 

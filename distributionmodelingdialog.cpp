@@ -30,6 +30,12 @@ DistributionModelingDialog::DistributionModelingDialog(Attribute *at, QWidget *p
 
     this->setWindowTitle("Model a distribution for " + at->getContainingFile()->getName() + ":" + at->getName());
 
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnParameters->setIcon( QIcon(":icons32/setting32") );
+        ui->btnPlot->setIcon( QIcon(":icons32/plot32") );
+        ui->btnSave->setIcon( QIcon(":icons32/save32") );
+    }
+
     adjustSize();
 }
 

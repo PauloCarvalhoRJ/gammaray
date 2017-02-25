@@ -7,6 +7,8 @@
 #include <QWidget>
 #include <QPlainTextEdit>
 #include <QTextCursor>
+#include <QScreen>
+#include <QApplication>
 #include <cassert>
 #include <stdint.h>
 #include "exceptions/invalidgslibdatafileexception.h"
@@ -683,4 +685,14 @@ void Util::importSettingsFromPreviousVersion()
             return;
         }
     }
+}
+
+DisplayResolution Util::getDisplayResolutionClass()
+{
+    QScreen *screen0 = QApplication::screens().at(0);
+    qreal rDPI = (qreal)screen0->logicalDotsPerInch();
+    if( rDPI > 192 ) //96dpi is about SVGA in a 15-inch screen.
+        return DisplayResolution::NORMAL_DPI;
+    else
+        return DisplayResolution::HIGH_DPI;
 }

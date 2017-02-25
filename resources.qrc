@@ -95,5 +95,6 @@
         <file alias="crosshairs32">art/iconsHD/crosshairs32.png</file>
         <file alias="catpdf32">art/iconsHD/catpdf32.png</file>
         <file alias="thrcdf32">art/iconsHD/thrcdf32.png</file>
+        <file alias="logo64">art/iconsHD/icon64.png</file>
     </qresource>
 </RCC>

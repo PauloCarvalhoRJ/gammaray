@@ -6,6 +6,7 @@
 #include "domain/project.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
+#include "util.h"
 #include <QDir>
 #include <QMessageBox>
 
@@ -54,6 +55,12 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
             vpvWidget->set1st( QString::number( cpdf->get1stValue( i ) ) );
             vpvWidget->set2nd( QString::number( cpdf->get2ndValue( i ) ) );
         }
+    }
+
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnAdd->setIcon( QIcon(":icons32/zoomin32") );
+        ui->btnRemove->setIcon( QIcon(":icons32/zoomout32") );
+        ui->btnSave->setIcon( QIcon(":icons32/save32") );
     }
 
     adjustSize();
