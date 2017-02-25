@@ -411,4 +411,5 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc)
     }
 
     TODO_SAVE_FILE_AND_UPDATE_PROJECT_TREE;
+    SEE_addGEOEASColumn_METHOD;
 }
