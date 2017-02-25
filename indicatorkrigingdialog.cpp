@@ -16,6 +16,7 @@
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslib.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
+#include "util.h"
 
 IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *parent) :
     QDialog(parent),
@@ -67,6 +68,10 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
 
     //call this slot to show the variogram selector widgets.
     onUpdateVariogramSelectors();
+
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnConfigureAndRun->setIcon( QIcon(":icons32/setting32") );
+    }
 
     adjustSize();
 }

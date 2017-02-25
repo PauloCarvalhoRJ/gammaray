@@ -12,7 +12,7 @@ public:
 
     // ProjectComponent interface
 public:
-    QIcon getIcon(){return QIcon(":icons/catpdf16");}
+    QIcon getIcon();
     void save(QTextStream *txt_stream);
 
     // File interface

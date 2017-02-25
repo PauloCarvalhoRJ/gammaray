@@ -26,21 +26,35 @@ Project::Project(const QString path) : QAbstractItemModel()
 {
     this->_project_directory = new QDir( path );
 
+    //define the icons (depends on the display resolution
+    QIcon iconDataFiles = QIcon(":icons/db16");
+    QIcon iconVariogramFiles = QIcon(":icons/vario16");
+    QIcon iconDistributionFiles = QIcon(":icons/histo16");
+    QIcon iconPlotFiles = QIcon(":icons/plot16");
+    QIcon iconResourceFiles = QIcon(":icons/resources16");
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        iconDataFiles = QIcon(":icons32/db32");
+        iconVariogramFiles = QIcon(":icons32/vario32");
+        iconDistributionFiles = QIcon(":icons32/histo32");
+        iconPlotFiles = QIcon(":icons32/plot32");
+        iconResourceFiles = QIcon(":icons32/resources32");
+    }
+
     //build project tree top level structure
     this->_root = new ProjectRoot();
-    this->_data_files = new ObjectGroup( "Data Files", QIcon(":icons/db16"), "DATAFILES");
+    this->_data_files = new ObjectGroup( "Data Files", iconDataFiles, "DATAFILES");
     this->_data_files->setParent( this->_root );
     this->_root->addChild( this->_data_files );
-    this->_variograms = new ObjectGroup( "Variogram Files", QIcon(":icons/vario16"), "VARIOGRAMS");
+    this->_variograms = new ObjectGroup( "Variogram Files", iconVariogramFiles, "VARIOGRAMS");
     this->_variograms->setParent( this->_root );
     this->_root->addChild( this->_variograms );
-    this->_distributions = new ObjectGroup( "Distribution Files", QIcon(":icons/histo16"), "DISTRIBUTIONS");
+    this->_distributions = new ObjectGroup( "Distribution Files", iconDistributionFiles, "DISTRIBUTIONS");
     this->_distributions->setParent( this->_root );
     this->_root->addChild( this->_distributions );
-    this->_plots = new ObjectGroup( "Plot Files", QIcon(":icons/plot16"), "PLOTS");
+    this->_plots = new ObjectGroup( "Plot Files", iconPlotFiles, "PLOTS");
     this->_plots->setParent( this->_root );
     this->_root->addChild( this->_plots );
-    this->_resources = new ObjectGroup( "Resource Files", QIcon(":icons/resources16"), "RESOURCES");
+    this->_resources = new ObjectGroup( "Resource Files", iconResourceFiles, "RESOURCES");
     this->_resources->setParent( this->_root );
     this->_root->addChild( this->_resources );
 

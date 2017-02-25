@@ -4,6 +4,7 @@
 #include "domain/application.h"
 #include "domain/project.h"
 #include "widgets/qlabelwithcrosshairs.h"
+#include "util.h"
 #include <QTemporaryFile>
 #include <QLabel>
 #include <QPixmap>
@@ -24,6 +25,19 @@ PSWidget::PSWidget(QWidget *parent) :
 
     _lblImage = new QLabelWithCrossHairs();
     ui->scrollAreaWidgetContents->layout()->addWidget( _lblImage );
+
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btn80dpi->setIcon( QIcon(":icons32/80dpi32") );
+        ui->btn150dpi->setIcon( QIcon(":icons32/150dpi32") );
+        ui->btn300dpi->setIcon( QIcon(":icons32/300dpi32") );
+        ui->btn600dpi->setIcon( QIcon(":icons32/600dpi32") );
+        ui->btnChangeSettings->setIcon( QIcon(":icons32/setting32") );
+        ui->btnCrossHairs->setIcon( QIcon(":icons32/crosshairs32") );
+        ui->btnSavePlot->setIcon( QIcon(":icons32/plot32") );
+        ui->btnSnapshot->setIcon( QIcon(":icons32/snapshot32") );
+        ui->btnZoomIn->setIcon( QIcon(":icons32/zoomin32") );
+        ui->btnZoomOut->setIcon( QIcon(":icons32/zoomout32") );
+    }
 }
 
 PSWidget::~PSWidget()

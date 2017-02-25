@@ -46,6 +46,14 @@ BidistributionModelingDialog::BidistributionModelingDialog(Attribute *atX, Attri
     ui->widDistrVar1->layout()->addWidget( m_cmbXDist );
     ui->widDistrVar2->layout()->addWidget( m_cmbYDist );
 
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnParameters->setIcon( QIcon(":icons32/setting32") );
+        ui->btnPlot->setIcon( QIcon(":icons32/plot32") );
+        ui->btnSave->setIcon( QIcon(":icons32/save32") );
+        ui->btnSaveXDistr->setIcon( QIcon(":icons32/save32") );
+        ui->btnSaveYDistr->setIcon( QIcon(":icons32/save32") );
+    }
+
     adjustSize();
 }
 

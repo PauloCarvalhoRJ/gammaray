@@ -8,6 +8,7 @@
 #include "application.h"
 #include "../exceptions/invalidgslibdatafileexception.h"
 #include "weight.h"
+#include "util.h"
 
 PointSet::PointSet( QString path ) : DataFile( path )
 {
@@ -19,7 +20,10 @@ PointSet::PointSet( QString path ) : DataFile( path )
 
 QIcon PointSet::getIcon()
 {
-    return QIcon(":icons/pointset16");
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/pointset16");
+    else
+        return QIcon(":icons32/pointset32");
 }
 
 void PointSet::save(QTextStream *txt_stream)

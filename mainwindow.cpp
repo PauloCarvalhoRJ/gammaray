@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QMessageBox>
+#include <QScreen>
 #include "aboutdialog.h"
 #include "setupdialog.h"
 #include <QFileDialog>
@@ -95,6 +96,14 @@ MainWindow::MainWindow(QWidget *parent) :
     this->restoreProjectTreeUIState2();
 
     Application::instance()->logInfo(QString("Welcome to ").append(APP_NAME_VER).append("."));
+
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        this->setWindowIcon( QIcon(":icons32/logo64") );
+    }
+
+    QScreen *screen0 = QApplication::screens().at(0);
+    qreal rDPI = (qreal)screen0->logicalDotsPerInch();
+    Application::instance()->logInfo(QString("----screen DPI (display 0): ").append(QString::number( rDPI )).append("."));
 }
 
 MainWindow::~MainWindow()

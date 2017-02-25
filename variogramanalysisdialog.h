@@ -45,6 +45,8 @@ private:
     GSLibParameterFile* m_gpf_gam;
     CartesianGrid* m_varmap_grid;
     GSLibParameterFile* m_gpf_vmodel;
+    /** Does some UI details not in ui->setup(). */
+    void finishUISetup();
 
 private slots:
     void onOpenVarMapParameters();

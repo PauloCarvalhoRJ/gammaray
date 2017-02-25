@@ -68,6 +68,10 @@ CreateGridDialog::CreateGridDialog(PointSet *pointSet, QWidget *parent) :
 
     connect( m_vModelList, SIGNAL(variogramClicked()), this, SLOT(onVariogramClicked()));
 
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnRunGammaBar->setIcon( QIcon(":icons32/gbar32") );
+    }
+
     adjustSize();
 }
 
