@@ -1,57 +1,53 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-#include <typeinfo>
-#include <cmath>
 #include <QMessageBox>
-#include <QFileDialog>
-#include <QtGlobal>
-#include <QSettings>
-#include <QInputDialog>
-#include <QLineEdit>
-#include <QModelIndex>
-#include <QModelIndexList>
-#include "domain/pointset.h"
-#include "domain/cartesiangrid.h"
-#include "domain/projectcomponent.h"
-#include "domain/file.h"
-#include "domain/variogrammodel.h"
-#include "domain/experimentalvariogram.h"
-#include "domain/thresholdcdf.h"
-#include "domain/categorypdf.h"
-#include "domain/categorydefinition.h"
-#include "domain/project.h"
-#include "domain/application.h"
-#include "domain/attribute.h"
-#include "domain/objectgroup.h"
-#include "domain/univariatecategoryclassification.h"
-#include "gslib/gslibparams/gslibparinputdata.h"
-#include "gslib/gslibparameterfiles/gslibparameterfile.h"
-#include "gslib/gslibparameterfiles/gslibparamtypes.h"
-#include "gslib/gslib.h"
-#include "gslib/gslibparametersdialog.h"
-#include "util.h"
-#include "variogramanalysisdialog.h"
-#include "declusteringdialog.h"
-#include "filecontentsdialog.h"
-#include "displayplotdialog.h"
-#include "nscoredialog.h"
-#include "distributionmodelingdialog.h"
-#include "bidistributionmodelingdialog.h"
-#include "valuespairsdialog.h"
-#include "indicatorkrigingdialog.h"
-#include "triadseditordialog.h"
+#include <QScreen>
 #include "aboutdialog.h"
 #include "setupdialog.h"
+#include <QFileDialog>
+#include "domain/project.h"
+#include "domain/application.h"
+#include <QtGlobal>
+#include <QSettings>
 #include "datafiledialog.h"
 #include "pointsetdialog.h"
 #include "cartesiangriddialog.h"
 #include "creategriddialog.h"
 #include "krigingdialog.h"
+#include "domain/pointset.h"
+#include "domain/cartesiangrid.h"
+#include <QModelIndex>
+#include <QModelIndexList>
+#include <typeinfo>
+#include <cmath>
+#include "domain/projectcomponent.h"
+#include "domain/file.h"
+#include "filecontentsdialog.h"
+#include "domain/attribute.h"
+#include "displayplotdialog.h"
+#include "gslib/gslibparams/gslibparinputdata.h"
+#include "gslib/gslibparameterfiles/gslibparameterfile.h"
+#include "gslib/gslibparameterfiles/gslibparamtypes.h"
+#include "gslib/gslib.h"
+#include "gslib/gslibparametersdialog.h"
+#include "variogramanalysisdialog.h"
+#include "declusteringdialog.h"
+#include <QInputDialog>
+#include <QLineEdit>
+#include "domain/variogrammodel.h"
+#include "domain/experimentalvariogram.h"
+#include "domain/thresholdcdf.h"
+#include "domain/categorypdf.h"
+#include "util.h"
+#include "nscoredialog.h"
+#include "distributionmodelingdialog.h"
+#include "bidistributionmodelingdialog.h"
+#include "valuespairsdialog.h"
+#include "indicatorkrigingdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    m_subMenuClassifyInto( new QMenu("Classify into", this) )
+    ui(new Ui::MainWindow)
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -100,6 +96,14 @@ MainWindow::MainWindow(QWidget *parent) :
     this->restoreProjectTreeUIState2();
 
     Application::instance()->logInfo(QString("Welcome to ").append(APP_NAME_VER).append("."));
+
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        this->setWindowIcon( QIcon(":icons32/logo64") );
+    }
+
+    QScreen *screen0 = QApplication::screens().at(0);
+    qreal rDPI = (qreal)screen0->logicalDotsPerInch();
+    Application::instance()->logInfo(QString("----screen DPI (display 0): ").append(QString::number( rDPI )).append("."));
 }
 
 MainWindow::~MainWindow()
@@ -298,7 +302,6 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         if ( index.isValid() && index.internalPointer() == project->getResourcesGroup()) {
             _projectContextMenu->addAction("Create threshold c.d.f. ...", this, SLOT(onCreateThresholdCDF()));
             _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
-            _projectContextMenu->addAction("Create categories definition ...", this, SLOT(onCreateCategoryDefinition()));
         }
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
@@ -351,10 +354,6 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
                 _projectContextMenu->addAction("Normal score...", this, SLOT(onNScore()));
                 _projectContextMenu->addAction("Model a distribution...", this, SLOT(onDistrModel()));
-            }
-            if( parent_file->getFileType().compare("POINTSET") == 0 ){
-                makeMenuClassifyInto();
-                _projectContextMenu->addMenu( m_subMenuClassifyInto );
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1141,11 +1140,6 @@ void MainWindow::onEdit()
         CategoryPDF* cpdf  = (CategoryPDF*)_right_clicked_file;
         ValuesPairsDialog* vpd = new ValuesPairsDialog( cpdf, this );
         vpd->show();
-    } else if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
-        //Get the category definition object.
-        CategoryDefinition* cdp  = (CategoryDefinition*)_right_clicked_file;
-        TriadsEditorDialog* ted = new TriadsEditorDialog( cdp, this );
-        ted->show();
     }
 }
 
@@ -1154,70 +1148,6 @@ void MainWindow::onCreateCategoryPDF()
     CategoryPDF* cpdf = new CategoryPDF("");
     ValuesPairsDialog* vpd = new ValuesPairsDialog( cpdf, this );
     vpd->show();
-}
-
-void MainWindow::onCreateCategoryDefinition()
-{
-    CategoryDefinition *cd = new CategoryDefinition("");
-    TriadsEditorDialog *ted = new TriadsEditorDialog( cd, this);
-    ted->show();
-}
-
-void MainWindow::onClassifyInto()
-{
-    //assuming sender() returns a QAction* if execution passes through here.
-    QAction *act = (QAction*)sender();
-
-    //assuming the text in the menu item is the name of a categorical definition file.
-    QString categoricalDefinitionFileName = act->text();
-
-    //try to get the corresponding project component.
-    ProjectComponent* pc = Application::instance()->getProject()->
-            getResourcesGroup()->getChildByName( categoricalDefinitionFileName );
-    if( ! pc ){
-        Application::instance()->logError("MainWindow::onClassifyInto(): File " + categoricalDefinitionFileName +
-                                          " not found in Resource Files group.");
-        return;
-    }
-
-    //Assuming the project componente is a CategoryDefinition
-    CategoryDefinition* cd = (CategoryDefinition*)pc;
-
-    //Create a univariate classification table.
-    m_ucc = new UnivariateCategoryClassification( cd, "");
-
-    //Open the dialog to edit the classification intervals and category.
-    TriadsEditorDialog *ted = new TriadsEditorDialog( m_ucc, this );
-    ted->setWindowTitle( "Classify " + _right_clicked_attribute->getName() + " into " + cd->getName() );
-    ted->showOKbutton();
-    connect( ted, SIGNAL(accepted()), this, SLOT(onPerformClassifyInto()));
-    ted->show(); //show()->non-modal / execute()->modal
-    //method onPerformClassifyInto() will be called upon dilog accept.
-}
-
-void MainWindow::onPerformClassifyInto()
-{
-    //Assumes the attribute's parent file is a DataFile
-    DataFile* df = (DataFile*)_right_clicked_attribute->getContainingFile();
-
-    //Get the target attribute GEO-EAS index in the data file
-    uint index = df->getFieldGEOEASIndex( _right_clicked_attribute->getName() );
-
-    //propose a name for the new variable
-    QString proposed_name = m_ucc->getCategoryDefinition()->getName();
-
-    //user enters the name for the new variable
-    QString new_var_name = QInputDialog::getText(this, "Name the new categorical variable",
-                                             "New variable name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
-
-    //if the user didn't cancel the input box
-    if ( ! new_var_name.isEmpty() ){
-        //perfom de classification
-        df->classify( index-1, m_ucc );
-    }
-
-    //TODO: delete m_ucc.
 }
 
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
@@ -1373,24 +1303,6 @@ QList<Attribute *> MainWindow::getSelectedAttributes()
         }
     }
     return result;
-}
-
-void MainWindow::makeMenuClassifyInto()
-{
-    m_subMenuClassifyInto->clear(); //remove any previously added item actions
-    ObjectGroup* resources = Application::instance()->getProject()->getResourcesGroup();
-    for( uint i = 0; i < resources->getChildCount(); ++i){
-        ProjectComponent *pc = resources->getChildByIndex( i );
-        if( pc->isFile() ){
-            File *fileAspect = (File*)pc;
-            if( fileAspect->getFileType() == "CATEGORYDEFINITION" ){
-                m_subMenuClassifyInto->addAction( fileAspect->getIcon(),
-                                                  fileAspect->getName(),
-                                                  this,
-                                                  SLOT(onClassifyInto()));
-            }
-        }
-    }
 }
 
 QString MainWindow::strippedName(const QString &fullDirPath)

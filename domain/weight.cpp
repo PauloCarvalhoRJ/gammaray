@@ -1,4 +1,5 @@
 #include "weight.h"
+#include "util.h"
 
 Weight::Weight(QString name, int index_in_file, Attribute *parentAttribute) :
     Attribute( name, index_in_file )
@@ -8,5 +9,8 @@ Weight::Weight(QString name, int index_in_file, Attribute *parentAttribute) :
 
 QIcon Weight::getIcon()
 {
-    return QIcon(":icons/weight16");
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/weight16");
+    else
+        return QIcon(":icons32/weight32");
 }

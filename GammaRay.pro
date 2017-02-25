@@ -279,7 +279,7 @@ FORMS    += mainwindow.ui \
     widgets/intervalandcategorywidget.ui
 
 # The application version
-VERSION = 1.0.1
+VERSION = 1.1.0
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
@@ -294,3 +294,6 @@ DEFINES += APP_NAME_VER=\\\"$$TARGET\\\040$$VERSION\\\"
 
 RESOURCES += \
     resources.qrc
+
+#set the Windows executable icon
+win32:RC_ICONS += art/exeicon.ico

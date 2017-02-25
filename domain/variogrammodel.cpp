@@ -4,6 +4,7 @@
 
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
+#include "util.h"
 
 VariogramModel::VariogramModel(const QString path) : File( path )
 {
@@ -78,7 +79,10 @@ double VariogramModel::getRoll(int structure)
 
 QIcon VariogramModel::getIcon()
 {
-    return QIcon(":icons/vmodel16");
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/vmodel16");
+    else
+        return QIcon(":icons32/vmodel32");
 }
 
 void VariogramModel::save(QTextStream *txt_stream)

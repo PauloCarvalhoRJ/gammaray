@@ -13,6 +13,14 @@ class QPlainTextEdit;
 class CartesianGrid;
 class Attribute;
 
+/*! Display resolution classes used to select an adequate set of icons and maybe other
+ *  GUI measures sensitive to display resolution. */
+enum class DisplayResolution : uint {
+    NORMAL_DPI = 0, /*!< For usual SVGA displays or high vertical resultion in physically large screens. */
+    HIGH_DPI        /*!< For the so-called 4k displays, unless exceptionally large screens. */
+};
+
+
 /**
  * @brief The Util class organizes system-wide utilitary functions.
  */
@@ -205,6 +213,11 @@ public:
      * Nothing happens if there no previous settings are found.
      */
     static void importSettingsFromPreviousVersion();
+
+    /**
+     * Returns an ID to classify display resolutions.
+     */
+    static DisplayResolution getDisplayResolutionClass();
 
 };
 

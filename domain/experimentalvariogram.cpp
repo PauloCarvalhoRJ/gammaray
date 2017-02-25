@@ -1,6 +1,7 @@
 #include "experimentalvariogram.h"
 #include <QFile>
 #include <QTextStream>
+#include "util.h"
 
 ExperimentalVariogram::ExperimentalVariogram(const QString path) : File( path )
 {
@@ -55,7 +56,10 @@ void ExperimentalVariogram::updateMetaDataFile()
 
 QIcon ExperimentalVariogram::getIcon()
 {
-    return QIcon(":icons/vexp16");
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/vexp16");
+    else
+        return QIcon(":icons32/vexp32");
 }
 
 void ExperimentalVariogram::save(QTextStream *txt_stream)

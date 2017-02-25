@@ -40,7 +40,7 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(Attribute *head, Attribute *tai
 
     this->setWindowTitle( QString("Variogram analysis on ").append( m_head->getContainingFile()->getName() ) );
 
-    adjustSize();
+    finishUISetup();
 }
 
 VariogramAnalysisDialog::VariogramAnalysisDialog(ExperimentalVariogram *ev, QWidget *parent) :
@@ -63,6 +63,8 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(ExperimentalVariogram *ev, QWid
     ui->frmGamGamv->setVisible( false );
     ui->frmVarmap->setVisible( false );
     ui->lbl3->setText( "Variogram model:" );
+
+    finishUISetup();
 }
 
 VariogramAnalysisDialog::~VariogramAnalysisDialog()
@@ -83,6 +85,23 @@ VariogramAnalysisDialog::~VariogramAnalysisDialog()
     if( m_gpf_vmodel )
         delete m_gpf_vmodel;
     Application::instance()->logInfo("Variogram analysis dialog destroyed.");
+}
+
+void VariogramAnalysisDialog::finishUISetup()
+{
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnExpVarioPar->setIcon( QIcon(":icons32/setting32") );
+        ui->btnExpVarioPlot->setIcon( QIcon(":icons32/plot32") );
+        ui->btnExpVarioSave->setIcon( QIcon(":icons32/save32") );
+        ui->btnModelVarioPar->setIcon( QIcon(":icons32/setting32") );
+        ui->btnModelVarioPlot->setIcon( QIcon(":icons32/plot32") );
+        ui->btnModelVarioSave->setIcon( QIcon(":icons32/save32") );
+        ui->btnVarioMapSave->setIcon( QIcon(":icons32/save32") );
+        ui->btnVarmapPar->setIcon( QIcon(":icons32/setting32") );
+        ui->btnVarmapPlot->setIcon( QIcon(":icons32/plot32") );
+    }
+
+    adjustSize();
 }
 
 void VariogramAnalysisDialog::onOpenVarMapParameters()
