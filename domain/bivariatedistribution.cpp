@@ -1,4 +1,5 @@
 #include "bivariatedistribution.h"
+#include "util.h"
 
 BivariateDistribution::BivariateDistribution(const QString path) : Distribution( path )
 {
@@ -6,6 +7,9 @@ BivariateDistribution::BivariateDistribution(const QString path) : Distribution(
 
 QIcon BivariateDistribution::getIcon()
 {
-    return QIcon(":icons/bidist16");
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/bidist16");
+    else
+        return QIcon(":icons32/bidist32");
 }
 

@@ -205,10 +205,17 @@ void CartesianGrid::updateMetaDataFile()
 
 QIcon CartesianGrid::getIcon()
 {
-    if(_nz == 1)
-        return QIcon(":icons/cartesiangrid16");
-    else
-        return QIcon(":icons/cg3D16");
+    if(_nz == 1){
+        if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+            return QIcon(":icons/cartesiangrid16");
+        else
+            return QIcon(":icons32/cartesiangrid32");
+    }else{
+        if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+            return QIcon(":icons/cg3D16");
+        else
+            return QIcon(":icons32/cg3D32");
+    }
 }
 
 void CartesianGrid::save(QTextStream *txt_stream)
