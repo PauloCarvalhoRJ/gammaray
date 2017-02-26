@@ -2,6 +2,7 @@
 #include "ui_setupdialog.h"
 #include <QFileDialog>
 #include "domain/application.h"
+#include "util.h"
 
 SetupDialog::SetupDialog(QWidget *parent) :
     QDialog(parent),
@@ -21,14 +22,14 @@ SetupDialog::~SetupDialog()
 
 void SetupDialog::showGSLibPathSearch()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "select GSLib executables location");
+    QString dir = QFileDialog::getExistingDirectory(this, "select GSLib executables location", Util::getProgramInstallDir());
     if( ! dir.isEmpty() )
         ui->txtGSLibPath->setText( dir );
 }
 
 void SetupDialog::showGSPathSearch()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "select Ghostscript installation directory");
+    QString dir = QFileDialog::getExistingDirectory(this, "select Ghostscript installation directory", Util::getProgramInstallDir());
     if( ! dir.isEmpty() )
         ui->txtGSPath->setText( dir );
 }

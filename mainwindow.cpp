@@ -462,8 +462,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 
 void MainWindow::onAddDataFile()
 {
-    QString file = QFileDialog::getOpenFileName(this, "select data file");
+    QString file = QFileDialog::getOpenFileName(this, "select data file", Util::getLastBrowsedDirectory());
     if( ! file.isEmpty() ){
+        Util::saveLastBrowsedDirectoryOfFile( file );
         DataFileDialog dfd(this, file);
         dfd.exec();
         if( dfd.result() == QDialog::Accepted ){
@@ -1323,7 +1324,7 @@ void MainWindow::showSetup()
 
 void MainWindow::newProject()
 {
-    QString dir = QFileDialog::getExistingDirectory(this, "select project directory");
+    QString dir = QFileDialog::getExistingDirectory(this, "Select project directory", QDir::homePath());
     if( ! dir.isEmpty() ){
         Application::instance()->openProject( dir );
         this->setCurrentMRU( dir );

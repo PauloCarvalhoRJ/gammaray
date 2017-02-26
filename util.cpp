@@ -696,3 +696,29 @@ DisplayResolution Util::getDisplayResolutionClass()
     else
         return DisplayResolution::HIGH_DPI;
 }
+
+QString Util::getLastBrowsedDirectory()
+{
+    QSettings settings;
+    return settings.value( "LastBrowsedDir" ).toString();
+}
+
+void Util::saveLastBrowsedDirectory(QString dir_path )
+{
+    QSettings settings;
+    settings.setValue( "LastBrowsedDir", dir_path );
+}
+
+void Util::saveLastBrowsedDirectoryOfFile(QString file_path)
+{
+    Util::saveLastBrowsedDirectory( QFileInfo( file_path ).dir().absolutePath() );
+}
+
+QString Util::getProgramInstallDir()
+{
+#ifdef Q_OS_WIN
+    return QString( getenv("PROGRAMFILES") );
+#else
+    return QString("/usr");
+#endif
+}

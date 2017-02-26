@@ -207,6 +207,27 @@ public:
      */
     static DisplayResolution getDisplayResolutionClass();
 
+    /**
+     * Return the last browsed directory in a file dialog.
+     */
+    static QString getLastBrowsedDirectory();
+
+    /**
+     * Saves the last browsed directory in a file dialog to registry/home settings.
+     * The parameter must be a directory path.
+     */
+    static void saveLastBrowsedDirectory(QString dir_path);
+
+    /**
+     * Saves the last browsed directory in a file dialog to registry/home settings.
+     * The parameter must be a file path.
+     */
+    static void saveLastBrowsedDirectoryOfFile(QString file_path);
+
+    /**
+     * Returns the PROGRAMFILES environmental variable in Windows or /usr otherwise.
+     */
+    static QString getProgramInstallDir();
 };
 
 #endif // UTIL_H
