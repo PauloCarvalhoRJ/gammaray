@@ -295,11 +295,17 @@
    </property>
   </action>
   <action name="actionIndicatorKrigingContinuous">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Indicator Kriging (continuous)</string>
    </property>
   </action>
   <action name="actionIndicatorKrigingCategorical">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>Indicator Kriging (categorical)</string>
    </property>
