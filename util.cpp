@@ -41,7 +41,6 @@ QStringList Util::getFieldNames(const QString gslib_data_file_path)
     file.open( QFile::ReadOnly | QFile::Text );
     QTextStream in(&file);
     int n_vars = 0;
-    bool ok = false;
     int var_count = 0;
     for (int i = 0; !in.atEnd(); ++i)
     {

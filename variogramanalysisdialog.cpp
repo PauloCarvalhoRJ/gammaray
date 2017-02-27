@@ -418,9 +418,9 @@ void VariogramAnalysisDialog::onOpenVariogramModelParamateres()
     }
 
     //these are useful to compute lag, azimuth and dip from gam regular grid parameters
-    double xsize;
-    double ysize;
-    double zsize;
+    double xsize = 1.0;
+    double ysize = 1.0;
+    double zsize = 1.0;
     if( m_gpf_gam )
     {
         GSLibParGrid* par5 = m_gpf_gam->getParameter<GSLibParGrid*>(5);

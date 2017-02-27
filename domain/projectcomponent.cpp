@@ -73,7 +73,7 @@ int ProjectComponent::getChildIndex(ProjectComponent *child)
     return -1;
 }
 
-void ProjectComponent::save(QTextStream *txt_stream)
+void ProjectComponent::save(QTextStream */*txt_stream*/)
 {
 
 }

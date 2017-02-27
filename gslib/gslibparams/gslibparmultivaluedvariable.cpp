@@ -30,7 +30,7 @@ void GSLibParMultiValuedVariable::assureLoop(uint n)
 
 void GSLibParMultiValuedVariable::assure(uint n)
 {
-    if( _parameters.size() >= n)
+    if( _parameters.size() >= (int)n)
         return;
     if( getAllowedParameterTypeName() == "double" ){
         assureLoop<GSLibParDouble>( n );

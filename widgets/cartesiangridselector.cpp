@@ -33,7 +33,7 @@ CartesianGridSelector::~CartesianGridSelector()
     delete ui;
 }
 
-void CartesianGridSelector::onSelection(int index)
+void CartesianGridSelector::onSelection(int /*index*/)
 {
     m_dataFile = nullptr;
     Project* project = Application::instance()->getProject();

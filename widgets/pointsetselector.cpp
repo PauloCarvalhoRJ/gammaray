@@ -29,7 +29,7 @@ PointSetSelector::~PointSetSelector()
     delete ui;
 }
 
-void PointSetSelector::onSelection(int index)
+void PointSetSelector::onSelection(int /*index*/)
 {
     m_dataFile = nullptr;
     Project* project = Application::instance()->getProject();
