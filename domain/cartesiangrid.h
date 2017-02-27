@@ -48,9 +48,9 @@ public:
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
-    bool isWeight( Attribute* at ) { return false; }
+    bool isWeight( Attribute* /*at*/ ) { return false; }
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
-    virtual Attribute* getVariableOfWeight( Attribute* at ) { return nullptr; }
+    virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 
 // File interface
 public:

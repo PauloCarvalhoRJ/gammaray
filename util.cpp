@@ -41,7 +41,6 @@ QStringList Util::getFieldNames(const QString gslib_data_file_path)
     file.open( QFile::ReadOnly | QFile::Text );
     QTextStream in(&file);
     int n_vars = 0;
-    bool ok = false;
     int var_count = 0;
     for (int i = 0; !in.atEnd(); ++i)
     {
@@ -666,7 +665,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.0.1" << "1.0";
+    previousVersions << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -695,4 +694,30 @@ DisplayResolution Util::getDisplayResolutionClass()
         return DisplayResolution::NORMAL_DPI;
     else
         return DisplayResolution::HIGH_DPI;
+}
+
+QString Util::getLastBrowsedDirectory()
+{
+    QSettings settings;
+    return settings.value( "LastBrowsedDir" ).toString();
+}
+
+void Util::saveLastBrowsedDirectory(QString dir_path )
+{
+    QSettings settings;
+    settings.setValue( "LastBrowsedDir", dir_path );
+}
+
+void Util::saveLastBrowsedDirectoryOfFile(QString file_path)
+{
+    Util::saveLastBrowsedDirectory( QFileInfo( file_path ).dir().absolutePath() );
+}
+
+QString Util::getProgramInstallDir()
+{
+#ifdef Q_OS_WIN
+    return QString( getenv("PROGRAMFILES") );
+#else
+    return QString("/usr");
+#endif
 }

@@ -217,7 +217,7 @@ void IndicatorKrigingDialog::onConfigureAndRun()
 
     //show the ik3d parameters
     GSLibParametersDialog gsd( m_gpf_ik3d, this );
-    int result = gsd.exec();
+    /*int result =*/ gsd.exec();
 
 //    //if user didn't cancel the dialog
 //    if( result == QDialog::Accepted ){

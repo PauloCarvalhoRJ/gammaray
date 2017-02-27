@@ -102,7 +102,7 @@ void GSLib::onProgramOutput()
         Application::instance()->logInfo( stdout_text );
 }
 
-void GSLib::onProgramFinished(int exit_code, QProcess::ExitStatus exit_status)
+void GSLib::onProgramFinished(int exit_code, QProcess::ExitStatus /*exit_status*/)
 {
     Application::instance()->logInfo( QString("GSLib::onProgramFinished(): Program terminated with exit code = ").append( QString::number(exit_code) ) );
     emit programFinished();

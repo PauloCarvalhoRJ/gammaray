@@ -56,7 +56,7 @@ void VariogramModelSelector::selectVariogram(const QString name)
     emit variogramSelected();
 }
 
-void VariogramModelSelector::onVariogramSelected(int index)
+void VariogramModelSelector::onVariogramSelected(int /*index*/)
 {
     emit variogramSelected();
 }
