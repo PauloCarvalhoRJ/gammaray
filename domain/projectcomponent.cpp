@@ -81,7 +81,7 @@ ProjectComponent *ProjectComponent::getChildByName(QString name)
     return nullptr;
 }
 
-void ProjectComponent::save(QTextStream *txt_stream)
+void ProjectComponent::save(QTextStream */*txt_stream*/)
 {
 
 }

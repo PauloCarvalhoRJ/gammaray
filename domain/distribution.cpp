@@ -74,7 +74,7 @@ void Distribution::updateColumnCollection()
     QStringList fields = Util::getFieldNames( this->_path );
     for( int i = 0; i < fields.size(); ++i ){
         int index_in_file = i + 1;
-        DistributionColumn *dc = new DistributionColumn( fields[i], index_in_file );
+        DistributionColumn *dc = new DistributionColumn( fields[i].trimmed(), index_in_file );
         this->_children.push_back( dc );
         dc->setParent( this );
     }

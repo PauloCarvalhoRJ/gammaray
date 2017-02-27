@@ -279,7 +279,9 @@ FORMS    += mainwindow.ui \
     widgets/intervalandcategorywidget.ui
 
 # The application version
-VERSION = 1.1.0
+# Don't forget to update the Util::importSettingsFromPreviousVersion() method to
+# enable the import of registry/user settings of previous versions.
+VERSION = 1.2
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

@@ -558,7 +558,7 @@ int Project::rowCount(const QModelIndex &parent) const
         parentItem = static_cast<ProjectComponent*>(parent.internalPointer());
     return parentItem->getChildCount();
 }
-int Project::columnCount(const QModelIndex &parent) const
+int Project::columnCount(const QModelIndex &/*parent*/) const
 {
     return 1;
 }
@@ -579,7 +579,7 @@ Qt::ItemFlags Project::flags(const QModelIndex &index) const
         return 0;
     return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
 }
-QVariant Project::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant Project::headerData(int /*section*/, Qt::Orientation /*orientation*/, int /*role*/) const
 {
     //if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
     //    return rootItem->data(section);

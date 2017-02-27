@@ -66,7 +66,6 @@ void WidgetGSLibParMultiValuedVariable::updateValue(QList<GSLibParVarWeight *> *
         QListIterator<GSLibParVarWeight *> it_par( *param );
         QListIterator<QWidget *> it_wid( this->_widgets );
         //first, the variables indexes...
-        int count = 0;
         while( it_wid.hasNext() ){
             GSLibParVarWeight *var_wgt = it_par.next();
             WidgetGSLibParInt *widget = (WidgetGSLibParInt *)it_wid.next();

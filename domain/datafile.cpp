@@ -226,7 +226,7 @@ void DataFile::updatePropertyCollection()
         /*if( index_in_file != this->_x_field_index &&
             index_in_file != this->_y_field_index &&
             index_in_file != this->_z_field_index ){*/
-            Attribute *at = new Attribute( fields[i], index_in_file );
+            Attribute *at = new Attribute( fields[i].trimmed(), index_in_file );
             if( isWeight( at ) ){ //if attribute is a weight, it is represented as a child object
                                   //of the variable it refers to
                 Attribute* variable = this->getVariableOfWeight( at );
@@ -234,7 +234,7 @@ void DataFile::updatePropertyCollection()
                     Application::instance()->logError("Error in variable-weight assignment.");
                 else{
                     delete at; //it is not a generic Attribute
-                    Weight* wgt = new Weight( fields[i], index_in_file, variable );
+                    Weight* wgt = new Weight( fields[i].trimmed(), index_in_file, variable );
                     variable->addChild( wgt );
                 }
             } else if( isNormal( at ) ){ //if attribute is a normal transform of another variable,
@@ -244,7 +244,7 @@ void DataFile::updatePropertyCollection()
                     Application::instance()->logError("Error in variable-normal variable assignment.");
                 else{
                     delete at; //it is not a generic Attribute
-                    NormalVariable* ns_var = new NormalVariable( fields[i], index_in_file, variable );
+                    NormalVariable* ns_var = new NormalVariable( fields[i].trimmed(), index_in_file, variable );
                     variable->addChild( ns_var );
                 }
             } else { //common variables are direct children of files

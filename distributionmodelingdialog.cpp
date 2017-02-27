@@ -20,8 +20,8 @@
 DistributionModelingDialog::DistributionModelingDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::DistributionModelingDialog),
-    m_attribute( at ),
-    m_gpf_histsmth( nullptr )
+    m_gpf_histsmth( nullptr ),
+    m_attribute( at )
 {
     ui->setupUi(this);
 

@@ -10,9 +10,17 @@ Ghostscript::Ghostscript()
 {
 }
 
-QString Ghostscript::getGsProgramName()
+QString Ghostscript::getGsProgramName(QDir &bin_dir )
 {
     #ifdef Q_OS_WIN
+        //GhostScript Windows executable can be gswin64c.exe or gswin32c.exe.
+        //Try gswin64c.exe preferentially.
+        QFile gsExePath( bin_dir.filePath( "gswin64c.exe" ) );
+        if( gsExePath.exists() ){
+            Application::instance()->logInfo( "GhostScript 64-bit found." );
+            return "gswin64c.exe";
+        }
+        Application::instance()->logInfo( "Trying GhostScript 32-bit." );
         return "gswin32c.exe";
     #else
         return "gs";
@@ -24,7 +32,7 @@ void Ghostscript::makePNG(const QString input_ps_file_path, const QString output
     QProcess cmd;
     QDir gs_home = QDir(Application::instance()->getGhostscriptPathSetting());
     QDir gs_bin = QDir(gs_home.filePath("bin"));
-    QString gs_program = gs_bin.filePath( Ghostscript::getGsProgramName() );
+    QString gs_program = gs_bin.filePath( Ghostscript::getGsProgramName( gs_bin ) );
 
     gs_program = QString("\"").append(gs_program).append("\"");
 

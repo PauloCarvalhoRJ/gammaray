@@ -46,7 +46,7 @@ VariogramModel *VariogramModelList::getSelectedVModel()
     return nullptr;
 }
 
-void VariogramModelList::onVariogramSelection(QModelIndex index)
+void VariogramModelList::onVariogramSelection(QModelIndex /*index*/)
 {
     emit variogramClicked();
 }

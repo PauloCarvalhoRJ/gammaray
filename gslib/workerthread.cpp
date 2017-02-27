@@ -41,7 +41,7 @@ void WorkerThread::onProgramOutput()
         Application::instance()->logInfo( stdout_text );
 }
 
-void WorkerThread::onProgramFinished(int exit_code, QProcess::ExitStatus exit_status)
+void WorkerThread::onProgramFinished(int exit_code, QProcess::ExitStatus /*exit_status*/)
 {
     Application::instance()->logInfo( QString("WorkerThread::onProgramFinished(): Program terminated with exit code = ").append( QString::number(exit_code) ) );
     delete m_process;
