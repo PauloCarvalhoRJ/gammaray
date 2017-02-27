@@ -162,8 +162,8 @@ void VariogramAnalysisDialog::onOpenVarMapParameters()
         m_gpf_varmap->getParameter<GSLibParFile*>(7)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("out");
     }
     //construct the parameter dialog so the user can adjust other settings before running varmap
-    GSLibParametersDialog *gslibpardiag = new GSLibParametersDialog( m_gpf_varmap );
-    int result = gslibpardiag->exec();
+    GSLibParametersDialog gslibpardiag( m_gpf_varmap );
+    int result = gslibpardiag.exec();
     if( result == QDialog::Accepted ){
         //Generate the parameter file
         QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
@@ -585,8 +585,8 @@ void VariogramAnalysisDialog::onOpenVariogramModelParamateres()
     }
 
     //show the parameter dialog so the user can review and adjust other settings before running vmodel
-    GSLibParametersDialog *gslibpardiag = new GSLibParametersDialog( m_gpf_vmodel );
-    int result = gslibpardiag->exec();
+    GSLibParametersDialog gslibpardiag( m_gpf_vmodel );
+    int result = gslibpardiag.exec();
     if( result == QDialog::Accepted ){
         //Generate the parameter file
         QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
@@ -708,8 +708,8 @@ void VariogramAnalysisDialog::onGamv()
     //--------------------------------------------------------------------------------
 
     //show the parameter dialog so the user can adjust other settings before running gamv
-    GSLibParametersDialog *gslibpardiag = new GSLibParametersDialog( m_gpf_gamv );
-    int result = gslibpardiag->exec();
+    GSLibParametersDialog gslibpardiag( m_gpf_gamv );
+    int result = gslibpardiag.exec();
     if( result == QDialog::Accepted ){
         //Generate the parameter file
         QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
@@ -947,8 +947,8 @@ void VariogramAnalysisDialog::onGam()
     //--------------------------------------------------------------------------------
 
     //show the parameter dialog so the user can adjust other settings before running gam
-    GSLibParametersDialog *gslibpardiag = new GSLibParametersDialog( m_gpf_gam );
-    int result = gslibpardiag->exec();
+    GSLibParametersDialog gslibpardiag( m_gpf_gam );
+    int result = gslibpardiag.exec();
     if( result == QDialog::Accepted ){
         //Generate the parameter file
         QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
