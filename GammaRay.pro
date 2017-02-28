@@ -117,7 +117,8 @@ SOURCES += main.cpp\
     widgets/fileselectorwidget.cpp \
     scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
-    gslib/gslibparams/widgets/widgetgslibparvmodel.cpp
+    gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
+    spatialindex/spatialindex.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -216,7 +217,8 @@ HEADERS  += mainwindow.h \
     scripting.h \
     exprtk.hpp \
     gslib/gslibparams/gslibparvmodel.h \
-    gslib/gslibparams/widgets/widgetgslibparvmodel.h
+    gslib/gslibparams/widgets/widgetgslibparvmodel.h \
+    spatialindex/spatialindex.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
@@ -262,6 +264,13 @@ FORMS    += mainwindow.ui \
     indicatorkrigingdialog.ui \
     widgets/fileselectorwidget.ui \
     gslib/gslibparams/widgets/widgetgslibparvmodel.ui
+
+# The Boost include path.
+BOOST_INSTALL = $$(BOOST_ROOT)
+isEmpty(BOOST_INSTALL){
+    error(BOOST_ROOT environment variable not defined.)
+}
+INCLUDEPATH += $$BOOST_INSTALL
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
