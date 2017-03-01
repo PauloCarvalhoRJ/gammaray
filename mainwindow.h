@@ -122,6 +122,9 @@ private slots:
     void onCreateCategoryDefinition();
     void onClassifyInto();
     void onPerformClassifyInto();
+    void onLookForDuplicates();
+    void onEditWithExternalProgram();
+
 private:
     /**
      * This method is used to create (vm == nullptr) or review (vm != nullptr)
