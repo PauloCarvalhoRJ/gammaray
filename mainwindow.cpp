@@ -32,6 +32,7 @@
 #include "gslib/gslibparametersdialog.h"
 #include "variogramanalysisdialog.h"
 #include "declusteringdialog.h"
+#include <QDesktopServices>
 #include <QInputDialog>
 #include <QLineEdit>
 #include "domain/variogrammodel.h"
@@ -336,6 +337,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ){
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
             }
+            _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
         //build context menu for an attribute
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isAttribute() ) {
@@ -1187,6 +1189,11 @@ void MainWindow::onLookForDuplicates()
         }
         Application::instance()->logInfo( "=======END OF REPORT============" );
     }
+}
+
+void MainWindow::onEditWithExternalProgram()
+{
+    QDesktopServices::openUrl(QUrl( _right_clicked_file->getPath() ));
 }
 
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
