@@ -44,6 +44,7 @@
 #include "bidistributionmodelingdialog.h"
 #include "valuespairsdialog.h"
 #include "indicatorkrigingdialog.h"
+#include "spatialindex/spatialindexpoints.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -330,6 +331,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "POINTSET" ){
                 _projectContextMenu->addAction("Create estimation/simulation grid...", this, SLOT(onCreateGrid()));
+                _projectContextMenu->addAction("Look for duplicate/close samples", this, SLOT(onLookForDuplicates()));
             }
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ){
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
@@ -1149,6 +1151,42 @@ void MainWindow::onCreateCategoryPDF()
     CategoryPDF* cpdf = new CategoryPDF("");
     ValuesPairsDialog* vpd = new ValuesPairsDialog( cpdf, this );
     vpd->show();
+}
+
+void MainWindow::onLookForDuplicates()
+{
+    bool ok;
+    double tolerance = QInputDialog::getDouble(this, "Duplicate tolerance",
+                                             "Enter the location tolerance around the X,Y,Z coordinates:",
+                                             0.1, 0.0, 10.0, 3, &ok);
+
+    if(! ok ) return;
+
+    double distance = QInputDialog::getDouble(this, "Duplicate separation",
+                                             "Enter the distance between two points to be considered too close:",
+                                             0.001, 0.0, 1000.0, 3, &ok);
+    if( ok ){
+        PointSet* ps = (PointSet*)_right_clicked_file;
+        SpatialIndexPoints::fill( ps, tolerance );
+        uint totFileDataLines = ps->getDataLineCount();
+        uint headerLineCount = Util::getHeaderLineCount( ps->getPath() );
+        Application::instance()->logInfo( "=======BEGIN OF REPORT============" );
+        QStringList messages;
+        for( uint iFileDataLine = 0; iFileDataLine < totFileDataLines; ++iFileDataLine){
+            QList<uint> nearSamples = SpatialIndexPoints::getNearestWithin( iFileDataLine, 5, distance);
+            QList<uint>::iterator it = nearSamples.begin();
+            for(; it != nearSamples.end(); ++it){
+                messages.append( "Sample at line " + QString::number(iFileDataLine+1+headerLineCount) +
+                                      " is too close to sample at line " + QString::number(*it+1+headerLineCount) + "." );
+            }
+        }
+        //output the messages, since the distance is symmetrical (A->B == B->A),
+        //only half of the messages are necessary.
+        for( int i = 0; i < messages.count()/2; ++i){
+            Application::instance()->logInfo( messages[i] );
+        }
+        Application::instance()->logInfo( "=======END OF REPORT============" );
+    }
 }
 
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)

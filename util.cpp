@@ -721,3 +721,32 @@ QString Util::getProgramInstallDir()
     return QString("/usr");
 #endif
 }
+
+uint Util::getHeaderLineCount( QString file_path )
+{
+    QFile file( file_path );
+    file.open( QFile::ReadOnly | QFile::Text );
+    QTextStream in(&file);
+    int n_vars = 0;
+    int var_count = 0;
+
+    for (int i = 0; !in.atEnd(); ++i)
+    {
+       //read file line by line
+       QString line = in.readLine();
+
+       if( i == 0 ){} //first line is ignored
+       else if( i == 1 ){ //second line is the number of variables
+           n_vars = Util::getFirstNumber( line );
+       } else if ( i > 1 && var_count < n_vars ){ //the variables names
+           ++var_count;
+       } else { //begin lines containing data
+           file.close();
+           return i;
+       }
+    }
+    //it is not supposed to reach the end of file.
+    Application::instance()->logWarn("WARNING: Util::getHeaderLineCount(): unexpected reach EOF.");
+    file.close();
+    return 0;
+}

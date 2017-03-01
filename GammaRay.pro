@@ -118,7 +118,7 @@ SOURCES += main.cpp\
     scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
     gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
-    spatialindex/spatialindex.cpp
+    spatialindex/spatialindexpoints.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -218,7 +218,7 @@ HEADERS  += mainwindow.h \
     exprtk.hpp \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
-    spatialindex/spatialindex.h
+    spatialindex/spatialindexpoints.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
