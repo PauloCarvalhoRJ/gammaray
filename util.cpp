@@ -665,7 +665,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -720,4 +720,33 @@ QString Util::getProgramInstallDir()
 #else
     return QString("/usr");
 #endif
+}
+
+uint Util::getHeaderLineCount( QString file_path )
+{
+    QFile file( file_path );
+    file.open( QFile::ReadOnly | QFile::Text );
+    QTextStream in(&file);
+    int n_vars = 0;
+    int var_count = 0;
+
+    for (int i = 0; !in.atEnd(); ++i)
+    {
+       //read file line by line
+       QString line = in.readLine();
+
+       if( i == 0 ){} //first line is ignored
+       else if( i == 1 ){ //second line is the number of variables
+           n_vars = Util::getFirstNumber( line );
+       } else if ( i > 1 && var_count < n_vars ){ //the variables names
+           ++var_count;
+       } else { //begin lines containing data
+           file.close();
+           return i;
+       }
+    }
+    //it is not supposed to reach the end of file.
+    Application::instance()->logWarn("WARNING: Util::getHeaderLineCount(): unexpected reach EOF.");
+    file.close();
+    return 0;
 }

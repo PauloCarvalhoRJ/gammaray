@@ -118,6 +118,9 @@ private slots:
     void onCreateThresholdCDF();
     void onEdit();
     void onCreateCategoryPDF();
+    void onLookForDuplicates();
+    void onEditWithExternalProgram();
+
 private:
     /**
      * This method is used to create (vm == nullptr) or review (vm != nullptr)

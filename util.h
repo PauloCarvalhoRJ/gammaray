@@ -228,6 +228,11 @@ public:
      * Returns the PROGRAMFILES environmental variable in Windows or /usr otherwise.
      */
     static QString getProgramInstallDir();
+
+    /**
+     * Returns the number of file lines that make up the header of the given GEO-EAS file.
+     */
+    static uint getHeaderLineCount( QString file_path );
 };
 
 #endif // UTIL_H
