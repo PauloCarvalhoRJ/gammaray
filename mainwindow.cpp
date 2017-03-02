@@ -97,15 +97,22 @@ MainWindow::MainWindow(QWidget *parent) :
     //restore project tree state
     this->restoreProjectTreeUIState2();
 
+    //show welcome message
     Application::instance()->logInfo(QString("Welcome to ").append(APP_NAME_VER).append("."));
 
+    //set high-res icon if screen dpi is high
     if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
         this->setWindowIcon( QIcon(":icons32/logo64") );
     }
 
+    //show screen DPI
     QScreen *screen0 = QApplication::screens().at(0);
     qreal rDPI = (qreal)screen0->logicalDotsPerInch();
     Application::instance()->logInfo(QString("----screen DPI (display 0): ").append(QString::number( rDPI )).append("."));
+
+    //add a custom menu item to the QTextEdit's standard context menu.
+    ui->txtedMessages->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->txtedMessages,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(showMessagesConsoleCustomContextMenu(const QPoint &)));
 }
 
 MainWindow::~MainWindow()
@@ -1196,6 +1203,11 @@ void MainWindow::onEditWithExternalProgram()
     QDesktopServices::openUrl(QUrl( _right_clicked_file->getPath() ));
 }
 
+void MainWindow::onClearMessages()
+{
+    ui->txtedMessages->setText("");
+}
+
 void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
 {
 
@@ -1406,4 +1418,12 @@ void MainWindow::openIKCategorical()
 {
     IndicatorKrigingDialog* ikd = new IndicatorKrigingDialog( IKVariableType::CATEGORICAL, this);
     ikd->show();
+}
+
+void MainWindow::showMessagesConsoleCustomContextMenu(const QPoint &pt)
+{
+    QMenu *menu = ui->txtedMessages->createStandardContextMenu();
+    menu->addAction("Clear", this, SLOT(onClearMessages()));
+    menu->exec(ui->txtedMessages->mapToGlobal(pt));
+    delete menu;
 }
