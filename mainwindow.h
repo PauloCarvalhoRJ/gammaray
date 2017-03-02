@@ -43,6 +43,7 @@ public slots:
     void openKriging();
     void openIKContinuous();
     void openIKCategorical();
+    void showMessagesConsoleCustomContextMenu(const QPoint &pt);
 
 private:
     Ui::MainWindow *ui;
@@ -124,6 +125,7 @@ private slots:
     void onPerformClassifyInto();
     void onLookForDuplicates();
     void onEditWithExternalProgram();
+    void onClearMessages();
 
 private:
     /**
