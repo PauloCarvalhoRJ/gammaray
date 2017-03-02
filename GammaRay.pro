@@ -123,7 +123,7 @@ SOURCES += main.cpp\
     triadseditordialog.cpp \
     domain/univariatecategoryclassification.cpp \
     widgets/categoryselector.cpp \
-    widgets/intervalandcategorywidget.cpp
+    widgets/intervalandcategorywidget.cpp \
     spatialindex/spatialindexpoints.cpp
 
 HEADERS  += mainwindow.h \
@@ -229,7 +229,7 @@ HEADERS  += mainwindow.h \
     triadseditordialog.h \
     domain/univariatecategoryclassification.h \
     widgets/categoryselector.h \
-    widgets/intervalandcategorywidget.h
+    widgets/intervalandcategorywidget.h \
     spatialindex/spatialindexpoints.h
 
 FORMS    += mainwindow.ui \

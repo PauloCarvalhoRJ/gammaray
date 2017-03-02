@@ -47,7 +47,7 @@ File *FileSelectorWidget::getSelectedFile()
     return nullptr;
 }
 
-void FileSelectorWidget::onSelection(int index)
+void FileSelectorWidget::onSelection(int /*index*/)
 {
     m_File = nullptr;
     Project* project = Application::instance()->getProject();

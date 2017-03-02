@@ -32,7 +32,7 @@ QWidget *UnivariateCategoryClassification::createContentElementWidget()
     return new IntervalAndCategoryWidget( m_categoryDefinition );
 }
 
-QWidget *UnivariateCategoryClassification::createWidgetFilledWithContentElement(uint iContent)
+QWidget *UnivariateCategoryClassification::createWidgetFilledWithContentElement(uint /*iContent*/)
 {
     //create a parameter set with the code, color and name values.
 //    GSLibParMultiValuedFixed* par = new GSLibParMultiValuedFixed("","","");
@@ -52,7 +52,7 @@ QWidget *UnivariateCategoryClassification::createWidgetFilledWithContentElement(
     return nullptr;
 }
 
-void UnivariateCategoryClassification::addContentElementFromWidget(QWidget *w)
+void UnivariateCategoryClassification::addContentElementFromWidget(QWidget */*w*/)
 {
     //surely the widget is a WidgetGSLibParMultiValuedFixed.
 //    WidgetGSLibParMultiValuedFixed *widget = (WidgetGSLibParMultiValuedFixed*)w;

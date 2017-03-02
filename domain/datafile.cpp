@@ -11,6 +11,7 @@
 #include "normalvariable.h"
 #include "cartesiangrid.h"
 #include "domain/univariatecategoryclassification.h"
+#include "project.h"
 
 DataFile::DataFile(QString path) : File( path )
 {
@@ -215,6 +216,20 @@ void DataFile::deleteFromFS()
     file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
 }
 
+void DataFile::writeToFS()
+{
+    //if file already exists, keep copy of the file description or make up one otherwise
+    QString comment;
+    if( this->exists() )
+        comment = Util::getGEOEAScomment( this->getPath() );
+    else
+        comment = this->getFileType() + " created by GammaRay";
+
+    //next, we need to know the number of columns
+    //(assumes the first data line has the correct number of variables)
+    uint nvars = _data[0].size();
+}
+
 void DataFile::updatePropertyCollection()
 {
     //updates attribute collection
@@ -394,7 +409,7 @@ bool DataFile::isNDV(double value)
     }
 }
 
-void DataFile::classify(uint column, UnivariateCategoryClassification *ucc)
+void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, const QString name_for_new_column )
 {
     //load the current data from the file system
     loadData();
@@ -410,6 +425,15 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc)
         (*it).push_back( categoryId );
     }
 
-    TODO_SAVE_FILE_AND_UPDATE_PROJECT_TREE;
-    SEE_addGEOEASColumn_METHOD;
+    //create and add a new Attribute object the represents the new column
+    uint newIndexGEOEAS = Util::getFieldNames( this->getPath() ).count() + 1;
+    Attribute* at = new Attribute( name_for_new_column, newIndexGEOEAS );
+    at->setParent( this );
+    this->addChild( at );
+
+    //saves the file contents to file system
+    this->writeToFS();
+
+    //update the project tree to show the new column
+    Application::instance()->refreshProjectTree();
 }

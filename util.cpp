@@ -771,3 +771,14 @@ uint Util::getHeaderLineCount( QString file_path )
     file.close();
     return 0;
 }
+
+QString Util::getGEOEAScomment(QString file_path)
+{
+    QFile file( file_path );
+    file.open( QFile::ReadOnly | QFile::Text );
+    QTextStream in(&file);
+    //the comment is the first file line (no need for loops, etc.)
+    QString result = in.readLine();
+    file.close();
+    return result;
+}

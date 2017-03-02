@@ -245,6 +245,11 @@ public:
      * Returns the number of file lines that make up the header of the given GEO-EAS file.
      */
     static uint getHeaderLineCount( QString file_path );
+
+    /**
+      * Returns the first line of a GEO-EAS file (the file description).
+      */
+    static QString getGEOEAScomment( QString file_path );
 };
 
 #endif // UTIL_H

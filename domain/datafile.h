@@ -160,10 +160,11 @@ public:
      * map passed as parameter.  Nothing happens is nullptr is passed as parameter.
      * First column is zero.
      */
-    void classify( uint column, UnivariateCategoryClassification* ucc );
+    void classify(uint column, UnivariateCategoryClassification* ucc , const QString name_for_new_column);
 
 //File interface
     void deleteFromFS();
+    void writeToFS();
 
 protected:
 
