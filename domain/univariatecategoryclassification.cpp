@@ -1,10 +1,21 @@
 #include "univariatecategoryclassification.h"
 
 #include "widgets/intervalandcategorywidget.h"
+#include "categorydefinition.h"
+#include "application.h"
+#include "project.h"
+#include "objectgroup.h"
 
 UnivariateCategoryClassification::UnivariateCategoryClassification(CategoryDefinition *cd, QString path) :
     DoubleDoubeIntTriplets ( path ),
     m_categoryDefinition( cd )
+{
+}
+
+UnivariateCategoryClassification::UnivariateCategoryClassification(const QString categoryDefinitionName, QString path) :
+    DoubleDoubeIntTriplets ( path ),
+    m_categoryDefinition( nullptr ),
+    m_categoryDefinitionNameForDelayedLoad( categoryDefinitionName )
 {
 }
 
@@ -24,53 +35,66 @@ int UnivariateCategoryClassification::getCategory(double value)
 
 void UnivariateCategoryClassification::save(QTextStream *txt_stream)
 {
-    (*txt_stream) << this->getFileType() << ":" << this->getFileName() << '\n';
+    QString usedCategoryDefinitionName;
+    if( m_categoryDefinition )
+        usedCategoryDefinitionName = m_categoryDefinition->getName();
+    else
+        usedCategoryDefinitionName = m_categoryDefinitionNameForDelayedLoad;
+
+    if( usedCategoryDefinitionName.isEmpty() )
+        Application::instance()->logError(
+                    "ERROR: UnivariateCategoryClassification::save(): blank CategoryDefinition name.");
+
+    (*txt_stream) << this->getFileType() << ":" <<
+                     this->getFileName() << ',' << usedCategoryDefinitionName << '\n';
 }
 
 QWidget *UnivariateCategoryClassification::createContentElementWidget()
 {
+    if( ! setCategoryDefinition() )
+        return new QWidget();
     return new IntervalAndCategoryWidget( m_categoryDefinition );
 }
 
-QWidget *UnivariateCategoryClassification::createWidgetFilledWithContentElement(uint /*iContent*/)
+QWidget *UnivariateCategoryClassification::createWidgetFilledWithContentElement(uint iContent)
 {
-    //create a parameter set with the code, color and name values.
-//    GSLibParMultiValuedFixed* par = new GSLibParMultiValuedFixed("","","");
-//    GSLibParInt *pint = new GSLibParInt("","","");
-//    pint->_value = get1stValue( iContent ); // the category code
-//    par->_parameters.append( pint );
-//    GSLibParColor *pcol = new GSLibParColor("","","");
-//    pcol->_color_code = get2ndValue( iContent ); // the GSLib color code
-//    par->_parameters.append( pcol );
-//    GSLibParString *pstr = new GSLibParString("","","");
-//    pstr->_value = get3rdValue( iContent ); //the Category name
-//    par->_parameters.append( pstr );
-//    //store the pointer to delete some time later.
-//    m_stashOfCreatedParameters.append( par );
-//    //return the widget tailored for the data types of the triplet.
-//    return par->getWidget();
-    return nullptr;
+    if( ! setCategoryDefinition() )
+        return new QWidget();
+
+    IntervalAndCategoryWidget *widget = new IntervalAndCategoryWidget( m_categoryDefinition );
+
+    widget->setIntervalLow( get1stValue( iContent ) );
+    widget->setIntervalHigh( get2ndValue( iContent ) );
+    widget->setCategoryCode( get3rdValue( iContent ) );
+
+    return widget;
 }
 
-void UnivariateCategoryClassification::addContentElementFromWidget(QWidget */*w*/)
+void UnivariateCategoryClassification::addContentElementFromWidget(QWidget *w)
 {
-    //surely the widget is a WidgetGSLibParMultiValuedFixed.
-//    WidgetGSLibParMultiValuedFixed *widget = (WidgetGSLibParMultiValuedFixed*)w;
+    //surely the widget is a IntervalAndCategoryWidget.
+    IntervalAndCategoryWidget *widget = (IntervalAndCategoryWidget*)w;
 
-//    //build a parameter set adequate to read the user-entered values in the passed widget.
-//    GSLibParMultiValuedFixed* par = new GSLibParMultiValuedFixed("","","");
-//    par->_parameters.append( new GSLibParInt("","","") );
-//    par->_parameters.append( new GSLibParColor("","","") );
-//    par->_parameters.append( new GSLibParString("","","") );
+    //add the triplet of the values read.
+    addTriplet( widget->getIntervalLow(),
+                widget->getIntervalHigh(),
+                widget->getCategoryCode());
+}
 
-//    //read the values from the widget into the parameter set object.
-//    widget->updateValue( par );
-
-//    //add the triplet of the values read.
-//    addTriplet( ((GSLibParInt*)par->_parameters[0])->_value,
-//                ((GSLibParColor*)par->_parameters[1])->_color_code,
-//                ((GSLibParString*)par->_parameters[2])->_value );
-
-//    //store the parameter set pointer to delete some time later.
-//    m_stashOfCreatedParameters.append( par );
+bool UnivariateCategoryClassification::setCategoryDefinition()
+{
+    if( ! m_categoryDefinition ){
+        m_categoryDefinition = (CategoryDefinition*)Application::instance()->
+                getProject()->
+                getResourcesGroup()->
+                getChildByName( m_categoryDefinitionNameForDelayedLoad );
+        if( ! m_categoryDefinition ){
+            Application::instance()->logError(
+                        "ERROR: UnivariateCategoryClassification::setCategoryDefinition(): CategoryDefinition "
+                        + m_categoryDefinitionNameForDelayedLoad + " not found in the project." );
+            return false;
+        } else
+            return true;
+    } else
+        return true;
 }

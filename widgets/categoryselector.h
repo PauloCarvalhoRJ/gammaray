@@ -17,6 +17,10 @@ public:
     explicit CategorySelector(CategoryDefinition *cd, QWidget *parent = 0);
     ~CategorySelector();
 
+    uint getSelectedCategoryCode();
+
+    void setSelectedCategoryCode( uint code );
+
 private:
     Ui::CategorySelector *ui;
 };

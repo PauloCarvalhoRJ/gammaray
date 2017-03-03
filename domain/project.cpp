@@ -21,6 +21,7 @@
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
 #include "domain/categorydefinition.h"
+#include "domain/univariatecategoryclassification.h"
 #include "plot.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
@@ -180,6 +181,22 @@ Project::Project(const QString path) : QAbstractItemModel()
                 QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
                 //create category definition object from file
                 File *file = new CategoryDefinition( file_obj.fileName() );
+                //add the object to project tree structure
+                this->_resources->addChild( file );
+                file->setParent( this->_resources );
+           }
+           //found an univariate classification file reference in gammaray.prj
+           if( line.startsWith( "UNIVARIATECATEGORYCLASSIFICATION:" )){
+                //get file name and category definition used to create the classification
+                QString fileName_and_categoryDef = line.split(":")[1];
+                //get the file name
+                QString file_name = fileName_and_categoryDef.split(",")[0];
+                //get the name of the category defition used to define the classification
+                QString cat_def_name = fileName_and_categoryDef.split(",")[1];
+                //make file path
+                QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
+                //create category definition object from file
+                File *file = new UnivariateCategoryClassification( cat_def_name, file_obj.fileName() );
                 //add the object to project tree structure
                 this->_resources->addChild( file );
                 file->setParent( this->_resources );

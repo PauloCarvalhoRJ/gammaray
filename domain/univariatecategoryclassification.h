@@ -14,7 +14,14 @@ class CategoryDefinition;
 class UnivariateCategoryClassification : public DoubleDoubeIntTriplets
 {
 public:
+
     UnivariateCategoryClassification( CategoryDefinition* cd, QString path );
+
+    /** Constructor with the name of a CategoryDefinition (delayed load).
+      * @param categoryDefinitionName The name of a CategoryDefinition object existing in the project.
+      */
+    UnivariateCategoryClassification( const QString categoryDefinitionName, QString path );
+
     ~UnivariateCategoryClassification();
 
     /**
@@ -45,6 +52,14 @@ public:
 
 private:
     CategoryDefinition* m_categoryDefinition;
+    /** This value does not need to be updated after m_categoryDefinition pointer is set. */
+    QString m_categoryDefinitionNameForDelayedLoad;
+
+    /** Sets m_categoryDefinition by searching a CategoryDefinition with the name given by
+     * m_categoryDefinitionNameForDelayedLoad.
+     * Returns true if the search was successful.
+     */
+    bool setCategoryDefinition();
 };
 
 #endif // UNIVARIATECATEGORYCLASSIFICATION_H

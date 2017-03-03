@@ -17,6 +17,12 @@ public:
      */
     File* getContainingFile();
 
+    /**
+     * Returns the GEO-EAS index passed in the constructor,
+     * so this is not necessarily read from a GEO-EAS file.
+     */
+    int getAttributeGEOEASgivenIndex(){ return _index; }
+
     // ProjectComponent interface
 public:
     QString getName();

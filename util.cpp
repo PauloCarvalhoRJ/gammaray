@@ -675,6 +675,8 @@ QIcon Util::makeGSLibColorIcon(uint color_code)
 
     //make and return the icon.
     QPixmap pixmap(16,16);
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI )
+        pixmap = QPixmap(32, 32);
     pixmap.fill( colors.at( color_code - 1 ) );
     return QIcon( pixmap );
 }

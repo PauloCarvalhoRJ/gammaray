@@ -218,16 +218,79 @@ void DataFile::deleteFromFS()
 
 void DataFile::writeToFS()
 {
+    //create a new file for output
+    QFile outputFile( QString( this->getPath() ).append(".new") );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+
     //if file already exists, keep copy of the file description or make up one otherwise
     QString comment;
     if( this->exists() )
         comment = Util::getGEOEAScomment( this->getPath() );
     else
         comment = this->getFileType() + " created by GammaRay";
+    out << comment << endl;
 
     //next, we need to know the number of columns
     //(assumes the first data line has the correct number of variables)
     uint nvars = _data[0].size();
+    out << nvars << endl;
+
+    //get all child objects (mostly attributes directly under this file or attached under another attribute)
+    //we do this because some attributes (columns) may not be in the current GEO-EAS file.
+    std::vector<ProjectComponent*> allChildren;
+    this->getAllObjects( allChildren );
+
+    //for each GEO-EAS column index (start with 1, not zero)
+    uint control = 0;
+    for( uint iGEOEAS = 1; iGEOEAS <= nvars; ++iGEOEAS){
+        //find the attribute by the GEO-EAS index
+        std::vector<ProjectComponent*>::iterator it = allChildren.begin();
+        for(; it != allChildren.end(); ++it){
+            if( (*it)->isAttribute() ){
+                Attribute* at = (Attribute*)(*it);
+                if( at->getAttributeGEOEASgivenIndex() == (int)iGEOEAS ){
+                    out << at->getName() << endl;
+                    ++control;
+                    break;
+                }
+            }
+        }
+    }
+
+    if( control != nvars ){
+        Application::instance()->logWarn("WARNING: DataFile::writeToFS(): mismatch between data column count and Attribute object count.");
+        //make up names for mismatched data columns
+        for( uint iGEOEAS = control; iGEOEAS <= nvars; ++iGEOEAS){
+            out << "ATTRIBUTE " << iGEOEAS << endl;
+        }
+    }
+
+    //for each data line
+    std::vector< std::vector<double> >::iterator itDataLine = _data.begin();
+    for(; itDataLine != _data.end(); ++itDataLine){
+        //for each data column
+        std::vector<double>::iterator itDataColumn = (*itDataLine).begin();
+        out << *itDataColumn;
+        ++itDataColumn;
+        for(; itDataColumn != (*itDataLine).end(); ++itDataColumn){
+            out << '\t' << *itDataColumn;
+        }
+        out << endl;
+    }
+
+    //close output file
+    outputFile.close();
+
+    //deletes the current file
+/*    QFile currentFile( this->getPath() );
+    currentFile.remove();
+    //renames the .new file, effectively replacing the current file.
+    outputFile.rename( this->getPath() );
+    //updates properties list so any changes appear in the project tree.
+    updatePropertyCollection();
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree(); */
 }
 
 void DataFile::updatePropertyCollection()
@@ -433,7 +496,4 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, cons
 
     //saves the file contents to file system
     this->writeToFS();
-
-    //update the project tree to show the new column
-    Application::instance()->refreshProjectTree();
 }

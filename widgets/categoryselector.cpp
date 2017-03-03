@@ -14,7 +14,8 @@ CategorySelector::CategorySelector(CategoryDefinition *cd, QWidget *parent) :
         cd->loadTriplets(); //makes sure the triplets are read from the file system.
         for( int i = 0; i < cd->getCategoryCount(); ++i){
             ui->cmbCategories->addItem( Util::makeGSLibColorIcon( cd->getColorCode( i ) ),
-                                        cd->getCategoryName( i ) + " (code = " + QString::number(cd->getCategoryCode( i )) + ")" );
+                                        cd->getCategoryName( i ) + " (code = " + QString::number(cd->getCategoryCode( i )) + ")",
+                                        cd->getCategoryCode( i ));
         }
     } else {
         ui->cmbCategories->addItem( "ERROR: NO CATEGORY DEFINITION" );
@@ -24,4 +25,15 @@ CategorySelector::CategorySelector(CategoryDefinition *cd, QWidget *parent) :
 CategorySelector::~CategorySelector()
 {
     delete ui;
+}
+
+uint CategorySelector::getSelectedCategoryCode()
+{
+    return ui->cmbCategories->itemData( ui->cmbCategories->currentIndex(), Qt::UserRole ).toUInt();
+}
+
+void CategorySelector::setSelectedCategoryCode(uint code)
+{
+    int index = ui->cmbCategories->findData( QVariant( code ), Qt::UserRole );
+    ui->cmbCategories->setCurrentIndex( index );
 }

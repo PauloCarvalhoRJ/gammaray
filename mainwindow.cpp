@@ -1167,6 +1167,11 @@ void MainWindow::onEdit()
         CategoryDefinition* cdp  = (CategoryDefinition*)_right_clicked_file;
         TriadsEditorDialog* ted = new TriadsEditorDialog( cdp, this );
         ted->show();
+    } else if( _right_clicked_file->getFileType() == "UNIVARIATECATEGORYCLASSIFICATION" ){
+        //Get the category definition object.
+        UnivariateCategoryClassification* ucc  = (UnivariateCategoryClassification*)_right_clicked_file;
+        TriadsEditorDialog* ted = new TriadsEditorDialog( ucc, this );
+        ted->show();
     }
 }
 

@@ -104,7 +104,7 @@ void TriadsEditorDialog::onSave()
 
     //sets the file path as the project's directory + the file name given by the user
     m_triadsFile->setPath( Application::instance()->getProject()->getPath() +
-                           QDir::separator() +
+                           "/" + //Qt translates forward slashes to backslashes in Windows
                            ui->txtFileName->text() );
 
     //determine whether the file exists (create new or overwrite)
