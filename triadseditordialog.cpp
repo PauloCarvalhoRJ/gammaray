@@ -128,3 +128,14 @@ void TriadsEditorDialog::onSave()
         Application::instance()->getProject()->registerFileAsResource( m_triadsFile );
     }
 }
+
+void TriadsEditorDialog::onOK()
+{
+    //read the values entered by the user, just in case the file was not saved
+    m_triadsFile->clearLoadedContents(); //clear any previously loaded values
+    QList<QWidget*>::iterator it = m_tripletWidgets.begin();
+    for( ; it  != m_tripletWidgets.end(); ++it )
+        m_triadsFile->addContentElementFromWidget( *it );
+    //emit the accepted() signal to close the dialog with acceptance.
+    emit accepted();
+}

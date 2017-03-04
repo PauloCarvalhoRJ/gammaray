@@ -44,6 +44,7 @@ public:
     QWidget* getWidget();
     bool isCollection() { return true; }
     GSLibParMultiValuedVariable* clone();
+    bool update();
 
 private:
     template<typename T>

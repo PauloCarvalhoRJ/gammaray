@@ -1417,11 +1417,15 @@ void GSLibParameterFile::setDefaultValuesForKt3d()
 
 void GSLibParameterFile::setDefaultValuesForIk3d()
 {
+    //NOTE: ik3d is known to quit with an error if the file names are the same
+    //      even when they are not used, so setting something like NO_FILE for
+    //      all unused file parameters will likely make ik3d fail.
+
     getParameter<GSLibParOption*>(0)->_selected_value = 1;
 
     getParameter<GSLibParOption*>(1)->_selected_value = 0;
 
-    getParameter<GSLibParFile*>(2)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(2)->_path = "jack.dat";
 
     GSLibParMultiValuedFixed *par3 = getParameter<GSLibParMultiValuedFixed*>(3);
     par3->getParameter<GSLibParUInt*>(0)->_value = 0;
@@ -1441,16 +1445,16 @@ void GSLibParameterFile::setDefaultValuesForIk3d()
     par6->getParameter<GSLibParDouble*>(0)->_value = 0.25;
     par6->getParameter<GSLibParDouble*>(1)->_value = 0.65;
 
-    getParameter<GSLibParFile*>(7)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(7)->_path = "input.dat";
 
     GSLibParMultiValuedFixed *par8 = getParameter<GSLibParMultiValuedFixed*>(8);
     par8->getParameter<GSLibParUInt*>(0)->_value = 0;
-    par8->getParameter<GSLibParUInt*>(1)->_value = 1;
-    par8->getParameter<GSLibParUInt*>(2)->_value = 2;
+    par8->getParameter<GSLibParUInt*>(1)->_value = 0;
+    par8->getParameter<GSLibParUInt*>(2)->_value = 0;
     par8->getParameter<GSLibParUInt*>(3)->_value = 0;
     par8->getParameter<GSLibParUInt*>(4)->_value = 0;
 
-    getParameter<GSLibParFile*>(9)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(9)->_path = "soft.dat";
 
     GSLibParMultiValuedFixed *par10 = getParameter<GSLibParMultiValuedFixed*>(10);
     par10->getParameter<GSLibParUInt*>(0)->_value = 1;
@@ -1467,9 +1471,9 @@ void GSLibParameterFile::setDefaultValuesForIk3d()
 
     getParameter<GSLibParOption*>(12)->_selected_value = 0;
 
-    getParameter<GSLibParFile*>(13)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(13)->_path = "debug.out";
 
-    getParameter<GSLibParFile*>(14)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(14)->_path = "result.dat";
 
     GSLibParGrid* par15= getParameter<GSLibParGrid*>(15);
     par15->_specs_x->getParameter<GSLibParUInt*>(0)->_value = 10; //nx

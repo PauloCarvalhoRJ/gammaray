@@ -26,9 +26,9 @@ public:
 
     /**
      * Returns the category id corresponding to the given value.
-     * Returns -1 if no category is found.
+     * Returns noDataValue if no category is found.
      */
-    int getCategory( double value );
+    int getCategory(double value , int noClassValue);
 
     /**
      * Returns the categorical definition used to build this categorical classification.

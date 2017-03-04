@@ -262,15 +262,15 @@
    <sender>btnOK</sender>
    <signal>clicked()</signal>
    <receiver>TriadsEditorDialog</receiver>
-   <slot>accept()</slot>
+   <slot>onOK()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>216</x>
+     <x>203</x>
      <y>285</y>
     </hint>
     <hint type="destinationlabel">
-     <x>133</x>
-     <y>285</y>
+     <x>105</x>
+     <y>280</y>
     </hint>
    </hints>
   </connection>
@@ -279,5 +279,6 @@
   <slot>onAddTriplet()</slot>
   <slot>onRemoveTriplet()</slot>
   <slot>onSave()</slot>
+  <slot>onOK()</slot>
  </slots>
 </ui>

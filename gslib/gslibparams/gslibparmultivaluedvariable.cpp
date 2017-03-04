@@ -105,4 +105,10 @@ GSLibParMultiValuedVariable *GSLibParMultiValuedVariable::clone()
     return clone;
 }
 
+bool GSLibParMultiValuedVariable::update()
+{
+    ((WidgetGSLibParMultiValuedVariable*)this->_widget)->updateValue( this );
+    return true;
+}
+
 

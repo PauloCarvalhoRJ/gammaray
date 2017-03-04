@@ -24,13 +24,23 @@ UnivariateCategoryClassification::~UnivariateCategoryClassification()
 
 }
 
-int UnivariateCategoryClassification::getCategory(double value)
+int UnivariateCategoryClassification::getCategory(double value, int noClassValue)
 {
+    //get the count of value triplets (range start, range end and category code)
     uint tot = getTripletCount();
+    //if zero, it's possible that the triplets were not read from file.
+    if( tot == 0 ){
+        this->loadTriplets();
+        tot = getTripletCount();
+        if( tot == 0 )
+            Application::instance()->logError("ERROR: UnivariateCategoryClassification::getCategory(): file is empty or not found.");
+    }
+    //for each interval
     for(uint i = 0; i < tot; ++i)
         if( value >= get1stValue( i ) && value <= get2ndValue( i ) )
             return get3rdValue( i );
-    return -1;
+    //returns the no-data-value if no class is found
+    return noClassValue;
 }
 
 void UnivariateCategoryClassification::save(QTextStream *txt_stream)

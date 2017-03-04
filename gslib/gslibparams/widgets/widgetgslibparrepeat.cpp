@@ -102,6 +102,9 @@ void WidgetGSLibParRepeat::update_values(QList<GSLibParType *> params_list, QLis
         }else if( param_type_name == "file" ){
             WidgetGSLibParFile* gwidget = (WidgetGSLibParFile*)widget;
             gwidget->updateValue( (GSLibParFile*)par );
+        }else if( param_type_name == "vmodel" ){
+            WidgetGSLibParVModel* gwidget = (WidgetGSLibParVModel*)widget;
+            gwidget->updateValue( (GSLibParVModel*)par );
         }else
             Application::instance()->logError(QString("WidgetGSLibParRepeat::update_values(): parameter type \"").append(param_type_name).append("\"  not fully supported as an array parameter."));
     }

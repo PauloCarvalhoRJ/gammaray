@@ -12,6 +12,7 @@
 #include "domain/thresholdcdf.h"
 #include "domain/pointset.h"
 #include "domain/variogrammodel.h"
+#include "domain/cartesiangrid.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslib.h"
@@ -22,7 +23,8 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
     QDialog(parent),
     ui(new Ui::IndicatorKrigingDialog),
     m_gpf_ik3d( nullptr ),
-    m_varType( varType )
+    m_varType( varType ),
+    m_cg_estimation( nullptr )
 {
     ui->setupUi(this);
 
@@ -98,6 +100,35 @@ void IndicatorKrigingDialog::addVariogramSelector(){
     VariogramModelSelector* vms = new VariogramModelSelector();
     ui->groupVariograms->layout()->addWidget( vms );
     m_variogramSelectors.append( vms );
+}
+
+void IndicatorKrigingDialog::preview()
+{
+    if( m_cg_estimation )
+        delete m_cg_estimation;
+
+    //get the tmp file path created by ik3d with the p.d.f. estimates
+    QString grid_file_path = m_gpf_ik3d->getParameter<GSLibParFile*>(14)->_path;
+
+    //create a new grid object corresponding to the file created by kt3d
+    m_cg_estimation = new CartesianGrid( grid_file_path );
+
+    //set the grid geometry info.
+    m_cg_estimation->setInfoFromGridParameter( m_gpf_ik3d->getParameter<GSLibParGrid*>(15) );
+
+    //kt3d usually uses -999 as no-data-value.
+    m_cg_estimation->setNoDataValue( "-999" );
+
+    //get the number of classes/thresholds in the distribution file
+    uint ndist = m_dfSelector->getSelectedFile()->getContentsCount();
+
+    //for each class/threshold
+    for( uint i = 0; i < ndist; ++i){
+        //get the class/threshold probability field
+        Attribute* est_var = (Attribute*)m_cg_estimation->getChildByIndex( i );
+        //open the plot dialog
+        Util::viewGrid( est_var, this );
+    }
 }
 
 void IndicatorKrigingDialog::onUpdateVariogramSelectors()
@@ -210,6 +241,11 @@ void IndicatorKrigingDialog::onConfigureAndRun()
             par10_3->getParameter<GSLibParUInt*>(i)->_value =
                     m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
         }
+    } else { //if soft data is not set, make sure all fields are set to zero
+        GSLibParMultiValuedFixed *par10 = m_gpf_ik3d->getParameter<GSLibParMultiValuedFixed*>(10);
+        par10->getParameter<GSLibParUInt*>(0)->_value = 0;
+        par10->getParameter<GSLibParUInt*>(1)->_value = 0;
+        par10->getParameter<GSLibParUInt*>(2)->_value = 0;
     }
 
     //trimming limits
@@ -258,11 +294,11 @@ void IndicatorKrigingDialog::onConfigureAndRun()
         m_gpf_ik3d->save( par_file_path );
 
         //to be notified when ik3d completes.
-//        connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onIk3dCompletes()) );
+        connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onIk3dCompletes()) );
 
         //run ik3d program asynchronously
-//        Application::instance()->logInfo("Starting ik3d program...");
-//        GSLib::instance()->runProgramAsync( "ik3d", par_file_path );
+        Application::instance()->logInfo("Starting ik3d program...");
+        GSLib::instance()->runProgramAsync( "ik3d", par_file_path );
     }
 }
 
@@ -271,7 +307,7 @@ void IndicatorKrigingDialog::onIk3dCompletes()
     //frees all signal connections to the GSLib singleton.
     GSLib::instance()->disconnect();
 
-    //preview();
+    preview();
 }
 
 void IndicatorKrigingDialog::onUpdateSoftIndicatorVariablesSelectors()

@@ -289,14 +289,14 @@ void DataFile::writeToFS()
     outputFile.close();
 
     //deletes the current file
-/*    QFile currentFile( this->getPath() );
+    QFile currentFile( this->getPath() );
     currentFile.remove();
     //renames the .new file, effectively replacing the current file.
     outputFile.rename( this->getPath() );
     //updates properties list so any changes appear in the project tree.
     updatePropertyCollection();
     //update the project tree in the main window.
-    Application::instance()->refreshProjectTree(); */
+    Application::instance()->refreshProjectTree();
 }
 
 void DataFile::updatePropertyCollection()
@@ -486,10 +486,15 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, cons
     //for each data row...
     std::vector< std::vector <double> >::iterator it = _data.begin();
     for( ; it != _data.end(); ++it){
+        //define the default value (for class not found)
+        int noClassFoundValue = -1;
+        if( hasNoDataValue() )
+            //hopefully the file's NDV is integer
+            noClassFoundValue = (int)getNoDataValue().toDouble();
         //...get the input value
         double value = (*it).at( column );
         //...get the category code corresponding to the value
-        int categoryId = ucc->getCategory( value );
+        int categoryId = ucc->getCategory( value, noClassFoundValue );
         //...append the code to the current row.
         (*it).push_back( categoryId );
     }

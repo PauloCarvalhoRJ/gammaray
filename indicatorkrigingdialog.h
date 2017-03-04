@@ -15,6 +15,7 @@ class PointSetSelector;
 class VariogramModelSelector;
 class FileSelectorWidget;
 class GSLibParameterFile;
+class CartesianGrid;
 
 /*! The variable type result in different indicator kriging beahvior. */
 enum class IKVariableType : uint {
@@ -43,6 +44,8 @@ private:
     QList<VariogramModelSelector*> m_variogramSelectors;
     void addVariogramSelector();
     IKVariableType m_varType;
+    CartesianGrid* m_cg_estimation;
+    void preview();
 
 private slots:
     void onUpdateVariogramSelectors();

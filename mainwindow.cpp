@@ -1256,7 +1256,7 @@ void MainWindow::onClassifyInto()
     CategoryDefinition* cd = (CategoryDefinition*)pc;
 
     //Create a univariate classification table.
-    m_ucc = new UnivariateCategoryClassification( cd, "");
+    m_ucc = new UnivariateCategoryClassification( cd, "" );
 
     //Open the dialog to edit the classification intervals and category.
     TriadsEditorDialog *ted = new TriadsEditorDialog( m_ucc, this );

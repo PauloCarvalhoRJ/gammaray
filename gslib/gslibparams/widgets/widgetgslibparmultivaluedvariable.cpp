@@ -128,6 +128,9 @@ void WidgetGSLibParMultiValuedVariable::updateValue(GSLibParMultiValuedVariable 
         if( param_type_name == "uint" ){
             WidgetGSLibParUInt* gwidget = (WidgetGSLibParUInt*)widget;
             gwidget->updateValue( (GSLibParUInt*)par );
+        }else if( param_type_name == "double" ){
+            WidgetGSLibParDouble* gwidget = (WidgetGSLibParDouble*)widget;
+            gwidget->updateValue( (GSLibParDouble*)par );
         }else
             Application::instance()->logError(QString("WidgetGSLibParMultiValuedVariable::updateValue(GSLibParMultiValuedVariable*): parameter type \"").append(param_type_name).append("\" does not have an equivalent widget type."));
     }

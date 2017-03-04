@@ -30,6 +30,7 @@ private slots:
     void onAddTriplet();
     void onRemoveTriplet();
     void onSave();
+    void onOK();
 };
 
 #endif // TRIADSEDITORDIALOG_H
