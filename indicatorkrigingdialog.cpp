@@ -266,11 +266,21 @@ void IndicatorKrigingDialog::onConfigureAndRun()
     //set the variogram model(s)
     GSLibParRepeat *par22 = m_gpf_ik3d->getParameter<GSLibParRepeat*>(22);
     if( ui->radioMedianIK->isChecked() ){ //median IK requires just one variogram model
-        par22->setCount( 1 );
+        //this does not work.  Strangely ik3d still expects n-variograms even with median IK selected... figures.
+        /*par22->setCount( 1 );
         GSLibParVModel *par22_0 = par22->getParameter<GSLibParVModel*>(0, 0);
         VariogramModelSelector* vms = m_variogramSelectors.at( 0 );
         VariogramModel *vmodel = vms->getSelectedVModel();
-        par22_0->setFromVariogramModel( vmodel );
+        par22_0->setFromVariogramModel( vmodel );*/
+
+        //...repeating the same variogram model for each category/threshold...
+        par22->setCount( ndist );
+        for( uint i = 0; i < ndist; ++i){
+            GSLibParVModel *par22_0 = par22->getParameter<GSLibParVModel*>(i, 0);
+            VariogramModelSelector* vms = m_variogramSelectors.at( 0 );
+            VariogramModel *vmodel = vms->getSelectedVModel();
+            par22_0->setFromVariogramModel( vmodel );
+        }
     } else { //full IK requires one variogram model per c.d.f./p.d.f. threshold/class.
         par22->setCount( ndist );
         for( uint i = 0; i < ndist; ++i){
