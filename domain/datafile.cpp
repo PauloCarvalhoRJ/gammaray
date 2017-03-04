@@ -2,6 +2,8 @@
 #include <QTextStream>
 #include <QRegularExpression>
 #include <limits>
+#include <iomanip>      // std::setprecision
+#include <sstream>    // std::stringstream
 #include "datafile.h"
 #include "../exceptions/invalidgslibdatafileexception.h"
 #include "application.h"
@@ -274,7 +276,11 @@ void DataFile::writeToFS()
         out << *itDataColumn;
         ++itDataColumn;
         for(; itDataColumn != (*itDataLine).end(); ++itDataColumn){
-            out << '\t' << *itDataColumn;
+            //making sure the values are written in GSLib-like precision
+            std::stringstream ss;
+            ss << std::setprecision( 12 /*std::numeric_limits<double>::max_digits10*/ );
+            ss << *itDataColumn;
+            out << '\t' << ss.str().c_str();
         }
         out << endl;
     }
