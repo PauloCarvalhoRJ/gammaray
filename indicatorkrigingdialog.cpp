@@ -116,8 +116,8 @@ void IndicatorKrigingDialog::preview()
     //set the grid geometry info.
     m_cg_estimation->setInfoFromGridParameter( m_gpf_ik3d->getParameter<GSLibParGrid*>(15) );
 
-    //kt3d usually uses -999 as no-data-value.
-    m_cg_estimation->setNoDataValue( "-999" );
+    //ik3d usually uses -9.9999 as no-data-value.
+    m_cg_estimation->setNoDataValue( "-9.9999" );
 
     //get the number of classes/thresholds in the distribution file
     uint ndist = m_dfSelector->getSelectedFile()->getContentsCount();
@@ -158,6 +158,8 @@ void IndicatorKrigingDialog::onUpdateVariogramSelectors()
 
 void IndicatorKrigingDialog::onConfigureAndRun()
 {
+    bool firstRun = false;
+
     //-----------------------------set ik3d parameters---------------------------
     if( ! m_gpf_ik3d ){
         //create the parameters object
@@ -168,6 +170,8 @@ void IndicatorKrigingDialog::onConfigureAndRun()
 
         //output file
         m_gpf_ik3d->getParameter<GSLibParFile*>(14)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+        firstRun = true;
     }
 
     //-----------------these parameters must be re-set according to what the user has selected in the dialog--------
@@ -248,10 +252,12 @@ void IndicatorKrigingDialog::onConfigureAndRun()
         par10->getParameter<GSLibParUInt*>(2)->_value = 0;
     }
 
-    //trimming limits
-    GSLibParMultiValuedFixed *par11 = m_gpf_ik3d->getParameter<GSLibParMultiValuedFixed*>(11);
-    par11->getParameter<GSLibParDouble*>(0)->_value = min;
-    par11->getParameter<GSLibParDouble*>(1)->_value = max;
+    if( firstRun ){ //to not overwrite what the user might set
+        //trimming limits
+        GSLibParMultiValuedFixed *par11 = m_gpf_ik3d->getParameter<GSLibParMultiValuedFixed*>(11);
+        par11->getParameter<GSLibParDouble*>(0)->_value = min;
+        par11->getParameter<GSLibParDouble*>(1)->_value = max;
+    }
 
     //set the grid parameters
     m_gpf_ik3d->setGridParameters( (CartesianGrid*)m_cgSelector->getSelectedDataFile() );
