@@ -206,6 +206,11 @@ public:
      * Creates a 16x16 pixel QIcon filled with a GSLib color given its code.
      */
     static QIcon makeGSLibColorIcon( uint color_code );
+
+    /**
+      * Returns a QColor given a GSLib color code.
+      */
+    static QColor getGSLibColor( uint color_code );
     
     /**
      * Imports the registry/user home seetings from a previus version of GammaRay.

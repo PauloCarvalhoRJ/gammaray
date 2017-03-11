@@ -397,8 +397,8 @@
    <slot>onUpdateVariogramSelectors()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>75</x>
-     <y>101</y>
+     <x>122</x>
+     <y>125</y>
     </hint>
     <hint type="destinationlabel">
      <x>115</x>
@@ -413,8 +413,8 @@
    <slot>onUpdateVariogramSelectors()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>291</x>
-     <y>102</y>
+     <x>483</x>
+     <y>125</y>
     </hint>
     <hint type="destinationlabel">
      <x>345</x>
@@ -429,8 +429,8 @@
    <slot>onConfigureAndRun()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>482</x>
-     <y>259</y>
+     <x>494</x>
+     <y>239</y>
     </hint>
     <hint type="destinationlabel">
      <x>508</x>
@@ -438,9 +438,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnSaveEstimates</sender>
+   <signal>clicked()</signal>
+   <receiver>IndicatorKrigingDialog</receiver>
+   <slot>onSave()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>479</x>
+     <y>307</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>453</x>
+     <y>385</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onUpdateVariogramSelectors()</slot>
   <slot>onConfigureAndRun()</slot>
+  <slot>onSave()</slot>
  </slots>
 </ui>

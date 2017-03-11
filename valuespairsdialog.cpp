@@ -6,9 +6,11 @@
 #include "domain/project.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
+#include "domain/categorydefinition.h"
 #include "util.h"
 #include <QDir>
 #include <QMessageBox>
+#include <QLabel>
 
 ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
     QDialog(parent),
@@ -49,11 +51,31 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
         ui->lbl1stCaption->setText("<html><strong>category ids:</strong></html>");
         ui->lbl2ndCaption->setText("<html><strong>probabilities:</strong></html>");
         CategoryPDF* cpdf = (CategoryPDF*)m_valuePairsFile;
+        CategoryDefinition* cd = cpdf->getCategoryDefinition();
         for( int i = 0; i < cpdf->getPairCount(); ++i){
             onAddPair();
             ValuePairVertical* vpvWidget = (ValuePairVertical*)m_pairWidgets.last();
             vpvWidget->set1st( QString::number( cpdf->get1stValue( i ) ) );
             vpvWidget->set2nd( QString::number( cpdf->get2ndValue( i ) ) );
+            //if the CategoryDefinition is defined, add an informative label
+            //presenting the categories.
+            if( cd ){
+                QLabel *lbl = new QLabel();
+                lbl->setText(cd->getCategoryName( i ));
+                lbl->setAlignment( Qt::AlignCenter );
+                QColor color = Util::getGSLibColor( cd->getColorCode( i ) );
+                lbl->setStyleSheet("QLabel { background-color : rgb(" +
+                                   QString::number(color.red()) + "," +
+                                   QString::number(color.green()) + "," +
+                                   QString::number(color.blue()) +"); }");
+                vpvWidget->addWidget( lbl );
+            }
+        }
+        //if the file does not exist (creating a new one)
+        if( ! cpdf->exists() ){
+            //suggest a meaningful name for the file
+            if( cd )
+                ui->txtFileName->setText( cd->getName() + "_PDF" );
         }
     }
 

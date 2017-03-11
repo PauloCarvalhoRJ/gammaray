@@ -157,18 +157,31 @@ Project::Project(const QString path) : QAbstractItemModel()
                 dist->setInfoFromMetadataFile();
            }
            //found a threshold c.d.f. or category p.d.f. file reference in gammaray.prj
-           if( line.startsWith( "THRESHOLDCDF:" ) ||
-               line.startsWith( "CATEGORYPDF:" ) ){
+           if( line.startsWith( "CATEGORYPDF:" ) ){
+                // get file name and the refered CategoryDefinition
+                QStringList file_name_and_category_definition = line.split(":")[1].split(",");
+                // get the file name
+                QString file_name = file_name_and_category_definition[0];
+                // get the category definition name (may be not defined)
+                QString category_definition = "FILE_NOT_DEFINED";
+                if( file_name_and_category_definition.size() == 2 )
+                    category_definition = file_name_and_category_definition[1];
+                // make file path
+                QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
+                // create distribution object from file
+                CategoryPDF *file = new CategoryPDF( category_definition, file_obj.fileName() );
+                // add the object to project tree structure
+                this->_resources->addChild( file );
+                file->setParent( this->_resources );
+           }
+           //found a threshold c.d.f. file reference in gammaray.prj
+           if( line.startsWith( "THRESHOLDCDF:" ) ){
                 //get file name
                 QString file_name = line.split(":")[1];
                 //make file path
                 QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
                 //create distribution object from file
-                File *file;
-                if( line.startsWith( "THRESHOLDCDF:" ) )
-                    file = new ThresholdCDF( file_obj.fileName() );
-                else
-                    file = new CategoryPDF( file_obj.fileName() );
+                ThresholdCDF *file = new ThresholdCDF( file_obj.fileName() );
                 //add the object to project tree structure
                 this->_resources->addChild( file );
                 file->setParent( this->_resources );

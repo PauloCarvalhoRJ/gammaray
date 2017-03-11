@@ -681,6 +681,15 @@ QIcon Util::makeGSLibColorIcon(uint color_code)
     return QIcon( pixmap );
 }
 
+QColor Util::getGSLibColor(uint color_code)
+{
+    //make list of GSLib colors
+    QList<QColor> colors;
+    Util::makeGSLibColorsList( colors );
+
+    return colors.at( color_code - 1 );
+}
+
 void Util::importSettingsFromPreviousVersion()
 {
     //get the settings of this application

@@ -315,7 +315,6 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         //build context menu for the Resources group
         if ( index.isValid() && index.internalPointer() == project->getResourcesGroup()) {
             _projectContextMenu->addAction("Create threshold c.d.f. ...", this, SLOT(onCreateThresholdCDF()));
-            _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
             _projectContextMenu->addAction("Create categories definition ...", this, SLOT(onCreateCategoryDefinition()));
         }
         //build context menu for a file
@@ -349,6 +348,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ){
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
+            }
+            if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
+                _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -1177,7 +1179,22 @@ void MainWindow::onEdit()
 
 void MainWindow::onCreateCategoryPDF()
 {
-    CategoryPDF* cpdf = new CategoryPDF("");
+    //We can assume the file is a category definitio.
+    CategoryDefinition* cd  = (CategoryDefinition*)_right_clicked_file;
+    cd->loadTriplets();
+
+    //Create an empty p.d.f.
+    CategoryPDF* cpdf = new CategoryPDF(cd, "");
+
+    //split 100% between the categories
+    double parcel = 1.0 / cd->getCategoryCount();
+
+    //init the p.d.f. with default values for each category
+    for( int i = 0; i < cd->getCategoryCount(); ++i ){
+        cpdf->addPair( cd->getCategoryCode( i ), parcel );
+    }
+
+    //create and show the edit dialog
     ValuesPairsDialog* vpd = new ValuesPairsDialog( cpdf, this );
     vpd->show();
 }

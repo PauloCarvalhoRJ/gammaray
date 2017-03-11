@@ -32,3 +32,8 @@ void ValuePairVertical::set2nd(QString value)
 {
     ui->txt2ndValue->setText( value );
 }
+
+void ValuePairVertical::addWidget(QWidget *w)
+{
+    ui->verticalLayout->addWidget( w );
+}

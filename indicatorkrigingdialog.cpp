@@ -19,6 +19,8 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "util.h"
 
+#include <QMessageBox>
+
 IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::IndicatorKrigingDialog),
@@ -227,6 +229,8 @@ void IndicatorKrigingDialog::onConfigureAndRun()
     pointSet->loadData();
     double min = pointSet->min( varIndex - 1 );
     double max = pointSet->max( varIndex - 1 );
+    min -= (min/10.0); //give 10% tolerance
+    max += (max/10.0); //give 10% solerance
 
     //the soft indicator file is surely a PointSet object
     PointSet *psSoftData = (PointSet*)m_psSoftSelector->getSelectedDataFile();
@@ -348,4 +352,45 @@ void IndicatorKrigingDialog::onUpdateSoftIndicatorVariablesSelectors()
             m_SoftIndicatorVariablesSelectors.append( vs );
         }
     }
+}
+
+void IndicatorKrigingDialog::onSave()
+{
+    if( ! m_gpf_ik3d || ! m_cg_estimation ){
+        QMessageBox::critical( this, "Error", "Please, run the estimation at least once.");
+        return;
+    }
+
+    //get the selected estimation grid
+    CartesianGrid* estimation_grid = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! estimation_grid ){
+        QMessageBox::critical( this, "Error", "Please, select an estimation grid.");
+        return;
+    }
+
+    if( m_varType == IKVariableType::CATEGORICAL ){
+        //get the selected p.d.f. file
+        CategoryPDF *pdf = (CategoryPDF *)m_dfSelector->getSelectedFile();
+
+
+    }
+
+/*
+    //suggest variable names to the user
+    QString proposed_name( "" );
+    proposed_name = proposed_name.append( ( m_varType == IKVariableType::CATEGORICAL ? "PROB_OF_" : "PROB_BELOW_" ) );
+
+    //presents a dialog so the user can change the suggested name.
+    bool ok;
+    QString what = ( estimates ? "estimates" : "kriging variances" );
+    QString new_var_name = QInputDialog::getText(this, "Name the " + what + " variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if (ok && !new_var_name.isEmpty()){
+        //the estimates are normally the first variable in the resulting grid
+        Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( ( estimates ? 1 : 2 ) );
+        //add the estimates or variances to the selected estimation grid
+        estimation_grid->addGEOEASColumn( values, new_var_name );
+    }
+    */
 }

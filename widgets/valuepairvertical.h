@@ -28,6 +28,11 @@ public:
     /** Sets the text of the lower box. */
     void set2nd( QString value );
 
+    /** Adds a widget below the two text boxes.
+     * Added widgets may provide useful information to the user about the pair.
+     */
+    void addWidget( QWidget* w );
+
 private:
     Ui::ValuePairVertical *ui;
 };

@@ -52,6 +52,7 @@ private slots:
     void onConfigureAndRun();
     void onIk3dCompletes();
     void onUpdateSoftIndicatorVariablesSelectors();
+    void onSave();
 };
 
 #endif // INDICATORKRIGINGDIALOG_H
