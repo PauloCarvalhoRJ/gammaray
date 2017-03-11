@@ -13,12 +13,14 @@
 #include "domain/pointset.h"
 #include "domain/variogrammodel.h"
 #include "domain/cartesiangrid.h"
+#include "domain/categorydefinition.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslib.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "util.h"
 
+#include <QInputDialog>
 #include <QMessageBox>
 
 IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *parent) :
@@ -369,28 +371,64 @@ void IndicatorKrigingDialog::onSave()
     }
 
     if( m_varType == IKVariableType::CATEGORICAL ){
-        //get the selected p.d.f. file
-        CategoryPDF *pdf = (CategoryPDF *)m_dfSelector->getSelectedFile();
+        //suggest a prefix for the variable names to the user
+        QString prefix( "Probability_of_" );
 
+        //presents a dialog so the user can change the suggested name.
+        bool ok;
+        prefix = QInputDialog::getText(this, "Define prefix for the variables",
+                                                 "Prefix for the probability fields:", QLineEdit::Normal,
+                                                 prefix, &ok);
+        //if the user didn't cancel the input dialog
+        if( ok ){
+            //get the selected p.d.f. file
+            CategoryPDF *pdf = (CategoryPDF *)m_dfSelector->getSelectedFile();
 
+            //get the category definition used to create the p.d.f. (if defined)
+            CategoryDefinition *cd = pdf->getCategoryDefinition();
+
+            //for each code/probability pair
+            for(int i = 0; i < pdf->getPairCount(); ++i){
+                //make a meaningful name
+                QString proposed_name( prefix );
+                if( cd )
+                    proposed_name.append( cd->getCategoryName( i ) );
+                else
+                    proposed_name.append( "Category_" ).append( pdf->get1stValue( i ) );
+
+                //the estimates normally follow the order of the categories in the resulting grid
+                Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( i + 1 );
+                //add the estimates or variances to the selected estimation grid
+                estimation_grid->addGEOEASColumn( values, proposed_name );
+            }
+        }
     }
 
-/*
-    //suggest variable names to the user
-    QString proposed_name( "" );
-    proposed_name = proposed_name.append( ( m_varType == IKVariableType::CATEGORICAL ? "PROB_OF_" : "PROB_BELOW_" ) );
+    if( m_varType == IKVariableType::CONTINUOUS ){
+        //suggest a prefix for the variable names to the user
+        QString prefix( "Probability_below_" );
 
-    //presents a dialog so the user can change the suggested name.
-    bool ok;
-    QString what = ( estimates ? "estimates" : "kriging variances" );
-    QString new_var_name = QInputDialog::getText(this, "Name the " + what + " variable",
-                                             "New variable name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
-    if (ok && !new_var_name.isEmpty()){
-        //the estimates are normally the first variable in the resulting grid
-        Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( ( estimates ? 1 : 2 ) );
-        //add the estimates or variances to the selected estimation grid
-        estimation_grid->addGEOEASColumn( values, new_var_name );
+        //presents a dialog so the user can change the suggested name.
+        bool ok;
+        prefix = QInputDialog::getText(this, "Define prefix for the variables",
+                                                 "Prefix for the cumulative probability fields:", QLineEdit::Normal,
+                                                 prefix, &ok);
+        //if the user didn't cancel the input dialog
+        if( ok ){
+            //get the selected c.d.f. file
+            ThresholdCDF *cdf = (ThresholdCDF *)m_dfSelector->getSelectedFile();
+
+            //for each code/probability pair
+            for(int i = 0; i < cdf->getPairCount(); ++i){
+                //make a meaningful name
+                QString proposed_name( prefix );
+                proposed_name.append( QString::number(cdf->get1stValue( i )) );
+
+                //the estimates normally follow the order of the categories in the resulting grid
+                Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( i + 1 );
+                //add the estimates or variances to the selected estimation grid
+                estimation_grid->addGEOEASColumn( values, proposed_name );
+            }
+        }
     }
-    */
 }
