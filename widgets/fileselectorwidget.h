@@ -30,9 +30,16 @@ public:
     /** Returns null pointer if no file is selected. */
     File* getSelectedFile();
 
+signals:
+    void fileSelected( File* file );
+
 private:
     Ui::FileSelectorWidget *ui;
     FileSelectorType m_filesOfTypes;
+    File* m_File;
+
+public slots:
+    void onSelection( int index );
 };
 
 #endif // FILESELECTORWIDGET_H

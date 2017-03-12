@@ -41,6 +41,18 @@ void GSLibParMultiValuedVariable::assure(uint n)
     }
 }
 
+void GSLibParMultiValuedVariable::setSize(uint n)
+{
+    //first assures the count
+    assure( n );
+    //deletes the trailing elements until the count is met
+    while( _parameters.size() > (int)n ){
+        QList<GSLibParType*>::iterator it = --_parameters.end();
+        delete (*it);
+        _parameters.erase( it );
+    }
+}
+
 void GSLibParMultiValuedVariable::save(QTextStream *out)
 {
     QString buffer;
@@ -91,6 +103,12 @@ GSLibParMultiValuedVariable *GSLibParMultiValuedVariable::clone()
         Application::instance()->logError("GSLibParMultiValuedVariable::clone() 1: parameters of type \"" + _parameters.at(0)->getTypeName() + "\" do not support cloning.");
     }
     return clone;
+}
+
+bool GSLibParMultiValuedVariable::update()
+{
+    ((WidgetGSLibParMultiValuedVariable*)this->_widget)->updateValue( this );
+    return true;
 }
 
 

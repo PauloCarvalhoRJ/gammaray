@@ -8,7 +8,8 @@
 FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::FileSelectorWidget),
-    m_filesOfTypes( filesOfTypes )
+    m_filesOfTypes( filesOfTypes ),
+    m_File( nullptr )
 {
     ui->setupUi(this);
 
@@ -44,4 +45,23 @@ File *FileSelectorWidget::getSelectedFile()
         }
     }
     return nullptr;
+}
+
+void FileSelectorWidget::onSelection(int /*index*/)
+{
+    m_File = nullptr;
+    Project* project = Application::instance()->getProject();
+
+    //TODO: maybe search in the other groups as well
+    ObjectGroup* og = project->getResourcesGroup();
+    for( int i = 0; i < og->getChildCount(); ++i){
+        File* varFile = (File*)og->getChildByIndex( i );
+        if( varFile->getName() == ui->cmbFile->currentText() ){
+            m_File = (File*)varFile;
+            emit fileSelected( m_File );
+            return;
+        }
+    }
+    //the user may select "NOT SET", so emit signal with null pointer.
+    emit fileSelected( nullptr );
 }

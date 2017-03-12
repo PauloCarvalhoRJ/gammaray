@@ -15,6 +15,7 @@ class PointSetSelector;
 class VariogramModelSelector;
 class FileSelectorWidget;
 class GSLibParameterFile;
+class CartesianGrid;
 
 /*! The variable type result in different indicator kriging beahvior. */
 enum class IKVariableType : uint {
@@ -37,15 +38,22 @@ private:
     CartesianGridSelector* m_cgSelector;
     PointSetSelector* m_psSelector;
     VariableSelector* m_PointSetVariableSelector;
+    PointSetSelector* m_psSoftSelector;
+    QList<VariableSelector*> m_SoftIndicatorVariablesSelectors;
     FileSelectorWidget* m_dfSelector;
     QList<VariogramModelSelector*> m_variogramSelectors;
     void addVariogramSelector();
     IKVariableType m_varType;
+    CartesianGrid* m_cg_estimation;
+    void preview();
 
 private slots:
     void onUpdateVariogramSelectors();
     void onConfigureAndRun();
     void onIk3dCompletes();
+    void onUpdateSoftIndicatorVariablesSelectors();
+    void onSave();
+    void onCreateFaciesMap();
 };
 
 #endif // INDICATORKRIGINGDIALOG_H

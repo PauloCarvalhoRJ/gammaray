@@ -16,6 +16,7 @@
 #include "domain/cartesiangrid.h"
 #include "domain/attribute.h"
 #include "domain/project.h"
+#include "domain/categorydefinition.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
@@ -421,7 +422,7 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     file.close();
 }
 
-void Util::viewGrid(Attribute *variable, QWidget* parent = 0)
+bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, CategoryDefinition *cd)
 {
     //get input data file
     //the parent component of an attribute is a file
@@ -490,6 +491,34 @@ void Util::viewGrid(Attribute *variable, QWidget* parent = 0)
     par12->getParameter<GSLibParDouble*>(1)->_value = data_max;
     par12->getParameter<GSLibParDouble*>(2)->_value = (data_max-data_min)/10.0;
 
+    //enable categorical display, if a category definition is passed
+    if( cd ){
+        //make sure the category definition info is loaded from the file
+        cd->loadTriplets();
+        //set category mode on
+        GSLibParOption* par11 = gpf.getParameter<GSLibParOption*>(11);
+        par11->_selected_value = 1;
+        //set the number of categories
+        GSLibParUInt* par13 = gpf.getParameter<GSLibParUInt*>(13);
+        par13->_value = cd->getCategoryCount();
+        //set the category display parameters
+        GSLibParRepeat* par14 = gpf.getParameter<GSLibParRepeat*>(14);
+        par14->setCount( par13->_value );
+        for( uint iCat = 0; iCat < par13->_value; ++iCat){
+            //The category code, color code and name are in a row of three paramaters
+            GSLibParMultiValuedFixed *parMV = par14->getParameter<GSLibParMultiValuedFixed*>( iCat, 0 );
+            //set the category code
+            GSLibParUInt* par14_0 = parMV->getParameter<GSLibParUInt*>( 0 );
+            par14_0->_value = cd->getCategoryCode( iCat );
+            //set the category color
+            GSLibParColor* par14_1 = parMV->getParameter<GSLibParColor*>( 1 );
+            par14_1->_color_code = cd->getColorCode( iCat );
+            //set the category name
+            GSLibParString* par14_2 = parMV->getParameter<GSLibParString*>( 2 );
+            par14_2->_value = cd->getCategoryName( iCat );
+        }
+    }
+
     //----------------------------------------------------------------------------------
 
     //Generate the parameter file
@@ -502,7 +531,12 @@ void Util::viewGrid(Attribute *variable, QWidget* parent = 0)
 
     //display the plot output
     DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(1)->_path, title, gpf, parent);
+    if( modal ){
+        int response = dpd->exec();
+        return response == QDialog::Accepted;
+    }
     dpd->show();
+    return false;
 }
 
 void Util::viewXPlot(Attribute *xVariable, Attribute *yVariable, QWidget *parent, Attribute *zVariable)
@@ -658,6 +692,38 @@ void Util::importUnivariateDistribution(Attribute *at, const QString path_from, 
     }
 }
 
+void Util::makeGSLibColorsList(QList<QColor> &colors)
+{
+    colors << Qt::red << QColor(255,165,0) << Qt::yellow << Qt::green << QColor( Qt::green ).darker();
+    colors << Qt::cyan << Qt::blue <<  QColor(238,130,238) << Qt::white << Qt::black;
+    colors << QColor(128,0,128) << QColor(165,42,42) << QColor(255,20,147) << QColor(50,205,50);
+    colors << Qt::gray << QColor(26,26,26) << QColor(51,51,51) << QColor(77,77,77) << QColor(102,102,102);
+    colors << QColor(128,128,128) << QColor(154,154,154) << QColor(179,179,179) << QColor(205,205,205) << QColor(230,230,230);
+}
+
+QIcon Util::makeGSLibColorIcon(uint color_code)
+{
+    //make list of GSLib colors
+    QList<QColor> colors;
+    Util::makeGSLibColorsList( colors );
+
+    //make and return the icon.
+    QPixmap pixmap(16,16);
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI )
+        pixmap = QPixmap(32, 32);
+    pixmap.fill( colors.at( color_code - 1 ) );
+    return QIcon( pixmap );
+}
+
+QColor Util::getGSLibColor(uint color_code)
+{
+    //make list of GSLib colors
+    QList<QColor> colors;
+    Util::makeGSLibColorsList( colors );
+
+    return colors.at( color_code - 1 );
+}
+
 void Util::importSettingsFromPreviousVersion()
 {
     //get the settings of this application
@@ -665,7 +731,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -749,4 +815,15 @@ uint Util::getHeaderLineCount( QString file_path )
     Application::instance()->logWarn("WARNING: Util::getHeaderLineCount(): unexpected reach EOF.");
     file.close();
     return 0;
+}
+
+QString Util::getGEOEAScomment(QString file_path)
+{
+    QFile file( file_path );
+    file.open( QFile::ReadOnly | QFile::Text );
+    QTextStream in(&file);
+    //the comment is the first file line (no need for loops, etc.)
+    QString result = in.readLine();
+    file.close();
+    return result;
 }

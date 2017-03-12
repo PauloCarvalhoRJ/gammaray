@@ -117,7 +117,9 @@ void GSLibParametersDialog::onDialogAccepted()
     for(int i = 0; i < cparams; ++i){
         GSLibParType* par = this->_gpf->getParameter<GSLibParType*>( i );
         if( ! par->update() ){
-            Application::instance()->logError( QString("ERROR: parameters of type \"").append( par->getTypeName() ).append("\" are not editable or the parameter update failed.") );
+            Application::instance()->logError( QString("ERROR: GSLibParametersDialog::onDialogAccepted(): parameters of type \"").
+                                               append( par->getTypeName() ).
+                                               append("\" are not editable or the parameter update failed.") );
         }
     }
 }

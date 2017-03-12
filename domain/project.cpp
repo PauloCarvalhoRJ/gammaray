@@ -20,6 +20,8 @@
 #include "domain/application.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
+#include "domain/categorydefinition.h"
+#include "domain/univariatecategoryclassification.h"
 #include "plot.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
@@ -68,6 +70,7 @@ Project::Project(const QString path) : QAbstractItemModel()
         for (int i = 0; !in.atEnd(); ++i)
         {
            QString line = in.readLine();
+           //TODO: THE IFs BELOW SIGNAL A REFACTORING OPPORTUNITY
            //found a point set file reference in gammaray.prj
            if( line.startsWith( "POINTSET:" ) ){
                //get file name
@@ -154,18 +157,59 @@ Project::Project(const QString path) : QAbstractItemModel()
                 dist->setInfoFromMetadataFile();
            }
            //found a threshold c.d.f. or category p.d.f. file reference in gammaray.prj
-           if( line.startsWith( "THRESHOLDCDF:" ) ||
-               line.startsWith( "CATEGORYPDF:" ) ){
+           if( line.startsWith( "CATEGORYPDF:" ) ){
+                // get file name and the refered CategoryDefinition
+                QStringList file_name_and_category_definition = line.split(":")[1].split(",");
+                // get the file name
+                QString file_name = file_name_and_category_definition[0];
+                // get the category definition name (may be not defined)
+                QString category_definition = "FILE_NOT_DEFINED";
+                if( file_name_and_category_definition.size() == 2 )
+                    category_definition = file_name_and_category_definition[1];
+                // make file path
+                QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
+                // create distribution object from file
+                CategoryPDF *file = new CategoryPDF( category_definition, file_obj.fileName() );
+                // add the object to project tree structure
+                this->_resources->addChild( file );
+                file->setParent( this->_resources );
+           }
+           //found a threshold c.d.f. file reference in gammaray.prj
+           if( line.startsWith( "THRESHOLDCDF:" ) ){
                 //get file name
                 QString file_name = line.split(":")[1];
                 //make file path
                 QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
                 //create distribution object from file
-                File *file;
-                if( line.startsWith( "THRESHOLDCDF:" ) )
-                    file = new ThresholdCDF( file_obj.fileName() );
-                else
-                    file = new CategoryPDF( file_obj.fileName() );
+                ThresholdCDF *file = new ThresholdCDF( file_obj.fileName() );
+                //add the object to project tree structure
+                this->_resources->addChild( file );
+                file->setParent( this->_resources );
+           }
+           //found a category definition file reference in gammaray.prj
+           if( line.startsWith( "CATEGORYDEFINITION:" )){
+                //get file name
+                QString file_name = line.split(":")[1];
+                //make file path
+                QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
+                //create category definition object from file
+                File *file = new CategoryDefinition( file_obj.fileName() );
+                //add the object to project tree structure
+                this->_resources->addChild( file );
+                file->setParent( this->_resources );
+           }
+           //found an univariate classification file reference in gammaray.prj
+           if( line.startsWith( "UNIVARIATECATEGORYCLASSIFICATION:" )){
+                //get file name and category definition used to create the classification
+                QString fileName_and_categoryDef = line.split(":")[1];
+                //get the file name
+                QString file_name = fileName_and_categoryDef.split(",")[0];
+                //get the name of the category defition used to define the classification
+                QString cat_def_name = fileName_and_categoryDef.split(",")[1];
+                //make file path
+                QFile file_obj( this->_project_directory->absoluteFilePath( file_name ) );
+                //create category definition object from file
+                File *file = new UnivariateCategoryClassification( cat_def_name, file_obj.fileName() );
                 //add the object to project tree structure
                 this->_resources->addChild( file );
                 file->setParent( this->_resources );
@@ -308,6 +352,13 @@ void Project::addCategoryPDF(CategoryPDF *cpdf)
     this->save();
 }
 
+void Project::addResourceFile(File *file)
+{
+    this->_resources->addChild( file );
+    file->setParent( this->_resources );
+    this->save();
+}
+
 void Project::importPlot(const QString from_path, const QString new_file_name)
 {
     //create a new plot object from the generated .ps file
@@ -413,6 +464,13 @@ void Project::registerThresholdCDF(ThresholdCDF *tcdf)
 void Project::registerCategoryPDF(CategoryPDF *cpdf)
 {
     this->addCategoryPDF( cpdf );
+    //refreshes project tree display
+    Application::instance()->refreshProjectTree();
+}
+
+void Project::registerFileAsResource(File *file)
+{
+    this->addResourceFile( file );
     //refreshes project tree display
     Application::instance()->refreshProjectTree();
 }

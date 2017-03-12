@@ -1417,11 +1417,15 @@ void GSLibParameterFile::setDefaultValuesForKt3d()
 
 void GSLibParameterFile::setDefaultValuesForIk3d()
 {
+    //NOTE: ik3d is known to quit with an error if the file names are the same
+    //      even when they are not used, so setting something like NO_FILE for
+    //      all unused file parameters will likely make ik3d fail.
+
     getParameter<GSLibParOption*>(0)->_selected_value = 1;
 
     getParameter<GSLibParOption*>(1)->_selected_value = 0;
 
-    getParameter<GSLibParFile*>(2)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(2)->_path = "jack.dat";
 
     GSLibParMultiValuedFixed *par3 = getParameter<GSLibParMultiValuedFixed*>(3);
     par3->getParameter<GSLibParUInt*>(0)->_value = 0;
@@ -1441,24 +1445,25 @@ void GSLibParameterFile::setDefaultValuesForIk3d()
     par6->getParameter<GSLibParDouble*>(0)->_value = 0.25;
     par6->getParameter<GSLibParDouble*>(1)->_value = 0.65;
 
-    getParameter<GSLibParFile*>(7)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(7)->_path = "input.dat";
 
     GSLibParMultiValuedFixed *par8 = getParameter<GSLibParMultiValuedFixed*>(8);
     par8->getParameter<GSLibParUInt*>(0)->_value = 0;
-    par8->getParameter<GSLibParUInt*>(1)->_value = 1;
-    par8->getParameter<GSLibParUInt*>(2)->_value = 2;
+    par8->getParameter<GSLibParUInt*>(1)->_value = 0;
+    par8->getParameter<GSLibParUInt*>(2)->_value = 0;
     par8->getParameter<GSLibParUInt*>(3)->_value = 0;
     par8->getParameter<GSLibParUInt*>(4)->_value = 0;
 
-    getParameter<GSLibParFile*>(9)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(9)->_path = "soft.dat";
 
-    GSLibParMultiValuedVariable *par10 = getParameter<GSLibParMultiValuedVariable*>(10);
-    par10->assure( 3 + getParameter<GSLibParUInt*>(4)->_value ); // 3+ for the X,Y,Z coordinates columns
+    GSLibParMultiValuedFixed *par10 = getParameter<GSLibParMultiValuedFixed*>(10);
     par10->getParameter<GSLibParUInt*>(0)->_value = 1;
     par10->getParameter<GSLibParUInt*>(1)->_value = 2;
     par10->getParameter<GSLibParUInt*>(2)->_value = 0;
-    par10->getParameter<GSLibParUInt*>(3)->_value = 0;
-    par10->getParameter<GSLibParUInt*>(4)->_value = 0;
+    GSLibParMultiValuedVariable *par10_3 = par10->getParameter<GSLibParMultiValuedVariable*>(3);
+    par10_3->assure( getParameter<GSLibParUInt*>(4)->_value );
+    par10_3->getParameter<GSLibParUInt*>(0)->_value = 0;
+    par10_3->getParameter<GSLibParUInt*>(1)->_value = 0;
 
     GSLibParMultiValuedFixed *par11 = getParameter<GSLibParMultiValuedFixed*>(11);
     par11->getParameter<GSLibParDouble*>(0)->_value = -1e21;
@@ -1466,9 +1471,9 @@ void GSLibParameterFile::setDefaultValuesForIk3d()
 
     getParameter<GSLibParOption*>(12)->_selected_value = 0;
 
-    getParameter<GSLibParFile*>(13)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(13)->_path = "debug.out";
 
-    getParameter<GSLibParFile*>(14)->_path = "NO_FILE";
+    getParameter<GSLibParFile*>(14)->_path = "result.dat";
 
     GSLibParGrid* par15= getParameter<GSLibParGrid*>(15);
     par15->_specs_x->getParameter<GSLibParUInt*>(0)->_value = 10; //nx
@@ -2094,7 +2099,7 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<file>                                                    -file with data\n";
         out << "<uint> <uint> <uint> <uint> <uint>                        -   columns for DH_id,X,Y,Z,var\n";
         out << "<file>                                                    -file with soft indicator input\n";
-        out << "<uint+>                                                   -   columns for X,Y,Z and indicators\n";
+        out << "<uint> <uint> <uint> <uint+>                              -   columns for X,Y,Z and indicators\n";
         out << "<double> <double>                                         -   trimming limits\n";
         out << "<option [0:0][1:1][2:2][3:3]>                             -debugging level: 0,1,2,3\n";
         out << "<file>                                                    -file for debugging output\n";

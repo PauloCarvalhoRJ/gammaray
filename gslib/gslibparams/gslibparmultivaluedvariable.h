@@ -34,6 +34,9 @@ public:
       than or equal to the given number. */
     void assure(uint n);
 
+    /** Sets the number of elements in this parameter collection.*/
+    void setSize(uint n);
+
     // GSLibParType interface
 public:
     void save(QTextStream *out);
@@ -41,6 +44,7 @@ public:
     QWidget* getWidget();
     bool isCollection() { return true; }
     GSLibParMultiValuedVariable* clone();
+    bool update();
 
 private:
     template<typename T>

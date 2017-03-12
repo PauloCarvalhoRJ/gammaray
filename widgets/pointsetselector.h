@@ -17,7 +17,9 @@ class PointSetSelector : public QWidget
     Q_OBJECT
 
 public:
-    explicit PointSetSelector(QWidget *parent = 0);
+
+    /** @param show_not_set If true, adds a "NOT SET" item as the first item. */
+    explicit PointSetSelector(bool show_not_set = false, QWidget *parent = 0);
     ~PointSetSelector();
 
     /** Returns null pointer if no file is selected. */
@@ -28,6 +30,7 @@ signals:
 
 private:
     Ui::PointSetSelector *ui;
+    bool m_HasNotSetItem;
     DataFile* m_dataFile;
 
 public slots:

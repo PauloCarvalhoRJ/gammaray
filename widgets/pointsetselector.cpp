@@ -5,12 +5,16 @@
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
 
-PointSetSelector::PointSetSelector(QWidget *parent) :
+PointSetSelector::PointSetSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::PointSetSelector),
+    m_HasNotSetItem( show_not_set ),
     m_dataFile( nullptr )
 {
     ui->setupUi(this);
+
+    if( m_HasNotSetItem )
+        ui->cmbGrids->addItem( "NOT SET" );
 
     Project* project = Application::instance()->getProject();
 
@@ -40,7 +44,10 @@ void PointSetSelector::onSelection(int /*index*/)
             if( varFile->getName() == ui->cmbGrids->currentText() ){
                 m_dataFile = (DataFile*)varFile;
                 emit pointSetSelected( m_dataFile );
+                return;
             }
         }
     }
+    //the user may select "NOT SET", so emit signal with null pointer.
+    emit pointSetSelected( nullptr );
 }

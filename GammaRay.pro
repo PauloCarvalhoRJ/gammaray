@@ -118,6 +118,12 @@ SOURCES += main.cpp\
     scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
     gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
+    domain/triads.cpp \
+    domain/categorydefinition.cpp \
+    triadseditordialog.cpp \
+    domain/univariatecategoryclassification.cpp \
+    widgets/categoryselector.cpp \
+    widgets/intervalandcategorywidget.cpp \
     spatialindex/spatialindexpoints.cpp
 
 HEADERS  += mainwindow.h \
@@ -218,6 +224,12 @@ HEADERS  += mainwindow.h \
     exprtk.hpp \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
+    domain/triads.h \
+    domain/categorydefinition.h \
+    triadseditordialog.h \
+    domain/univariatecategoryclassification.h \
+    widgets/categoryselector.h \
+    widgets/intervalandcategorywidget.h \
     spatialindex/spatialindexpoints.h
 
 FORMS    += mainwindow.ui \
@@ -263,7 +275,10 @@ FORMS    += mainwindow.ui \
     valuespairsdialog.ui \
     indicatorkrigingdialog.ui \
     widgets/fileselectorwidget.ui \
-    gslib/gslibparams/widgets/widgetgslibparvmodel.ui
+    gslib/gslibparams/widgets/widgetgslibparvmodel.ui \
+    triadseditordialog.ui \
+    widgets/categoryselector.ui \
+    widgets/intervalandcategorywidget.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
@@ -275,7 +290,7 @@ INCLUDEPATH += $$BOOST_INSTALL
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 1.2.1
+VERSION = 1.3
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

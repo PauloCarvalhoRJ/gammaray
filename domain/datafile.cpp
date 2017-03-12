@@ -2,6 +2,8 @@
 #include <QTextStream>
 #include <QRegularExpression>
 #include <limits>
+#include <iomanip>      // std::setprecision
+#include <sstream>    // std::stringstream
 #include "datafile.h"
 #include "../exceptions/invalidgslibdatafileexception.h"
 #include "application.h"
@@ -10,6 +12,8 @@
 #include "weight.h"
 #include "normalvariable.h"
 #include "cartesiangrid.h"
+#include "domain/univariatecategoryclassification.h"
+#include "project.h"
 
 DataFile::DataFile(QString path) : File( path )
 {
@@ -214,6 +218,87 @@ void DataFile::deleteFromFS()
     file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
 }
 
+void DataFile::writeToFS()
+{
+    //create a new file for output
+    QFile outputFile( QString( this->getPath() ).append(".new") );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+
+    //if file already exists, keep copy of the file description or make up one otherwise
+    QString comment;
+    if( this->exists() )
+        comment = Util::getGEOEAScomment( this->getPath() );
+    else
+        comment = this->getFileType() + " created by GammaRay";
+    out << comment << endl;
+
+    //next, we need to know the number of columns
+    //(assumes the first data line has the correct number of variables)
+    uint nvars = _data[0].size();
+    out << nvars << endl;
+
+    //get all child objects (mostly attributes directly under this file or attached under another attribute)
+    //we do this because some attributes (columns) may not be in the current GEO-EAS file.
+    std::vector<ProjectComponent*> allChildren;
+    this->getAllObjects( allChildren );
+
+    //for each GEO-EAS column index (start with 1, not zero)
+    uint control = 0;
+    for( uint iGEOEAS = 1; iGEOEAS <= nvars; ++iGEOEAS){
+        //find the attribute by the GEO-EAS index
+        std::vector<ProjectComponent*>::iterator it = allChildren.begin();
+        for(; it != allChildren.end(); ++it){
+            if( (*it)->isAttribute() ){
+                Attribute* at = (Attribute*)(*it);
+                if( at->getAttributeGEOEASgivenIndex() == (int)iGEOEAS ){
+                    out << at->getName() << endl;
+                    ++control;
+                    break;
+                }
+            }
+        }
+    }
+
+    if( control != nvars ){
+        Application::instance()->logWarn("WARNING: DataFile::writeToFS(): mismatch between data column count and Attribute object count.");
+        //make up names for mismatched data columns
+        for( uint iGEOEAS = control; iGEOEAS <= nvars; ++iGEOEAS){
+            out << "ATTRIBUTE " << iGEOEAS << endl;
+        }
+    }
+
+    //for each data line
+    std::vector< std::vector<double> >::iterator itDataLine = _data.begin();
+    for(; itDataLine != _data.end(); ++itDataLine){
+        //for each data column
+        std::vector<double>::iterator itDataColumn = (*itDataLine).begin();
+        out << *itDataColumn;
+        ++itDataColumn;
+        for(; itDataColumn != (*itDataLine).end(); ++itDataColumn){
+            //making sure the values are written in GSLib-like precision
+            std::stringstream ss;
+            ss << std::setprecision( 12 /*std::numeric_limits<double>::max_digits10*/ );
+            ss << *itDataColumn;
+            out << '\t' << ss.str().c_str();
+        }
+        out << endl;
+    }
+
+    //close output file
+    outputFile.close();
+
+    //deletes the current file
+    QFile currentFile( this->getPath() );
+    currentFile.remove();
+    //renames the .new file, effectively replacing the current file.
+    outputFile.rename( this->getPath() );
+    //updates properties list so any changes appear in the project tree.
+    updatePropertyCollection();
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
+}
+
 void DataFile::updatePropertyCollection()
 {
     //updates attribute collection
@@ -383,6 +468,14 @@ uint DataFile::getDataLineCount()
     return _data.size();
 }
 
+uint DataFile::getDataColumnCount()
+{
+    if( getDataLineCount() > 0 )
+        return _data[0].size();
+    else
+        return 0;
+}
+
 bool DataFile::isNDV(double value)
 {
     if( ! this->hasNoDataValue() )
@@ -391,4 +484,35 @@ bool DataFile::isNDV(double value)
         double ndv = this->getNoDataValue().toDouble();
         return Util::almostEqual2sComplement( ndv, value, 1 );
     }
+}
+
+void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, const QString name_for_new_column )
+{
+    //load the current data from the file system
+    loadData();
+
+    //for each data row...
+    std::vector< std::vector <double> >::iterator it = _data.begin();
+    for( ; it != _data.end(); ++it){
+        //define the default value (for class not found)
+        int noClassFoundValue = -1;
+        if( hasNoDataValue() )
+            //hopefully the file's NDV is integer
+            noClassFoundValue = (int)getNoDataValue().toDouble();
+        //...get the input value
+        double value = (*it).at( column );
+        //...get the category code corresponding to the value
+        int categoryId = ucc->getCategory( value, noClassFoundValue );
+        //...append the code to the current row.
+        (*it).push_back( categoryId );
+    }
+
+    //create and add a new Attribute object the represents the new column
+    uint newIndexGEOEAS = Util::getFieldNames( this->getPath() ).count() + 1;
+    Attribute* at = new Attribute( name_for_new_column, newIndexGEOEAS );
+    at->setParent( this );
+    this->addChild( at );
+
+    //saves the file contents to file system
+    this->writeToFS();
 }

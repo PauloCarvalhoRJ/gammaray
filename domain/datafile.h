@@ -6,6 +6,7 @@
 #include <QMap>
 
 class Attribute;
+class UnivariateCategoryClassification;
 
 /**
  * @brief The DataFile class is the base class of all project components that are
@@ -147,14 +148,32 @@ public:
      */
     uint getDataLineCount();
 
+    /**
+     * Returns the number of data columns (variables) of the first line of file (assumes all lines have the
+     * same number of columns).
+     * Make sure to have called loadData() prior to this call, otherwise zero will be returned.
+     * Also if you made changes to the data file, it is necessary to call loadData() again to update
+     * the object contents.
+     */
+    uint getDataColumnCount();
+
     /** Returns whether the given value equals the no-data value set for this data file.
      * If a no-data value has not been set, this method always returns false.
      * TODO: possible performance bottleneck.
      */
     bool isNDV( double value );
 
+    /**
+     * Adds a new data column (variable/attribute) containing categorical values computed from the
+     * values of the given variable as a function of the univariate category classification
+     * map passed as parameter.  Nothing happens is nullptr is passed as parameter.
+     * First column is zero.
+     */
+    void classify(uint column, UnivariateCategoryClassification* ucc , const QString name_for_new_column);
+
 //File interface
     void deleteFromFS();
+    void writeToFS();
 
 protected:
 

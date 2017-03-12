@@ -12,6 +12,7 @@ class QWidget;
 class QPlainTextEdit;
 class CartesianGrid;
 class Attribute;
+class CategoryDefinition;
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -156,8 +157,14 @@ public:
      * Runs the GSLib program pixelplt and opens the plot dialog to view a
      * variable in a regular grid.
      * @param parent Parent QWidget for the plot dialog.
+     * @param modal If true, the method returns only when the user closes the Plot Dialog.
+     * @param cd If informed, the grid is renderd as a categorical variable.
+     * @return True if modal == true and if the user did not cancel the Plot Dialog; false otherwise.
      */
-    static void viewGrid(Attribute* variable , QWidget *parent);
+    static bool viewGrid(Attribute* variable ,
+                         QWidget *parent,
+                         bool modal = false,
+                         CategoryDefinition *cd = nullptr);
 
     /**
      * Runs the GSLib program scatplt and opens the plot dialog to view a
@@ -196,6 +203,23 @@ public:
     static void importUnivariateDistribution(Attribute *at, const QString path_from , QWidget *dialogs_owner);
 
     /**
+     * Populates the passed list with QColor objects containing colors according to GSLib convention.
+     * The indexes in the list + 1 are the GSLib color codes.  For instance, red is the first color,
+     * list index == 0, thus the color code is 1.
+     */
+    static void makeGSLibColorsList( QList<QColor> &colors );
+
+    /**
+     * Creates a 16x16 pixel QIcon filled with a GSLib color given its code.
+     */
+    static QIcon makeGSLibColorIcon( uint color_code );
+
+    /**
+      * Returns a QColor given a GSLib color code.
+      */
+    static QColor getGSLibColor( uint color_code );
+    
+    /**
      * Imports the registry/user home seetings from a previus version of GammaRay.
      * The import happens only if there are no seetings for this version.
      * Nothing happens if there no previous settings are found.
@@ -233,6 +257,11 @@ public:
      * Returns the number of file lines that make up the header of the given GEO-EAS file.
      */
     static uint getHeaderLineCount( QString file_path );
+
+    /**
+      * Returns the first line of a GEO-EAS file (the file description).
+      */
+    static QString getGEOEAScomment( QString file_path );
 };
 
 #endif // UTIL_H

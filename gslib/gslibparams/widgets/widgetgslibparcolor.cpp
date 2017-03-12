@@ -2,6 +2,7 @@
 #include "ui_widgetgslibparcolor.h"
 #include "../gslibparcolor.h"
 #include <QColor>
+#include "util.h"
 
 WidgetGSLibParColor::WidgetGSLibParColor(QWidget *parent) :
     QWidget(parent),
@@ -20,21 +21,15 @@ WidgetGSLibParColor::WidgetGSLibParColor(QWidget *parent) :
 
     //make list of GSLib colors
     QList<QColor> colors;
-    colors << Qt::red << QColor(255,165,0) << Qt::yellow << Qt::green << QColor( Qt::green ).darker();
-    colors << Qt::cyan << Qt::blue <<  QColor(238,130,238) << Qt::white << Qt::black;
-    colors << QColor(128,0,128) << QColor(165,42,42) << QColor(255,20,147) << QColor(50,205,50);
-    colors << Qt::gray << QColor(26,26,26) << QColor(51,51,51) << QColor(77,77,77) << QColor(102,102,102);
-    colors << QColor(128,128,128) << QColor(154,154,154) << QColor(179,179,179) << QColor(205,205,205) << QColor(230,230,230);
+    Util::makeGSLibColorsList( colors );
 
     //make the drop down menu items using the two lists above
     QComboBox *cb = ui->cmbColor;
     for( int index = 0; index < labels.size(); ++index){
         QColor color( Qt::red );
-        QPixmap pixmap(16,16);
-        pixmap.fill( colors.at( index ) );
         cb->insertItem(index, labels.at( index ), QVariant( color ));
         cb->setItemData(index, colors.at( index ), Qt::UserRole);
-        cb->setItemIcon(index, QIcon( pixmap ));
+        cb->setItemIcon(index, Util::makeGSLibColorIcon( index + 1 ));
     }
 
     //notify this object whenever the user makes a choice

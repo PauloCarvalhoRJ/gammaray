@@ -73,6 +73,14 @@ int ProjectComponent::getChildIndex(ProjectComponent *child)
     return -1;
 }
 
+ProjectComponent *ProjectComponent::getChildByName(QString name)
+{
+    for (std::vector<ProjectComponent*>::iterator it = _children.begin() ; it != _children.end(); ++it)
+       if ( (*it)->getName() == name )
+          return *it;
+    return nullptr;
+}
+
 void ProjectComponent::save(QTextStream */*txt_stream*/)
 {
 
