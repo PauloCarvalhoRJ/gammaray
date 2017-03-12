@@ -88,8 +88,19 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
     //call this slot to show the soft indicator variables selectors.
     onUpdateSoftIndicatorVariablesSelectors();
     
+    //set high-res icons for high-dpi displays
     if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
         ui->btnConfigureAndRun->setIcon( QIcon(":icons32/setting32") );
+        ui->btnSaveEstimates->setIcon( QIcon(":icons32/save32") );
+        ui->btnFaciesMap->setIcon( QIcon(":icons32/faciesmap32") );
+    }
+
+    //configure actions specific for each variable type
+    if( m_varType == IKVariableType::CATEGORICAL ){
+
+    } else {
+        ui->lblFaciesMap->hide();
+        ui->btnFaciesMap->hide();
     }
 
     adjustSize();
@@ -429,6 +440,99 @@ void IndicatorKrigingDialog::onSave()
                 //add the estimates or variances to the selected estimation grid
                 estimation_grid->addGEOEASColumn( values, proposed_name );
             }
+        }
+    }
+}
+
+void IndicatorKrigingDialog::onCreateFaciesMap()
+{
+    if( ! m_gpf_ik3d || ! m_cg_estimation ){
+        QMessageBox::critical( this, "Error", "Please, run the estimation at least once.");
+        return;
+    }
+
+    //get the selected estimation grid
+    CartesianGrid* estimation_grid = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! estimation_grid ){
+        QMessageBox::critical( this, "Error", "Please, select an estimation grid.");
+        return;
+    }
+
+    //get the selected p.d.f. file
+    CategoryPDF *pdf = (CategoryPDF *)m_dfSelector->getSelectedFile();
+
+    //define a temp path for the facies map
+    QString faciesMapPath = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+    //open the file for output
+    QFile outputFile( faciesMapPath );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+
+    //write cartesian grid header
+    out << "Indicator Kriging facies map" << "\n";
+    out << "1" << "\n";
+    out << "Category" << "\n";
+
+    //read the grid with the probability fields
+    uint nLines = m_cg_estimation->getDataLineCount();
+    uint nColumns = m_cg_estimation->getDataColumnCount();
+    for( uint iLine = 0; iLine < nLines; ++iLine ){
+        double maxLikelihood = -0.0001;
+        int columnWithMaxLikelihood = -1;
+        //find the column with the greatest value
+        for( uint iColumn = 0; iColumn < nColumns; ++iColumn ){
+            double prob = m_cg_estimation->data( iLine, iColumn );
+            if( prob > maxLikelihood ){
+                maxLikelihood = prob;
+                columnWithMaxLikelihood = iColumn;
+            }
+        }
+        //write the facies code
+        if( columnWithMaxLikelihood >= 0 )
+            out << pdf->get1stValue( columnWithMaxLikelihood ) << "\n";
+        else
+            out << "-1" << "\n";
+    }
+
+    //closes the output file
+    outputFile.close();
+
+    //create a CartesianGrid object from the recently created file
+    CartesianGrid* cgFacies = new CartesianGrid( faciesMapPath );
+
+    //set the grid paramaters with the same values of the estimation grid.
+    cgFacies->setInfoFromOtherCG( m_cg_estimation );
+
+    //the NDV for the facies grid is -1
+    cgFacies->setNoDataValue( "-1" );
+
+    //get the single variable
+    Attribute* cat_var = (Attribute*)cgFacies->getChildByIndex( 0 );
+
+    //get the category definition (if nullptr, the map will be displayed as a continuous variable)
+    CategoryDefinition *cd = pdf->getCategoryDefinition();
+
+    //open the plot dialog
+    if( Util::viewGrid( cat_var, this, true, cd ) ){
+        //make a meaningful name
+        QString proposed_name;
+        if( cd )
+            proposed_name = cd->getName();
+        else
+            proposed_name = "Facies";
+
+        //presents a dialog so the user can change the suggested name.
+        bool ok;
+        proposed_name = QInputDialog::getText(this, "Define variable name",
+                                                 "Name for the categorical variable:", QLineEdit::Normal,
+                                                 proposed_name, &ok);
+        //if the user didn't cancel the input dialog
+        if( ok ){
+            //get the single variable
+            Attribute* values = cgFacies->getAttributeFromGEOEASIndex( 1 );
+            //add the categorical variable the selected estimation grid
+            estimation_grid->addGEOEASColumn( values, proposed_name );
         }
     }
 }

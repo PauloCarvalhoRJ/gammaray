@@ -468,6 +468,14 @@ uint DataFile::getDataLineCount()
     return _data.size();
 }
 
+uint DataFile::getDataColumnCount()
+{
+    if( getDataLineCount() > 0 )
+        return _data[0].size();
+    else
+        return 0;
+}
+
 bool DataFile::isNDV(double value)
 {
     if( ! this->hasNoDataValue() )

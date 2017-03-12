@@ -46,7 +46,7 @@ void GSLibParMultiValuedVariable::setSize(uint n)
     //first assures the count
     assure( n );
     //deletes the trailing elements until the count is met
-    while( _parameters.size() > n ){
+    while( _parameters.size() > (int)n ){
         QList<GSLibParType*>::iterator it = --_parameters.end();
         delete (*it);
         _parameters.erase( it );

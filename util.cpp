@@ -16,6 +16,7 @@
 #include "domain/cartesiangrid.h"
 #include "domain/attribute.h"
 #include "domain/project.h"
+#include "domain/categorydefinition.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
@@ -421,7 +422,7 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     file.close();
 }
 
-void Util::viewGrid(Attribute *variable, QWidget* parent = 0)
+bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, CategoryDefinition *cd)
 {
     //get input data file
     //the parent component of an attribute is a file
@@ -490,6 +491,34 @@ void Util::viewGrid(Attribute *variable, QWidget* parent = 0)
     par12->getParameter<GSLibParDouble*>(1)->_value = data_max;
     par12->getParameter<GSLibParDouble*>(2)->_value = (data_max-data_min)/10.0;
 
+    //enable categorical display, if a category definition is passed
+    if( cd ){
+        //make sure the category definition info is loaded from the file
+        cd->loadTriplets();
+        //set category mode on
+        GSLibParOption* par11 = gpf.getParameter<GSLibParOption*>(11);
+        par11->_selected_value = 1;
+        //set the number of categories
+        GSLibParUInt* par13 = gpf.getParameter<GSLibParUInt*>(13);
+        par13->_value = cd->getCategoryCount();
+        //set the category display parameters
+        GSLibParRepeat* par14 = gpf.getParameter<GSLibParRepeat*>(14);
+        par14->setCount( par13->_value );
+        for( uint iCat = 0; iCat < par13->_value; ++iCat){
+            //The category code, color code and name are in a row of three paramaters
+            GSLibParMultiValuedFixed *parMV = par14->getParameter<GSLibParMultiValuedFixed*>( iCat, 0 );
+            //set the category code
+            GSLibParUInt* par14_0 = parMV->getParameter<GSLibParUInt*>( 0 );
+            par14_0->_value = cd->getCategoryCode( iCat );
+            //set the category color
+            GSLibParColor* par14_1 = parMV->getParameter<GSLibParColor*>( 1 );
+            par14_1->_color_code = cd->getColorCode( iCat );
+            //set the category name
+            GSLibParString* par14_2 = parMV->getParameter<GSLibParString*>( 2 );
+            par14_2->_value = cd->getCategoryName( iCat );
+        }
+    }
+
     //----------------------------------------------------------------------------------
 
     //Generate the parameter file
@@ -502,7 +531,12 @@ void Util::viewGrid(Attribute *variable, QWidget* parent = 0)
 
     //display the plot output
     DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(1)->_path, title, gpf, parent);
+    if( modal ){
+        int response = dpd->exec();
+        return response == QDialog::Accepted;
+    }
     dpd->show();
+    return false;
 }
 
 void Util::viewXPlot(Attribute *xVariable, Attribute *yVariable, QWidget *parent, Attribute *zVariable)
@@ -697,7 +731,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){

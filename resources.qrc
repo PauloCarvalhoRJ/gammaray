@@ -49,6 +49,7 @@
         <file alias="thrcdf16">art/thrcdf16x16.png</file>
         <file alias="catdef16">art/catdef16x16.png</file>
         <file alias="catuniclass16">art/catuniclass16x16.png</file>
+        <file alias="faciesmap16">art/faciesmap16x16.png</file>
     </qresource>
     <qresource prefix="/icons32">
         <file alias="db32">art/iconsHD/db32.png</file>
@@ -98,5 +99,6 @@
         <file alias="catpdf32">art/iconsHD/catpdf32.png</file>
         <file alias="thrcdf32">art/iconsHD/thrcdf32.png</file>
         <file alias="logo64">art/iconsHD/icon64.png</file>
+        <file alias="faciesmap32">art/iconsHD/faciesmap32.png</file>
     </qresource>
 </RCC>

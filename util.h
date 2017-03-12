@@ -12,6 +12,7 @@ class QWidget;
 class QPlainTextEdit;
 class CartesianGrid;
 class Attribute;
+class CategoryDefinition;
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -156,8 +157,14 @@ public:
      * Runs the GSLib program pixelplt and opens the plot dialog to view a
      * variable in a regular grid.
      * @param parent Parent QWidget for the plot dialog.
+     * @param modal If true, the method returns only when the user closes the Plot Dialog.
+     * @param cd If informed, the grid is renderd as a categorical variable.
+     * @return True if modal == true and if the user did not cancel the Plot Dialog; false otherwise.
      */
-    static void viewGrid(Attribute* variable , QWidget *parent);
+    static bool viewGrid(Attribute* variable ,
+                         QWidget *parent,
+                         bool modal = false,
+                         CategoryDefinition *cd = nullptr);
 
     /**
      * Runs the GSLib program scatplt and opens the plot dialog to view a

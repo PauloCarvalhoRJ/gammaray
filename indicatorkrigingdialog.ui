@@ -280,27 +280,14 @@
       <string>Actions</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_2">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>1) Configure and run:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="btnConfigureAndRun">
+      <item row="1" column="1">
+       <widget class="QPushButton" name="btnSaveEstimates">
         <property name="text">
          <string/>
         </property>
         <property name="icon">
          <iconset resource="resources.qrc">
-          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
+          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
         </property>
        </widget>
       </item>
@@ -317,14 +304,45 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="1">
-       <widget class="QPushButton" name="btnSaveEstimates">
+      <item row="0" column="1">
+       <widget class="QPushButton" name="btnConfigureAndRun">
         <property name="text">
          <string/>
         </property>
         <property name="icon">
          <iconset resource="resources.qrc">
-          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_2">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>1) Configure and run:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lblFaciesMap">
+        <property name="text">
+         <string>3) Create facies map (max. likelihood)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="btnFaciesMap">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/faciesmap16</normaloff>:/icons/faciesmap16</iconset>
         </property>
        </widget>
       </item>
@@ -430,7 +448,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>494</x>
-     <y>239</y>
+     <y>220</y>
     </hint>
     <hint type="destinationlabel">
      <x>508</x>
@@ -445,12 +463,28 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>479</x>
-     <y>307</y>
+     <x>494</x>
+     <y>277</y>
     </hint>
     <hint type="destinationlabel">
      <x>453</x>
      <y>385</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnFaciesMap</sender>
+   <signal>clicked()</signal>
+   <receiver>IndicatorKrigingDialog</receiver>
+   <slot>onCreateFaciesMap()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>480</x>
+     <y>326</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>489</x>
+     <y>394</y>
     </hint>
    </hints>
   </connection>
@@ -459,5 +493,6 @@
   <slot>onUpdateVariogramSelectors()</slot>
   <slot>onConfigureAndRun()</slot>
   <slot>onSave()</slot>
+  <slot>onCreateFaciesMap()</slot>
  </slots>
 </ui>

@@ -148,6 +148,15 @@ public:
      */
     uint getDataLineCount();
 
+    /**
+     * Returns the number of data columns (variables) of the first line of file (assumes all lines have the
+     * same number of columns).
+     * Make sure to have called loadData() prior to this call, otherwise zero will be returned.
+     * Also if you made changes to the data file, it is necessary to call loadData() again to update
+     * the object contents.
+     */
+    uint getDataColumnCount();
+
     /** Returns whether the given value equals the no-data value set for this data file.
      * If a no-data value has not been set, this method always returns false.
      * TODO: possible performance bottleneck.
