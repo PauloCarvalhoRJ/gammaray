@@ -148,9 +148,14 @@ void ValuesPairsDialog::onSave()
             //get the same CategoryDefinition and the file path
             CategoryPDF* cpdfAspect = (CategoryPDF*)m_valuePairsFile;
             new_file = new CategoryPDF( cpdfAspect->getCategoryDefinition(), path_entered_by_user);
+        } else {
+            Application::instance()->logError("ERROR: ValuesPairsDialog::onSave(): value paris files of type " + m_valuePairsFile->getFileType() + " not supported." );
         }
         //the pointer now points to the new file
         m_valuePairsFile = new_file;
+    } else if( isNew ){  //physical file is new and object is not in the project tree
+        //set the path of the new file object
+        m_valuePairsFile->setPath( path_entered_by_user );
     }
 
     //clear any previously loaded pairs (will write the user-entered pairs)

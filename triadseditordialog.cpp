@@ -3,6 +3,8 @@
 #include "domain/file.h"
 #include "domain/application.h"
 #include "domain/project.h"
+#include "domain/categorydefinition.h"
+#include "domain/univariatecategoryclassification.h"
 #include <QMessageBox>
 #include <QDir>
 
@@ -102,13 +104,37 @@ void TriadsEditorDialog::onSave()
         return;
     }
 
-    //sets the file path as the project's directory + the file name given by the user
-    m_triadsFile->setPath( Application::instance()->getProject()->getPath() +
-                           "/" + //Qt translates forward slashes to backslashes in Windows
-                           ui->txtFileName->text() );
+    //determine whether the file is present as an object in the project tree.
+    bool isInProject = Application::instance()->getProject()->fileIsChild( m_triadsFile );
 
-    //determine whether the file exists (create new or overwrite)
-    bool isNew = ! m_triadsFile->exists();
+    //make a path from the name entered by the user
+    QString path_entered_by_user = Application::instance()->getProject()->getPath() +
+            "/" + //Qt translates forward slashes to backslash in Windows
+            ui->txtFileName->text();
+    QFile intended_path( path_entered_by_user );
+
+    //determine whether the intended file physically exists (create new or overwrite)
+    bool isNew = ! intended_path.exists();
+
+    //if object already exists in the project tree but the user gave another name
+    //then it is necessary to create a new file object.
+    if( isNew && isInProject ){
+        File* new_file;
+        if( m_triadsFile->getFileType() == "CATEGORYDEFINITION" ){
+            new_file = new CategoryDefinition( path_entered_by_user );
+        } else if( m_triadsFile->getFileType() == "UNIVARIATECATEGORYCLASSIFICATION" ){
+            //get the same CategoryDefinition and the file path
+            UnivariateCategoryClassification* uccAspect = (UnivariateCategoryClassification*)m_triadsFile;
+            new_file = new UnivariateCategoryClassification( uccAspect->getCategoryDefinition(), path_entered_by_user);
+        } else {
+            Application::instance()->logError("ERROR: TriadsEditorDialog::onSave(): triads files of type " + m_triadsFile->getFileType() + " not supported." );
+        }
+        //the pointer now points to the new file
+        m_triadsFile = new_file;
+    } else if( isNew ){  //physical file is new and object is not in the project tree
+        //set the path of the new file object
+        m_triadsFile->setPath( path_entered_by_user );
+    }
 
     //clear any previously loaded pairs (will write the user-entered pairs)
     if( ! isNew )
