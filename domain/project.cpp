@@ -548,6 +548,21 @@ bool Project::fileExists( const QString filename )
     return full_path.exists();
 }
 
+bool Project::fileIsChild(File *file)
+{
+    if( _data_files->isChild( file ) )
+        return true;
+    if( _plots->isChild( file ) )
+        return true;
+    if( _variograms->isChild( file ) )
+        return true;
+    if( _distributions->isChild( file ) )
+        return true;
+    if( _resources->isChild( file ) )
+        return true;
+    return false;
+}
+
 //-------------- QAbstractItemModel interface------------
 QModelIndex Project::index(int row, int column, const QModelIndex &parent) const
 {

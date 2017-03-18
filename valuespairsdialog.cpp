@@ -123,13 +123,32 @@ void ValuesPairsDialog::onSave()
         return;
     }
 
-    //sets the file path as the project's directory + the file name given by the user
-    m_valuePairsFile->setPath( Application::instance()->getProject()->getPath() +
-                               QDir::separator() +
-                               ui->txtFileName->text() );
+    //determine whether the file is present as an object in the project tree.
+    bool isInProject = Application::instance()->getProject()->fileIsChild( m_valuePairsFile );
 
-    //determine whether the file exists (create new or overwrite)
-    bool isNew = ! m_valuePairsFile->exists();
+    //make a path from the name entered by the user
+    QString path_entered_by_user = Application::instance()->getProject()->getPath() +
+            "/" + //Qt translates this to backslash in Windows
+            ui->txtFileName->text();
+    QFile intended_path( path_entered_by_user );
+
+    //determine whether the intended file physically exists (create new or overwrite)
+    bool isNew = ! intended_path.exists();
+
+    //if object already exists in the project tree but the used gave another name
+    //then it is necessary to create a new file object.
+    if( isNew && isInProject ){
+        File* new_file;
+        if( m_valuePairsFile->getFileType() == "THRESHOLDCDF" ){
+            new_file = new ThresholdCDF( path_entered_by_user );
+        } else if( m_valuePairsFile->getFileType() == "CATEGORYPDF" ){
+            //get the same CategoryDefinition and the file path
+            CategoryPDF* cpdfAspect = (CategoryPDF*)m_valuePairsFile;
+            new_file = new CategoryPDF( cpdfAspect->getCategoryDefinition(), path_entered_by_user);
+        }
+        //the pointer now points to the new file
+        m_valuePairsFile = new_file;
+    }
 
     //clear any previously loaded pairs (will write the user-entered pairs)
     if( ! isNew )

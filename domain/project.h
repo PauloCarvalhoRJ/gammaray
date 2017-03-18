@@ -189,6 +189,11 @@ public:
      */
     bool fileExists( const QString filename );
 
+    /**
+     * Returns whether the given File object is a child in the project tree.
+     */
+    bool fileIsChild( File* file );
+
 private:
     QDir* _project_directory;
     ObjectGroup* _data_files;
