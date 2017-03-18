@@ -9,7 +9,7 @@ class Attribute : public ProjectComponent
 {
 public:
     /** Constructor. Index in GEO-EAS format begins with 1, not zero. */
-    Attribute( QString name, int index_in_file );
+    Attribute( QString name, int index_in_file, bool categorical = false );
 
     /** Returns the File object containing this Attribute.
      *  The File can be a parent, grand-parent, etc. object.
@@ -23,6 +23,12 @@ public:
      */
     int getAttributeGEOEASgivenIndex(){ return _index; }
 
+    /** Returns whether this attribute was considered as a categorical variable. */
+    bool isCategorical();
+
+    /** Sets whether this attribute was considered as a categorical variable. */
+    void setCategorical( bool value );
+
     // ProjectComponent interface
 public:
     QString getName();
@@ -34,6 +40,7 @@ public:
 private:
     QString _name;
     int _index; //index in GEO-EAS format begins with 1, not zero.
+    bool _categorical;
 };
 
 #endif // ATTRIBUTE_H

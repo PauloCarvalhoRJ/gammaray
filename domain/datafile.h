@@ -94,6 +94,11 @@ public:
     bool isNormal( Attribute* at );
 
     /**
+     * Returns whether the given attribute is a categorical variable.
+     */
+    bool isCategorical( Attribute* at );
+
+    /**
      * Returns the variable associated with the declustering weight attribute.
      */
     virtual Attribute* getVariableOfWeight( Attribute* at ) = 0;
@@ -125,6 +130,11 @@ public:
      * 3- File name of the transform table (.trn file).
      */
     QMap<uint, QPair<uint, QString> > getNSVarVarTrnTriads(){ return _nsvar_var_trn; }
+
+    /**
+     * Returns the list of GEO-EAS indexes (1st == 1, not zero) of the attributes considered as categorical variables.
+     */
+    QList<uint> getCategoricalAttributes(){ return _categorical_attributes; }
 
     /**
      * Adds the values stored in an Attribute object as a GEO-EAS column to the given data file.
@@ -194,6 +204,11 @@ protected:
      * the transform table file (QString member) is indicated in the relation
      */
     QMap<uint, QPair<uint, QString> > _nsvar_var_trn;
+
+    /**
+     * List of GEO-EAS indexes (1st = 1, not zero) of attributes considered as categorical variables.
+     */
+    QList<uint> _categorical_attributes;
 };
 
 #endif // DATAFILE_H

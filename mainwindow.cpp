@@ -506,11 +506,12 @@ void MainWindow::onAddDataFile()
                 if( cgd.result() == QDialog::Accepted ){
                     CartesianGrid *cg = new CartesianGrid( file );
                     QMap<uint, QPair<uint, QString> > empty;
+                    QList<uint> empty2;
                     cg->setInfo( cgd.getX0(), cgd.getY0(), cgd.getZ0(),
                                  cgd.getDX(), cgd.getDY(), cgd.getDZ(),
                                  cgd.getNX(), cgd.getNY(), cgd.getNZ(),
                                  cgd.getRot(), cgd.getNReal(), cgd.getNoDataValue(),
-                                 empty );
+                                 empty, empty2 );
                     Application::instance()->getProject()->addDataFile( cg );
                 }
             }

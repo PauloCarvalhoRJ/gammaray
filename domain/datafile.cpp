@@ -198,6 +198,12 @@ bool DataFile::isNormal(Attribute *at)
     return _nsvar_var_trn.contains( index_in_GEOEAS_file );
 }
 
+bool DataFile::isCategorical(Attribute *at)
+{
+    uint index_in_GEOEAS_file = this->getFieldGEOEASIndex( at->getName() );
+    return _categorical_attributes.contains( index_in_GEOEAS_file );
+}
+
 Attribute *DataFile::getVariableOfNScoreVar(Attribute *at)
 {
     uint ns_var_index_in_GEOEAS_file = this->getFieldGEOEASIndex( at->getName() );
@@ -332,6 +338,8 @@ void DataFile::updatePropertyCollection()
                     variable->addChild( ns_var );
                 }
             } else { //common variables are direct children of files
+                if( isCategorical( at ) )
+                    at->setCategorical( true );
                 this->_children.push_back( at );
                 at->setParent( this );
             }
