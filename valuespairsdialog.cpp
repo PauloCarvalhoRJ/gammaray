@@ -52,6 +52,9 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
         ui->lbl2ndCaption->setText("<html><strong>probabilities:</strong></html>");
         CategoryPDF* cpdf = (CategoryPDF*)m_valuePairsFile;
         CategoryDefinition* cd = cpdf->getCategoryDefinition();
+        //makes sure the definition is read from file
+        if( cd )
+            cd->loadTriplets();
         for( int i = 0; i < cpdf->getPairCount(); ++i){
             onAddPair();
             ValuePairVertical* vpvWidget = (ValuePairVertical*)m_pairWidgets.last();
