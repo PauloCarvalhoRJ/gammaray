@@ -7,6 +7,7 @@
 
 class Attribute;
 class UnivariateCategoryClassification;
+class CategoryDefinition;
 
 /**
  * @brief The DataFile class is the base class of all project components that are
@@ -148,8 +149,14 @@ public:
      * according to this DataFile if it has been set; otherwise, -9999999.
      * Of course, after the addition, this object is updated from the changed file contents.
      * @param new_name If empty, the variable name (at->getName()) is used in this file.
+     * @param categorical If true, the attribute is handled as a categorical variable.
+     * @param cd The pointer to the CategoryDefinition object used to create the categorical attribute, normally
+     *           set when the categorical paramater is true.
      */
-    void addGEOEASColumn( Attribute *at, const QString new_name = "");
+    void addGEOEASColumn(Attribute *at,
+                         const QString new_name = "",
+                         bool categorical = false,
+                         CategoryDefinition *cd = nullptr);
 
     /**
      * Returns the number of data lines read from file.

@@ -532,9 +532,8 @@ void IndicatorKrigingDialog::onCreateFaciesMap()
         if( ok ){
             //get the single variable
             Attribute* values = cgFacies->getAttributeFromGEOEASIndex( 1 );
-            values->setCategorical( true );
             //add the categorical variable the selected estimation grid
-            estimation_grid->addGEOEASColumn( values, proposed_name );
+            estimation_grid->addGEOEASColumn( values, proposed_name, true, cd );
         }
     }
 }

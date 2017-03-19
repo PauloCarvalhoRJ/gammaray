@@ -370,7 +370,7 @@ void DataFile::addVariableNScoreVariableRelationship(uint variableGEOEASindex, u
     this->updateMetaDataFile();
 }
 
-void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
+void DataFile::addGEOEASColumn(Attribute *at, const QString new_name, bool categorical, CategoryDefinition *cd)
 {
     //set the variable name in the destination file
     QString var_name;
@@ -419,6 +419,7 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
        uint data_line_index = 0;
        uint n_vars = 0;
        uint var_count = 0;
+       uint indexGEOEAS_new_variable = 0;
        //for each line in the destination file...
        while ( !in.atEnd() ){
            //...read its line
@@ -432,6 +433,7 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
           } else if( line_index == 1 ) {
               n_vars = Util::getFirstNumber( line );
               out << ( n_vars+1 ) << '\n';
+              indexGEOEAS_new_variable = n_vars+1; //the GEO-EAS index of the added column equals the new number of columns
           //simply copy the current variable names
           } else if ( var_count < n_vars ) {
               out << line << '\n';
@@ -470,6 +472,14 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
        inputFile.remove();
        //renames the new file, effectively replacing the destination file.
        outputFile.rename( QFile( file_path ).fileName() );
+       //if the added column was deemed categorical, adds its GEO-EAS index and name of the category definition
+       //to the list of pairs for metadata keeping.
+       if( categorical ){
+           //TODO: guard against cd being nullptr
+           _categorical_attributes.append( QPair<uint,QString>( indexGEOEAS_new_variable , cd->getName() ) );
+           //update the metadata file
+           this->updateMetaDataFile();
+       }
        //updates properties list so any changes appear in the project tree.
        updatePropertyCollection();
        //update the project tree in the main window.
