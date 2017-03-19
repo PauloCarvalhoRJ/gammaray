@@ -119,7 +119,7 @@ void TriadsEditorDialog::onSave()
     //if object already exists in the project tree but the user gave another name
     //then it is necessary to create a new file object.
     if( isNew && isInProject ){
-        File* new_file;
+        File* new_file = nullptr;
         if( m_triadsFile->getFileType() == "CATEGORYDEFINITION" ){
             new_file = new CategoryDefinition( path_entered_by_user );
         } else if( m_triadsFile->getFileType() == "UNIVARIATECATEGORYCLASSIFICATION" ){

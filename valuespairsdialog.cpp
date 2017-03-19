@@ -141,7 +141,7 @@ void ValuesPairsDialog::onSave()
     //if object already exists in the project tree but the used gave another name
     //then it is necessary to create a new file object.
     if( isNew && isInProject ){
-        File* new_file;
+        File* new_file = nullptr;
         if( m_valuePairsFile->getFileType() == "THRESHOLDCDF" ){
             new_file = new ThresholdCDF( path_entered_by_user );
         } else if( m_valuePairsFile->getFileType() == "CATEGORYPDF" ){
