@@ -16,9 +16,10 @@ public:
     PointSet( QString path );
 
     /** Sets point set metadata.  It also populates the file's attribute collection. */
-    void setInfo( int x_index, int y_index, int z_index, const QString no_data_value,
+    void setInfo(int x_index, int y_index, int z_index, const QString no_data_value,
                   const QMap<uint, uint> &wgt_var_pairs,
-                  const QMap<uint, QPair<uint,QString> > &nvar_var_trn_triads);
+                  const QMap<uint, QPair<uint,QString> > &nvar_var_trn_triads,
+                  const QList<QPair<uint, QString> > &categorical_attributes );
 
     /** Calls setInfo(int, int, int, const QString, const QMap<uint, uint> &) passing an empty
      * collection of variable-weight index pairs (the fourth parameter) and an empty collection

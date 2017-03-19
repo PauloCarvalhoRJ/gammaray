@@ -3,10 +3,11 @@
 #include "pointset.h"
 #include "util.h"
 
-Attribute::Attribute(QString name, int index_in_file)
+Attribute::Attribute(QString name, int index_in_file, bool categorical)
 {
     this->_name = name;
     this->_index = index_in_file;
+    _categorical = categorical;
 }
 
 File *Attribute::getContainingFile()
@@ -18,6 +19,16 @@ File *Attribute::getContainingFile()
             return (File*)pc;
     }
     return nullptr;
+}
+
+bool Attribute::isCategorical()
+{
+    return _categorical;
+}
+
+void Attribute::setCategorical(bool value)
+{
+    _categorical = value;
 }
 
 
@@ -53,6 +64,12 @@ QIcon Attribute::getIcon()
                 }
             }
         }
+    }
+    if( isCategorical() ){
+        if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+            return QIcon(":icons/catvar16");
+        else
+            return QIcon(":icons32/catvar32");
     }
     return QIcon(":icons/var");
 }

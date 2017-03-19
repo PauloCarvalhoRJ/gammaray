@@ -14,6 +14,7 @@
 #include "domain/variogrammodel.h"
 #include "domain/cartesiangrid.h"
 #include "domain/categorydefinition.h"
+#include "domain/attribute.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslib.h"
@@ -532,7 +533,7 @@ void IndicatorKrigingDialog::onCreateFaciesMap()
             //get the single variable
             Attribute* values = cgFacies->getAttributeFromGEOEASIndex( 1 );
             //add the categorical variable the selected estimation grid
-            estimation_grid->addGEOEASColumn( values, proposed_name );
+            estimation_grid->addGEOEASColumn( values, proposed_name, true, cd );
         }
     }
 }

@@ -13,6 +13,7 @@
 #include "normalvariable.h"
 #include "cartesiangrid.h"
 #include "domain/univariatecategoryclassification.h"
+#include "domain/categorydefinition.h"
 #include "project.h"
 
 DataFile::DataFile(QString path) : File( path )
@@ -198,6 +199,17 @@ bool DataFile::isNormal(Attribute *at)
     return _nsvar_var_trn.contains( index_in_GEOEAS_file );
 }
 
+bool DataFile::isCategorical(Attribute *at)
+{
+    uint index_in_GEOEAS_file = this->getFieldGEOEASIndex( at->getName() );
+    QList< QPair<uint, QString> >::iterator it = _categorical_attributes.begin();
+    for(; it != _categorical_attributes.end(); ++it){
+        if( (*it).first == index_in_GEOEAS_file )
+            return true;
+    }
+    return false;
+}
+
 Attribute *DataFile::getVariableOfNScoreVar(Attribute *at)
 {
     uint ns_var_index_in_GEOEAS_file = this->getFieldGEOEASIndex( at->getName() );
@@ -332,6 +344,8 @@ void DataFile::updatePropertyCollection()
                     variable->addChild( ns_var );
                 }
             } else { //common variables are direct children of files
+                if( isCategorical( at ) )
+                    at->setCategorical( true );
                 this->_children.push_back( at );
                 at->setParent( this );
             }
@@ -356,7 +370,7 @@ void DataFile::addVariableNScoreVariableRelationship(uint variableGEOEASindex, u
     this->updateMetaDataFile();
 }
 
-void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
+void DataFile::addGEOEASColumn(Attribute *at, const QString new_name, bool categorical, CategoryDefinition *cd)
 {
     //set the variable name in the destination file
     QString var_name;
@@ -405,6 +419,7 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
        uint data_line_index = 0;
        uint n_vars = 0;
        uint var_count = 0;
+       uint indexGEOEAS_new_variable = 0;
        //for each line in the destination file...
        while ( !in.atEnd() ){
            //...read its line
@@ -418,6 +433,7 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
           } else if( line_index == 1 ) {
               n_vars = Util::getFirstNumber( line );
               out << ( n_vars+1 ) << '\n';
+              indexGEOEAS_new_variable = n_vars+1; //the GEO-EAS index of the added column equals the new number of columns
           //simply copy the current variable names
           } else if ( var_count < n_vars ) {
               out << line << '\n';
@@ -456,6 +472,14 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name)
        inputFile.remove();
        //renames the new file, effectively replacing the destination file.
        outputFile.rename( QFile( file_path ).fileName() );
+       //if the added column was deemed categorical, adds its GEO-EAS index and name of the category definition
+       //to the list of pairs for metadata keeping.
+       if( categorical ){
+           //TODO: guard against cd being nullptr
+           _categorical_attributes.append( QPair<uint,QString>( indexGEOEAS_new_variable , cd->getName() ) );
+           //update the metadata file
+           this->updateMetaDataFile();
+       }
        //updates properties list so any changes appear in the project tree.
        updatePropertyCollection();
        //update the project tree in the main window.
@@ -509,10 +533,17 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, cons
 
     //create and add a new Attribute object the represents the new column
     uint newIndexGEOEAS = Util::getFieldNames( this->getPath() ).count() + 1;
-    Attribute* at = new Attribute( name_for_new_column, newIndexGEOEAS );
+    Attribute* at = new Attribute( name_for_new_column, newIndexGEOEAS, true );
+    //adds the attribute's GEO-EAS index (with the name of the category definition file) to the metadata as a categorical attribute
+    _categorical_attributes.append(
+                QPair<uint,QString>(newIndexGEOEAS,
+                                    ucc->getCategoryDefinition()->getName()) );
     at->setParent( this );
     this->addChild( at );
 
     //saves the file contents to file system
     this->writeToFS();
+
+    //update the metadata file
+    this->updateMetaDataFile();
 }

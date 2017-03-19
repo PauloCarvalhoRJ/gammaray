@@ -7,6 +7,7 @@
 
 class Attribute;
 class UnivariateCategoryClassification;
+class CategoryDefinition;
 
 /**
  * @brief The DataFile class is the base class of all project components that are
@@ -94,6 +95,11 @@ public:
     bool isNormal( Attribute* at );
 
     /**
+     * Returns whether the given attribute is a categorical variable.
+     */
+    bool isCategorical( Attribute* at );
+
+    /**
      * Returns the variable associated with the declustering weight attribute.
      */
     virtual Attribute* getVariableOfWeight( Attribute* at ) = 0;
@@ -127,6 +133,12 @@ public:
     QMap<uint, QPair<uint, QString> > getNSVarVarTrnTriads(){ return _nsvar_var_trn; }
 
     /**
+     * Returns the list of GEO-EAS indexes (1st == 1, not zero) of the attributes considered as categorical variables.
+     * The second member of the pairs is the name of the category definition file.
+     */
+    QList< QPair<uint,QString> > getCategoricalAttributes(){ return _categorical_attributes; }
+
+    /**
      * Adds the values stored in an Attribute object as a GEO-EAS column to the given data file.
      * The new column is appended to the end of each of the file's lines.
      * No check is done whether the Attribute has the same value count as data line count in the file.
@@ -137,8 +149,14 @@ public:
      * according to this DataFile if it has been set; otherwise, -9999999.
      * Of course, after the addition, this object is updated from the changed file contents.
      * @param new_name If empty, the variable name (at->getName()) is used in this file.
+     * @param categorical If true, the attribute is handled as a categorical variable.
+     * @param cd The pointer to the CategoryDefinition object used to create the categorical attribute, normally
+     *           set when the categorical paramater is true.
      */
-    void addGEOEASColumn( Attribute *at, const QString new_name = "");
+    void addGEOEASColumn(Attribute *at,
+                         const QString new_name = "",
+                         bool categorical = false,
+                         CategoryDefinition *cd = nullptr);
 
     /**
      * Returns the number of data lines read from file.
@@ -194,6 +212,12 @@ protected:
      * the transform table file (QString member) is indicated in the relation
      */
     QMap<uint, QPair<uint, QString> > _nsvar_var_trn;
+
+    /**
+     * List of GEO-EAS indexes (1st = 1, not zero) of attributes considered as categorical variables.
+     * The second member of the pairs is the name of category definition file.
+     */
+    QList< QPair<uint, QString> > _categorical_attributes;
 };
 
 #endif // DATAFILE_H

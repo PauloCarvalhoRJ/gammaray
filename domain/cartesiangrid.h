@@ -14,7 +14,9 @@ public:
                   double dx, double dy, double dz,
                   int nx, int ny, int nz,
                   double rot, int nreal, const QString no_data_value,
-                 QMap<uint, QPair<uint, QString> > nvar_var_trn_triads);
+                  QMap<uint, QPair<uint, QString> > nvar_var_trn_triads,
+                  const QList<QPair<uint, QString> > &categorical_attributes);
+
     /** Sets cartesian grid metadata from the accompaining .md file, if it exists.
      Nothing happens if the metadata file does not exist.  If it exists, it calls
      #setInfo() with the metadata read from the .md file.*/

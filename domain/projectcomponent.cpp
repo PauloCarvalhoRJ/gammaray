@@ -81,6 +81,14 @@ ProjectComponent *ProjectComponent::getChildByName(QString name)
     return nullptr;
 }
 
+bool ProjectComponent::isChild(ProjectComponent *pc)
+{
+    for (std::vector<ProjectComponent*>::iterator it = _children.begin() ; it != _children.end(); ++it)
+       if ( (*it) == pc )
+          return true;
+    return false;
+}
+
 void ProjectComponent::save(QTextStream */*txt_stream*/)
 {
 

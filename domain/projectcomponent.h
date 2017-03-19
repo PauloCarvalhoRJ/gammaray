@@ -32,6 +32,7 @@ public:
     virtual int getIndexInParent();
     virtual int getChildIndex( ProjectComponent* child );
     ProjectComponent* getChildByName( QString name );
+    bool isChild( ProjectComponent* pc );
     virtual void save( QTextStream* txt_stream );
     /** Fills the given list with all ProjectComponents contained within.
      * It returns all children objects, their children, etc.  It is recursive call.
