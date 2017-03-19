@@ -37,14 +37,14 @@ void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_d
 {
     QMap<uint, uint> empty;
     QMap< uint, QPair<uint, QString> > empty2;
-    QList<uint> empty3;
+    QList< QPair< uint, QString> > empty3;
     this->setInfo( x_index, y_index, z_index, no_data_value, empty, empty2, empty3);
 }
 
 void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_data_value,
                        const QMap<uint, uint> &wgt_var_pairs,
                        const QMap<uint, QPair<uint, QString> > &nvar_var_trn_triads,
-                       const QList<uint> &categorical_attributes)
+                       const QList< QPair<uint,QString> > &categorical_attributes)
 {
     //updates metadata
     this->_x_field_index = x_index;
@@ -85,7 +85,7 @@ void PointSet::setInfoFromMetadataFile()
     int x_index = 0, y_index = 0, z_index = 0;
     QMap<uint, uint> wgt_var_pairs;
     QMap<uint, QPair<uint,QString> > nsvar_var_trn;
-    QList<uint> categorical_attributes;
+    QList< QPair<uint,QString> > categorical_attributes;
     QString ndv;
     if( md_file.exists() ){
         md_file.open( QFile::ReadOnly | QFile::Text );
@@ -122,8 +122,10 @@ void PointSet::setInfoFromMetadataFile()
                //variable index and transform table filename are the value
                nsvar_var_trn.insert( ns_var.toUInt(), QPair<uint,QString>(var.toUInt(), trn_filename ));
            }else if( line.startsWith( "CATEGORICAL:" ) ){
-               QString var = line.split(":")[1];
-               categorical_attributes.append( var.toUInt() );
+               QString var_and_catDefName = line.split(":")[1];
+               QString var = var_and_catDefName.split(",")[0];
+               QString catDefName = var_and_catDefName.split(",")[1];
+               categorical_attributes.append( QPair<uint,QString>( var.toUInt(), catDefName ) );
            }
         }
         md_file.close();
@@ -189,9 +191,9 @@ void PointSet::updateMetaDataFile()
         j.next();
         out << "NSCORE:" << j.value().first << '>' << j.key() << '=' << j.value().second << '\n';
     }
-    QList<uint>::iterator k = _categorical_attributes.begin();
+    QList< QPair<uint,QString> >::iterator k = _categorical_attributes.begin();
     for(; k != _categorical_attributes.end(); ++k){
-        out << "CATEGORICAL:" << *k;
+        out << "CATEGORICAL:" << (*k).first << "," << (*k).second << '\n';
     }
     file.close();
 }

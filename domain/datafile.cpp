@@ -13,6 +13,7 @@
 #include "normalvariable.h"
 #include "cartesiangrid.h"
 #include "domain/univariatecategoryclassification.h"
+#include "domain/categorydefinition.h"
 #include "project.h"
 
 DataFile::DataFile(QString path) : File( path )
@@ -201,7 +202,12 @@ bool DataFile::isNormal(Attribute *at)
 bool DataFile::isCategorical(Attribute *at)
 {
     uint index_in_GEOEAS_file = this->getFieldGEOEASIndex( at->getName() );
-    return _categorical_attributes.contains( index_in_GEOEAS_file );
+    QList< QPair<uint, QString> >::iterator it = _categorical_attributes.begin();
+    for(; it != _categorical_attributes.end(); ++it){
+        if( (*it).first == index_in_GEOEAS_file )
+            return true;
+    }
+    return false;
 }
 
 Attribute *DataFile::getVariableOfNScoreVar(Attribute *at)
@@ -517,10 +523,17 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, cons
 
     //create and add a new Attribute object the represents the new column
     uint newIndexGEOEAS = Util::getFieldNames( this->getPath() ).count() + 1;
-    Attribute* at = new Attribute( name_for_new_column, newIndexGEOEAS );
+    Attribute* at = new Attribute( name_for_new_column, newIndexGEOEAS, true );
+    //adds the attribute's GEO-EAS index (with the name of the category definition file) to the metadata as a categorical attribute
+    _categorical_attributes.append(
+                QPair<uint,QString>(newIndexGEOEAS,
+                                    ucc->getCategoryDefinition()->getName()) );
     at->setParent( this );
     this->addChild( at );
 
     //saves the file contents to file system
     this->writeToFS();
+
+    //update the metadata file
+    this->updateMetaDataFile();
 }

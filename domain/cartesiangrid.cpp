@@ -25,7 +25,7 @@ void CartesianGrid::setInfo(double x0, double y0, double z0,
                             double dx, double dy, double dz,
                             int nx, int ny, int nz, double rot, int nreal, const QString no_data_value,
                             QMap<uint, QPair<uint, QString> > nvar_var_trn_triads,
-                            const QList<uint> &categorical_attributes)
+                            const QList< QPair<uint,QString> > &categorical_attributes)
 {
     //updating metadata
     this->_dx = dx;
@@ -59,7 +59,7 @@ void CartesianGrid::setInfoFromMetadataFile()
     uint nreal = 0;
     QString ndv;
     QMap<uint, QPair<uint,QString> > nsvar_var_trn;
-    QList<uint> categorical_attributes;
+    QList< QPair<uint,QString> > categorical_attributes;
     if( md_file.exists() ){
         md_file.open( QFile::ReadOnly | QFile::Text );
         QTextStream in(&md_file);
@@ -112,8 +112,10 @@ void CartesianGrid::setInfoFromMetadataFile()
                //variable index and transform table filename are the value
                nsvar_var_trn.insert( ns_var.toUInt(), QPair<uint,QString>(var.toUInt(), trn_filename ));
            }else if( line.startsWith( "CATEGORICAL:" ) ){
-               QString var = line.split(":")[1];
-               categorical_attributes.append( var.toUInt() );
+               QString var_and_catDefName = line.split(":")[1];
+               QString var = var_and_catDefName.split(",")[0];
+               QString catDefName = var_and_catDefName.split(",")[1];
+               categorical_attributes.append( QPair<uint,QString>(var.toUInt(), catDefName) );
            }
         }
         md_file.close();
@@ -130,7 +132,7 @@ void CartesianGrid::setInfoFromOtherCG(CartesianGrid *other_cg)
     uint nreal = 0;
     QString ndv;
     QMap<uint, QPair<uint, QString> > nsvar_var_trn_triads;
-    QList<uint> categorical_attributes;
+    QList< QPair<uint, QString> > categorical_attributes;
     x0 = other_cg->getX0();
     y0 = other_cg->getY0();
     z0 = other_cg->getZ0();
@@ -158,7 +160,7 @@ void CartesianGrid::setInfoFromGridParameter(GSLibParGrid *pg)
     uint nreal = 0;
     QString ndv;
     QMap<uint, QPair<uint, QString> > empty;
-    QList<uint> empty2;
+    QList< QPair<uint,QString> > empty2;
 
     nx = pg->_specs_x->getParameter<GSLibParUInt*>(0)->_value; //nx
     x0 = pg->_specs_x->getParameter<GSLibParDouble*>(1)->_value; //min x
@@ -211,9 +213,9 @@ void CartesianGrid::updateMetaDataFile()
         j.next();
         out << "NSCORE:" << j.value().first << '>' << j.key() << '=' << j.value().second << '\n';
     }
-    QList<uint>::iterator k = _categorical_attributes.begin();
+    QList< QPair<uint,QString> >::iterator k = _categorical_attributes.begin();
     for(; k != _categorical_attributes.end(); ++k){
-        out << "CATEGORICAL:" << *k;
+        out << "CATEGORICAL:" << (*k).first << "," << (*k).second << '\n';
     }
     file.close();
 }

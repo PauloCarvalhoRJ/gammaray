@@ -133,8 +133,9 @@ public:
 
     /**
      * Returns the list of GEO-EAS indexes (1st == 1, not zero) of the attributes considered as categorical variables.
+     * The second member of the pairs is the name of the category definition file.
      */
-    QList<uint> getCategoricalAttributes(){ return _categorical_attributes; }
+    QList< QPair<uint,QString> > getCategoricalAttributes(){ return _categorical_attributes; }
 
     /**
      * Adds the values stored in an Attribute object as a GEO-EAS column to the given data file.
@@ -207,8 +208,9 @@ protected:
 
     /**
      * List of GEO-EAS indexes (1st = 1, not zero) of attributes considered as categorical variables.
+     * The second member of the pairs is the name of category definition file.
      */
-    QList<uint> _categorical_attributes;
+    QList< QPair<uint, QString> > _categorical_attributes;
 };
 
 #endif // DATAFILE_H

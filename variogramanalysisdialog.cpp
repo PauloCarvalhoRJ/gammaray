@@ -211,7 +211,7 @@ void VariogramAnalysisDialog::onOpenVarMapPlot()
 
     //set grid parameters
     QMap<uint, QPair<uint, QString> > empty;
-    QList<uint> empty2;
+    QList< QPair<uint,QString> > empty2;
     m_varmap_grid->setInfo(nxlags * -xlag, nylags * -ylag, nzlags * -zlag,
                              xlag,           ylag,           zlag,
                              nxlags*2+1,     nylags*2+1,     nzlags*2+1,
