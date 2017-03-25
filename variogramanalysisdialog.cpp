@@ -843,10 +843,14 @@ void VariogramAnalysisDialog::onVargplt(const QString path_to_exp_variogram_data
 
     //adjust curve count as needed
     GSLibParRepeat *par6 = m_gpf_vargplt_exp_irreg->getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
+    uint old_count = par6->getCount();
     par6->setCount( ncurves + ncurves_models );
 
-    //suggest model curves visual parameters after vmodel runs
-    for(uint i = ncurves; i < (ncurves + ncurves_models); ++i)
+    //determine wether the number of curves changed
+    bool curve_count_changed = ( old_count != ncurves + ncurves_models );
+
+    //suggest model curves visual parameters after vmodel runs (only if curve count changed)
+    for(uint i = ncurves; i < (ncurves + ncurves_models) && curve_count_changed; ++i)
     {
         par6->getParameter<GSLibParFile*>(i, 0)->_path = path_to_vmodel_output;
         GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
