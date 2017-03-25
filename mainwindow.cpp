@@ -54,7 +54,8 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_subMenuClassifyInto( new QMenu("Classify into", this) )
+    m_subMenuClassifyInto( new QMenu("Classify into", this) ),
+    m_subMenuClassifyWith( new QMenu("Classify with", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -377,6 +378,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( parent_file->getFileType().compare("POINTSET") == 0 ){
                 makeMenuClassifyInto();
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
+                makeMenuClassifyWith();
+                _projectContextMenu->addMenu( m_subMenuClassifyWith );
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1246,6 +1249,35 @@ void MainWindow::onClearMessages()
     ui->txtedMessages->setText("");
 }
 
+void MainWindow::onClassifyWith()
+{
+    //assuming sender() returns a QAction* if execution passes through here.
+    QAction *act = (QAction*)sender();
+
+    //assuming the text in the menu item is the name of a univariate category classification file.
+    QString uccFileName = act->text();
+
+    //try to get the corresponding project component.
+    ProjectComponent* pc = Application::instance()->getProject()->
+            getResourcesGroup()->getChildByName( uccFileName );
+    if( ! pc ){
+        Application::instance()->logError("MainWindow::onClassifyWith(): File " + uccFileName +
+                                          " not found in Resource Files group.");
+        return;
+    }
+
+    //Assuming the project component is an UnivariateCategoryClassification
+    m_ucc = (UnivariateCategoryClassification*)pc;
+
+    //Open the dialog to edit the classification intervals and category.
+    TriadsEditorDialog *ted = new TriadsEditorDialog( m_ucc, this );
+    ted->setWindowTitle( "Classify " + _right_clicked_attribute->getName() + " with " + m_ucc->getName() );
+    ted->showOKbutton();
+    connect( ted, SIGNAL(accepted()), this, SLOT(onPerformClassifyInto()));
+    ted->show(); //show()->non-modal / execute()->modal
+    //method onPerformClassifyInto() will be called upon dilog accept.
+}
+
 void MainWindow::onCreateCategoryDefinition()
 {
     CategoryDefinition *cd = new CategoryDefinition("");
@@ -1478,6 +1510,24 @@ void MainWindow::makeMenuClassifyInto()
                                                   fileAspect->getName(),
                                                   this,
                                                   SLOT(onClassifyInto()));
+            }
+        }
+    }
+}
+
+void MainWindow::makeMenuClassifyWith()
+{
+    m_subMenuClassifyWith->clear(); //remove any previously added item actions
+    ObjectGroup* resources = Application::instance()->getProject()->getResourcesGroup();
+    for( uint i = 0; i < (uint)resources->getChildCount(); ++i){
+        ProjectComponent *pc = resources->getChildByIndex( i );
+        if( pc->isFile() ){
+            File *fileAspect = (File*)pc;
+            if( fileAspect->getFileType() == "UNIVARIATECATEGORYCLASSIFICATION" ){
+                m_subMenuClassifyWith->addAction( fileAspect->getIcon(),
+                                                  fileAspect->getName(),
+                                                  this,
+                                                  SLOT(onClassifyWith()));
             }
         }
     }
