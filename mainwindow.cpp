@@ -715,7 +715,15 @@ void MainWindow::onXPlot()
 
 void MainWindow::onPixelPlt()
 {
-    Util::viewGrid( _right_clicked_attribute, this );
+    CategoryDefinition *cd = nullptr;
+    //if the attribute is categorical...
+    if(  _right_clicked_attribute->isCategorical() ){
+        //the parent file is surely a CartesianGrid.
+        CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
+        //... get the associated category definition
+        cd = cg->getCategoryDefinition( _right_clicked_attribute );
+    }
+    Util::viewGrid( _right_clicked_attribute, this, false, cd );
 }
 
 void MainWindow::onProbPlt()
