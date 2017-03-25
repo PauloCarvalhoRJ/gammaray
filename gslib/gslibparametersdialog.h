@@ -43,8 +43,19 @@ private:
      */
     void recallSettings();
 
+    /** Detaches the parameter-owned widgets
+    *  from their Qt object parents, preventing their undue deletion
+    *  upon dialog destruction.  Such widgets can only be deleted when
+    *  the parent GSLibParType object is destroyed, othwerwise the program crashes
+    *  when this dialog is called a second time for the same GSLibParameterFile object .
+    *  A call to QLayout::addWidget(QWidget*) automatically sets QLayout as QWidget's parent.
+    *  This function is usually called when the dialog is about to close.
+    */
+    void detachParameterWidgets();
+
 private slots:
     void onDialogAccepted();
+    void onDialogRejected();
     /**
      *  This slot is called when an WigetGSLibParUint widget's value changed.
      *  Not all of such widgets trigger this slot.  It usually happens for

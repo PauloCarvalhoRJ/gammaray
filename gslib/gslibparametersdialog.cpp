@@ -23,6 +23,7 @@ GSLibParametersDialog::GSLibParametersDialog(GSLibParameterFile *gpf, QWidget *p
     //-------------------end of GUI construction-------------------------------------------------------
 
     connect( this, SIGNAL( accepted() ), SLOT( onDialogAccepted() ) );
+    connect( this, SIGNAL( rejected() ), SLOT( onDialogRejected() ) );
 
     //restore the dialog settings from registry/user home
     recallSettings();
@@ -30,21 +31,6 @@ GSLibParametersDialog::GSLibParametersDialog(GSLibParameterFile *gpf, QWidget *p
 
 GSLibParametersDialog::~GSLibParametersDialog()
 {
-    //save the dialog settings to registry/user home
-    rememberSettings();
-    //-----------------------------------------------------------------------------------
-    //this code block detaches the parameter-owned widgets
-    //from their Qt object parents, preventing their undue deletion
-    //upon dialog destruction.  Such widgets can only be deleted when
-    //the parent GSLibParType object is destroyed, othwerwise the program crashes
-    //when this dialog is called a second time for the same GSLibParameterFile object .
-    //A call to QLayout::addWidget(QWidget*) automatically sets QLayout as QWidget's parent.
-    int cparams = this->_gpf->getParameterCount();
-    for(int i = 0; i < cparams; ++i){
-        GSLibParType* par = this->_gpf->getParameter<GSLibParType*>( i );
-        par->detachFromGUI( ui->frmWidgets->layout() );
-    }
-    //-----------------------------------------------------------------------------------
     delete ui;
 }
 
@@ -110,6 +96,15 @@ void GSLibParametersDialog::recallSettings()
     qsettings.endGroup();
 }
 
+void GSLibParametersDialog::detachParameterWidgets()
+{
+    int cparams = this->_gpf->getParameterCount();
+    for(int i = 0; i < cparams; ++i){
+        GSLibParType* par = this->_gpf->getParameter<GSLibParType*>( i );
+        par->detachFromGUI( ui->frmWidgets->layout() );
+    }
+}
+
 void GSLibParametersDialog::onDialogAccepted()
 {
     //update the GSLib parameter object with the user input values in the associated widgets.
@@ -122,6 +117,16 @@ void GSLibParametersDialog::onDialogAccepted()
                                                append("\" are not editable or the parameter update failed.") );
         }
     }
+    detachParameterWidgets();
+    //save the dialog settings to registry/user home
+    rememberSettings();
+}
+
+void GSLibParametersDialog::onDialogRejected()
+{
+    detachParameterWidgets();
+    //save the dialog settings to registry/user home
+    rememberSettings();
 }
 
 void GSLibParametersDialog::someUintWidgetValueChanged(uint value, QString parameter_name)
