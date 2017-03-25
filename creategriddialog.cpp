@@ -106,9 +106,9 @@ void CreateGridDialog::runGammaBar()
     par0->getParameter<GSLibParDouble*>(2)->_value = m_par->_specs_z->getParameter<GSLibParDouble*>(2)->_value;
     //leave block discretization as one
     GSLibParMultiValuedFixed *par1 = gpar.getParameter<GSLibParMultiValuedFixed*>(1);
-    par1->getParameter<GSLibParUInt*>(0)->_value = 1;
-    par1->getParameter<GSLibParUInt*>(1)->_value = 1;
-    par1->getParameter<GSLibParUInt*>(2)->_value = 1;
+    par1->getParameter<GSLibParUInt*>(0)->_value = ui->txtBlkDiscrX->text().toInt();
+    par1->getParameter<GSLibParUInt*>(1)->_value = ui->txtBlkDiscrY->text().toInt();
+    par1->getParameter<GSLibParUInt*>(2)->_value = ui->txtBlkDiscrZ->text().toInt();
 
     //Generate the parameter file
     //NOTE: due to a buggy input file setting in gammabar, the parameter file must be generated
