@@ -10,7 +10,7 @@ GSLibParLimitsDouble::GSLibParLimitsDouble(const QString name, const QString lab
 
 void GSLibParLimitsDouble::save(QTextStream *out)
 {
-    (*out) << _min << "    " << _max << '\n';
+    (*out) << QString::number(_min, 'g', 12) << "    " << QString::number(_max, 'g', 12) << '\n';
 }
 
 QWidget *GSLibParLimitsDouble::getWidget()

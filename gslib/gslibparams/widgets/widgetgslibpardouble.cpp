@@ -18,7 +18,7 @@ void WidgetGSLibParDouble::fillFields(double param, QString description)
 {
     ui->lblDesc->setText( description );
     ui->lblDesc->setVisible( !description.isEmpty() );
-    ui->txtValue->setText( QString::number( param ) );
+    ui->txtValue->setText( QString::number( param, 'g', 12 ) );
 }
 
 void WidgetGSLibParDouble::updateValue(double *var)
