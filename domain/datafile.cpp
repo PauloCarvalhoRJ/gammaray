@@ -15,6 +15,7 @@
 #include "domain/univariatecategoryclassification.h"
 #include "domain/categorydefinition.h"
 #include "project.h"
+#include "objectgroup.h"
 
 DataFile::DataFile(QString path) : File( path )
 {
@@ -208,6 +209,20 @@ bool DataFile::isCategorical(Attribute *at)
             return true;
     }
     return false;
+}
+
+CategoryDefinition *DataFile::getCategoryDefinition(Attribute *at)
+{
+    uint index_in_GEOEAS_file = this->getFieldGEOEASIndex( at->getName() );
+    QList< QPair<uint, QString> >::iterator it = _categorical_attributes.begin();
+    for(; it != _categorical_attributes.end(); ++it){
+        if( (*it).first == index_in_GEOEAS_file ){
+            QString cd_file_name = (*it).second;
+            return (CategoryDefinition*)Application::instance()->
+                    getProject()->getResourcesGroup()->getChildByName( cd_file_name );
+        }
+    }
+    return nullptr;
 }
 
 Attribute *DataFile::getVariableOfNScoreVar(Attribute *at)

@@ -126,6 +126,8 @@ private slots:
     void onLookForDuplicates();
     void onEditWithExternalProgram();
     void onClearMessages();
+    void onClassifyWith();
+    void onMapAs();
 
 private:
     /**
@@ -138,6 +140,7 @@ private:
       * If none was selected, returns an empty list.
       */
     QList<Attribute*> getSelectedAttributes();
+
     /**
      * The pointer to the dynamic sub-menu "Classify into" of the project tree context menu.
      */
@@ -150,6 +153,25 @@ private:
      * The pointer to the categorical classification defined by the user upon calling onClassifyInto().
      */
     UnivariateCategoryClassification *m_ucc;
+
+
+    /**
+     * The pointer to the dynamic sub-menu "Classify with" of the project tree context menu.
+     */
+    QMenu* m_subMenuClassifyWith;
+    /**
+      * Creates the dynamic items of sub-menu "Classify with".
+      */
+    void makeMenuClassifyWith();
+
+    /**
+     * The pointer to the dynamic sub-menu "Map as" of the project tree context menu.
+     */
+    QMenu* m_subMenuMapAs;
+    /**
+      * Creates the dynamic items of sub-menu "Map as".
+      */
+    void makeMenuMapAs();
 };
 
 #endif // MAINWINDOW_H

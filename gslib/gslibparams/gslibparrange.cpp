@@ -10,7 +10,7 @@ GSLibParRange::GSLibParRange(const QString name, const QString label, const QStr
 
 void GSLibParRange::save(QTextStream *out)
 {
-    *out << _value << '\n';
+    *out << QString::number(_value, 'g', 12) << '\n';
 }
 
 QWidget *GSLibParRange::getWidget()

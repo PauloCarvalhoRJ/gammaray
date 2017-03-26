@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>663</width>
-    <height>404</height>
+    <width>669</width>
+    <height>433</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This dialog helps the user to create a new cartesian grid file adequate for estimation or simulation of variables in a samples file (point set). It does so by suggesting grid geometry from the point set bounding box and allowing the user to choose a grid resolution with an appropriate inter-cell variance given a variogram model (gammabar).&lt;/p&gt;&lt;p&gt;The created grid contains a binary variable that results in a checkerboard pattern so the user can easily assess the generated geometry in a plot window.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This dialog helps the user to create a new cartesian grid file adequate for estimation or simulation of variables in a samples file (point set). It does so by suggesting grid geometry from the point set bounding box and allowing the user to choose a grid resolution with an appropriate inter-cell variance given a variogram model and an intended block discretization for block kriging.&lt;/p&gt;&lt;p&gt;The created grid contains a binary variable that results in a checkerboard pattern so the user can easily assess the generated geometry in a plot window.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignJustify|Qt::AlignVCenter</set>
@@ -143,6 +143,46 @@
             <property name="bottomMargin">
              <number>0</number>
             </property>
+           </layout>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="frame_6">
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_5">
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Block discretization (X, Y, Z):</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="txtBlkDiscrX">
+              <property name="text">
+               <string>1</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="txtBlkDiscrY">
+              <property name="text">
+               <string>1</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="txtBlkDiscrZ">
+              <property name="text">
+               <string>1</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </item>

@@ -2066,9 +2066,9 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<double> <double> <double>                                -maximum search radii\n";
         out << "<double> <double> <double>                                -angles for search ellipsoid\n";
         out << "<option [0:SK][1:OK][2:LVM][3:KED]> <double>              -0=SK,1=OK,2=non-st SK,3=exdrift;mean for SK\n";
-        out << "<option [0:no][1:yes]> <option [0:no][1:yes]> <option [0:no][1:yes]> " << \
-               "<option [0:no][1:yes]> <option [0:no][1:yes]> <option [0:no][1:yes]> " << \
-               "<option [0:no][1:yes]> <option [0:no][1:yes]> <option [0:no][1:yes]>       -drift: x,y,z,xx,yy,zz,xy,xz,zy\n";
+        out << "<option [0:  ][1: x ]> <option [0:  ][1: y ]> <option [0:  ][1: z ]> " << \
+               "<option [0:  ][1:x^2]> <option [0:  ][1:y^2]> <option [0:  ][1:z^2]> " << \
+               "<option [0:  ][1: xy]> <option [0:  ][1: xz]> <option [0:  ][1: zy]>       -drift: x,y,z,xx,yy,zz,xy,xz,zy\n";
         out << "<option [0:variable][1:trend]>                            -estimate what\n";
         out << "<file>                                                    -gridded file with drift/mean\n";
         out << "<uint>                                                    -  column number in gridded file\n";

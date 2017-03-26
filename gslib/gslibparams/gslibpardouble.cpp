@@ -15,7 +15,7 @@ GSLibParDouble::~GSLibParDouble()
 
 void GSLibParDouble::save(QTextStream *out)
 {
-    *out << _value << '\n';
+    *out << QString::number(_value, 'g', 12) << '\n';
 }
 
 QWidget *GSLibParDouble::getWidget()

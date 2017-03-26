@@ -100,6 +100,12 @@ public:
     bool isCategorical( Attribute* at );
 
     /**
+     * Returns the category definition associated to the given attribute, supposedly categorical.
+     * Returns nullptr if none is found, the attribute is not categorical or does not belong to this data file.
+     */
+    CategoryDefinition *getCategoryDefinition( Attribute* at );
+
+    /**
      * Returns the variable associated with the declustering weight attribute.
      */
     virtual Attribute* getVariableOfWeight( Attribute* at ) = 0;
