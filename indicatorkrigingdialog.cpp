@@ -176,6 +176,27 @@ void IndicatorKrigingDialog::onConfigureAndRun()
 {
     bool firstRun = false;
 
+    //get the selected p.d.f./c.d.f. file
+    File *distribution = m_dfSelector->getSelectedFile();
+    if( ! distribution ){
+        QMessageBox::critical( this, "Error", "Please, select a c.d.f./p.d.f. file.");
+        return;
+    }
+
+    //get the selected point set data file
+    PointSet *pointSet = (PointSet*)m_psSelector->getSelectedDataFile();
+    if( ! pointSet ){
+        QMessageBox::critical( this, "Error", "Please, select a point set file.");
+        return;
+    }
+
+    //get the selected estimation grid
+    CartesianGrid *cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", "Please, select an estimation grid.");
+        return;
+    }
+
     //-----------------------------set ik3d parameters---------------------------
     if( ! m_gpf_ik3d ){
         //create the parameters object
@@ -191,9 +212,6 @@ void IndicatorKrigingDialog::onConfigureAndRun()
     }
 
     //-----------------these parameters must be re-set according to what the user has selected in the dialog--------
-
-    //get the selected p.d.f./c.d.f. file
-    File *distribution = m_dfSelector->getSelectedFile();
 
     //ValuePairs class implements getContentsCount() to return the number of pairs.
     uint ndist = distribution->getContentsCount();
@@ -223,8 +241,6 @@ void IndicatorKrigingDialog::onConfigureAndRun()
             par6->getParameter<GSLibParDouble*>(i)->_value = cdf->get2ndValue(i);
         }
     }
-
-    PointSet *pointSet = (PointSet*)m_psSelector->getSelectedDataFile();
 
     int varIndex = m_PointSetVariableSelector->getSelectedVariableGEOEASIndex();
 
@@ -278,7 +294,7 @@ void IndicatorKrigingDialog::onConfigureAndRun()
     }
 
     //set the grid parameters
-    m_gpf_ik3d->setGridParameters( (CartesianGrid*)m_cgSelector->getSelectedDataFile() );
+    m_gpf_ik3d->setGridParameters( cg );
 
     //IK mode (has to specify threshold if mode is median IK)
     GSLibParMultiValuedFixed *par20 = m_gpf_ik3d->getParameter<GSLibParMultiValuedFixed*>(20);
@@ -288,6 +304,7 @@ void IndicatorKrigingDialog::onConfigureAndRun()
         par20->getParameter<GSLibParOption*>(0)->_selected_value = 1;
 
     //set the variogram model(s)
+    bool selection_ok = true;
     GSLibParRepeat *par22 = m_gpf_ik3d->getParameter<GSLibParRepeat*>(22);
     if( ui->radioMedianIK->isChecked() ){ //median IK requires just one variogram model
         //this does not work.  Strangely ik3d still expects n-variograms even with median IK selected... figures.
@@ -303,6 +320,10 @@ void IndicatorKrigingDialog::onConfigureAndRun()
             GSLibParVModel *par22_0 = par22->getParameter<GSLibParVModel*>(i, 0);
             VariogramModelSelector* vms = m_variogramSelectors.at( 0 );
             VariogramModel *vmodel = vms->getSelectedVModel();
+            if( ! vmodel ){
+                selection_ok = false;
+                break;
+            }
             par22_0->setFromVariogramModel( vmodel );
         }
     } else { //full IK requires one variogram model per c.d.f./p.d.f. threshold/class.
@@ -311,8 +332,21 @@ void IndicatorKrigingDialog::onConfigureAndRun()
             GSLibParVModel *par22_0 = par22->getParameter<GSLibParVModel*>(i, 0);
             VariogramModelSelector* vms = m_variogramSelectors.at( i );
             VariogramModel *vmodel = vms->getSelectedVModel();
+            if( ! vmodel ){
+                selection_ok = false;
+                break;
+            }
             par22_0->setFromVariogramModel( vmodel );
         }
+    }
+
+    //if the variogram model selection is not ok...
+    if( ! selection_ok ){
+        //...delete the IK paramater set and return with an error message dialog.
+        delete m_gpf_ik3d;
+        m_gpf_ik3d = nullptr;
+        QMessageBox::critical( this, "Error", "Please, select the necessary variogram(s) model(s).");
+        return;
     }
 
     //----------------------------prepare and execute ik3d--------------------------------
