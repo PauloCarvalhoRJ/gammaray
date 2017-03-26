@@ -147,6 +147,18 @@ void KrigingDialog::onParameters()
         par13->getParameter<GSLibParDouble*>(0)->_value = variogram->get_a_hMax( 0 ); //semi-major axis
         par13->getParameter<GSLibParDouble*>(1)->_value = variogram->get_a_hMin( 0 ); //semi-minor axis
         par13->getParameter<GSLibParDouble*>(2)->_value = variogram->get_a_vert( 0 ); //vertical semi-axis
+        uint nst = variogram->getNst();
+        for( uint ist = 1; ist < nst; ++ist ){ //sets the initial search radii to the longest range
+            double current_hMax = variogram->get_a_hMax( ist );
+            double current_hMin = variogram->get_a_hMin( ist );
+            double current_vert = variogram->get_a_vert( ist );
+            if( par13->getParameter<GSLibParDouble*>(0)->_value < current_hMax )
+                par13->getParameter<GSLibParDouble*>(0)->_value = current_hMax;
+            if( par13->getParameter<GSLibParDouble*>(1)->_value < current_hMin )
+                par13->getParameter<GSLibParDouble*>(1)->_value = current_hMin;
+            if( par13->getParameter<GSLibParDouble*>(2)->_value < current_vert )
+                par13->getParameter<GSLibParDouble*>(2)->_value = current_vert;
+        }
         GSLibParMultiValuedFixed *par14 = m_gpf_kt3d->getParameter<GSLibParMultiValuedFixed*>(14);
         par14->getParameter<GSLibParDouble*>(0)->_value = variogram->getAzimuth( 0 ); //azimuth
         par14->getParameter<GSLibParDouble*>(1)->_value = variogram->getDip( 0 ); //dip
