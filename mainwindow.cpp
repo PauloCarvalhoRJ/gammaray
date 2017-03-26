@@ -55,7 +55,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
     m_subMenuClassifyInto( new QMenu("Classify into", this) ),
-    m_subMenuClassifyWith( new QMenu("Classify with", this) )
+    m_subMenuClassifyWith( new QMenu("Classify with", this) ),
+    m_subMenuMapAs( new QMenu("Map as", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -366,8 +367,11 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Map (locmap)", this, SLOT(onLocMap()));
                 _projectContextMenu->addAction("Decluster...", this, SLOT(onDecluster()));
             }
-            if( parent_file->getFileType().compare("CARTESIANGRID") == 0 )
+            if( parent_file->getFileType().compare("CARTESIANGRID") == 0 ){
                 _projectContextMenu->addAction("Map (pixelplt)", this, SLOT(onPixelPlt()));
+                makeMenuMapAs();
+                _projectContextMenu->addMenu( m_subMenuMapAs );
+            }
             if( parent_file->getFileType() == "POINTSET" ||
                 parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("Probability plot", this, SLOT(onProbPlt()));
@@ -1286,6 +1290,30 @@ void MainWindow::onClassifyWith()
     //method onPerformClassifyInto() will be called upon dilog accept.
 }
 
+void MainWindow::onMapAs()
+{
+    //assuming sender() returns a QAction* if execution passes through here.
+    QAction *act = (QAction*)sender();
+
+    //assuming the text in the menu item is the name of a categorical definition file.
+    QString categoricalDefinitionFileName = act->text();
+
+    //try to get the corresponding project component.
+    ProjectComponent* pc = Application::instance()->getProject()->
+            getResourcesGroup()->getChildByName( categoricalDefinitionFileName );
+    if( ! pc ){
+        Application::instance()->logError("MainWindow::onMapAs(): File " + categoricalDefinitionFileName +
+                                          " not found in Resource Files group.");
+        return;
+    }
+
+    //Assuming the project component is a CategoryDefinition
+    CategoryDefinition* cd = (CategoryDefinition*)pc;
+
+    //plot the cartesian grid
+    Util::viewGrid( _right_clicked_attribute, this, false, cd );
+}
+
 void MainWindow::onCreateCategoryDefinition()
 {
     CategoryDefinition *cd = new CategoryDefinition("");
@@ -1536,6 +1564,24 @@ void MainWindow::makeMenuClassifyWith()
                                                   fileAspect->getName(),
                                                   this,
                                                   SLOT(onClassifyWith()));
+            }
+        }
+    }
+}
+
+void MainWindow::makeMenuMapAs()
+{
+    m_subMenuMapAs->clear(); //remove any previously added item actions
+    ObjectGroup* resources = Application::instance()->getProject()->getResourcesGroup();
+    for( uint i = 0; i < (uint)resources->getChildCount(); ++i){
+        ProjectComponent *pc = resources->getChildByIndex( i );
+        if( pc->isFile() ){
+            File *fileAspect = (File*)pc;
+            if( fileAspect->getFileType() == "CATEGORYDEFINITION" ){
+                m_subMenuMapAs->addAction( fileAspect->getIcon(),
+                                                  fileAspect->getName(),
+                                                  this,
+                                                  SLOT(onMapAs()));
             }
         }
     }

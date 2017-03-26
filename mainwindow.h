@@ -127,6 +127,7 @@ private slots:
     void onEditWithExternalProgram();
     void onClearMessages();
     void onClassifyWith();
+    void onMapAs();
 
 private:
     /**
@@ -162,6 +163,15 @@ private:
       * Creates the dynamic items of sub-menu "Classify with".
       */
     void makeMenuClassifyWith();
+
+    /**
+     * The pointer to the dynamic sub-menu "Map as" of the project tree context menu.
+     */
+    QMenu* m_subMenuMapAs;
+    /**
+      * Creates the dynamic items of sub-menu "Map as".
+      */
+    void makeMenuMapAs();
 };
 
 #endif // MAINWINDOW_H
