@@ -1255,7 +1255,7 @@ void MainWindow::onLookForDuplicates()
 
 void MainWindow::onEditWithExternalProgram()
 {
-    QDesktopServices::openUrl(QUrl( _right_clicked_file->getPath() ));
+    QDesktopServices::openUrl(QUrl::fromLocalFile( _right_clicked_file->getPath() ));
 }
 
 void MainWindow::onClearMessages()
