@@ -39,6 +39,8 @@
 #include <QDesktopServices>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <QDragEnterEvent>
+#include <QMimeData>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
@@ -120,6 +122,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //add a custom menu item to the QTextEdit's standard context menu.
     ui->txtedMessages->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->txtedMessages,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(showMessagesConsoleCustomContextMenu(const QPoint &)));
+
+    //enable drop from drag-n-drop gestures
+    setAcceptDrops( true );
 }
 
 MainWindow::~MainWindow()
@@ -148,6 +153,21 @@ void MainWindow::log_message(const QString message, const QString style)
         ui->txtedMessages->setTextColor( Qt::red );
     ui->txtedMessages->append( message );
     //ui->txtedMessages->append( "\n" );
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *e)
+{
+    if (e->mimeData()->hasUrls()) {
+        e->acceptProposedAction();
+    }
+}
+
+void MainWindow::dropEvent(QDropEvent *e)
+{
+    foreach (const QUrl &url, e->mimeData()->urls()) {
+        QString fileName = url.toLocalFile();
+        doAddDataFile( fileName );
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *){
@@ -262,27 +282,52 @@ void MainWindow::restoreProjectTreeUIState2()
 
 void MainWindow::refreshTreeStyle()
 {
-    ui->treeProject->setStyleSheet("QTreeView::branch:has-siblings:!adjoins-item { \
-                                   border-image: url(:icons/vline) 0; } \
-            QTreeView::branch:has-siblings:adjoins-item { \
-                 border-image: url(:icons/bmore) 0; \
-             } \
-            \
-             QTreeView::branch:!has-children:!has-siblings:adjoins-item { \
-                 border-image: url(:icons/bend) 0; \
-             } \
-            \
-             QTreeView::branch:has-children:!has-siblings:closed, \
-             QTreeView::branch:closed:has-children:has-siblings { \
-                     border-image: none; \
-                     image: url(:icons/bclosed); \
-             } \
-            \
-             QTreeView::branch:open:has-children:!has-siblings, \
-             QTreeView::branch:open:has-children:has-siblings  { \
-                     border-image: none; \
-                     image: url(:icons/bopen); \
-             }");
+
+    if(Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI)
+        ui->treeProject->setStyleSheet("QTreeView::branch:has-siblings:!adjoins-item { \
+                                       border-image: url(:icons/vline) 0; } \
+                QTreeView::branch:has-siblings:adjoins-item { \
+                     border-image: url(:icons/bmore) 0; \
+                 } \
+                \
+                 QTreeView::branch:!has-children:!has-siblings:adjoins-item { \
+                     border-image: url(:icons/bend) 0; \
+                 } \
+                \
+                 QTreeView::branch:has-children:!has-siblings:closed, \
+                 QTreeView::branch:closed:has-children:has-siblings { \
+                         border-image: none; \
+                         image: url(:icons/bclosed); \
+                 } \
+                \
+                 QTreeView::branch:open:has-children:!has-siblings, \
+                 QTreeView::branch:open:has-children:has-siblings  { \
+                         border-image: none; \
+                         image: url(:icons/bopen); \
+                 }");
+    else
+         ui->treeProject->setStyleSheet("QTreeView::branch:has-siblings:!adjoins-item { \
+                                        border-image: url(:icons32/vline32) 0; } \
+                 QTreeView::branch:has-siblings:adjoins-item { \
+                      border-image: url(:icons32/bmore32) 0; \
+                  } \
+                 \
+                  QTreeView::branch:!has-children:!has-siblings:adjoins-item { \
+                      border-image: url(:icons32/bend32) 0; \
+                  } \
+                 \
+                  QTreeView::branch:has-children:!has-siblings:closed, \
+                  QTreeView::branch:closed:has-children:has-siblings { \
+                          border-image: none; \
+                          image: url(:icons32/bclosed32); \
+                  } \
+                 \
+                  QTreeView::branch:open:has-children:!has-siblings, \
+                  QTreeView::branch:open:has-children:has-siblings  { \
+                          border-image: none; \
+                          image: url(:icons32/bopen32); \
+                  }");
+
 }
 
 
@@ -493,38 +538,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 void MainWindow::onAddDataFile()
 {
     QString file = QFileDialog::getOpenFileName(this, "select data file", Util::getLastBrowsedDirectory());
-    if( ! file.isEmpty() ){
-        Util::saveLastBrowsedDirectoryOfFile( file );
-        DataFileDialog dfd(this, file);
-        dfd.exec();
-        if( dfd.result() == QDialog::Accepted ){
-            if( dfd.getDataFileType() == DataFileDialog::POINTSET ){
-                PointSetDialog psd(this, file);
-                psd.exec();
-                if( psd.result() == QDialog::Accepted ){
-                    //make the point set object
-                    PointSet *ps = new PointSet( file );
-                    ps->setInfo( psd.getXFieldIndex(), psd.getYFieldIndex(), psd.getZFieldIndex(), psd.getNoDataValue() );
-                    Application::instance()->getProject()->addDataFile( ps );
-                }
-            } else if( dfd.getDataFileType() == DataFileDialog::CARTESIANGRID ){
-                CartesianGridDialog cgd(this, file);
-                cgd.exec();
-                if( cgd.result() == QDialog::Accepted ){
-                    CartesianGrid *cg = new CartesianGrid( file );
-                    QMap<uint, QPair<uint, QString> > empty;
-                    QList< QPair<uint,QString> > empty2;
-                    cg->setInfo( cgd.getX0(), cgd.getY0(), cgd.getZ0(),
-                                 cgd.getDX(), cgd.getDY(), cgd.getDZ(),
-                                 cgd.getNX(), cgd.getNY(), cgd.getNZ(),
-                                 cgd.getRot(), cgd.getNReal(), cgd.getNoDataValue(),
-                                 empty, empty2 );
-                    Application::instance()->getProject()->addDataFile( cg );
-                }
-            }
-        }
-    }
-    this->refreshTreeStyle();
+    doAddDataFile( file );
 }
 
 void MainWindow::onRemoveFile()
@@ -1238,13 +1252,15 @@ void MainWindow::onLookForDuplicates()
             QList<uint> nearSamples = SpatialIndexPoints::getNearestWithin( iFileDataLine, 5, distance);
             QList<uint>::iterator it = nearSamples.begin();
             for(; it != nearSamples.end(); ++it){
-                messages.append( "Sample at line " + QString::number(iFileDataLine+1+headerLineCount) +
-                                      " is too close to sample at line " + QString::number(*it+1+headerLineCount) + "." );
+                uint lineNumber1 = iFileDataLine + 1 + headerLineCount;
+                uint lineNumber2 = *it + 1 + headerLineCount;
+                //do not report symmetrical occurences.
+                if( lineNumber1 < lineNumber2 )
+                    messages.append( "Sample at line " + QString::number( lineNumber1 ) +
+                                          " is too close to sample at line " + QString::number( lineNumber2 ) + "." );
             }
         }
-        //output the messages, since the distance is symmetrical (A->B == B->A),
-        //only half of the messages are necessary.
-        for( int i = 0; i < messages.count()/2; ++i){
+        for( int i = 0; i < messages.count(); ++i){
             Application::instance()->logInfo( messages[i] );
         }
         Application::instance()->logInfo( "=======END OF REPORT============" );
@@ -1253,7 +1269,7 @@ void MainWindow::onLookForDuplicates()
 
 void MainWindow::onEditWithExternalProgram()
 {
-    QDesktopServices::openUrl(QUrl( _right_clicked_file->getPath() ));
+    QDesktopServices::openUrl(QUrl::fromLocalFile( _right_clicked_file->getPath() ));
 }
 
 void MainWindow::onClearMessages()
@@ -1450,7 +1466,7 @@ void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
 
         //aborts functionality if user clicks "Cancel" or presses "ESC" in the dialog
         if( result != QDialog::Accepted )
-            break;
+            return;
 
         //the user may have changed the number of variogram curves in vmodel parameters
         //so it is necessary to update the vargplt parameters accordingly
@@ -1485,8 +1501,8 @@ void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
                                                        this);
         result = dpd->exec();
 
-        //aborts functionality if user clicks "Cancel" or presses "ESC" in the dialog
-        if( result != QDialog::Accepted )
+        //ends the modeling loop if user clicks "OK" in the dialog
+        if( result == QDialog::Accepted )
             break;
     }
 
@@ -1585,6 +1601,42 @@ void MainWindow::makeMenuMapAs()
             }
         }
     }
+}
+
+void MainWindow::doAddDataFile(const QString filePath )
+{
+    if( ! filePath .isEmpty() ){
+        Util::saveLastBrowsedDirectoryOfFile( filePath  );
+        DataFileDialog dfd(this, filePath );
+        dfd.exec();
+        if( dfd.result() == QDialog::Accepted ){
+            if( dfd.getDataFileType() == DataFileDialog::POINTSET ){
+                PointSetDialog psd(this, filePath );
+                psd.exec();
+                if( psd.result() == QDialog::Accepted ){
+                    //make the point set object
+                    PointSet *ps = new PointSet( filePath  );
+                    ps->setInfo( psd.getXFieldIndex(), psd.getYFieldIndex(), psd.getZFieldIndex(), psd.getNoDataValue() );
+                    Application::instance()->getProject()->addDataFile( ps );
+                }
+            } else if( dfd.getDataFileType() == DataFileDialog::CARTESIANGRID ){
+                CartesianGridDialog cgd(this, filePath );
+                cgd.exec();
+                if( cgd.result() == QDialog::Accepted ){
+                    CartesianGrid *cg = new CartesianGrid( filePath  );
+                    QMap<uint, QPair<uint, QString> > empty;
+                    QList< QPair<uint,QString> > empty2;
+                    cg->setInfo( cgd.getX0(), cgd.getY0(), cgd.getZ0(),
+                                 cgd.getDX(), cgd.getDY(), cgd.getDZ(),
+                                 cgd.getNX(), cgd.getNY(), cgd.getNZ(),
+                                 cgd.getRot(), cgd.getNReal(), cgd.getNoDataValue(),
+                                 empty, empty2 );
+                    Application::instance()->getProject()->addDataFile( cg );
+                }
+            }
+        }
+    }
+    this->refreshTreeStyle();
 }
 
 QString MainWindow::strippedName(const QString &fullDirPath)

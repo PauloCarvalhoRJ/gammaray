@@ -15,7 +15,8 @@ typedef bg::model::box<Point3D> Box;
 typedef std::pair<Box, size_t> Value;
 
 // create the R* variant of the rtree
-bgi::rtree< Value, bgi::rstar<16> > rtree;
+// WARNING: incorrect R-Tree parameter may lead to crashes with element insertions
+bgi::rtree< Value, bgi::rstar<16,5,5,32> > rtree;
 
 //the query pointset
 PointSet* pointset = nullptr;

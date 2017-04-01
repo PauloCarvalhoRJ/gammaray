@@ -71,7 +71,10 @@ QIcon Attribute::getIcon()
         else
             return QIcon(":icons32/catvar32");
     }
-    return QIcon(":icons/var");
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/var");
+    else
+        return QIcon(":icons/var32");
 }
 
 

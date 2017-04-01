@@ -34,6 +34,11 @@ public:
     */
     void log_message( const QString message, const QString style );
 
+    //QMainWindow interface
+public:
+    void dragEnterEvent( QDragEnterEvent *e );
+    void dropEvent( QDropEvent *e );
+
 public slots:
     void showAbout();
     void showSetup();
@@ -172,6 +177,10 @@ private:
       * Creates the dynamic items of sub-menu "Map as".
       */
     void makeMenuMapAs();
+    /**
+     *  Adds the data file given its path to the project.
+     */
+    void doAddDataFile( const QString filePath );
 };
 
 #endif // MAINWINDOW_H

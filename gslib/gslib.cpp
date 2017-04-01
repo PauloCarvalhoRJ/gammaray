@@ -40,6 +40,27 @@ void GSLib::runProgram(const QString program_name, const QString par_file_path, 
     }
     if(! process.waitForFinished() ){
         Application::instance()->logError(QString("ERROR: call to external program ").append(program_name).append(" abnormally ended."));
+        QString errorCause;
+        switch( process.error() ){
+            case QProcess::FailedToStart:
+                errorCause = "Program file is missing or you lack execution permission on it.";
+                break;
+            case QProcess::Crashed:
+                errorCause = "Program crashed.";
+                break;
+            case QProcess::Timedout:
+                errorCause = "Execution timeout.";
+                break;
+            case QProcess::WriteError:
+                errorCause = "Could not write to process' input stream.";
+                break;
+            case QProcess::ReadError:
+                errorCause = "Could not read from process' output stream.";
+                break;
+            default:
+                errorCause = "Unknown.";
+        }
+        Application::instance()->logError(QString("      Cause: ").append(errorCause));
     }
 
     m_last_output = process.readAllStandardOutput();
@@ -58,7 +79,6 @@ void GSLib::runProgramAsync(const QString program_name, const QString par_file_p
     QDir gslib_home = QDir(Application::instance()->getGSLibPathSetting());
     QString gslib_program = gslib_home.filePath( program_name );
 
-    //TODO: test whether running a program with quotation marks works in Unix
     gslib_program = QString("\"").append(gslib_program).append("\"");
 
     QString command = gslib_program.append(" \"").append( par_file_path ).append("\"");

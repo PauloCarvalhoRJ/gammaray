@@ -23,6 +23,7 @@ QString Ghostscript::getGsProgramName(QDir &bin_dir )
         Application::instance()->logInfo( "Trying GhostScript 32-bit." );
         return "gswin32c.exe";
     #else
+        static_cast<void>(bin_dir); //avoid compiler warning (no-use) in non-Windows platforms
         return "gs";
     #endif
 }
