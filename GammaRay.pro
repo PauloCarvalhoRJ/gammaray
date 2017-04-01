@@ -285,7 +285,7 @@ BOOST_INSTALL = $$(BOOST_ROOT)
 isEmpty(BOOST_INSTALL){
     error(BOOST_ROOT environment variable not defined.)
 }
-INCLUDEPATH += $$BOOST_INSTALL
+INCLUDEPATH += $$BOOST_INSTALL/include
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
