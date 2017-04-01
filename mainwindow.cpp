@@ -39,6 +39,8 @@
 #include <QDesktopServices>
 #include <QInputDialog>
 #include <QLineEdit>
+#include <QDragEnterEvent>
+#include <QMimeData>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
@@ -120,6 +122,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //add a custom menu item to the QTextEdit's standard context menu.
     ui->txtedMessages->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->txtedMessages,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(showMessagesConsoleCustomContextMenu(const QPoint &)));
+
+    //enable drop from drag-n-drop gestures
+    setAcceptDrops( true );
 }
 
 MainWindow::~MainWindow()
@@ -148,6 +153,21 @@ void MainWindow::log_message(const QString message, const QString style)
         ui->txtedMessages->setTextColor( Qt::red );
     ui->txtedMessages->append( message );
     //ui->txtedMessages->append( "\n" );
+}
+
+void MainWindow::dragEnterEvent(QDragEnterEvent *e)
+{
+    if (e->mimeData()->hasUrls()) {
+        e->acceptProposedAction();
+    }
+}
+
+void MainWindow::dropEvent(QDropEvent *e)
+{
+    foreach (const QUrl &url, e->mimeData()->urls()) {
+        QString fileName = url.toLocalFile();
+        doAddDataFile( fileName );
+    }
 }
 
 void MainWindow::closeEvent(QCloseEvent *){
@@ -518,38 +538,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 void MainWindow::onAddDataFile()
 {
     QString file = QFileDialog::getOpenFileName(this, "select data file", Util::getLastBrowsedDirectory());
-    if( ! file.isEmpty() ){
-        Util::saveLastBrowsedDirectoryOfFile( file );
-        DataFileDialog dfd(this, file);
-        dfd.exec();
-        if( dfd.result() == QDialog::Accepted ){
-            if( dfd.getDataFileType() == DataFileDialog::POINTSET ){
-                PointSetDialog psd(this, file);
-                psd.exec();
-                if( psd.result() == QDialog::Accepted ){
-                    //make the point set object
-                    PointSet *ps = new PointSet( file );
-                    ps->setInfo( psd.getXFieldIndex(), psd.getYFieldIndex(), psd.getZFieldIndex(), psd.getNoDataValue() );
-                    Application::instance()->getProject()->addDataFile( ps );
-                }
-            } else if( dfd.getDataFileType() == DataFileDialog::CARTESIANGRID ){
-                CartesianGridDialog cgd(this, file);
-                cgd.exec();
-                if( cgd.result() == QDialog::Accepted ){
-                    CartesianGrid *cg = new CartesianGrid( file );
-                    QMap<uint, QPair<uint, QString> > empty;
-                    QList< QPair<uint,QString> > empty2;
-                    cg->setInfo( cgd.getX0(), cgd.getY0(), cgd.getZ0(),
-                                 cgd.getDX(), cgd.getDY(), cgd.getDZ(),
-                                 cgd.getNX(), cgd.getNY(), cgd.getNZ(),
-                                 cgd.getRot(), cgd.getNReal(), cgd.getNoDataValue(),
-                                 empty, empty2 );
-                    Application::instance()->getProject()->addDataFile( cg );
-                }
-            }
-        }
-    }
-    this->refreshTreeStyle();
+    doAddDataFile( file );
 }
 
 void MainWindow::onRemoveFile()
@@ -1612,6 +1601,42 @@ void MainWindow::makeMenuMapAs()
             }
         }
     }
+}
+
+void MainWindow::doAddDataFile(const QString filePath )
+{
+    if( ! filePath .isEmpty() ){
+        Util::saveLastBrowsedDirectoryOfFile( filePath  );
+        DataFileDialog dfd(this, filePath );
+        dfd.exec();
+        if( dfd.result() == QDialog::Accepted ){
+            if( dfd.getDataFileType() == DataFileDialog::POINTSET ){
+                PointSetDialog psd(this, filePath );
+                psd.exec();
+                if( psd.result() == QDialog::Accepted ){
+                    //make the point set object
+                    PointSet *ps = new PointSet( filePath  );
+                    ps->setInfo( psd.getXFieldIndex(), psd.getYFieldIndex(), psd.getZFieldIndex(), psd.getNoDataValue() );
+                    Application::instance()->getProject()->addDataFile( ps );
+                }
+            } else if( dfd.getDataFileType() == DataFileDialog::CARTESIANGRID ){
+                CartesianGridDialog cgd(this, filePath );
+                cgd.exec();
+                if( cgd.result() == QDialog::Accepted ){
+                    CartesianGrid *cg = new CartesianGrid( filePath  );
+                    QMap<uint, QPair<uint, QString> > empty;
+                    QList< QPair<uint,QString> > empty2;
+                    cg->setInfo( cgd.getX0(), cgd.getY0(), cgd.getZ0(),
+                                 cgd.getDX(), cgd.getDY(), cgd.getDZ(),
+                                 cgd.getNX(), cgd.getNY(), cgd.getNZ(),
+                                 cgd.getRot(), cgd.getNReal(), cgd.getNoDataValue(),
+                                 empty, empty2 );
+                    Application::instance()->getProject()->addDataFile( cg );
+                }
+            }
+        }
+    }
+    this->refreshTreeStyle();
 }
 
 QString MainWindow::strippedName(const QString &fullDirPath)
