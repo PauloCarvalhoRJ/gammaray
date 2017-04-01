@@ -1238,13 +1238,15 @@ void MainWindow::onLookForDuplicates()
             QList<uint> nearSamples = SpatialIndexPoints::getNearestWithin( iFileDataLine, 5, distance);
             QList<uint>::iterator it = nearSamples.begin();
             for(; it != nearSamples.end(); ++it){
-                messages.append( "Sample at line " + QString::number(iFileDataLine+1+headerLineCount) +
-                                      " is too close to sample at line " + QString::number(*it+1+headerLineCount) + "." );
+                uint lineNumber1 = iFileDataLine + 1 + headerLineCount;
+                uint lineNumber2 = *it + 1 + headerLineCount;
+                //do not report symmetrical occurences.
+                if( lineNumber1 < lineNumber2 )
+                    messages.append( "Sample at line " + QString::number( lineNumber1 ) +
+                                          " is too close to sample at line " + QString::number( lineNumber2 ) + "." );
             }
         }
-        //output the messages, since the distance is symmetrical (A->B == B->A),
-        //only half of the messages are necessary.
-        for( int i = 0; i < messages.count()/2; ++i){
+        for( int i = 0; i < messages.count(); ++i){
             Application::instance()->logInfo( messages[i] );
         }
         Application::instance()->logInfo( "=======END OF REPORT============" );
