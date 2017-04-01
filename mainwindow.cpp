@@ -1452,7 +1452,7 @@ void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
 
         //aborts functionality if user clicks "Cancel" or presses "ESC" in the dialog
         if( result != QDialog::Accepted )
-            break;
+            return;
 
         //the user may have changed the number of variogram curves in vmodel parameters
         //so it is necessary to update the vargplt parameters accordingly
@@ -1487,8 +1487,8 @@ void MainWindow::createOrReviewVariogramModel(VariogramModel *vm)
                                                        this);
         result = dpd->exec();
 
-        //aborts functionality if user clicks "Cancel" or presses "ESC" in the dialog
-        if( result != QDialog::Accepted )
+        //ends the modeling loop if user clicks "OK" in the dialog
+        if( result == QDialog::Accepted )
             break;
     }
 
