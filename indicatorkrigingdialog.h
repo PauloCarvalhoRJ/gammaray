@@ -54,6 +54,7 @@ private slots:
     void onUpdateSoftIndicatorVariablesSelectors();
     void onSave();
     void onCreateFaciesMap();
+    void onSaveForPostik();
 };
 
 #endif // INDICATORKRIGINGDIALOG_H
