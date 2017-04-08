@@ -39,6 +39,7 @@ public:
     QWidget *createContentElementWidget();
     QWidget *createWidgetFilledWithContentElement( uint iContent );
     void addContentElementFromWidget( QWidget* w );
+    bool isDataFile(){ return false; }
 
 protected:
     /** This member stores the pointers to the created GSLibParTypes

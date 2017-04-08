@@ -17,6 +17,7 @@ public:
 // File interface
 public:
     QString getFileType(){ return "UNIDIST"; }
+    bool isDataFile(){ return false; }
 
 // ProjectComponent interface
 public:

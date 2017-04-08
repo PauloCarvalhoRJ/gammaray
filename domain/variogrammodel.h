@@ -82,6 +82,7 @@ public:
     QString getFileType(){ return "VMODEL"; }
     virtual bool canHaveMetaData(){ return false; }
     virtual void updateMetaDataFile(){;}
+    bool isDataFile(){ return false; }
 
 // ProjectComponent interface
 public:

@@ -17,6 +17,7 @@ public:
 // File interface
 public:
     QString getFileType(){ return "BIDIST"; }
+    bool isDataFile(){ return false; }
 
 // ProjectComponent interface
 public:

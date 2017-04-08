@@ -15,6 +15,7 @@
 #include "creategriddialog.h"
 #include "krigingdialog.h"
 #include "triadseditordialog.h"
+#include "postikdialog.h"
 #include "domain/pointset.h"
 #include "domain/cartesiangrid.h"
 #include "domain/categorydefinition.h"
@@ -1706,5 +1707,6 @@ void MainWindow::showMessagesConsoleCustomContextMenu(const QPoint &pt)
 
 void MainWindow::openIKPostProcessing()
 {
-
+    PostikDialog* pd = new PostikDialog( this );
+    pd->show();
 }

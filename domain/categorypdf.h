@@ -31,6 +31,7 @@ public:
     QString getFileType(){ return "CATEGORYPDF"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
+    bool isDataFile(){ return false; }
 
 private:
     CategoryDefinition *m_categoryDefinition;

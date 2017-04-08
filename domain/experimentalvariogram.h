@@ -29,6 +29,7 @@ public:
     QString getFileType(){ return "EXPVARIOGRAM"; }
     virtual bool canHaveMetaData(){ return true; }
     virtual void updateMetaDataFile();
+    bool isDataFile(){ return false; }
 
 // ProjectComponent interface
 public:

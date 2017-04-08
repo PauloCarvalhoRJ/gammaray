@@ -59,6 +59,7 @@ public:
     bool canHaveMetaData();
     QString getFileType();
     void updateMetaDataFile();
+    bool isDataFile(){ return true; }
 
     // ProjectComponent interface
 public:
