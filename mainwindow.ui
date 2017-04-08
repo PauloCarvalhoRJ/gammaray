@@ -250,6 +250,7 @@
     <addaction name="actionKriging"/>
     <addaction name="actionIndicatorKrigingContinuous"/>
     <addaction name="actionIndicatorKrigingCategorical"/>
+    <addaction name="actionIK_Post_processing"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEstimation"/>
@@ -308,6 +309,11 @@
    </property>
    <property name="text">
     <string>Indicator Kriging (categorical)</string>
+   </property>
+  </action>
+  <action name="actionIK_Post_processing">
+   <property name="text">
+    <string>IK Post-processing</string>
    </property>
   </action>
  </widget>
@@ -444,6 +450,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionIK_Post_processing</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openIKPostProcessing()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>206</x>
+     <y>149</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -453,5 +475,6 @@
   <slot>openKriging()</slot>
   <slot>openIKContinuous()</slot>
   <slot>openIKCategorical()</slot>
+  <slot>openIKPostProcessing()</slot>
  </slots>
 </ui>

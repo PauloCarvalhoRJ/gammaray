@@ -1703,3 +1703,8 @@ void MainWindow::showMessagesConsoleCustomContextMenu(const QPoint &pt)
     menu->exec(ui->txtedMessages->mapToGlobal(pt));
     delete menu;
 }
+
+void MainWindow::openIKPostProcessing()
+{
+
+}
