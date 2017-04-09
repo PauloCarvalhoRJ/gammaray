@@ -239,6 +239,10 @@ private:
       */
     void setDefaultValuesForIk3d();
     /**
+      * Called by setDefaultValues() if _program_name is "postik".
+      */
+    void setDefaultValuesForPostik();
+    /**
      * Wraps the given GSLib parameter type in a GSLibParMultivaluedVariable container object,
      * instead of directly adding it to the given parameter list.
      */

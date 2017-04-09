@@ -107,6 +107,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForKt3d();
     } else if ( this->_program_name == "ik3d" ){
         this->setDefaultValuesForIk3d();
+    } else if ( this->_program_name == "postik" ){
+        this->setDefaultValuesForPostik();
     } else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
@@ -1517,6 +1519,57 @@ void GSLibParameterFile::setDefaultValuesForIk3d()
     return;
 }
 
+void GSLibParameterFile::setDefaultValuesForPostik()
+{
+    getParameter<GSLibParFile*>(0)->_path = "ik3d_output.dat";
+    getParameter<GSLibParFile*>(1)->_path = "postik_output.dat";
+
+    GSLibParMultiValuedFixed *par2 = getParameter<GSLibParMultiValuedFixed*>(2);
+    par2->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par2->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+
+    getParameter<GSLibParUInt*>(3)->_value = 5;
+
+    GSLibParMultiValuedVariable *par4 = getParameter<GSLibParMultiValuedVariable*>(4);
+    par4->assure( getParameter<GSLibParUInt*>(3)->_value );
+    par4->getParameter<GSLibParDouble*>(0)->_value = 0.5;
+    par4->getParameter<GSLibParDouble*>(1)->_value = 1.0;
+    par4->getParameter<GSLibParDouble*>(2)->_value = 2.5;
+    par4->getParameter<GSLibParDouble*>(3)->_value = 5.0;
+    par4->getParameter<GSLibParDouble*>(4)->_value = 10.0;
+
+    GSLibParMultiValuedFixed *par5 = getParameter<GSLibParMultiValuedFixed*>(5);
+    par5->getParameter<GSLibParOption*>(0)->_selected_value = 0;
+    par5->getParameter<GSLibParOption*>(1)->_selected_value = 1;
+    par5->getParameter<GSLibParDouble*>(2)->_value = 0.75;
+
+    getParameter<GSLibParFile*>(6)->_path = "data_for_global_dist.dat";
+
+    GSLibParMultiValuedFixed *par7 = getParameter<GSLibParMultiValuedFixed*>(7);
+    par7->getParameter<GSLibParUInt*>(0)->_value = 3;
+    par7->getParameter<GSLibParUInt*>(1)->_value = 0;
+    par7->getParameter<GSLibParDouble*>(2)->_value = -1e10;
+    par7->getParameter<GSLibParDouble*>(3)->_value = 1e10;
+
+    GSLibParMultiValuedFixed *par8 = getParameter<GSLibParMultiValuedFixed*>(8);
+    par8->getParameter<GSLibParDouble*>(0)->_value = -1e10;
+    par8->getParameter<GSLibParDouble*>(1)->_value = 1e10;
+
+    GSLibParMultiValuedFixed *par9 = getParameter<GSLibParMultiValuedFixed*>(9);
+    par9->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par9->getParameter<GSLibParDouble*>(1)->_value = 1.0;
+
+    GSLibParMultiValuedFixed *par10 = getParameter<GSLibParMultiValuedFixed*>(10);
+    par10->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par10->getParameter<GSLibParDouble*>(1)->_value = 1.0;
+
+    GSLibParMultiValuedFixed *par11 = getParameter<GSLibParMultiValuedFixed*>(11);
+    par11->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par11->getParameter<GSLibParDouble*>(1)->_value = 2.0;
+
+    getParameter<GSLibParUInt*>(12)->_value = 50;
+}
+
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
 {
     GSLibParMultiValuedVariable *mvv = new GSLibParMultiValuedVariable( parameter );
@@ -2113,6 +2166,31 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<option [0:SK][1:OK]>                                     -0=SK, 1=OK\n";
         out << "<repeat [ndist]>\n";
         out << "   <vmodel>                                               -variogram model.\n";
+    }
+    par_file.close();
+
+    par_file_path = dir.absoluteFilePath("postik.par.tpl");
+    par_file.setFileName( par_file_path );
+    if( !par_file.exists() ){
+        par_file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&par_file);
+        out << "                  Parameters for POSTIK\n";
+        out << "                  ***********************\n";
+        out << '\n';
+        out << "START OF PARAMETERS\n";
+        out << "<file>                                                                         -file with IK3D output (continuous)\n";
+        out << "<file>                                                                         -file for output\n";
+        out << "<option [1:E-type][2:Prob. and mean above][3:quantile][4:variance]> <double>   -output option, output parameter\n";
+        out << "<uint>                                                                         -number of thresholds\n";
+        out << "<double+>                                                                      -the thresholds\n";
+        out << "<option [0:No][1:Yes]> <option [1:affine][2:indirect]> <double>                -volume support correction?, type, variance reduction\n";
+        out << "<file>                                                                         -file with global distribution\n";
+        out << "<uint> <uint> <double> <double>                                                -   ivr,  iwt,  tmin,  tmax\n";
+        out << "<double> <double>                                                              -minimum and maximum Z value\n";
+        out << "<option [1:linear interp.][2:power model interp.][3:quantiles from data]> <double>  -lower tail: option, parameter\n";
+        out << "<option [1:linear interp.][2:power model interp.][3:quantiles from data]> <double>  -middle    : option, parameter\n";
+        out << "<option [1:linear interp.][2:power model interp.][3:quantiles from data][4:hyperbolic model interp.]> <double>   -upper tail: option, parameter\n";
+        out << "<uint>                                                                         -maximum discretization\n";
     }
     par_file.close();
 }
