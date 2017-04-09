@@ -94,11 +94,13 @@ IndicatorKrigingDialog::IndicatorKrigingDialog(IKVariableType varType, QWidget *
         ui->btnConfigureAndRun->setIcon( QIcon(":icons32/setting32") );
         ui->btnSaveEstimates->setIcon( QIcon(":icons32/save32") );
         ui->btnFaciesMap->setIcon( QIcon(":icons32/faciesmap32") );
+        ui->btnSaveGridForPostik->setIcon( QIcon(":icons32/save32") );
     }
 
     //configure actions specific for each variable type
     if( m_varType == IKVariableType::CATEGORICAL ){
-
+        ui->lblSaveGridForPostik->hide();
+        ui->btnSaveGridForPostik->hide();
     } else {
         ui->lblFaciesMap->hide();
         ui->btnFaciesMap->hide();
@@ -569,5 +571,51 @@ void IndicatorKrigingDialog::onCreateFaciesMap()
             //add the categorical variable the selected estimation grid
             estimation_grid->addGEOEASColumn( values, proposed_name, true, cd );
         }
+    }
+}
+
+void IndicatorKrigingDialog::onSaveForPostik()
+{
+    if( ! m_gpf_ik3d || ! m_cg_estimation ){
+        QMessageBox::critical( this, "Error", "Please, run the estimation at least once.");
+        return;
+    }
+
+    //get the selected estimation grid
+    CartesianGrid* estimation_grid = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! estimation_grid ){
+        QMessageBox::critical( this, "Error", "Please, select an estimation grid to set the new grid geometry from.");
+        return;
+    }
+
+    //postik is not available for categorical variables
+    if( m_varType == IKVariableType::CATEGORICAL ){
+        QMessageBox::critical( this, "Error", "Post-processing is not available for categorical variables.");
+        return;
+    }
+
+    //get the selected estimation grid
+    CartesianGrid *selectedCG = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+
+    //presents a naming dialog with a suggested name for the new Cartesian grid.
+    bool ok;
+    QString new_cg_name = m_PointSetVariableSelector->getSelectedVariableName() + "_IK_estimates_for_PostIK";
+    new_cg_name = QInputDialog::getText(this, "Name the new cartesian grid",
+                                             "Name for the new Cartesian grid:", QLineEdit::Normal,
+                                             new_cg_name, &ok);
+
+    //if the user didn't cancel the input dialog
+    if( ok ){
+        //get the IK output file
+        QString tmp_file_path = m_gpf_ik3d->getParameter<GSLibParFile*>(14)->_path;
+
+        //create a new grid object corresponding to the file with the IK estimates
+        CartesianGrid* cg = new CartesianGrid( tmp_file_path );
+
+        //set the metadata info from the estimation grid selected by the user
+        cg->setInfoFromOtherCG( selectedCG, false );
+
+        //import the grid file with the IK estimates as a project item
+        Application::instance()->getProject()->importCartesianGrid( cg, new_cg_name );
     }
 }

@@ -291,6 +291,17 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="btnConfigureAndRun">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="0">
        <widget class="QLabel" name="label_6">
         <property name="sizePolicy">
@@ -301,17 +312,6 @@
         </property>
         <property name="text">
          <string>2) Save estimates:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QPushButton" name="btnConfigureAndRun">
-        <property name="text">
-         <string/>
-        </property>
-        <property name="icon">
-         <iconset resource="resources.qrc">
-          <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
         </property>
        </widget>
       </item>
@@ -328,13 +328,6 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="lblFaciesMap">
-        <property name="text">
-         <string>3) Create facies map (max. likelihood)</string>
-        </property>
-       </widget>
-      </item>
       <item row="2" column="1">
        <widget class="QPushButton" name="btnFaciesMap">
         <property name="text">
@@ -343,6 +336,31 @@
         <property name="icon">
          <iconset resource="resources.qrc">
           <normaloff>:/icons/faciesmap16</normaloff>:/icons/faciesmap16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="lblFaciesMap">
+        <property name="text">
+         <string>3) Create facies map (max. likelihood)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="lblSaveGridForPostik">
+        <property name="text">
+         <string>3) Save new grid for post-processing:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="btnSaveGridForPostik">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="resources.qrc">
+          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
         </property>
        </widget>
       </item>
@@ -448,7 +466,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>494</x>
-     <y>220</y>
+     <y>208</y>
     </hint>
     <hint type="destinationlabel">
      <x>508</x>
@@ -464,7 +482,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>494</x>
-     <y>277</y>
+     <y>253</y>
     </hint>
     <hint type="destinationlabel">
      <x>453</x>
@@ -479,12 +497,28 @@
    <slot>onCreateFaciesMap()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>480</x>
-     <y>326</y>
+     <x>494</x>
+     <y>298</y>
     </hint>
     <hint type="destinationlabel">
      <x>489</x>
      <y>394</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSaveGridForPostik</sender>
+   <signal>clicked()</signal>
+   <receiver>IndicatorKrigingDialog</receiver>
+   <slot>onSaveForPostik()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>481</x>
+     <y>334</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>508</x>
+     <y>359</y>
     </hint>
    </hints>
   </connection>
@@ -494,5 +528,6 @@
   <slot>onConfigureAndRun()</slot>
   <slot>onSave()</slot>
   <slot>onCreateFaciesMap()</slot>
+  <slot>onSaveForPostik()</slot>
  </slots>
 </ui>

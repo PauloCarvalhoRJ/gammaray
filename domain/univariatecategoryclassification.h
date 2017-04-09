@@ -49,6 +49,7 @@ public:
     QWidget *createContentElementWidget();
     QWidget *createWidgetFilledWithContentElement( uint iContent );
     void addContentElementFromWidget( QWidget* w );
+    bool isDataFile(){ return false; }
 
 private:
     CategoryDefinition* m_categoryDefinition;

@@ -87,6 +87,11 @@ public:
      */
     virtual void addContentElementFromWidget( QWidget* /*w*/ ){ throw InvalidMethodException(); }
 
+    /**
+      *  Returns whether this file as a data file.
+      */
+    virtual bool isDataFile() = 0;
+
 protected:
     QString _path;
 

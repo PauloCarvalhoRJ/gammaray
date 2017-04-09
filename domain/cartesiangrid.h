@@ -24,8 +24,16 @@ public:
 
     /** Sets the cartesian grid metadata by copying the values from another grid, specified by
      * the given pointer.
+     * @param copyCategoricalAttributesList If false, unlink any categorical variables to category definitions
+     *        turning them into common attributes, interpreted as continuous values.
      */
-    void setInfoFromOtherCG( CartesianGrid* other_cg );
+    void setInfoFromOtherCG( CartesianGrid* other_cg, bool copyCategoricalAttributesList = true );
+
+    /**
+     * @brief setGeometryFromOtherCG
+     * @param other_cg
+     */
+    void setGeometryFromOtherCG( CartesianGrid* other_cg );
 
     /**
      * Sets the cartesian grid metadata from the values in a grid paraemeter object.
@@ -59,6 +67,7 @@ public:
     bool canHaveMetaData();
     QString getFileType();
     void updateMetaDataFile();
+    bool isDataFile(){ return true; }
 
 // ProjectComponent interface
 public:

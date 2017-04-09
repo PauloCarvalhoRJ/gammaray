@@ -21,6 +21,7 @@ public:
     QString getFileType(){ return "THRESHOLDCDF"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
+    bool isDataFile(){ return false; }
 };
 
 #endif // THRESHOLDCDF_H

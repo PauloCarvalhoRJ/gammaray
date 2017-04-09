@@ -16,6 +16,7 @@ public:
     QString getFileType(){ return "PLOT"; }
     virtual bool canHaveMetaData(){ return false; }
     virtual void updateMetaDataFile(){;}
+    bool isDataFile(){ return false; }
 
 // ProjectComponent interface
 public:

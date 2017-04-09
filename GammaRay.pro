@@ -124,7 +124,8 @@ SOURCES += main.cpp\
     domain/univariatecategoryclassification.cpp \
     widgets/categoryselector.cpp \
     widgets/intervalandcategorywidget.cpp \
-    spatialindex/spatialindexpoints.cpp
+    spatialindex/spatialindexpoints.cpp \
+    postikdialog.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -230,7 +231,8 @@ HEADERS  += mainwindow.h \
     domain/univariatecategoryclassification.h \
     widgets/categoryselector.h \
     widgets/intervalandcategorywidget.h \
-    spatialindex/spatialindexpoints.h
+    spatialindex/spatialindexpoints.h \
+    postikdialog.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
@@ -278,7 +280,8 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibparvmodel.ui \
     triadseditordialog.ui \
     widgets/categoryselector.ui \
-    widgets/intervalandcategorywidget.ui
+    widgets/intervalandcategorywidget.ui \
+    postikdialog.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
@@ -290,7 +293,7 @@ INCLUDEPATH += $$BOOST_INSTALL/include
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 1.4
+VERSION = 1.5
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

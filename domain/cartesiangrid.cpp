@@ -123,7 +123,7 @@ void CartesianGrid::setInfoFromMetadataFile()
     }
 }
 
-void CartesianGrid::setInfoFromOtherCG(CartesianGrid *other_cg)
+void CartesianGrid::setInfoFromOtherCG(CartesianGrid *other_cg, bool copyCategoricalAttributesList)
 {
     double x0 = 0.0, y0 = 0.0, z0 = 0.0;
     double dx = 0.0, dy = 0.0, dz = 0.0;
@@ -146,7 +146,8 @@ void CartesianGrid::setInfoFromOtherCG(CartesianGrid *other_cg)
     nreal = other_cg->getNReal();
     ndv = other_cg->getNoDataValue();
     nsvar_var_trn_triads = other_cg->getNSVarVarTrnTriads();
-    categorical_attributes = other_cg->getCategoricalAttributes();
+    if( copyCategoricalAttributesList )
+        categorical_attributes = other_cg->getCategoricalAttributes();
     this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal,
                    ndv, nsvar_var_trn_triads, categorical_attributes);
 }
