@@ -115,7 +115,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="btnSave">
         <property name="text">
          <string/>
         </property>
@@ -196,7 +196,7 @@
    </hints>
   </connection>
   <connection>
-   <sender>pushButton</sender>
+   <sender>btnSave</sender>
    <signal>clicked()</signal>
    <receiver>PostikDialog</receiver>
    <slot>onSave()</slot>

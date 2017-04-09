@@ -10,6 +10,8 @@ class PostikDialog;
 class CartesianGridSelector;
 class FileSelectorWidget;
 class VariableSelector;
+class GSLibParameterFile;
+class CartesianGrid;
 
 class PostikDialog : public QDialog
 {
@@ -31,6 +33,9 @@ private:
     FileSelectorWidget* m_fileForDistSelector;
     VariableSelector* m_variableForDistSelector;
     VariableSelector* m_weightForDistSelector;
+    GSLibParameterFile* m_gpf_postik;
+    CartesianGrid* m_cg_postprocess;
+    void preview();
 };
 
 #endif // POSTIKDIALOG_H

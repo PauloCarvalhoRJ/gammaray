@@ -48,11 +48,19 @@ FileSelectorWidget::~FileSelectorWidget()
 File *FileSelectorWidget::getSelectedFile()
 {
     Project* project = Application::instance()->getProject();
-    ObjectGroup* og = project->getResourcesGroup();
-    for( int i = 0; i < og->getChildCount(); ++i){
-        File *varFile = (File*)og->getChildByIndex( i );
-        if( varFile->getName() == ui->cmbFile->currentText() ){
-            return (File*)varFile;
+
+    const uint nogs = 2;
+    ObjectGroup* ogs[nogs] = {project->getResourcesGroup(),
+                              project->getDataFilesGroup()
+                             };
+
+    for( uint j = 0; j < nogs; ++j){
+        ObjectGroup* og = ogs[j];
+        for( int i = 0; i < og->getChildCount(); ++i){
+            File *varFile = (File*)og->getChildByIndex( i );
+            if( varFile->getName() == ui->cmbFile->currentText() ){
+                return (File*)varFile;
+            }
         }
     }
     return nullptr;
