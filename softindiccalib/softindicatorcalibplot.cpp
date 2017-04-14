@@ -32,45 +32,9 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
 
     replot();
 
-    // ------------------------------------
-    // We add a color bar to the left axis
-    // ------------------------------------
-
-    QwtScaleWidget *scaleWidget = axisWidget( yLeft );
-    scaleWidget->setMargin( 10 ); // area for the color bar
-    //d_colorBar = new ColorBar( Qt::Vertical, scaleWidget );
-    //d_colorBar->setRange( Qt::red, Qt::darkBlue );
-    //d_colorBar->setFocusPolicy( Qt::TabFocus );
-
-    //connect( d_colorBar, SIGNAL( selected( const QColor & ) ),
-    //    SLOT( setCanvasColor( const QColor & ) ) );
-
-    // we need the resize events, to lay out the color bar
-    scaleWidget->installEventFilter( this );
-
-    // ------------------------------------
-    // We add a wheel to the canvas
-    // ------------------------------------
-
-    //d_wheel = new QwtWheel( canvas() );
-    //d_wheel->setOrientation( Qt::Vertical );
-    //d_wheel->setRange( -100, 100 );
-    //d_wheel->setValue( 0.0 );
-    //d_wheel->setMass( 0.2 );
-    //d_wheel->setTotalAngle( 4 * 360.0 );
-
-    //connect( d_wheel, SIGNAL( valueChanged( double ) ),
-    //    SLOT( scrollLeftAxis( double ) ) );
-
     // we need the resize events, to lay out the wheel
     canvas()->installEventFilter( this );
 
-    //d_colorBar->setWhatsThis(
-    //    "Selecting a color will change the background of the plot." );
-    scaleWidget->setWhatsThis(
-        "Selecting a value at the scale will insert a new curve." );
-    //d_wheel->setWhatsThis(
-    //    "With the wheel you can move the visible area." );
     axisWidget( xBottom )->setWhatsThis(
         "Selecting a value at the scale will insert a new curve." );
 }
@@ -111,12 +75,12 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
     curve->setSymbol( new QwtSymbol( QwtSymbol::Ellipse,
         Qt::gray, c, QSize( 8, 8 ) ) );
 
-    double x[10];
+    double x[11];
     double y[sizeof( x ) / sizeof( x[0] )];
 
     for ( uint i = 0; i < sizeof( x ) / sizeof( x[0] ); i++ )
     {
-        double v = 5.0 + i * 10.0;
+        double v = 0.0 + i * 10.0;
         if ( o == Qt::Horizontal )
         {
             x[i] = v;

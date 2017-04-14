@@ -127,7 +127,8 @@ SOURCES += main.cpp\
     spatialindex/spatialindexpoints.cpp \
     postikdialog.cpp \
     softindiccalib/softindicatorcalibrationdialog.cpp \
-    softindiccalib/softindicatorcalibplot.cpp
+    softindiccalib/softindicatorcalibplot.cpp \
+    softindiccalib/softindicatorcalibcanvaspicker.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -236,7 +237,8 @@ HEADERS  += mainwindow.h \
     spatialindex/spatialindexpoints.h \
     postikdialog.h \
     softindiccalib/softindicatorcalibrationdialog.h \
-    softindiccalib/softindicatorcalibplot.h
+    softindiccalib/softindicatorcalibplot.h \
+    softindiccalib/softindicatorcalibcanvaspicker.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \

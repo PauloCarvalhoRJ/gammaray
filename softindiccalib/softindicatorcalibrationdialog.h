@@ -9,6 +9,7 @@ class SoftIndicatorCalibrationDialog;
 
 class FileSelectorWidget;
 class Attribute;
+class SoftIndicatorCalibPlot;
 
 class SoftIndicatorCalibrationDialog : public QDialog
 {
@@ -22,6 +23,7 @@ private:
     Ui::SoftIndicatorCalibrationDialog *ui;
     FileSelectorWidget *m_fsw;
     Attribute *m_at;
+    SoftIndicatorCalibPlot *m_softIndCalibPlot;
 };
 
 #endif // SOFTINDICATORCALIBRATIONDIALOG_H

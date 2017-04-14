@@ -6,13 +6,15 @@
 #include "domain/file.h"
 #include "widgets/fileselectorwidget.h"
 #include "softindicatorcalibplot.h"
+#include "softindicatorcalibcanvaspicker.h"
 
 #include <QHBoxLayout>
 
 SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SoftIndicatorCalibrationDialog),
-    m_at( at )
+    m_at( at ),
+    m_softIndCalibPlot( nullptr )
 {
     ui->setupUi(this);
 
@@ -29,7 +31,13 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
     QHBoxLayout *hl = (QHBoxLayout*)(ui->frmTopBar->layout());
     hl->addStretch();
 
-    ui->frmCalib->layout()->addWidget( new SoftIndicatorCalibPlot(this) );
+    //add the widget used to edit the calibration curves
+    m_softIndCalibPlot = new SoftIndicatorCalibPlot(this);
+    ui->frmCalib->layout()->addWidget( m_softIndCalibPlot );
+
+    // The canvas picker handles all mouse and key
+    // events on the plot canvas
+    ( void ) new SoftIndicatorCalibCanvasPicker( m_softIndCalibPlot );
 
     adjustSize();
 }
