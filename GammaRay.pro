@@ -126,7 +126,8 @@ SOURCES += main.cpp\
     widgets/intervalandcategorywidget.cpp \
     spatialindex/spatialindexpoints.cpp \
     postikdialog.cpp \
-    softindiccalib/softindicatorcalibrationdialog.cpp
+    softindiccalib/softindicatorcalibrationdialog.cpp \
+    softindiccalib/softindicatorcalibplot.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -234,7 +235,8 @@ HEADERS  += mainwindow.h \
     widgets/intervalandcategorywidget.h \
     spatialindex/spatialindexpoints.h \
     postikdialog.h \
-    softindiccalib/softindicatorcalibrationdialog.h
+    softindiccalib/softindicatorcalibrationdialog.h \
+    softindiccalib/softindicatorcalibplot.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
@@ -292,6 +294,15 @@ isEmpty(BOOST_INSTALL){
     error(BOOST_ROOT environment variable not defined.)
 }
 INCLUDEPATH += $$BOOST_INSTALL/include
+
+# The Qwt include and lib path and libraries.
+QWT_INSTALL = $$(QWT_ROOT)
+isEmpty(QWT_INSTALL){
+    error(QWT_ROOT environment variable not defined.)
+}
+INCLUDEPATH += $$QWT_INSTALL/include
+LIBPATH     += $$QWT_INSTALL/lib
+LIBS        += -lqwt
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
