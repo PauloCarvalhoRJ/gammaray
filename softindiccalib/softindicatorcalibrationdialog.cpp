@@ -5,6 +5,7 @@
 #include "domain/attribute.h"
 #include "domain/file.h"
 #include "widgets/fileselectorwidget.h"
+#include "softindicatorcalibplot.h"
 
 #include <QHBoxLayout>
 
@@ -27,6 +28,8 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
     //add a spacer for better layout
     QHBoxLayout *hl = (QHBoxLayout*)(ui->frmTopBar->layout());
     hl->addStretch();
+
+    ui->frmCalib->layout()->addWidget( new SoftIndicatorCalibPlot(this) );
 
     adjustSize();
 }

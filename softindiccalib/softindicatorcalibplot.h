@@ -9,10 +9,13 @@ class SoftIndicatorCalibPlot : public QwtPlot
 public:
     explicit SoftIndicatorCalibPlot( QWidget *parent = 0 );
 
-signals:
+    virtual bool eventFilter(QObject *object, QEvent * e);
 
 public slots:
+    void insertCurve( int axis, double base );
 
+private:
+    void insertCurve( Qt::Orientation o, const QColor &c, double base );
 };
 
 #endif // SOFTINDICATORCALIBPLOT_H
