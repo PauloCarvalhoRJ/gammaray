@@ -125,7 +125,8 @@ SOURCES += main.cpp\
     widgets/categoryselector.cpp \
     widgets/intervalandcategorywidget.cpp \
     spatialindex/spatialindexpoints.cpp \
-    postikdialog.cpp
+    postikdialog.cpp \
+    softindiccalib/softindicatorcalibrationdialog.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -232,7 +233,8 @@ HEADERS  += mainwindow.h \
     widgets/categoryselector.h \
     widgets/intervalandcategorywidget.h \
     spatialindex/spatialindexpoints.h \
-    postikdialog.h
+    postikdialog.h \
+    softindiccalib/softindicatorcalibrationdialog.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
@@ -281,7 +283,8 @@ FORMS    += mainwindow.ui \
     triadseditordialog.ui \
     widgets/categoryselector.ui \
     widgets/intervalandcategorywidget.ui \
-    postikdialog.ui
+    postikdialog.ui \
+    softindiccalib/softindicatorcalibrationdialog.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)

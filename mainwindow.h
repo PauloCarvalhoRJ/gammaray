@@ -134,6 +134,7 @@ private slots:
     void onClearMessages();
     void onClassifyWith();
     void onMapAs();
+    void onSoftIndicatorCalib();
 
 private:
     /**

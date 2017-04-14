@@ -53,6 +53,7 @@
 #include "valuespairsdialog.h"
 #include "indicatorkrigingdialog.h"
 #include "spatialindex/spatialindexpoints.h"
+#include "softindiccalib/softindicatorcalibrationdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -430,6 +431,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
+                _projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1329,6 +1331,12 @@ void MainWindow::onMapAs()
 
     //plot the cartesian grid
     Util::viewGrid( _right_clicked_attribute, this, false, cd );
+}
+
+void MainWindow::onSoftIndicatorCalib()
+{
+    SoftIndicatorCalibrationDialog *sicd = new SoftIndicatorCalibrationDialog( _right_clicked_attribute, this );
+    sicd->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()
