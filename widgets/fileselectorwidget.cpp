@@ -25,7 +25,8 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
         File* varFile = (File*)og->getChildByIndex( i );
         bool toAdd = ( m_filesOfTypes == FileSelectorType::CDFs && varFile->getFileType() == "THRESHOLDCDF" ) ||
                      ( m_filesOfTypes == FileSelectorType::PDFs && varFile->getFileType() == "CATEGORYPDF" ) ||
-                     ( m_filesOfTypes == FileSelectorType::CategoryDefinitions && varFile->getFileType() == "CATEGORYDEFINITION" );
+                     ( m_filesOfTypes == FileSelectorType::CategoryDefinitions && varFile->getFileType() == "CATEGORYDEFINITION" ) ||
+                     ( m_filesOfTypes == FileSelectorType::CDsAndCDFs && (varFile->getFileType() == "CATEGORYDEFINITION" || varFile->getFileType() == "THRESHOLDCDF") );
         if( toAdd ){
             ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }

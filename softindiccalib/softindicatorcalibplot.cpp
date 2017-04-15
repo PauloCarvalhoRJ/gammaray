@@ -5,11 +5,13 @@
 #include <qwt_symbol.h>
 #include <qwt_plot_grid.h>
 #include <qwt_plot_layout.h>
+#include <qwt_plot_intervalcurve.h>
 
 #include "softindicatorcalibcanvaspicker.h"
 
 SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
-    QwtPlot(parent)
+    QwtPlot(parent),
+    m_nCurves(2)
 {
     setTitle( "Soft indicator calibration." );
 
@@ -20,6 +22,9 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
     // axes
     setAxisScale( QwtPlot::xBottom, 0.0, 100.0 );
     setAxisScale( QwtPlot::yLeft, 0.0, 100.0 );
+
+    setAxisTitle( QwtPlot::yLeft,
+        QString( "Probability (%)" ) );
 
     // Avoid jumping when label with 3 digits
     // appear/disappear when scrolling vertically
@@ -71,7 +76,91 @@ void SoftIndicatorCalibPlot::transferData(std::vector<double> &source)
     //update horizontal axis scale
     setAxisScale( QwtPlot::xBottom, getDataMin(), getDataMax() );
 
-    insertCurve( Qt::Horizontal, 20.0);
+    //set initial spacing between the curves
+    double step = 100.0 / ( m_nCurves + 1 );
+
+    //add the curves
+    for( size_t i = 0; i < m_nCurves; ++i){
+        insertCurve( Qt::Horizontal, step * (i+1));
+    }
+}
+
+void SoftIndicatorCalibPlot::setNumberOfCurves(size_t number)
+{
+    m_nCurves = number;
+
+    //remove current calibration curves
+    clearCurves();
+
+    //set the initial spacing between the curves
+    double step = 100.0 / ( m_nCurves + 1 );
+
+    //add the curves
+    for( size_t i = 0; i < m_nCurves; ++i){
+        insertCurve( Qt::Horizontal, step * (i+1));
+    }
+}
+
+std::vector<std::vector<double> > SoftIndicatorCalibPlot::getSoftIndicators(SoftIndicatorCalculationMode mode)
+{
+    std::vector<std::vector<double> > m;
+    return m;
+}
+
+void SoftIndicatorCalibPlot::setXAxisLabel(QString text)
+{
+    setAxisTitle( QwtPlot::xBottom, text );
+}
+
+void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve)
+{
+    //get the number of user data
+    int nData = m_data.size();
+
+    //correct for possibly out-of-range base curve index
+    if( base_curve > (int)m_curves.size()-1 )
+        base_curve = (int)m_curves.size()-1;
+    if( base_curve < -1 )
+        base_curve = -1;
+
+    //get the index of the top curve
+    int top_curve = base_curve + 1;
+
+    //create a x, y_base, y_top sample collection object
+    QVector<QwtIntervalSample> intervals( nData );
+
+    //get the y intervals between the target curves
+    for ( int i = 0; i < nData; ++i )
+    {
+        double low;
+        double high;
+        double x = 0.0;
+
+        if( base_curve >= 0 ){
+            low = m_curves[base_curve]->sample(i).y();
+            x = m_curves[base_curve]->sample(i).x();
+        }else
+            low = 0.0;
+
+        if( top_curve < (int)m_curves.size() ){
+            high = m_curves[top_curve]->sample(i).y();
+            x = m_curves[top_curve]->sample(i).x();
+        }else
+            high = 100.0;
+
+        STOPPED_HERE;
+        intervals[i] = QwtIntervalSample( x, QwtInterval( low, high ) );
+    }
+
+    //create and plot a interval curve object
+    QwtPlotIntervalCurve *d_intervalCurve = new QwtPlotIntervalCurve( "Range" );
+    d_intervalCurve->setRenderHint( QwtPlotItem::RenderAntialiased );
+    QColor bg( color );
+    bg.setAlpha( 150 );
+    d_intervalCurve->setBrush( QBrush( bg ) );
+    d_intervalCurve->setStyle( QwtPlotIntervalCurve::Tube );
+    d_intervalCurve->setSamples( intervals );
+    d_intervalCurve->attach( this );
 }
 
 void SoftIndicatorCalibPlot::insertCurve(int axis, double base)
@@ -82,8 +171,9 @@ void SoftIndicatorCalibPlot::insertCurve(int axis, double base)
     else
         o = Qt::Vertical;
 
-    QRgb rgb = static_cast<QRgb>( rand() );
-    insertCurve( o, QColor( rgb ), base );
+    //QRgb rgb = static_cast<QRgb>( rand() );
+    //insertCurve( o, QColor( rgb ), base );
+    insertCurve( o, Qt::black, base );
     replot();
 }
 
@@ -126,6 +216,7 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
 
 void SoftIndicatorCalibPlot::clearCurves()
 {
+
     std::vector<QwtPlotCurve*>::iterator it = m_curves.begin();
     for(; it != m_curves.end(); ++it){
         (*it)->detach( );

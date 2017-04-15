@@ -24,6 +24,9 @@ private:
     FileSelectorWidget *m_fsw;
     Attribute *m_at;
     SoftIndicatorCalibPlot *m_softIndCalibPlot;
+
+private slots:
+    void onUpdateNumberOfCalibrationCurves();
 };
 
 #endif // SOFTINDICATORCALIBRATIONDIALOG_H

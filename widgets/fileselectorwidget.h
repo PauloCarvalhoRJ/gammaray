@@ -12,10 +12,11 @@ class DataFile;
 
 /*! The file types to list. */
 enum class FileSelectorType : uint {
-    CDFs = 0,           /*!< Only threshold c.d.f. files can be selected. */
-    PDFs,               /*!< Only category p.d.f. files can be selected. */
-    DataFiles,          /*!< Data files can be selected. */
-    CategoryDefinitions /*!< Categorical definition files can be selected. */
+    CDFs = 0,            /*!< Only threshold c.d.f. files can be selected. */
+    PDFs,                /*!< Only category p.d.f. files can be selected. */
+    DataFiles,           /*!< Data files can be selected. */
+    CategoryDefinitions, /*!< Categorical definition files can be selected. */
+    CDsAndCDFs           /*!< Categorical definition and threshold c.d.f. files can be selected. */
 };
 
 /**

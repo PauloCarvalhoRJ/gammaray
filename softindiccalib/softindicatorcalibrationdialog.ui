@@ -41,7 +41,7 @@
       <item>
        <widget class="QLabel" name="label">
         <property name="text">
-         <string>Category definition:</string>
+         <string>File with categories or thresholds:</string>
         </property>
        </widget>
       </item>

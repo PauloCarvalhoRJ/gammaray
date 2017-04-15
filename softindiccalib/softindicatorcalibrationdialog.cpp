@@ -24,8 +24,10 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
     setWindowTitle("Soft indicator calibration for " + at->getContainingFile()->getName() + "/" + at->getName());
 
     //add a category definition file selection drop down menu
-    m_fsw = new FileSelectorWidget( FileSelectorType::CategoryDefinitions, true );
+    m_fsw = new FileSelectorWidget( FileSelectorType::CDsAndCDFs, true );
     ui->frmTopBar->layout()->addWidget( m_fsw );
+    connect( m_fsw, SIGNAL(fileSelected(File*)),
+             this, SLOT(onUpdateNumberOfCalibrationCurves()) );
 
     //add a spacer for better layout
     QHBoxLayout *hl = (QHBoxLayout*)(ui->frmTopBar->layout());
@@ -58,6 +60,10 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
         }
         //move the array of doubles to the widget (it'll no longer be availabe here)
         m_softIndCalibPlot->transferData( data );
+        //set the variable name as the x-axis label.
+        m_softIndCalibPlot->setXAxisLabel( at->getName() );
+
+        m_softIndCalibPlot->fillColor( QColor( Qt::green ), -1 );
     }
 
     adjustSize();
@@ -67,4 +73,18 @@ SoftIndicatorCalibrationDialog::~SoftIndicatorCalibrationDialog()
 {
     delete ui;
     Application::instance()->logInfo("SoftIndicatorCalibrationDialog destroyed.");
+}
+
+void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
+{
+    File *selectedFile = m_fsw->getSelectedFile();
+    if( selectedFile ){
+        selectedFile->readFromFS();
+        if( selectedFile->getFileType() == "THRESHOLDCDF"){
+            m_softIndCalibPlot->setNumberOfCurves( selectedFile->getContentsCount() );
+        }else{
+            //for categorical variables the calibration curves separate the categories, thus -1.
+            m_softIndCalibPlot->setNumberOfCurves( selectedFile->getContentsCount()-1 );
+        }
+    }
 }
