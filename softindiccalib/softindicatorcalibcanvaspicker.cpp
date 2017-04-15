@@ -272,7 +272,15 @@ void SoftIndicatorCalibCanvasPicker::move( const QPoint &pos )
             xData[i] = sample.x();
             yData[i] = sample.y();
         }
+        //limits vertical movement to a range between 0.0 and 100.0,
+        //since there is no valid probabilty value outside that range
+        if( yData[i] > 100.0)
+            yData[i] = 100.0;
+        if( yData[i] < 0.0)
+            yData[i] = 0.0;
     }
+
+
     d_selectedCurve->setSamples( xData, yData );
 
     /*

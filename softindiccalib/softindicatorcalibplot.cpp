@@ -6,6 +6,8 @@
 #include <qwt_plot_grid.h>
 #include <qwt_plot_layout.h>
 
+#include "softindicatorcalibcanvaspicker.h"
+
 SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
     QwtPlot(parent)
 {
@@ -37,6 +39,10 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
 
     axisWidget( xBottom )->setWhatsThis(
         "Selecting a value at the scale will insert a new curve." );
+
+    // The canvas picker handles all mouse and key
+    // events on the plot canvas
+    ( void ) new SoftIndicatorCalibCanvasPicker( this );
 }
 
 bool SoftIndicatorCalibPlot::eventFilter(QObject *object, QEvent *e)
@@ -52,6 +58,20 @@ bool SoftIndicatorCalibPlot::eventFilter(QObject *object, QEvent *e)
     }
 
     return QwtPlot::eventFilter( object, e );
+}
+
+void SoftIndicatorCalibPlot::transferData(std::vector<double> &source)
+{
+    //remove current calibration curves
+    clearCurves();
+
+    //get the data
+    m_data = std::move( source );
+
+    //update horizontal axis scale
+    setAxisScale( QwtPlot::xBottom, getDataMin(), getDataMax() );
+
+    insertCurve( Qt::Horizontal, 20.0);
 }
 
 void SoftIndicatorCalibPlot::insertCurve(int axis, double base)
@@ -75,12 +95,17 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
     curve->setSymbol( new QwtSymbol( QwtSymbol::Ellipse,
         Qt::gray, c, QSize( 8, 8 ) ) );
 
-    double x[11];
-    double y[sizeof( x ) / sizeof( x[0] )];
+    size_t nPoints = 11;
+    double x[nPoints];
+    double y[nPoints];
 
-    for ( uint i = 0; i < sizeof( x ) / sizeof( x[0] ); i++ )
+    double step = ( getDataMax() - getDataMin() ) / (nPoints - 1);
+
+    double dataMin = getDataMin();
+
+    for ( uint i = 0; i < nPoints; i++ )
     {
-        double v = 0.0 + i * 10.0;
+        double v = dataMin + i * step;
         if ( o == Qt::Horizontal )
         {
             x[i] = v;
@@ -93,7 +118,38 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
         }
     }
 
-    curve->setSamples( x, y, sizeof( x ) / sizeof( x[0] ) );
+    curve->setSamples( x, y, nPoints );
     curve->attach( this );
 
+    m_curves.push_back( curve );
+}
+
+void SoftIndicatorCalibPlot::clearCurves()
+{
+    std::vector<QwtPlotCurve*>::iterator it = m_curves.begin();
+    for(; it != m_curves.end(); ++it){
+        (*it)->detach( );
+        //delete *it;
+    }
+    m_curves.clear();
+}
+
+double SoftIndicatorCalibPlot::getDataMax()
+{
+    if( m_data.size() > 0 ){
+        std::vector<double>::iterator it = std::max_element( m_data.begin(), m_data.end() );
+        return *it;
+    } else {
+        return 100.0;
+    }
+}
+
+double SoftIndicatorCalibPlot::getDataMin()
+{
+    if( m_data.size() > 0 ){
+        std::vector<double>::iterator it = std::min_element( m_data.begin(), m_data.end() );
+        return *it;
+    } else {
+        return 0.0;
+    }
 }
