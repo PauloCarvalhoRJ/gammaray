@@ -47,7 +47,10 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
 
     // The canvas picker handles all mouse and key
     // events on the plot canvas
-    ( void ) new SoftIndicatorCalibCanvasPicker( this );
+    //( void ) new SoftIndicatorCalibCanvasPicker( this );
+    SoftIndicatorCalibCanvasPicker* siccp = new SoftIndicatorCalibCanvasPicker( this ); //TODO: delete?
+    //To be notified when a calibration curve is edited by the used.
+    connect( siccp, SIGNAL(curveChanged()), this, SLOT(onCurveChanged()) );
 }
 
 bool SoftIndicatorCalibPlot::eventFilter(QObject *object, QEvent *e)
@@ -222,13 +225,25 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
 
 void SoftIndicatorCalibPlot::clearCurves()
 {
-
     std::vector<QwtPlotCurve*>::iterator it = m_curves.begin();
     for(; it != m_curves.end(); ++it){
         (*it)->detach( );
-        //delete *it;
+        //delete *it;  //assuming autoDelete is on for this QwtPlot
     }
     m_curves.clear();
+
+    //also clears the filled areas between the curves, if any.
+    clearFillAreas();
+}
+
+void SoftIndicatorCalibPlot::clearFillAreas()
+{
+    std::vector<QwtPlotIntervalCurve*>::iterator it = m_fillAreas.begin();
+    for(; it != m_fillAreas.end(); ++it){
+        (*it)->detach( );
+        //delete *it; //assuming autoDelete is on for this QwtPlot
+    }
+    m_fillAreas.clear();
 }
 
 double SoftIndicatorCalibPlot::getDataMax()
@@ -249,4 +264,9 @@ double SoftIndicatorCalibPlot::getDataMin()
     } else {
         return 0.0;
     }
+}
+
+void SoftIndicatorCalibPlot::onCurveChanged()
+{
+    STOPPED_HERE;
 }

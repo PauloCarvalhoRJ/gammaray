@@ -14,6 +14,9 @@ public:
 
     virtual bool event( QEvent * );
 
+Q_SIGNALS:
+    void curveChanged();
+
 private:
     void select( const QPoint & );
     void move( const QPoint & );

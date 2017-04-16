@@ -65,6 +65,9 @@ private:
     /** Removes all curves currently in the plot. */
     void clearCurves();
 
+    /** Removes the filled areas between the calibration curves. */
+    void clearFillAreas();
+
     /** The data values. */
     std::vector<double> m_data;
 
@@ -83,6 +86,10 @@ private:
 
     /** The number of curves desired by the user. */
     size_t m_nCurves;
+
+private slots:
+    /** This must be triggered when a curve is changed. */
+    void onCurveChanged();
 };
 
 #endif // SOFTINDICATORCALIBPLOT_H

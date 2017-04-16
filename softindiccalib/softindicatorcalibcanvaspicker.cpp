@@ -295,6 +295,9 @@ void SoftIndicatorCalibCanvasPicker::move( const QPoint &pos )
     plotCanvas->setPaintAttribute( QwtPlotCanvas::ImmediatePaint, false );
 
     showCursor( true );
+
+    //notify any listening client code of changes in the curves
+    emit curveChanged();
 }
 
 // Hightlight the selected point
