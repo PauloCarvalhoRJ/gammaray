@@ -4,6 +4,7 @@
 #include <qwt_plot.h>
 
 class QwtPlotCurve;
+class QwtPlotIntervalCurve;
 
 /*! The variable type result in different soft indicators returned by getSoftIndicators(). */
 enum class SoftIndicatorCalculationMode : uint {
@@ -69,6 +70,10 @@ private:
 
     /** The curves used to calibrate the data into soft indicator values. */
     std::vector<QwtPlotCurve*> m_curves;
+
+    /** The filled areas between the calibration curves, normally used to calibrate
+     * soft indicators for categorical variables. */
+    std::vector<QwtPlotIntervalCurve*> m_fillAreas;
 
     /** Returns the highest value in the m_data vector or 100.0 if the vector is empty. */
     double getDataMax();

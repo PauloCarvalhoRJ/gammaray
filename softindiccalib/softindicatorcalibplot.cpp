@@ -16,7 +16,7 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
     setTitle( "Soft indicator calibration." );
 
     QwtPlotGrid *grid = new QwtPlotGrid;
-    grid->setMajorPen( Qt::white, 0, Qt::DotLine );
+    grid->setMajorPen( Qt::black, 0, Qt::DotLine );
     grid->attach( this );
 
     // axes
@@ -114,8 +114,12 @@ void SoftIndicatorCalibPlot::setXAxisLabel(QString text)
 
 void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve)
 {
-    //get the number of user data
-    int nData = m_data.size();
+    //does nothing if there is no calibration curve.
+    if( m_curves.size() == 0 )
+        return;
+
+    //get the number curve points (assumes all curves have the same number of points)
+    int nData = m_curves[0]->data()->size();
 
     //correct for possibly out-of-range base curve index
     if( base_curve > (int)m_curves.size()-1 )
@@ -148,7 +152,6 @@ void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve)
         }else
             high = 100.0;
 
-        STOPPED_HERE;
         intervals[i] = QwtIntervalSample( x, QwtInterval( low, high ) );
     }
 
@@ -156,11 +159,14 @@ void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve)
     QwtPlotIntervalCurve *d_intervalCurve = new QwtPlotIntervalCurve( "Range" );
     d_intervalCurve->setRenderHint( QwtPlotItem::RenderAntialiased );
     QColor bg( color );
-    bg.setAlpha( 150 );
+    bg.setAlpha( 75 );
     d_intervalCurve->setBrush( QBrush( bg ) );
     d_intervalCurve->setStyle( QwtPlotIntervalCurve::Tube );
     d_intervalCurve->setSamples( intervals );
     d_intervalCurve->attach( this );
+
+    //store the pointer of the new interval curve
+    m_fillAreas.push_back( d_intervalCurve );
 }
 
 void SoftIndicatorCalibPlot::insertCurve(int axis, double base)

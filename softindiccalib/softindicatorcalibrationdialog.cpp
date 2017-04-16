@@ -5,8 +5,10 @@
 #include "domain/attribute.h"
 #include "domain/file.h"
 #include "domain/datafile.h"
+#include "domain/categorydefinition.h"
 #include "widgets/fileselectorwidget.h"
 #include "softindicatorcalibplot.h"
+#include "util.h"
 
 #include <QHBoxLayout>
 
@@ -62,8 +64,6 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
         m_softIndCalibPlot->transferData( data );
         //set the variable name as the x-axis label.
         m_softIndCalibPlot->setXAxisLabel( at->getName() );
-
-        m_softIndCalibPlot->fillColor( QColor( Qt::green ), -1 );
     }
 
     adjustSize();
@@ -83,8 +83,14 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
         if( selectedFile->getFileType() == "THRESHOLDCDF"){
             m_softIndCalibPlot->setNumberOfCurves( selectedFile->getContentsCount() );
         }else{
+            int nCategories = selectedFile->getContentsCount();
             //for categorical variables the calibration curves separate the categories, thus -1.
-            m_softIndCalibPlot->setNumberOfCurves( selectedFile->getContentsCount()-1 );
+            m_softIndCalibPlot->setNumberOfCurves( nCategories-1 );
+            //fills the areas between the curves with the colors of the categories
+            CategoryDefinition *cd = (CategoryDefinition*)selectedFile;
+            for( int i = 0; i < nCategories; ++i ){
+                m_softIndCalibPlot->fillColor( Util::getGSLibColor( cd->getColorCode(i) ) , i-1 );
+            }
         }
     }
 }
