@@ -27,7 +27,7 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
     setWindowTitle("Soft indicator calibration for " + at->getContainingFile()->getName() + "/" + at->getName());
 
     //add a category definition file selection drop down menu
-    m_fsw = new FileSelectorWidget( FileSelectorType::CDsAndCDFs, true );
+    m_fsw = new FileSelectorWidget( FileSelectorType::CDsCDFsandPDFs, true );
     ui->frmTopBar->layout()->addWidget( m_fsw );
     connect( m_fsw, SIGNAL(fileSelected(File*)),
              this, SLOT(onUpdateNumberOfCalibrationCurves()) );
