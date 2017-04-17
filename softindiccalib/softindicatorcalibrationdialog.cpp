@@ -7,6 +7,7 @@
 #include "domain/datafile.h"
 #include "domain/categorydefinition.h"
 #include "domain/thresholdcdf.h"
+#include "domain/categorypdf.h"
 #include "widgets/fileselectorwidget.h"
 #include "softindicatorcalibplot.h"
 #include "util.h"
@@ -92,7 +93,7 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
                 m_softIndCalibPlot->setCurveColor( i, QColor( rgb ));
                 m_softIndCalibPlot->setCurveBase( i, cdf->get2ndValue(i) * 100.0);
             }
-        }else{
+        }else if( selectedFile->getFileType() == "CATEGORYDEFINITION"){
             //for categorical variables the calibration curves separate the categories, thus -1.
             m_softIndCalibPlot->setNumberOfCurves( nCategories-1 );
             //fills the areas between the curves with the colors of the categories
@@ -102,6 +103,23 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
                                                i-1,
                                                cd->getCategoryName( i ));
             }
+        }else if( selectedFile->getFileType() == "CATEGORYPDF"){
+            //for categorical variables the calibration curves separate the categories, thus -1.
+            m_softIndCalibPlot->setNumberOfCurves( nCategories-1 );
+            //fills the areas between the curves with the colors of the categories
+            CategoryPDF *pdf = (CategoryPDF*)selectedFile;
+            CategoryDefinition *cd = pdf->getCategoryDefinition();
+            cd->loadTriplets();
+            double curveBase = 0.0;
+            for( int i = 0; i < nCategories; ++i ){
+                m_softIndCalibPlot->fillColor( Util::getGSLibColor( cd->getCategoryColorByCode( pdf->get1stValue( i ) ) ) ,
+                                               i-1,
+                                               cd->getCategoryNameByCode( pdf->get1stValue( i ) ) );
+                if( i > 0 )
+                    m_softIndCalibPlot->setCurveBase( i-1, curveBase * 100.0);
+                curveBase += pdf->get2ndValue( i );
+            }
+            m_softIndCalibPlot->updateFillAreas();
         }
     }
 }
