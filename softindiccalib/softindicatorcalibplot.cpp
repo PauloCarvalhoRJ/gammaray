@@ -6,6 +6,7 @@
 #include <qwt_plot_grid.h>
 #include <qwt_plot_layout.h>
 #include <qwt_plot_intervalcurve.h>
+#include <qwt_legend.h>
 
 #include "softindicatorcalibcanvaspicker.h"
 
@@ -34,8 +35,8 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
 
     plotLayout()->setAlignCanvasToScales( true );
 
-    insertCurve( Qt::Horizontal, Qt::yellow, 30.0 );
-    insertCurve( Qt::Horizontal, Qt::white, 70.0 );
+    insertCurve( Qt::Horizontal, Qt::yellow, 30.0, QString() );
+    insertCurve( Qt::Horizontal, Qt::white, 70.0, QString() );
 
     replot();
 
@@ -51,6 +52,8 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
     SoftIndicatorCalibCanvasPicker* siccp = new SoftIndicatorCalibCanvasPicker( this ); //TODO: delete?
     //To be notified when a calibration curve is edited by the used.
     connect( siccp, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onCurveChanged(QwtPlotCurve*)) );
+
+    insertLegend( new QwtLegend() );
 }
 
 bool SoftIndicatorCalibPlot::eventFilter(QObject *object, QEvent *e)
@@ -115,7 +118,7 @@ void SoftIndicatorCalibPlot::setXAxisLabel(QString text)
     setAxisTitle( QwtPlot::xBottom, text );
 }
 
-void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve)
+void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve, const QString label )
 {
     //does nothing if there is no calibration curve.
     if( m_curves.size() == 0 )
@@ -159,18 +162,51 @@ void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve)
     }
 
     //create and plot a interval curve object
-    QwtPlotIntervalCurve *d_intervalCurve = new QwtPlotIntervalCurve( "Range" );
+    QwtPlotIntervalCurve *d_intervalCurve = new QwtPlotIntervalCurve( label );
     d_intervalCurve->setRenderHint( QwtPlotItem::RenderAntialiased );
     QColor bg( color );
     bg.setAlpha( 75 );
     d_intervalCurve->setBrush( QBrush( bg ) );
     d_intervalCurve->setStyle( QwtPlotIntervalCurve::Tube );
     d_intervalCurve->setSamples( intervals );
+    d_intervalCurve->setLegendIconSize( QSize( 16, 16 ) );
     d_intervalCurve->attach( this );
 
     //store the pointer of the new interval curve
     m_fillAreas.push_back( d_intervalCurve );
 }
+
+void SoftIndicatorCalibPlot::setCurveLabel(int index, QString label)
+{
+    QwtPlotCurve* curve = m_curves[index];
+    curve->setTitle( label );
+    curve->setLegendIconSize( QSize( 16, 16 ) );
+}
+
+void SoftIndicatorCalibPlot::setCurveColor(int index, QColor color)
+{
+    QwtPlotCurve* curve = m_curves[index];
+    curve->setPen( color, 3.0 );
+}
+
+void SoftIndicatorCalibPlot::setCurveBase(int index, double value)
+{
+    QwtPlotCurve* curve = m_curves[index];
+
+    QVector<double> xData( curve->dataSize() );
+    QVector<double> yData( curve->dataSize() );
+    //for each curve point
+    for ( int i = 0; i < static_cast<int>( curve->dataSize() ); i++ ) {
+        const QPointF sample = curve->sample( i );
+        xData[i] = sample.x();
+        yData[i] = value;
+    }
+    //updates the curve points
+    curve->setSamples( xData, yData );
+
+    //prevents potential crossings
+    pushCurves( curve );
+ }
 
 void SoftIndicatorCalibPlot::insertCurve(int axis, double base)
 {
@@ -180,15 +216,15 @@ void SoftIndicatorCalibPlot::insertCurve(int axis, double base)
     else
         o = Qt::Vertical;
 
-    //QRgb rgb = static_cast<QRgb>( rand() );
-    //insertCurve( o, QColor( rgb ), base );
-    insertCurve( o, Qt::black, base );
+    //QRgb rgb = static_cast<QRgb>( (uint)( (double) std::rand() / (double)RAND_MAX * (1U<<31)) );
+    //insertCurve( o, QColor( rgb ), base, QString() );
+    insertCurve( o, Qt::black, base, QString() );
     replot();
 }
 
-void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, double base)
+void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, double base, QString label )
 {
-    QwtPlotCurve *curve = new QwtPlotCurve();
+    QwtPlotCurve *curve = new QwtPlotCurve( label );
 
     curve->setPen( c );
     curve->setSymbol( new QwtSymbol( QwtSymbol::Ellipse,
@@ -219,6 +255,12 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
 
     curve->setSamples( x, y, nPoints );
     curve->attach( this );
+
+    //put legend icon if label text is set
+    if( ! label.isEmpty() )
+        curve->setLegendIconSize( QSize( 16, 16 ) );
+    else
+        curve->setLegendIconSize( QSize( 0, 0 ) );
 
     m_curves.push_back( curve );
 }

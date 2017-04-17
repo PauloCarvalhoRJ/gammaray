@@ -6,6 +6,7 @@
 #include "domain/file.h"
 #include "domain/datafile.h"
 #include "domain/categorydefinition.h"
+#include "domain/thresholdcdf.h"
 #include "widgets/fileselectorwidget.h"
 #include "softindicatorcalibplot.h"
 #include "util.h"
@@ -80,16 +81,26 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
     File *selectedFile = m_fsw->getSelectedFile();
     if( selectedFile ){
         selectedFile->readFromFS();
+        int nCategories = selectedFile->getContentsCount();
         if( selectedFile->getFileType() == "THRESHOLDCDF"){
             m_softIndCalibPlot->setNumberOfCurves( selectedFile->getContentsCount() );
+            //sets the curve labels with each threshold
+            ThresholdCDF *cdf = (ThresholdCDF*)selectedFile;
+            for( int i = 0; i < nCategories; ++i ){
+                m_softIndCalibPlot->setCurveLabel(i, "thr. = " + QString::number( cdf->get1stValue( i ), 'g', 12 ) );
+                QRgb rgb = static_cast<QRgb>( (uint)( (double) std::rand() / (double)RAND_MAX * (1U<<31)) );
+                m_softIndCalibPlot->setCurveColor( i, QColor( rgb ));
+                m_softIndCalibPlot->setCurveBase( i, cdf->get2ndValue(i) * 100.0);
+            }
         }else{
-            int nCategories = selectedFile->getContentsCount();
             //for categorical variables the calibration curves separate the categories, thus -1.
             m_softIndCalibPlot->setNumberOfCurves( nCategories-1 );
             //fills the areas between the curves with the colors of the categories
             CategoryDefinition *cd = (CategoryDefinition*)selectedFile;
             for( int i = 0; i < nCategories; ++i ){
-                m_softIndCalibPlot->fillColor( Util::getGSLibColor( cd->getColorCode(i) ) , i-1 );
+                m_softIndCalibPlot->fillColor( Util::getGSLibColor( cd->getColorCode(i) ) ,
+                                               i-1,
+                                               cd->getCategoryName( i ));
             }
         }
     }

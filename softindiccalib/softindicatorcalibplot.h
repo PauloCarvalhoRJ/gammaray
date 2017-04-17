@@ -53,14 +53,34 @@ public:
      * Fills the plot area with the given color between the calibration curve given by base_curve index and the one
      * immediately above it.  If base_curve is -1 or less, the "base curve" will be the plot bottom side.
      * If base_curve is the index of the highest one or higher, the "top curve" will be the plot top side.
+     * @param label Text that will appear in the plot legend (e.g. Sandstone).
      */
-    void fillColor(const QColor &color, int base_curve );
+    void fillColor(const QColor &color, int base_curve , const QString label );
+
+    /** Sets the legend label of a calibration curve given its index.  This is normally used when calibrating
+     * soft probabilities (cumulative) for thresholds of a continuous variable.
+     * Setting a label for a curve also enables its legend icon.
+     */
+    void setCurveLabel( int index, QString label );
+
+    /** Sets the color of a calibration curve given its index.  This is normally used when calibrating
+     * soft probabilities (cumulative) for thresholds of a continuous variable.
+     * Setting a color for a curve also sets its legend icon color, if the curve has a label set.
+     * By default, curves are rendered in black.
+     */
+    void setCurveColor( int index, QColor color );
+
+    /** Sets the given curve base, resulting in a flat line at the given value.
+      *  The value must be between 0.0 and 100.0 (will be truncated otherside).
+      * Other curves will also be adjusted to prevent undue crossing.
+      */
+    void setCurveBase( int index, double value );
 
 public slots:
     void insertCurve( int axis, double base );
 
 private:
-    void insertCurve( Qt::Orientation o, const QColor &c, double base );
+    void insertCurve(Qt::Orientation o, const QColor &c, double base , QString label);
 
     /** Removes all curves currently in the plot. */
     void clearCurves();
