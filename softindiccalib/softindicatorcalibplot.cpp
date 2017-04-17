@@ -107,10 +107,75 @@ void SoftIndicatorCalibPlot::setNumberOfCurves(size_t number)
     }
 }
 
-std::vector<std::vector<double> > SoftIndicatorCalibPlot::getSoftIndicators(SoftIndicatorCalculationMode mode)
+std::vector< std::vector<double> > SoftIndicatorCalibPlot::getSoftIndicators(SoftIndicatorCalculationMode mode)
 {
-    std::vector<std::vector<double> > m;
-    return m;
+    std::vector< std::vector<double> > m;
+
+    if( mode == SoftIndicatorCalculationMode::CONTINUOUS ){
+        //for each curve
+        uint nCurves = m_curves.size();
+        for( uint iCurve = 0; iCurve < nCurves; ++iCurve){
+            QwtPlotCurve* curve = m_curves[iCurve];
+            std::vector<double> softIndicators;
+            softIndicators.reserve( m_data.size() );
+            //for each datum
+            uint nData = m_data.size();
+            for( uint iDatum = 0; iDatum < nData; ++iDatum ){
+                //find the index of the curve point whose X is less or equal than the data value, but the next
+                // X is greater than.
+                int iLeft = 0;
+                for ( int i = 0; i < static_cast<int>( curve->dataSize() ); i++ )
+                    if( m_data[iDatum] < curve->sample(i).x() )
+                        iLeft = i-1;
+                //perform the linear interpolation
+                double x = m_data[iDatum];
+                double x0 = curve->sample(iLeft).x();
+                double y0 = curve->sample(iLeft).y();
+                double x1 = curve->sample(iLeft+1).x();
+                double y1 = curve->sample(iLeft+1).y();
+                double y = y0 + (x-x0) * (y1-y0) / (x1-x0);
+                softIndicators.push_back( y );
+            }
+            m.push_back( softIndicators );
+        }
+    }
+
+    if( mode == SoftIndicatorCalculationMode::CATEGORICAL ){
+        //for each filled area
+        uint nFills = m_fillAreas.size();
+        for( uint iFill = 0; iFill < nFills; ++iFill){
+            QwtPlotIntervalCurve* fill = m_fillAreas[iFill];
+            std::vector<double> softIndicators;
+            softIndicators.reserve( m_data.size() );
+            //for each datum
+            uint nData = m_data.size();
+            for( uint iDatum = 0; iDatum < nData; ++iDatum ){
+                //find the index of the curve point whose X is less or equal than the data value, but the next
+                // X is greater than.
+                int iLeft = 0;
+                for ( int i = 0; i < static_cast<int>( fill->dataSize() ); i++ )
+                    if( m_data[iDatum] < fill->sample(i).value )
+                        iLeft = i-1;
+                //perform the linear interpolation of upper bound
+                double x = m_data[iDatum];
+                double x0 = fill->sample(iLeft).value;
+                double y0 = fill->sample(iLeft).interval.maxValue();
+                double x1 = fill->sample(iLeft+1).value;
+                double y1 = fill->sample(iLeft+1).interval.maxValue();
+                double yUpper = y0 + (x-x0) * (y1-y0) / (x1-x0);
+                //perform the linear interpolation of lower bound
+                y0 = fill->sample(iLeft).interval.minValue();
+                y1 = fill->sample(iLeft+1).interval.minValue();
+                double yLower = y0 + (x-x0) * (y1-y0) / (x1-x0);
+                //stores the difference (probability of a category)
+                softIndicators.push_back( yUpper - yLower );
+            }
+            m.push_back( softIndicators );
+        }
+    }
+
+    //return by move semantics
+    return std::move(m);
 }
 
 void SoftIndicatorCalibPlot::setXAxisLabel(QString text)

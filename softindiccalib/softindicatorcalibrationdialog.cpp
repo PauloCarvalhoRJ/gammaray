@@ -123,3 +123,16 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
         }
     }
 }
+
+void SoftIndicatorCalibrationDialog::onSave()
+{
+
+    SoftIndicatorCalculationMode calcMode = SoftIndicatorCalculationMode::CATEGORICAL;
+    File *selectedFile = m_fsw->getSelectedFile();
+    if( selectedFile ){
+        if( selectedFile->getFileType() == "THRESHOLDCDF")
+            calcMode = SoftIndicatorCalculationMode::CONTINUOUS;
+
+        std::vector< std::vector< double > > result = m_softIndCalibPlot->getSoftIndicators( calcMode );
+    }
+}

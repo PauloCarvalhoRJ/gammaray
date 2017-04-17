@@ -41,6 +41,8 @@ public:
      * and between the curves and 0.0% and 100.0%.  So, if you set two curves, you get three soft probabilities per datum.
      * If mode is CONTINUOUS, then soft indicators are computed as the probability value at each curve
      * So, if you set two curves, you get two soft probabilities (cumulative) per datum.
+     * The outer vector corresponds to each category/threshold and the inner vector corresponds to the soft indicators
+     * computed for a category/threshold.
      */
     std::vector< std::vector< double > > getSoftIndicators( SoftIndicatorCalculationMode mode );
 

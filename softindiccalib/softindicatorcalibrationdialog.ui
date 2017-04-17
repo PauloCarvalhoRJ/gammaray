@@ -105,9 +105,16 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <widget class="QPushButton" name="pushButton">
+          <widget class="QPushButton" name="btnSave">
+           <property name="toolTip">
+            <string>Save soft indicator variables.</string>
+           </property>
            <property name="text">
             <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
            </property>
           </widget>
          </item>
@@ -177,7 +184,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>btnDismiss</sender>
@@ -195,5 +204,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnSave</sender>
+   <signal>clicked()</signal>
+   <receiver>SoftIndicatorCalibrationDialog</receiver>
+   <slot>onSave()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>562</x>
+     <y>62</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>125</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>onSave()</slot>
+ </slots>
 </ui>
