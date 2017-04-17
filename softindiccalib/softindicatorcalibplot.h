@@ -68,6 +68,16 @@ private:
     /** Removes the filled areas between the calibration curves. */
     void clearFillAreas();
 
+    /** Changes the geometry of the fill areas to follow the calibration curves.
+     * Does nothing if there is no fill areas between the curves.
+     */
+    void updateFillAreas();
+
+    /**
+     *  Updates the curves other than the given one so they do not cross each other.
+     */
+    void pushCurves( QwtPlotCurve* curve );
+
     /** The data values. */
     std::vector<double> m_data;
 
@@ -89,7 +99,7 @@ private:
 
 private slots:
     /** This must be triggered when a curve is changed. */
-    void onCurveChanged();
+    void onCurveChanged( QwtPlotCurve* changed_curve );
 };
 
 #endif // SOFTINDICATORCALIBPLOT_H

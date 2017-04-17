@@ -50,7 +50,7 @@ SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
     //( void ) new SoftIndicatorCalibCanvasPicker( this );
     SoftIndicatorCalibCanvasPicker* siccp = new SoftIndicatorCalibCanvasPicker( this ); //TODO: delete?
     //To be notified when a calibration curve is edited by the used.
-    connect( siccp, SIGNAL(curveChanged()), this, SLOT(onCurveChanged()) );
+    connect( siccp, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onCurveChanged(QwtPlotCurve*)) );
 }
 
 bool SoftIndicatorCalibPlot::eventFilter(QObject *object, QEvent *e)
@@ -246,6 +246,120 @@ void SoftIndicatorCalibPlot::clearFillAreas()
     m_fillAreas.clear();
 }
 
+void SoftIndicatorCalibPlot::updateFillAreas()
+{
+    //does nothing if there is no calibration curve.
+    if( m_curves.size() == 0 )
+        return;
+
+    //get the number curve points (assumes all curves have the same number of points)
+    int nPoints = m_curves[0]->data()->size();
+
+    //get number of fill areas between
+    int nFills = m_fillAreas.size();
+
+    //does nothing if there are no fill areas (continuous variable case)
+    if( nFills == 0 )
+        return;
+
+    for( int iFill = 0; iFill < nFills; ++iFill){
+
+        //get the index of the base curve (can be -1 to indicate the base is constant at 0.0%)
+        int base_curve = iFill - 1;
+
+        //get the index of the top curve
+        int top_curve = base_curve + 1;
+
+        //create a x, y_base, y_top sample collection object
+        QVector<QwtIntervalSample> intervals( nPoints );
+
+        //get the y intervals between the target curves
+        for ( int i = 0; i < nPoints; ++i )
+        {
+            double low;
+            double high;
+            double x = 0.0;
+
+            if( base_curve >= 0 ){
+                low = m_curves[base_curve]->sample(i).y();
+                x = m_curves[base_curve]->sample(i).x();
+            }else
+                low = 0.0;
+
+            if( top_curve < (int)m_curves.size() ){
+                high = m_curves[top_curve]->sample(i).y();
+                x = m_curves[top_curve]->sample(i).x();
+            }else
+                high = 100.0;
+
+            intervals[i] = QwtIntervalSample( x, QwtInterval( low, high ) );
+        }
+
+        //update the fill area geometry
+        m_fillAreas[iFill]->setSamples( intervals );
+    }
+
+}
+
+void SoftIndicatorCalibPlot::pushCurves(QwtPlotCurve *curve)
+{
+    std::vector<QwtPlotCurve*> curvesAbove;
+    std::vector<QwtPlotCurve*> curvesBelow;
+
+    //get the index of the changed curve;
+    std::vector<QwtPlotCurve*>::iterator it = m_curves.begin();
+    int indexOfCurve = 0;
+    for(; it != m_curves.end(); ++it, ++indexOfCurve)
+        if( *it == curve ){
+            //++indexOfCurve;
+            break;
+        }
+
+    //get the curves above the changed curve
+    for( size_t i = indexOfCurve+1; i < m_curves.size(); ++i)
+        curvesAbove.push_back( m_curves[i] );
+
+    //get the curves below the changed curve
+    for( int i = indexOfCurve-1; i >= 0; --i)
+        curvesBelow.push_back( m_curves[i] );
+
+    //push upwards all curves above the changed curve
+    it = curvesAbove.begin();
+    for(; it != curvesAbove.end(); ++it){
+        QVector<double> xData( (*it)->dataSize() );
+        QVector<double> yData( (*it)->dataSize() );
+        //for each curve point
+        for ( int i = 0; i < static_cast<int>( (*it)->dataSize() ); i++ ) {
+            const QPointF sample = (*it)->sample( i );
+            xData[i] = sample.x();
+            yData[i] = sample.y();
+            //if the Y of the curve above is lower, forces it to equal the changed curve
+            if( yData[i] < curve->sample(i).y() )
+                yData[i] = curve->sample(i).y();
+        }
+        //updates the curve points
+        (*it)->setSamples( xData, yData );
+    }
+
+    //push downwards all curves below the changed curve
+    it = curvesBelow.begin();
+    for(; it != curvesBelow.end(); ++it){
+        QVector<double> xData( (*it)->dataSize() );
+        QVector<double> yData( (*it)->dataSize() );
+        //for each curve point
+        for ( int i = 0; i < static_cast<int>( (*it)->dataSize() ); i++ ) {
+            const QPointF sample = (*it)->sample( i );
+            xData[i] = sample.x();
+            yData[i] = sample.y();
+            //if the Y of the curve above is higher, forces it to equal the changed curve
+            if( yData[i] > curve->sample(i).y() )
+                yData[i] = curve->sample(i).y();
+        }
+        //updates the curve points
+        (*it)->setSamples( xData, yData );
+    }
+}
+
 double SoftIndicatorCalibPlot::getDataMax()
 {
     if( m_data.size() > 0 ){
@@ -266,7 +380,8 @@ double SoftIndicatorCalibPlot::getDataMin()
     }
 }
 
-void SoftIndicatorCalibPlot::onCurveChanged()
+void SoftIndicatorCalibPlot::onCurveChanged( QwtPlotCurve *changed_curve )
 {
-    STOPPED_HERE;
+    pushCurves( changed_curve );
+    updateFillAreas();
 }

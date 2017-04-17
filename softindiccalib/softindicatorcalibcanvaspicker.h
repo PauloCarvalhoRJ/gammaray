@@ -4,6 +4,7 @@ class QPoint;
 class QCustomEvent;
 class QwtPlot;
 class QwtPlotCurve;
+class SoftIndicatorCalibPlot;
 
 class SoftIndicatorCalibCanvasPicker: public QObject
 {
@@ -15,7 +16,7 @@ public:
     virtual bool event( QEvent * );
 
 Q_SIGNALS:
-    void curveChanged();
+    void curveChanged( QwtPlotCurve* changed_curve );
 
 private:
     void select( const QPoint & );
@@ -28,8 +29,8 @@ private:
     void shiftPointCursor( bool up );
     void shiftCurveCursor( bool up );
 
-    QwtPlot *plot();
-    const QwtPlot *plot() const;
+    SoftIndicatorCalibPlot *plot();
+    const SoftIndicatorCalibPlot *plot() const;
 
     QwtPlotCurve *d_selectedCurve;
     int d_selectedPoint;

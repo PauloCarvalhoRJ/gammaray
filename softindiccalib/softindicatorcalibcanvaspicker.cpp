@@ -9,6 +9,7 @@
 #include <qwt_plot_curve.h>
 #include <qwt_plot_directpainter.h>
 #include "softindicatorcalibcanvaspicker.h"
+#include "softindicatorcalibplot.h"
 
 SoftIndicatorCalibCanvasPicker::SoftIndicatorCalibCanvasPicker( QwtPlot *plot ):
     QObject( plot ),
@@ -41,14 +42,14 @@ SoftIndicatorCalibCanvasPicker::SoftIndicatorCalibCanvasPicker( QwtPlot *plot ):
     shiftCurveCursor( true );
 }
 
-QwtPlot *SoftIndicatorCalibCanvasPicker::plot()
+SoftIndicatorCalibPlot *SoftIndicatorCalibCanvasPicker::plot()
 {
-    return qobject_cast<QwtPlot *>( parent() );
+    return qobject_cast<SoftIndicatorCalibPlot *>( parent() );
 }
 
-const QwtPlot *SoftIndicatorCalibCanvasPicker::plot() const
+const SoftIndicatorCalibPlot *SoftIndicatorCalibCanvasPicker::plot() const
 {
-    return qobject_cast<const QwtPlot *>( parent() );
+    return qobject_cast<const SoftIndicatorCalibPlot *>( parent() );
 }
 
 bool SoftIndicatorCalibCanvasPicker::event( QEvent *ev )
@@ -260,7 +261,7 @@ void SoftIndicatorCalibCanvasPicker::move( const QPoint &pos )
         if ( i == d_selectedPoint )
         {
             //move the curve points only up and down
-            xData[i] = d_selectedCurve->data()->sample(i).x();
+            xData[i] = d_selectedCurve->sample(i).x();
             //xData[i] = plot()->invTransform(
                 //d_selectedCurve->xAxis(), pos.x() );
             yData[i] = plot()->invTransform(
@@ -297,7 +298,7 @@ void SoftIndicatorCalibCanvasPicker::move( const QPoint &pos )
     showCursor( true );
 
     //notify any listening client code of changes in the curves
-    emit curveChanged();
+    emit curveChanged( d_selectedCurve );
 }
 
 // Hightlight the selected point
