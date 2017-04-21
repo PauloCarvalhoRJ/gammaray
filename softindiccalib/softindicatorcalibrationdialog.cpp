@@ -8,11 +8,13 @@
 #include "domain/categorydefinition.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
+#include "domain/project.h"
 #include "widgets/fileselectorwidget.h"
 #include "softindicatorcalibplot.h"
 #include "util.h"
 
 #include <QHBoxLayout>
+#include <cmath>
 
 SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -121,18 +123,120 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
             }
             m_softIndCalibPlot->updateFillAreas();
         }
+        saveTmpFileWithSoftIndicators();
     }
 }
 
 void SoftIndicatorCalibrationDialog::onSave()
 {
+}
 
+void SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
+{
     SoftIndicatorCalculationMode calcMode = SoftIndicatorCalculationMode::CATEGORICAL;
     File *selectedFile = m_fsw->getSelectedFile();
     if( selectedFile ){
+
+        //define the soft indicator type
         if( selectedFile->getFileType() == "THRESHOLDCDF")
             calcMode = SoftIndicatorCalculationMode::CONTINUOUS;
 
-        std::vector< std::vector< double > > result = m_softIndCalibPlot->getSoftIndicators( calcMode );
+        //compute the soft indicators (outer vector = each soft indicator; inner vector = values)
+        std::vector< std::vector< double > > softIndicators = m_softIndCalibPlot->getSoftIndicators( calcMode );
+
+        //get the number of computed soft indicator variables
+        uint nSoftIndicators = softIndicators.size();
+
+        //get the Attribute's data file
+        File *file = m_at->getContainingFile();
+        if( file->isDataFile() ){
+
+            //////////////////////////Completes the results with any no-data-values that may exist in the data samples/////////////
+            DataFile *dataFile = (DataFile*)file;
+            //load the data
+            dataFile->loadData();
+            // get the number of data samples
+            uint nData = dataFile->getDataLineCount();
+            //get the Attribute's GEO-EAS index
+            uint atGEOEASIndex = m_at->getAttributeGEOEASgivenIndex();
+            //fills the arrays of soft indicator vectors with any NDVs, to make sure the
+            //sizes match the data count
+            for( uint i = 0; i < nData; ++i){
+                //get sample value
+                double value = dataFile->data( i, atGEOEASIndex-1 );
+                //if the value is a No-Data-Value
+                if( dataFile->isNDV( value ) ){
+                    //for each soft indicator variable
+                    for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
+                        //insert a no-data-value in the soft indicator vector
+                        softIndicators[iSoftIndicator].insert( softIndicators[iSoftIndicator].begin() + i,
+                                                               dataFile->getNoDataValueAsDouble() );
+                    }
+                }
+            }
+            ////////////////////////////////////////////////////////////////
+
+            //suggest names for the soft indicator fields
+            QStringList labels;
+            for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
+                if( selectedFile->getFileType() == "THRESHOLDCDF"){
+                    ThresholdCDF *cdf = (ThresholdCDF*)selectedFile;
+                    labels.append( "thr. = " + QString::number( cdf->get1stValue( iSoftIndicator ), 'g', 12 ) );
+                }else if( selectedFile->getFileType() == "CATEGORYDEFINITION"){
+                    CategoryDefinition *cd = (CategoryDefinition*)selectedFile;
+                    labels.append( cd->getCategoryName( iSoftIndicator ) );
+                }else if( selectedFile->getFileType() == "CATEGORYPDF"){
+                    CategoryPDF *pdf = (CategoryPDF*)selectedFile;
+                    CategoryDefinition *cd = pdf->getCategoryDefinition();
+                    cd->loadTriplets();
+                    labels.append( cd->getCategoryNameByCode( pdf->get1stValue( iSoftIndicator ) ) );
+                }
+            }
+
+
+            //////////////////////////////creates a temporary data file with the soft indicators//////////////////////////
+            //open a new file for output
+            QFile outputFile( Application::instance()->getProject()->generateUniqueTmpFilePath("dat") );
+            outputFile.open( QFile::WriteOnly | QFile::Text );
+            QTextStream out(&outputFile);
+
+            //output the GEO-EAS header
+            out << "Soft indicators for " + dataFile->getPath() + '\n';
+            out << nSoftIndicators+1 << '\n'; //+1 for the input sample value
+            out << "Input variable: " << m_at->getName() << '\n';
+            for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
+                out << "Soft Indicator for " << labels[ iSoftIndicator ] << '\n';
+            }
+
+            //output the original data and their computed soft indicators
+            for( uint i = 0; i < nData; ++i){
+                //output the sample datum to help in debugging any potential problem.
+                out << dataFile->data( i, atGEOEASIndex-1 ) << '\t';
+                // the residue is used to ensure a 1.0 sum for the soft indicators
+                double residue = 1.0;
+                //for each soft indicator variable
+                for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
+                    double softIndicatorTruncated = std::floor( (softIndicators[iSoftIndicator][i]/100.0) * 10000+0.5)/10000;
+                    //get the string presentation of the soft indicator value with 6-digit precision
+                    QString softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                    //for categorical case, the delivered soft indicators must sum up 1.0 exactly
+                    if( calcMode == SoftIndicatorCalculationMode::CATEGORICAL ){
+                        //subtract the actual output value from the residue
+                        residue -= softIndicatorTruncated;
+                        //ensure a 1.0 total probability
+                        if( iSoftIndicator == nSoftIndicators - 1){
+                            softIndicatorTruncated += residue;
+                            softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                        }
+                    }
+                    //insert a no-data-value in the soft indicator vector
+                    out << softIndicatorString << '\t';
+                }
+                out << '\n';
+            }
+            //closes the output file
+            outputFile.close();
+            //////////////////////////////////////////////////////////////////////////////////////
+        }
     }
 }

@@ -125,8 +125,13 @@ std::vector< std::vector<double> > SoftIndicatorCalibPlot::getSoftIndicators(Sof
                 // X is greater than.
                 int iLeft = 0;
                 for ( int i = 0; i < static_cast<int>( curve->dataSize() ); i++ )
-                    if( m_data[iDatum] < curve->sample(i).x() )
+                    if( m_data[iDatum] <= curve->sample(i).x() ){
                         iLeft = i-1;
+                        //adjust for begining-of-scale case
+                        if(iLeft < 0)
+                            iLeft = 0;
+                        break; //interrupt search
+                    }
                 //perform the linear interpolation
                 double x = m_data[iDatum];
                 double x0 = curve->sample(iLeft).x();
@@ -150,12 +155,17 @@ std::vector< std::vector<double> > SoftIndicatorCalibPlot::getSoftIndicators(Sof
             //for each datum
             uint nData = m_data.size();
             for( uint iDatum = 0; iDatum < nData; ++iDatum ){
-                //find the index of the curve point whose X is less or equal than the data value, but the next
+                //find the index of the fill area sample whose X is less or equal than the data value, but the next
                 // X is greater than.
                 int iLeft = 0;
                 for ( int i = 0; i < static_cast<int>( fill->dataSize() ); i++ )
-                    if( m_data[iDatum] < fill->sample(i).value )
+                    if( m_data[iDatum] <= fill->sample(i).value ){
                         iLeft = i-1;
+                        //adjust for begining-of-scale case
+                        if(iLeft < 0)
+                            iLeft = 0;
+                        break; //interrupt search
+                    }
                 //perform the linear interpolation of upper bound
                 double x = m_data[iDatum];
                 double x0 = fill->sample(iLeft).value;

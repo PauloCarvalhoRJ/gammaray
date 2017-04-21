@@ -4,6 +4,7 @@
 #include <limits>
 #include <iomanip>      // std::setprecision
 #include <sstream>    // std::stringstream
+#include <cmath>
 #include "datafile.h"
 #include "../exceptions/invalidgslibdatafileexception.h"
 #include "application.h"
@@ -181,6 +182,15 @@ uint DataFile::getLastFieldGEOEASIndex()
 QString DataFile::getNoDataValue()
 {
     return this->_no_data_value;
+}
+
+double DataFile::getNoDataValueAsDouble()
+{
+    bool OK;
+    double result = getNoDataValue().toDouble( &OK );
+    if( ! OK )
+        return std::nan("");
+    return result;
 }
 
 void DataFile::setNoDataValue(const QString new_ndv)

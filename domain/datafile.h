@@ -75,6 +75,13 @@ public:
     virtual QString getNoDataValue();
 
     /**
+     * Returns the user-given no-data value as a double value.
+     * @note This method performs a conversion from the original text value entered by the user.  If it
+     * cannot be converted to a double, a generic NaN is returned (std::nan("")).
+     */
+    virtual double getNoDataValueAsDouble();
+
+    /**
      * Sets the new no-data value.  Empty string means not set.
      */
     virtual void setNoDataValue( const QString new_ndv );

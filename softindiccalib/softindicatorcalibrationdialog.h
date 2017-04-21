@@ -28,6 +28,9 @@ private:
 private slots:
     void onUpdateNumberOfCalibrationCurves();
     void onSave();
+
+private:
+    void saveTmpFileWithSoftIndicators();
 };
 
 #endif // SOFTINDICATORCALIBRATIONDIALOG_H
