@@ -9,6 +9,7 @@
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
 #include "domain/project.h"
+#include "domain/pointset.h"
 #include "widgets/fileselectorwidget.h"
 #include "softindicatorcalibplot.h"
 #include "util.h"
@@ -123,15 +124,46 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
             }
             m_softIndCalibPlot->updateFillAreas();
         }
-        saveTmpFileWithSoftIndicators();
     }
 }
 
 void SoftIndicatorCalibrationDialog::onSave()
 {
+
 }
 
-void SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
+void SoftIndicatorCalibrationDialog::onPreview()
+{
+    //get the Attribute's data file
+    File *dataFile = m_at->getContainingFile();
+
+    //get the temporary data file with the computed soft indicators
+    QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+
+    if( dataFile->getFileType() == "POINTSET" ){
+        //create a new grid object corresponding to a file to be created in the tmp directory
+        PointSet* ps = new PointSet( fileWithSoftIndicators );
+
+        //set the new point set metadata
+        ps->setInfo( 1, 2, 3, ((DataFile*)dataFile)->getNoDataValue() );
+
+        //get the number of direct children (assumed to be all fields found in the point set file)
+        uint nFields = ps->getChildCount();
+
+        //4: skip X, Y, Z and original data variables
+        //display only the soft indicators
+        for( uint i = 4; i < nFields; ++i){
+            //get the variable with the soft indicator
+            Attribute* softIndicator = (Attribute*)ps->getChildByIndex( i );
+            //open the plot dialog
+            Util::viewPointSet( softIndicator, this );
+        }
+    }
+
+    //TODO: destroy the created object pointed to by cg.
+}
+
+QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
 {
     SoftIndicatorCalculationMode calcMode = SoftIndicatorCalculationMode::CATEGORICAL;
     File *selectedFile = m_fsw->getSelectedFile();
@@ -196,20 +228,34 @@ void SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
 
             //////////////////////////////creates a temporary data file with the soft indicators//////////////////////////
             //open a new file for output
-            QFile outputFile( Application::instance()->getProject()->generateUniqueTmpFilePath("dat") );
+            QString tmpFilePath = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+            QFile outputFile( tmpFilePath );
             outputFile.open( QFile::WriteOnly | QFile::Text );
             QTextStream out(&outputFile);
 
             //output the GEO-EAS header
             out << "Soft indicators for " + dataFile->getPath() + '\n';
-            out << nSoftIndicators+1 << '\n'; //+1 for the input sample value
+            out << nSoftIndicators+1+3 << '\n'; //+1 for the input sample value, +3 for the X,Y,Z coordinates of a pointset
+            out << "X" << '\n';
+            out << "Y" << '\n';
+            out << "Z" << '\n';
             out << "Input variable: " << m_at->getName() << '\n';
             for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
                 out << "Soft Indicator for " << labels[ iSoftIndicator ] << '\n';
             }
 
+            //The data file is surely a PointSet file
+            PointSet* ps = (PointSet*)dataFile;
+
             //output the original data and their computed soft indicators
             for( uint i = 0; i < nData; ++i){
+                //output the X, Y, Z fields of the pointset
+                out << dataFile->data( i, ps->getXindex()-1 ) << '\t';
+                out << dataFile->data( i, ps->getYindex()-1 ) << '\t';
+                if( ps->is3D() )
+                    out << dataFile->data( i, ps->getZindex()-1 ) << '\t';
+                else
+                    out << "0.0" << '\t';
                 //output the sample datum to help in debugging any potential problem.
                 out << dataFile->data( i, atGEOEASIndex-1 ) << '\t';
                 // the residue is used to ensure a 1.0 sum for the soft indicators
@@ -237,6 +283,9 @@ void SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
             //closes the output file
             outputFile.close();
             //////////////////////////////////////////////////////////////////////////////////////
+
+            return tmpFilePath;
         }
     }
+    return "FILE_NOT_FOUND.DAT";
 }

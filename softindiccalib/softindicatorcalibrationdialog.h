@@ -28,9 +28,10 @@ private:
 private slots:
     void onUpdateNumberOfCalibrationCurves();
     void onSave();
+    void onPreview();
 
 private:
-    void saveTmpFileWithSoftIndicators();
+    QString saveTmpFileWithSoftIndicators();
 };
 
 #endif // SOFTINDICATORCALIBRATIONDIALOG_H

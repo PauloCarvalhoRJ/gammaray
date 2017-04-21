@@ -167,6 +167,15 @@ public:
                          CategoryDefinition *cd = nullptr);
 
     /**
+     * Runs the GSLib program locmap and opens the plot dialog to view a
+     * variable in a point set file.
+     * @param parent Parent QWidget for the plot dialog.
+     * @param modal If true, the method returns only when the user closes the Plot Dialog.
+     */
+    static bool viewPointSet(Attribute* variable ,
+                             QWidget *parent);
+
+    /**
      * Runs the GSLib program scatplt and opens the plot dialog to view a
      * a crossplot between two or three variable.
      * @param parent Parent QWidget for the plot dialog.

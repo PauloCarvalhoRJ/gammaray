@@ -17,6 +17,7 @@
 #include "domain/attribute.h"
 #include "domain/project.h"
 #include "domain/categorydefinition.h"
+#include "domain/pointset.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
@@ -537,6 +538,87 @@ bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, Catego
     }
     dpd->show();
     return false;
+}
+
+bool Util::viewPointSet(Attribute *variable, QWidget *parent)
+{
+    //get input data file
+    //the parent component of an attribute is a file
+    //assumes the file is a Point Set, since the user is calling locmap
+    PointSet* input_data_file = (PointSet*)variable->getContainingFile();
+
+    //loads data in file, because it's necessary.
+    input_data_file->loadData();
+
+    //get the variable index in parent data file
+    uint var_index = input_data_file->getFieldGEOEASIndex( variable->getName() );
+
+    //make plot/window title
+    QString title = variable->getContainingFile()->getName();
+    title.append("/");
+    title.append(variable->getName());
+    title.append(" map");
+
+    //Construct an object composition based on the parameter file template for the locmap program.
+    GSLibParameterFile gpf( "locmap" );
+
+    //Set default values so we need to change less parameters and let
+    //the user change the others as one may see fit.
+    gpf.setDefaultValues();
+
+    //get the max and min of the selected variable
+    double data_min = input_data_file->min( var_index-1 );
+    double data_max = input_data_file->max( var_index-1 );
+
+    //----------------set the minimum required locmap paramaters-----------------------
+    //input file
+    gpf.getParameter<GSLibParFile*>(0)->_path = input_data_file->getPath();
+
+    //X, Y and variable
+    GSLibParMultiValuedFixed* par1 = gpf.getParameter<GSLibParMultiValuedFixed*>(1);
+    par1->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getXindex();
+    par1->getParameter<GSLibParUInt*>(1)->_value = input_data_file->getYindex();
+    par1->getParameter<GSLibParUInt*>(2)->_value = var_index;
+
+    //trimming limits
+    GSLibParMultiValuedFixed* par2 = gpf.getParameter<GSLibParMultiValuedFixed*>(2);
+    par2->getParameter<GSLibParDouble*>(0)->_value = data_min - fabs( data_min/100.0 );
+    par2->getParameter<GSLibParDouble*>(1)->_value = data_max + fabs( data_max/100.0 );
+
+    //postscript file
+    gpf.getParameter<GSLibParFile*>(3)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+    //X limits
+    GSLibParMultiValuedFixed* par4 = gpf.getParameter<GSLibParMultiValuedFixed*>(4);
+    par4->getParameter<GSLibParDouble*>(0)->_value = input_data_file->min( input_data_file->getXindex()-1 );
+    par4->getParameter<GSLibParDouble*>(1)->_value = input_data_file->max( input_data_file->getXindex()-1 );
+
+    //Y limits
+    GSLibParMultiValuedFixed* par5 = gpf.getParameter<GSLibParMultiValuedFixed*>(5);
+    par5->getParameter<GSLibParDouble*>(0)->_value = input_data_file->min( input_data_file->getYindex()-1 );
+    par5->getParameter<GSLibParDouble*>(1)->_value = input_data_file->max( input_data_file->getYindex()-1 );
+
+    //color scale details
+    GSLibParMultiValuedFixed* par10 = gpf.getParameter<GSLibParMultiValuedFixed*>(10);
+    par10->getParameter<GSLibParDouble*>(0)->_value = data_min;
+    par10->getParameter<GSLibParDouble*>(1)->_value = data_max;
+    par10->getParameter<GSLibParDouble*>(2)->_value = (data_max-data_min)/10.0; //color scale ticks in 10 steps
+
+    //plot title
+    gpf.getParameter<GSLibParString*>(12)->_value = title;
+    //----------------------------------------------------------------------------------
+
+    //Generate the parameter file
+    QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    gpf.save( par_file_path );
+
+    //run locmap program
+    Application::instance()->logInfo("Starting locmap program...");
+    GSLib::instance()->runProgram( "locmap", par_file_path );
+
+    //display the plot output
+    DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(3)->_path, title, gpf, parent);
+    dpd->show(); //show() makes dialog modalless
 }
 
 void Util::viewXPlot(Attribute *xVariable, Attribute *yVariable, QWidget *parent, Attribute *zVariable)
