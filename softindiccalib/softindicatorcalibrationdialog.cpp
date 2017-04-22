@@ -15,6 +15,9 @@
 #include "util.h"
 
 #include <QHBoxLayout>
+#include <QInputDialog>
+#include <QLineEdit>
+#include <QMessageBox>
 #include <cmath>
 
 SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QWidget *parent) :
@@ -129,11 +132,55 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
 
 void SoftIndicatorCalibrationDialog::onSave()
 {
+    File *selectedFile = m_fsw->getSelectedFile();
+    if( !selectedFile ){
+        QMessageBox::critical( this, "Error", "Please, select a file containing categories or thresholds.");
+        return;
+    }
 
+    //get the Attribute's data file
+    File *dataFile = m_at->getContainingFile();
+
+    //ask the user for the name to the new point set file
+    bool ok = false;
+    QString proposed_name = dataFile->getName().append("_SOFT.xyz");
+    QString new_name = QInputDialog::getText(this, "Name the new point set file",
+                                             "New point set file name with soft indicators:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if(!ok) return;
+
+    if( dataFile->getFileType() == "POINTSET" ){
+        //get the temporary data file with the computed soft indicators
+        QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+
+        //assuming the data file is a point set file
+        PointSet* psData = (PointSet*)dataFile;
+
+        //rename the output point set file
+        QString newPSpath = Util::renameFile( fileWithSoftIndicators, new_name );
+
+        //create a new point set object corresponding to a file created in the tmp directory
+        PointSet* ps = new PointSet( newPSpath );
+
+        //set the new point set metadata
+        ps->setInfo( 1, 2, 3, psData->getNoDataValue() );
+
+        //adds the point set to the project
+        Application::instance()->getProject()->addDataFile( ps );
+
+        //refreshes the project tree
+        Application::instance()->refreshProjectTree();
+    }
 }
 
 void SoftIndicatorCalibrationDialog::onPreview()
 {
+    File *selectedFile = m_fsw->getSelectedFile();
+    if( !selectedFile ){
+        QMessageBox::critical( this, "Error", "Please, select a file containing categories or thresholds.");
+        return;
+    }
+
     //get the Attribute's data file
     File *dataFile = m_at->getContainingFile();
 
@@ -150,9 +197,9 @@ void SoftIndicatorCalibrationDialog::onPreview()
         //get the number of direct children (assumed to be all fields found in the point set file)
         uint nFields = ps->getChildCount();
 
-        //4: skip X, Y, Z and original data variables
+        //3: skip X, Y and Z variables
         //display only the soft indicators
-        for( uint i = 4; i < nFields; ++i){
+        for( uint i = 3; i < nFields; ++i){
             //get the variable with the soft indicator
             Attribute* softIndicator = (Attribute*)ps->getChildByIndex( i );
             //open the plot dialog
@@ -160,7 +207,7 @@ void SoftIndicatorCalibrationDialog::onPreview()
         }
     }
 
-    //TODO: destroy the created object pointed to by cg.
+    //TODO: destroy the created object pointed to by ps.
 }
 
 QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
@@ -235,13 +282,12 @@ QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
 
             //output the GEO-EAS header
             out << "Soft indicators for " + dataFile->getPath() + '\n';
-            out << nSoftIndicators+1+3 << '\n'; //+1 for the input sample value, +3 for the X,Y,Z coordinates of a pointset
+            out << nSoftIndicators+3 << '\n'; // +3 for the X,Y,Z coordinates of a pointset
             out << "X" << '\n';
             out << "Y" << '\n';
             out << "Z" << '\n';
-            out << "Input variable: " << m_at->getName() << '\n';
             for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
-                out << "Soft Indicator for " << labels[ iSoftIndicator ] << '\n';
+                out << m_at->getName() << " soft indicator for " << labels[ iSoftIndicator ] << '\n';
             }
 
             //The data file is surely a PointSet file
@@ -256,8 +302,6 @@ QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
                     out << dataFile->data( i, ps->getZindex()-1 ) << '\t';
                 else
                     out << "0.0" << '\t';
-                //output the sample datum to help in debugging any potential problem.
-                out << dataFile->data( i, atGEOEASIndex-1 ) << '\t';
                 // the residue is used to ensure a 1.0 sum for the soft indicators
                 double residue = 1.0;
                 //for each soft indicator variable
