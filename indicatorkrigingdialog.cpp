@@ -282,10 +282,17 @@ void IndicatorKrigingDialog::onConfigureAndRun()
                     m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
         }
     } else { //if soft data is not set, make sure all fields are set to zero
+        m_gpf_ik3d->getParameter<GSLibParFile*>(9)->_path = "SOFT_INDICATOR_FILE_NOT_SET";
         GSLibParMultiValuedFixed *par10 = m_gpf_ik3d->getParameter<GSLibParMultiValuedFixed*>(10);
         par10->getParameter<GSLibParUInt*>(0)->_value = 0;
         par10->getParameter<GSLibParUInt*>(1)->_value = 0;
         par10->getParameter<GSLibParUInt*>(2)->_value = 0;
+        GSLibParMultiValuedVariable *par10_3 = par10->getParameter<GSLibParMultiValuedVariable*>(3);
+        //the soft data fields
+        par10_3->setSize( ndist );
+        for( uint i = 0; i < ndist; ++i){
+            par10_3->getParameter<GSLibParUInt*>(i)->_value = 0;
+        }
     }
 
     if( firstRun ){ //to not overwrite what the user might set
