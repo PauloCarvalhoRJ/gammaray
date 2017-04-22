@@ -540,7 +540,7 @@ bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, Catego
     return false;
 }
 
-bool Util::viewPointSet(Attribute *variable, QWidget *parent)
+bool Util::viewPointSet(Attribute *variable, QWidget *parent, bool modal)
 {
     //get input data file
     //the parent component of an attribute is a file
@@ -618,7 +618,12 @@ bool Util::viewPointSet(Attribute *variable, QWidget *parent)
 
     //display the plot output
     DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(3)->_path, title, gpf, parent);
-    dpd->show(); //show() makes dialog modalless
+    if( modal ){
+        int response = dpd->exec();
+        return response == QDialog::Accepted;
+    }
+    dpd->show();
+    return false;
 }
 
 void Util::viewXPlot(Attribute *xVariable, Attribute *yVariable, QWidget *parent, Attribute *zVariable)
@@ -813,7 +818,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){

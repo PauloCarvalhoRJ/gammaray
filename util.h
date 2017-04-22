@@ -173,7 +173,8 @@ public:
      * @param modal If true, the method returns only when the user closes the Plot Dialog.
      */
     static bool viewPointSet(Attribute* variable ,
-                             QWidget *parent);
+                             QWidget *parent,
+                             bool modal = false);
 
     /**
      * Runs the GSLib program scatplt and opens the plot dialog to view a
