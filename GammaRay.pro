@@ -125,7 +125,10 @@ SOURCES += main.cpp\
     widgets/categoryselector.cpp \
     widgets/intervalandcategorywidget.cpp \
     spatialindex/spatialindexpoints.cpp \
-    postikdialog.cpp
+    postikdialog.cpp \
+    softindiccalib/softindicatorcalibrationdialog.cpp \
+    softindiccalib/softindicatorcalibplot.cpp \
+    softindiccalib/softindicatorcalibcanvaspicker.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -232,7 +235,10 @@ HEADERS  += mainwindow.h \
     widgets/categoryselector.h \
     widgets/intervalandcategorywidget.h \
     spatialindex/spatialindexpoints.h \
-    postikdialog.h
+    postikdialog.h \
+    softindiccalib/softindicatorcalibrationdialog.h \
+    softindiccalib/softindicatorcalibplot.h \
+    softindiccalib/softindicatorcalibcanvaspicker.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
@@ -281,7 +287,8 @@ FORMS    += mainwindow.ui \
     triadseditordialog.ui \
     widgets/categoryselector.ui \
     widgets/intervalandcategorywidget.ui \
-    postikdialog.ui
+    postikdialog.ui \
+    softindiccalib/softindicatorcalibrationdialog.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
@@ -290,10 +297,19 @@ isEmpty(BOOST_INSTALL){
 }
 INCLUDEPATH += $$BOOST_INSTALL/include
 
+# The Qwt include and lib path and libraries.
+QWT_INSTALL = $$(QWT_ROOT)
+isEmpty(QWT_INSTALL){
+    error(QWT_ROOT environment variable not defined.)
+}
+INCLUDEPATH += $$QWT_INSTALL/include
+LIBPATH     += $$QWT_INSTALL/lib
+LIBS        += -lqwt
+
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 1.5
+VERSION = 1.6
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

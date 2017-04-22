@@ -11,6 +11,26 @@ CategoryDefinition::~CategoryDefinition()
     //TODO: delete the objects in m_createdParameters here.
 }
 
+QString CategoryDefinition::getCategoryNameByCode(int category_code)
+{
+    uint nTriplets = getCategoryCount();
+    for( uint i = 0; i < nTriplets; ++i){
+        if( category_code == getCategoryCode( i ) )
+            return getCategoryName( i );
+    }
+    return "CATEGORY-NOT-FOUND";
+}
+
+uint CategoryDefinition::getCategoryColorByCode(int category_code)
+{
+    uint nTriplets = getCategoryCount();
+    for( uint i = 0; i < nTriplets; ++i){
+        if( category_code == getCategoryCode( i ) )
+            return getColorCode( i );
+    }
+    return 0;
+}
+
 void CategoryDefinition::save(QTextStream *txt_stream)
 {
     (*txt_stream) << this->getFileType() << ":" << this->getFileName() << '\n';

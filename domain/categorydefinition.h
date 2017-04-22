@@ -25,6 +25,12 @@ public:
     int getColorCode( int category_index ){ return get2ndValue(category_index); }
     QString getCategoryName( int category_index ){ return get3rdValue(category_index); }
 
+    /** Returns the category name given its code. */
+    QString getCategoryNameByCode( int category_code );
+
+    /** Returns the category GSLib color code given its code. */
+    uint getCategoryColorByCode( int category_code );
+
     // ProjectComponent interface
 public:
     QIcon getIcon(){return QIcon(":icons/catdef16");}
