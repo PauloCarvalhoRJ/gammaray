@@ -9,6 +9,7 @@
 #include <QTextCursor>
 #include <QScreen>
 #include <QApplication>
+#include <QFrame>
 #include <cassert>
 #include <stdint.h>
 #include "exceptions/invalidgslibdatafileexception.h"
@@ -913,4 +914,24 @@ QString Util::getGEOEAScomment(QString file_path)
     QString result = in.readLine();
     file.close();
     return result;
+}
+
+QFrame *Util::createHorizontalLine()
+{
+    QFrame *line;
+    line = new QFrame( );
+    line->setFrameShape(QFrame::HLine);
+    line->setFrameShadow(QFrame::Sunken);
+    line->setLineWidth(1);
+    return line;
+}
+
+QFrame *Util::createVerticalLine()
+{
+    QFrame *line;
+    line = new QFrame( );
+    line->setFrameShape(QFrame::VLine);
+    line->setFrameShadow(QFrame::Sunken);
+    line->setLineWidth(1);
+    return line;
 }

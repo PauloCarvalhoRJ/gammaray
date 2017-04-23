@@ -54,6 +54,7 @@
 #include "indicatorkrigingdialog.h"
 #include "spatialindex/spatialindexpoints.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
+#include "dialogs/cokrigingdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -1641,4 +1642,10 @@ void MainWindow::openIKPostProcessing()
 {
     PostikDialog* pd = new PostikDialog( this );
     pd->show();
+}
+
+void MainWindow::openCokriging()
+{
+    CokrigingDialog* cokd = new CokrigingDialog( this );
+    cokd->show();
 }

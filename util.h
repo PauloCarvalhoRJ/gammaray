@@ -10,6 +10,7 @@
 
 class QWidget;
 class QPlainTextEdit;
+class QFrame;
 class CartesianGrid;
 class Attribute;
 class CategoryDefinition;
@@ -272,6 +273,16 @@ public:
       * Returns the first line of a GEO-EAS file (the file description).
       */
     static QString getGEOEAScomment( QString file_path );
+
+    /**
+     * Creates a widget with the appearance of a horizontal line, normally used as a separator.
+     */
+    static QFrame* createHorizontalLine();
+
+    /**
+     * Creates a widget with the appearance of a vartical line, normally used as a separator.
+     */
+    static QFrame* createVerticalLine();
 };
 
 #endif // UTIL_H
