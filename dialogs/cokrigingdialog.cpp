@@ -222,6 +222,11 @@ void CokrigingDialog::onParameters()
 
 }
 
+void CokrigingDialog::onLMCcheck()
+{
+    //Do not allow power model.
+}
+
 QLabel *CokrigingDialog::makeLabel(const QString caption)
 {
     QLabel* label = new QLabel( caption );

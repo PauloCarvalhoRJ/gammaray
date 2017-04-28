@@ -38,6 +38,7 @@ private slots:
     void onUpdateVariogramMatrix( int numberOfSecondaryVariables );
     void onUpdateVarMatrixLabels();
     void onParameters();
+    void onLMCcheck();
 
 private:
     QLabel* makeLabel( const QString caption );
