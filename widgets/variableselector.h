@@ -8,6 +8,7 @@ class VariableSelector;
 }
 
 class DataFile;
+class Attribute;
 
 class VariableSelector : public QWidget
 {
@@ -26,13 +27,20 @@ public:
     /** Returns the name of the selected variable. */
     QString getSelectedVariableName();
 
+signals:
+    void variableSelected( Attribute* at );
+
 public slots:
+    /** Updates the list of variables from the passed data file.*/
     void onListVariables( DataFile* file );
 
 private:
     Ui::VariableSelector *ui;
     bool m_hasNotSetItem;
     DataFile *m_dataFile;
+
+public slots:
+    void onSelection( int index );
 };
 
 #endif // VARIABLESELECTOR_H

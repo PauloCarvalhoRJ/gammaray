@@ -11,6 +11,8 @@ class CokrigingDialog;
 class PointSetSelector;
 class VariableSelector;
 class CartesianGridSelector;
+class QLabel;
+class VariogramModelSelector;
 
 class CokrigingDialog : public QDialog
 {
@@ -28,10 +30,19 @@ private:
     CartesianGridSelector* m_cgEstimationGridSelector;
     CartesianGridSelector* m_cgSecondaryGridSelector;
     QVector<VariableSelector*> m_inputGridSecVarsSelectors;
+    QVector<QLabel*> m_labelsVarMatrixTopHeader;
+    QVector<QLabel*> m_labelsVarMatrixLeftHeader;
 
 private slots:
     void onNumberOfSecondaryVariablesChanged( int n );
     void onUpdateVariogramMatrix( int numberOfSecondaryVariables );
+    void onUpdateVarMatrixLabels();
+    void onParameters();
+
+private:
+    QLabel* makeLabel( const QString caption );
+    VariableSelector* makeVariableSelector();
+    VariogramModelSelector* makeVariogramModelSelector();
 };
 
 #endif // COKRIGINGDIALOG_H

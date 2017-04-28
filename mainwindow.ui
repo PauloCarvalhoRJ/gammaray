@@ -319,7 +319,7 @@
   </action>
   <action name="actionCokriging">
    <property name="text">
-    <string>Cokriging</string>
+    <string>Cokriging (cokb3d)</string>
    </property>
   </action>
  </widget>

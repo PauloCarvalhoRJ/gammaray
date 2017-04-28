@@ -73,11 +73,16 @@ int ProjectComponent::getChildIndex(ProjectComponent *child)
     return -1;
 }
 
-ProjectComponent *ProjectComponent::getChildByName(QString name)
+ProjectComponent *ProjectComponent::getChildByName(QString name, bool recurse )
 {
     for (std::vector<ProjectComponent*>::iterator it = _children.begin() ; it != _children.end(); ++it)
-       if ( (*it)->getName() == name )
+       if ( (*it)->getName() == name ){
           return *it;
+       } else if ( recurse ) {
+           ProjectComponent* grandChild = (*it)->getChildByName( name, true );
+           if( grandChild )
+               return grandChild;
+       }
     return nullptr;
 }
 

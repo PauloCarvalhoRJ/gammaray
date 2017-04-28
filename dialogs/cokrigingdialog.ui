@@ -607,8 +607,8 @@
    <slot>onNumberOfSecondaryVariablesChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>227</x>
-     <y>9</y>
+     <x>580</x>
+     <y>11</y>
     </hint>
     <hint type="destinationlabel">
      <x>309</x>
@@ -616,8 +616,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnParameters</sender>
+   <signal>clicked()</signal>
+   <receiver>CokrigingDialog</receiver>
+   <slot>onParameters()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>559</x>
+     <y>238</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>583</x>
+     <y>265</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onNumberOfSecondaryVariablesChanged(int)</slot>
+  <slot>onParameters()</slot>
  </slots>
 </ui>
