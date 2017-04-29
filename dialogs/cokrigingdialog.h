@@ -13,6 +13,8 @@ class VariableSelector;
 class CartesianGridSelector;
 class QLabel;
 class VariogramModelSelector;
+class GSLibParameterFile;
+class VariogramModel;
 
 class CokrigingDialog : public QDialog
 {
@@ -32,6 +34,9 @@ private:
     QVector<VariableSelector*> m_inputGridSecVarsSelectors;
     QVector<QLabel*> m_labelsVarMatrixTopHeader;
     QVector<QLabel*> m_labelsVarMatrixLeftHeader;
+    GSLibParameterFile* m_gpf_cokb3d;
+    //first int = head variable order (1=primary, 2=1st secondary, ...), second int = tail variable order
+    QVector< std::tuple<uint,uint,VariogramModelSelector*> > m_variograms;
 
 private slots:
     void onNumberOfSecondaryVariablesChanged( int n );
@@ -39,11 +44,16 @@ private slots:
     void onUpdateVarMatrixLabels();
     void onParameters();
     void onLMCcheck();
+    void onCokb3dCompletes();
 
 private:
     QLabel* makeLabel( const QString caption );
     VariableSelector* makeVariableSelector();
     VariogramModelSelector* makeVariogramModelSelector();
+    /** Returns nullptr if the head/tail combination does not exist.
+     * @note 1,3 == 3,1 due to assumed cross variogram symmetry (no lag effect).
+     */
+    VariogramModel* getVariogramModel( uint head, uint tail );
 };
 
 #endif // COKRIGINGDIALOG_H

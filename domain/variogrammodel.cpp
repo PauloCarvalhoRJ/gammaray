@@ -76,6 +76,39 @@ double VariogramModel::getRoll(int structure)
     return m_Roll.at( structure );
 }
 
+double VariogramModel::get_max_hMax()
+{
+    double value = get_a_hMax( 0 );
+    for( uint i = 1; i < this->getNst(); ++i ){
+        double tmp = get_a_hMax( i );
+        if( tmp > value )
+            value = tmp;
+    }
+    return value;
+}
+
+double VariogramModel::get_max_hMin()
+{
+    double value = get_a_hMin( 0 );
+    for( uint i = 1; i < this->getNst(); ++i ){
+        double tmp = get_a_hMin( i );
+        if( tmp > value )
+            value = tmp;
+    }
+    return value;
+}
+
+double VariogramModel::get_max_vert()
+{
+    double value = get_a_vert( 0 );
+    for( uint i = 1; i < this->getNst(); ++i ){
+        double tmp = get_a_vert( i );
+        if( tmp > value )
+            value = tmp;
+    }
+    return value;
+}
+
 
 QIcon VariogramModel::getIcon()
 {

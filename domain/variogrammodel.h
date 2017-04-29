@@ -77,6 +77,15 @@ public:
      */
     double getRoll( int structure );
 
+    /** Returns the highest semi-major axis range amongst the nested structures. */
+    double get_max_hMax();
+
+    /** Returns the highest semi-minor axis range amongst the nested structures. */
+    double get_max_hMin();
+
+    /** Returns the highest vertical axis range amongst the nested structures. */
+    double get_max_vert();
+
 // File interface
 public:
     QString getFileType(){ return "VMODEL"; }
