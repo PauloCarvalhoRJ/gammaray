@@ -15,6 +15,7 @@
 #include "gslib/gslib.h"
 #include "util.h"
 
+#include <QFile>
 #include <QMessageBox>
 #include <limits>
 #include <tuple>
@@ -22,7 +23,8 @@
 CokrigingDialog::CokrigingDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CokrigingDialog),
-    m_gpf_cokb3d( nullptr )
+    m_gpf_cokb3d( nullptr ),
+    m_cg_estimation( nullptr )
 {
 
     ui->setupUi(this);
@@ -434,8 +436,43 @@ void CokrigingDialog::onLMCcheck()
 
 void CokrigingDialog::onCokb3dCompletes()
 {
+    //frees all signal connections to the GSLib singleton.
+    GSLib::instance()->disconnect();
 
+    preview();
 }
+
+void CokrigingDialog::preview()
+{
+    if( m_cg_estimation )
+        delete m_cg_estimation;
+
+    //get the tmp file path created by cokb3d with the estimates and kriging variances
+    QString grid_file_path = m_gpf_cokb3d->getParameter<GSLibParFile*>(9)->_path;
+
+    //cokb3d may fail to estimate, most of times due to non-LMC variography
+    QFile file( grid_file_path );
+    if( ! file.exists() ){
+        Application::instance()->logError( "File with estimates not found. Check cokb3d messages." );
+        return;
+    }
+
+    //create a new grid object corresponding to the file created by cokb3d
+    m_cg_estimation = new CartesianGrid( grid_file_path );
+
+    //set the grid geometry info.
+    m_cg_estimation->setInfoFromGridParameter( m_gpf_cokb3d->getParameter<GSLibParGrid*>(10) );
+
+    //FIXME: cokb3d usually uses -999 as no-data-value?
+    m_cg_estimation->setNoDataValue( "-999" );
+
+    //get the variable with the estimation values (normally the first)
+    Attribute* est_var = (Attribute*)m_cg_estimation->getChildByIndex( 0 );
+
+    //open the plot dialog
+    Util::viewGrid( est_var, this );
+}
+
 
 QLabel *CokrigingDialog::makeLabel(const QString caption)
 {
