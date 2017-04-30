@@ -42,5 +42,25 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>cmbVariable</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>VariableSelector</receiver>
+   <slot>onSelection(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>115</x>
+     <y>10</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>115</x>
+     <y>10</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onSelection(int)</slot>
+ </slots>
 </ui>

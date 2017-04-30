@@ -426,7 +426,7 @@ void KrigingDialog::updateVariogramParameters(VariogramModel *vm)
     for( uint ist = 0; ist < par20->getParameter<GSLibParUInt*>(0)->_value; ++ist)
     {
         GSLibParMultiValuedFixed *par21_0 = par21->getParameter<GSLibParMultiValuedFixed*>(ist, 0);
-        par21_0->getParameter<GSLibParOption*>(0)->_selected_value = vm->getIt( ist );
+        par21_0->getParameter<GSLibParOption*>(0)->_selected_value = (uint)vm->getIt( ist );
         par21_0->getParameter<GSLibParDouble*>(1)->_value = vm->getCC( ist );
         par21_0->getParameter<GSLibParDouble*>(2)->_value = vm->getAzimuth( ist );
         par21_0->getParameter<GSLibParDouble*>(3)->_value = vm->getDip( ist );

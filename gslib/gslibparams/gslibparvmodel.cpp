@@ -66,7 +66,7 @@ void GSLibParVModel::setFromVariogramModel(VariogramModel *vmodel)
     _variogram_structures->setCount( nst ); //number of variogram structures
     for(uint i = 0; i < nst; ++i){ //for each variogram structure
         GSLibParMultiValuedFixed* par0 = _variogram_structures->getParameter<GSLibParMultiValuedFixed*>(i, 0);
-        par0->getParameter<GSLibParOption*>(0)->_selected_value = vmodel->getIt( i ); //structure type
+        par0->getParameter<GSLibParOption*>(0)->_selected_value = (uint)vmodel->getIt( i ); //structure type
         par0->getParameter<GSLibParDouble*>(1)->_value = vmodel->getCC( i ); //covariance contribution
         par0->getParameter<GSLibParDouble*>(2)->_value = vmodel->getAzimuth( i ); //azimuth
         par0->getParameter<GSLibParDouble*>(3)->_value = vmodel->getDip( i ); //dip

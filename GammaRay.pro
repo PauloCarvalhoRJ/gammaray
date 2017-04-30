@@ -128,7 +128,8 @@ SOURCES += main.cpp\
     postikdialog.cpp \
     softindiccalib/softindicatorcalibrationdialog.cpp \
     softindiccalib/softindicatorcalibplot.cpp \
-    softindiccalib/softindicatorcalibcanvaspicker.cpp
+    softindiccalib/softindicatorcalibcanvaspicker.cpp \
+    dialogs/cokrigingdialog.cpp
 
 HEADERS  += mainwindow.h \
     aboutdialog.h \
@@ -238,7 +239,8 @@ HEADERS  += mainwindow.h \
     postikdialog.h \
     softindiccalib/softindicatorcalibrationdialog.h \
     softindiccalib/softindicatorcalibplot.h \
-    softindiccalib/softindicatorcalibcanvaspicker.h
+    softindiccalib/softindicatorcalibcanvaspicker.h \
+    dialogs/cokrigingdialog.h
 
 FORMS    += mainwindow.ui \
     aboutdialog.ui \
@@ -288,7 +290,8 @@ FORMS    += mainwindow.ui \
     widgets/categoryselector.ui \
     widgets/intervalandcategorywidget.ui \
     postikdialog.ui \
-    softindiccalib/softindicatorcalibrationdialog.ui
+    softindiccalib/softindicatorcalibrationdialog.ui \
+    dialogs/cokrigingdialog.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
@@ -309,7 +312,7 @@ LIBS        += -lqwt
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 1.6
+VERSION = 1.7
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

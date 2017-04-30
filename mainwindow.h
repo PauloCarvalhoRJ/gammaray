@@ -50,6 +50,7 @@ public slots:
     void openIKCategorical();
     void showMessagesConsoleCustomContextMenu(const QPoint &pt);
     void openIKPostProcessing();
+    void openCokriging();
 
 private:
     Ui::MainWindow *ui;

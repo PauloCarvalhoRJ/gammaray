@@ -28,7 +28,7 @@ uint VariogramModel::getNst()
     return m_nst;
 }
 
-uint VariogramModel::getIt(int structure)
+VariogramStructureType VariogramModel::getIt(int structure)
 {
     readParameters();
     return m_it.at( structure );
@@ -74,6 +74,39 @@ double VariogramModel::getRoll(int structure)
 {
     readParameters();
     return m_Roll.at( structure );
+}
+
+double VariogramModel::get_max_hMax()
+{
+    double value = get_a_hMax( 0 );
+    for( uint i = 1; i < this->getNst(); ++i ){
+        double tmp = get_a_hMax( i );
+        if( tmp > value )
+            value = tmp;
+    }
+    return value;
+}
+
+double VariogramModel::get_max_hMin()
+{
+    double value = get_a_hMin( 0 );
+    for( uint i = 1; i < this->getNst(); ++i ){
+        double tmp = get_a_hMin( i );
+        if( tmp > value )
+            value = tmp;
+    }
+    return value;
+}
+
+double VariogramModel::get_max_vert()
+{
+    double value = get_a_vert( 0 );
+    for( uint i = 1; i < this->getNst(); ++i ){
+        double tmp = get_a_vert( i );
+        if( tmp > value )
+            value = tmp;
+    }
+    return value;
 }
 
 
@@ -124,7 +157,7 @@ void VariogramModel::readParameters()
     {
         GSLibParMultiValuedFixed *par4_0 = par4->getParameter<GSLibParMultiValuedFixed*>(inst, 0);
         //...collect the struture type
-        m_it.append( par4_0->getParameter<GSLibParOption*>(0)->_selected_value );
+        m_it.append( (VariogramStructureType)par4_0->getParameter<GSLibParOption*>(0)->_selected_value );
         //...collect the contribution
         m_cc.append( par4_0->getParameter<GSLibParDouble*>(1)->_value );
         //...add the contribution to the Sill value

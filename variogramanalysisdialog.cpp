@@ -104,6 +104,11 @@ void VariogramAnalysisDialog::finishUISetup()
     adjustSize();
 }
 
+bool VariogramAnalysisDialog::isCrossVariography()
+{
+    return m_head != m_tail;
+}
+
 void VariogramAnalysisDialog::onOpenVarMapParameters()
 {
     if( ! m_gpf_varmap ){
@@ -113,21 +118,39 @@ void VariogramAnalysisDialog::onOpenVarMapParameters()
         DataFile* input_data_file = (DataFile*)m_head->getContainingFile();
         //loads data in file.
         input_data_file->loadData();
-        //get the variable index in parent data file
-        uint var_index = input_data_file->getFieldGEOEASIndex( m_head->getName() );
+        //get the variables indexes in parent data file
+        uint head_var_index = input_data_file->getFieldGEOEASIndex( m_head->getName() );
+        uint tail_var_index = head_var_index;
+        if( isCrossVariography() )
+             tail_var_index = input_data_file->getFieldGEOEASIndex( m_tail->getName() );
         //Set default values so we need to change less parameters and let
         //the user change the others as one may see fit.
         m_gpf_varmap->setDefaultValues();
-        //get the max and min of the selected variable
-        double data_min = input_data_file->min( var_index-1 );
-        double data_max = input_data_file->max( var_index-1 );
+        //get the max and min of the selected variables
+        double data_min = input_data_file->min( head_var_index-1 );
+        double data_max = input_data_file->max( head_var_index-1 );
+        if( isCrossVariography() ){
+            double tail_min = input_data_file->min( tail_var_index-1 );
+            double tail_max = input_data_file->max( tail_var_index-1 );
+            if( tail_min < data_min )
+                data_min = tail_min;
+            if( tail_max > data_max )
+                data_max = tail_max;
+        }
         //----------------set the minimum required gamv paramaters-----------------------
         //input file
         m_gpf_varmap->getParameter<GSLibParFile*>(0)->_path = input_data_file->getPath();
         //number of variables and column numbers
         GSLibParMultiValuedFixed *par1 = m_gpf_varmap->getParameter<GSLibParMultiValuedFixed*>(1);
+        if( isCrossVariography() ){
+            par1->getParameter<GSLibParUInt*>(0)->_value = 2;
+        }
         GSLibParMultiValuedVariable *par1_1 = par1->getParameter<GSLibParMultiValuedVariable*>(1);
-        par1_1->getParameter<GSLibParUInt*>(0)->_value = var_index;
+        par1_1->getParameter<GSLibParUInt*>(0)->_value = head_var_index;
+        if( isCrossVariography() ){
+            par1_1->assure( 2 );
+            par1_1->getParameter<GSLibParUInt*>(1)->_value = tail_var_index;
+        }
         //data minimum and maximum (trimming limits)
         GSLibParMultiValuedFixed *par2 = m_gpf_varmap->getParameter<GSLibParMultiValuedFixed*>(2);
         par2->getParameter<GSLibParDouble*>(0)->_value = data_min;
@@ -160,6 +183,15 @@ void VariogramAnalysisDialog::onOpenVarMapParameters()
         }
         //output grid with varmap image
         m_gpf_varmap->getParameter<GSLibParFile*>(7)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+
+        //define a non-default variogram option if the user opted for cross variography
+        if( isCrossVariography() ){
+            GSLibParRepeat *par13 = m_gpf_varmap->getParameter<GSLibParRepeat*>(13);
+            GSLibParMultiValuedFixed *par13_0 = par13->getParameter<GSLibParMultiValuedFixed*>(0, 0);
+            par13_0->getParameter<GSLibParUInt*>(0)->_value = 1;
+            par13_0->getParameter<GSLibParUInt*>(1)->_value = 2;
+            par13_0->getParameter<GSLibParOption*>(2)->_selected_value = 2;
+        }
     }
     //construct the parameter dialog so the user can adjust other settings before running varmap
     GSLibParametersDialog gslibpardiag( m_gpf_varmap );
@@ -188,7 +220,11 @@ void VariogramAnalysisDialog::onOpenVarMapPlot()
 
     //make plot/window title
     QString title = "Variogram map of ";
+    if( isCrossVariography() )
+        title = "Cross-variogram ";
     title.append( m_head->getName() );
+    if( isCrossVariography() )
+        title.append( " X " + m_tail->getName() );
 
     //replace asterisks caused by a bug in varmap with no-data values
     Util::fixVarmapBug( m_gpf_varmap->getParameter<GSLibParFile*>(7)->_path );
@@ -670,16 +706,27 @@ void VariogramAnalysisDialog::onGamv()
         //loads data in file, because it's necessary.
         input_data_file->loadData();
 
-        //get the variable index in parent data file
-        uint var_index = input_data_file->getFieldGEOEASIndex( m_head->getName() );
+        //get the variable index(es) in parent data file
+        uint head_var_index = input_data_file->getFieldGEOEASIndex( m_head->getName() );
+        uint tail_var_index = head_var_index; //default is auto variogram
+        if( isCrossVariography() )
+            tail_var_index = input_data_file->getFieldGEOEASIndex( m_tail->getName() );
 
         //Set default values so we need to change less parameters and let
         //the user change the others as one may see fit.
         m_gpf_gamv->setDefaultValues();
 
-        //get the max and min of the selected variable
-        double data_min = input_data_file->min( var_index-1 );
-        double data_max = input_data_file->max( var_index-1 );
+        //get the max and min of the selected variables
+        double data_min = input_data_file->min( head_var_index-1 );
+        double data_max = input_data_file->max( head_var_index-1 );
+        if( isCrossVariography() ){
+            double tail_min = input_data_file->min( tail_var_index-1 );
+            double tail_max = input_data_file->max( tail_var_index-1 );
+            if( tail_min < data_min )
+                data_min = tail_min;
+            if( tail_max > data_max )
+                data_max = tail_max;
+        }
 
         //----------------set the minimum required gamv paramaters-----------------------
         //input file
@@ -693,14 +740,30 @@ void VariogramAnalysisDialog::onGamv()
 
         //variable to compute variogram for
         GSLibParMultiValuedFixed *par2 = m_gpf_gamv->getParameter<GSLibParMultiValuedFixed*>(2);
-        par2->getParameter<GSLibParUInt*>(0)->_value = 1; //quantity
+        par2->getParameter<GSLibParUInt*>(0)->_value = 1; //number of variables
+        if( isCrossVariography() )
+            par2->getParameter<GSLibParUInt*>(0)->_value = 2; //number of variables
         GSLibParMultiValuedVariable *par2_1 = par2->getParameter<GSLibParMultiValuedVariable*>(1);
-        par2_1->getParameter<GSLibParUInt*>(0)->_value = var_index;
+        par2_1->getParameter<GSLibParUInt*>(0)->_value = head_var_index;
+        if( isCrossVariography() ){
+            par2_1->assure( 2 );
+            par2_1->getParameter<GSLibParUInt*>(1)->_value = tail_var_index;
+        }
 
         //trimming limits
         GSLibParMultiValuedFixed *par3 = m_gpf_gamv->getParameter<GSLibParMultiValuedFixed*>(3);
         par3->getParameter<GSLibParDouble*>(0)->_value = data_min;
         par3->getParameter<GSLibParDouble*>(1)->_value = data_max;
+
+        //define a non-default variogram option if the user opted for cross variography
+        if( isCrossVariography() ){
+            GSLibParRepeat *par12 = m_gpf_gamv->getParameter<GSLibParRepeat*>(12);
+            GSLibParMultiValuedFixed *par12_0 = par12->getParameter<GSLibParMultiValuedFixed*>(0, 0);
+            par12_0->getParameter<GSLibParUInt*>(0)->_value = 1;
+            par12_0->getParameter<GSLibParUInt*>(1)->_value = 2;
+            par12_0->getParameter<GSLibParOption*>(2)->_selected_value = 2;
+            par12_0->getParameter<GSLibParDouble*>(3)->_value = 0.0;
+        }
 
         //output file with experimental variogram values
         m_gpf_gamv->getParameter<GSLibParFile*>(4)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("out");
@@ -908,16 +971,27 @@ void VariogramAnalysisDialog::onGam()
         //loads data in file.
         input_data_file->loadData();
 
-        //get the variable index in parent data file
-        uint var_index = input_data_file->getFieldGEOEASIndex( m_head->getName() );
+        //get the variable index(es) in parent data file
+        uint head_var_index = input_data_file->getFieldGEOEASIndex( m_head->getName() );
+        uint tail_var_index = head_var_index; //default is auto variogram
+        if( isCrossVariography() )
+            tail_var_index = input_data_file->getFieldGEOEASIndex( m_tail->getName() );
 
         //Set default values so we need to change less parameters and let
         //the user change the others as one may see fit.
         m_gpf_gam->setDefaultValues();
 
-        //get the max and min of the selected variable
-        double data_min = input_data_file->min( var_index-1 );
-        double data_max = input_data_file->max( var_index-1 );
+        //get the max and min of the selected variable(s)
+        double data_min = input_data_file->min( head_var_index-1 );
+        double data_max = input_data_file->max( head_var_index-1 );
+        if( isCrossVariography() ){
+            double tail_min = input_data_file->min( tail_var_index-1 );
+            double tail_max = input_data_file->max( tail_var_index-1 );
+            if( tail_min < data_min )
+                data_min = tail_min;
+            if( tail_max > data_max )
+                data_max = tail_max;
+        }
 
         //----------------set the minimum required gam paramaters-----------------------
         //input file
@@ -925,9 +999,15 @@ void VariogramAnalysisDialog::onGam()
 
         //variable to compute variogram for
         GSLibParMultiValuedFixed *par1 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(1);
-        par1->getParameter<GSLibParUInt*>(0)->_value = 1; //quantity
+        par1->getParameter<GSLibParUInt*>(0)->_value = 1; //number of variables
+        if( isCrossVariography() )
+            par1->getParameter<GSLibParUInt*>(0)->_value = 2; //number of variables
         GSLibParMultiValuedVariable *par1_1 = par1->getParameter<GSLibParMultiValuedVariable*>(1);
-        par1_1->getParameter<GSLibParUInt*>(0)->_value = var_index;
+        par1_1->getParameter<GSLibParUInt*>(0)->_value = head_var_index;
+        if( isCrossVariography() ){
+            par1_1->assure( 2 );
+            par1_1->getParameter<GSLibParUInt*>(1)->_value = tail_var_index;
+        }
 
         //trimming limits
         GSLibParMultiValuedFixed *par2 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(2);
@@ -948,6 +1028,16 @@ void VariogramAnalysisDialog::onGam()
         par5->_specs_z->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getNZ(); //nz
         par5->_specs_z->getParameter<GSLibParDouble*>(1)->_value = input_data_file->getZ0(); //min z
         par5->_specs_z->getParameter<GSLibParDouble*>(2)->_value = input_data_file->getDZ(); //cell size z
+
+        //set non-default variogam options if the user opted for cross variography
+        if( isCrossVariography() ){
+            GSLibParRepeat *par10 = m_gpf_gam->getParameter<GSLibParRepeat*>(10); //repeat nvarios-times
+            GSLibParMultiValuedFixed *par10_0 = par10->getParameter<GSLibParMultiValuedFixed*>(0, 0);
+            par10_0->getParameter<GSLibParUInt*>(0)->_value = 1;
+            par10_0->getParameter<GSLibParUInt*>(1)->_value = 2;
+            par10_0->getParameter<GSLibParOption*>(2)->_selected_value = 2;
+            par10_0->getParameter<GSLibParDouble*>(3)->_value = 0.0;
+        }
     }
     //--------------------------------------------------------------------------------
 

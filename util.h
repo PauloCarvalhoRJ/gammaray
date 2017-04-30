@@ -10,9 +10,11 @@
 
 class QWidget;
 class QPlainTextEdit;
+class QFrame;
 class CartesianGrid;
 class Attribute;
 class CategoryDefinition;
+class VariogramModel;
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -272,6 +274,25 @@ public:
       * Returns the first line of a GEO-EAS file (the file description).
       */
     static QString getGEOEAScomment( QString file_path );
+
+    /**
+     * Creates a widget with the appearance of a horizontal line, normally used as a separator.
+     */
+    static QFrame* createHorizontalLine();
+
+    /**
+     * Creates a widget with the appearance of a vartical line, normally used as a separator.
+     */
+    static QFrame* createVerticalLine();
+
+    /** Returns whether the given set of variograms form a Linear Model of Coregionalization.
+     *  Any problems encountered are reported to the main window's message panel as error messages
+     *  so the user can take corrective measures.
+     *  @param vmVar1 Autovariogram of 1st variable.
+     *  @param vmVar2 Autovariogram of 2nd variable.
+     *  @param crossVariogram Cross variogram between the variables (no lag effect assumed).
+     */
+    static bool isLMC( VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel* crossVariogram );
 };
 
 #endif // UTIL_H

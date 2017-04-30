@@ -109,6 +109,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForIk3d();
     } else if ( this->_program_name == "postik" ){
         this->setDefaultValuesForPostik();
+    } else if ( this->_program_name == "cokb3d" ){
+        this->setDefaultValuesForCokb3d();
     } else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
@@ -1516,7 +1518,6 @@ void GSLibParameterFile::setDefaultValuesForIk3d()
         GSLibParVModel *par22_i = par22->getParameter<GSLibParVModel*>(i, 0);
         par22_i->makeDefault();
     }
-    return;
 }
 
 void GSLibParameterFile::setDefaultValuesForPostik()
@@ -1568,6 +1569,122 @@ void GSLibParameterFile::setDefaultValuesForPostik()
     par11->getParameter<GSLibParDouble*>(1)->_value = 2.0;
 
     getParameter<GSLibParUInt*>(12)->_value = 50;
+}
+
+void GSLibParameterFile::setDefaultValuesForCokb3d()
+{
+    //input data file
+    getParameter<GSLibParFile*>(0)->_path = "nofile.dat";
+
+    //number of variables (primary + secondaries)
+    getParameter<GSLibParUInt*>(1)->_value = 2;
+
+    //columns for X,Y,Z,primary and secondaries
+    GSLibParMultiValuedVariable *par2 = getParameter<GSLibParMultiValuedVariable*>(2);
+    par2->assure( 3 + 2 );
+    par2->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par2->getParameter<GSLibParUInt*>(1)->_value = 2;
+    par2->getParameter<GSLibParUInt*>(2)->_value = 3;
+    par2->getParameter<GSLibParUInt*>(3)->_value = 4;
+    par2->getParameter<GSLibParUInt*>(4)->_value = 5;
+
+    //trimming limits
+    GSLibParMultiValuedFixed *par3 = this->getParameter<GSLibParMultiValuedFixed*>(3);
+    par3->getParameter<GSLibParDouble*>(0)->_value = -1e21;
+    par3->getParameter<GSLibParDouble*>(1)->_value = 1e21;
+
+    //cokriging type
+    getParameter<GSLibParOption*>(4)->_selected_value = 0;
+
+    //file with co-located secondary data
+    getParameter<GSLibParFile*>(5)->_path = "nofile.dat";
+
+    //column with co-located secondary data
+    getParameter<GSLibParUInt*>(6)->_value = 1;
+
+    //debug option
+    getParameter<GSLibParOption*>(7)->_selected_value = 0;
+
+    //file for debug output
+    getParameter<GSLibParFile*>(8)->_path = "nofile.dat";
+
+    //file with estimates output
+    getParameter<GSLibParFile*>(9)->_path = "nofile.dat";
+
+    //grid parameters
+    GSLibParGrid* par10 = getParameter<GSLibParGrid*>(10);
+    par10->_specs_x->getParameter<GSLibParUInt*>(0)->_value = 10; //nx
+    par10->_specs_x->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min x
+    par10->_specs_x->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size x
+    par10->_specs_y->getParameter<GSLibParUInt*>(0)->_value = 10; //ny
+    par10->_specs_y->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min y
+    par10->_specs_y->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size y
+    par10->_specs_z->getParameter<GSLibParUInt*>(0)->_value = 1; //nz
+    par10->_specs_z->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min z
+    par10->_specs_z->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size z
+
+    //x,y and z block discretization
+    GSLibParMultiValuedFixed *par11 = this->getParameter<GSLibParMultiValuedFixed*>(11);
+    par11->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par11->getParameter<GSLibParUInt*>(1)->_value = 1;
+    par11->getParameter<GSLibParUInt*>(2)->_value = 1;
+
+    //min primary, max primary, max secondary data for kriging
+    GSLibParMultiValuedFixed *par12 = this->getParameter<GSLibParMultiValuedFixed*>(12);
+    par12->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par12->getParameter<GSLibParUInt*>(1)->_value = 12;
+    par12->getParameter<GSLibParUInt*>(2)->_value = 12;
+
+    //maximum search radii for primary
+    GSLibParMultiValuedFixed *par13 = this->getParameter<GSLibParMultiValuedFixed*>(13);
+    par13->getParameter<GSLibParDouble*>(0)->_value = 100.0;
+    par13->getParameter<GSLibParDouble*>(1)->_value = 100.0;
+    par13->getParameter<GSLibParDouble*>(2)->_value = 100.0;
+
+    //maximum search radii for secondaries
+    GSLibParMultiValuedFixed *par14 = this->getParameter<GSLibParMultiValuedFixed*>(14);
+    par14->getParameter<GSLibParDouble*>(0)->_value = 20.0;
+    par14->getParameter<GSLibParDouble*>(1)->_value = 20.0;
+    par14->getParameter<GSLibParDouble*>(2)->_value = 20.0;
+
+    //angles for search ellipsoid
+    GSLibParMultiValuedFixed *par15 = this->getParameter<GSLibParMultiValuedFixed*>(15);
+    par15->getParameter<GSLibParDouble*>(0)->_value = 0.0;
+    par15->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+    par15->getParameter<GSLibParDouble*>(2)->_value = 0.0;
+
+    //kriging option
+    getParameter<GSLibParOption*>(16)->_selected_value = 0;
+
+    //means (primary and secondaries)
+    GSLibParMultiValuedVariable *par17 = getParameter<GSLibParMultiValuedVariable*>(17);
+    par17->assure( 2 );
+    par17->getParameter<GSLibParDouble*>(0)->_value = 0.0;
+    par17->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+
+    //--------auto and cross variograms-------------------------//
+    GSLibParRepeat *par18 = getParameter<GSLibParRepeat*>(18);
+    par18->setCount( 3 );
+    uint i1 = 1;
+    uint i2 = 1;
+    uint nvars = 2;
+    for(uint i = 0; i < 3; ++i ){
+        //variable indexes
+        GSLibParMultiValuedFixed *par18_ii = par18->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        par18_ii->getParameter<GSLibParUInt*>(0)->_value = i1;
+        par18_ii->getParameter<GSLibParUInt*>(1)->_value = i2;
+        //variogram model
+        GSLibParVModel *par18_i = par18->getParameter<GSLibParVModel*>(i, 1);
+        par18_i->makeDefault();
+        //compute the variable indexes
+        ++i2;
+        if( i2 > nvars ){
+            ++i1;
+            i2 = i1;
+            if( i1 > nvars )
+                break;
+        }
+    }
 }
 
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
@@ -2191,6 +2308,39 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<option [1:linear interp.][2:power model interp.][3:quantiles from data]> <double>  -middle    : option, parameter\n";
         out << "<option [1:linear interp.][2:power model interp.][3:quantiles from data][4:hyperbolic model interp.]> <double>   -upper tail: option, parameter\n";
         out << "<uint>                                                                         -maximum discretization\n";
+    }
+    par_file.close();
+
+    par_file_path = dir.absoluteFilePath("cokb3d.par.tpl");
+    par_file.setFileName( par_file_path );
+    if( !par_file.exists() ){
+        par_file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&par_file);
+        out << "                  Parameters for COKB3D\n";
+        out << "                  ***********************\n";
+        out << '\n';
+        out << "START OF PARAMETERS\n";
+        out << "<file>                                                    -file with data\n";
+        out << "<uint (nvar)>                                             -   number of variables (primary+other)\n";
+        out << "<uint+>                                                   -   columns for X,Y,Z,var,sec var(s)\n";
+        out << "<double> <double>                                         -   trimming limits\n";
+        out << "<option [0:full][1:co-located]>                           -cokriging type.\n";
+        out << "<file>                                                    -file with co-located secondary data\n";
+        out << "<uint>                                                    -   column with co-located secondary data\n";
+        out << "<option [0:0][1:1][2:2][3:3]>                             -debugging level: 0,1,2,3\n";
+        out << "<file>                                                    -file for debugging output\n";
+        out << "<file>                                                    -file for kriged output\n";
+        out << "<grid>                                                    -nx,xmn,xsiz; ny,ymn,ysiz; nz,zmn,zsiz\n";
+        out << "<uint> <uint> <uint>                                      -x,y and z block discretization\n";
+        out << "<uint> <uint> <uint>                                           -min primary, max primary, max secondary data for kriging\n";
+        out << "<double> <double> <double>                                -maximum search radii for primary\n";
+        out << "<double> <double> <double>                                -maximum search radii for secondary\n";
+        out << "<double> <double> <double>                                -angles for search ellipsoid\n";
+        out << "<option [0:SK][1:OK-standardized][2:OK-traditional]>      -0=SK,1=OK,2=OK-trad\n";
+        out << "<double+>                                                 -means (primary and secondaries)\n";
+        out << "<repeat [nvar]>\n";
+        out << "   <uint> <uint>                                          -variable indexes (e.g. 1 ).\n";
+        out << "   <vmodel>                                               -variogram model.\n";
     }
     par_file.close();
 }
