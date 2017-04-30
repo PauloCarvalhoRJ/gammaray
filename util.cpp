@@ -19,6 +19,7 @@
 #include "domain/project.h"
 #include "domain/categorydefinition.h"
 #include "domain/pointset.h"
+#include "domain/variogrammodel.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
@@ -819,7 +820,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -934,4 +935,92 @@ QFrame *Util::createVerticalLine()
     line->setFrameShadow(QFrame::Sunken);
     line->setLineWidth(1);
     return line;
+}
+
+bool Util::isLMC(VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel *crossVariogram)
+{
+    bool result = true;
+
+    VariogramModel* vmodels[] = { vmVar1, vmVar2, crossVariogram };
+
+    //Do not allow power model.
+    for( uint j = 0; j < 3; ++j)
+        for( uint i = 0; i < vmodels[j]->getNst(); ++i){
+            if( vmodels[j]->getIt( i ) == VariogramStructureType::POWER_LAW ){
+                result = false;
+                Application::instance()->logError( vmodels[j]->getName() + " has a power model, which is not allowed." );
+            }
+        }
+
+    //all the models must have the same structures
+    bool sameNumberOfStructures = true;
+    for( uint j = 0; j < 2; ++j)
+        for( uint i = j+1; i < 3; ++i)
+            if( vmodels[j]->getNst() != vmodels[i]->getNst() ){
+                sameNumberOfStructures = false;
+                result = false;
+                Application::instance()->logError( vmodels[j]->getName() + " has a different number of structures than " +
+                                                   vmodels[i]->getName() + "." );
+            } else {
+                for( uint k = 0; k < vmodels[j]->getNst(); ++k){
+                    if( vmodels[j]->getIt( k ) != vmodels[i]->getIt( k ) ){
+                        result = false;
+                        Application::instance()->logError( vmodels[j]->getName() + " has a different set of structures than " +
+                                                           vmodels[i]->getName() + "." );
+                    }
+                    if( vmodels[j]->getAzimuth( k ) != vmodels[i]->getAzimuth( k ) ||
+                        vmodels[j]->getDip( k ) != vmodels[i]->getDip( k ) ||
+                        vmodels[j]->getRoll( k ) != vmodels[i]->getRoll( k )){
+                        result = false;
+                        Application::instance()->logError( vmodels[j]->getName() + " has a different set of angles in structure " +
+                                                           QString::number(k+1) + " than " + vmodels[i]->getName() + "." );
+                    }
+                    if( vmodels[j]->get_a_hMax( k ) != vmodels[i]->get_a_hMax( k ) ||
+                        vmodels[j]->get_a_hMin( k ) != vmodels[i]->get_a_hMin( k ) ||
+                        vmodels[j]->get_a_vert( k ) != vmodels[i]->get_a_vert( k )){
+                        result = false;
+                        Application::instance()->logError( vmodels[j]->getName() + " has a different set of ranges in structure " +
+                                                           QString::number(k+1) + " than " + vmodels[i]->getName() + "." );
+                    }
+                }
+            }
+
+    //the contributions of the autovariograms must be positive
+    for( uint j = 0; j < 2; ++j){
+        if( vmodels[j]->getNugget() <= 0.0 ){
+            result = false;
+            Application::instance()->logError( vmodels[j]->getName() + " autovariogram has a non-positive nugget effect." );
+        }
+        for( uint k = 0; k < vmodels[j]->getNst(); ++k){
+            if( vmodels[j]->getCC( k ) <= 0.0 ){
+                result = false;
+                Application::instance()->logError( vmodels[j]->getName() + " autovariogram has a non-positive contribution." );
+            }
+        }
+    }
+
+    //the product of the contributions of the autovariograms must be grater than the square of the contributions of the
+    //cross variogram.
+    if( sameNumberOfStructures ){
+        if( vmodels[0]->getNugget() * vmodels[1]->getNugget() <=
+            vmodels[2]->getNugget() * vmodels[2]->getNugget() ){
+            result = false;
+            Application::instance()->logError( "The product of the nugget effects (" + QString::number(vmodels[0]->getNugget()) + " and " +
+                    QString::number(vmodels[1]->getNugget()) + ") of the autovariograms must be " +
+                    "grater than the square of the nugget effect (" + QString::number(vmodels[2]->getNugget()) +
+                    ") of the cross variogram." );
+        }
+        for( uint k = 0; k < vmodels[0]->getNst(); ++k){
+            if( vmodels[0]->getCC( k ) * vmodels[1]->getCC( k ) <=
+                vmodels[2]->getCC( k ) * vmodels[2]->getCC( k ) ){
+                result = false;
+                Application::instance()->logError( "The product of the contributions (" + QString::number(vmodels[0]->getCC( k )) + " and " +
+                        QString::number(vmodels[1]->getCC( k )) + ") of the autovariograms in structure " + QString::number(k+1) + " must be " +
+                        "grater than the square of the contribution (" + QString::number(vmodels[2]->getCC( k )) +
+                        ") of the cross variogram." );
+            }
+        }
+    }
+
+    return result;
 }

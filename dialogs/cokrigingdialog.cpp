@@ -16,7 +16,9 @@
 #include "util.h"
 
 #include <QFile>
+#include <QInputDialog>
 #include <QMessageBox>
+#include <QLineEdit>
 #include <limits>
 #include <tuple>
 
@@ -29,7 +31,7 @@ CokrigingDialog::CokrigingDialog(QWidget *parent) :
 
     ui->setupUi(this);
 
-    this->setWindowTitle("Cokriging");
+    this->setWindowTitle("Cokriging (with cokb3d)");
 
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
@@ -63,6 +65,7 @@ CokrigingDialog::CokrigingDialog(QWidget *parent) :
     font = m_cgSecondaryGridSelector->font();
     font.setBold( false );
     m_cgSecondaryGridSelector->setFont( font );
+    m_cgSecondaryGridSelector->setEnabled( false );
 
     //Call this slot to create the widgets that are function of the number of secondary variables
     onNumberOfSecondaryVariablesChanged( 1 );
@@ -109,10 +112,11 @@ void CokrigingDialog::onNumberOfSecondaryVariablesChanged(int n)
     m_inputGridSecVarsSelectors.clear();
 
     //installs the target number of secondary grid variable selectors
-    // NOTE: forcing to be one for cokb3d, which accepts only one co-located secondary
+    // TODO: forcing to be one.  In the future, check whether newcokb3d accepts more than one.
     for( int i = 0; i < 1/*n*/; ++i){
         VariableSelector* selector = makeVariableSelector();
         ui->frmSecondaryData->layout()->addWidget( selector );
+        selector->setEnabled( false );
         connect( m_cgSecondaryGridSelector, SIGNAL(cartesianGridSelected(DataFile*)),
                  selector, SLOT(onListVariables(DataFile*)) );
         m_inputGridSecVarsSelectors.push_back( selector );
@@ -431,7 +435,19 @@ void CokrigingDialog::onParameters()
 
 void CokrigingDialog::onLMCcheck()
 {
-    //Do not allow power model.
+    bool result = true;
+    //get the number of variables (primary + secondaries)
+    uint nvars = 1 + ui->spinNSecVars->value();
+    for( uint i = 1; i < nvars; ++i)
+        for( uint j = i + 1; j <= nvars; ++j){
+            VariogramModel *autoVar1 = getVariogramModel( i, i );
+            VariogramModel *autoVar2 = getVariogramModel( j, j );
+            VariogramModel *crossVar = getVariogramModel( i, j );
+            result = Util::isLMC( autoVar1, autoVar2, crossVar );
+        }
+    if( ! result ){
+        QMessageBox::critical( this, "Error", "The variograms do not form a LMC.  Please, check the message panel for error messages with the details.");
+    }
 }
 
 void CokrigingDialog::onCokb3dCompletes()
@@ -440,6 +456,16 @@ void CokrigingDialog::onCokb3dCompletes()
     GSLib::instance()->disconnect();
 
     preview();
+}
+
+void CokrigingDialog::onSave()
+{
+    save( true );
+}
+
+void CokrigingDialog::onSaveKrigingVariances()
+{
+    save( false );
 }
 
 void CokrigingDialog::preview()
@@ -463,7 +489,7 @@ void CokrigingDialog::preview()
     //set the grid geometry info.
     m_cg_estimation->setInfoFromGridParameter( m_gpf_cokb3d->getParameter<GSLibParGrid*>(10) );
 
-    //FIXME: cokb3d usually uses -999 as no-data-value?
+    //cokb3d usually uses -999 as no-data-value
     m_cg_estimation->setNoDataValue( "-999" );
 
     //get the variable with the estimation values (normally the first)
@@ -471,6 +497,38 @@ void CokrigingDialog::preview()
 
     //open the plot dialog
     Util::viewGrid( est_var, this );
+}
+
+void CokrigingDialog::save(bool estimates)
+{
+    if( ! m_gpf_cokb3d || ! m_cg_estimation ){
+        QMessageBox::critical( this, "Error", "Please, run the estimation at least once.");
+        return;
+    }
+
+    //get the selected estimation grid
+    CartesianGrid* estimation_grid = (CartesianGrid*)m_cgEstimationGridSelector->getSelectedDataFile();
+    if( ! estimation_grid ){
+        QMessageBox::critical( this, "Error", "Please, select an estimation grid.");
+        return;
+    }
+
+    //suggest a name to the user
+    QString proposed_name( m_inputPrimVarSelector->getSelectedVariableName() );
+    proposed_name = proposed_name.append( ( estimates ? "_CK_ESTIMATES" : "_CK_KVARIANCES" ) );
+
+    //presents a dialog so the user can change the suggested name.
+    bool ok;
+    QString what = ( estimates ? "estimates" : "kriging variances" );
+    QString new_var_name = QInputDialog::getText(this, "Name the " + what + " variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if (ok && !new_var_name.isEmpty()){
+        //the estimates are normally the first variable in the resulting grid
+        Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( ( estimates ? 1 : 2 ) );
+        //add the estimates or variances to the selected estimation grid
+        estimation_grid->addGEOEASColumn( values, new_var_name );
+    }
 }
 
 

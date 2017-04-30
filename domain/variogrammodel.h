@@ -4,6 +4,15 @@
 #include "file.h"
 #include <QList>
 
+/*! Variogram structure types. */
+enum class VariogramStructureType : int {
+    SPHERIC = 1,
+    EXPONENTIAL,
+    GAUSSIAN,
+    POWER_LAW,
+    COSINE_HOLE_EFFECT
+};
+
 /**
  * @brief The VariogramModel class represents a vmodel (GSLib progam) parameter file,
  *  which contains a variogram model, that was saved by the user in the project directory.
@@ -34,7 +43,7 @@ public:
     /** Returns the id of the variogram structure type (spherical, exponential, gaussian, etc.).
       * @param structure Number of the structure, first is zero, not counting the nugget effect.
       */
-    uint getIt( int structure );
+    VariogramStructureType getIt( int structure );
 
     /** Returns the variance contribution of a variance structure.
       * @param structure Number of the structure, first is zero, not counting the nugget effect.
@@ -106,7 +115,7 @@ private:
     double m_Sill;
     double m_Nugget;
     uint m_nst; //number of structures, not counting the nugget effect.
-    QList<uint> m_it; //structure type (spherical, exponential, gaussian, etc.)
+    QList<VariogramStructureType> m_it; //structure type (spherical, exponential, gaussian, etc.)
     QList<double> m_cc; //structure variance contribution
     QList<double> m_a_hMax;
     QList<double> m_a_hMin;

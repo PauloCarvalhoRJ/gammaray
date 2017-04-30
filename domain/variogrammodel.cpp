@@ -28,7 +28,7 @@ uint VariogramModel::getNst()
     return m_nst;
 }
 
-uint VariogramModel::getIt(int structure)
+VariogramStructureType VariogramModel::getIt(int structure)
 {
     readParameters();
     return m_it.at( structure );
@@ -157,7 +157,7 @@ void VariogramModel::readParameters()
     {
         GSLibParMultiValuedFixed *par4_0 = par4->getParameter<GSLibParMultiValuedFixed*>(inst, 0);
         //...collect the struture type
-        m_it.append( par4_0->getParameter<GSLibParOption*>(0)->_selected_value );
+        m_it.append( (VariogramStructureType)par4_0->getParameter<GSLibParOption*>(0)->_selected_value );
         //...collect the contribution
         m_cc.append( par4_0->getParameter<GSLibParDouble*>(1)->_value );
         //...add the contribution to the Sill value

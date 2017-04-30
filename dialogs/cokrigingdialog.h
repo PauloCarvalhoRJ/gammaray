@@ -47,6 +47,8 @@ private slots:
     void onParameters();
     void onLMCcheck();
     void onCokb3dCompletes();
+    void onSave();
+    void onSaveKrigingVariances();
 
 private:
     QLabel* makeLabel( const QString caption );
@@ -57,6 +59,7 @@ private:
      */
     VariogramModel* getVariogramModel( uint head, uint tail );
     void preview();
+    void save( bool estimates );
 };
 
 #endif // COKRIGINGDIALOG_H

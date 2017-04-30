@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>583</width>
-    <height>341</height>
+    <height>356</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -205,6 +205,9 @@
          </property>
          <item>
           <widget class="QLabel" name="label_6">
+           <property name="enabled">
+            <bool>false</bool>
+           </property>
            <property name="font">
             <font>
              <weight>50</weight>
@@ -213,7 +216,7 @@
             </font>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Secondary data.  If you inform this, cokriging will be performed in co-located mode.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Secondary data. If you inform this, cokriging will be performed in co-located mode (avaliable only for newcokb3d).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
@@ -243,6 +246,9 @@
             </property>
             <item>
              <widget class="QLabel" name="label_4">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>
@@ -540,19 +546,6 @@
       <string>Actions</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_8">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;3) Review parameters and run:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-        </property>
-       </widget>
-      </item>
       <item row="0" column="1">
        <widget class="QPushButton" name="btnParameters">
         <property name="toolTip">
@@ -580,6 +573,19 @@
         </property>
        </widget>
       </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="label_8">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;3) Review parameters and run:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="1">
        <widget class="QPushButton" name="btnSave">
         <property name="text">
@@ -588,6 +594,27 @@
         <property name="icon">
          <iconset resource="../resources.qrc">
           <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_10">
+        <property name="text">
+         <string>(optional) Save kriging variances:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="pushButton">
+        <property name="toolTip">
+         <string>Save kriging variances</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
         </property>
        </widget>
       </item>
@@ -644,8 +671,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>287</x>
-     <y>325</y>
+     <x>328</x>
+     <y>353</y>
     </hint>
     <hint type="destinationlabel">
      <x>409</x>
@@ -677,10 +704,10 @@
    <hints>
     <hint type="sourcelabel">
      <x>571</x>
-     <y>263</y>
+     <y>258</y>
     </hint>
     <hint type="destinationlabel">
-     <x>583</x>
+     <x>582</x>
      <y>265</y>
     </hint>
    </hints>
@@ -696,8 +723,40 @@
      <y>195</y>
     </hint>
     <hint type="destinationlabel">
-     <x>583</x>
+     <x>582</x>
      <y>209</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSave</sender>
+   <signal>clicked()</signal>
+   <receiver>CokrigingDialog</receiver>
+   <slot>onSave()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>560</x>
+     <y>280</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>583</x>
+     <y>301</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>CokrigingDialog</receiver>
+   <slot>onSaveKrigingVariances()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>557</x>
+     <y>312</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>584</x>
+     <y>331</y>
     </hint>
    </hints>
   </connection>
@@ -706,5 +765,7 @@
   <slot>onNumberOfSecondaryVariablesChanged(int)</slot>
   <slot>onParameters()</slot>
   <slot>onLMCcheck()</slot>
+  <slot>onSave()</slot>
+  <slot>onSaveKrigingVariances()</slot>
  </slots>
 </ui>
