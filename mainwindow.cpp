@@ -448,11 +448,13 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
           ){
             QString menu_caption_xplot = "Cross plot ";
             QString menu_caption_bidist = "Model bidistribution ";
+            QString menu_caption_xvariography = "Cross variography ";
             QString menu_caption_vars = (static_cast<ProjectComponent*>( index1.internalPointer() ))->getName();
             menu_caption_vars.append(" X ");
             menu_caption_vars.append((static_cast<ProjectComponent*>( index2.internalPointer() ))->getName());
             _projectContextMenu->addAction(menu_caption_xplot.append(menu_caption_vars), this, SLOT(onXPlot()));
             _projectContextMenu->addAction(menu_caption_bidist.append(menu_caption_vars), this, SLOT(onBidistrModel()));
+            _projectContextMenu->addAction(menu_caption_xvariography.append(menu_caption_vars), this, SLOT(onVariogramAnalysis()));
         }
         //if both objects are variables and have different parent files,
         if( index1.isValid() && index2.isValid() &&
@@ -845,7 +847,14 @@ void MainWindow::onOpenProjectPath()
 
 void MainWindow::onVariogramAnalysis()
 {
-    VariogramAnalysisDialog* vad = new VariogramAnalysisDialog( _right_clicked_attribute, _right_clicked_attribute, this );
+    //get the selected attributes
+    QList<Attribute*> selected_indexes = getSelectedAttributes();
+    Attribute* var1 = selected_indexes.at( 0 );
+    Attribute* var2 = var1; //auto-variography by default
+    if( selected_indexes.size() > 1 )
+        var2 = selected_indexes.at( 1 ); //cross variography
+
+    VariogramAnalysisDialog* vad = new VariogramAnalysisDialog( var1, var2, this );
     vad->setAttribute( Qt::WA_DeleteOnClose );
     vad->show();
 }

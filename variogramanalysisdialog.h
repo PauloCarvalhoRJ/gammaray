@@ -47,6 +47,7 @@ private:
     GSLibParameterFile* m_gpf_vmodel;
     /** Does some UI details not in ui->setup(). */
     void finishUISetup();
+    bool isCrossVariography();
 
 private slots:
     void onOpenVarMapParameters();
