@@ -159,8 +159,7 @@ void ValuesPairsDialog::onSave()
     }
 
     //clear any previously loaded pairs (will write the user-entered pairs)
-    if( ! isNew )
-        m_valuePairsFile->clearLoadedContents();
+    m_valuePairsFile->clearLoadedContents();
 
     //read the values entered by the user
     //TODO: the design of this with these if's is not very good.

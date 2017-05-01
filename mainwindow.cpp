@@ -1553,7 +1553,7 @@ void MainWindow::makeMenuMapAs()
 
 void MainWindow::doAddDataFile(const QString filePath )
 {
-    if( ! filePath .isEmpty() ){
+    if( ! filePath .isEmpty() && Application::instance()->hasOpenProject() ){
         Util::saveLastBrowsedDirectoryOfFile( filePath  );
         DataFileDialog dfd(this, filePath );
         dfd.exec();
