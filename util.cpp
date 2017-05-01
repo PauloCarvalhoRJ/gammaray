@@ -24,8 +24,8 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
 #include "gslib/gslib.h"
-#include "displayplotdialog.h"
-#include "distributioncolumnrolesdialog.h"
+#include "dialogs/displayplotdialog.h"
+#include "dialogs/distributioncolumnrolesdialog.h"
 #include <QDir>
 #include <QFileInfo>
 #include <QInputDialog>

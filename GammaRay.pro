@@ -27,23 +27,16 @@ CONFIG += c++11
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    aboutdialog.cpp \
-    setupdialog.cpp \
     domain/project.cpp \
     domain/application.cpp \
     domain/projectcomponent.cpp \
     domain/objectgroup.cpp \
     domain/projectroot.cpp \
-    datafiledialog.cpp \
-    pointsetdialog.cpp \
     util.cpp \
     domain/pointset.cpp \
     domain/attribute.cpp \
     domain/file.cpp \
-    filecontentsdialog.cpp \
     gs/ghostscript.cpp \
-    pswidget.cpp \
-    displayplotdialog.cpp \
     gslib/gslib.cpp \
     gslib/gslibparams/gslibpartype.cpp \
     gslib/gslibparams/gslibparinputdata.cpp \
@@ -72,7 +65,6 @@ SOURCES += main.cpp\
     gslib/gslibparams/widgets/widgetgslibparstring.cpp \
     gslib/gslibparams/widgets/widgetgslibparoption.cpp \
     gslib/gslibparams/widgets/widgetgslibparrange.cpp \
-    cartesiangriddialog.cpp \
     domain/cartesiangrid.cpp \
     gslib/gslibparams/gslibpargrid.cpp \
     gslib/gslibparams/gslibparcolor.cpp \
@@ -80,29 +72,21 @@ SOURCES += main.cpp\
     gslib/gslibparams/widgets/widgetgslibpargrid.cpp \
     gslib/gslibparams/widgets/widgetgslibparrepeat.cpp \
     gslib/gslibparams/widgets/widgetgslibparcolor.cpp \
-    variogramanalysisdialog.cpp \
     gslib/igslibparameterfinder.cpp \
     gslib/workerthread.cpp \
-    declusteringdialog.cpp \
-    nscoredialog.cpp \
     domain/plot.cpp \
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
-    creategriddialog.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
-    distributionmodelingdialog.cpp \
     domain/univariatedistribution.cpp \
-    bidistributionmodelingdialog.cpp \
     widgets/univariatedistributionselector.cpp \
     domain/distributioncolumn.cpp \
     domain/roles.cpp \
     domain/distribution.cpp \
     widgets/distributioncolumnroleselector.cpp \
-    distributioncolumnrolesdialog.cpp \
     domain/bivariatedistribution.cpp \
-    krigingdialog.cpp \
     widgets/variogrammodelselector.cpp \
     widgets/cartesiangridselector.cpp \
     widgets/pointsetselector.cpp \
@@ -112,44 +96,53 @@ SOURCES += main.cpp\
     domain/thresholdcdf.cpp \
     domain/categorypdf.cpp \
     widgets/valuepairvertical.cpp \
-    valuespairsdialog.cpp \
-    indicatorkrigingdialog.cpp \
     widgets/fileselectorwidget.cpp \
     scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
     gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
     domain/triads.cpp \
     domain/categorydefinition.cpp \
-    triadseditordialog.cpp \
     domain/univariatecategoryclassification.cpp \
     widgets/categoryselector.cpp \
     widgets/intervalandcategorywidget.cpp \
     spatialindex/spatialindexpoints.cpp \
-    postikdialog.cpp \
     softindiccalib/softindicatorcalibrationdialog.cpp \
     softindiccalib/softindicatorcalibplot.cpp \
     softindiccalib/softindicatorcalibcanvaspicker.cpp \
-    dialogs/cokrigingdialog.cpp
+    dialogs/cokrigingdialog.cpp \
+    dialogs/aboutdialog.cpp \
+    dialogs/variogramanalysisdialog.cpp \
+    dialogs/valuespairsdialog.cpp \
+    dialogs/triadseditordialog.cpp \
+    dialogs/setupdialog.cpp \
+    dialogs/postikdialog.cpp \
+    dialogs/pointsetdialog.cpp \
+    dialogs/nscoredialog.cpp \
+    dialogs/krigingdialog.cpp \
+    dialogs/indicatorkrigingdialog.cpp \
+    dialogs/filecontentsdialog.cpp \
+    dialogs/distributionmodelingdialog.cpp \
+    dialogs/distributioncolumnrolesdialog.cpp \
+    dialogs/displayplotdialog.cpp \
+    dialogs/declusteringdialog.cpp \
+    dialogs/datafiledialog.cpp \
+    dialogs/creategriddialog.cpp \
+    dialogs/cartesiangriddialog.cpp \
+    dialogs/bidistributionmodelingdialog.cpp \
+    widgets/pswidget.cpp
 
 HEADERS  += mainwindow.h \
-    aboutdialog.h \
-    setupdialog.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
-    datafiledialog.h \
-    pointsetdialog.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
     domain/attribute.h \
     domain/file.h \
-    filecontentsdialog.h \
     gs/ghostscript.h \
-    pswidget.h \
-    displayplotdialog.h \
     gslib/gslib.h \
     gslib/gslibparams/gslibpartype.h \
     gslib/gslibparams/gslibparinputdata.h \
@@ -182,7 +175,6 @@ HEADERS  += mainwindow.h \
     gslib/gslibparams/widgets/widgetgslibparstring.h \
     gslib/gslibparams/widgets/widgetgslibparoption.h \
     gslib/gslibparams/widgets/widgetgslibparrange.h \
-    cartesiangriddialog.h \
     domain/cartesiangrid.h \
     gslib/gslibparams/gslibpargrid.h \
     gslib/gslibparams/gslibparcolor.h \
@@ -190,29 +182,21 @@ HEADERS  += mainwindow.h \
     gslib/gslibparams/widgets/widgetgslibpargrid.h \
     gslib/gslibparams/widgets/widgetgslibparrepeat.h \
     gslib/gslibparams/widgets/widgetgslibparcolor.h \
-    variogramanalysisdialog.h \
     gslib/igslibparameterfinder.h \
     gslib/workerthread.h \
-    declusteringdialog.h \
-    nscoredialog.h \
     domain/plot.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
-    creategriddialog.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
-    distributionmodelingdialog.h \
     domain/univariatedistribution.h \
-    bidistributionmodelingdialog.h \
     widgets/univariatedistributionselector.h \
     domain/distributioncolumn.h \
     domain/roles.h \
     domain/distribution.h \
     widgets/distributioncolumnroleselector.h \
-    distributioncolumnrolesdialog.h \
     domain/bivariatedistribution.h \
-    krigingdialog.h \
     widgets/variogrammodelselector.h \
     widgets/cartesiangridselector.h \
     widgets/pointsetselector.h \
@@ -222,8 +206,6 @@ HEADERS  += mainwindow.h \
     domain/thresholdcdf.h \
     domain/categorypdf.h \
     widgets/valuepairvertical.h \
-    valuespairsdialog.h \
-    indicatorkrigingdialog.h \
     widgets/fileselectorwidget.h \
     scripting.h \
     exprtk.hpp \
@@ -231,25 +213,36 @@ HEADERS  += mainwindow.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
     domain/triads.h \
     domain/categorydefinition.h \
-    triadseditordialog.h \
     domain/univariatecategoryclassification.h \
     widgets/categoryselector.h \
     widgets/intervalandcategorywidget.h \
     spatialindex/spatialindexpoints.h \
-    postikdialog.h \
     softindiccalib/softindicatorcalibrationdialog.h \
     softindiccalib/softindicatorcalibplot.h \
     softindiccalib/softindicatorcalibcanvaspicker.h \
-    dialogs/cokrigingdialog.h
+    dialogs/cokrigingdialog.h \
+    dialogs/aboutdialog.h \
+    dialogs/bidistributionmodelingdialog.h \
+    dialogs/cartesiangriddialog.h \
+    dialogs/creategriddialog.h \
+    dialogs/datafiledialog.h \
+    dialogs/declusteringdialog.h \
+    dialogs/displayplotdialog.h \
+    dialogs/distributioncolumnrolesdialog.h \
+    dialogs/distributionmodelingdialog.h \
+    dialogs/filecontentsdialog.h \
+    dialogs/indicatorkrigingdialog.h \
+    dialogs/krigingdialog.h \
+    dialogs/nscoredialog.h \
+    dialogs/pointsetdialog.h \
+    dialogs/postikdialog.h \
+    dialogs/setupdialog.h \
+    dialogs/triadseditordialog.h \
+    dialogs/valuespairsdialog.h \
+    dialogs/variogramanalysisdialog.h \
+    widgets/pswidget.h
 
 FORMS    += mainwindow.ui \
-    aboutdialog.ui \
-    setupdialog.ui \
-    datafiledialog.ui \
-    pointsetdialog.ui \
-    filecontentsdialog.ui \
-    pswidget.ui \
-    displayplotdialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
@@ -262,36 +255,43 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibparstring.ui \
     gslib/gslibparams/widgets/widgetgslibparoption.ui \
     gslib/gslibparams/widgets/widgetgslibparrange.ui \
-    cartesiangriddialog.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
-    variogramanalysisdialog.ui \
-    declusteringdialog.ui \
-    nscoredialog.ui \
-    creategriddialog.ui \
     widgets/variogrammodellist.ui \
-    distributionmodelingdialog.ui \
-    bidistributionmodelingdialog.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \
-    distributioncolumnrolesdialog.ui \
-    krigingdialog.ui \
     widgets/variogrammodelselector.ui \
     widgets/cartesiangridselector.ui \
     widgets/pointsetselector.ui \
     widgets/variableselector.ui \
     widgets/valuepairvertical.ui \
-    valuespairsdialog.ui \
-    indicatorkrigingdialog.ui \
     widgets/fileselectorwidget.ui \
     gslib/gslibparams/widgets/widgetgslibparvmodel.ui \
-    triadseditordialog.ui \
     widgets/categoryselector.ui \
     widgets/intervalandcategorywidget.ui \
-    postikdialog.ui \
     softindiccalib/softindicatorcalibrationdialog.ui \
-    dialogs/cokrigingdialog.ui
+    dialogs/cokrigingdialog.ui \
+    dialogs/aboutdialog.ui \
+    dialogs/bidistributionmodelingdialog.ui \
+    dialogs/cartesiangriddialog.ui \
+    dialogs/creategriddialog.ui \
+    dialogs/datafiledialog.ui \
+    dialogs/declusteringdialog.ui \
+    dialogs/displayplotdialog.ui \
+    dialogs/distributioncolumnrolesdialog.ui \
+    dialogs/distributionmodelingdialog.ui \
+    dialogs/filecontentsdialog.ui \
+    dialogs/indicatorkrigingdialog.ui \
+    dialogs/krigingdialog.ui \
+    dialogs/nscoredialog.ui \
+    dialogs/pointsetdialog.ui \
+    dialogs/postikdialog.ui \
+    dialogs/setupdialog.ui \
+    dialogs/triadseditordialog.ui \
+    dialogs/valuespairsdialog.ui \
+    dialogs/variogramanalysisdialog.ui \
+    widgets/pswidget.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)

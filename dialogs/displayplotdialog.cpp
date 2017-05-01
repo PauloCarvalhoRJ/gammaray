@@ -1,6 +1,6 @@
 #include "displayplotdialog.h"
 #include "ui_displayplotdialog.h"
-#include "pswidget.h"
+#include "widgets/pswidget.h"
 #include "gslib/gslibparametersdialog.h"
 #include "domain/application.h"
 #include "domain/project.h"
