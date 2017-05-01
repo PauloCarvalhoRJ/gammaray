@@ -102,8 +102,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //open the lastly opened project if the user
     //closed GammaRay without closing the project
     QString lops = Application::instance()->getLastlyOpenedProjectSetting();
-    if( ! lops.isEmpty() )
+    if( ! lops.isEmpty() ){
         this->openProject( lops );
+    }
     //set project tree style
     this->refreshTreeStyle();
     //restore project tree state
@@ -186,6 +187,8 @@ void MainWindow::openProject(const QString path)
     Application::instance()->openProject( path );
     this->setCurrentMRU( path );
     displayApplicationInfo();
+    if( Application::instance()->hasOpenProject() )
+        ui->menuEstimation->setEnabled( true );
 }
 
 void MainWindow::setCurrentMRU(const QString path)
@@ -336,6 +339,8 @@ void MainWindow::refreshTreeStyle()
 
 void MainWindow::onProjectHeaderContextMenu(const QPoint &mouse_location)
 {
+    if( ! Application::instance()->hasOpenProject() )
+        return;
     _projectHeaderContextMenu->clear(); //remove all context menu actions
     _projectHeaderContextMenu->addAction("See project path", this, SLOT(onSeeProjectPath()));
     _projectHeaderContextMenu->addAction("Open project directory...", this, SLOT(onOpenProjectPath()));
@@ -1604,6 +1609,8 @@ void MainWindow::newProject()
     if( ! dir.isEmpty() ){
         Application::instance()->openProject( dir );
         this->setCurrentMRU( dir );
+        if( Application::instance()->hasOpenProject() )
+            ui->menuEstimation->setEnabled( true );
     }
     displayApplicationInfo();
 }
@@ -1612,6 +1619,7 @@ void MainWindow::closeProject()
 {
     Application::instance()->closeProject();
     displayApplicationInfo();
+    ui->menuEstimation->setEnabled( false );
 }
 
 void MainWindow::openRecentProject()
