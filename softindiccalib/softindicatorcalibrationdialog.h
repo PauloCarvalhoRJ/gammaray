@@ -29,6 +29,8 @@ private slots:
     void onUpdateNumberOfCalibrationCurves();
     void onSave();
     void onPreview();
+    void onResultedGlobalPDF();
+    void onResultedGlobalCDF();
 
 private:
     QString saveTmpFileWithSoftIndicators();
