@@ -66,8 +66,9 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
         for( uint i = 0; i < nData; ++i){
             double value = dataFile->data( i, atGEOEASIndex-1 );
             //adds only if the value is not a No-Data-Value
-            if( ! dataFile->isNDV( value ) )
+            if( ! dataFile->isNDV( value ) ){
                 data.push_back( value );
+            }
         }
         //move the array of doubles to the widget (it'll no longer be availabe here)
         m_softIndCalibPlot->transferData( data );
@@ -430,20 +431,28 @@ QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
                 double residue = 1.0;
                 //for each soft indicator variable
                 for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
-                    double softIndicatorTruncated = std::floor( (softIndicators[iSoftIndicator][i]/100.0) * 10000+0.5)/10000;
-                    //get the string presentation of the soft indicator value with 6-digit precision
-                    QString softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
-                    //for categorical case, the delivered soft indicators must sum up 1.0 exactly
-                    if( calcMode == SoftIndicatorCalculationMode::CATEGORICAL ){
-                        //subtract the actual output value from the residue
-                        residue -= softIndicatorTruncated;
-                        //ensure a 1.0 total probability
-                        if( iSoftIndicator == nSoftIndicators - 1){
-                            softIndicatorTruncated += residue;
-                            softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                    QString softIndicatorString;
+                    //get the soft indicator value
+                    double softIndicatorValue = softIndicators[iSoftIndicator][i];
+                    //if the soft indicator value is not NDV
+                    if( ! dataFile->isNDV( softIndicatorValue ) ) {
+                        double softIndicatorTruncated = std::floor( (softIndicatorValue/100.0) * 10000+0.5)/10000;
+                        //get the string presentation of the soft indicator value with 6-digit precision
+                        softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                        //for categorical case, the delivered soft indicators must sum up 1.0 exactly
+                        if( calcMode == SoftIndicatorCalculationMode::CATEGORICAL ){
+                            //subtract the actual output value from the residue
+                            residue -= softIndicatorTruncated;
+                            //ensure a 1.0 total probability
+                            if( iSoftIndicator == nSoftIndicators - 1){
+                                softIndicatorTruncated += residue;
+                                softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                            }
                         }
+                    } else {
+                        softIndicatorString = dataFile->getNoDataValue();
                     }
-                    //insert a no-data-value in the soft indicator vector
+                    //output the soft indicator or NDV value
                     out << softIndicatorString << '\t';
                 }
                 out << '\n';
