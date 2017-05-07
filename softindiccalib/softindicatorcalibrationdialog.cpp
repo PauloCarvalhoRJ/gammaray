@@ -11,6 +11,7 @@
 #include "domain/project.h"
 #include "domain/pointset.h"
 #include "widgets/fileselectorwidget.h"
+#include "dialogs/valuespairsdialog.h"
 #include "softindicatorcalibplot.h"
 #include "util.h"
 
@@ -65,8 +66,9 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
         for( uint i = 0; i < nData; ++i){
             double value = dataFile->data( i, atGEOEASIndex-1 );
             //adds only if the value is not a No-Data-Value
-            if( ! dataFile->isNDV( value ) )
+            if( ! dataFile->isNDV( value ) ){
                 data.push_back( value );
+            }
         }
         //move the array of doubles to the widget (it'll no longer be availabe here)
         m_softIndCalibPlot->transferData( data );
@@ -90,6 +92,8 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
         selectedFile->readFromFS();
         int nCategories = selectedFile->getContentsCount();
         if( selectedFile->getFileType() == "THRESHOLDCDF"){
+            ui->btnGlobalPDF->hide();
+            ui->btnGlobalCDF->show();
             m_softIndCalibPlot->setNumberOfCurves( selectedFile->getContentsCount() );
             //sets the curve labels with each threshold
             ThresholdCDF *cdf = (ThresholdCDF*)selectedFile;
@@ -100,6 +104,8 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
                 m_softIndCalibPlot->setCurveBase( i, cdf->get2ndValue(i) * 100.0);
             }
         }else if( selectedFile->getFileType() == "CATEGORYDEFINITION"){
+            ui->btnGlobalPDF->show();
+            ui->btnGlobalCDF->hide();
             //for categorical variables the calibration curves separate the categories, thus -1.
             m_softIndCalibPlot->setNumberOfCurves( nCategories-1 );
             //fills the areas between the curves with the colors of the categories
@@ -110,6 +116,8 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
                                                cd->getCategoryName( i ));
             }
         }else if( selectedFile->getFileType() == "CATEGORYPDF"){
+            ui->btnGlobalPDF->show();
+            ui->btnGlobalCDF->hide();
             //for categorical variables the calibration curves separate the categories, thus -1.
             m_softIndCalibPlot->setNumberOfCurves( nCategories-1 );
             //fills the areas between the curves with the colors of the categories
@@ -210,6 +218,123 @@ void SoftIndicatorCalibrationDialog::onPreview()
     //TODO: destroy the created object pointed to by ps.
 }
 
+void SoftIndicatorCalibrationDialog::onResultedGlobalPDF()
+{
+    File *selectedFile = m_fsw->getSelectedFile();
+    if( !selectedFile ){
+        QMessageBox::critical( this, "Error", "Please, select a file containing categories or thresholds.");
+        return;
+    }
+
+    //get the category definition associated with the selected file with the source of categories
+    CategoryDefinition *selectedCategoryDefinition = nullptr;
+    if( selectedFile->getFileType() == "CATEGORYDEFINITION"){
+        selectedCategoryDefinition = (CategoryDefinition*)selectedFile;
+    }else if( selectedFile->getFileType() == "CATEGORYPDF"){
+        CategoryPDF *pdf = (CategoryPDF*)selectedFile;
+        selectedCategoryDefinition = pdf->getCategoryDefinition();
+    }
+
+    //verify the CategoryDefinition
+    if( ! selectedCategoryDefinition ){
+        Application::instance()->logError("SoftIndicatorCalibrationDialog::onResultedGlobalPDF(): null CategoryDefinition.  Aborting.");
+        return;
+    }
+
+    //get the Attribute's data file
+    File *dataFile = m_at->getContainingFile();
+
+    if( dataFile->getFileType() == "POINTSET" ){
+        //get the temporary data file with the computed soft indicators
+        QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+
+        //assuming the data file is a point set file
+        PointSet* psData = (PointSet*)dataFile;
+
+        //create a new point set object corresponding to a file created in the tmp directory
+        PointSet* ps = new PointSet( fileWithSoftIndicators );
+
+        //set the new point set metadata
+        ps->setInfo( 1, 2, 3, psData->getNoDataValue() );
+
+        //loads the soft indicator data
+        ps->loadData();
+
+        //get the number of computed soft indicator variables (number of data columns - 3 for the x,y,z coordinates)
+        uint nSoftIndicators = ps->getDataColumnCount() - 3;
+
+        //create a p.d.f. object to store the global
+        CategoryPDF* globalPDF = new CategoryPDF( selectedCategoryDefinition, "");
+
+        //for each soft indicator
+        for( uint i = 0; i < nSoftIndicators; ++i){
+            //get its mean through the resulted data file
+            double mean = ps->mean( 3 + i );
+            //added the pair category code-probability to the p.d.f. object
+            globalPDF->addPair( selectedCategoryDefinition->getCategoryCode( i ), mean );
+        }
+
+        //show the p.d.f. editor to display the computed global frequencies
+        ValuesPairsDialog* vpd = new ValuesPairsDialog( globalPDF, this );
+        vpd->show(); //show dialog non-modally
+    }
+}
+
+void SoftIndicatorCalibrationDialog::onResultedGlobalCDF()
+{
+    File *selectedFile = m_fsw->getSelectedFile();
+    if( !selectedFile ){
+        QMessageBox::critical( this, "Error", "Please, select a file containing categories or thresholds.");
+        return;
+    }
+
+    //get the category definition associated with the selected file with the source of categories
+    ThresholdCDF *cdf = nullptr;
+    if( selectedFile->getFileType() == "THRESHOLDCDF"){
+        cdf = (ThresholdCDF*)selectedFile;
+    }
+
+    //get the Attribute's data file
+    File *dataFile = m_at->getContainingFile();
+
+    if( dataFile->getFileType() == "POINTSET" ){
+        //get the temporary data file with the computed soft indicators
+        QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+
+        //assuming the data file is a point set file
+        PointSet* psData = (PointSet*)dataFile;
+
+        //create a new point set object corresponding to a file created in the tmp directory
+        PointSet* ps = new PointSet( fileWithSoftIndicators );
+
+        //set the new point set metadata
+        ps->setInfo( 1, 2, 3, psData->getNoDataValue() );
+
+        //loads the soft indicator data
+        ps->loadData();
+
+        //get the number of computed soft indicator variables (number of data columns - 3 for the x,y,z coordinates)
+        uint nSoftIndicators = ps->getDataColumnCount() - 3;
+
+        //create a c.d.f. object to store the global cumulative probabilities
+        ThresholdCDF* globalCDF = new ThresholdCDF( "" );
+
+        //for each soft indicator
+        for( uint i = 0; i < nSoftIndicators; ++i){
+            //get its mean through the resulted data file
+            double mean = ps->mean( 3 + i );
+            //added the pair category code-probability to the p.d.f. object
+            globalCDF->addPair( cdf->get1stValue( i ) , mean );
+        }
+
+        //show the c.d.f. editor to display the computed global cumulative frequencies
+        ValuesPairsDialog* vpd = new ValuesPairsDialog( globalCDF, this );
+        vpd->show(); //show dialog non-modally
+
+        //TODO: delete globalCDF somewhere
+    }
+}
+
 QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
 {
     SoftIndicatorCalculationMode calcMode = SoftIndicatorCalculationMode::CATEGORICAL;
@@ -306,20 +431,28 @@ QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
                 double residue = 1.0;
                 //for each soft indicator variable
                 for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
-                    double softIndicatorTruncated = std::floor( (softIndicators[iSoftIndicator][i]/100.0) * 10000+0.5)/10000;
-                    //get the string presentation of the soft indicator value with 6-digit precision
-                    QString softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
-                    //for categorical case, the delivered soft indicators must sum up 1.0 exactly
-                    if( calcMode == SoftIndicatorCalculationMode::CATEGORICAL ){
-                        //subtract the actual output value from the residue
-                        residue -= softIndicatorTruncated;
-                        //ensure a 1.0 total probability
-                        if( iSoftIndicator == nSoftIndicators - 1){
-                            softIndicatorTruncated += residue;
-                            softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                    QString softIndicatorString;
+                    //get the soft indicator value
+                    double softIndicatorValue = softIndicators[iSoftIndicator][i];
+                    //if the soft indicator value is not NDV
+                    if( ! dataFile->isNDV( softIndicatorValue ) ) {
+                        double softIndicatorTruncated = std::floor( (softIndicatorValue/100.0) * 10000+0.5)/10000;
+                        //get the string presentation of the soft indicator value with 6-digit precision
+                        softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                        //for categorical case, the delivered soft indicators must sum up 1.0 exactly
+                        if( calcMode == SoftIndicatorCalculationMode::CATEGORICAL ){
+                            //subtract the actual output value from the residue
+                            residue -= softIndicatorTruncated;
+                            //ensure a 1.0 total probability
+                            if( iSoftIndicator == nSoftIndicators - 1){
+                                softIndicatorTruncated += residue;
+                                softIndicatorString = QString::number( softIndicatorTruncated, 'g', 4 );
+                            }
                         }
+                    } else {
+                        softIndicatorString = dataFile->getNoDataValue();
                     }
-                    //insert a no-data-value in the soft indicator vector
+                    //output the soft indicator or NDV value
                     out << softIndicatorString << '\t';
                 }
                 out << '\n';

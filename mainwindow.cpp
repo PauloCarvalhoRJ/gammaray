@@ -2,20 +2,20 @@
 #include "ui_mainwindow.h"
 #include <QMessageBox>
 #include <QScreen>
-#include "aboutdialog.h"
-#include "setupdialog.h"
+#include "dialogs/aboutdialog.h"
+#include "dialogs/setupdialog.h"
 #include <QFileDialog>
 #include "domain/project.h"
 #include "domain/application.h"
 #include <QtGlobal>
 #include <QSettings>
-#include "datafiledialog.h"
-#include "pointsetdialog.h"
-#include "cartesiangriddialog.h"
-#include "creategriddialog.h"
-#include "krigingdialog.h"
-#include "triadseditordialog.h"
-#include "postikdialog.h"
+#include "dialogs/datafiledialog.h"
+#include "dialogs/pointsetdialog.h"
+#include "dialogs/cartesiangriddialog.h"
+#include "dialogs/creategriddialog.h"
+#include "dialogs/krigingdialog.h"
+#include "dialogs/triadseditordialog.h"
+#include "dialogs/postikdialog.h"
 #include "domain/pointset.h"
 #include "domain/cartesiangrid.h"
 #include "domain/categorydefinition.h"
@@ -27,16 +27,16 @@
 #include <cmath>
 #include "domain/projectcomponent.h"
 #include "domain/file.h"
-#include "filecontentsdialog.h"
+#include "dialogs/filecontentsdialog.h"
 #include "domain/attribute.h"
-#include "displayplotdialog.h"
+#include "dialogs/displayplotdialog.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslib.h"
 #include "gslib/gslibparametersdialog.h"
-#include "variogramanalysisdialog.h"
-#include "declusteringdialog.h"
+#include "dialogs/variogramanalysisdialog.h"
+#include "dialogs/declusteringdialog.h"
 #include <QDesktopServices>
 #include <QInputDialog>
 #include <QLineEdit>
@@ -47,11 +47,11 @@
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
 #include "util.h"
-#include "nscoredialog.h"
-#include "distributionmodelingdialog.h"
-#include "bidistributionmodelingdialog.h"
-#include "valuespairsdialog.h"
-#include "indicatorkrigingdialog.h"
+#include "dialogs/nscoredialog.h"
+#include "dialogs/distributionmodelingdialog.h"
+#include "dialogs/bidistributionmodelingdialog.h"
+#include "dialogs/valuespairsdialog.h"
+#include "dialogs/indicatorkrigingdialog.h"
 #include "spatialindex/spatialindexpoints.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
@@ -102,8 +102,9 @@ MainWindow::MainWindow(QWidget *parent) :
     //open the lastly opened project if the user
     //closed GammaRay without closing the project
     QString lops = Application::instance()->getLastlyOpenedProjectSetting();
-    if( ! lops.isEmpty() )
+    if( ! lops.isEmpty() ){
         this->openProject( lops );
+    }
     //set project tree style
     this->refreshTreeStyle();
     //restore project tree state
@@ -186,6 +187,8 @@ void MainWindow::openProject(const QString path)
     Application::instance()->openProject( path );
     this->setCurrentMRU( path );
     displayApplicationInfo();
+    if( Application::instance()->hasOpenProject() )
+        ui->menuEstimation->setEnabled( true );
 }
 
 void MainWindow::setCurrentMRU(const QString path)
@@ -336,6 +339,8 @@ void MainWindow::refreshTreeStyle()
 
 void MainWindow::onProjectHeaderContextMenu(const QPoint &mouse_location)
 {
+    if( ! Application::instance()->hasOpenProject() )
+        return;
     _projectHeaderContextMenu->clear(); //remove all context menu actions
     _projectHeaderContextMenu->addAction("See project path", this, SLOT(onSeeProjectPath()));
     _projectHeaderContextMenu->addAction("Open project directory...", this, SLOT(onOpenProjectPath()));
@@ -1548,7 +1553,7 @@ void MainWindow::makeMenuMapAs()
 
 void MainWindow::doAddDataFile(const QString filePath )
 {
-    if( ! filePath .isEmpty() ){
+    if( ! filePath .isEmpty() && Application::instance()->hasOpenProject() ){
         Util::saveLastBrowsedDirectoryOfFile( filePath  );
         DataFileDialog dfd(this, filePath );
         dfd.exec();
@@ -1604,6 +1609,8 @@ void MainWindow::newProject()
     if( ! dir.isEmpty() ){
         Application::instance()->openProject( dir );
         this->setCurrentMRU( dir );
+        if( Application::instance()->hasOpenProject() )
+            ui->menuEstimation->setEnabled( true );
     }
     displayApplicationInfo();
 }
@@ -1612,6 +1619,7 @@ void MainWindow::closeProject()
 {
     Application::instance()->closeProject();
     displayApplicationInfo();
+    ui->menuEstimation->setEnabled( false );
 }
 
 void MainWindow::openRecentProject()

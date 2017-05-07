@@ -107,7 +107,7 @@
          <item>
           <widget class="QPushButton" name="btnPreview">
            <property name="toolTip">
-            <string>Preview</string>
+            <string>Preview maps with results.</string>
            </property>
            <property name="text">
             <string/>
@@ -129,6 +129,34 @@
            <property name="icon">
             <iconset resource="../resources.qrc">
              <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnGlobalPDF">
+           <property name="toolTip">
+            <string>Show resulting global PDF.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/icons32/catpdf32</normaloff>:/icons32/catpdf32</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnGlobalCDF">
+           <property name="toolTip">
+            <string>Show resulting global CDF.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/icons32/thrcdf32</normaloff>:/icons32/thrcdf32</iconset>
            </property>
           </widget>
          </item>
@@ -250,9 +278,43 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnGlobalPDF</sender>
+   <signal>clicked()</signal>
+   <receiver>SoftIndicatorCalibrationDialog</receiver>
+   <slot>onResultedGlobalPDF()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>562</x>
+     <y>122</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>587</x>
+     <y>222</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnGlobalCDF</sender>
+   <signal>clicked()</signal>
+   <receiver>SoftIndicatorCalibrationDialog</receiver>
+   <slot>onResultedGlobalCDF()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>569</x>
+     <y>155</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>586</x>
+     <y>207</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onSave()</slot>
   <slot>onPreview()</slot>
+  <slot>onResultedGlobalPDF()</slot>
+  <slot>onResultedGlobalCDF()</slot>
  </slots>
 </ui>

@@ -29,8 +29,9 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
     ui->txtFileName->setText( m_valuePairsFile->getFileName() );
 
     //loads the file contents
-    if( m_valuePairsFile->exists() )
+    if( m_valuePairsFile->exists() ){
         m_valuePairsFile->readFromFS();
+    }
 
     //prepare the interface according to the specific file
     if( m_valuePairsFile->getFileType() == "THRESHOLDCDF" ){
@@ -159,8 +160,7 @@ void ValuesPairsDialog::onSave()
     }
 
     //clear any previously loaded pairs (will write the user-entered pairs)
-    if( ! isNew )
-        m_valuePairsFile->clearLoadedContents();
+    m_valuePairsFile->clearLoadedContents();
 
     //read the values entered by the user
     //TODO: the design of this with these if's is not very good.

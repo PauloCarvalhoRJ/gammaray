@@ -24,8 +24,8 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
 #include "gslib/gslib.h"
-#include "displayplotdialog.h"
-#include "distributioncolumnrolesdialog.h"
+#include "dialogs/displayplotdialog.h"
+#include "dialogs/distributioncolumnrolesdialog.h"
 #include <QDir>
 #include <QFileInfo>
 #include <QInputDialog>
@@ -377,7 +377,7 @@ void Util::copyFile(const QString from_path, const QString to_path)
         Application::instance()->logError("Util::copyFile: file copy failed.");
 }
 
-void Util::copyFileToDir(const QString from_path, const QString path_to_directory)
+QString Util::copyFileToDir(const QString from_path, const QString path_to_directory)
 {
     //get information on the original file
     QFileInfo info_origin( from_path );
@@ -389,6 +389,8 @@ void Util::copyFileToDir(const QString from_path, const QString path_to_director
     QString to_path = dest_dir.absoluteFilePath( origin_file_name );
     //perfoms the copy
     Util::copyFile( from_path, to_path);
+    //returns the new complete path to the copied file
+    return to_path;
 }
 
 void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
@@ -813,6 +815,37 @@ QColor Util::getGSLibColor(uint color_code)
     return colors.at( color_code - 1 );
 }
 
+QString Util::getGSLibColorName(uint color_code)
+{
+    switch( color_code ){
+    case 1: return "red";
+    case 2: return "orange";
+    case 3: return "yellow";
+    case 4: return "light green";
+    case 5: return "green";
+    case 6: return "light blue";
+    case 7: return "dark blue";
+    case 8: return "violet";
+    case 9: return "white";
+    case 10: return "black";
+    case 11: return "purple";
+    case 12: return "brown";
+    case 13: return "pink";
+    case 14: return "intermediate green";
+    case 15: return "gray";
+    case 16: return "gray 10%";
+    case 17: return "gray 20%";
+    case 18: return "gray 30%";
+    case 19: return "gray 40%";
+    case 20: return "gray 50%";
+    case 21: return "gray 60%";
+    case 22: return "gray 70%";
+    case 23: return "gray 80%";
+    case 24: return "gray 90%";
+    default: return "invalid color code";
+    }
+}
+
 void Util::importSettingsFromPreviousVersion()
 {
     //get the settings of this application
@@ -820,7 +853,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -1023,4 +1056,21 @@ bool Util::isLMC(VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel 
     }
 
     return result;
+}
+
+void Util::saveText(const QString filePath, const QStringList lines)
+{
+    //open a new file for output
+    QFile outputFile( filePath );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+
+    QStringList::const_iterator it = lines.begin();
+    for ( ; it != lines.end(); ++it ){
+        QString line = *it;
+        out << line << "\n";
+    }
+
+    //closes the output file
+    outputFile.close();
 }

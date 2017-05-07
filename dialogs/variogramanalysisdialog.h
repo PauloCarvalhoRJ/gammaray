@@ -41,7 +41,7 @@ private:
     GSLibParameterFile* m_gpf_varmap;
     GSLibParameterFile* m_gpf_pixelplt;
     GSLibParameterFile* m_gpf_gamv;
-    GSLibParameterFile* m_gpf_vargplt_exp_irreg;
+    GSLibParameterFile* m_gpf_vargplt;
     GSLibParameterFile* m_gpf_gam;
     CartesianGrid* m_varmap_grid;
     GSLibParameterFile* m_gpf_vmodel;

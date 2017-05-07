@@ -28,7 +28,7 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(Attribute *head, Attribute *tai
     m_gpf_varmap( nullptr ),
     m_gpf_pixelplt( nullptr ),
     m_gpf_gamv( nullptr ),
-    m_gpf_vargplt_exp_irreg( nullptr ),
+    m_gpf_vargplt( nullptr ),
     m_gpf_gam( nullptr ),
     m_varmap_grid( nullptr ),
     m_gpf_vmodel( nullptr )
@@ -52,7 +52,7 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(ExperimentalVariogram *ev, QWid
     m_gpf_varmap( nullptr ),
     m_gpf_pixelplt( nullptr ),
     m_gpf_gamv( nullptr ),
-    m_gpf_vargplt_exp_irreg( nullptr ),
+    m_gpf_vargplt( nullptr ),
     m_gpf_gam( nullptr ),
     m_varmap_grid( nullptr ),
     m_gpf_vmodel( nullptr )
@@ -78,8 +78,8 @@ VariogramAnalysisDialog::~VariogramAnalysisDialog()
         delete m_gpf_varmap;
     if( m_gpf_pixelplt )
         delete m_gpf_pixelplt;
-    if( m_gpf_vargplt_exp_irreg )
-        delete m_gpf_vargplt_exp_irreg;
+    if( m_gpf_vargplt )
+        delete m_gpf_vargplt;
     if( m_gpf_gam )
         delete m_gpf_gam;
     if( m_gpf_vmodel )
@@ -401,7 +401,7 @@ void VariogramAnalysisDialog::onSaveExpVariogram()
                                              proposed_name, &ok);
     if (ok && !new_exp_vario_name.isEmpty()){
 
-        //Generate a vargplt parameter file path (tmp directory)
+        //Generate a vargplt parameter file path (project directory)
         QDir path_for_varplt_file( Application::instance()->getProject()->getPath() );
         QString vargplt_par_file = path_for_varplt_file.filePath( new_exp_vario_name + ".vargplt" );
 
@@ -409,7 +409,7 @@ void VariogramAnalysisDialog::onSaveExpVariogram()
         new_exp_vario_name.append(".out");
 
         //vargplt: replace the path to the experimental variogram data with the definitive one
-        GSLibParRepeat *par6 = m_gpf_vargplt_exp_irreg->getParameter<GSLibParRepeat*>(6);
+        GSLibParRepeat *par6 = m_gpf_vargplt->getParameter<GSLibParRepeat*>(6);
         uint ncurves = par6->getCount();
         for(uint i = 0; i < ncurves; ++i)
         {
@@ -417,8 +417,24 @@ void VariogramAnalysisDialog::onSaveExpVariogram()
             par6->getParameter<GSLibParFile*>(i, 0)->_path = path_to_exp_variogram_data.filePath( new_exp_vario_name );
         }
 
+        //vargplt: manage the text file for legend text, if it exists.
+        {
+            QString pathToLegendTmp = m_gpf_vargplt->getParameter<GSLibParFile*>(7)->_path;
+            QFile txtLegendFile( pathToLegendTmp );
+            if( txtLegendFile.exists() ){
+                //make a new name for it
+                QString new_name_for_legend_file = new_exp_vario_name + ".legend";
+                //rename the file in the tmp dir
+                QString pathToLegendTmpNewName = Util::renameFile( pathToLegendTmp, new_name_for_legend_file );
+                //copy it to project directory
+                QString finalLegendPath = Util::copyFileToDir( pathToLegendTmpNewName, Application::instance()->getProject()->getPath() );
+                //updates the vargplt parameter
+                m_gpf_vargplt->getParameter<GSLibParFile*>(7)->_path = finalLegendPath;
+            }
+        }
+
         //vargplt: save the vargplt parameter file that will use the experimental variogram data saved to the project
-        m_gpf_vargplt_exp_irreg->save( vargplt_par_file );
+        m_gpf_vargplt->save( vargplt_par_file );
 
         //import the experimental variogram file to the project directory
         Application::instance()->getProject()->importExperimentalVariogram( _exp_var_file_path,
@@ -826,12 +842,16 @@ void VariogramAnalysisDialog::onVargplt(const QString path_to_exp_variogram_data
     //compute a number of variogram curves to plot depending on
     //the experimental variogram calculation parameters
     uint ncurves = 1; //default is one variogram to plot
-    if( m_gpf_gamv )
-        ncurves = m_gpf_gamv->getParameter<GSLibParUInt*>(8)->_value * m_gpf_gamv->getParameter<GSLibParUInt*>(11)->_value;
+    uint ndirections = 1; //default is one direction
+    if( m_gpf_gamv ){
+        ndirections = m_gpf_gamv->getParameter<GSLibParUInt*>(8)->_value;
+        ncurves = ndirections * m_gpf_gamv->getParameter<GSLibParUInt*>(11)->_value;
+    }
     if( m_gpf_gam )
     {
         GSLibParMultiValuedFixed *par6 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(6);
-        ncurves = par6->getParameter<GSLibParUInt*>(0)->_value * m_gpf_gam->getParameter<GSLibParUInt*>(9)->_value;
+        ndirections = par6->getParameter<GSLibParUInt*>(0)->_value;
+        ncurves = ndirections * m_gpf_gam->getParameter<GSLibParUInt*>(9)->_value;
     }
     if( m_ev )
     {
@@ -852,13 +872,32 @@ void VariogramAnalysisDialog::onVargplt(const QString path_to_exp_variogram_data
         ncurves_models = par1->getParameter<GSLibParUInt*>(0)->_value;
     }
 
+    //make list of captions for the legend text further down
+    QStringList legendCaptions;
+    for( uint i = 0; i < ndirections; ++i){
+        if( m_gpf_gamv ){
+            GSLibParRepeat *par9 = m_gpf_gamv->getParameter<GSLibParRepeat*>(9); //repeat ndir-times
+            GSLibParMultiValuedFixed *par9_0 = par9->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+            legendCaptions.append( "AZ=" + QString::number(par9_0->getParameter<GSLibParDouble*>(0)->_value)
+                                   + " DIP=" + QString::number(par9_0->getParameter<GSLibParDouble*>(3)->_value));
+        }
+        if( m_gpf_gam )
+        {
+            GSLibParRepeat *par7 = m_gpf_gam->getParameter<GSLibParRepeat*>(7); //repeat ndir-times
+            GSLibParMultiValuedFixed *par7_0 = par7->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+            legendCaptions.append( "STEP X=" + QString::number(par7_0->getParameter<GSLibParInt*>(0)->_value)
+                                   + " STEP Y=" + QString::number(par7_0->getParameter<GSLibParInt*>(1)->_value)
+                                   + " STEP Z=" + QString::number(par7_0->getParameter<GSLibParInt*>(2)->_value));
+        }
+    }
+
     //make a GLSib parameter object if it wasn't done yet.
-    if( ! m_gpf_vargplt_exp_irreg ){
-        m_gpf_vargplt_exp_irreg = new GSLibParameterFile( "vargplt" );
+    if( ! m_gpf_vargplt ){
+        m_gpf_vargplt = new GSLibParameterFile( "vargplt" );
 
         //Set default values so we need to change less parameters and let
         //the user change the others as one may see fit.
-        m_gpf_vargplt_exp_irreg->setDefaultValues();
+        m_gpf_vargplt->setDefaultValues();
 
         //make plot/window title
         QString title;
@@ -880,10 +919,10 @@ void VariogramAnalysisDialog::onVargplt(const QString path_to_exp_variogram_data
         //--------------------set some parameter values-----------------------
 
         //postscript file
-        m_gpf_vargplt_exp_irreg->getParameter<GSLibParFile*>(0)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+        m_gpf_vargplt->getParameter<GSLibParFile*>(0)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
 
         //suggest display settings for each variogram curve
-        GSLibParRepeat *par6 = m_gpf_vargplt_exp_irreg->getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
+        GSLibParRepeat *par6 = m_gpf_vargplt->getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
         par6->setCount( ncurves + ncurves_models );
         //the experimental curves
         for(uint i = 0; i < ncurves; ++i)
@@ -896,21 +935,51 @@ void VariogramAnalysisDialog::onVargplt(const QString path_to_exp_variogram_data
             par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 0;
             par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = (i % 15) + 1; //cycle through the available colors (except the gray tones)
         }
+        //the model curves
+        for(uint i = ncurves; i < (ncurves + ncurves_models); ++i)
+        {
+            par6->getParameter<GSLibParFile*>(i, 0)->_path = path_to_vmodel_output;
+            GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
+            par6_0_1->getParameter<GSLibParUInt*>(0)->_value = i - ncurves + 1;
+            par6_0_1->getParameter<GSLibParUInt*>(1)->_value = 0;
+            par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 0;
+            par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
+            par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = ((i - ncurves) % 15) + 1; //cycle through the available colors (except the gray tones)
+        }
 
         //plot title
-        m_gpf_vargplt_exp_irreg->getParameter<GSLibParString*>(5)->_value = title;
+        m_gpf_vargplt->getParameter<GSLibParString*>(5)->_value = title;
     }
 
     //suggest (number of directions * number of variograms) from the variogram calculation parameters
-    m_gpf_vargplt_exp_irreg->getParameter<GSLibParUInt*>(1)->_value = ncurves + ncurves_models; // nvarios
+    m_gpf_vargplt->getParameter<GSLibParUInt*>(1)->_value = ncurves + ncurves_models; // nvarios
 
     //adjust curve count as needed
-    GSLibParRepeat *par6 = m_gpf_vargplt_exp_irreg->getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
+    GSLibParRepeat *par6 = m_gpf_vargplt->getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
     uint old_count = par6->getCount();
     par6->setCount( ncurves + ncurves_models );
 
     //determine wether the number of curves changed
     bool curve_count_changed = ( old_count != ncurves + ncurves_models );
+
+    //suggest experimental variogram visual parameters if the number of curves changes
+    //also updates color legend
+    for(uint i = 0; i < ncurves; ++i)
+    {
+        GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
+        par6_0_1->getParameter<GSLibParUInt*>(0)->_value = i + 1;
+        uint colorCode = 1;
+        if( curve_count_changed ){
+            colorCode = (i % 15) + 1; //cycle through the available colors (except the gray tones)
+            par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = colorCode; //cycle through the available colors (except the gray tones)
+        } else {
+            colorCode = par6_0_1->getParameter<GSLibParColor*>(4)->_color_code;
+        }
+        if( legendCaptions.size() == (int)ndirections )
+            legendCaptions[ i % ndirections ] = Util::getGSLibColorName(colorCode) + ": " + legendCaptions[ i % ndirections ];
+        else
+            Application::instance()->logWarn("VariogramAnalysisDialog::onVargplt(): Generation or update of color legend text in variogram plot not available.");
+    }
 
     //suggest model curves visual parameters after vmodel runs (only if curve count changed)
     for(uint i = ncurves; i < (ncurves + ncurves_models) && curve_count_changed; ++i)
@@ -935,21 +1004,39 @@ void VariogramAnalysisDialog::onVargplt(const QString path_to_exp_variogram_data
         par6->getParameter<GSLibParFile*>(i, 0)->_path = path_to_vmodel_output;
     }
 
+    //save and use a txt file to serve as legend
+    if( ! legendCaptions.isEmpty() ){
+        QString legendTXTfilePath = Application::instance()->getProject()->generateUniqueTmpFilePath("txt");
+        m_gpf_vargplt->getParameter<GSLibParFile*>(7)->_path = legendTXTfilePath;
+        Util::saveText( legendTXTfilePath, legendCaptions);
+    } else { //if performing variogam modeling from a saved experimental variogram, legendCaptions will be empty
+        Application::instance()->logWarn("VariogramAnalysisDialog::onVargplt(): Color legend text file for the variogram plot not generated or updated.");
+        if( m_ev ){
+            Application::instance()->logWarn("VariogramAnalysisDialog::onVargplt(): Trying to use the static legend text file in the saved experimental variogram parameters.");
+            GSLibParameterFile gpf_accessory_vargplt( "vargplt" );
+            //loads the data from the accessory vargplt parameter file
+            gpf_accessory_vargplt.setValuesFromParFile( m_ev->getPathToVargpltPar() );
+            //get the legend text file path from the vargplt file associated with the saved experimental variogram
+            m_gpf_vargplt->getParameter<GSLibParFile*>(7)->_path =
+                    gpf_accessory_vargplt.getParameter<GSLibParFile*>(7)->_path;
+        }
+    }
+
     //----------------------display plot------------------------------------------------------------
 
     //Generate the parameter file
     QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
-    m_gpf_vargplt_exp_irreg->save( par_file_path );
+    m_gpf_vargplt->save( par_file_path );
 
     //run vargplt program
     Application::instance()->logInfo("Starting vargplt program...");
     GSLib::instance()->runProgram( "vargplt", par_file_path );
 
-    GSLibParameterFile gpf = *m_gpf_vargplt_exp_irreg;
+    GSLibParameterFile gpf = *m_gpf_vargplt;
 
     //display the plot output
-    DisplayPlotDialog *dpd = new DisplayPlotDialog(m_gpf_vargplt_exp_irreg->getParameter<GSLibParFile*>(0)->_path,
-                                                   m_gpf_vargplt_exp_irreg->getParameter<GSLibParString*>(5)->_value,
+    DisplayPlotDialog *dpd = new DisplayPlotDialog(m_gpf_vargplt->getParameter<GSLibParFile*>(0)->_path,
+                                                   m_gpf_vargplt->getParameter<GSLibParString*>(5)->_value,
                                                    gpf,
                                                    this);
     dpd->show();

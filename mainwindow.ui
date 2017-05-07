@@ -244,6 +244,9 @@
     <addaction name="actionAbout"/>
    </widget>
    <widget class="QMenu" name="menuEstimation">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="title">
      <string>Estimation</string>
     </property>
