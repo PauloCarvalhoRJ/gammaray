@@ -145,8 +145,9 @@ public:
     /**
      * Copies a physical file to the specified directory.
      * If there is a file in the destination path, overwrites.
+     * @return The complete path after the copy operation.
      */
-    static void copyFileToDir( const QString from_path, const QString path_to_directory );
+    static QString copyFileToDir( const QString from_path, const QString path_to_directory );
 
     /**
      * Creates a GEO-EAS regular grid file using the grid specs from the
@@ -230,7 +231,12 @@ public:
       * Returns a QColor given a GSLib color code.
       */
     static QColor getGSLibColor( uint color_code );
-    
+
+    /**
+      * Returns the name of a GSLib color given its code.
+      */
+    static QString getGSLibColorName( uint color_code );
+
     /**
      * Imports the registry/user home seetings from a previus version of GammaRay.
      * The import happens only if there are no seetings for this version.
@@ -293,6 +299,9 @@ public:
      *  @param crossVariogram Cross variogram between the variables (no lag effect assumed).
      */
     static bool isLMC( VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel* crossVariogram );
+
+    /** Saves the given list of strings as lines in the given text file. */
+    static void saveText( const QString filePath, const QStringList lines);
 };
 
 #endif // UTIL_H
