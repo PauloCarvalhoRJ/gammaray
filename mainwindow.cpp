@@ -55,6 +55,7 @@
 #include "spatialindex/spatialindexpoints.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
+#include "widgets/view3dwidget.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -129,6 +130,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //enable drop from drag-n-drop gestures
     setAcceptDrops( true );
+
+    //show the 3D view widget
+    ui->frmContent->layout()->addWidget( new View3DWidget() );
 }
 
 MainWindow::~MainWindow()

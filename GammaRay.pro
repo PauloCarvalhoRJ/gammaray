@@ -129,7 +129,8 @@ SOURCES += main.cpp\
     dialogs/creategriddialog.cpp \
     dialogs/cartesiangriddialog.cpp \
     dialogs/bidistributionmodelingdialog.cpp \
-    widgets/pswidget.cpp
+    widgets/pswidget.cpp \
+    widgets/view3dwidget.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -240,7 +241,8 @@ HEADERS  += mainwindow.h \
     dialogs/triadseditordialog.h \
     dialogs/valuespairsdialog.h \
     dialogs/variogramanalysisdialog.h \
-    widgets/pswidget.h
+    widgets/pswidget.h \
+    widgets/view3dwidget.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -291,7 +293,8 @@ FORMS    += mainwindow.ui \
     dialogs/triadseditordialog.ui \
     dialogs/valuespairsdialog.ui \
     dialogs/variogramanalysisdialog.ui \
-    widgets/pswidget.ui
+    widgets/pswidget.ui \
+    widgets/view3dwidget.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
@@ -308,6 +311,21 @@ isEmpty(QWT_INSTALL){
 INCLUDEPATH += $$QWT_INSTALL/include
 LIBPATH     += $$QWT_INSTALL/lib
 LIBS        += -lqwt
+
+# The VTK include and lib paths and libraries
+VTK_INSTALL = $$(VTK_ROOT)
+isEmpty(VTK_INSTALL){
+    error(VTK_ROOT environment variable not defined.)
+}
+INCLUDEPATH += $$VTK_INSTALL/include/vtk-6.3
+LIBPATH     += $$VTK_INSTALL/lib
+LIBS        += -lvtkGUISupportQt-6.3 \
+               -lvtkCommonCore-6.3 \
+               -lvtkFiltersSources-6.3 \
+               -lvtkRenderingCore-6.3 \
+               -lvtkCommonExecutionModel-6.3 \
+               -lvtkInteractionStyle-6.3 \
+               -lvtkRenderingOpenGL2-6.3
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
