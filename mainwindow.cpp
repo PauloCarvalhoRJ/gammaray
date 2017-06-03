@@ -55,7 +55,7 @@
 #include "spatialindex/spatialindexpoints.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
-#include "widgets/view3dwidget.h"
+#include "viewer3d/view3dwidget.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
