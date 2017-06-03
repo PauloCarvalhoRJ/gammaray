@@ -96,7 +96,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->lblProjName->setContextMenuPolicy( Qt::CustomContextMenu );
     connect(ui->lblProjName, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onProjectHeaderContextMenu(const QPoint &)));
 
-
     //update UI with application state.
     displayApplicationInfo();
     Application::instance()->setMainWindow( this );

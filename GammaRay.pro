@@ -130,7 +130,8 @@ SOURCES += main.cpp\
     dialogs/cartesiangriddialog.cpp \
     dialogs/bidistributionmodelingdialog.cpp \
     widgets/pswidget.cpp \
-    viewer3d/view3dwidget.cpp
+    viewer3d/view3dwidget.cpp \
+    widgets/projecttreeview.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -242,7 +243,8 @@ HEADERS  += mainwindow.h \
     dialogs/valuespairsdialog.h \
     dialogs/variogramanalysisdialog.h \
     widgets/pswidget.h \
-    viewer3d/view3dwidget.h
+    viewer3d/view3dwidget.h \
+    widgets/projecttreeview.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
