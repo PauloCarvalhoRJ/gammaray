@@ -14,6 +14,7 @@ VTK_MODULE_INIT(vtkInteractionStyle)
 #include <vtkActor.h>
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
+#include <QSettings>
 
 View3DWidget::View3DWidget(QWidget *parent) :
     QWidget(parent),
@@ -21,29 +22,46 @@ View3DWidget::View3DWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QVTKWidget* vtkwidget = new QVTKWidget();
+    //restore main splitter position
+    {
+        QSettings qs;
+        QByteArray state;
+        if( qs.contains( "viewer3dsplitter" ))
+            state = qs.value("viewer3dsplitter").toByteArray();
+        ui->splitter->restoreState( state );
+    }
+    //restore left splitter position
+    {
+        QSettings qs;
+        QByteArray state;
+        if( qs.contains( "viewer3dsplitter2" ))
+            state = qs.value("viewer3dsplitter2").toByteArray();
+        ui->splitter_2->restoreState( state );
+    }
 
+    //===========VTK TEST CODE==========================================
+    QVTKWidget* vtkwidget = new QVTKWidget();
     vtkSmartPointer<vtkSphereSource> sphereSource =
         vtkSmartPointer<vtkSphereSource>::New();
-
     vtkSmartPointer<vtkPolyDataMapper> sphereMapper =
         vtkSmartPointer<vtkPolyDataMapper>::New();
     sphereMapper->SetInputConnection( sphereSource->GetOutputPort() );
-
     vtkSmartPointer<vtkActor> sphereActor =
         vtkSmartPointer<vtkActor>::New();
     sphereActor->SetMapper( sphereMapper );
-
     vtkSmartPointer<vtkRenderer> renderer =
         vtkSmartPointer<vtkRenderer>::New();
     renderer->AddActor( sphereActor );
-
     vtkwidget->GetRenderWindow()->AddRenderer( renderer );
+    //==================================================================
 
-    layout()->addWidget( vtkwidget );
+    ui->frmViewer->layout()->addWidget( vtkwidget );
 }
 
 View3DWidget::~View3DWidget()
 {
+    QSettings qs;
+    qs.setValue("viewer3dsplitter", ui->splitter->saveState());
+    qs.setValue("viewer3dsplitter2", ui->splitter_2->saveState());
     delete ui;
 }
