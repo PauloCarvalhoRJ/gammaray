@@ -19,6 +19,7 @@ class VariogramModel;
 class Distribution;
 class ThresholdCDF;
 class CategoryPDF;
+class ProjectComponent;
 
 /**
  * @brief The Project class holds all information about a geostats study.
@@ -193,6 +194,14 @@ public:
      * Returns whether the given File object is a child in the project tree.
      */
     bool fileIsChild( File* file );
+
+    /**
+     * Searches through the object tree for an object corresponding to the given
+     * object locator.  The locator follows this syntax: GENERIC_TYPE:SPECIFIC_TYPE:NAME, for examples:
+     * DATAFILE:CARTESIANGRID:Gold.dat or ATTRIBUTE:ATTRIBUTE:goldgrade.
+     * Returns nullptr if no object mathing the search is found.
+     */
+    ProjectComponent* findObject( const QString object_locator );
 
 private:
     QDir* _project_directory;

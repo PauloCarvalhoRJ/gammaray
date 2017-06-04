@@ -107,3 +107,17 @@ void ProjectComponent::getAllObjects( std::vector<ProjectComponent *> &result )
         (*it)->getAllObjects( result );
     }
 }
+
+ProjectComponent *ProjectComponent::findObject(const QString object_locator)
+{
+    //if the locator matches this object's
+    if( this->getObjectLocator().compare( object_locator ) == 0)
+        return this; //...returns itself
+    else //...otherwise, tries its children
+        for (std::vector<ProjectComponent*>::iterator it = _children.begin() ; it != _children.end(); ++it){
+           ProjectComponent* pc = (*it)->findObject( object_locator );
+           if( pc )
+               return pc;
+        }
+    return nullptr; //returns nullptr if no match is found
+}

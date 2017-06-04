@@ -4,6 +4,8 @@
 #include <QMimeData>
 
 #include "domain/application.h"
+#include "domain/project.h"
+#include "domain/projectcomponent.h"
 
 Viewer3DListWidget::Viewer3DListWidget( QWidget *parent ) : QListWidget( parent )
 {
@@ -36,4 +38,11 @@ void Viewer3DListWidget::dropEvent(QDropEvent *e)
     //otherwise, they are project objects
     //inform user that an object was dropped
     Application::instance()->logInfo("Viewer3DListWidget::dropEvent(): Dropped object locator: " + e->mimeData()->text());
+    ProjectComponent* object = Application::instance()->getProject()->findObject( e->mimeData()->text() );
+    if( ! object ){
+        Application::instance()->logError("Viewer3DListWidget::dropEvent(): object not found. Drop operation failed.");
+        return;
+    } else {
+        Application::instance()->logInfo("Viewer3DListWidget::dropEvent(): Found object: " + object->getName());
+    }
 }
