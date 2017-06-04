@@ -131,7 +131,8 @@ SOURCES += main.cpp\
     dialogs/bidistributionmodelingdialog.cpp \
     widgets/pswidget.cpp \
     viewer3d/view3dwidget.cpp \
-    widgets/projecttreeview.cpp
+    widgets/projecttreeview.cpp \
+    viewer3d/viewer3dlistwidget.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -244,7 +245,8 @@ HEADERS  += mainwindow.h \
     dialogs/variogramanalysisdialog.h \
     widgets/pswidget.h \
     viewer3d/view3dwidget.h \
-    widgets/projecttreeview.h
+    widgets/projecttreeview.h \
+    viewer3d/viewer3dlistwidget.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

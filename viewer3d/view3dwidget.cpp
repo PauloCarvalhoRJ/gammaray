@@ -56,6 +56,14 @@ View3DWidget::View3DWidget(QWidget *parent) :
     //==================================================================
 
     ui->frmViewer->layout()->addWidget( vtkwidget );
+
+    //enable and configure the objects list's drag-and-drop feature.
+    ui->listWidget->setDragEnabled(true);
+    ui->listWidget->setDragDropMode(QAbstractItemView::DragDrop);
+    ui->listWidget->viewport()->setAcceptDrops(true);
+    ui->listWidget->setDropIndicatorShown(true);
+    ui->listWidget->setAcceptDrops( true );
+
 }
 
 View3DWidget::~View3DWidget()

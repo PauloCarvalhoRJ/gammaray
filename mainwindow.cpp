@@ -91,6 +91,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->treeProject->setContextMenuPolicy( Qt::CustomContextMenu );
     connect(ui->treeProject, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onProjectContextMenu(const QPoint &)));
 
+    //enable and configure the Project Tree's drag-and-drop feature.
+    ui->treeProject->setDragEnabled(true);
+    ui->treeProject->setDragDropMode(QAbstractItemView::DragDrop);
+    ui->treeProject->viewport()->setAcceptDrops(true);
+    ui->treeProject->setDropIndicatorShown(true);
+
     //configure project header context menu
     _projectHeaderContextMenu = new QMenu( ui->lblProjName );
     ui->lblProjName->setContextMenuPolicy( Qt::CustomContextMenu );

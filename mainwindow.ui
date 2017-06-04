@@ -115,7 +115,7 @@
             <number>0</number>
            </property>
            <item>
-            <widget class="QTreeView" name="treeProject">
+            <widget class="ProjectTreeView" name="treeProject">
              <property name="selectionMode">
               <enum>QAbstractItemView::ExtendedSelection</enum>
              </property>
@@ -344,6 +344,13 @@
   </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>ProjectTreeView</class>
+   <extends>QTreeView</extends>
+   <header>widgets/projecttreeview.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="resources.qrc"/>
  </resources>
