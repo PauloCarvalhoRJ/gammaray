@@ -132,7 +132,8 @@ SOURCES += main.cpp\
     widgets/pswidget.cpp \
     viewer3d/view3dwidget.cpp \
     widgets/projecttreeview.cpp \
-    viewer3d/viewer3dlistwidget.cpp
+    viewer3d/viewer3dlistwidget.cpp \
+    viewer3d/view3dstyle.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -246,7 +247,8 @@ HEADERS  += mainwindow.h \
     widgets/pswidget.h \
     viewer3d/view3dwidget.h \
     widgets/projecttreeview.h \
-    viewer3d/viewer3dlistwidget.h
+    viewer3d/viewer3dlistwidget.h \
+    viewer3d/view3dstyle.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -330,7 +332,10 @@ LIBS        += -lvtkGUISupportQt$$VTK_VERSION_SUFFIX \
                -lvtkRenderingCore$$VTK_VERSION_SUFFIX \
                -lvtkCommonExecutionModel$$VTK_VERSION_SUFFIX \
                -lvtkInteractionStyle$$VTK_VERSION_SUFFIX \
-               -lvtkRenderingOpenGL2$$VTK_VERSION_SUFFIX
+               -lvtkRenderingOpenGL2$$VTK_VERSION_SUFFIX \
+               -lvtkRenderingAnnotation$$VTK_VERSION_SUFFIX \
+               -lvtkRenderingFreeType$$VTK_VERSION_SUFFIX \
+               -lvtkInteractionWidgets$$VTK_VERSION_SUFFIX
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to

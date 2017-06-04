@@ -6,6 +6,7 @@
 #include "domain/application.h"
 #include "domain/project.h"
 #include "domain/projectcomponent.h"
+#include "view3dstyle.h"
 
 Viewer3DListWidget::Viewer3DListWidget( QWidget *parent ) : QListWidget( parent )
 {
@@ -35,14 +36,23 @@ void Viewer3DListWidget::dropEvent(QDropEvent *e)
         }
         return;
     }
+
     //otherwise, they are project objects
     //inform user that an object was dropped
-    Application::instance()->logInfo("Viewer3DListWidget::dropEvent(): Dropped object locator: " + e->mimeData()->text());
-    ProjectComponent* object = Application::instance()->getProject()->findObject( e->mimeData()->text() );
+    QString object_locator = e->mimeData()->text();
+    Application::instance()->logInfo("Viewer3DListWidget::dropEvent(): Dropped object locator: " + object_locator);
+    ProjectComponent* object = Application::instance()->getProject()->findObject( object_locator );
     if( ! object ){
         Application::instance()->logError("Viewer3DListWidget::dropEvent(): object not found. Drop operation failed.");
         return;
     } else {
         Application::instance()->logInfo("Viewer3DListWidget::dropEvent(): Found object: " + object->getName());
     }
+
+    //Create a list item and a visual style corresponding to the object. (the same object may be represented multiple times)
+    QListWidgetItem* item = new QListWidgetItem( object->getIcon(), object->getName() );
+    View3DStyle* style = new View3DStyle();
+    item->setData( Qt::UserRole, object_locator );
+    addItem( item );
+    _styles.append( style );
 }

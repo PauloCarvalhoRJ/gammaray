@@ -3,6 +3,8 @@
 
 #include <QListWidget>
 
+class View3DStyle;
+
 /** This is a QListWidget subclass tailored to support certain operations on GammaRay project objects.
  * If you use Qt Creator, you can use the "Promote to..." option from the context menu when you right click
  * on the QListWidget on the form's object list. You then have to enter the name of the subclass (Viewer3DListWidget)
@@ -19,6 +21,10 @@ public:
     void dragEnterEvent(QDragEnterEvent *e);
 
     void dropEvent(QDropEvent *e);
+
+private:
+    /** The styles associated with each item in the list. */
+    QList<View3DStyle*> _styles;
 };
 
 #endif // VIEWER3DLISTWIDGET_H
