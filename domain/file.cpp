@@ -97,3 +97,8 @@ bool File::isAttribute()
 {
     return false;
 }
+
+QString File::getObjectLocator()
+{
+    return "FILE:" + getFileType() + ":" + getName();
+}

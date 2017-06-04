@@ -36,6 +36,7 @@ public:
     bool isFile();
     bool isAttribute();
     QString getPresentationName();
+    virtual QString getObjectLocator();
 
 private:
     QString _name;

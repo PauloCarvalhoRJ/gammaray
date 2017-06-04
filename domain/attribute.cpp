@@ -92,3 +92,8 @@ QString Attribute::getPresentationName()
 {
     return QString("[").append( QString::number(_index) ).append("]-").append( _name );
 }
+
+QString Attribute::getObjectLocator()
+{
+    return "ATTRIBUTE:ATTRIBUTE:" + getName();
+}

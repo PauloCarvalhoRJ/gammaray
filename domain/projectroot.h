@@ -20,6 +20,7 @@ public:
     QIcon getIcon();
     bool isFile();
     bool isAttribute();
+    virtual QString getObjectLocator();
 };
 
 #endif // PROJECTROOT_H

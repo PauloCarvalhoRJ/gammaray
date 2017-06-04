@@ -101,6 +101,7 @@ public:
     virtual QIcon getIcon() = 0;
     bool isFile();
     bool isAttribute();
+    virtual QString getObjectLocator();
 };
 
 #endif // __VVVV___FILE_H

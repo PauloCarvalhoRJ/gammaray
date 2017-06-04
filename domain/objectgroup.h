@@ -34,6 +34,7 @@ public:
     void save(QTextStream *txt_stream);
     bool isFile();
     bool isAttribute();
+    virtual QString getObjectLocator();
 };
 
 #endif // OBJECTGROUP_H

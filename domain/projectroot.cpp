@@ -25,3 +25,8 @@ bool ProjectRoot::isAttribute()
 {
     return false;
 }
+
+QString ProjectRoot::getObjectLocator()
+{
+    return "PROJECTROOT:PROJECTROOT:" + getName();
+}

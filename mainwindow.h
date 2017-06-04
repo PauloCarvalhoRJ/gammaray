@@ -34,6 +34,12 @@ public:
     */
     void log_message( const QString message, const QString style );
 
+    /**
+     *  Adds the data file given its path to the project.
+     *  Assumes there is an open project.
+     */
+    void doAddDataFile( const QString filePath );
+
     //QMainWindow interface
 public:
     void dragEnterEvent( QDragEnterEvent *e );
@@ -180,10 +186,6 @@ private:
       * Creates the dynamic items of sub-menu "Map as".
       */
     void makeMenuMapAs();
-    /**
-     *  Adds the data file given its path to the project.
-     */
-    void doAddDataFile( const QString filePath );
 };
 
 #endif // MAINWINDOW_H

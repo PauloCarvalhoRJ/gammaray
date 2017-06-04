@@ -22,6 +22,8 @@ public:
 
     void dragEnterEvent(QDragEnterEvent *e);
 
+    void dropEvent( QDropEvent *e );
+
 protected:
     QPoint dragStartPosition;
 };

@@ -21,7 +21,13 @@ public:
     virtual QIcon getIcon() = 0;
     virtual bool isFile() = 0;
     virtual bool isAttribute() = 0;
+
+    /** Returns a string in the format: GENERIC_TYPE:SPECIFIC_TYPE:OBJECT_NAME.
+     * Examples: FILE:CARTESIANGRID:GoldMine.dat or ATTRIBUTE:ATTRIBUTE:GoldGrade
+     */
+    virtual QString getObjectLocator() = 0;
     virtual bool hasChildren();
+
     virtual void addChild( ProjectComponent* child );
     virtual void removeChild( ProjectComponent* child );
     virtual bool hasParent();

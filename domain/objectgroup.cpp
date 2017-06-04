@@ -36,3 +36,8 @@ bool ObjectGroup::isAttribute()
 {
     return false;
 }
+
+QString ObjectGroup::getObjectLocator()
+{
+    return "OBJECTGROUP:OBJECTGROUP:" + getName();
+}
