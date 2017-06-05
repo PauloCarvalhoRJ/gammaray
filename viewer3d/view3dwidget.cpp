@@ -65,21 +65,22 @@ View3DWidget::View3DWidget(QWidget *parent) :
     renderer->SetBackground(0.9,0.9,1);
     renderer->SetBackground2(0.5,0.5,1);
 
-    //----------------------adding the orientation axes-------------------------
-    //----not working: try making widget a class member.  it seems to be going out of scope
-    vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
-    vtkSmartPointer<vtkOrientationMarkerWidget> widget =
-            vtkSmartPointer<vtkOrientationMarkerWidget>::New();
-    widget->SetOutlineColor( 0.9300, 0.5700, 0.1300 );
-    widget->SetOrientationMarker( axes );
-    widget->SetInteractor( vtkwidget->GetRenderWindow()->GetInteractor() );
-    widget->SetViewport( 0.0, 0.0, 0.4, 0.4 );
-    widget->SetEnabled( 1 );
-    widget->InteractiveOn();
-    //--------------------------------------------------------------------------
-
     renderer->AddActor( sphereActor );  // VTK TEST CODE
     vtkwidget->GetRenderWindow()->AddRenderer( renderer );
+
+    //----------------------adding the orientation axes-------------------------
+    vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
+    _vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
+    _vtkAxesWidget->SetOutlineColor( 0.9300, 0.5700, 0.1300 );
+    _vtkAxesWidget->SetOrientationMarker( axes );
+    _vtkAxesWidget->SetInteractor( vtkwidget->GetRenderWindow()->GetInteractor() );
+    _vtkAxesWidget->SetViewport( 0.0, 0.0, 0.2, 0.2 );
+    _vtkAxesWidget->SetEnabled( 1 );
+    _vtkAxesWidget->InteractiveOn();
+    //--------------------------------------------------------------------------
+
+    //adjusts view so everything fits in the screen
+    renderer->ResetCamera();
 
     //add the VTK widget the layout
     ui->frmViewer->layout()->addWidget( vtkwidget );
