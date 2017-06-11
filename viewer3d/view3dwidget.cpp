@@ -96,7 +96,8 @@ View3DWidget::View3DWidget(QWidget *parent) :
     //ui->listWidget->setDropIndicatorShown(true);
     ui->listWidget->setAcceptDrops( true );
 
-    connect( ui->listWidget, SIGNAL(newObject(QString,View3DStyle*)), this, SLOT(onNewObject(QString,View3DStyle*)) );
+    connect( ui->listWidget, SIGNAL(newObject(QString)), this, SLOT(onNewObject(QString)) );
+    connect( ui->listWidget, SIGNAL(removeObject(QString)), this, SLOT(onRemoveObject(QString)) );
 }
 
 View3DWidget::~View3DWidget()
@@ -107,7 +108,7 @@ View3DWidget::~View3DWidget()
     delete ui;
 }
 
-void View3DWidget::onNewObject(const QString object_locator, View3DStyle *style)
+void View3DWidget::onNewObject(const QString object_locator)
 {
     Application::instance()->logInfo("View3DWidget::onNewObject(): new object to display: " + object_locator);
 
@@ -122,4 +123,24 @@ void View3DWidget::onNewObject(const QString object_locator, View3DStyle *style)
 
     //redraw the scene
     _vtkwidget->update();
+
+    //keeps a list of locator-actor pairs to allow management
+    _currentObjects.insert( object_locator, actor );
+}
+
+void View3DWidget::onRemoveObject(const QString object_locator)
+{
+    //removes the VTK actor matching the object locator from the list.
+    vtkSmartPointer<vtkActor> actor = _currentObjects.take( object_locator );
+
+    //removes the VTK actor from view.
+    _renderer->RemoveActor( actor );
+
+    //adjusts view so everything fits in the screen
+    _renderer->ResetCamera();
+
+    //redraw the scene
+    _vtkwidget->update();
+
+    //TODO: verify whether the smart pointer manages memory after all local references to the actor have been removed.
 }

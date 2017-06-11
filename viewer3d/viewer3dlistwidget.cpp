@@ -1,6 +1,7 @@
 #include "viewer3dlistwidget.h"
 
 #include <QDragEnterEvent>
+#include <QMenu>
 #include <QMimeData>
 
 #include "domain/application.h"
@@ -10,6 +11,10 @@
 
 Viewer3DListWidget::Viewer3DListWidget( QWidget *parent ) : QListWidget( parent )
 {
+    //configure list item context menu
+    _contextMenu = new QMenu( this );
+    this->setContextMenuPolicy( Qt::CustomContextMenu );
+    connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onContextMenu(const QPoint &)));
 }
 
 void Viewer3DListWidget::dragMoveEvent(QDragMoveEvent * /*e*/) {
@@ -51,10 +56,44 @@ void Viewer3DListWidget::dropEvent(QDropEvent *e)
 
     //Create a list item and a visual style corresponding to the object. (the same object may be represented multiple times)
     QListWidgetItem* item = new QListWidgetItem( object->getIcon(), object->getName() );
-    View3DStyle* style = new View3DStyle();
     item->setData( Qt::UserRole, object_locator );
     addItem( item );
-    _styles.append( style );
 
-    emit newObject( object_locator, style );
+    //notify possibly listening contexts of this drop event
+    emit newObject( object_locator );
+}
+
+void Viewer3DListWidget::onContextMenu(const QPoint &mouse_location)
+{
+    QModelIndex index = this->indexAt(mouse_location); //get index to project component under mouse
+    //Project* project = Application::instance()->getProject(); //get pointer to open project
+    _contextMenu->clear(); //remove all context menu actions
+
+    //get all selected items, this may include other items different from the one under the mouse pointer.
+    QModelIndexList selected_indexes = this->selectionModel()->selectedIndexes();
+
+    //if there is just one selected item.
+    if( selected_indexes.size() == 1 ){
+        //build context menu for any item
+        if ( index.isValid() /*&& index.internalPointer() == project->getDataFilesGroup() */) {
+            _contextMenu->addAction("Remove from view", this, SLOT(onRemoveFromView()));
+        }
+    }
+
+    //show the context menu under the mouse cursor.
+    if( _contextMenu->actions().size() > 0 )
+        _contextMenu->exec(this->mapToGlobal(mouse_location));
+
+}
+
+void Viewer3DListWidget::onRemoveFromView()
+{
+    QModelIndex index = this->currentIndex();
+    QListWidgetItem* item = this->takeItem( index.row() );
+
+    //QListWidgetItem* item = this->currentItem();
+    QString object_locator = item->data( Qt::UserRole ).toString();
+    Application::instance()->logInfo( "Viewer3DListWidget::onRemoveFromView(): User requested removal from view of " +
+                                      object_locator );
+    emit removeObject( object_locator );
 }

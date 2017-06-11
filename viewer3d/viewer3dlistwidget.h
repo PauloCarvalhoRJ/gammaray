@@ -28,12 +28,19 @@ public:
 
 signals:
 
-    /** Triggered when the user drops a project object. The created style for the object is also passed. */
-    void newObject( const QString object_locator, View3DStyle* style );
+    /** Triggered when the user drops a project object. */
+    void newObject( const QString object_locator );
+
+    /** Triggered when the user removes an object from view. */
+    void removeObject( const QString object_locator );
 
 private:
-    /** The styles associated with each item in the list. */
-    QList<View3DStyle*> _styles;
+    //context menu for the list items
+    QMenu *_contextMenu;
+
+private slots:
+    void onContextMenu(const QPoint &mouse_location);
+    void onRemoveFromView();
 };
 
 #endif // VIEWER3DLISTWIDGET_H

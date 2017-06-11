@@ -5,6 +5,8 @@
 
 #include <vtkSmartPointer.h>
 #include <vtkOrientationMarkerWidget.h>
+#include <vtkActor.h>
+#include <QMap>
 
 namespace Ui {
 class View3DWidget;
@@ -31,10 +33,15 @@ private:
     //the VTK renderer (add VTK actors to it to build the scene).
     vtkSmartPointer<vtkRenderer> _renderer;
 
+    //the Qt widget containing a VTK viewport
     QVTKWidget* _vtkwidget;
 
+    //the list of current VTK actors indexed by their associated domain object locators.
+    QMap< QString, vtkSmartPointer<vtkActor> > _currentObjects;
+
 private slots:
-    void onNewObject( const QString object_locator, View3DStyle* style );
+    void onNewObject( const QString object_locator );
+    void onRemoveObject( const QString object_locator );
 };
 
 #endif // VIEW3DWIDGET_H
