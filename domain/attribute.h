@@ -37,6 +37,7 @@ public:
     bool isAttribute();
     QString getPresentationName();
     virtual QString getObjectLocator();
+    virtual vtkSmartPointer<vtkActor> buildVTKActor();
 
 private:
     QString _name;
