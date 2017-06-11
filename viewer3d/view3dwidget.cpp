@@ -144,3 +144,11 @@ void View3DWidget::onRemoveObject(const QString object_locator)
 
     //TODO: verify whether the smart pointer manages memory after all local references to the actor have been removed.
 }
+
+void View3DWidget::onViewAll()
+{
+    //adjusts view so everything fits in the screen
+    _renderer->ResetCamera();
+    //redraw the scene
+    _vtkwidget->update();
+}

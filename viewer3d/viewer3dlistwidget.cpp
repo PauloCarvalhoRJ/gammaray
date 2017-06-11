@@ -90,8 +90,6 @@ void Viewer3DListWidget::onRemoveFromView()
 {
     QModelIndex index = this->currentIndex();
     QListWidgetItem* item = this->takeItem( index.row() );
-
-    //QListWidgetItem* item = this->currentItem();
     QString object_locator = item->data( Qt::UserRole ).toString();
     Application::instance()->logInfo( "Viewer3DListWidget::onRemoveFromView(): User requested removal from view of " +
                                       object_locator );
