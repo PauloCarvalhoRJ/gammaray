@@ -209,6 +209,72 @@
              <iconset resource="../resources.qrc">
               <normaloff>:/icons32/v3Dglobal32</normaloff>:/icons32/v3Dglobal32</iconset>
             </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnLookAtXY">
+            <property name="toolTip">
+             <string>Look at XY plane</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons32/v3Dxy32</normaloff>:/icons32/v3Dxy32</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnLookAtXZ">
+            <property name="toolTip">
+             <string>Look at XZ plane</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons32/v3Dyz32</normaloff>:/icons32/v3Dyz32</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnLookAtYZ">
+            <property name="toolTip">
+             <string>Look at YZ plane</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons32/v3Dxz32</normaloff>:/icons32/v3Dxz32</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
            </widget>
           </item>
           <item>
@@ -260,8 +326,59 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnLookAtXY</sender>
+   <signal>clicked()</signal>
+   <receiver>View3DWidget</receiver>
+   <slot>onLookAtXY()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>582</x>
+     <y>71</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>305</x>
+     <y>159</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnLookAtXZ</sender>
+   <signal>clicked()</signal>
+   <receiver>View3DWidget</receiver>
+   <slot>onLookAtXZ()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>582</x>
+     <y>116</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>305</x>
+     <y>159</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnLookAtYZ</sender>
+   <signal>clicked()</signal>
+   <receiver>View3DWidget</receiver>
+   <slot>onLookAtYZ()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>582</x>
+     <y>161</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>305</x>
+     <y>159</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onViewAll()</slot>
+  <slot>onLookAtXY()</slot>
+  <slot>onLookAtXZ()</slot>
+  <slot>onLookAtYZ()</slot>
  </slots>
 </ui>

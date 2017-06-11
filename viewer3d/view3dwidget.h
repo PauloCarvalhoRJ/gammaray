@@ -43,6 +43,9 @@ private slots:
     void onNewObject( const QString object_locator );
     void onRemoveObject( const QString object_locator );
     void onViewAll();
+    void onLookAtXY();
+    void onLookAtXZ();
+    void onLookAtYZ();
 };
 
 #endif // VIEW3DWIDGET_H

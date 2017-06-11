@@ -18,6 +18,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkRenderWindow.h>
 #include <vtkRenderer.h>
 #include <vtkOrientationMarkerWidget.h>
+#include <vtkCamera.h>
 #include <QSettings>
 
 #include "domain/application.h"
@@ -118,9 +119,6 @@ void View3DWidget::onNewObject(const QString object_locator)
     //adds the actor for viewing
     _renderer->AddActor( actor );
 
-    //adjusts view so everything fits in the screen
-    _renderer->ResetCamera();
-
     //redraw the scene
     _vtkwidget->update();
 
@@ -136,9 +134,6 @@ void View3DWidget::onRemoveObject(const QString object_locator)
     //removes the VTK actor from view.
     _renderer->RemoveActor( actor );
 
-    //adjusts view so everything fits in the screen
-    _renderer->ResetCamera();
-
     //redraw the scene
     _vtkwidget->update();
 
@@ -149,6 +144,40 @@ void View3DWidget::onViewAll()
 {
     //adjusts view so everything fits in the screen
     _renderer->ResetCamera();
+    //redraw the scene
+    _vtkwidget->update();
+}
+
+void View3DWidget::onLookAtXY()
+{
+    //_renderer->ResetCamera();
+    double *fp = _renderer->GetActiveCamera()->GetFocalPoint();
+    double *p = _renderer->GetActiveCamera()->GetPosition();
+    double dist = std::sqrt( (p[0]-fp[0])*(p[0]-fp[0]) + (p[1]-fp[1])*(p[1]-fp[1]) + (p[2]-fp[2])*(p[2]-fp[2]) );
+    _renderer->GetActiveCamera()->SetPosition(fp[0], fp[1], fp[2]+dist);
+    _renderer->GetActiveCamera()->SetViewUp(0.0, 1.0, 0.0);
+    //redraw the scene
+    _vtkwidget->update();
+}
+
+void View3DWidget::onLookAtXZ()
+{
+    double *fp = _renderer->GetActiveCamera()->GetFocalPoint();
+    double *p = _renderer->GetActiveCamera()->GetPosition();
+    double dist = std::sqrt( (p[0]-fp[0])*(p[0]-fp[0]) + (p[1]-fp[1])*(p[1]-fp[1]) + (p[2]-fp[2])*(p[2]-fp[2]) );
+    _renderer->GetActiveCamera()->SetPosition(fp[0], fp[1]-dist, fp[2]);
+    _renderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
+    //redraw the scene
+    _vtkwidget->update();
+}
+
+void View3DWidget::onLookAtYZ()
+{
+    double *fp = _renderer->GetActiveCamera()->GetFocalPoint();
+    double *p = _renderer->GetActiveCamera()->GetPosition();
+    double dist = std::sqrt( (p[0]-fp[0])*(p[0]-fp[0]) + (p[1]-fp[1])*(p[1]-fp[1]) + (p[2]-fp[2])*(p[2]-fp[2]) );
+    _renderer->GetActiveCamera()->SetPosition(fp[0]+dist, fp[1], fp[2]);
+    _renderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
     //redraw the scene
     _vtkwidget->update();
 }
