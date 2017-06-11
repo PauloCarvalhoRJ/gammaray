@@ -20,6 +20,11 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkOrientationMarkerWidget.h>
 #include <QSettings>
 
+#include "domain/application.h"
+#include "domain/project.h"
+#include "domain/projectcomponent.h"
+#include "view3dbuilders.h"
+
 View3DWidget::View3DWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::View3DWidget)
@@ -43,47 +48,46 @@ View3DWidget::View3DWidget(QWidget *parent) :
         ui->splitter_2->restoreState( state );
     }
 
-    QVTKWidget* vtkwidget = new QVTKWidget();
+    _vtkwidget = new QVTKWidget();
 
     //===========VTK TEST CODE==========================================
-    vtkSmartPointer<vtkSphereSource> sphereSource =
-        vtkSmartPointer<vtkSphereSource>::New();
-    vtkSmartPointer<vtkPolyDataMapper> sphereMapper =
-        vtkSmartPointer<vtkPolyDataMapper>::New();
-    sphereMapper->SetInputConnection( sphereSource->GetOutputPort() );
-    vtkSmartPointer<vtkActor> sphereActor =
-        vtkSmartPointer<vtkActor>::New();
-    sphereActor->SetMapper( sphereMapper );
+//    vtkSmartPointer<vtkSphereSource> sphereSource =
+//        vtkSmartPointer<vtkSphereSource>::New();
+//    vtkSmartPointer<vtkPolyDataMapper> sphereMapper =
+//        vtkSmartPointer<vtkPolyDataMapper>::New();
+//    sphereMapper->SetInputConnection( sphereSource->GetOutputPort() );
+//    vtkSmartPointer<vtkActor> sphereActor =
+//        vtkSmartPointer<vtkActor>::New();
+//    sphereActor->SetMapper( sphereMapper );
     //==================================================================
 
 
-    vtkSmartPointer<vtkRenderer> renderer =
-        vtkSmartPointer<vtkRenderer>::New();
+    _renderer = vtkSmartPointer<vtkRenderer>::New();
 
     //add a nice sky-like background
-    renderer->GradientBackgroundOn();
-    renderer->SetBackground(0.9,0.9,1);
-    renderer->SetBackground2(0.5,0.5,1);
+    _renderer->GradientBackgroundOn();
+    _renderer->SetBackground(0.9,0.9,1);
+    _renderer->SetBackground2(0.5,0.5,1);
 
-    renderer->AddActor( sphereActor );  // VTK TEST CODE
-    vtkwidget->GetRenderWindow()->AddRenderer( renderer );
+//    renderer->AddActor( sphereActor );  // VTK TEST CODE
+    _vtkwidget->GetRenderWindow()->AddRenderer( _renderer );
 
     //----------------------adding the orientation axes-------------------------
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
     _vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
     _vtkAxesWidget->SetOutlineColor( 0.9300, 0.5700, 0.1300 );
     _vtkAxesWidget->SetOrientationMarker( axes );
-    _vtkAxesWidget->SetInteractor( vtkwidget->GetRenderWindow()->GetInteractor() );
+    _vtkAxesWidget->SetInteractor( _vtkwidget->GetRenderWindow()->GetInteractor() );
     _vtkAxesWidget->SetViewport( 0.0, 0.0, 0.2, 0.2 );
     _vtkAxesWidget->SetEnabled( 1 );
     _vtkAxesWidget->InteractiveOn();
     //--------------------------------------------------------------------------
 
     //adjusts view so everything fits in the screen
-    renderer->ResetCamera();
+    _renderer->ResetCamera();
 
     //add the VTK widget the layout
-    ui->frmViewer->layout()->addWidget( vtkwidget );
+    ui->frmViewer->layout()->addWidget( _vtkwidget );
 
     //enable and configure the objects list's drag-and-drop feature.
     //ui->listWidget->setDragEnabled(true);
@@ -92,6 +96,7 @@ View3DWidget::View3DWidget(QWidget *parent) :
     //ui->listWidget->setDropIndicatorShown(true);
     ui->listWidget->setAcceptDrops( true );
 
+    connect( ui->listWidget, SIGNAL(newObject(QString,View3DStyle*)), this, SLOT(onNewObject(QString,View3DStyle*)) );
 }
 
 View3DWidget::~View3DWidget()
@@ -100,4 +105,21 @@ View3DWidget::~View3DWidget()
     qs.setValue("viewer3dsplitter", ui->splitter->saveState());
     qs.setValue("viewer3dsplitter2", ui->splitter_2->saveState());
     delete ui;
+}
+
+void View3DWidget::onNewObject(const QString object_locator, View3DStyle *style)
+{
+    Application::instance()->logInfo("View3DWidget::onNewObject(): new object to display: " + object_locator);
+
+    //gets the VTK Actor that represents the domain object
+    vtkSmartPointer<vtkActor> actor = Application::instance()->getProject()->findObject( object_locator )->buildVTKActor();
+
+    //adds the actor for viewing
+    _renderer->AddActor( actor );
+
+    //adjusts view so everything fits in the screen
+    _renderer->ResetCamera();
+
+    //redraw the scene
+    _vtkwidget->update();
 }

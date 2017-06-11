@@ -13,7 +13,11 @@ class View3DStyle;
  */
 class Viewer3DListWidget : public QListWidget
 {
+
+    Q_OBJECT
+
 public:
+
     Viewer3DListWidget(QWidget *parent = nullptr);
 
     void dragMoveEvent(QDragMoveEvent *e);
@@ -21,6 +25,11 @@ public:
     void dragEnterEvent(QDragEnterEvent *e);
 
     void dropEvent(QDropEvent *e);
+
+signals:
+
+    /** Triggered when the user drops a project object. The created style for the object is also passed. */
+    void newObject( const QString object_locator, View3DStyle* style );
 
 private:
     /** The styles associated with each item in the list. */

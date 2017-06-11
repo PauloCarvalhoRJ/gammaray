@@ -55,4 +55,6 @@ void Viewer3DListWidget::dropEvent(QDropEvent *e)
     item->setData( Qt::UserRole, object_locator );
     addItem( item );
     _styles.append( style );
+
+    emit newObject( object_locator, style );
 }

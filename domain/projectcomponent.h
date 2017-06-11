@@ -5,6 +5,8 @@
 #include <QIcon>
 #include <vector>
 
+#include "viewer3d/view3dbuilders.h"
+
 class QTextStream;
 
 /**
@@ -47,6 +49,10 @@ public:
     /** Recursively searches for an object matching the given object locator. */
     ProjectComponent* findObject( const QString object_locator );
     void dummyCall(){ int x; x = 2; ++x; } //used to test pointer validity (TODO: not used anywhere)
+
+    /** Builds a VTK actor object to enable 3D display. This default implementation is an ineffective call.*/
+    virtual vtkSmartPointer<vtkActor> buildVTKActor( );
+
 protected:
     std::vector<ProjectComponent*> _children;
     ProjectComponent* _parent;
