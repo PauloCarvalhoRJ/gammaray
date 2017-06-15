@@ -3,6 +3,7 @@
 #include "domain/projectcomponent.h"
 #include "domain/pointset.h"
 #include "domain/attribute.h"
+#include "view3dcolortables.h"
 
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
@@ -12,6 +13,7 @@
 #include <vtkPointData.h>
 #include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
+#include <vtkLookupTable.h>
 
 View3DBuilders::View3DBuilders()
 {
@@ -120,7 +122,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet
 
     //create a VTK array to store the sample values
     vtkSmartPointer<vtkDoubleArray> values = vtkSmartPointer<vtkDoubleArray>::New();
-    //values->SetName('values');
+    values->SetName("values");
 
     //read point geometry and sample values
     vtkSmartPointer<vtkIdList> pids = vtkSmartPointer<vtkIdList>::New();
@@ -140,7 +142,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet
     }
     vertices->InsertNextCell( pids );
 
-    // Create a polydata object
+    // Create a polydata object (topological object)
     vtkSmartPointer<vtkPolyData> pointCloud =
       vtkSmartPointer<vtkPolyData>::New();
 
@@ -148,17 +150,22 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet
     pointCloud->SetPoints(points);
     pointCloud->SetVerts(vertices);
     pointCloud->GetPointData()->SetScalars( values );
-    //pointCloud->GetPointData()->SetActiveScalars('values');
+    pointCloud->GetPointData()->SetActiveScalars("values");
 
-    // Visualization parameters
+    //build a color table
+    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getClassicRainbow( min, max );
+
+    // Create a visualization parameters object
     vtkSmartPointer<vtkPolyDataMapper> mapper =
       vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputData(pointCloud);
-    mapper->SetColorModeToDefault();
+    mapper->SetLookupTable(lut);
+    mapper->SetScalarModeToUsePointFieldData();
+    mapper->SetColorModeToMapScalars();
+    mapper->SelectColorArray("values");
     mapper->SetScalarRange(min, max);
-    mapper->SetScalarVisibility(1);
 
-    // Create and configure the actor
+    // Create and configure the final actor object
     vtkSmartPointer<vtkActor> actor =
       vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
