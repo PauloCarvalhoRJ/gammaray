@@ -3,6 +3,7 @@
 #include "domain/projectcomponent.h"
 #include "domain/pointset.h"
 #include "domain/attribute.h"
+#include "domain/cartesiangrid.h"
 #include "view3dcolortables.h"
 
 #include <vtkPoints.h>
@@ -14,6 +15,9 @@
 #include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkLookupTable.h>
+#include <vtkPlaneSource.h>
+#include <vtkTransform.h>
+#include <vtkTransformPolyDataFilter.h>
 
 View3DBuilders::View3DBuilders()
 {
@@ -101,6 +105,19 @@ vtkSmartPointer<vtkActor> View3DBuilders::build(Attribute *object)
     }
 }
 
+vtkSmartPointer<vtkActor> View3DBuilders::build(CartesianGrid *object)
+{
+    //use a more meaningful name.
+    CartesianGrid *cartesianGrid = object;
+
+    if( cartesianGrid->getNZ() < 2 ){
+        return buildForMapCartesianGrid( cartesianGrid );
+    } else {
+        Application::instance()->logError("View3DBuilders::build(CartesianGrid *): Cartesian grid of unsupported geometry.");
+        return vtkSmartPointer<vtkActor>::New();
+    }
+}
+
 vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet, Attribute *attribute)
 {
     // Create the geometry of a point (the coordinate)
@@ -171,5 +188,52 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet
     actor->SetMapper(mapper);
     actor->GetProperty()->SetPointSize(3);
 
+    return actor;
+}
+
+vtkSmartPointer<vtkActor> View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid)
+{
+
+    //get grid geometric parameters
+    int nX = cartesianGrid->getNX();
+    int nY = cartesianGrid->getNY();
+    double X0 = cartesianGrid->getX0();
+    double Y0 = cartesianGrid->getY0();
+    double dX = cartesianGrid->getDX();
+    double dY = cartesianGrid->getDY();
+    double azimuth = cartesianGrid->getRot();
+    double X0frame = X0 - dX/2.0;
+    double Y0frame = Y0 - dY/2.0;
+
+    // set up a transform to apply the rotation about the grid origin (center of the first cell)
+    vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
+    xform->Translate( X0, Y0, 0.0);
+    xform->RotateZ( azimuth );
+    xform->Translate( -X0, -Y0, 0.0);
+
+    //build a VTK 2D regular grid object based on GSLib grid convention
+    vtkSmartPointer<vtkPlaneSource> plane = vtkSmartPointer<vtkPlaneSource>::New();
+    plane->SetXResolution( nX );
+    plane->SetYResolution( nY );
+    plane->SetOrigin( X0frame, Y0frame, 0.0 );
+    plane->SetPoint1( X0 + nX * dX, Y0frame, 0.0);
+    plane->SetPoint2( X0frame, Y0 + nY * dY, 0.0);
+    plane->Update();
+
+    //apply the transform (rotation) to the plane
+    vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter =
+            vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+    transformFilter->SetInputConnection(plane->GetOutputPort());
+    transformFilter->SetTransform(xform);
+    transformFilter->Update();
+
+    // Create a visualization parameters object
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(transformFilter->GetOutputPort());
+    mapper->Update();
+
+    // Finally, create and return the actor
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
     return actor;
 }

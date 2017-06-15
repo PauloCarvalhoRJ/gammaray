@@ -242,3 +242,8 @@ void CartesianGrid::save(QTextStream *txt_stream)
     //also saves the metadata file.
     this->updateMetaDataFile();
 }
+
+vtkSmartPointer<vtkActor> CartesianGrid::buildVTKActor()
+{
+    return View3DBuilders::build( this );
+}

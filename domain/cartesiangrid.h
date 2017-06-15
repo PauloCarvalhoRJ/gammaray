@@ -73,6 +73,7 @@ public:
 public:
     QIcon getIcon();
     void save(QTextStream *txt_stream);
+    virtual vtkSmartPointer<vtkActor> buildVTKActor();
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;
