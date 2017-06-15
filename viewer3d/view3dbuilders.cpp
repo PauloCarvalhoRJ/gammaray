@@ -152,8 +152,8 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet
     pointCloud->GetPointData()->SetScalars( values );
     pointCloud->GetPointData()->SetActiveScalars("values");
 
-    //build a color table
-    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getClassicRainbow( min, max );
+    //assign a color table
+    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
 
     // Create a visualization parameters object
     vtkSmartPointer<vtkPolyDataMapper> mapper =

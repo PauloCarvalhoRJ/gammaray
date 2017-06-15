@@ -2,9 +2,32 @@
 
 #include <vtkColorTransferFunction.h>
 
+#include "domain/application.h"
+
 View3dColorTables::View3dColorTables()
 {
 }
+
+vtkSmartPointer<vtkLookupTable> View3dColorTables::getColorTable(ColorTable ct, double min, double max)
+{
+    switch( ct ){
+        case ColorTable::RAINBOW: return getClassicRainbow( min, max ); break;
+        default:
+            Application::instance()->logError("View3dColorTables::getColorTable(): unknown color table code.  Returning a default.");
+            return getClassicRainbow( min, max );
+    }
+}
+
+QString View3dColorTables::getColorTableName(ColorTable ct)
+{
+    switch( ct ){
+        case ColorTable::RAINBOW: return "Rainbow"; break;
+        default:
+            return "UNKNOWN";
+    }
+}
+
+//===============private functions=====================================
 
 vtkSmartPointer<vtkLookupTable> View3dColorTables::getPredefinedColorsExample(double min, double max)
 {
