@@ -18,6 +18,7 @@
 #include <vtkPlaneSource.h>
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
+#include <vtkCellData.h>
 
 View3DBuilders::View3DBuilders()
 {
@@ -99,6 +100,14 @@ vtkSmartPointer<vtkActor> View3DBuilders::build(Attribute *object)
 
     if( fileType == "POINTSET" ){
         return buildForAttributeFromPointSet( (PointSet*)file, attribute );
+    } else if( fileType == "CARTESIANGRID" ) {
+        CartesianGrid* cg = (CartesianGrid*)file;
+        if( cg->getNZ() < 2 ){
+            return buildForAttributeInMapCartesianGrid( cg, attribute );
+        } else {
+            Application::instance()->logError("View3DBuilders::build(Attribute *): Attribute belongs to 3D Cartesian grid.");
+            return vtkSmartPointer<vtkActor>::New();
+        }
     } else {
         Application::instance()->logError("View3DBuilders::build(Attribute *): Attribute belongs to unsupported file type: " + fileType);
         return vtkSmartPointer<vtkActor>::New();
@@ -194,7 +203,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet
 vtkSmartPointer<vtkActor> View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid)
 {
 
-    //get grid geometric parameters
+    //get grid geometric parameters (loading data is not necessary)
     int nX = cartesianGrid->getNX();
     int nY = cartesianGrid->getNY();
     double X0 = cartesianGrid->getX0();
@@ -230,6 +239,82 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForMapCartesianGrid(CartesianGrid
     // Create a visualization parameters object
     vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
     mapper->SetInputConnection(transformFilter->GetOutputPort());
+    mapper->Update();
+
+    // Finally, create and return the actor
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    return actor;
+}
+
+vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid *cartesianGrid, Attribute *attribute)
+{
+    //load grid data
+    cartesianGrid->loadData();
+
+    //get the variable index in parent data file
+    uint var_index = cartesianGrid->getFieldGEOEASIndex( attribute->getName() );
+
+    //get the max and min of the selected variable
+    double min = cartesianGrid->min( var_index-1 );
+    double max = cartesianGrid->max( var_index-1 );
+
+    //get grid geometric parameters
+    int nX = cartesianGrid->getNX();
+    int nY = cartesianGrid->getNY();
+    double X0 = cartesianGrid->getX0();
+    double Y0 = cartesianGrid->getY0();
+    double dX = cartesianGrid->getDX();
+    double dY = cartesianGrid->getDY();
+    double azimuth = cartesianGrid->getRot();
+    double X0frame = X0 - dX/2.0;
+    double Y0frame = Y0 - dY/2.0;
+
+    //create a VTK array to store the sample values
+    vtkSmartPointer<vtkDoubleArray> values = vtkSmartPointer<vtkDoubleArray>::New();
+    values->SetName("values");
+
+    //read sample values
+    values->Allocate( nX*nY );
+    for( int i = 0; i < nX*nY; ++i){
+        // sample value
+        double value = cartesianGrid->data( i, var_index - 1 );
+        values->InsertNextValue( value );
+    }
+
+    // set up a transform to apply the rotation about the grid origin (center of the first cell)
+    vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
+    xform->Translate( X0, Y0, 0.0);
+    xform->RotateZ( -azimuth );
+    xform->Translate( -X0, -Y0, 0.0);
+
+    //build a VTK 2D regular grid object based on GSLib grid convention
+    vtkSmartPointer<vtkPlaneSource> plane = vtkSmartPointer<vtkPlaneSource>::New();
+    plane->SetXResolution( nX );
+    plane->SetYResolution( nY );
+    plane->SetOrigin( X0frame, Y0frame, 0.0 );
+    plane->SetPoint1( X0 + nX * dX, Y0frame, 0.0);
+    plane->SetPoint2( X0frame, Y0 + nY * dY, 0.0);
+    plane->Update();
+
+    //assign the grid values to the grid cells
+    plane->GetOutput()->GetCellData()->SetScalars( values );
+
+    //apply the transform (rotation) to the plane
+    vtkSmartPointer<vtkTransformPolyDataFilter> transformFilter =
+            vtkSmartPointer<vtkTransformPolyDataFilter>::New();
+    transformFilter->SetInputConnection(plane->GetOutputPort());
+    transformFilter->SetTransform(xform);
+    transformFilter->Update();
+
+    //assign a color table
+    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+
+    // Create a visualization parameters object
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(transformFilter->GetOutputPort());
+    mapper->SetLookupTable(lut);
+    mapper->SetScalarRange(min, max);
     mapper->Update();
 
     // Finally, create and return the actor

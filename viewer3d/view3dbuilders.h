@@ -36,6 +36,13 @@ private:
      *  The grid is displayed in the XY plane (Z=0).
     */
     static vtkSmartPointer<vtkActor> buildForMapCartesianGrid( CartesianGrid* cartesianGrid );
+
+    /** Specific builder for an Attribute in a Cartesian grid that represents a 2D map (nZ < 2).
+     *  The grid is displayed in the XY plane (Z=0).
+     */
+    static vtkSmartPointer<vtkActor> buildForAttributeInMapCartesianGrid(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute );
 };
 
 #endif // VIEW3DBUILDERS_H
