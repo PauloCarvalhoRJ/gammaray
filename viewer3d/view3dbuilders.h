@@ -49,6 +49,12 @@ private:
      */
     static vtkSmartPointer<vtkProp> buildFor3DCartesianGrid( CartesianGrid* cartesianGrid );
 
+    /** Specific builder for an Attribute in a generic 3D Cartesian grid.
+     */
+    static vtkSmartPointer<vtkProp> buildForAttributeCartesianGrid(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute );
+
     /** Specific builder for a stratigraphic grid (kept for future reference).
      */
     static vtkSmartPointer<vtkProp> buildForStratGrid( ProjectComponent* toBeSpecified );
