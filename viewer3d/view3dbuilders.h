@@ -51,7 +51,14 @@ private:
 
     /** Specific builder for an Attribute in a generic 3D Cartesian grid.
      */
-    static vtkSmartPointer<vtkProp> buildForAttributeCartesianGrid(
+    static vtkSmartPointer<vtkProp> buildForAttribute3DCartesianGrid(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute );
+
+    /** Specific builder for an Attribute in a generic 3D Cartesian grid (with clipping planes
+     *  along de I, J and K planes)
+     */
+    static vtkSmartPointer<vtkProp> buildForAttribute3DCartesianGridWithIJKClipping(
             CartesianGrid* cartesianGrid,
             Attribute* attribute );
 
