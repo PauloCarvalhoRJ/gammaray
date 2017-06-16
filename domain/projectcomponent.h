@@ -51,7 +51,7 @@ public:
     void dummyCall(){ int x; x = 2; ++x; } //used to test pointer validity (TODO: not used anywhere)
 
     /** Builds a VTK actor object to enable 3D display. This default implementation is an ineffective call.*/
-    virtual vtkSmartPointer<vtkActor> buildVTKActor( );
+    virtual vtkSmartPointer<vtkProp> buildVTKActor( );
 
 protected:
     std::vector<ProjectComponent*> _children;

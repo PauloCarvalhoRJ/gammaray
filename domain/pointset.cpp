@@ -33,7 +33,7 @@ void PointSet::save(QTextStream *txt_stream)
     this->updateMetaDataFile();
 }
 
-vtkSmartPointer<vtkActor> PointSet::buildVTKActor()
+vtkSmartPointer<vtkProp> PointSet::buildVTKActor()
 {
     return View3DBuilders::build( this );
 }

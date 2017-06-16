@@ -342,7 +342,9 @@ LIBS        += -lvtkGUISupportQt$$VTK_VERSION_SUFFIX \
                -lvtkInteractionWidgets$$VTK_VERSION_SUFFIX \
                -lvtkCommonDataModel$$VTK_VERSION_SUFFIX \
                -lvtkFiltersGeneral$$VTK_VERSION_SUFFIX \
-               -lvtkCommonTransforms$$VTK_VERSION_SUFFIX
+               -lvtkCommonTransforms$$VTK_VERSION_SUFFIX \
+               -lvtkImagingSources$$VTK_VERSION_SUFFIX \
+               -lvtkImagingCore$$VTK_VERSION_SUFFIX
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to

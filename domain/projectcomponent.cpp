@@ -122,7 +122,7 @@ ProjectComponent *ProjectComponent::findObject(const QString object_locator)
     return nullptr; //returns nullptr if no match is found
 }
 
-vtkSmartPointer<vtkActor> ProjectComponent::buildVTKActor()
+vtkSmartPointer<vtkProp> ProjectComponent::buildVTKActor()
 {
     return View3DBuilders::build( this );
 }

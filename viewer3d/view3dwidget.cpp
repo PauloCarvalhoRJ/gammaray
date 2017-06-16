@@ -114,7 +114,7 @@ void View3DWidget::onNewObject(const QString object_locator)
     Application::instance()->logInfo("View3DWidget::onNewObject(): new object to display: " + object_locator);
 
     //gets the VTK Actor that represents the domain object
-    vtkSmartPointer<vtkActor> actor = Application::instance()->getProject()->findObject( object_locator )->buildVTKActor();
+    vtkSmartPointer<vtkProp> actor = Application::instance()->getProject()->findObject( object_locator )->buildVTKActor();
 
     //adds the actor for viewing
     _renderer->AddActor( actor );
@@ -129,7 +129,7 @@ void View3DWidget::onNewObject(const QString object_locator)
 void View3DWidget::onRemoveObject(const QString object_locator)
 {
     //removes the VTK actor matching the object locator from the list.
-    vtkSmartPointer<vtkActor> actor = _currentObjects.take( object_locator );
+    vtkSmartPointer<vtkProp> actor = _currentObjects.take( object_locator );
 
     //removes the VTK actor from view.
     _renderer->RemoveActor( actor );

@@ -98,7 +98,7 @@ QString Attribute::getObjectLocator()
     return "ATTRIBUTE:ATTRIBUTE:" + getName();
 }
 
-vtkSmartPointer<vtkActor> Attribute::buildVTKActor()
+vtkSmartPointer<vtkProp> Attribute::buildVTKActor()
 {
     return View3DBuilders::build( this );
 }

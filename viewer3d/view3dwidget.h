@@ -37,7 +37,7 @@ private:
     QVTKWidget* _vtkwidget;
 
     //the list of current VTK actors indexed by their associated domain object locators.
-    QMap< QString, vtkSmartPointer<vtkActor> > _currentObjects;
+    QMap< QString, vtkSmartPointer<vtkProp> > _currentObjects;
 
 private slots:
     void onNewObject( const QString object_locator );

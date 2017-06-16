@@ -19,12 +19,19 @@
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
 #include <vtkCellData.h>
+#include <vtkImageGridSource.h>
+#include <vtkImageCast.h>
+#include <vtkImageMapper3D.h>
+#include <vtkStructuredGrid.h>
+#include <vtkDataSetMapper.h>
+#include <vtkShrinkFilter.h>
+#include <vtkTransformFilter.h>
 
 View3DBuilders::View3DBuilders()
 {
 }
 
-vtkSmartPointer<vtkActor> View3DBuilders::build(ProjectComponent *object)
+vtkSmartPointer<vtkProp> View3DBuilders::build(ProjectComponent *object)
 {
     QString object_locator = object->getObjectLocator();
     QString generic_class = object_locator.split(':')[0];
@@ -35,7 +42,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::build(ProjectComponent *object)
     return vtkSmartPointer<vtkActor>::New();
 }
 
-vtkSmartPointer<vtkActor> View3DBuilders::build(PointSet *object)
+vtkSmartPointer<vtkProp> View3DBuilders::build(PointSet *object)
 {
     //use a more meaningful name.
     PointSet *pointSet = object;
@@ -87,7 +94,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::build(PointSet *object)
     return actor;
 }
 
-vtkSmartPointer<vtkActor> View3DBuilders::build(Attribute *object)
+vtkSmartPointer<vtkProp> View3DBuilders::build(Attribute *object)
 {
     //use a more meaningful name.
     Attribute *attribute = object;
@@ -114,7 +121,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::build(Attribute *object)
     }
 }
 
-vtkSmartPointer<vtkActor> View3DBuilders::build(CartesianGrid *object)
+vtkSmartPointer<vtkProp> View3DBuilders::build(CartesianGrid *object)
 {
     //use a more meaningful name.
     CartesianGrid *cartesianGrid = object;
@@ -122,12 +129,11 @@ vtkSmartPointer<vtkActor> View3DBuilders::build(CartesianGrid *object)
     if( cartesianGrid->getNZ() < 2 ){
         return buildForMapCartesianGrid( cartesianGrid );
     } else {
-        Application::instance()->logError("View3DBuilders::build(CartesianGrid *): Cartesian grid of unsupported geometry.");
-        return vtkSmartPointer<vtkActor>::New();
+        return buildFor3DCartesianGrid( cartesianGrid );
     }
 }
 
-vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet, Attribute *attribute)
+vtkSmartPointer<vtkProp> View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet, Attribute *attribute)
 {
     // Create the geometry of a point (the coordinate)
     vtkSmartPointer<vtkPoints> points =
@@ -200,7 +206,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeFromPointSet(PointSet
     return actor;
 }
 
-vtkSmartPointer<vtkActor> View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid)
+vtkSmartPointer<vtkProp> View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid)
 {
 
     //get grid geometric parameters (loading data is not necessary)
@@ -217,7 +223,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForMapCartesianGrid(CartesianGrid
     // set up a transform to apply the rotation about the grid origin (center of the first cell)
     vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
     xform->Translate( X0, Y0, 0.0);
-    xform->RotateZ( azimuth );
+    xform->RotateZ( -azimuth );
     xform->Translate( -X0, -Y0, 0.0);
 
     //build a VTK 2D regular grid object based on GSLib grid convention
@@ -247,7 +253,7 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForMapCartesianGrid(CartesianGrid
     return actor;
 }
 
-vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid *cartesianGrid, Attribute *attribute)
+vtkSmartPointer<vtkProp> View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid *cartesianGrid, Attribute *attribute)
 {
     //load grid data
     cartesianGrid->loadData();
@@ -320,5 +326,104 @@ vtkSmartPointer<vtkActor> View3DBuilders::buildForAttributeInMapCartesianGrid(Ca
     // Finally, create and return the actor
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
+    return actor;
+}
+
+vtkSmartPointer<vtkProp> View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianGrid)
+{
+    //get grid geometric parameters (loading data is not necessary)
+    int nX = cartesianGrid->getNX();
+    int nY = cartesianGrid->getNY();
+    int nZ = cartesianGrid->getNZ();
+    double X0 = cartesianGrid->getX0();
+    double Y0 = cartesianGrid->getY0();
+    double Z0 = cartesianGrid->getZ0();
+    double dX = cartesianGrid->getDX();
+    double dY = cartesianGrid->getDY();
+    double dZ = cartesianGrid->getDZ();
+    double azimuth = cartesianGrid->getRot();
+    //double X0frame = X0 - dX/2.0;
+    //double Y0frame = Y0 - dY/2.0;
+    //double Z0frame = Z0 - dZ/2.0;
+
+    // set up a transform to apply the rotation about the grid origin (location of the first data point)
+    vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
+    xform->Translate( X0, Y0, Z0);
+    xform->RotateZ( -azimuth );
+    xform->Translate( -X0, -Y0, -Z0);
+
+    // Create a grid (corner-point, explicit geometry)
+    //  TODO: GSLib grids are cell-centered
+    vtkSmartPointer<vtkStructuredGrid> structuredGrid =
+            vtkSmartPointer<vtkStructuredGrid>::New();
+    vtkSmartPointer<vtkPoints> points =
+            vtkSmartPointer<vtkPoints>::New();
+    for(int k = 0; k < nZ; ++k)
+        for(int j = 0; j < nY; ++j)
+            for(int i = 0; i < nX; ++i)
+                points->InsertNextPoint( X0 + i * dX,
+                                         Y0 + j * dY,
+                                         Z0 + k * dZ );
+    structuredGrid->SetDimensions( nX, nY, nZ );
+    structuredGrid->SetPoints(points);
+
+    //apply the transform (rotation) to the grid
+    vtkSmartPointer<vtkTransformFilter> transformFilter =
+            vtkSmartPointer<vtkTransformFilter>::New();
+    transformFilter->SetInputData( structuredGrid );
+    transformFilter->SetTransform(xform);
+    transformFilter->Update();
+
+    // Create mapper (visualization parameters)
+    vtkSmartPointer<vtkDataSetMapper> mapper =
+            vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputConnection(transformFilter->GetOutputPort());
+
+    // Finally, create and return the actor
+    vtkSmartPointer<vtkActor> actor =
+            vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    return actor;
+}
+
+vtkSmartPointer<vtkProp> View3DBuilders::buildForStratGrid(ProjectComponent */*toBeSpecified*/)
+{
+    // Create a grid
+    vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    double x, y, z;
+
+    x = 0.0;
+    y = 0.0;
+    z = 0.0;
+
+    for(unsigned int k = 0; k < 2; k++)
+    {
+        z += 2.0;
+        for(unsigned int j = 0; j < 3; j++)
+        {
+            y += 1.0;
+            for(unsigned int i = 0; i < 2; i++)
+            {
+                x += .5;
+                points->InsertNextPoint(x, y, z);
+            }
+        }
+    }
+
+    // Specify the dimensions of the grid
+    structuredGrid->SetDimensions(2,3,2);
+    structuredGrid->SetPoints(points);
+
+    // Create a mapper and actor
+    vtkSmartPointer<vtkDataSetMapper> mapper =
+            vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputData(structuredGrid);
+
+    vtkSmartPointer<vtkActor> actor =
+            vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
     return actor;
 }
