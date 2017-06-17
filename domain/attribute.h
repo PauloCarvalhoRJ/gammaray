@@ -39,6 +39,7 @@ public:
     virtual QString getObjectLocator();
     virtual vtkSmartPointer<vtkProp> buildVTKActor();
     virtual QString getTypeName(){ return "Attribute"; }
+    virtual View3DConfigWidget* build3DViewerConfigWidget();
 
 private:
     QString _name;

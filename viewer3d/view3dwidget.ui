@@ -97,6 +97,23 @@
           <property name="frameShadow">
            <enum>QFrame::Raised</enum>
           </property>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+          </layout>
          </widget>
         </widget>
        </item>
@@ -386,11 +403,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>listWidget</sender>
+   <signal>itemClicked(QListWidgetItem*)</signal>
+   <receiver>View3DWidget</receiver>
+   <slot>onObjectsListItemActivated(QListWidgetItem*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>254</x>
+     <y>136</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>305</x>
+     <y>159</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onViewAll()</slot>
   <slot>onLookAtXY()</slot>
   <slot>onLookAtXZ()</slot>
   <slot>onLookAtYZ()</slot>
+  <slot>onObjectsListItemActivated(QListWidgetItem*)</slot>
  </slots>
 </ui>

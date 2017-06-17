@@ -137,7 +137,8 @@ SOURCES += main.cpp\
     viewer3d/view3dbuilders.cpp \
     viewer3d/view3dcolortables.cpp \
     viewer3d/view3dconfigwidget.cpp \
-    viewer3d/view3dconfigwidgetsbuilder.cpp
+    viewer3d/view3dconfigwidgetsbuilder.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -256,7 +257,8 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dbuilders.h \
     viewer3d/view3dcolortables.h \
     viewer3d/view3dconfigwidget.h \
-    viewer3d/view3dconfigwidgetsbuilder.h
+    viewer3d/view3dconfigwidgetsbuilder.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -308,7 +310,8 @@ FORMS    += mainwindow.ui \
     dialogs/valuespairsdialog.ui \
     dialogs/variogramanalysisdialog.ui \
     widgets/pswidget.ui \
-    viewer3d/view3dwidget.ui
+    viewer3d/view3dwidget.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)

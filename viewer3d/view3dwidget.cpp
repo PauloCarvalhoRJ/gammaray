@@ -25,10 +25,12 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "domain/project.h"
 #include "domain/projectcomponent.h"
 #include "view3dbuilders.h"
+#include "view3dconfigwidget.h"
 
 View3DWidget::View3DWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::View3DWidget)
+    ui(new Ui::View3DWidget),
+    _currentCfgWidget( nullptr )
 {
     ui->setupUi(this);
 
@@ -109,6 +111,19 @@ View3DWidget::~View3DWidget()
     delete ui;
 }
 
+void View3DWidget::removeCurrentConfigWidget()
+{
+    //if there is a current config widget
+    if( _currentCfgWidget ){
+        //removes the current config widget
+        ui->frmDataViewOptions->layout()->removeWidget( _currentCfgWidget );
+        //resets its parent
+        _currentCfgWidget->setParent( nullptr );
+        //resets the pointer
+        _currentCfgWidget = nullptr;
+    }
+}
+
 void View3DWidget::onNewObject(const QString object_locator)
 {
     Application::instance()->logInfo("View3DWidget::onNewObject(): new object to display: " + object_locator);
@@ -136,6 +151,15 @@ void View3DWidget::onRemoveObject(const QString object_locator)
 
     //redraw the scene
     _vtkwidget->update();
+
+    removeCurrentConfigWidget();
+
+    //removes and deletes the config widget (if any) associated with the object
+    View3DConfigWidget * widget = nullptr;
+    if( _currentCfgWidgets.contains( object_locator )){
+        widget = _currentCfgWidgets.take( object_locator );
+        delete widget;
+    }
 
     //TODO: verify whether the smart pointer manages memory after all local references to the actor have been removed.
 }
@@ -180,4 +204,42 @@ void View3DWidget::onLookAtYZ()
     _renderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
     //redraw the scene
     _vtkwidget->update();
+}
+
+void View3DWidget::onObjectsListItemActivated(QListWidgetItem *item)
+{
+    //retrieve the selected item's object locator
+    QString object_locator = item->data( Qt::UserRole ).toString();
+
+    //fetch the object's pointer
+    ProjectComponent* object = Application::instance()->getProject()->findObject( object_locator );
+
+    removeCurrentConfigWidget();
+
+    //if an object was found
+    if( object ){
+        Application::instance()->logInfo("View3DWidget::onObjectsListItemActivated(): object found: " +
+                                          object->getName() + ".");
+        //retrieve or create the config widget for the object
+        View3DConfigWidget *widget = nullptr;
+        if( _currentCfgWidgets.contains( object_locator ) ){
+            widget = _currentCfgWidgets[object_locator];
+        } else {
+            widget = object->build3DViewerConfigWidget();
+            if( widget )
+                _currentCfgWidgets.insert( object_locator, widget );
+        }
+        //if there is a config widget
+        if( widget ){
+            //places the config widget in the interface
+            ui->frmDataViewOptions->layout()->addWidget( widget );
+            //sets as the current config widget
+            _currentCfgWidget = widget;
+        } else {
+            Application::instance()->logError("View3DWidget::onObjectsListItemActivated(): null widget returned.");
+        }
+    } else {
+        Application::instance()->logError("View3DWidget::onObjectsListItemActivated(): object with locator " +
+                                          object_locator + " not found.");
+    }
 }

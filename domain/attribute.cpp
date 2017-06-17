@@ -2,6 +2,7 @@
 #include "file.h"
 #include "pointset.h"
 #include "util.h"
+#include "viewer3d/view3dconfigwidgetsbuilder.h"
 
 Attribute::Attribute(QString name, int index_in_file, bool categorical)
 {
@@ -101,4 +102,9 @@ QString Attribute::getObjectLocator()
 vtkSmartPointer<vtkProp> Attribute::buildVTKActor()
 {
     return View3DBuilders::build( this );
+}
+
+View3DConfigWidget *Attribute::build3DViewerConfigWidget()
+{
+    return View3DConfigWidgetsBuilder::build( this );
 }

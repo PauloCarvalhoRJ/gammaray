@@ -15,6 +15,8 @@ class View3DWidget;
 class View3DStyle;
 
 class QVTKWidget;
+class QListWidgetItem;
+class View3DConfigWidget;
 
 class View3DWidget : public QWidget
 {
@@ -39,6 +41,15 @@ private:
     //the list of current VTK actors indexed by their associated domain object locators.
     QMap< QString, vtkSmartPointer<vtkProp> > _currentObjects;
 
+    //the list of current 3D viewing config widgets indexed by their associated domain object locators.
+    QMap< QString, View3DConfigWidget* > _currentCfgWidgets;
+
+    //the currently displayed 3D viewing config widget.
+    View3DConfigWidget* _currentCfgWidget;
+
+    //removes the current 3D viewing config widget.
+    void removeCurrentConfigWidget();
+
 private slots:
     void onNewObject( const QString object_locator );
     void onRemoveObject( const QString object_locator );
@@ -46,6 +57,7 @@ private slots:
     void onLookAtXY();
     void onLookAtXZ();
     void onLookAtYZ();
+    void onObjectsListItemActivated(QListWidgetItem *item);
 };
 
 #endif // VIEW3DWIDGET_H

@@ -3,6 +3,8 @@
 
 class View3DConfigWidget;
 class ProjectComponent;
+class Attribute;
+class CartesianGrid;
 
 /**
  * This class groups static functions to build 3D viewer configuration widgets for the several domain objects.
@@ -15,7 +17,20 @@ class View3DConfigWidgetsBuilder
 public:
     View3DConfigWidgetsBuilder();
 
+    /** Generic builder (fallback implementation). */
     static View3DConfigWidget* build( ProjectComponent *pc );
+
+    //@{
+    /** Specific overrides. */
+    static View3DConfigWidget* build( Attribute *attribute ); //attribute (can be of point set, cartesian grid, etc.)
+    //@}
+
+private:
+    /** Specific builder for an Attribute in a generic 3D Cartesian grid.*/
+    static View3DConfigWidget* buildForAttribute3DCartesianGrid(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute );
+
 };
 
 #endif // VIEW3DCONFIGWIDGETSBUILDER_H
