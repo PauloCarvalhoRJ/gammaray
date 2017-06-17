@@ -1,4 +1,5 @@
 #include "projectcomponent.h"
+#include "viewer3d/view3dconfigwidgetsbuilder.h"
 
 ProjectComponent::ProjectComponent()
 {
@@ -125,4 +126,9 @@ ProjectComponent *ProjectComponent::findObject(const QString object_locator)
 vtkSmartPointer<vtkProp> ProjectComponent::buildVTKActor()
 {
     return View3DBuilders::build( this );
+}
+
+View3DConfigWidget *ProjectComponent::build3DViewerConfigWidget()
+{
+    return View3DConfigWidgetsBuilder::build( this );
 }

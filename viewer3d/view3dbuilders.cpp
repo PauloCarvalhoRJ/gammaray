@@ -35,12 +35,9 @@ View3DBuilders::View3DBuilders()
 
 vtkSmartPointer<vtkProp> View3DBuilders::build(ProjectComponent *object)
 {
-    QString object_locator = object->getObjectLocator();
-    QString generic_class = object_locator.split(':')[0];
-    QString specific_class = object_locator.split(':')[1];
-    Application::instance()->logError("view3DBuilders::build(): graphic builder for objects of type " +
-                                      generic_class + ":" + specific_class + ":*"
-                                      + " not found.");
+    Application::instance()->logError("view3DBuilders::build(): graphic builder for objects of type \"" +
+                                      object->getTypeName()
+                                      + "\" not found.");
     return vtkSmartPointer<vtkActor>::New();
 }
 

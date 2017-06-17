@@ -135,7 +135,9 @@ SOURCES += main.cpp\
     viewer3d/viewer3dlistwidget.cpp \
     viewer3d/view3dstyle.cpp \
     viewer3d/view3dbuilders.cpp \
-    viewer3d/view3dcolortables.cpp
+    viewer3d/view3dcolortables.cpp \
+    viewer3d/view3dconfigwidget.cpp \
+    viewer3d/view3dconfigwidgetsbuilder.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -252,7 +254,9 @@ HEADERS  += mainwindow.h \
     viewer3d/viewer3dlistwidget.h \
     viewer3d/view3dstyle.h \
     viewer3d/view3dbuilders.h \
-    viewer3d/view3dcolortables.h
+    viewer3d/view3dcolortables.h \
+    viewer3d/view3dconfigwidget.h \
+    viewer3d/view3dconfigwidgetsbuilder.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

@@ -28,13 +28,11 @@ private:
 public:
     QString getName();
     QIcon getIcon();
-
-    // ProjectComponent interface
-public:
     void save(QTextStream *txt_stream);
     bool isFile();
     bool isAttribute();
     virtual QString getObjectLocator();
+    virtual QString getTypeName(){ return "ObjectGroup"; }
 };
 
 #endif // OBJECTGROUP_H

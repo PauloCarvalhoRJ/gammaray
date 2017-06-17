@@ -38,6 +38,7 @@ public:
     QString getPresentationName();
     virtual QString getObjectLocator();
     virtual vtkSmartPointer<vtkProp> buildVTKActor();
+    virtual QString getTypeName(){ return "Attribute"; }
 
 private:
     QString _name;

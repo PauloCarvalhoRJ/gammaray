@@ -8,6 +8,7 @@
 #include "viewer3d/view3dbuilders.h"
 
 class QTextStream;
+class View3DConfigWidget;
 
 /**
  * @brief The ProjectComponent class models any part of a project such as data files, variograms, training images,
@@ -23,9 +24,10 @@ public:
     virtual QIcon getIcon() = 0;
     virtual bool isFile() = 0;
     virtual bool isAttribute() = 0;
+    virtual QString getTypeName() = 0;
 
-    /** Returns a string in the format: GENERIC_TYPE:SPECIFIC_TYPE:OBJECT_NAME.
-     * Examples: FILE:CARTESIANGRID:GoldMine.dat or ATTRIBUTE:ATTRIBUTE:GoldGrade
+    /** Returns a string that uniquely identify an object in the project.
+     *  Use the findObject() function to fetch the object pointer given a locator.
      */
     virtual QString getObjectLocator() = 0;
     virtual bool hasChildren();
@@ -52,6 +54,9 @@ public:
 
     /** Builds a VTK actor object to enable 3D display. This default implementation is an ineffective call.*/
     virtual vtkSmartPointer<vtkProp> buildVTKActor( );
+
+    /** Builds a 3D Viewer configuration widget. This default implementation is an ineffective call.*/
+    virtual View3DConfigWidget* build3DViewerConfigWidget();
 
 protected:
     std::vector<ProjectComponent*> _children;
