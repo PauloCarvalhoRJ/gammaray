@@ -65,7 +65,7 @@ public:
 public:
     QIcon getIcon();
     void save(QTextStream *txt_stream);
-    virtual vtkSmartPointer<vtkProp> buildVTKActor();
+    virtual View3DViewData build3DViewObjects();
 
 private:
     int _x_field_index; //index start at 1. Zero means not set.

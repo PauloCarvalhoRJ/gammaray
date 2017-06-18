@@ -243,7 +243,7 @@ void CartesianGrid::save(QTextStream *txt_stream)
     this->updateMetaDataFile();
 }
 
-vtkSmartPointer<vtkProp> CartesianGrid::buildVTKActor()
+View3DViewData CartesianGrid::build3DViewObjects()
 {
     return View3DBuilders::build( this );
 }

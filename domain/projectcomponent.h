@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "viewer3d/view3dbuilders.h"
+#include "viewer3d/view3dviewdata.h"
 
 class QTextStream;
 class View3DConfigWidget;
@@ -52,11 +53,17 @@ public:
     ProjectComponent* findObject( const QString object_locator );
     void dummyCall(){ int x; x = 2; ++x; } //used to test pointer validity (TODO: not used anywhere)
 
-    /** Builds a VTK actor object to enable 3D display. This default implementation is an ineffective call.*/
-    virtual vtkSmartPointer<vtkProp> buildVTKActor( );
+    /** Builds the objects (e.g. VTKActor) to enable 3D display. This default implementation is an ineffective call.
+     * Subclasses should not store the objects created, since the same domain object may be viewed multiple times,
+     * possibly in different ways.  Implementations should only use the information in this object to build appropriate
+     * visual objects.
+     */
+    virtual View3DViewData build3DViewObjects( );
 
-    /** Builds a 3D Viewer configuration widget. This default implementation is an ineffective call.*/
-    virtual View3DConfigWidget* build3DViewerConfigWidget();
+    /** Builds a 3D Viewer configuration widget. This default implementation is an ineffective call.
+     * viewObjects contains the objects describing the visual appearance of a domain object (mostly VTK objects).
+     */
+    virtual View3DConfigWidget* build3DViewerConfigWidget( View3DViewData viewObjects );
 
 protected:
     std::vector<ProjectComponent*> _children;

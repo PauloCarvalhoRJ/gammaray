@@ -33,15 +33,15 @@ View3DBuilders::View3DBuilders()
 {
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::build(ProjectComponent *object)
+View3DViewData View3DBuilders::build(ProjectComponent *object)
 {
     Application::instance()->logError("view3DBuilders::build(): graphic builder for objects of type \"" +
                                       object->getTypeName()
                                       + "\" not found.");
-    return vtkSmartPointer<vtkActor>::New();
+    return View3DViewData();
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::build(PointSet *object)
+View3DViewData View3DBuilders::build(PointSet *object)
 {
     //use a more meaningful name.
     PointSet *pointSet = object;
@@ -90,10 +90,10 @@ vtkSmartPointer<vtkProp> View3DBuilders::build(PointSet *object)
     actor->SetMapper(mapper);
     actor->GetProperty()->SetPointSize(3);
 
-    return actor;
+    return View3DViewData( actor );
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::build(Attribute *object)
+View3DViewData View3DBuilders::build(Attribute *object)
 {
     //use a more meaningful name.
     Attribute *attribute = object;
@@ -115,11 +115,11 @@ vtkSmartPointer<vtkProp> View3DBuilders::build(Attribute *object)
         }
     } else {
         Application::instance()->logError("View3DBuilders::build(Attribute *): Attribute belongs to unsupported file type: " + fileType);
-        return vtkSmartPointer<vtkActor>::New();
+        return View3DViewData();
     }
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::build(CartesianGrid *object)
+View3DViewData View3DBuilders::build(CartesianGrid *object)
 {
     //use a more meaningful name.
     CartesianGrid *cartesianGrid = object;
@@ -131,7 +131,7 @@ vtkSmartPointer<vtkProp> View3DBuilders::build(CartesianGrid *object)
     }
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet, Attribute *attribute)
+View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet, Attribute *attribute)
 {
     // Create the geometry of a point (the coordinate)
     vtkSmartPointer<vtkPoints> points =
@@ -201,10 +201,10 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForAttributeFromPointSet(PointSet*
     actor->SetMapper(mapper);
     actor->GetProperty()->SetPointSize(3);
 
-    return actor;
+    return View3DViewData(actor);
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid)
+View3DViewData View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid)
 {
 
     //get grid geometric parameters (loading data is not necessary)
@@ -248,10 +248,10 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForMapCartesianGrid(CartesianGrid 
     // Finally, create and return the actor
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
-    return actor;
+    return View3DViewData(actor);
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid *cartesianGrid, Attribute *attribute)
+View3DViewData View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid *cartesianGrid, Attribute *attribute)
 {
     //load grid data
     cartesianGrid->loadData();
@@ -324,10 +324,10 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForAttributeInMapCartesianGrid(Car
     // Finally, create and return the actor
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
-    return actor;
+    return View3DViewData(actor);
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianGrid)
+View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianGrid)
 {
     //get grid geometric parameters (loading data is not necessary)
     int nX = cartesianGrid->getNX();
@@ -382,10 +382,10 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     actor->GetProperty()->EdgeVisibilityOn();
-    return actor;
+    return View3DViewData(actor);
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGrid(CartesianGrid *cartesianGrid, Attribute *attribute)
+View3DViewData View3DBuilders::buildForAttribute3DCartesianGrid(CartesianGrid *cartesianGrid, Attribute *attribute)
 {
     //load grid data
     cartesianGrid->loadData();
@@ -471,10 +471,10 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGrid(Cartes
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     actor->GetProperty()->EdgeVisibilityOn();
-    return actor;
+    return View3DViewData(actor);
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
+View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
         CartesianGrid *cartesianGrid, Attribute *attribute)
 {
     //load grid data
@@ -569,10 +569,10 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGridWithIJK
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     actor->GetProperty()->EdgeVisibilityOn();
-    return actor;
+    return View3DViewData(actor, clipper);
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildForStratGrid(ProjectComponent */*toBeSpecified*/)
+View3DViewData View3DBuilders::buildForStratGrid(ProjectComponent */*toBeSpecified*/)
 {
     // Create a grid
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
@@ -611,5 +611,5 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForStratGrid(ProjectComponent */*t
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
 
-    return actor;
+    return View3DViewData(actor);
 }

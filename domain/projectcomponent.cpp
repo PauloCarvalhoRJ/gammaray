@@ -123,12 +123,12 @@ ProjectComponent *ProjectComponent::findObject(const QString object_locator)
     return nullptr; //returns nullptr if no match is found
 }
 
-vtkSmartPointer<vtkProp> ProjectComponent::buildVTKActor()
+View3DViewData ProjectComponent::build3DViewObjects()
 {
     return View3DBuilders::build( this );
 }
 
-View3DConfigWidget *ProjectComponent::build3DViewerConfigWidget()
+View3DConfigWidget *ProjectComponent::build3DViewerConfigWidget(View3DViewData viewObjects)
 {
-    return View3DConfigWidgetsBuilder::build( this );
+    return View3DConfigWidgetsBuilder::build( this, viewObjects );
 }

@@ -13,6 +13,7 @@ public:
     explicit View3DConfigWidget(QWidget *parent = 0);
 
 signals:
+    void changed();
 
 public slots:
 

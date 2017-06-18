@@ -9,6 +9,7 @@
 #include <QMap>
 
 #include "view3dlistrecord.h"
+#include "view3dviewdata.h"
 
 namespace Ui {
 class View3DWidget;
@@ -40,8 +41,8 @@ private:
     //the Qt widget containing a VTK viewport
     QVTKWidget* _vtkwidget;
 
-    //the list of current VTK actors indexed by their associated domain object info.
-    QMap< View3DListRecord, vtkSmartPointer<vtkProp> > _currentObjects;
+    //the list of current VTK actors/visual objects indexed by their associated domain object info.
+    QMap< View3DListRecord, View3DViewData > _currentObjects;
 
     //the list of current 3D viewing config widgets indexed by their associated domain object info.
     QMap< View3DListRecord, View3DConfigWidget* > _currentCfgWidgets;
@@ -60,6 +61,7 @@ private slots:
     void onLookAtXZ();
     void onLookAtYZ();
     void onObjectsListItemActivated(QListWidgetItem *item);
+    void onConfigWidgetChanged();
 };
 
 #endif // VIEW3DWIDGET_H

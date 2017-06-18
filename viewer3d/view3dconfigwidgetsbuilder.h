@@ -1,6 +1,8 @@
 #ifndef VIEW3DCONFIGWIDGETSBUILDER_H
 #define VIEW3DCONFIGWIDGETSBUILDER_H
 
+#include "view3dviewdata.h"
+
 class View3DConfigWidget;
 class ProjectComponent;
 class Attribute;
@@ -18,18 +20,19 @@ public:
     View3DConfigWidgetsBuilder();
 
     /** Generic builder (fallback implementation). */
-    static View3DConfigWidget* build( ProjectComponent *pc );
+    static View3DConfigWidget* build( ProjectComponent *pc, View3DViewData viewObjects );
 
     //@{
     /** Specific overrides. */
-    static View3DConfigWidget* build( Attribute *attribute ); //attribute (can be of point set, cartesian grid, etc.)
+    static View3DConfigWidget* build( Attribute *attribute, View3DViewData viewObjects ); //attribute (can be of point set, cartesian grid, etc.)
     //@}
 
 private:
     /** Specific builder for an Attribute in a generic 3D Cartesian grid.*/
     static View3DConfigWidget* buildForAttribute3DCartesianGrid(
             CartesianGrid* cartesianGrid,
-            Attribute* attribute );
+            Attribute* attribute ,
+            View3DViewData viewObjects);
 
 };
 

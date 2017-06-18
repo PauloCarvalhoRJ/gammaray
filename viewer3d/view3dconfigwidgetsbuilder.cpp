@@ -10,7 +10,7 @@ View3DConfigWidgetsBuilder::View3DConfigWidgetsBuilder()
 {
 }
 
-View3DConfigWidget *View3DConfigWidgetsBuilder::build(ProjectComponent *pc)
+View3DConfigWidget *View3DConfigWidgetsBuilder::build(ProjectComponent *pc, View3DViewData viewObjects)
 {
     Application::instance()->logError("View3DConfigWidgetsBuilder::build(): objects of type \"" +
                                       pc->getTypeName()
@@ -18,7 +18,7 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(ProjectComponent *pc)
     return nullptr;
 }
 
-View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute)
+View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute, View3DViewData viewObjects)
 {
     //get the attribute's parent data file
     File *file = attribute->getContainingFile();
@@ -32,7 +32,7 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute)
             Application::instance()->logError("View3DConfigWidgetsBuilder::build(Attribute *): Config widget unavailable for Attributes in 2D Cartesian grids.");
             return nullptr;
         } else {
-            return buildForAttribute3DCartesianGrid( cg, attribute );
+            return buildForAttribute3DCartesianGrid( cg, attribute, viewObjects );
         }
     } else {
         Application::instance()->logError("View3DConfigWidgetsBuilder::build(Attribute *): Config widget unavailable for Attributes of file type: " + fileType);
@@ -41,7 +41,7 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute)
 }
 
 View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttribute3DCartesianGrid(
-        CartesianGrid *cartesianGrid, Attribute *attribute )
+        CartesianGrid *cartesianGrid, Attribute *attribute, View3DViewData viewObjects )
 {
-    return new V3DCfgWidForAttributeIn3DCartesianGrid( cartesianGrid, attribute );
+    return new V3DCfgWidForAttributeIn3DCartesianGrid( cartesianGrid, attribute, viewObjects );
 }

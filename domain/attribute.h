@@ -37,9 +37,9 @@ public:
     bool isAttribute();
     QString getPresentationName();
     virtual QString getObjectLocator();
-    virtual vtkSmartPointer<vtkProp> buildVTKActor();
+    virtual View3DViewData build3DViewObjects();
     virtual QString getTypeName(){ return "Attribute"; }
-    virtual View3DConfigWidget* build3DViewerConfigWidget();
+    virtual View3DConfigWidget* build3DViewerConfigWidget(View3DViewData viewObjects);
 
 private:
     QString _name;

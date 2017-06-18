@@ -4,6 +4,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkActor.h>
 #include <vtkImageActor.h>
+#include "view3dviewdata.h"
 
 class ProjectComponent;
 class PointSet;
@@ -21,50 +22,50 @@ public:
     View3DBuilders();
 
     /** Generic builder (fallback implementation). */
-    static vtkSmartPointer<vtkProp> build(ProjectComponent *object );
+    static View3DViewData build(ProjectComponent *object );
 
     //@{
     /** Specific overrides. */
-    static vtkSmartPointer<vtkProp> build( PointSet* object ); //point set geometry only
-    static vtkSmartPointer<vtkProp> build( Attribute* object ); //attribute (can be of point set, cartesian grid, etc.)
-    static vtkSmartPointer<vtkProp> build( CartesianGrid* object );  //cartesian grid geometry only
+    static View3DViewData build( PointSet* object ); //point set geometry only
+    static View3DViewData build( Attribute* object ); //attribute (can be of point set, cartesian grid, etc.)
+    static View3DViewData build( CartesianGrid* object );  //cartesian grid geometry only
     //@}
 
 private:
-    static vtkSmartPointer<vtkProp> buildForAttributeFromPointSet( PointSet* pointSet, Attribute* attribute );
+    static View3DViewData buildForAttributeFromPointSet( PointSet* pointSet, Attribute* attribute );
 
     /** Specific builder for a Cartesian grid that represents a 2D map (nZ < 2).
      *  The grid is displayed in the XY plane (Z=0).
     */
-    static vtkSmartPointer<vtkProp> buildForMapCartesianGrid( CartesianGrid* cartesianGrid );
+    static View3DViewData buildForMapCartesianGrid( CartesianGrid* cartesianGrid );
 
     /** Specific builder for an Attribute in a Cartesian grid that represents a 2D map (nZ < 2).
      *  The grid is displayed in the XY plane (Z=0).
      */
-    static vtkSmartPointer<vtkProp> buildForAttributeInMapCartesianGrid(
+    static View3DViewData buildForAttributeInMapCartesianGrid(
             CartesianGrid* cartesianGrid,
             Attribute* attribute );
 
     /** Specific builder for a Cartesian grid that represents a generic 3D volume (nZ >= 2).
      */
-    static vtkSmartPointer<vtkProp> buildFor3DCartesianGrid( CartesianGrid* cartesianGrid );
+    static View3DViewData buildFor3DCartesianGrid( CartesianGrid* cartesianGrid );
 
     /** Specific builder for an Attribute in a generic 3D Cartesian grid.
      */
-    static vtkSmartPointer<vtkProp> buildForAttribute3DCartesianGrid(
+    static View3DViewData buildForAttribute3DCartesianGrid(
             CartesianGrid* cartesianGrid,
             Attribute* attribute );
 
     /** Specific builder for an Attribute in a generic 3D Cartesian grid (with clipping planes
      *  along de I, J and K planes)
      */
-    static vtkSmartPointer<vtkProp> buildForAttribute3DCartesianGridWithIJKClipping(
+    static View3DViewData buildForAttribute3DCartesianGridWithIJKClipping(
             CartesianGrid* cartesianGrid,
             Attribute* attribute );
 
     /** Specific builder for a stratigraphic grid (kept for future reference).
      */
-    static vtkSmartPointer<vtkProp> buildForStratGrid( ProjectComponent* toBeSpecified );
+    static View3DViewData buildForStratGrid( ProjectComponent* toBeSpecified );
 };
 
 #endif // VIEW3DBUILDERS_H
