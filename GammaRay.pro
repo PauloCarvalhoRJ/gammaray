@@ -129,7 +129,18 @@ SOURCES += main.cpp\
     dialogs/creategriddialog.cpp \
     dialogs/cartesiangriddialog.cpp \
     dialogs/bidistributionmodelingdialog.cpp \
-    widgets/pswidget.cpp
+    widgets/pswidget.cpp \
+    viewer3d/view3dwidget.cpp \
+    widgets/projecttreeview.cpp \
+    viewer3d/viewer3dlistwidget.cpp \
+    viewer3d/view3dstyle.cpp \
+    viewer3d/view3dbuilders.cpp \
+    viewer3d/view3dcolortables.cpp \
+    viewer3d/view3dconfigwidget.cpp \
+    viewer3d/view3dconfigwidgetsbuilder.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.cpp \
+    viewer3d/view3dlistrecord.cpp \
+    viewer3d/view3dviewdata.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -240,7 +251,18 @@ HEADERS  += mainwindow.h \
     dialogs/triadseditordialog.h \
     dialogs/valuespairsdialog.h \
     dialogs/variogramanalysisdialog.h \
-    widgets/pswidget.h
+    widgets/pswidget.h \
+    viewer3d/view3dwidget.h \
+    widgets/projecttreeview.h \
+    viewer3d/viewer3dlistwidget.h \
+    viewer3d/view3dstyle.h \
+    viewer3d/view3dbuilders.h \
+    viewer3d/view3dcolortables.h \
+    viewer3d/view3dconfigwidget.h \
+    viewer3d/view3dconfigwidgetsbuilder.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h \
+    viewer3d/view3dlistrecord.h \
+    viewer3d/view3dviewdata.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -291,7 +313,9 @@ FORMS    += mainwindow.ui \
     dialogs/triadseditordialog.ui \
     dialogs/valuespairsdialog.ui \
     dialogs/variogramanalysisdialog.ui \
-    widgets/pswidget.ui
+    widgets/pswidget.ui \
+    viewer3d/view3dwidget.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
@@ -309,10 +333,34 @@ INCLUDEPATH += $$QWT_INSTALL/include
 LIBPATH     += $$QWT_INSTALL/lib
 LIBS        += -lqwt
 
+# The VTK include and lib paths and libraries
+VTK_INSTALL = $$(VTK_ROOT)
+isEmpty(VTK_INSTALL){
+    error(VTK_ROOT environment variable not defined.)
+}
+VTK_VERSION_SUFFIX=-6.3  #this suffix may be empty
+INCLUDEPATH += $$VTK_INSTALL/include/vtk$$VTK_VERSION_SUFFIX
+LIBPATH     += $$VTK_INSTALL/lib
+LIBS        += -lvtkGUISupportQt$$VTK_VERSION_SUFFIX \
+               -lvtkCommonCore$$VTK_VERSION_SUFFIX \
+               -lvtkFiltersSources$$VTK_VERSION_SUFFIX \
+               -lvtkRenderingCore$$VTK_VERSION_SUFFIX \
+               -lvtkCommonExecutionModel$$VTK_VERSION_SUFFIX \
+               -lvtkInteractionStyle$$VTK_VERSION_SUFFIX \
+               -lvtkRenderingOpenGL2$$VTK_VERSION_SUFFIX \
+               -lvtkRenderingAnnotation$$VTK_VERSION_SUFFIX \
+               -lvtkRenderingFreeType$$VTK_VERSION_SUFFIX \
+               -lvtkInteractionWidgets$$VTK_VERSION_SUFFIX \
+               -lvtkCommonDataModel$$VTK_VERSION_SUFFIX \
+               -lvtkFiltersGeneral$$VTK_VERSION_SUFFIX \
+               -lvtkCommonTransforms$$VTK_VERSION_SUFFIX \
+               -lvtkImagingSources$$VTK_VERSION_SUFFIX \
+               -lvtkImagingCore$$VTK_VERSION_SUFFIX
+
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 1.7.1
+VERSION = 2.0
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

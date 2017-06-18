@@ -102,5 +102,9 @@
         <file alias="logo64">art/iconsHD/icon64.png</file>
         <file alias="faciesmap32">art/iconsHD/faciesmap32.png</file>
         <file alias="catvar32">art/iconsHD/catvar32.png</file>
+        <file alias="v3Dglobal32">art/iconsHD/v3Dglobal32.png</file>
+        <file alias="v3Dxy32">art/iconsHD/v3Dxy32.png</file>
+        <file alias="v3Dxz32">art/iconsHD/v3Dxz32.png</file>
+        <file alias="v3Dyz32">art/iconsHD/v3Dyz32.png</file>
     </qresource>
 </RCC>

@@ -242,3 +242,8 @@ void CartesianGrid::save(QTextStream *txt_stream)
     //also saves the metadata file.
     this->updateMetaDataFile();
 }
+
+View3DViewData CartesianGrid::build3DViewObjects()
+{
+    return View3DBuilders::build( this );
+}

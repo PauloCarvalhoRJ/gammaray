@@ -206,6 +206,9 @@ public:
     void deleteFromFS();
     void writeToFS();
 
+//ProjectComponent interface
+    virtual QString getObjectLocator();
+
 protected:
 
     /**

@@ -563,6 +563,11 @@ bool Project::fileIsChild(File *file)
     return false;
 }
 
+ProjectComponent *Project::findObject(const QString object_locator)
+{
+    return _root->findObject( object_locator );
+}
+
 //-------------- QAbstractItemModel interface------------
 QModelIndex Project::index(int row, int column, const QModelIndex &parent) const
 {

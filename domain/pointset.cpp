@@ -33,6 +33,11 @@ void PointSet::save(QTextStream *txt_stream)
     this->updateMetaDataFile();
 }
 
+View3DViewData PointSet::build3DViewObjects()
+{
+    return View3DBuilders::build( this );
+}
+
 void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_data_value)
 {
     QMap<uint, uint> empty;

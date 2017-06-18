@@ -94,6 +94,9 @@ public:
     /** Generates a path to a temporary file in the GSLib directory. */
     QString generateUniqueFilePathInGSLibDir(const QString file_extension);
 
+    /** Adds a data file to the project.  Does nothing of there is no open project. */
+    void addDataFile( const QString path );
+
 private:
     Application();
     ~Application();

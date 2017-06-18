@@ -93,6 +93,13 @@ QString Application::generateUniqueFilePathInGSLibDir(const QString file_extensi
     }
 }
 
+void Application::addDataFile(const QString path)
+{
+    if( this->hasOpenProject() ){
+        _mw->doAddDataFile( path );
+    }
+}
+
 QByteArray Application::getMainWindowSplitterSetting()
 {
     QSettings qs;

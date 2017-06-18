@@ -55,6 +55,7 @@
 #include "spatialindex/spatialindexpoints.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
+#include "viewer3d/view3dwidget.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -90,11 +91,16 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->treeProject->setContextMenuPolicy( Qt::CustomContextMenu );
     connect(ui->treeProject, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onProjectContextMenu(const QPoint &)));
 
+    //enable and configure the Project Tree's drag-and-drop feature.
+    ui->treeProject->setDragEnabled(true);
+    ui->treeProject->setDragDropMode(QAbstractItemView::DragDrop);
+    ui->treeProject->viewport()->setAcceptDrops(true);
+    ui->treeProject->setDropIndicatorShown(true);
+
     //configure project header context menu
     _projectHeaderContextMenu = new QMenu( ui->lblProjName );
     ui->lblProjName->setContextMenuPolicy( Qt::CustomContextMenu );
     connect(ui->lblProjName, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onProjectHeaderContextMenu(const QPoint &)));
-
 
     //update UI with application state.
     displayApplicationInfo();
@@ -129,6 +135,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     //enable drop from drag-n-drop gestures
     setAcceptDrops( true );
+
+    //show the 3D view widget
+    ui->frmContent->layout()->addWidget( new View3DWidget() );
 }
 
 MainWindow::~MainWindow()

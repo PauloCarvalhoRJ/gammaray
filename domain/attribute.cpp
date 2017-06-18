@@ -2,6 +2,7 @@
 #include "file.h"
 #include "pointset.h"
 #include "util.h"
+#include "viewer3d/view3dconfigwidgetsbuilder.h"
 
 Attribute::Attribute(QString name, int index_in_file, bool categorical)
 {
@@ -91,4 +92,19 @@ bool Attribute::isAttribute()
 QString Attribute::getPresentationName()
 {
     return QString("[").append( QString::number(_index) ).append("]-").append( _name );
+}
+
+QString Attribute::getObjectLocator()
+{
+    return "ATTRIBUTE:ATTRIBUTE:" + getName();
+}
+
+View3DViewData Attribute::build3DViewObjects()
+{
+    return View3DBuilders::build( this );
+}
+
+View3DConfigWidget *Attribute::build3DViewerConfigWidget( View3DViewData viewObjects )
+{
+    return View3DConfigWidgetsBuilder::build( this, viewObjects );
 }

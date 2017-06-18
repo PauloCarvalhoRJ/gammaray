@@ -1,4 +1,5 @@
 #include "projectcomponent.h"
+#include "viewer3d/view3dconfigwidgetsbuilder.h"
 
 ProjectComponent::ProjectComponent()
 {
@@ -106,4 +107,28 @@ void ProjectComponent::getAllObjects( std::vector<ProjectComponent *> &result )
         result.push_back( *it );
         (*it)->getAllObjects( result );
     }
+}
+
+ProjectComponent *ProjectComponent::findObject(const QString object_locator)
+{
+    //if the locator matches this object's
+    if( this->getObjectLocator().compare( object_locator ) == 0)
+        return this; //...returns itself
+    else //...otherwise, tries its children
+        for (std::vector<ProjectComponent*>::iterator it = _children.begin() ; it != _children.end(); ++it){
+           ProjectComponent* pc = (*it)->findObject( object_locator );
+           if( pc )
+               return pc;
+        }
+    return nullptr; //returns nullptr if no match is found
+}
+
+View3DViewData ProjectComponent::build3DViewObjects()
+{
+    return View3DBuilders::build( this );
+}
+
+View3DConfigWidget *ProjectComponent::build3DViewerConfigWidget(View3DViewData viewObjects)
+{
+    return View3DConfigWidgetsBuilder::build( this, viewObjects );
 }
