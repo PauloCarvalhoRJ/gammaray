@@ -54,13 +54,28 @@ void Viewer3DListWidget::dropEvent(QDropEvent *e)
         Application::instance()->logInfo("Viewer3DListWidget::dropEvent(): Found object: " + object->getName());
     }
 
-    //Create a list item and a visual style corresponding to the object. (the same object may be represented multiple times)
+    //Create a list item with the object information
     QListWidgetItem* item = new QListWidgetItem( object->getIcon(), object->getName() );
-    item->setData( Qt::UserRole, object_locator );
+    View3DListRecord data( object_locator, getNextInstance( object_locator ) );
+    QVariant qv; //the QVariant is necessary to wrap the custom class for storage as list item data
+    qv.setValue( data );
+    item->setData( Qt::UserRole, qv );
     addItem( item );
 
     //notify possibly listening contexts of this drop event
-    emit newObject( object_locator );
+    emit newObject( data );
+}
+
+uint Viewer3DListWidget::getNextInstance( const QString object_locator )
+{
+    uint greatest_instance_found = 0;
+    for( int i = 0; i < count(); ++i){
+        QListWidgetItem* item = this->item( i );
+        View3DListRecord data = item->data( Qt::UserRole ).value<View3DListRecord>();
+        if( data.objectLocator == object_locator && greatest_instance_found < data.instance )
+            greatest_instance_found = data.instance;
+    }
+    return ++greatest_instance_found;
 }
 
 void Viewer3DListWidget::onContextMenu(const QPoint &mouse_location)
@@ -90,8 +105,11 @@ void Viewer3DListWidget::onRemoveFromView()
 {
     QModelIndex index = this->currentIndex();
     QListWidgetItem* item = this->takeItem( index.row() );
-    QString object_locator = item->data( Qt::UserRole ).toString();
+
+    View3DListRecord data = item->data( Qt::UserRole ).value<View3DListRecord>();
+
     Application::instance()->logInfo( "Viewer3DListWidget::onRemoveFromView(): User requested removal from view of " +
-                                      object_locator );
-    emit removeObject( object_locator );
+                                      data.objectLocator + "(instance=" + QString::number( data.instance ) + ")" );
+
+    emit removeObject( data );
 }

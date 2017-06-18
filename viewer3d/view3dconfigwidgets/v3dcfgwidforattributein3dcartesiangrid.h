@@ -4,6 +4,9 @@
 #include <QWidget>
 #include "../view3dconfigwidget.h"
 
+class CartesianGrid;
+class Attribute;
+
 namespace Ui {
 class V3DCfgWidForAttributeIn3DCartesianGrid;
 }
@@ -13,7 +16,8 @@ class V3DCfgWidForAttributeIn3DCartesianGrid : public View3DConfigWidget
     Q_OBJECT
 
 public:
-    explicit V3DCfgWidForAttributeIn3DCartesianGrid(QWidget *parent = 0);
+    explicit V3DCfgWidForAttributeIn3DCartesianGrid(
+            CartesianGrid *cartesianGrid, Attribute *attribute, QWidget *parent = 0);
     ~V3DCfgWidForAttributeIn3DCartesianGrid();
 
 private:

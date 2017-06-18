@@ -474,7 +474,8 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGrid(Cartes
     return actor;
 }
 
-vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(CartesianGrid *cartesianGrid, Attribute *attribute)
+vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
+        CartesianGrid *cartesianGrid, Attribute *attribute)
 {
     //load grid data
     cartesianGrid->loadData();
@@ -563,7 +564,7 @@ vtkSmartPointer<vtkProp> View3DBuilders::buildForAttribute3DCartesianGridWithIJK
     mapper->SetScalarRange(min, max);
     mapper->Update();
 
-    // Finally, create and return the actor
+    // Finally, pass everything to the actor and return it.
     vtkSmartPointer<vtkActor> actor =
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);

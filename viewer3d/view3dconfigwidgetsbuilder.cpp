@@ -43,5 +43,5 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute)
 View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttribute3DCartesianGrid(
         CartesianGrid *cartesianGrid, Attribute *attribute )
 {
-    return new V3DCfgWidForAttributeIn3DCartesianGrid();
+    return new V3DCfgWidForAttributeIn3DCartesianGrid( cartesianGrid, attribute );
 }

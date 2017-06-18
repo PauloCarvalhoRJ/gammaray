@@ -2,6 +2,7 @@
 #define VIEWER3DLISTWIDGET_H
 
 #include <QListWidget>
+#include "view3dlistrecord.h"
 
 class View3DStyle;
 
@@ -29,14 +30,20 @@ public:
 signals:
 
     /** Triggered when the user drops a project object. */
-    void newObject( const QString object_locator );
+    void newObject( const View3DListRecord object_info );
 
     /** Triggered when the user removes an object from view. */
-    void removeObject( const QString object_locator );
+    void removeObject( const View3DListRecord object_info );
 
 private:
     //context menu for the list items
     QMenu *_contextMenu;
+
+    /** Returns an increasing number of repeated occurences of the same object_locator.
+     * The user may display the same object multiple times, possibly in different ways (e.g.
+     * view the same Attribute in a 3D Cartesian grid as a translucent or clipped data cube and as iso-surface).
+     */
+    uint getNextInstance( const QString object_locator );
 
 private slots:
     void onContextMenu(const QPoint &mouse_location);

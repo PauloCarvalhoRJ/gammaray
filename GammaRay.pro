@@ -138,7 +138,8 @@ SOURCES += main.cpp\
     viewer3d/view3dcolortables.cpp \
     viewer3d/view3dconfigwidget.cpp \
     viewer3d/view3dconfigwidgetsbuilder.cpp \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.cpp
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.cpp \
+    viewer3d/view3dlistrecord.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -258,7 +259,8 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dcolortables.h \
     viewer3d/view3dconfigwidget.h \
     viewer3d/view3dconfigwidgetsbuilder.h \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h \
+    viewer3d/view3dlistrecord.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

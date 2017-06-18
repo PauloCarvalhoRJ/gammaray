@@ -99,8 +99,8 @@ View3DWidget::View3DWidget(QWidget *parent) :
     //ui->listWidget->setDropIndicatorShown(true);
     ui->listWidget->setAcceptDrops( true );
 
-    connect( ui->listWidget, SIGNAL(newObject(QString)), this, SLOT(onNewObject(QString)) );
-    connect( ui->listWidget, SIGNAL(removeObject(QString)), this, SLOT(onRemoveObject(QString)) );
+    connect( ui->listWidget, SIGNAL(newObject(View3DListRecord)), this, SLOT(onNewObject(View3DListRecord)) );
+    connect( ui->listWidget, SIGNAL(removeObject(View3DListRecord)), this, SLOT(onRemoveObject(View3DListRecord)) );
 }
 
 View3DWidget::~View3DWidget()
@@ -124,12 +124,12 @@ void View3DWidget::removeCurrentConfigWidget()
     }
 }
 
-void View3DWidget::onNewObject(const QString object_locator)
+void View3DWidget::onNewObject( const View3DListRecord object_info )
 {
-    Application::instance()->logInfo("View3DWidget::onNewObject(): new object to display: " + object_locator);
+    Application::instance()->logInfo("View3DWidget::onNewObject(): new object to display: " + object_info.getDescription());
 
     //gets the VTK Actor that represents the domain object
-    vtkSmartPointer<vtkProp> actor = Application::instance()->getProject()->findObject( object_locator )->buildVTKActor();
+    vtkSmartPointer<vtkProp> actor = Application::instance()->getProject()->findObject( object_info.objectLocator )->buildVTKActor();
 
     //adds the actor for viewing
     _renderer->AddActor( actor );
@@ -138,13 +138,13 @@ void View3DWidget::onNewObject(const QString object_locator)
     _vtkwidget->update();
 
     //keeps a list of locator-actor pairs to allow management
-    _currentObjects.insert( object_locator, actor );
+    _currentObjects.insert( object_info, actor );
 }
 
-void View3DWidget::onRemoveObject(const QString object_locator)
+void View3DWidget::onRemoveObject( const View3DListRecord object_info )
 {
     //removes the VTK actor matching the object locator from the list.
-    vtkSmartPointer<vtkProp> actor = _currentObjects.take( object_locator );
+    vtkSmartPointer<vtkProp> actor = _currentObjects.take( object_info );
 
     //removes the VTK actor from view.
     _renderer->RemoveActor( actor );
@@ -156,8 +156,8 @@ void View3DWidget::onRemoveObject(const QString object_locator)
 
     //removes and deletes the config widget (if any) associated with the object
     View3DConfigWidget * widget = nullptr;
-    if( _currentCfgWidgets.contains( object_locator )){
-        widget = _currentCfgWidgets.take( object_locator );
+    if( _currentCfgWidgets.contains( object_info )){
+        widget = _currentCfgWidgets.take( object_info );
         delete widget;
     }
 
@@ -208,11 +208,11 @@ void View3DWidget::onLookAtYZ()
 
 void View3DWidget::onObjectsListItemActivated(QListWidgetItem *item)
 {
-    //retrieve the selected item's object locator
-    QString object_locator = item->data( Qt::UserRole ).toString();
+    //retrieve the selected item's object info
+    View3DListRecord object_info = item->data( Qt::UserRole ).value<View3DListRecord>();
 
     //fetch the object's pointer
-    ProjectComponent* object = Application::instance()->getProject()->findObject( object_locator );
+    ProjectComponent* object = Application::instance()->getProject()->findObject( object_info.objectLocator );
 
     removeCurrentConfigWidget();
 
@@ -222,12 +222,12 @@ void View3DWidget::onObjectsListItemActivated(QListWidgetItem *item)
                                           object->getName() + ".");
         //retrieve or create the config widget for the object
         View3DConfigWidget *widget = nullptr;
-        if( _currentCfgWidgets.contains( object_locator ) ){
-            widget = _currentCfgWidgets[object_locator];
+        if( _currentCfgWidgets.contains( object_info ) ){
+            widget = _currentCfgWidgets[object_info];
         } else {
             widget = object->build3DViewerConfigWidget();
             if( widget )
-                _currentCfgWidgets.insert( object_locator, widget );
+                _currentCfgWidgets.insert( object_info, widget );
         }
         //if there is a config widget
         if( widget ){
@@ -239,7 +239,7 @@ void View3DWidget::onObjectsListItemActivated(QListWidgetItem *item)
             Application::instance()->logError("View3DWidget::onObjectsListItemActivated(): null widget returned.");
         }
     } else {
-        Application::instance()->logError("View3DWidget::onObjectsListItemActivated(): object with locator " +
-                                          object_locator + " not found.");
+        Application::instance()->logError("View3DWidget::onObjectsListItemActivated(): object with locator/instance " +
+                                          object_info.getDescription() + " not found.");
     }
 }
