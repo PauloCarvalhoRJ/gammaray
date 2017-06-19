@@ -1074,3 +1074,65 @@ void Util::saveText(const QString filePath, const QStringList lines)
     //closes the output file
     outputFile.close();
 }
+
+void Util::fft1D( int lx, std::complex<double> cx[], int isig )
+{
+    int i, j, l, m, istep;
+    std::complex<double> carg, /*cexp,*/ cw, ctemp;
+    double pii, sc;
+    pii = 4.*std::atan(1.);
+
+    j = 1;
+    sc = std::sqrt(1./lx);
+    for( i = 1; i <= lx; ++i){
+        if(i <= j){
+            ctemp = cx[j]*sc;
+            cx[j] = cx[i]*sc;
+            cx[i] = ctemp;
+        }
+        m = lx/2;
+        while (m >= 1 && j > m){
+            j = j-m;
+            m = m/2;
+        }
+        j = j + m;
+    }
+
+    l = 1;
+
+    std::complex<double> im(0, 1); //Fortran's cmplx(0.,1.) == i
+
+    while (l < lx){
+        istep = 2*l;
+        for( m = 1; m <= l; ++m ){
+            carg = im *(pii*isig*(m-1))/(double)l;
+            cw = std::exp(carg);
+            for( i = m; i <= lx; i = i + istep ){
+                ctemp = cw*cx[i+l];
+                cx[i+l]= cx[i]-ctemp;
+                cx[i]= cx[i]+ctemp;
+            }
+        }
+        l = istep;
+    }
+}
+
+void Util::fft2D(int n1, int n2, std::complex<double> *cp, int isig)
+{
+    int i1,i2;
+    std::complex<double> cw[n2+1];
+
+    for( i2 = 1; i2 <= n2; ++i2){
+        fft1D(n1, &(cp[1*n2+i2]), isig); //cp[1*n2+i2] is supposed to mean cp[1][i2] (Fortran: cp(1,i2))
+    }
+
+    for( i1 = 1; i1 <= n1; ++i1){
+        for( i2 = 1; i2 <= n2; ++i2) {
+            cw[i2] = cp[i1*n2+i2];       //cp[i1*n2+i2] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
+        }
+        fft1D(n2, cw, isig);
+        for( i2 = 1; i2 <= n2; ++i2){
+            cp[i1*n2+i2] = cw[i2];       //cp[i1*n2+i2] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
+        }
+    }
+}

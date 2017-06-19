@@ -3,6 +3,7 @@
 #include <QStringList>
 #include <QString>
 #include <QList>
+#include <complex>
 
 //macro used to do printf on QString for debugging purposes
 //it is safe to delete this.
@@ -302,6 +303,29 @@ public:
 
     /** Saves the given list of strings as lines in the given text file. */
     static void saveText( const QString filePath, const QStringList lines);
+
+    /** Computes FFT (forward or reverse) for a vector of values.  The result will be stored in the input array.
+     *  This is a C++ port from the original Fortran implementation by Jon Claerbout (1985).
+     *  Due to direct port, element 0 is ignored, so you need to place the values from element 1 on and the total
+     *  number of elements must be +1.
+     *  @note The array elements are OVERWRITTEN during computation.
+     *  @param lx Number of elements in values array (not counting 0 element).
+     *  @param cx Input/output vector of values (complex numbers).
+     *  @param isig 0 == forward FFT (input in values in real space), 1 == reverse FFT (input values in wave number space).
+     */
+    static void fft1D( int lx, std::complex<double> cx[], int isig );
+
+    /** Computes 2D FFT (forward or reverse) for an array of values.  The result will be stored in the input array.
+     *  This is a C++ port from the original Fortran implementation by M.Pirttijärvi (2003).
+     *  Due to direct port, elements 0 is ignored, so you need to place the values from element 1 on and the total
+     *  number of elements must be +1 in each dimension.
+     *  @note The array elements are OVERWRITTEN during computation.
+     *  @param n1 Number of elements in X direction (not counting 0 element).
+     *  @param n2 Number of elements in Y direction (not counting 0 element).
+     *  @param cx Input/output array of values (complex numbers).
+     *  @param isig 0 == forward FFT (input in values in real space), 1 == reverse FFT (input values in wave number space).
+     */
+    static void fft2D(int n1, int n2, std::complex<double> *cp, int isig );
 };
 
 #endif // UTIL_H
