@@ -50,12 +50,6 @@ private:
      */
     static View3DViewData buildFor3DCartesianGrid( CartesianGrid* cartesianGrid );
 
-    /** Specific builder for an Attribute in a generic 3D Cartesian grid.
-     */
-    static View3DViewData buildForAttribute3DCartesianGrid(
-            CartesianGrid* cartesianGrid,
-            Attribute* attribute );
-
     /** Specific builder for an Attribute in a generic 3D Cartesian grid (with clipping planes
      *  along de I, J and K planes)
      */
