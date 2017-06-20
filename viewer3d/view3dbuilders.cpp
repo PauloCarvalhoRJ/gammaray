@@ -28,6 +28,9 @@
 #include <vtkTransformFilter.h>
 #include <vtkStructuredGridClip.h>
 #include <vtkPlane.h>
+#include <vtkDecimatePro.h>
+#include <vtkTriangleFilter.h>
+#include <vtkFloatArray.h>
 
 View3DBuilders::View3DBuilders()
 {
@@ -151,7 +154,7 @@ View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet,
     double max = pointSet->max( var_index-1 );
 
     //create a VTK array to store the sample values
-    vtkSmartPointer<vtkDoubleArray> values = vtkSmartPointer<vtkDoubleArray>::New();
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
     values->SetName("values");
 
     //read point geometry and sample values
@@ -275,7 +278,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid
     double Y0frame = Y0 - dY/2.0;
 
     //create a VTK array to store the sample values
-    vtkSmartPointer<vtkDoubleArray> values = vtkSmartPointer<vtkDoubleArray>::New();
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
     values->SetName("values");
 
     //read sample values
@@ -302,6 +305,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid
     plane->SetOrigin( X0frame, Y0frame, 0.0 );
     plane->SetPoint1( X0 + nX * dX, Y0frame, 0.0);
     plane->SetPoint2( X0frame, Y0 + nY * dY, 0.0);
+    plane->SetOutputPointsPrecision( vtkAlgorithm::SINGLE_PRECISION );
     plane->Update();
 
     //assign the grid values to the grid cells
@@ -416,7 +420,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGrid(CartesianGrid *c
     double Z0frame = Z0 - dZ/2.0;
 
     //create a VTK array to store the sample values
-    vtkSmartPointer<vtkDoubleArray> values = vtkSmartPointer<vtkDoubleArray>::New();
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
     values->SetName("values");
 
     //read sample values
@@ -509,7 +513,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
     double Z0frame = Z0 - dZ/2.0;
 
     //create a VTK array to store the sample values
-    vtkSmartPointer<vtkDoubleArray> values = vtkSmartPointer<vtkDoubleArray>::New();
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
     values->SetName("values");
 
     //read sample values
