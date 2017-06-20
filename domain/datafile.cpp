@@ -18,6 +18,29 @@
 #include "project.h"
 #include "objectgroup.h"
 
+//-------------------------------possible fast string split for the DataFile::loadData() method------------------------
+#include <string>
+#include <sstream>
+#include <vector>
+#include <iterator>
+template<typename Out>
+void fast_split(const std::string &s, char delim, Out result) {
+    std::stringstream ss;
+    ss.str(s);
+    std::string item;
+    while (std::getline(ss, item, delim)) {
+        if (!item.empty()) //skip blank tokens
+            *(result++) = std::stod(item);
+    }
+}
+std::vector<double> fast_split(const std::string &s, char delim) {
+    std::vector<double> elems;
+    fast_split(s, delim, std::back_inserter(elems));
+    return elems;
+}
+//------------------------------------------------------------------------------------------------------------
+
+
 DataFile::DataFile(QString path) : File( path )
 {
 }
