@@ -18,29 +18,6 @@
 #include "project.h"
 #include "objectgroup.h"
 
-//-------------------------------possible fast string split for the DataFile::loadData() method------------------------
-#include <string>
-#include <sstream>
-#include <vector>
-#include <iterator>
-template<typename Out>
-void fast_split(const std::string &s, char delim, Out result) {
-    std::stringstream ss;
-    ss.str(s);
-    std::string item;
-    while (std::getline(ss, item, delim)) {
-        if (!item.empty()) //skip blank tokens
-            *(result++) = std::stod(item);
-    }
-}
-std::vector<double> fast_split(const std::string &s, char delim) {
-    std::vector<double> elems;
-    fast_split(s, delim, std::back_inserter(elems));
-    return elems;
-}
-//------------------------------------------------------------------------------------------------------------
-
-
 DataFile::DataFile(QString path) : File( path )
 {
 }
@@ -76,8 +53,8 @@ void DataFile::loadData()
            ++var_count;
        } else { //lines containing data
            std::vector<double> data_line;
-           //TODO: this maybe a bottleneck for large data files
-           QStringList values = line.split(QRegularExpression("\\s+"), QString::SkipEmptyParts);
+           //QStringList values = line.split(QRegularExpression("\\s+"), QString::SkipEmptyParts); //this is a bottleneck
+           QStringList values = Util::fastSplit( line );
            if( values.size() != n_vars ){
                Application::instance()->logError( QString("ERROR: wrong number of values in line ").append(QString::number(i)) );
                Application::instance()->logError( QString("       expected: ").append(QString::number(n_vars)).append(", found:").append(QString::number(values.size())) );
@@ -94,7 +71,7 @@ void DataFile::loadData()
                    }
                }
                //add the line to the list
-               this->_data.push_back( data_line );
+               this->_data.push_back( std::move( data_line ) );
                ++data_line_count;
            }
        }
