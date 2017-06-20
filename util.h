@@ -304,7 +304,7 @@ public:
     static void saveText( const QString filePath, const QStringList lines);
 
     /** Split function specialized to tokenize data lines of GEO-EAS files.
-     *  @note This is not a generic tokenizer, so do not user for other applications.
+     *  @note This is not a generic tokenizer, so do not use for other applications.
      */
     static QStringList fastSplit( const QString lineGEOEAS );
 };

@@ -577,3 +577,8 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, cons
     //update the metadata file
     this->updateMetaDataFile();
 }
+
+void DataFile::freeLoadedData()
+{
+    _data.clear();
+}

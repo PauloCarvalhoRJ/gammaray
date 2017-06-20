@@ -202,6 +202,9 @@ public:
      */
     void classify(uint column, UnivariateCategoryClassification* ucc , const QString name_for_new_column);
 
+    /** De-allocates the data loaded with loadData(). */
+    void freeLoadedData();
+
 //File interface
     void deleteFromFS();
     void writeToFS();

@@ -1091,7 +1091,7 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
             case '6': case '7': case '8': case '9': case 'E': case 'e': case '+':
                 token[ iTokenChar++ ] = currentChar;
                 break;
-            default:  //found a separator char (could be anything other than number components)
+            default:  //found a separator char (could be anything other than valid number characters)
                 token[ iTokenChar ] = 0; //append null char
                 if( iTokenChar > 0 ) //if token is not empty
                     result.push_back( token ); //adds the token to the string list
@@ -1100,8 +1100,10 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     }
 
     //it is possible that the last token finishes the line
-    if( iTokenChar > 0 ) //if token is not empty
+    if( iTokenChar > 0 ){ //if token is not empty
+        token[ iTokenChar ] = 0; //append null char
         result.push_back( token ); //adds the token to the string list
+    }
 
     return result;
 }

@@ -286,6 +286,9 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGrid(CartesianGrid
         values->InsertNextValue( value );
     }
 
+    //we don't need file's data anymore
+    cartesianGrid->freeLoadedData();
+
     // set up a transform to apply the rotation about the grid origin (center of the first cell)
     vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
     xform->Translate( X0, Y0, 0.0);
@@ -424,6 +427,9 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGrid(CartesianGrid *c
         values->InsertNextValue( value );
     }
 
+    //we don't need file's data anymore
+    cartesianGrid->freeLoadedData();
+
     // set up a transform to apply the rotation about the grid origin (location of the first data point)
     vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
     xform->Translate( X0, Y0, Z0);
@@ -513,6 +519,9 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
         double value = cartesianGrid->data( i, var_index - 1 );
         values->InsertNextValue( value );
     }
+
+    //we don't need file's data anymore
+    cartesianGrid->freeLoadedData();
 
     // set up a transform to apply the rotation about the grid origin (location of the first data point)
     vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
