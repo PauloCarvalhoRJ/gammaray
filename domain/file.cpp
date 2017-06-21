@@ -100,5 +100,5 @@ bool File::isAttribute()
 
 QString File::getObjectLocator()
 {
-    return "FILE:" + getFileType() + ":" + getName();
+    return   _parent->getObjectLocator() + '/' + getName();
 }

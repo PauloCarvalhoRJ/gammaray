@@ -96,7 +96,7 @@ QString Attribute::getPresentationName()
 
 QString Attribute::getObjectLocator()
 {
-    return "ATTRIBUTE:ATTRIBUTE:" + getName();
+    return _parent->getObjectLocator() + '/' + getName();
 }
 
 View3DViewData Attribute::build3DViewObjects()

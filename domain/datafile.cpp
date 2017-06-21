@@ -353,11 +353,6 @@ void DataFile::writeToFS()
     Application::instance()->refreshProjectTree();
 }
 
-QString DataFile::getObjectLocator()
-{
-    return "DATAFILE:" + getFileType() + ":" + getName();
-}
-
 void DataFile::updatePropertyCollection()
 {
     //updates attribute collection
