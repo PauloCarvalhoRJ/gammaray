@@ -31,6 +31,7 @@
 #include <vtkDecimatePro.h>
 #include <vtkTriangleFilter.h>
 #include <vtkFloatArray.h>
+#include <vtkExtractGrid.h>
 
 View3DBuilders::View3DBuilders()
 {
@@ -466,13 +467,11 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
     transformFilter->SetTransform(xform);
     transformFilter->Update();
 
-    // Setup a clipping object on the transformed grid,
-    // initializing it to not clip anything
-    vtkSmartPointer<vtkStructuredGridClip> clipper =
-            vtkSmartPointer<vtkStructuredGridClip>::New();
-    clipper->SetInputConnection(transformFilter->GetOutputPort());
-    clipper->ClipDataOn();
-    clipper->SetOutputWholeExtent( 0, nX, 0, nY, 0, nZ );
+    //apply a grid sub-sampler/re-sampler to handle clipping
+    vtkSmartPointer<vtkExtractGrid> subGrid =
+            vtkSmartPointer<vtkExtractGrid>::New();
+    subGrid->SetInputConnection( transformFilter->GetOutputPort()  );
+    subGrid->SetVOI( 0, nX, 0, nY, 0, nZ );
 
     //assign a color table
     vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
@@ -480,7 +479,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
     // Create mapper (visualization parameters)
     vtkSmartPointer<vtkDataSetMapper> mapper =
             vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputConnection(clipper->GetOutputPort());
+    mapper->SetInputConnection( subGrid->GetOutputPort());
     mapper->SetLookupTable(lut);
     mapper->SetScalarRange(min, max);
     mapper->Update();
@@ -490,7 +489,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     actor->GetProperty()->EdgeVisibilityOn();
-    return View3DViewData(actor, clipper);
+    return View3DViewData(actor, subGrid, mapper);
 }
 
 View3DViewData View3DBuilders::buildForStratGrid(ProjectComponent */*toBeSpecified*/)

@@ -65,8 +65,9 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 {
 
     //Since we are in a V3DCfgWidForAttributeIn3DCartesianGrid (data cube with clipping)
-    //assumes a vtkStructuredGridClip exists in the View3DViewData object
-    vtkSmartPointer<vtkStructuredGridClip> clipper = _viewObjects.clipper;
+    //assumes a vtkStructuredGridClip and a vtkDataSetMapper exist in the View3DViewData object
+    vtkSmartPointer<vtkExtractGrid> subgrider = _viewObjects.subgrider;
+    vtkSmartPointer<vtkDataSetMapper> mapper = _viewObjects.mapper;
 
     //TODO: setting SetOutputWholeExtent alone rises a VTK error, which I didn't find a way
     //      to avoid yet.  So I suppress the warning window, which is not good, but so far
@@ -77,20 +78,24 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
     vtkObject::GlobalWarningDisplayOff();
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    clipper->SetOutputWholeExtent( ui->sldILowClip->value(),
-                                   ui->sldIHighClip->value(),
-                                   ui->sldJLowClip->value(),
-                                   ui->sldJHighClip->value(),
-                                   ui->sldKLowClip->value(),
-                                   ui->sldKHighClip->value() );
-//    clipper->UpdateWholeExtent();
-//    clipper->SetUpdateExtentToWholeExtent();
+    subgrider->SetVOI(ui->sldILowClip->value(),
+                       ui->sldIHighClip->value(),
+                       ui->sldJLowClip->value(),
+                       ui->sldJHighClip->value(),
+                       ui->sldKLowClip->value(),
+                       ui->sldKHighClip->value());
+
+    mapper->SetInputConnection( subgrider->GetOutputPort());
+
+//    subgrider->UpdateWholeExtent();
+//    subgrider->SetUpdateExtentToWholeExtent();
 //    int ext[]={0,5,0,5,0,5};
-//    clipper->SetUpdateExtent(ext);
-//    clipper->PropagateUpdateExtent();
-//    clipper->UpdateInformation();
-//    clipper->UpdateDataObject();
-//    clipper->Update();
+//    subgrider->SetUpdateExtent(ext);
+//    subgrider->PropagateUpdateExtent();
+//    subgrider->UpdateInformation();
+//    subgrider->UpdateDataObject();
+//    subgrider->Update();
+//    subgrider->Set
 
     emit changed();
 }
