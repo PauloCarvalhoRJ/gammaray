@@ -31,7 +31,6 @@ public:
       *  This does not follow GEO_EAS convention, so the first data value, at the first line and first column of the file
       *  is at (0,0). ATTENTION: the coordinates are relative to file contents.  Do not confuse with
       *  grid coordinates in regular grids.
-      *  @note Make sure to load data with loadData(), as this method does not check it for performance reasons.
       */
     double data(uint line, uint column);
 

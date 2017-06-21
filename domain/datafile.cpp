@@ -105,6 +105,9 @@ void DataFile::loadData()
 
 double DataFile::data(uint line, uint column)
 {
+    switch( _data.size() ){ //if _data is empty
+        case 0: loadData(); //loads the data from disk.
+    }
     return (this->_data.at(line)).at(column);
 }
 
