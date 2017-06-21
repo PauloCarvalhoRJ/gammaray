@@ -10,7 +10,7 @@ View3DConfigWidgetsBuilder::View3DConfigWidgetsBuilder()
 {
 }
 
-View3DConfigWidget *View3DConfigWidgetsBuilder::build(ProjectComponent *pc, View3DViewData viewObjects)
+View3DConfigWidget *View3DConfigWidgetsBuilder::build(ProjectComponent *pc, View3DViewData /*viewObjects*/)
 {
     Application::instance()->logError("View3DConfigWidgetsBuilder::build(): objects of type \"" +
                                       pc->getTypeName()

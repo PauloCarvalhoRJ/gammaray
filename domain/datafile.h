@@ -4,6 +4,7 @@
 #include "file.h"
 #include <vector>
 #include <QMap>
+#include <QDateTime>
 
 class Attribute;
 class UnivariateCategoryClassification;
@@ -237,6 +238,13 @@ protected:
      * The second member of the pairs is the name of category definition file.
      */
     QList< QPair<uint, QString> > _categorical_attributes;
+
+    /**
+     * Stores the file timestamp in the last call to loadData().
+     * This time is used to detect whether there as a change in the file, to prevent
+     * unnecessary data reloads.
+     */
+    QDateTime _lastModifiedDateTimeLastLoad;
 };
 
 #endif // DATAFILE_H

@@ -1,6 +1,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QRegularExpression>
+#include <QFileInfo>
 #include <limits>
 #include <iomanip>      // std::setprecision
 #include <sstream>    // std::stringstream
@@ -18,14 +19,13 @@
 #include "project.h"
 #include "objectgroup.h"
 
-DataFile::DataFile(QString path) : File( path )
+DataFile::DataFile(QString path) : File( path ),
+    _lastModifiedDateTimeLastLoad( )
 {
 }
 
 void DataFile::loadData()
 {
-    //TODO: prevent unnecessary data reloads that might cause nuisance with larger files.
-
     QStringList list;
     QFile file( this->_path );
     file.open( QFile::ReadOnly | QFile::Text );
@@ -33,10 +33,24 @@ void DataFile::loadData()
     int n_vars = 0;
     int var_count = 0;
     uint data_line_count = 0;
+    QFileInfo info( _path );
+
+    //if loaded data is not empty and was loaded before
+    if( ! _data.empty() && ! _lastModifiedDateTimeLastLoad.isNull() ){
+        QDateTime currentLastModified = info.lastModified();
+        //if modified datetime didn't change since last call to loadData
+        if( currentLastModified <= _lastModifiedDateTimeLastLoad ){
+            Application::instance()->logInfo(QString("File ").append(this->_path).append(" already loaded and up to date.  Did nothing."));
+            return; //does nothing
+        }
+    }
+
+    //record the current datetime of file change
+    _lastModifiedDateTimeLastLoad = info.lastModified();
 
     Application::instance()->logInfo(QString("Loading data from ").append(this->_path).append("..."));
 
-    //make sure _data is emply
+    //make sure _data is empty
     _data.clear();
 
     for (int i = 0; !in.atEnd(); ++i)

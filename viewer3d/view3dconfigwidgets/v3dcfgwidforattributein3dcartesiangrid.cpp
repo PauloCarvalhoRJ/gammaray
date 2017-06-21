@@ -9,7 +9,7 @@
 
 V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(
         CartesianGrid *cartesianGrid,
-        Attribute *attribute,
+        Attribute */*attribute*/,
         View3DViewData viewObjects,
         QWidget *parent) :
     View3DConfigWidget(parent),
