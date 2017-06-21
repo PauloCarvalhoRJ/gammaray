@@ -197,11 +197,13 @@ public:
 
     /**
      * Searches through the object tree for an object corresponding to the given
-     * object locator.  The locator follows this syntax: GENERIC_TYPE:SPECIFIC_TYPE:NAME, for examples:
-     * DATAFILE:CARTESIANGRID:Gold.dat or ATTRIBUTE:ATTRIBUTE:goldgrade.
-     * Returns nullptr if no object mathing the search is found.
+     * object locator.
      */
     ProjectComponent* findObject( const QString object_locator );
+
+    /** Calls DataFile::freeLoadedData() on all objects of type DataFile (or of its subclasses) in the project.
+     */
+    void freeLoadedData();
 
 private:
     QDir* _project_directory;

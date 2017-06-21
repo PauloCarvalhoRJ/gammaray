@@ -142,6 +142,7 @@ private slots:
     void onClassifyWith();
     void onMapAs();
     void onSoftIndicatorCalib();
+    void onFreeLoadedData();
 
 private:
     /**

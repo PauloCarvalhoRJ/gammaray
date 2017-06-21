@@ -20,8 +20,10 @@ Project *Application::getProject()
 
 void Application::openProject(const QString directory_path)
 {
-    if( _open_project )
+    if( _open_project ){
+        this->_open_project->freeLoadedData(); //TODO: this is unnecessary if a ProjectComponent deletes its children in its destructor
         delete _open_project;
+    }
     _open_project = new Project( directory_path );
 }
 
@@ -33,6 +35,7 @@ void Application::setMainWindow(MainWindow *mw)
 void Application::closeProject()
 {
     if( _open_project ){
+        this->_open_project->freeLoadedData(); //TODO: this is unnecessary if a ProjectComponent deletes its children in its destructor
         delete this->_open_project;
         this->_open_project = nullptr;
     }

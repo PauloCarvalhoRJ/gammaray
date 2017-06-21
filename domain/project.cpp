@@ -568,6 +568,27 @@ ProjectComponent *Project::findObject(const QString object_locator)
     return _root->findObject( object_locator );
 }
 
+void Project::freeLoadedData()
+{
+    std::vector<ProjectComponent*> objects;
+    //retrieve all objects in Data Files group
+    _data_files->getAllObjects( objects );
+    std::vector<ProjectComponent*>::iterator it = objects.begin();
+    //for all objects found...
+    for( ; it != objects.end(); ++it){
+        //... if it's a file...
+        if( (*it)->isFile() ){
+            File * fileAspect = (File*)(*it);
+            //... if it's a data file ...
+            if( fileAspect->isDataFile() ){
+                DataFile* dataFileAspect = (DataFile*) fileAspect;
+                //... frees its loaded data (if any).
+                dataFileAspect->freeLoadedData();
+            }
+        }
+    }
+}
+
 //-------------- QAbstractItemModel interface------------
 QModelIndex Project::index(int row, int column, const QModelIndex &parent) const
 {
