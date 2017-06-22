@@ -10,6 +10,7 @@
 
 class QTextStream;
 class View3DConfigWidget;
+class View3DWidget;
 
 /**
  * @brief The ProjectComponent class models any part of a project such as data files, variograms, training images,
@@ -58,7 +59,7 @@ public:
      * possibly in different ways.  Implementations should only use the information in this object to build appropriate
      * visual objects.
      */
-    virtual View3DViewData build3DViewObjects( );
+    virtual View3DViewData build3DViewObjects( View3DWidget *widget3D  );
 
     /** Builds a 3D Viewer configuration widget. This default implementation is an ineffective call.
      * viewObjects contains the objects describing the visual appearance of a domain object (mostly VTK objects).

@@ -29,6 +29,9 @@ public:
     explicit View3DWidget(QWidget *parent = 0);
     ~View3DWidget();
 
+    /** Returns the VTK renderer used to paint the scene on this widget's canvas. */
+    vtkSmartPointer<vtkRenderer> getRenderer(){ return _renderer; }
+
 private:
     Ui::View3DWidget *ui;
 

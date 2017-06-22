@@ -33,9 +33,9 @@ void PointSet::save(QTextStream *txt_stream)
     this->updateMetaDataFile();
 }
 
-View3DViewData PointSet::build3DViewObjects()
+View3DViewData PointSet::build3DViewObjects(View3DWidget *widget3D)
 {
-    return View3DBuilders::build( this );
+    return View3DBuilders::build( this, widget3D );
 }
 
 void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_data_value)

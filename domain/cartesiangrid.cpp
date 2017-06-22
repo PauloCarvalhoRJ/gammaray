@@ -243,7 +243,7 @@ void CartesianGrid::save(QTextStream *txt_stream)
     this->updateMetaDataFile();
 }
 
-View3DViewData CartesianGrid::build3DViewObjects()
+View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
 {
-    return View3DBuilders::build( this );
+    return View3DBuilders::build( this, widget3D );
 }
