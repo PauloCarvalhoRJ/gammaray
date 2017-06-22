@@ -12,6 +12,7 @@ SetupDialog::SetupDialog(QWidget *parent) :
     //read settings from OS registry.
     ui->txtGSLibPath->setText( Application::instance()->getGSLibPathSetting() );
     ui->txtGSPath->setText( Application::instance()->getGhostscriptPathSetting() );
+    ui->spinMaxGridCells3DView->setValue( Application::instance()->getMaxGridCellCountFor3DVisualizationSetting() );
     adjustSize();
 }
 
@@ -39,6 +40,7 @@ void SetupDialog::accept()
     //save settings to OS registry.
     Application::instance()->setGSLibPathSetting( ui->txtGSLibPath->text() );
     Application::instance()->setGhostscriptPathSetting( ui->txtGSPath->text() );
+    Application::instance()->setMaxGridCellCountFor3DVisualizationSetting( ui->spinMaxGridCells3DView->value() );
     //make dialog close.
     this->reject();
 }

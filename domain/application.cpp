@@ -59,6 +59,23 @@ void Application::setGhostscriptPathSetting(const QString path)
     qs.setValue("gspath", path);
 }
 
+int Application::getMaxGridCellCountFor3DVisualizationSetting()
+{
+    QSettings qs;
+    bool ok;
+    int setting = qs.value("maxcellgrid3dview").toInt( &ok );
+    if( ! ok )
+        return 2000000; //default
+    else
+        return setting;
+}
+
+void Application::setMaxGridCellCountFor3DVisualizationSetting(int value)
+{
+    QSettings qs;
+    qs.setValue("maxcellgrid3dview", value);
+}
+
 void Application::logInfo(const QString text)
 {
     Q_ASSERT(_mw != 0);

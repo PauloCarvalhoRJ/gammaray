@@ -560,13 +560,15 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
 
     //try a sampling rate to keep the number of elements below the threshold
     int srate = 1;
-    for( ; (nX*nY) / (srate*srate) >  2000000; ++srate);
+    int maxcells = Application::instance()->getMaxGridCellCountFor3DVisualizationSetting();
+    for( ; (nX*nY) / (srate*srate) >  maxcells; ++srate);
 
     //warn user if sampling rate is less than maximum detail
     if( srate > 1){
         QString message("Grid with too many cells (");
         message += QString::number(nX*nY) +
-                " > 2000000 ).  Sampling rate set to " + QString::number(srate) + " (1 = max. detail)";
+                " > " + QString::number(maxcells) + " ).  Sampling rate set to " +
+                QString::number(srate) + " (1 = max. detail)";
         QMessageBox::warning( nullptr, "Warning", message);
         Application::instance()->logWarn("View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructuredGrid: " + message);
     }
@@ -729,13 +731,15 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
 
     //try a sampling rate to keep the number of elements below the threshold
     int srate = 1;
-    for( ; (nX*nY*nZ) / (srate*srate*srate) >  2000000; ++srate);
+    int maxcells = Application::instance()->getMaxGridCellCountFor3DVisualizationSetting();
+    for( ; (nX*nY*nZ) / (srate*srate*srate) >  maxcells; ++srate);
 
     //warn user if sampling rate is less than maximum detail
     if( srate > 1){
         QString message("Grid with too many cells (");
         message += QString::number(nX*nY*nZ) +
-                " > 2000000 ).  Sampling rate set to " + QString::number(srate) + " (1 = max. detail)";
+                " > " + QString::number(maxcells) + " ).  Sampling rate set to " +
+                QString::number(srate) + " (1 = max. detail)";
         QMessageBox::warning( nullptr, "Warning", message);
         Application::instance()->logWarn("View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping: " + message);
     }
