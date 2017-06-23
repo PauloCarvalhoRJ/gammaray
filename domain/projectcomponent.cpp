@@ -123,9 +123,9 @@ ProjectComponent *ProjectComponent::findObject(const QString object_locator)
     return nullptr; //returns nullptr if no match is found
 }
 
-View3DViewData ProjectComponent::build3DViewObjects()
+View3DViewData ProjectComponent::build3DViewObjects( View3DWidget * widget3D )
 {
-    return View3DBuilders::build( this );
+    return View3DBuilders::build( this, widget3D );
 }
 
 View3DConfigWidget *ProjectComponent::build3DViewerConfigWidget(View3DViewData viewObjects)

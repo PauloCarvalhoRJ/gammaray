@@ -853,7 +853,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -1073,4 +1073,37 @@ void Util::saveText(const QString filePath, const QStringList lines)
 
     //closes the output file
     outputFile.close();
+}
+
+QStringList Util::fastSplit(const QString lineGEOEAS)
+{
+    QStringList result;
+    char token[100]; //100 characters is more than enough for a double in a text file.
+    int iTokenChar = 0;
+    int nchar = lineGEOEAS.length();
+    char currentChar;
+
+    //for each char of the line
+    for( int i = 0; i < nchar; ++i){
+        currentChar = lineGEOEAS[i].toLatin1(); //assumes no fancy unicode chars are in GEO-EAS data sets
+        switch(currentChar){
+            case '-': case '.': case '0': case '1': case '2': case '3': case '4': case '5':
+            case '6': case '7': case '8': case '9': case 'E': case 'e': case '+':
+                token[ iTokenChar++ ] = currentChar;
+                break;
+            default:  //found a separator char (could be anything other than valid number characters)
+                token[ iTokenChar ] = 0; //append null char
+                if( iTokenChar > 0 ) //if token is not empty
+                    result.push_back( token ); //adds the token to the string list
+                iTokenChar = 0; //resets the token char counter
+        }
+    }
+
+    //it is possible that the last token finishes the line
+    if( iTokenChar > 0 ){ //if token is not empty
+        token[ iTokenChar ] = 0; //append null char
+        result.push_back( token ); //adds the token to the string list
+    }
+
+    return result;
 }

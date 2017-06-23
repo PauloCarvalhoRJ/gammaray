@@ -354,6 +354,7 @@ void MainWindow::onProjectHeaderContextMenu(const QPoint &mouse_location)
     _projectHeaderContextMenu->addAction("See project path", this, SLOT(onSeeProjectPath()));
     _projectHeaderContextMenu->addAction("Open project directory...", this, SLOT(onOpenProjectPath()));
     _projectHeaderContextMenu->addAction("Clear temporary files", this, SLOT(onCleanTmpFiles()));
+    _projectHeaderContextMenu->addAction("Free loaded data (frees up RAM)", this, SLOT(onFreeLoadedData()));
     _projectHeaderContextMenu->exec(ui->lblProjName->mapToGlobal(mouse_location));
 }
 
@@ -1285,6 +1286,11 @@ void MainWindow::onSoftIndicatorCalib()
 {
     SoftIndicatorCalibrationDialog *sicd = new SoftIndicatorCalibrationDialog( _right_clicked_attribute, this );
     sicd->show();
+}
+
+void MainWindow::onFreeLoadedData()
+{
+    Application::instance()->getProject()->freeLoadedData();
 }
 
 void MainWindow::onCreateCategoryDefinition()
