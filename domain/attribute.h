@@ -37,7 +37,7 @@ public:
     bool isAttribute();
     QString getPresentationName();
     virtual QString getObjectLocator();
-    virtual View3DViewData build3DViewObjects();
+    virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
     virtual QString getTypeName(){ return "Attribute"; }
     virtual View3DConfigWidget* build3DViewerConfigWidget(View3DViewData viewObjects);
 

@@ -92,6 +92,11 @@ public:
       */
     virtual bool isDataFile() = 0;
 
+    /**
+      *  Returns the file size in bytes.  Returns -1 if file does not exist.
+      */
+    virtual long getFileSize();
+
 protected:
     QString _path;
 

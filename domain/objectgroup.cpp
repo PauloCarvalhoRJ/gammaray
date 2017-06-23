@@ -39,5 +39,5 @@ bool ObjectGroup::isAttribute()
 
 QString ObjectGroup::getObjectLocator()
 {
-    return "OBJECTGROUP:OBJECTGROUP:" + getName();
+    return _parent->getObjectLocator() + '/' + getName();
 }

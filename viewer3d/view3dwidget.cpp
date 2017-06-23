@@ -131,7 +131,7 @@ void View3DWidget::onNewObject( const View3DListRecord object_info )
     View3DViewData viewData = Application::instance()->
             getProject()->
             findObject( object_info.objectLocator )->
-            build3DViewObjects();
+            build3DViewObjects( this );
 
     //gets the VTK Actor that represents the domain object
     vtkSmartPointer<vtkProp> actor = viewData.actor;

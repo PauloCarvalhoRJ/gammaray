@@ -96,12 +96,12 @@ QString Attribute::getPresentationName()
 
 QString Attribute::getObjectLocator()
 {
-    return "ATTRIBUTE:ATTRIBUTE:" + getName();
+    return _parent->getObjectLocator() + '/' + getName();
 }
 
-View3DViewData Attribute::build3DViewObjects()
+View3DViewData Attribute::build3DViewObjects(View3DWidget *widget3D)
 {
-    return View3DBuilders::build( this );
+    return View3DBuilders::build( this, widget3D );
 }
 
 View3DConfigWidget *Attribute::build3DViewerConfigWidget( View3DViewData viewObjects )

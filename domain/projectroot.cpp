@@ -28,5 +28,5 @@ bool ProjectRoot::isAttribute()
 
 QString ProjectRoot::getObjectLocator()
 {
-    return "PROJECTROOT:PROJECTROOT:" + getName();
+    return "/" + getName();
 }

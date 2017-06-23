@@ -34,6 +34,11 @@ private:
             Attribute* attribute ,
             View3DViewData viewObjects);
 
+    /** Specific builder for an Attribute in 2D map (nK < 2) Cartesian grid.*/
+    static View3DConfigWidget* buildForAttributeMapCartesianGrid(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute ,
+            View3DViewData viewObjects);
 };
 
 #endif // VIEW3DCONFIGWIDGETSBUILDER_H

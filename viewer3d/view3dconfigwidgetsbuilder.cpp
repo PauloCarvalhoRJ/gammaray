@@ -5,12 +5,13 @@
 #include "domain/file.h"
 #include "domain/cartesiangrid.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h"
+#include "view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h"
 
 View3DConfigWidgetsBuilder::View3DConfigWidgetsBuilder()
 {
 }
 
-View3DConfigWidget *View3DConfigWidgetsBuilder::build(ProjectComponent *pc, View3DViewData viewObjects)
+View3DConfigWidget *View3DConfigWidgetsBuilder::build(ProjectComponent *pc, View3DViewData /*viewObjects*/)
 {
     Application::instance()->logError("View3DConfigWidgetsBuilder::build(): objects of type \"" +
                                       pc->getTypeName()
@@ -29,8 +30,7 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute, View
     if( fileType == "CARTESIANGRID" ) {
         CartesianGrid* cg = (CartesianGrid*)file;
         if( cg->getNZ() < 2 ){
-            Application::instance()->logError("View3DConfigWidgetsBuilder::build(Attribute *): Config widget unavailable for Attributes in 2D Cartesian grids.");
-            return nullptr;
+            return buildForAttributeMapCartesianGrid( cg, attribute, viewObjects );
         } else {
             return buildForAttribute3DCartesianGrid( cg, attribute, viewObjects );
         }
@@ -44,4 +44,10 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttribute3DCartesianGrid
         CartesianGrid *cartesianGrid, Attribute *attribute, View3DViewData viewObjects )
 {
     return new V3DCfgWidForAttributeIn3DCartesianGrid( cartesianGrid, attribute, viewObjects );
+}
+
+View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeMapCartesianGrid(
+        CartesianGrid *cartesianGrid, Attribute *attribute, View3DViewData viewObjects)
+{
+    return new V3DCfgWidForAttributeInMapCartesianGrid( cartesianGrid, attribute, viewObjects );
 }

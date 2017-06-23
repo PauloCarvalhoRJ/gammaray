@@ -4,6 +4,7 @@
 #include "file.h"
 #include <vector>
 #include <QMap>
+#include <QDateTime>
 
 class Attribute;
 class UnivariateCategoryClassification;
@@ -30,7 +31,6 @@ public:
       *  This does not follow GEO_EAS convention, so the first data value, at the first line and first column of the file
       *  is at (0,0). ATTENTION: the coordinates are relative to file contents.  Do not confuse with
       *  grid coordinates in regular grids.
-      *  @note Make sure to load data with loadData(), as this method does not check it for performance reasons.
       */
     double data(uint line, uint column);
 
@@ -202,12 +202,12 @@ public:
      */
     void classify(uint column, UnivariateCategoryClassification* ucc , const QString name_for_new_column);
 
+    /** De-allocates the data loaded with loadData(). */
+    void freeLoadedData();
+
 //File interface
     void deleteFromFS();
     void writeToFS();
-
-//ProjectComponent interface
-    virtual QString getObjectLocator();
 
 protected:
 
@@ -234,6 +234,13 @@ protected:
      * The second member of the pairs is the name of category definition file.
      */
     QList< QPair<uint, QString> > _categorical_attributes;
+
+    /**
+     * Stores the file timestamp in the last call to loadData().
+     * This time is used to detect whether there as a change in the file, to prevent
+     * unnecessary data reloads.
+     */
+    QDateTime _lastModifiedDateTimeLastLoad;
 };
 
 #endif // DATAFILE_H

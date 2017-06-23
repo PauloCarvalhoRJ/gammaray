@@ -326,6 +326,12 @@ public:
      *  @param isig 0 == forward FFT (input in values in real space), 1 == reverse FFT (input values in wave number space).
      */
     static void fft2D(int n1, int n2, std::complex<double> *cp, int isig );
+    
+    /** Split function specialized to tokenize data lines of GEO-EAS files.
+     *  @note This is not a generic tokenizer, so do not use for other applications.
+     */
+    static QStringList fastSplit( const QString lineGEOEAS );
+
 };
 
 #endif // UTIL_H
