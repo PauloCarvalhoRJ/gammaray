@@ -74,7 +74,7 @@ void DataFile::loadData()
     //wait for the data load to finish
     //not very beautiful, but simple and effective
     while( ! dl->isFinished() ){
-        thread->wait( 500 ); //reduces cpu usage, refreshes at each 500 milliseconds
+        thread->wait( 200 ); //reduces cpu usage, refreshes at each 500 milliseconds
         QCoreApplication::processEvents(); //let Qt repaint widgets
     }
 
