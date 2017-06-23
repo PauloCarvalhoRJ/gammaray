@@ -2,8 +2,8 @@
 #include "ui_v3dcfgwidforattributeinmapcartesiangrid.h"
 
 V3DCfgWidForAttributeInMapCartesianGrid::V3DCfgWidForAttributeInMapCartesianGrid(
-        CartesianGrid *cartesianGrid,
-        Attribute *attribute,
+        CartesianGrid */*cartesianGrid*/,
+        Attribute */*attribute*/,
         View3DViewData viewObjects,
         QWidget *parent) :
     View3DConfigWidget(parent),
