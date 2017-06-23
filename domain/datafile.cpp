@@ -6,6 +6,9 @@
 #include <iomanip>      // std::setprecision
 #include <sstream>    // std::stringstream
 #include <cmath>
+#include <QProgressDialog>
+#include <QFutureWatcher>
+#include <QtConcurrent/QtConcurrent>
 #include "datafile.h"
 #include "../exceptions/invalidgslibdatafileexception.h"
 #include "application.h"
@@ -18,6 +21,7 @@
 #include "domain/categorydefinition.h"
 #include "project.h"
 #include "objectgroup.h"
+#include "auxiliary/dataloader.h"
 
 DataFile::DataFile(QString path) : File( path ),
     _lastModifiedDateTimeLastLoad( )
@@ -26,12 +30,8 @@ DataFile::DataFile(QString path) : File( path ),
 
 void DataFile::loadData()
 {
-    QStringList list;
     QFile file( this->_path );
     file.open( QFile::ReadOnly | QFile::Text );
-    QTextStream in(&file);
-    int n_vars = 0;
-    int var_count = 0;
     uint data_line_count = 0;
     QFileInfo info( _path );
 
@@ -50,46 +50,34 @@ void DataFile::loadData()
 
     Application::instance()->logInfo(QString("Loading data from ").append(this->_path).append("..."));
 
+
     //make sure _data is empty
     _data.clear();
 
-    for (int i = 0; !in.atEnd(); ++i)
-    {
-       //read file line by line
-       QString line = in.readLine();
+    //data load takes place in another thread, so we can show and update a progress bar
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Loading and parsing " + _path + "...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setValue( 0 );
+    progressDialog.setMaximum( getFileSize() / 100 ); //see DataLoader::doLoad(). Dividing by 100 allows a max value of ~400GB when converting from long to int
+    QThread* thread = new QThread();  //does it need to set parent (a QObject)?
+    DataLoader* dl = new DataLoader(file, _data, data_line_count); // Do not set a parent. The object cannot be moved if it has a parent.
+    dl->moveToThread(thread);
+    dl->connect(thread, SIGNAL(finished()), dl, SLOT(deleteLater()));
+    dl->connect(thread, SIGNAL(started()), dl, SLOT(doLoad()));
+    dl->connect(dl, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
+    thread->start();
+    /////////////////////////////////
 
-       //TODO: second line may contain other information in grid files, so it will fail for such cases.
-       if( i == 0 ){} //first line is ignored
-       else if( i == 1 ){ //second line is the number of variables
-           n_vars = Util::getFirstNumber( line );
-       } else if ( i > 1 && var_count < n_vars ){ //the variables names
-           list << line;
-           ++var_count;
-       } else { //lines containing data
-           std::vector<double> data_line;
-           //QStringList values = line.split(QRegularExpression("\\s+"), QString::SkipEmptyParts); //this is a bottleneck
-           QStringList values = Util::fastSplit( line );
-           if( values.size() != n_vars ){
-               Application::instance()->logError( QString("ERROR: wrong number of values in line ").append(QString::number(i)) );
-               Application::instance()->logError( QString("       expected: ").append(QString::number(n_vars)).append(", found:").append(QString::number(values.size())) );
-               for( QStringList::Iterator it = values.begin(); it != values.end(); ++it ){
-                   Application::instance()->logInfo((*it));
-               }
-           } else {
-               //read each value along the line
-               for( QStringList::Iterator it = values.begin(); it != values.end(); ++it ){
-                   bool ok = true;
-                   data_line.push_back( (*it).toDouble( &ok ) );
-                   if( !ok ){
-                       Application::instance()->logError( QString("DataFile::loadData(): error in data file (line ").append(QString::number(i)).append("): cannot convert ").append( *it ).append(" to double.") );
-                   }
-               }
-               //add the line to the list
-               this->_data.push_back( std::move( data_line ) );
-               ++data_line_count;
-           }
-       }
+    //wait for the data load to finish
+    //not very beautiful, but simple and effective
+    while( ! dl->isFinished() ){
+        thread->wait( 500 ); //reduces cpu usage, refreshes at each 500 milliseconds
+        QCoreApplication::processEvents(); //let Qt repaint widgets
     }
+
     file.close();
 
     //cartesian grids must have a given number of read lines

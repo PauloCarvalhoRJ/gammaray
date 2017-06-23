@@ -141,7 +141,8 @@ SOURCES += main.cpp\
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.cpp \
     viewer3d/view3dlistrecord.cpp \
     viewer3d/view3dviewdata.cpp \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.cpp
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.cpp \
+    domain/auxiliary/dataloader.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -264,7 +265,8 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h \
     viewer3d/view3dlistrecord.h \
     viewer3d/view3dviewdata.h \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h \
+    domain/auxiliary/dataloader.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

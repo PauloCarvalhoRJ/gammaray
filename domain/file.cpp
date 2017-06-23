@@ -81,6 +81,14 @@ bool File::exists()
     return path.exists();
 }
 
+long File::getFileSize()
+{
+    if( ! exists() )
+        return -1;
+    QFileInfo info( _path );
+    return info.size(); //assumes long is 64-bit integer
+}
+
 
 QString File::getName()
 {
