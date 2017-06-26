@@ -592,8 +592,9 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper( mapper );
 
-    // Finally, return the actor passing the sub-gridder so the user can change the sampling rate.
-    return View3DViewData(actor, sg);
+    // Finally, return the actor along with other visual objects
+    // so the user can make adjustments to rendering.
+    return View3DViewData(actor, sg, mapper);
 }
 
 View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianGrid, View3DWidget */*widget3D*/)
