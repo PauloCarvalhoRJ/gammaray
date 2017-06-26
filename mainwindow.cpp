@@ -137,7 +137,7 @@ MainWindow::MainWindow(QWidget *parent) :
     setAcceptDrops( true );
 
     //show the 3D view widget
-    ui->frmContent->layout()->addWidget( new View3DWidget() );
+    ui->frmContent->layout()->addWidget( new View3DWidget( this ) );
 }
 
 MainWindow::~MainWindow()
@@ -448,6 +448,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
                 _projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
+            }
+            if( parent_file->getFileType() == "CARTESIANGRID"  ){
+                _projectContextMenu->addAction("FFT 2D (kx-ky space transform)", this, SLOT(onFFT2D()));
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1291,6 +1294,20 @@ void MainWindow::onSoftIndicatorCalib()
 void MainWindow::onFreeLoadedData()
 {
     Application::instance()->getProject()->freeLoadedData();
+}
+
+void MainWindow::onFFT2D()
+{
+    //the parent file is surely a CartesianGrid.
+    CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
+
+    std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+
+    Util::fft2D( cg->getNX(), cg->getNY(), array, FFTComputationMode::DIRECT );
+
+    Util::createGEOEASGrid( "real", "imag", array, Application::instance()->getProject()->getPath() + "/NUMINEX.DAT" );
+
+    Application::instance()->logInfo("FFT 2D completed.");
 }
 
 void MainWindow::onCreateCategoryDefinition()

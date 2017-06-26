@@ -180,6 +180,31 @@ void CartesianGrid::setInfoFromGridParameter(GSLibParGrid *pg)
     this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal, ndv, empty, empty2);
 }
 
+double CartesianGrid::dataIJK(uint column, uint i, uint j, uint k)
+{
+    uint dataRow = i + j*_nx + k*_ny*_nx;
+    return data( dataRow, column );
+}
+
+std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPart, int indexColumImaginaryPart)
+{
+    std::vector< std::complex<double> > result( _nx * _ny * _nz ); //[_nx][_ny][_nz]
+
+    for( uint k = 0; k < _nz; ++k)
+        for( uint j = 0; j < _ny; ++j)
+            for( uint i = 0; i < _nx; ++i){
+                double real = 0.0d;
+                double im = 0.0d;
+                if( indexColumRealPart >= 0 )
+                    real = dataIJK( indexColumRealPart, i, j, k);
+                if( indexColumImaginaryPart >= 0 )
+                    im = dataIJK( indexColumImaginaryPart, i, j, k);
+                result[i + j*_nx + k*_ny*_nx] = std::complex<double>(real, im);
+            }
+
+    return result;
+}
+
 bool CartesianGrid::canHaveMetaData()
 {
     return true;

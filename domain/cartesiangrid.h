@@ -2,6 +2,7 @@
 #define CARTESIANGRID_H
 
 #include "datafile.h"
+#include <complex>
 
 class GSLibParGrid;
 
@@ -54,6 +55,23 @@ public:
     double getRot(){ return _rot; }
     uint getNReal(){ return _nreal; }
     //@}
+
+    /**
+     * Returns a value from the data column (0 = 1st column) given a grid topological coordinate (IJK).
+     * @param i must be between 0 and NX-1.
+     * @param j must be between 0 and NY-1.
+     * @param k must be between 0 and NZ-1.
+     */
+    double dataIJK(uint column, uint i, uint j, uint k);
+
+    /** Creates a vector of complex numbers with the values taken from data columns.
+     *  Specify -1 to omit a column, which causes the repective part to be filled with zeros.
+     *  getArray(-1,-1) returns an array filled with zeroes.  The dimension of the array is that
+     *  of the Cartesian grid (getNX(), getNY(), getNZ()).
+     *  @param indexColumRealPart Column index (starting with 0) with the values for the real part.
+     *  @param indexColumRealPart Column index (starting with 0) with the values for the imaginary part.
+     */
+    std::vector< std::complex<double> > getArray( int indexColumRealPart, int indexColumImaginaryPart = -1 );
 
     //DataFile interface
 public:

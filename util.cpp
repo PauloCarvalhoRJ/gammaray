@@ -427,6 +427,49 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     file.close();
 }
 
+void Util::createGEOEASGrid(const QString columnNameForRealPart,
+                            const QString columnNameForImaginaryPart,
+                            std::vector<std::complex<double> > &array, QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //determine the number of columns
+    int nColumns = 0;
+    if( ! columnNameForRealPart.isEmpty() )
+        nColumns++;
+    if( ! columnNameForImaginaryPart.isEmpty() )
+        nColumns++;
+    if( nColumns == 0)
+        return;
+
+    //write out the GEO-EAS grid geader
+    out << "Grid file\n";
+    out << nColumns << '\n';
+    if( ! columnNameForRealPart.isEmpty() )
+        out << columnNameForRealPart << '\n';
+    if( ! columnNameForImaginaryPart.isEmpty() )
+        out << columnNameForImaginaryPart << '\n';
+
+    //loop to output the values
+    std::vector< std::complex<double> >::iterator it = array.begin();
+    for( ; it != array.end(); ++it ){
+        if( ! columnNameForRealPart.isEmpty() ){
+            out << (*it).real() ;
+            if( ! columnNameForImaginaryPart.isEmpty() )
+                out << '\t';
+        }
+        if( ! columnNameForImaginaryPart.isEmpty() )
+            out << (*it).imag() ;
+        out << '\n';
+    }
+
+    //close file
+    file.close();
+}
+
 bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, CategoryDefinition *cd)
 {
     //get input data file
@@ -1075,20 +1118,28 @@ void Util::saveText(const QString filePath, const QStringList lines)
     outputFile.close();
 }
 
-void Util::fft1D( int lx, std::complex<double> cx[], int isig )
+void Util::fft1D(int lx, std::vector< std::complex<double> > &cx, int startingElement, FFTComputationMode isig )
 {
     int i, j, l, m, istep;
     std::complex<double> carg, /*cexp,*/ cw, ctemp;
     double pii, sc;
     pii = 4.*std::atan(1.);
 
+    int iisig;
+    switch( isig ){
+        case FFTComputationMode::DIRECT: iisig = 0;
+        case FFTComputationMode::REVERSE: iisig = 1;
+    }
+
     j = 1;
     sc = std::sqrt(1./lx);
     for( i = 1; i <= lx; ++i){
         if(i <= j){
-            ctemp = cx[j]*sc;
-            cx[j] = cx[i]*sc;
-            cx[i] = ctemp;
+            int pi = startingElement + i;
+            int pj = startingElement + j;
+            ctemp = cx[pj-1]*sc;
+            cx[pj-1] = cx[pi-1]*sc;
+            cx[pi-1] = ctemp;
         }
         m = lx/2;
         while (m >= 1 && j > m){
@@ -1102,39 +1153,143 @@ void Util::fft1D( int lx, std::complex<double> cx[], int isig )
 
     std::complex<double> im(0, 1); //Fortran's cmplx(0.,1.) == i
 
-    while (l < lx){
+    while ( l < lx ){
         istep = 2*l;
         for( m = 1; m <= l; ++m ){
-            carg = im *(pii*isig*(m-1))/(double)l;
+            carg = im *(pii*iisig*(m-1))/(double)(l);
             cw = std::exp(carg);
-            for( i = m; i <= lx; i = i + istep ){
-                ctemp = cw*cx[i+l];
-                cx[i+l]= cx[i]-ctemp;
-                cx[i]= cx[i]+ctemp;
+            for( i = m; i+l < lx; i = i + istep ){
+                int pi = startingElement + i;
+                if( pi+l-1 < 0 || pi+l-1 >= (int)cx.size() || pi-1 < 0 || pi-1 >= (int)cx.size()){
+                    Application::instance()->logError("Util::fft1D: Index out of bounds.  Computation not done.");
+                    continue;
+                }
+                ctemp = (cw*cx[pi+l-1]);
+                cx[pi+l-1] = (cx[pi-1]-ctemp);
+                cx[pi-1] = (cx[pi-1]+ctemp);
             }
         }
         l = istep;
     }
+
+    /////////////////original code in Fortran/////////////////////////////
+ /* !----------------------------------------------------------------------
+    ! 1-D Fast Fourier Transform (FFT) by Jon Claerbout (1985)
+    !----------------------------------------------------------------------
+    ! Input and output parameters:
+    !
+    !   LX=   dimension of the data array (integer)
+    !   CX=   data array (complex, dim=LX) with input values in real part
+    !   ISIG= integer flag = 0 for forward FFT and = 1 for inverse FFT
+    !
+    ! Note that this soubroutine deletes the original data in the CX array
+    ! and after this subroutine the data array needs to be swapped around
+    ! the origin (see Press et al. Numerical recipes, for example).
+    !
+    ! Original reference: Claerbout, J., 1976. Fundamentals of geophysical
+    ! data processing. With applications to petroleum prospecting: McGraw-
+    ! Hill Book Co.
+    !----------------------------------------------------------------------
+    ! Markku Pirttijärvi, 2003
+
+      subroutine fork(lx,cx,isig)
+
+        implicit none
+        integer :: lx,isig,i,j,l,m,istep
+        complex :: cx(lx),carg,cexp,cw,ctemp
+        real :: pii,sc
+        pii= 4.*atan(1.)
+
+        j= 1
+        sc= sqrt(1./lx)
+        do i= 1,lx
+          if(i <= j) then
+            ctemp= cx(j)*sc
+            cx(j)= cx(i)*sc
+            cx(i)= ctemp
+          end if
+          m= lx/2
+          do while (m >= 1 .and. j > m)
+            j= j-m
+            m= m/2
+          end do
+          j= j+m
+        end do
+        l= 1
+        do while (l < lx)
+          istep= 2*l
+          do m= 1,l
+            carg= cmplx(0.,1.)*(pii*isig*(m-1))/l
+            cw= cexp(carg)
+            do i= m,lx,istep
+              ctemp= cw*cx(i+l)
+              cx(i+l)= cx(i)-ctemp
+              cx(i)= cx(i)+ctemp
+            end do
+          end do
+          l= istep
+        end do
+        return
+      end subroutine fork
+*/
 }
 
-void Util::fft2D(int n1, int n2, std::complex<double> *cp, int isig)
+void Util::fft2D(int n1, int n2, std::vector< std::complex<double> > &cp, FFTComputationMode isig)
 {
     int i1,i2;
-    std::complex<double> cw[n2+1];
+    std::vector< std::complex<double> > cw( n2 );
 
-    for( i2 = 1; i2 <= n2; ++i2){
-        fft1D(n1, &(cp[1*n2+i2]), isig); //cp[1*n2+i2] is supposed to mean cp[1][i2] (Fortran: cp(1,i2))
+    for( i2 = 0; i2 < n2; ++i2){
+        fft1D(n1, cp, i2*n1, isig); //cp[i2*n1] is supposed to mean cp[0][i2] (Fortran: cp(1,i2))
     }
 
-    for( i1 = 1; i1 <= n1; ++i1){
-        for( i2 = 1; i2 <= n2; ++i2) {
-            cw[i2] = cp[i1*n2+i2];       //cp[i1*n2+i2] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
+    for( i1 = 0; i1 < n1; ++i1){
+        for( i2 = 0; i2 < n2; ++i2) {
+            cw[i2] = cp[i1+i2*n1];       //cp[i1+i2*n1] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
         }
-        fft1D(n2, cw, isig);
-        for( i2 = 1; i2 <= n2; ++i2){
-            cp[i1*n2+i2] = cw[i2];       //cp[i1*n2+i2] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
+        fft1D(n2, cw, 0, isig);
+        for( i2 = 0; i2 < n2; ++i2){
+            cp[i1+i2*n1] = cw[i2];       //cp[i1+i2*n1] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
         }
     }
+    //////////////////////original code in Fortran//////////////////////
+/*  !----------------------------------------------------------------------
+    ! Computation of 2-D Fast Fourier Transform (FFT)
+    !---------------------------------------------------------------------
+    ! Input and output parameters:
+    !
+    ! N1=   dimension of the data array in x direction (integer)
+    ! N2=   dimension of the data array in y direction (integer)
+    ! CP=   data array (complex, dim=(N1,N2)) with input values in real part
+    ! ISIG= computation flag (int.) = 0 for forward and =1 for inverse FFT
+    !
+    ! Calls external subroutine FORK (for 1D FFT) to do the actual work.
+    !---------------------------------------------------------------------
+    ! M.Pirttijärvi, October, 2003
+
+      subroutine ft2d(n1,n2,cp,isig)
+        implicit none
+        integer :: n1,n2,isig,i1,i2
+        complex :: cp(n1,n2),cw(n2)
+        external fork
+
+        do i2= 1,n2
+          call fork(n1,cp(1,i2),isig)
+        end do
+
+        do i1= 1,n1
+          do i2= 1,n2
+            cw(i2)= cp(i1,i2)
+          end do
+          call fork(n2,cw,isig)
+          do i2= 1,n2
+            cp(i1,i2)= cw(i2)
+          end do
+        end do
+
+        return
+      end subroutine ft2d
+*/
 }
 
 QStringList Util::fastSplit(const QString lineGEOEAS)
