@@ -1298,14 +1298,43 @@ void MainWindow::onFreeLoadedData()
 
 void MainWindow::onFFT2D()
 {
+    //propose a name for the new grid to contain the FFT image
+    QString proposed_name = _right_clicked_attribute->getName() + "_FFT.dat";
+
+    //user enters the name for the new grid with FFT image
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid",
+                                             "Name for the grid with FFT image:", QLineEdit::Normal,
+                                             proposed_name );
+
+    //if the user canceled the input box
+    if ( new_cg_name.isEmpty() ){
+        //abort
+        return;
+    }
+
     //the parent file is surely a CartesianGrid.
     CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
 
+    //get the array containing the data
     std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
+    //run FFT2D
     Util::fft2D( cg->getNX(), cg->getNY(), array, FFTComputationMode::DIRECT );
 
-    Util::createGEOEASGrid( "real", "imag", array, Application::instance()->getProject()->getPath() + "/NUMINEX.DAT" );
+    //make a tmp file path
+    QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+    //crate a new cartesian grid pointing to the tmp path
+    CartesianGrid * new_cg = new CartesianGrid( tmp_file_path );
+
+    //set the geometry info based on the original grid
+    new_cg->setInfoFromOtherCG( cg, false );
+
+    //save the results in the project's tmp directory
+    Util::createGEOEASGrid( "Real part", "Imaginary part", array, tmp_file_path);
+
+    //import the saved file to the project
+    Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
 
     Application::instance()->logInfo("FFT 2D completed.");
 }

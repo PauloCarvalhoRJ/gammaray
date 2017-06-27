@@ -1123,7 +1123,7 @@ void Util::fft1D(int lx, std::vector< std::complex<double> > &cx, int startingEl
     int i, j, l, m, istep;
     std::complex<double> carg, /*cexp,*/ cw, ctemp;
     double pii, sc;
-    pii = 4.*std::atan(1.);
+    pii = 4.*std::atan(1.); //c++ has pi defined as constant
 
     int iisig;
     switch( isig ){
