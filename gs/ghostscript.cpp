@@ -59,7 +59,7 @@ void Ghostscript::makePNG(const QString input_ps_file_path, const QString output
             append( input_ps_file_path ).append("\"");
 
     cmd.start( command );
-    if(! cmd.waitForFinished() )
+    if(! cmd.waitForFinished(-1) )
         throw ExternalProgramException( cmd.error() );
 
 }
