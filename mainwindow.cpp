@@ -450,7 +450,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
-                _projectContextMenu->addAction("FFT 2D (kx-ky space transform)", this, SLOT(onFFT2D()));
+                _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1296,7 +1296,7 @@ void MainWindow::onFreeLoadedData()
     Application::instance()->getProject()->freeLoadedData();
 }
 
-void MainWindow::onFFT2D()
+void MainWindow::onFFT()
 {
     //propose a name for the new grid to contain the FFT image
     QString proposed_name = _right_clicked_attribute->getName() + "_FFT.dat";
@@ -1318,8 +1318,12 @@ void MainWindow::onFFT2D()
     //get the array containing the data
     std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
-    //run FFT2D
-    Util::fft2D( cg->getNX(), cg->getNY(), array, FFTComputationMode::DIRECT );
+    //run FFT
+    Util::fft3D( cg->getNX(),
+                 cg->getNY(),
+                 cg->getNZ(),
+                 array,
+                 FFTComputationMode::DIRECT);
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");

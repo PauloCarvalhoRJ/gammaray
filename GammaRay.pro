@@ -364,7 +364,8 @@ LIBS        += -lvtkGUISupportQt$$VTK_VERSION_SUFFIX \
                -lvtkImagingSources$$VTK_VERSION_SUFFIX \
                -lvtkImagingCore$$VTK_VERSION_SUFFIX \
                -lvtkFiltersCore$$VTK_VERSION_SUFFIX \
-               -lvtkFiltersExtraction$$VTK_VERSION_SUFFIX
+               -lvtkFiltersExtraction$$VTK_VERSION_SUFFIX \
+               -lvtkImagingFourier$$VTK_VERSION_SUFFIX
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to

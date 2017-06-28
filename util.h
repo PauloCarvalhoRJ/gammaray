@@ -373,6 +373,16 @@ public:
      */
     static QStringList fastSplit( const QString lineGEOEAS );
 
+    /** Computes 3D FFT (forward or reverse) for an array of values.  The result will be stored in the input array.
+     *  @note The array elements are OVERWRITTEN during computation.
+     *  @note The array should be created by making a[nI*nJ*nK] and not a[nI][nJ][nK] to preserve memory locality (maximize cache hits)
+     *  @param nI Number of elements in X/I direction.
+     *  @param nJ Number of elements in Y/J direction.
+     *  @param nJ Number of elements in Y/J direction.
+     *  @param values Input/output array of values (complex numbers).
+     *  @param isig 0 or 1 to transform or back-transform respectively.
+     */
+    static void fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig );
 };
 
 #endif // UTIL_H

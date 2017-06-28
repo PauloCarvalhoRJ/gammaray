@@ -31,6 +31,9 @@
 #include <QInputDialog>
 #include <QSettings>
 #include <cmath>
+#include <vtkSmartPointer.h>
+#include <vtkImageData.h>
+#include <vtkImageFFT.h>
 
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
 
@@ -1396,4 +1399,48 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     }
 
     return result;
+}
+
+void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig)
+{
+    //create a vtk image from the value array
+    vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
+    image->SetDimensions( nI, nJ, nK );
+    image->AllocateScalars( VTK_DOUBLE, 2 ); // two components: real and imaginary parts.
+    for(unsigned int k = 0; k < (unsigned int)nK; ++k) {
+        for(unsigned int j = 0; j < (unsigned int)nJ; ++j){
+            for(unsigned int i = 0; i < (unsigned int)nI; ++i){
+                std::complex<double> value = values[i + j*nI + k*nJ*nI];
+                double* cell = static_cast<double*>(image->GetScalarPointer(i,j,k));
+                cell[0] = value.real();
+                cell[1] = value.imag();
+            }
+        }
+    }
+    image->Modified();
+
+    // Compute the FFT of the image
+    vtkSmartPointer<vtkImageFFT> fftFilter = vtkSmartPointer<vtkImageFFT>::New();
+    //fftFilter->SetInputConnection( image->GetData() );
+    fftFilter->SetInputData( image );
+    fftFilter->Update();
+
+    //get the image in frequency domain
+    ////// index_shift = ( index + nINDEX/2) % nINDEX)
+    ////// shifts the lower frequencies components to the center of the image for ease of interpretation/////
+    vtkSmartPointer<vtkImageData> imageFFT = fftFilter->GetOutput();
+    for(unsigned int k = 0; k < (unsigned int)nK; ++k) {
+        int k_shift = (k + nK/2) % nK;
+        for(unsigned int j = 0; j < (unsigned int)nJ; ++j){
+            int j_shift = (j + nJ/2) % nJ;
+            for(unsigned int i = 0; i < (unsigned int)nI; ++i){
+                int i_shift = (i + nI/2) % nI;
+                std::complex<double> value;
+                double* cell = static_cast<double*>(imageFFT->GetScalarPointer(i,j,k));
+                value.real( cell[0] );
+                value.imag( cell[1] );
+                values[i_shift + j_shift*nI + k_shift*nJ*nI] = value;
+            }
+        }
+    }
 }
