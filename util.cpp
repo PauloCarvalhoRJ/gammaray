@@ -1125,9 +1125,9 @@ void Util::fft1D(int lx, std::vector< std::complex<double> > &cx, int startingEl
     double pii, sc;
     pii = 4.*std::atan(1.); //c++ has pi defined as constant
 
-    int iisig;
+    int iisig = 0;
     switch( isig ){
-        case FFTComputationMode::DIRECT: iisig = 0;
+        case FFTComputationMode::DIRECT: iisig = 0; break;
         case FFTComputationMode::REVERSE: iisig = 1;
     }
 
@@ -1234,6 +1234,77 @@ void Util::fft1D(int lx, std::vector< std::complex<double> > &cx, int startingEl
 */
 }
 
+void Util::fft1DPPP(int dir, long m, std::vector<std::complex<double> > &x, long startingElement)
+{
+    long i, i1, i2,j, k, l, l1, l2, n;
+    std::complex <double> t1, u, c;
+
+    /*Calculate the number of points */
+    n = 1;
+    for(i = 0; i < m; i++)
+        n <<= 1;
+
+    /* Do the bit reversal */
+    i2 = n >> 1;
+    j = 0;
+
+    for (i = 0; i < n-1 ; i++)
+    {
+        if (i < j)
+            std::swap(x[i+startingElement],
+                      x[j+startingElement]);
+
+        k = i2;
+
+        while (k <= j)
+        {
+            j -= k;
+            k >>= 1;
+        }
+
+        j += k;
+    }
+
+    /* Compute the FFT */
+    c.real(-1.0);
+    c.imag(0.0);
+    l2 = 1;
+    for (l = 0; l < m; l++)
+    {
+        l1 = l2;
+        l2 <<= 1;
+        u.real(1.0);
+        u.imag(0.0);
+
+        for (j = 0; j < l1; j++)
+        {
+            for (i = j; i < n; i += l2)
+            {
+                i1 = i + l1;
+                t1 = u * x[i1+startingElement];
+                x[i1+startingElement] = x[i+startingElement] - t1;
+                x[i+startingElement] += t1;
+            }
+
+            u = u * c;
+        }
+
+        c.imag(std::sqrt((1.0 - c.real()) / 2.0));
+        if (dir == 1)
+            c.imag(-c.imag());
+        c.real(std::sqrt((1.0 + c.real()) / 2.0));
+    }
+
+    /* Scaling for forward transform */
+    if (dir == 1)
+    {
+        for (i = 0; i < n; i++)
+            x[i+startingElement] /= n;
+    }
+    return;
+}
+
+
 void Util::fft2D(int n1, int n2, std::vector< std::complex<double> > &cp, FFTComputationMode isig)
 {
     int i1,i2;
@@ -1241,6 +1312,7 @@ void Util::fft2D(int n1, int n2, std::vector< std::complex<double> > &cp, FFTCom
 
     for( i2 = 0; i2 < n2; ++i2){
         fft1D(n1, cp, i2*n1, isig); //cp[i2*n1] is supposed to mean cp[0][i2] (Fortran: cp(1,i2))
+        //fft1DPPP( 1, (long)std::log2(n2), cp, i2*n1);
     }
 
     for( i1 = 0; i1 < n1; ++i1){
@@ -1248,6 +1320,7 @@ void Util::fft2D(int n1, int n2, std::vector< std::complex<double> > &cp, FFTCom
             cw[i2] = cp[i1+i2*n1];       //cp[i1+i2*n1] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
         }
         fft1D(n2, cw, 0, isig);
+        //fft1DPPP( 1, (long)std::log2(n2), cw, 0);
         for( i2 = 0; i2 < n2; ++i2){
             cp[i1+i2*n1] = cw[i2];       //cp[i1+i2*n1] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
         }

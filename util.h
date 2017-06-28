@@ -333,12 +333,29 @@ public:
     /** Computes FFT (forward or reverse) for a vector of values.  The result will be stored in the input array.
      *  This is a C++ port from the original Fortran implementation by Jon Claerbout (1985).
      *  @note The array elements are OVERWRITTEN during computation.
+     *  @note This is a WIP.  Not currently working accurately, probably by something misinterpreted from the
+     *        Fortran code.  Help with this will be much appreciated.  Original Fortran code is in the .cpp.
+     *        function body as a series of comments.
      *  @param lx Number of elements in values array.
      *  @param cx Input/output vector of values (complex numbers).
      *  @param startingElement Position in cx considered as 1st element (pass zero if the array is unidimensional).
      *  @param isig 0 or 1 to transform or back-transform respectively.
      */
     static void fft1D(int lx, std::vector<std::complex<double> > &cx, int startingElement, FFTComputationMode isig );
+
+    /**
+     *  Slight modification to use the more portable STL's complex type and be called from an FFT 2D routine
+     *  from the modification of Paul Bourkes FFT code by Peter Cusack
+     *  to utilise the Microsoft complex type.
+     *
+     *  This computes an in-place complex-to-complex FFT
+     *  dir =  1 gives forward transform
+     *  dir = -1 gives reverse transform
+     *
+     *  @param m log2(number of cells). Number of cells should be 4, 16, 64, etc...
+     *  @note WIP: This function is not compatible with fft2D().
+     */
+    static void fft1DPPP(int dir, long m, std::vector< std::complex <double> > &x, long startingElement);
 
     /** Computes 2D FFT (forward or reverse) for an array of values.  The result will be stored in the input array.
      *  This is a C++ port from the original Fortran implementation by M.Pirttijärvi (2003).
