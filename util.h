@@ -3,6 +3,8 @@
 #include <QStringList>
 #include <QString>
 #include <QList>
+#include <complex>
+#include "array3d.h"
 
 //macro used to do printf on QString for debugging purposes
 //it is safe to delete this.
@@ -23,6 +25,18 @@ enum class DisplayResolution : uint {
     HIGH_DPI        /*!< For the so-called 4k displays, unless exceptionally large screens. */
 };
 
+/*! FFT computation mode for fft1d() and fft2d(). */
+enum class FFTComputationMode : int {
+    DIRECT = 0, /*!< Functions fft1d() and fft2d() takes an input in real space and result is in frequency space. */
+    REVERSE     /*!< Functions fft1d() and fft2d() takes an input in frequency space and result is in real space. */
+};
+
+/*! Computation direction for fft1d() when taking a 3D array. */
+enum class FFT1DDirection : int {
+    DIR_I = 0, /*!< Computes along I (inlines). */
+    DIR_J,     /*!< Computes along J (crosslines). */
+    DIR_K      /*!< Computes along K (traces). */
+};
 
 /**
  * @brief The Util class organizes system-wide utilitary functions.
@@ -155,6 +169,19 @@ public:
      * that results in a checkerboard battern in the plots.
      */
     static void createGEOEAScheckerboardGrid( CartesianGrid* cg, QString path );
+
+    /**
+     * Creates a GEO-EAS regular grid file using the given grid specs and the values
+     * passed in the unidimensional vector of complex values.
+     * If you omit a name for a field/column, the corresponding values will not be
+     * written to the file.  If you omit (empty string) both names, no file will be generated.
+     * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
+     * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
+     */
+    static void createGEOEASGrid( const QString columnNameForRealPart,
+                                  const QString columnNameForImaginaryPart,
+                                  std::vector< std::complex<double> > &array,
+                                  QString path );
 
     /**
      * Runs the GSLib program pixelplt and opens the plot dialog to view a
@@ -303,10 +330,59 @@ public:
     /** Saves the given list of strings as lines in the given text file. */
     static void saveText( const QString filePath, const QStringList lines);
 
+    /** Computes FFT (forward or reverse) for a vector of values.  The result will be stored in the input array.
+     *  This is a C++ port from the original Fortran implementation by Jon Claerbout (1985).
+     *  @note The array elements are OVERWRITTEN during computation.
+     *  @note This is a WIP.  Not currently working accurately, probably by something misinterpreted from the
+     *        Fortran code.  Help with this will be much appreciated.  Original Fortran code is in the .cpp.
+     *        function body as a series of comments.
+     *  @param lx Number of elements in values array.
+     *  @param cx Input/output vector of values (complex numbers).
+     *  @param startingElement Position in cx considered as 1st element (pass zero if the array is unidimensional).
+     *  @param isig 0 or 1 to transform or back-transform respectively.
+     */
+    static void fft1D(int lx, std::vector<std::complex<double> > &cx, int startingElement, FFTComputationMode isig );
+
+    /**
+     *  Slight modification to use the more portable STL's complex type and be called from an FFT 2D routine
+     *  from the modification of Paul Bourkes FFT code by Peter Cusack
+     *  to utilise the Microsoft complex type.
+     *
+     *  This computes an in-place complex-to-complex FFT
+     *  dir =  1 gives forward transform
+     *  dir = -1 gives reverse transform
+     *
+     *  @param m log2(number of cells). Number of cells should be 4, 16, 64, etc...
+     *  @note WIP: This function is not compatible with fft2D().
+     */
+    static void fft1DPPP(int dir, long m, std::vector< std::complex <double> > &x, long startingElement);
+
+    /** Computes 2D FFT (forward or reverse) for an array of values.  The result will be stored in the input array.
+     *  This is a C++ port from the original Fortran implementation by M.Pirttijärvi (2003).
+     *  @note The array elements are OVERWRITTEN during computation.
+     *  @note The array should be created by making a[nI*nJ*nK] and not a[nI][nJ][nK] to preserve memory locality (maximize cache hits)
+     *  @param n1 Number of elements in X/I direction.
+     *  @param n2 Number of elements in Y/J direction.
+     *  @param cx Input/output array of values (complex numbers).
+     *  @param isig 0 or 1 to transform or back-transform respectively.
+     */
+    static void fft2D(int n1, int n2, std::vector<std::complex<double> > &cp, FFTComputationMode isig );
+    
     /** Split function specialized to tokenize data lines of GEO-EAS files.
      *  @note This is not a generic tokenizer, so do not use for other applications.
      */
     static QStringList fastSplit( const QString lineGEOEAS );
+
+    /** Computes 3D FFT (forward or reverse) for an array of values.  The result will be stored in the input array.
+     *  @note The array elements are OVERWRITTEN during computation.
+     *  @note The array should be created by making a[nI*nJ*nK] and not a[nI][nJ][nK] to preserve memory locality (maximize cache hits)
+     *  @param nI Number of elements in X/I direction.
+     *  @param nJ Number of elements in Y/J direction.
+     *  @param nJ Number of elements in Y/J direction.
+     *  @param values Input/output array of values (complex numbers).
+     *  @param isig 0 or 1 to transform or back-transform respectively.
+     */
+    static void fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig );
 };
 
 #endif // UTIL_H

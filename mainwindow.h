@@ -143,6 +143,7 @@ private slots:
     void onMapAs();
     void onSoftIndicatorCalib();
     void onFreeLoadedData();
+    void onFFT();
 
 private:
     /**

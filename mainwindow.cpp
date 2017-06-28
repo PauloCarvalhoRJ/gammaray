@@ -137,7 +137,7 @@ MainWindow::MainWindow(QWidget *parent) :
     setAcceptDrops( true );
 
     //show the 3D view widget
-    ui->frmContent->layout()->addWidget( new View3DWidget() );
+    ui->frmContent->layout()->addWidget( new View3DWidget( this ) );
 }
 
 MainWindow::~MainWindow()
@@ -448,6 +448,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
                 _projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
+            }
+            if( parent_file->getFileType() == "CARTESIANGRID"  ){
+                _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1291,6 +1294,53 @@ void MainWindow::onSoftIndicatorCalib()
 void MainWindow::onFreeLoadedData()
 {
     Application::instance()->getProject()->freeLoadedData();
+}
+
+void MainWindow::onFFT()
+{
+    //propose a name for the new grid to contain the FFT image
+    QString proposed_name = _right_clicked_attribute->getName() + "_FFT.dat";
+
+    //user enters the name for the new grid with FFT image
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid",
+                                             "Name for the grid with FFT image:", QLineEdit::Normal,
+                                             proposed_name );
+
+    //if the user canceled the input box
+    if ( new_cg_name.isEmpty() ){
+        //abort
+        return;
+    }
+
+    //the parent file is surely a CartesianGrid.
+    CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
+
+    //get the array containing the data
+    std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+
+    //run FFT
+    Util::fft3D( cg->getNX(),
+                 cg->getNY(),
+                 cg->getNZ(),
+                 array,
+                 FFTComputationMode::DIRECT);
+
+    //make a tmp file path
+    QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+    //crate a new cartesian grid pointing to the tmp path
+    CartesianGrid * new_cg = new CartesianGrid( tmp_file_path );
+
+    //set the geometry info based on the original grid
+    new_cg->setInfoFromOtherCG( cg, false );
+
+    //save the results in the project's tmp directory
+    Util::createGEOEASGrid( "Real part", "Imaginary part", array, tmp_file_path);
+
+    //import the saved file to the project
+    Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
+
+    Application::instance()->logInfo("FFT 2D completed.");
 }
 
 void MainWindow::onCreateCategoryDefinition()

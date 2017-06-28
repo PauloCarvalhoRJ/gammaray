@@ -31,6 +31,9 @@
 #include <QInputDialog>
 #include <QSettings>
 #include <cmath>
+#include <vtkSmartPointer.h>
+#include <vtkImageData.h>
+#include <vtkImageFFT.h>
 
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
 
@@ -422,6 +425,49 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
             if( isNYeven )
                 ++count;
         }
+
+    //close file
+    file.close();
+}
+
+void Util::createGEOEASGrid(const QString columnNameForRealPart,
+                            const QString columnNameForImaginaryPart,
+                            std::vector<std::complex<double> > &array, QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //determine the number of columns
+    int nColumns = 0;
+    if( ! columnNameForRealPart.isEmpty() )
+        nColumns++;
+    if( ! columnNameForImaginaryPart.isEmpty() )
+        nColumns++;
+    if( nColumns == 0)
+        return;
+
+    //write out the GEO-EAS grid geader
+    out << "Grid file\n";
+    out << nColumns << '\n';
+    if( ! columnNameForRealPart.isEmpty() )
+        out << columnNameForRealPart << '\n';
+    if( ! columnNameForImaginaryPart.isEmpty() )
+        out << columnNameForImaginaryPart << '\n';
+
+    //loop to output the values
+    std::vector< std::complex<double> >::iterator it = array.begin();
+    for( ; it != array.end(); ++it ){
+        if( ! columnNameForRealPart.isEmpty() ){
+            out << (*it).real() ;
+            if( ! columnNameForImaginaryPart.isEmpty() )
+                out << '\t';
+        }
+        if( ! columnNameForImaginaryPart.isEmpty() )
+            out << (*it).imag() ;
+        out << '\n';
+    }
 
     //close file
     file.close();
@@ -853,7 +899,8 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
+                        "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -1075,6 +1122,253 @@ void Util::saveText(const QString filePath, const QStringList lines)
     outputFile.close();
 }
 
+void Util::fft1D(int lx, std::vector< std::complex<double> > &cx, int startingElement, FFTComputationMode isig )
+{
+    int i, j, l, m, istep;
+    std::complex<double> carg, /*cexp,*/ cw, ctemp;
+    double pii, sc;
+    pii = 4.*std::atan(1.); //c++ has pi defined as constant
+
+    int iisig = 0;
+    switch( isig ){
+        case FFTComputationMode::DIRECT: iisig = 0; break;
+        case FFTComputationMode::REVERSE: iisig = 1;
+    }
+
+    j = 1;
+    sc = std::sqrt(1./lx);
+    for( i = 1; i <= lx; ++i){
+        if(i <= j){
+            int pi = startingElement + i;
+            int pj = startingElement + j;
+            ctemp = cx[pj-1]*sc;
+            cx[pj-1] = cx[pi-1]*sc;
+            cx[pi-1] = ctemp;
+        }
+        m = lx/2;
+        while (m >= 1 && j > m){
+            j = j-m;
+            m = m/2;
+        }
+        j = j + m;
+    }
+
+    l = 1;
+
+    std::complex<double> im(0, 1); //Fortran's cmplx(0.,1.) == i
+
+    while ( l < lx ){
+        istep = 2*l;
+        for( m = 1; m <= l; ++m ){
+            carg = im *(pii*iisig*(m-1))/(double)(l);
+            cw = std::exp(carg);
+            for( i = m; i+l < lx; i = i + istep ){
+                int pi = startingElement + i;
+                if( pi+l-1 < 0 || pi+l-1 >= (int)cx.size() || pi-1 < 0 || pi-1 >= (int)cx.size()){
+                    Application::instance()->logError("Util::fft1D: Index out of bounds.  Computation not done.");
+                    continue;
+                }
+                ctemp = (cw*cx[pi+l-1]);
+                cx[pi+l-1] = (cx[pi-1]-ctemp);
+                cx[pi-1] = (cx[pi-1]+ctemp);
+            }
+        }
+        l = istep;
+    }
+
+    /////////////////original code in Fortran/////////////////////////////
+ /* !----------------------------------------------------------------------
+    ! 1-D Fast Fourier Transform (FFT) by Jon Claerbout (1985)
+    !----------------------------------------------------------------------
+    ! Input and output parameters:
+    !
+    !   LX=   dimension of the data array (integer)
+    !   CX=   data array (complex, dim=LX) with input values in real part
+    !   ISIG= integer flag = 0 for forward FFT and = 1 for inverse FFT
+    !
+    ! Note that this soubroutine deletes the original data in the CX array
+    ! and after this subroutine the data array needs to be swapped around
+    ! the origin (see Press et al. Numerical recipes, for example).
+    !
+    ! Original reference: Claerbout, J., 1976. Fundamentals of geophysical
+    ! data processing. With applications to petroleum prospecting: McGraw-
+    ! Hill Book Co.
+    !----------------------------------------------------------------------
+    ! Markku Pirttijärvi, 2003
+
+      subroutine fork(lx,cx,isig)
+
+        implicit none
+        integer :: lx,isig,i,j,l,m,istep
+        complex :: cx(lx),carg,cexp,cw,ctemp
+        real :: pii,sc
+        pii= 4.*atan(1.)
+
+        j= 1
+        sc= sqrt(1./lx)
+        do i= 1,lx
+          if(i <= j) then
+            ctemp= cx(j)*sc
+            cx(j)= cx(i)*sc
+            cx(i)= ctemp
+          end if
+          m= lx/2
+          do while (m >= 1 .and. j > m)
+            j= j-m
+            m= m/2
+          end do
+          j= j+m
+        end do
+        l= 1
+        do while (l < lx)
+          istep= 2*l
+          do m= 1,l
+            carg= cmplx(0.,1.)*(pii*isig*(m-1))/l
+            cw= cexp(carg)
+            do i= m,lx,istep
+              ctemp= cw*cx(i+l)
+              cx(i+l)= cx(i)-ctemp
+              cx(i)= cx(i)+ctemp
+            end do
+          end do
+          l= istep
+        end do
+        return
+      end subroutine fork
+*/
+}
+
+void Util::fft1DPPP(int dir, long m, std::vector<std::complex<double> > &x, long startingElement)
+{
+    long i, i1, i2,j, k, l, l1, l2, n;
+    std::complex <double> t1, u, c;
+
+    /*Calculate the number of points */
+    n = 1;
+    for(i = 0; i < m; i++)
+        n <<= 1;
+
+    /* Do the bit reversal */
+    i2 = n >> 1;
+    j = 0;
+
+    for (i = 0; i < n-1 ; i++)
+    {
+        if (i < j)
+            std::swap(x[i+startingElement],
+                      x[j+startingElement]);
+
+        k = i2;
+
+        while (k <= j)
+        {
+            j -= k;
+            k >>= 1;
+        }
+
+        j += k;
+    }
+
+    /* Compute the FFT */
+    c.real(-1.0);
+    c.imag(0.0);
+    l2 = 1;
+    for (l = 0; l < m; l++)
+    {
+        l1 = l2;
+        l2 <<= 1;
+        u.real(1.0);
+        u.imag(0.0);
+
+        for (j = 0; j < l1; j++)
+        {
+            for (i = j; i < n; i += l2)
+            {
+                i1 = i + l1;
+                t1 = u * x[i1+startingElement];
+                x[i1+startingElement] = x[i+startingElement] - t1;
+                x[i+startingElement] += t1;
+            }
+
+            u = u * c;
+        }
+
+        c.imag(std::sqrt((1.0 - c.real()) / 2.0));
+        if (dir == 1)
+            c.imag(-c.imag());
+        c.real(std::sqrt((1.0 + c.real()) / 2.0));
+    }
+
+    /* Scaling for forward transform */
+    if (dir == 1)
+    {
+        for (i = 0; i < n; i++)
+            x[i+startingElement] /= n;
+    }
+    return;
+}
+
+
+void Util::fft2D(int n1, int n2, std::vector< std::complex<double> > &cp, FFTComputationMode isig)
+{
+    int i1,i2;
+    std::vector< std::complex<double> > cw( n2 );
+
+    for( i2 = 0; i2 < n2; ++i2){
+        fft1D(n1, cp, i2*n1, isig); //cp[i2*n1] is supposed to mean cp[0][i2] (Fortran: cp(1,i2))
+        //fft1DPPP( 1, (long)std::log2(n2), cp, i2*n1);
+    }
+
+    for( i1 = 0; i1 < n1; ++i1){
+        for( i2 = 0; i2 < n2; ++i2) {
+            cw[i2] = cp[i1+i2*n1];       //cp[i1+i2*n1] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
+        }
+        fft1D(n2, cw, 0, isig);
+        //fft1DPPP( 1, (long)std::log2(n2), cw, 0);
+        for( i2 = 0; i2 < n2; ++i2){
+            cp[i1+i2*n1] = cw[i2];       //cp[i1+i2*n1] is supposed to mean cp[i1][i2] (Fortran: cp(i1,i2))
+        }
+    }
+    //////////////////////original code in Fortran//////////////////////
+/*  !----------------------------------------------------------------------
+    ! Computation of 2-D Fast Fourier Transform (FFT)
+    !---------------------------------------------------------------------
+    ! Input and output parameters:
+    !
+    ! N1=   dimension of the data array in x direction (integer)
+    ! N2=   dimension of the data array in y direction (integer)
+    ! CP=   data array (complex, dim=(N1,N2)) with input values in real part
+    ! ISIG= computation flag (int.) = 0 for forward and =1 for inverse FFT
+    !
+    ! Calls external subroutine FORK (for 1D FFT) to do the actual work.
+    !---------------------------------------------------------------------
+    ! M.Pirttijärvi, October, 2003
+
+      subroutine ft2d(n1,n2,cp,isig)
+        implicit none
+        integer :: n1,n2,isig,i1,i2
+        complex :: cp(n1,n2),cw(n2)
+        external fork
+
+        do i2= 1,n2
+          call fork(n1,cp(1,i2),isig)
+        end do
+
+        do i1= 1,n1
+          do i2= 1,n2
+            cw(i2)= cp(i1,i2)
+          end do
+          call fork(n2,cw,isig)
+          do i2= 1,n2
+            cp(i1,i2)= cw(i2)
+          end do
+        end do
+
+        return
+      end subroutine ft2d
+*/
+}
+
 QStringList Util::fastSplit(const QString lineGEOEAS)
 {
     QStringList result;
@@ -1106,4 +1400,48 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     }
 
     return result;
+}
+
+void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode /*isig*/)
+{
+    //create a vtk image from the value array
+    vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
+    image->SetDimensions( nI, nJ, nK );
+    image->AllocateScalars( VTK_DOUBLE, 2 ); // two components: real and imaginary parts.
+    for(unsigned int k = 0; k < (unsigned int)nK; ++k) {
+        for(unsigned int j = 0; j < (unsigned int)nJ; ++j){
+            for(unsigned int i = 0; i < (unsigned int)nI; ++i){
+                std::complex<double> value = values[i + j*nI + k*nJ*nI];
+                double* cell = static_cast<double*>(image->GetScalarPointer(i,j,k));
+                cell[0] = value.real();
+                cell[1] = value.imag();
+            }
+        }
+    }
+    image->Modified();
+
+    // Compute the FFT of the image
+    vtkSmartPointer<vtkImageFFT> fftFilter = vtkSmartPointer<vtkImageFFT>::New();
+    //fftFilter->SetInputConnection( image->GetData() );
+    fftFilter->SetInputData( image );
+    fftFilter->Update();
+
+    //get the image in frequency domain
+    ////// index_shift = ( index + nINDEX/2) % nINDEX)
+    ////// shifts the lower frequencies components to the center of the image for ease of interpretation/////
+    vtkSmartPointer<vtkImageData> imageFFT = fftFilter->GetOutput();
+    for(unsigned int k = 0; k < (unsigned int)nK; ++k) {
+        int k_shift = (k + nK/2) % nK;
+        for(unsigned int j = 0; j < (unsigned int)nJ; ++j){
+            int j_shift = (j + nJ/2) % nJ;
+            for(unsigned int i = 0; i < (unsigned int)nI; ++i){
+                int i_shift = (i + nI/2) % nI;
+                std::complex<double> value;
+                double* cell = static_cast<double*>(imageFFT->GetScalarPointer(i,j,k));
+                value.real( cell[0] );
+                value.imag( cell[1] );
+                values[i_shift + j_shift*nI + k_shift*nJ*nI] = value;
+            }
+        }
+    }
 }

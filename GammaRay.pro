@@ -142,7 +142,8 @@ SOURCES += main.cpp\
     viewer3d/view3dlistrecord.cpp \
     viewer3d/view3dviewdata.cpp \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.cpp \
-    domain/auxiliary/dataloader.cpp
+    domain/auxiliary/dataloader.cpp \
+    array3d.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -266,7 +267,8 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dlistrecord.h \
     viewer3d/view3dviewdata.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h \
-    domain/auxiliary/dataloader.h
+    domain/auxiliary/dataloader.h \
+    array3d.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -362,12 +364,13 @@ LIBS        += -lvtkGUISupportQt$$VTK_VERSION_SUFFIX \
                -lvtkImagingSources$$VTK_VERSION_SUFFIX \
                -lvtkImagingCore$$VTK_VERSION_SUFFIX \
                -lvtkFiltersCore$$VTK_VERSION_SUFFIX \
-               -lvtkFiltersExtraction$$VTK_VERSION_SUFFIX
+               -lvtkFiltersExtraction$$VTK_VERSION_SUFFIX \
+               -lvtkImagingFourier$$VTK_VERSION_SUFFIX
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 2.1
+VERSION = 2.2
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
