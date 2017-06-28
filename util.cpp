@@ -899,7 +899,8 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
+                        "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -1401,7 +1402,7 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     return result;
 }
 
-void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig)
+void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode /*isig*/)
 {
     //create a vtk image from the value array
     vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
