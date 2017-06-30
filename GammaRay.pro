@@ -145,7 +145,8 @@ SOURCES += main.cpp\
     domain/auxiliary/dataloader.cpp \
     array3d.cpp \
     geostats/geostatsutils.cpp \
-    geostats/matrix3x3.cpp
+    geostats/matrix3x3.cpp \
+    geostats/matrixmxn.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -272,7 +273,8 @@ HEADERS  += mainwindow.h \
     domain/auxiliary/dataloader.h \
     array3d.h \
     geostats/geostatsutils.h \
-    geostats/matrix3x3.h
+    geostats/matrix3x3.h \
+    geostats/matrixmxn.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

@@ -29,7 +29,7 @@ Matrix3X3<double> GeostatsUtils::getAnisoTransform(double aSemiMajor,
                          0.0, aSemiMajor/aSemiMinor,                  0.0,
                          0.0,                   0.0, aSemiMajor/aSemiVert);
     //     <--------- order of transform application
-    //  the final effect is that we transform the world so the anisotropy becomes an isotropy
+    //  the final effect is that we transform the world so the anisotropy becomes isotropy
     return       S * Troll * Tpitch * Tyaw;
 }
 
