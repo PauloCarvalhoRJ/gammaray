@@ -23,17 +23,26 @@ public:
     /** Returns the number of columns. */
     T getM(){ return _m; }
 
-    /** Operator () for l-value element access: e.g.: a(1,2) = 20.0; . */
+    /** Operator () for l-value element access: e.g.: a(1,2) = 20.0; .
+     * Due to performance concern, no range check is performed.
+     */
     T& operator() (unsigned int i, unsigned int j){
       return _values[_n*i + j];
     }
 
-    /** Operator () for r-value element access: e.g.: double x = a(2,3); . */
+    /** Operator () for r-value element access: e.g.: double x = a(2,3); .
+      * Due to performance concern, no range check is performed.
+      */
     T operator() (unsigned i, unsigned j) const {
         return _values[_n*i + j];
     }
 
-    /** Inverts this matrix. */
+    /** Matrix multiplication operator. It is assumed the operands are compatible (this._m == b._n).*/
+    MatrixNXM<T> operator*(const MatrixNXM<T>& b);
+
+    /** Inverts this matrix. It is assumed that the matrix is square, no check in this regard is performed, though
+     * there is a check for singularity (prints a message and aborts calculation.)
+     */
     void invert();
 
 private:
@@ -65,13 +74,12 @@ MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue )
 template <typename T>
 void MatrixNXM<T>::invert(){
     /* This is a Gauss-Jordan method implemented from the code in Numerical Recipes, 3rd edition.
-       It is intended to solve a linear system, but we'll use it to invert this matrix.
-       the unknowns matrix will be this array. */
+       It is intended to solve a linear system, but it was modified just perform invertion.
+    */
     MatrixNXM<T> &a = *this;
     // the independent terms (right-hand side) vector is created with dummy values,
     // since we're not interested in solving a system.
-    //MatrixNXM<T> b( a._n, 1, 0.0 );
-    int i, icol, irow, j, k, l , ll, n = a.getN()/*, m = b.getM()*/;
+    int i, icol, irow, j, k, l , ll, n = a.getN();
     double big, dum, pivinv;
     std::vector<int> indxc(n), indxr(n), ipiv(n); //index bookkeeping vectors
     ipiv.assign(n, 0);
@@ -90,8 +98,8 @@ void MatrixNXM<T>::invert(){
                 }
         ++(ipiv[icol]);
         if (irow != icol) {
-            for (l=0; l<n; ++l) std::swap( a(irow,l), a(icol,l) );
-            //for (l=0; l<m; ++l) std::swap( b(irow,l), b(icol,l) );
+            for (l=0; l<n; ++l)
+                std::swap( a(irow,l), a(icol,l) );
         }
         indxr[i] = irow;
         indxc[i] = icol;
@@ -102,13 +110,12 @@ void MatrixNXM<T>::invert(){
         pivinv = 1.0 / a(icol,icol);
         a(icol, icol) = 1.0;
         for (l=0; l<n; ++l) a(icol,l) *= pivinv;
-        //for (l=0; l<m; ++l) b(icol,l) *= pivinv;
         for (ll=0; ll<n; ++ll)
             if (ll != icol) {
                 dum=a(ll, icol);
                 a(ll, icol) = 0.0;
-                for (l=0;l<n;++l) a(ll, l) -= a(icol, l) * dum;
-                //for (l=0;l<m;++l) b(ll, l) -= b(icol, l) * dum;
+                for (l=0;l<n;++l)
+                    a(ll, l) -= a(icol, l) * dum;
             }
     }
     for (l=n-1; l>=0; --l) {
@@ -116,6 +123,17 @@ void MatrixNXM<T>::invert(){
             for ( k=0; k<n; ++k)
                 std::swap( a(k,indxr[l]), a(k,indxc[l]) );
     }
+}
+
+template <typename T>
+MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
+   MatrixNXM<T> result;
+   MatrixNXM<T>& a = *this;
+   for(int i = 0; i < a._n; ++i)
+       for(int j = 0; j < b._m; ++j)
+           for(int k = 0; k < a._m; ++k)
+               result(i,j) += a(i,k) * b(k,j);
+   return result;
 }
 
 
