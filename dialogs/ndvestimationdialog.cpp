@@ -6,6 +6,7 @@
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
 #include "widgets/variogrammodelselector.h"
+#include "geostats/gridcell.h"
 
 NDVEstimationDialog::NDVEstimationDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -36,6 +37,19 @@ NDVEstimationDialog::~NDVEstimationDialog()
     delete ui;
 }
 
+void NDVEstimationDialog::krige(GridCell cell)
+{
+    //Assumes the partent file of the selected attribut is a Cartesian grid
+    CartesianGrid *cg = (CartesianGrid*)_at->getContainingFile();
+
+    //collects valued neighbors
+    std::vector<GridCell> vCells = cg->getValuedNeighbors( cell,
+                                                           ui->spinNbSamples->value(),
+                                                           ui->spinNCols->value(),
+                                                           ui->spinNRows->value(),
+                                                           ui->spinNSlices->value() );
+}
+
 void NDVEstimationDialog::updateMetricSizeLabels()
 {
     //Assumes the partent file of the selected attribut is a Cartesian grid
@@ -52,5 +66,22 @@ void NDVEstimationDialog::updateMetricSizeLabels()
 
 void NDVEstimationDialog::run()
 {
+    //Assumes the partent file of the selected attribut is a Cartesian grid
+    CartesianGrid *cg = (CartesianGrid*)_at->getContainingFile();
 
+    //gets the Attribute's column in its Cartesian grid's data array (GEO-EAS index - 1)
+    uint atIndex = _at->getAttributeGEOEASgivenIndex() - 1;
+
+    uint nI = cg->getNX();
+    uint nJ = cg->getNY();
+    uint nK = cg->getNZ();
+
+    for( uint k = 0; k <nK; ++k)
+        for( uint j = 0; j <nJ; ++j)
+            for( uint i = 0; i <nI; ++i){
+                double value = cg->dataIJK( atIndex, i, j, k );
+                if( cg->isNDV( value ) ){
+                    krige( GridCell(atIndex, i,j,k) );
+                }
+            }
 }

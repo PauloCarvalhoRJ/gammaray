@@ -4,6 +4,7 @@
 #include "../util.h"
 #include "attribute.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
+#include "geostats/gridcell.h"
 
 CartesianGrid::CartesianGrid( QString path )  : DataFile( path )
 {
@@ -203,6 +204,40 @@ std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPar
             }
 
     return result;
+}
+
+std::vector<GridCell> CartesianGrid::getValuedNeighbors(GridCell &cell,
+                                                        int numberOfSamples,
+                                                        int nColsAround,
+                                                        int nRowsAround,
+                                                        int nSlicesAround)
+{
+    std::vector<GridCell> result( numberOfSamples );
+    int row_limit = getNY();
+    int column_limit = getNX();
+    int slice_limit = getNZ();
+    int i = cell._i;
+    int j = cell._j;
+    int k = cell._k;
+    int shell = 1;
+    for( shell = 1; ; ++shell ){
+        for(int kk = std::max({0, k-shell, k-nSlicesAround/2}); kk <= std::min({k+shell, slice_limit, k-nSlicesAround/2}); ++k){
+            for(int jj = std::max({0, j-shell, j-nColsAround/2}); jj <= std::min({j+shell, column_limit, j+nColsAround/2}); ++jj){
+                for(int ii = std::max({0, i-shell, i-nRowsAround/2}); ii <= std::min({i+shell, row_limit, i+nRowsAround/2}); ++ii){
+                    if(ii != i || jj != j || kk != k ){
+                        double value = dataIJK( cell._dataIndex, ii, jj, kk );
+                        if( ! isNDV( value ) ){
+                            result.push_back( GridCell( cell._dataIndex, ii, jj, kk ) );
+                            if( result.size() == (unsigned)numberOfSamples )
+                                goto completed;
+                        }
+                    }
+                }
+            }
+        }
+    }
+completed:
+    int x = 2;
 }
 
 bool CartesianGrid::canHaveMetaData()

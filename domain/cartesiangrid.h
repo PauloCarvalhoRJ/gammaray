@@ -5,6 +5,7 @@
 #include <complex>
 
 class GSLibParGrid;
+class GridCell;
 
 class CartesianGrid : public DataFile
 {
@@ -72,6 +73,15 @@ public:
      *  @param indexColumRealPart Column index (starting with 0) with the values for the imaginary part.
      */
     std::vector< std::complex<double> > getArray( int indexColumRealPart, int indexColumImaginaryPart = -1 );
+
+    /**
+     *  Returns a vector of valued grid cells, ordered by proximity to the target cell.
+     */
+    std::vector<GridCell> getValuedNeighbors( GridCell& cell,
+                                              int numberOfSamples,
+                                              int nColsAround,
+                                              int nRowsAround,
+                                              int nSlicesAround );
 
     //DataFile interface
 public:

@@ -147,7 +147,8 @@ SOURCES += main.cpp\
     geostats/geostatsutils.cpp \
     geostats/matrix3x3.cpp \
     geostats/matrixmxn.cpp \
-    dialogs/ndvestimationdialog.cpp
+    dialogs/ndvestimationdialog.cpp \
+    geostats/gridcell.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -276,7 +277,8 @@ HEADERS  += mainwindow.h \
     geostats/geostatsutils.h \
     geostats/matrix3x3.h \
     geostats/matrixmxn.h \
-    dialogs/ndvestimationdialog.h
+    dialogs/ndvestimationdialog.h \
+    geostats/gridcell.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
