@@ -144,6 +144,7 @@ private slots:
     void onSoftIndicatorCalib();
     void onFreeLoadedData();
     void onFFT();
+    void onNDVEstimation();
 
 private:
     /**

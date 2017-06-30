@@ -146,7 +146,8 @@ SOURCES += main.cpp\
     array3d.cpp \
     geostats/geostatsutils.cpp \
     geostats/matrix3x3.cpp \
-    geostats/matrixmxn.cpp
+    geostats/matrixmxn.cpp \
+    dialogs/ndvestimationdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -274,7 +275,8 @@ HEADERS  += mainwindow.h \
     array3d.h \
     geostats/geostatsutils.h \
     geostats/matrix3x3.h \
-    geostats/matrixmxn.h
+    geostats/matrixmxn.h \
+    dialogs/ndvestimationdialog.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -328,7 +330,8 @@ FORMS    += mainwindow.ui \
     widgets/pswidget.ui \
     viewer3d/view3dwidget.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.ui \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.ui
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.ui \
+    dialogs/ndvestimationdialog.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
