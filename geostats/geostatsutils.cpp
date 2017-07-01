@@ -1,5 +1,8 @@
 #include "geostatsutils.h"
 
+#include "gridcell.h"
+#include "domain/cartesiangrid.h"
+
 #include <cmath>
 #include <limits>
 
@@ -54,15 +57,105 @@ double GeostatsUtils::getH(double x0, double y0, double z0,
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
-double GeostatsUtils::getGamma(VariogramModel model, double h, double range, double contribution)
+double GeostatsUtils::getGamma(VariogramStructureType permissiveModel, double h, double range, double contribution)
 {
-    switch( model ){
-    case VariogramModel::SPHERICAL:
+    double h_over_a;
+    switch( permissiveModel ){
+    case VariogramStructureType::SPHERIC:
         if( h > range )
             return contribution;
-        double h_over_a = h/range;
+        h_over_a = h/range;
         return contribution * ( 1.5*h_over_a - 0.5*(h_over_a*h_over_a*h_over_a) );
         break;
+    default:
+        Application::instance()->logError("GeostatsUtils::getGamma(): Unsupported structure type.  Assuming spheric.");
+        if( h > range )
+            return contribution;
+        h_over_a = h/range;
+        return contribution * ( 1.5*h_over_a - 0.5*(h_over_a*h_over_a*h_over_a) );
     }
     return std::numeric_limits<double>::quiet_NaN();
+}
+
+double GeostatsUtils::getGamma(VariogramModel *model, double h)
+{
+    double result = model->getNugget();
+    int nst = model->getNst();
+    for( int i = 0; i < nst; ++i){
+        result += GeostatsUtils::getGamma( model->getIt(i),
+                                           h,
+                                           model->get_a_hMax(0),
+                                           model->getCC(0) );
+    }
+    return result;
+}
+
+MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
+                                               VariogramModel *variogramModel)
+{
+    MatrixNXM<double> result( samples.size(), samples.size() );
+
+    std::multiset<GridCell>::iterator rowsIt = samples.begin();
+    std::multiset<GridCell>::iterator colsIt = samples.begin();
+
+    for( int i = 0; rowsIt != samples.end(); ++rowsIt, ++i ){
+        GridCell rowCell = *rowsIt;
+        for( int j = 0; colsIt != samples.end(); ++colsIt, ++j ){
+            GridCell colCell = *colsIt;
+            double h = GeostatsUtils::getH( rowCell._centerX, rowCell._centerY, rowCell._centerZ,
+                                            colCell._centerX, colCell._centerY, colCell._centerZ,
+                                            anisoTransform );
+            double cov = GeostatsUtils::getGamma( variogramModel, h );
+            result(i, j) = cov;
+        }
+    }
+    return result;
+}
+
+std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
+                                                        int numberOfSamples,
+                                                        int nColsAround,
+                                                        int nRowsAround,
+                                                        int nSlicesAround)
+{
+    std::multiset<GridCell> result;
+    CartesianGrid* cg = cell._grid;
+    if( ! cg ){
+        Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null grid.  Returning empty list.");
+        return result;
+    }
+    int row_limit = cg->getNY();
+    int column_limit = cg->getNX();
+    int slice_limit = cg->getNZ();
+    int i = cell._i;
+    int j = cell._j;
+    int k = cell._k;
+    int shell = 1; //shell of neighbors around the target cell (start with 1 cell distant).
+
+    //collect the neighbors starting from those immediately adjacent then outwards
+    for( ; ; ++shell ){ //shell expanding loop
+        for(int kk = std::max({0, k-shell, k-nSlicesAround/2}); kk < std::min({k+shell, slice_limit, k+nSlicesAround/2}); ++k){
+            for(int jj = std::max({0, j-shell, j-nColsAround/2}); jj < std::min({j+shell, column_limit, j+nColsAround/2}); ++jj){
+                for(int ii = std::max({0, i-shell, i-nRowsAround/2}); ii < std::min({i+shell, row_limit, i+nRowsAround/2}); ++ii){
+                    if(ii != i || jj != j || kk != k ){
+                        double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
+                        if( ! cg->isNDV( value ) ){
+                            GridCell currentCell( cg, cell._dataIndex, ii, jj, kk );
+                            currentCell.computeTopoDistance( cell );
+                            result.insert( currentCell );
+                            if( result.size() == (unsigned)numberOfSamples * 2 ) //TODO: * 2 is a heuristic (think of a better way to collect the n-closest samples
+                                goto completed; //abort collect loop if a suficient number of values is reached (no need for traversing all neighbouring cells
+                        }
+                    }
+                }
+            }
+        }
+    }
+completed:  //from goto in the loop above (or if the loops complete)
+
+    //keep only the closest n cells at most
+    while( result.size() > numberOfSamples )
+        result.erase( --result.end() );
+
+    return result;
 }

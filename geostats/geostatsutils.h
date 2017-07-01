@@ -2,11 +2,11 @@
 #define GEOSTATSUTILS_H
 
 #include "matrix3x3.h"
+#include "matrixmxn.h"
+#include "domain/variogrammodel.h"
+#include <set>
 
-/*! Variogram model types. */
-enum class VariogramModel : unsigned int {
-    SPHERICAL = 0 /*!< The spherical model. */
-};
+class GridCell;
 
 /**
  * The GeostatsUtils class contains static functions for geostatistics computations.
@@ -38,14 +38,34 @@ public:
                         Matrix3X3<double> &anisoTransform );
 
     /**
-     * Returns the covariance accoring to the given model.
+     * Returns the covariance for a variogram structure.
      * @param h separation argument (transformed with getH() if there is anisotropy).
      * @param range The a argument (the a value of the semi-major axis if there is anisotropy).
      * @param contribution Variance contribution (e.g. 20.0).
      */
-    static double getGamma( VariogramModel model, double h, double range, double contribution );
+    static double getGamma( VariogramStructureType permissiveModel, double h, double range, double contribution );
 
+    /**
+     * Returns the total covariance for a variogram model, that may contain more than one structure.
+     * Includes the nugget effet contribution, if any.
+     * @param h separation argument (transformed with getH() if there is anisotropy).
+     */
+    static double getGamma( VariogramModel* model, double h );
 
+    /**
+     * Creates a covariance matrix for the given set of samples.
+     */
+    static MatrixNXM<double> makeCovMatrix(std::multiset<GridCell>& samples,
+                                           VariogramModel *variogramModel);
+
+    /**
+     *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
+     */
+    static std::multiset<GridCell> getValuedNeighborsTopoOrdered(GridCell &cell,
+                                                            int numberOfSamples,
+                                                            int nColsAround,
+                                                            int nRowsAround,
+                                                            int nSlicesAround);
 };
 
 #endif // GEOSTATSUTILS_H

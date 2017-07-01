@@ -325,7 +325,7 @@ public:
      *  @param vmVar2 Autovariogram of 2nd variable.
      *  @param crossVariogram Cross variogram between the variables (no lag effect assumed).
      */
-    static bool isLMC( VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel* crossVariogram );
+    static bool isLMC(VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel *crossVariogram );
 
     /** Saves the given list of strings as lines in the given text file. */
     static void saveText( const QString filePath, const QStringList lines);

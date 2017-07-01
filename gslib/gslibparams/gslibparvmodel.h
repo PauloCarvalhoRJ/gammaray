@@ -20,7 +20,7 @@ public:
     void makeDefault();
 
     /** Sets the variogram parameters according to the given VariogramModel object. */
-    void setFromVariogramModel( VariogramModel* vmodel );
+    void setFromVariogramModel(VariogramModel *vmodel );
 
     // GSLibParType interface
 public:

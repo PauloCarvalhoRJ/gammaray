@@ -19,7 +19,7 @@ public:
     ~VariogramModelList();
 
     /** Returns the pointer to the selected variogram model or nullptr if none or more than one was selected. */
-    VariogramModel* getSelectedVModel();
+    VariogramModel *getSelectedVModel();
 
 signals:
     void variogramClicked();

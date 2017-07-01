@@ -21,7 +21,6 @@ public:
 private:
     Ui::NDVEstimationDialog *ui;
     Attribute *_at;
-    void krige( GridCell cell );
 
 private slots:
     void updateMetricSizeLabels();
