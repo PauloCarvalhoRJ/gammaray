@@ -4,38 +4,85 @@
 #include "domain/attribute.h"
 #include "gridcell.h"
 #include "geostatsutils.h"
+#include "ndvestimationrunner.h"
+#include <limits>
+#include <QProgressDialog>
+#include <QtConcurrent/QtConcurrent>
 
 NDVEstimation::NDVEstimation(Attribute *at) :
     _at(at),
     _searchMaxNumSamples(16),
     _searchNumCols(10),
     _searchNumRows(10),
-    _searchNumSlices(1)
+    _searchNumSlices(1),
+    _vmodel( nullptr ),
+    _useDefaultValue( false ),
+    _defaultValue( 0.0 ),
+    _ndv( std::numeric_limits<double>::quiet_NaN() )
 {}
 
 void NDVEstimation::run()
 {
+    if( ! _vmodel ){
+        Application::instance()->logError("NDVEstimation::run(): variogram model not specified. Aborted.");
+        return;
+    } else {
+        _vmodel->readFromFS();
+    }
+
     //Assumes the partent file of the selected attribut is a Cartesian grid
     CartesianGrid *cg = (CartesianGrid*)_at->getContainingFile();
 
-    //gets the Attribute's column in its Cartesian grid's data array (GEO-EAS index - 1)
-    uint atIndex = _at->getAttributeGEOEASgivenIndex() - 1;
+    if( ! cg->hasNoDataValue() ){
+        Application::instance()->logError("NDVEstimation::run(): No-data-value not set for the grid. Aborted.");
+        return;
+    } else {
+        bool ok;
+        _ndv = cg->getNoDataValue().toDouble( &ok );
+        if( ! ok ){
+            Application::instance()->logError("NDVEstimation::run(): No-data-value setting is not a valid number. Aborted.");
+            return;
+        }
+    }
+
+    //loads data previously to prevent clash with the progress dialog of both data
+    //loading and estimation running.
+    cg->loadData();
 
     //get the grid dimensions
     uint nI = cg->getNX();
     uint nJ = cg->getNY();
     uint nK = cg->getNZ();
 
+    Application::instance()->logInfo("NDV Estimation started...");
     //traverse the grid cells to run the estimation
     //on unvalued ones
-    for( uint k = 0; k <nK; ++k)
-        for( uint j = 0; j <nJ; ++j)
-            for( uint i = 0; i <nI; ++i){
-                double value = cg->dataIJK( atIndex, i, j, k );
-                if( cg->isNDV( value ) ){
-                    krige( GridCell(cg, atIndex, i,j,k) );
-                }
-            }
+
+    //estimation takes place in another thread, so we can show and update a progress bar
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Running estimation...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setValue( 0 );
+    progressDialog.setMaximum( nI * nJ * nK );
+    QThread* thread = new QThread();
+    NDVEstimationRunner* runner = new NDVEstimationRunner( this, _at ); // Do not set a parent. The object cannot be moved if it has a parent.
+    runner->moveToThread(thread);
+    runner->connect(thread, SIGNAL(finished()), runner, SLOT(deleteLater()));
+    runner->connect(thread, SIGNAL(started()), runner, SLOT(doRun()));
+    runner->connect(runner, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
+    thread->start();
+    /////////////////////////////////
+
+    //wait for the kriging to finish
+    //not very beautiful, but simple and effective
+    while( ! runner->isFinished() ){
+        thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+    }
+
+    Application::instance()->logInfo("NDV Estimation completed.");
 }
 
 void NDVEstimation::setSearchParameters(int searchMaxNumSamples,
@@ -48,23 +95,64 @@ void NDVEstimation::setSearchParameters(int searchMaxNumSamples,
     _searchNumRows=searchNumRows;
     _searchNumSlices=searchNumSlices;
 }
-
-void NDVEstimation::krige(GridCell cell)
+int NDVEstimation::searchMaxNumSamples() const
 {
-    //Assumes the partent file of the selected attribut is a Cartesian grid
-    CartesianGrid *cg = (CartesianGrid*)_at->getContainingFile();
-
-    //collects valued n-neighbors ordered by their topological distance with respect
-    //to the target cell
-    std::multiset<GridCell> vCells = GeostatsUtils::getValuedNeighborsTopoOrdered( cell,
-                                                           _searchMaxNumSamples,
-                                                           _searchNumCols,
-                                                           _searchNumRows,
-                                                           _searchNumSlices );
-
-    //get the covariance matrix for the neighbors cell.
-    //TODO: imprve performance by saving the covariances in a covariance table/cache, since
-    //      the covariances from the variogram model are function of sample separation, not their values.
-    //      This would take de advantage of the regular grid geometry
-    GeostatsUtils::makeCovMatrix( vCells, anisoTransform, variogramModel);
+    return _searchMaxNumSamples;
 }
+
+void NDVEstimation::setSearchMaxNumSamples(int searchMaxNumSamples)
+{
+    _searchMaxNumSamples = searchMaxNumSamples;
+}
+int NDVEstimation::searchNumCols() const
+{
+    return _searchNumCols;
+}
+
+void NDVEstimation::setSearchNumCols(int searchNumCols)
+{
+    _searchNumCols = searchNumCols;
+}
+int NDVEstimation::searchNumRows() const
+{
+    return _searchNumRows;
+}
+
+void NDVEstimation::setSearchNumRows(int searchNumRows)
+{
+    _searchNumRows = searchNumRows;
+}
+int NDVEstimation::searchNumSlices() const
+{
+    return _searchNumSlices;
+}
+
+void NDVEstimation::setSearchNumSlices(int searchNumSlices)
+{
+    _searchNumSlices = searchNumSlices;
+}
+double NDVEstimation::ndv() const
+{
+    return _ndv;
+}
+
+void NDVEstimation::setNdv(double ndv)
+{
+    _ndv = ndv;
+}
+VariogramModel *NDVEstimation::vmodel() const
+{
+    return _vmodel;
+}
+
+void NDVEstimation::setVmodel(VariogramModel *vmodel)
+{
+    _vmodel = vmodel;
+}
+
+
+
+
+
+
+

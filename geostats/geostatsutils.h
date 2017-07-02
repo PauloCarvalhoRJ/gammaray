@@ -7,9 +7,10 @@
 #include <set>
 
 class GridCell;
+class SpatialLocation;
 
 /**
- * The GeostatsUtils class contains static functions for geostatistics computations.
+ * The GeostatsUtils class contains static utilitary functions common to geostatistics algorithms.
  */
 class GeostatsUtils
 {
@@ -46,11 +47,10 @@ public:
     static double getGamma( VariogramStructureType permissiveModel, double h, double range, double contribution );
 
     /**
-     * Returns the total covariance for a variogram model, that may contain more than one structure.
+     * Returns the total covariance according to a variogram model between two locations.
      * Includes the nugget effet contribution, if any.
-     * @param h separation argument (transformed with getH() if there is anisotropy).
      */
-    static double getGamma( VariogramModel* model, double h );
+    static double getGamma(VariogramModel* model, SpatialLocation &locA, SpatialLocation &locB );
 
     /**
      * Creates a covariance matrix for the given set of samples.

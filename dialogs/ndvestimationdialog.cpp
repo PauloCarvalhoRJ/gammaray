@@ -12,7 +12,8 @@
 NDVEstimationDialog::NDVEstimationDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::NDVEstimationDialog),
-    _at(at)
+    _at(at),
+    _vmSelector(new VariogramModelSelector())
 {
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
@@ -27,7 +28,7 @@ NDVEstimationDialog::NDVEstimationDialog(Attribute *at, QWidget *parent) :
     ui->lblVariableName->setText( "<html><head/><body><p><span style=\" font-weight:600; color:#0000ff;\">" +
                               at->getName() + "</span></p></body></html>" );
 
-    ui->frmVariogramPlaceholder->layout()->addWidget( new VariogramModelSelector() );
+    ui->frmVariogramPlaceholder->layout()->addWidget( _vmSelector );
 
     updateMetricSizeLabels();
 }
@@ -60,5 +61,8 @@ void NDVEstimationDialog::run()
                                      ui->spinNCols->value(),
                                      ui->spinNRows->value(),
                                      ui->spinNSlices->value());
+    estimation->setVariogramModel( _vmSelector->getSelectedVModel() );
+    estimation->setUseDefaultValue( ui->chkUseSKMeanAsDefault->isChecked() );
+    estimation->setDefaultValue( ui->txtMeanForSK->text().toDouble() );
     estimation->run();
 }

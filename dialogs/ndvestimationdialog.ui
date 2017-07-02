@@ -136,6 +136,9 @@
      </item>
      <item row="4" column="2" colspan="2">
       <widget class="QComboBox" name="cmbKType">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <item>
         <property name="text">
          <string>SK</string>
@@ -158,12 +161,12 @@
      <item row="5" column="6" colspan="5">
       <widget class="QCheckBox" name="chkUseSKMeanAsDefault">
        <property name="text">
-        <string>use as default (SK or OK)</string>
+        <string>use as default value (SK or OK)</string>
        </property>
       </widget>
      </item>
      <item row="5" column="2" colspan="4">
-      <widget class="QLineEdit" name="lineEdit">
+      <widget class="QLineEdit" name="txtMeanForSK">
        <property name="text">
         <string>0.00</string>
        </property>

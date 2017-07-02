@@ -5,6 +5,7 @@
 
 class Attribute;
 class GridCell;
+class VariogramModelSelector;
 
 namespace Ui {
 class NDVEstimationDialog;
@@ -21,6 +22,7 @@ public:
 private:
     Ui::NDVEstimationDialog *ui;
     Attribute *_at;
+    VariogramModelSelector *_vmSelector;
 
 private slots:
     void updateMetricSizeLabels();

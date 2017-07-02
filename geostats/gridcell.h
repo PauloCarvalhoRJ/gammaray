@@ -1,6 +1,8 @@
 #ifndef GRIDCELL_H
 #define GRIDCELL_H
 
+#include "geostats/spatiallocation.h"
+
 class CartesianGrid;
 
 /** Data structure containing information of a grid cell. */
@@ -36,7 +38,7 @@ public:
     int _i, _j, _k;
 
     /** Spatial coordinates of the cell center. */
-    double _centerX, _centerY, _centerZ;
+    SpatialLocation _center;
 
     /** Data index in multi-valued cells. */
     int _dataIndex;

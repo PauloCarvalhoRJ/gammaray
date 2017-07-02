@@ -2,6 +2,7 @@
 
 #include "gridcell.h"
 #include "domain/cartesiangrid.h"
+#include "spatiallocation.h"
 
 #include <cmath>
 #include <limits>
@@ -77,15 +78,23 @@ double GeostatsUtils::getGamma(VariogramStructureType permissiveModel, double h,
     return std::numeric_limits<double>::quiet_NaN();
 }
 
-double GeostatsUtils::getGamma(VariogramModel *model, double h)
+double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, SpatialLocation &locB)
 {
     double result = model->getNugget();
     int nst = model->getNst();
     for( int i = 0; i < nst; ++i){
-        result += GeostatsUtils::getGamma( model->getIt(i),
-                                           h,
-                                           model->get_a_hMax(0),
-                                           model->getCC(0) );
+        //TODO: improve performance by saving the aniso transforms in a cache, assuming the anisotropy
+        //      is the same in all locations.
+        Matrix3X3<double> anisoTransform = GeostatsUtils::getAnisoTransform(
+                    model->get_a_hMax(i), model->get_a_hMin(i), model->get_a_vert(i),
+                    model->getAzimuth(i), model->getDip(i), model->getRoll(i));
+//        double h = GeostatsUtils::getH( locA._x, locA._y, locA._z,
+//                                        locB._x, locB._y, locB._z,
+//                                        anisoTransform );
+//        result += GeostatsUtils::getGamma( model->getIt(i),
+//                                           h,
+//                                           model->get_a_hMax(i),
+//                                           model->getCC(i) );
     }
     return result;
 }
@@ -96,16 +105,13 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
     MatrixNXM<double> result( samples.size(), samples.size() );
 
     std::multiset<GridCell>::iterator rowsIt = samples.begin();
-    std::multiset<GridCell>::iterator colsIt = samples.begin();
 
     for( int i = 0; rowsIt != samples.end(); ++rowsIt, ++i ){
         GridCell rowCell = *rowsIt;
+        std::multiset<GridCell>::iterator colsIt = samples.begin();
         for( int j = 0; colsIt != samples.end(); ++colsIt, ++j ){
             GridCell colCell = *colsIt;
-            double h = GeostatsUtils::getH( rowCell._centerX, rowCell._centerY, rowCell._centerZ,
-                                            colCell._centerX, colCell._centerY, colCell._centerZ,
-                                            anisoTransform );
-            double cov = GeostatsUtils::getGamma( variogramModel, h );
+            double cov = GeostatsUtils::getGamma( variogramModel, rowCell._center, colCell._center );
             result(i, j) = cov;
         }
     }
@@ -134,9 +140,9 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
 
     //collect the neighbors starting from those immediately adjacent then outwards
     for( ; ; ++shell ){ //shell expanding loop
-        for(int kk = std::max({0, k-shell, k-nSlicesAround/2}); kk < std::min({k+shell, slice_limit, k+nSlicesAround/2}); ++k){
-            for(int jj = std::max({0, j-shell, j-nColsAround/2}); jj < std::min({j+shell, column_limit, j+nColsAround/2}); ++jj){
-                for(int ii = std::max({0, i-shell, i-nRowsAround/2}); ii < std::min({i+shell, row_limit, i+nRowsAround/2}); ++ii){
+        for(int kk = std::max({0, k-shell, k-nSlicesAround/2}); kk < std::min({k+shell, slice_limit, k+nSlicesAround/2+1}); ++kk){
+            for(int jj = std::max({0, j-shell, j-nColsAround/2}); jj < std::min({j+shell, column_limit, j+nColsAround/2+1}); ++jj){
+                for(int ii = std::max({0, i-shell, i-nRowsAround/2}); ii < std::min({i+shell, row_limit, i+nRowsAround/2+1}); ++ii){
                     if(ii != i || jj != j || kk != k ){
                         double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
                         if( ! cg->isNDV( value ) ){

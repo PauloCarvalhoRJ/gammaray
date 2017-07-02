@@ -149,7 +149,9 @@ SOURCES += main.cpp\
     geostats/matrixmxn.cpp \
     dialogs/ndvestimationdialog.cpp \
     geostats/gridcell.cpp \
-    geostats/ndvestimation.cpp
+    geostats/ndvestimation.cpp \
+    geostats/spatiallocation.cpp \
+    geostats/ndvestimationrunner.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -280,7 +282,9 @@ HEADERS  += mainwindow.h \
     geostats/matrixmxn.h \
     dialogs/ndvestimationdialog.h \
     geostats/gridcell.h \
-    geostats/ndvestimation.h
+    geostats/ndvestimation.h \
+    geostats/spatiallocation.h \
+    geostats/ndvestimationrunner.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
