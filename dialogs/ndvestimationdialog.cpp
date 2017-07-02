@@ -64,5 +64,6 @@ void NDVEstimationDialog::run()
     estimation->setVariogramModel( _vmSelector->getSelectedVModel() );
     estimation->setUseDefaultValue( ui->chkUseSKMeanAsDefault->isChecked() );
     estimation->setDefaultValue( ui->txtMeanForSK->text().toDouble() );
+    estimation->setMeanForSK( ui->txtMeanForSK->text().toDouble() );
     estimation->run();
 }

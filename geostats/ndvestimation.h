@@ -44,6 +44,9 @@ public:
     VariogramModel *vmodel() const;
     void setVmodel(VariogramModel *vmodel);
 
+    double meanForSK() const;
+    void setMeanForSK(double meanForSK);
+
 private:
     Attribute *_at;
     int _searchMaxNumSamples;
@@ -56,6 +59,8 @@ private:
     /** The default value is used when no valued neighbors are found. */
     bool _useDefaultValue;
     double _defaultValue;
+
+    double _meanForSK;
 
     double _ndv;
 };

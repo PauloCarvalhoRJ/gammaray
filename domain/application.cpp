@@ -85,8 +85,9 @@ void Application::logInfo(const QString text)
 void Application::logWarn(const QString text)
 {
     Q_ASSERT(_mw != 0);
-    _mw->log_message( text, "warning" );
-    }
+    if( _logWarnings )
+        _mw->log_message( text, "warning" );
+}
 
 void Application::logError(const QString text)
 {
@@ -184,7 +185,8 @@ QString Application::getGhostscriptPathSetting()
     return qs.value("gspath").toString();
 }
 
-Application::Application()
+Application::Application() :
+    _logWarnings( true )
 {
     this->_open_project = nullptr;
 }

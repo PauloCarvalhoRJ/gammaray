@@ -1,5 +1,6 @@
 #include "variogrammodel.h"
 
+#include <QFileInfo>
 #include <QTextStream>
 
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
@@ -125,6 +126,22 @@ void VariogramModel::save(QTextStream *txt_stream)
 
 void VariogramModel::readParameters()
 {
+
+    //get info on the physical file that stores the variogram model data
+    QFileInfo info( _path );
+
+    //if read data is not empty and was loaded before
+    if( ! m_it.empty() && ! _lastModifiedDateTimeLastRead.isNull() ){
+        QDateTime currentLastModified = info.lastModified();
+        //if modified datetime didn't change since last call to readParameters
+        if( currentLastModified <= _lastModifiedDateTimeLastRead ){
+            return; //does nothing
+        }
+    }
+
+    //record the current datetime of file change
+    _lastModifiedDateTimeLastRead = info.lastModified();
+
     //reset the ranges and angles collections
     m_it.clear();
     m_cc.clear();

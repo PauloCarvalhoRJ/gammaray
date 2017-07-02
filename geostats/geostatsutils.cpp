@@ -80,21 +80,27 @@ double GeostatsUtils::getGamma(VariogramStructureType permissiveModel, double h,
 
 double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, SpatialLocation &locB)
 {
+    //lesser bottleneck
     double result = model->getNugget();
     int nst = model->getNst();
+
     for( int i = 0; i < nst; ++i){
         //TODO: improve performance by saving the aniso transforms in a cache, assuming the anisotropy
         //      is the same in all locations.
+        //major bottleneck
         Matrix3X3<double> anisoTransform = GeostatsUtils::getAnisoTransform(
                     model->get_a_hMax(i), model->get_a_hMin(i), model->get_a_vert(i),
                     model->getAzimuth(i), model->getDip(i), model->getRoll(i));
-//        double h = GeostatsUtils::getH( locA._x, locA._y, locA._z,
-//                                        locB._x, locB._y, locB._z,
-//                                        anisoTransform );
-//        result += GeostatsUtils::getGamma( model->getIt(i),
-//                                           h,
-//                                           model->get_a_hMax(i),
-//                                           model->getCC(i) );
+
+        double h = GeostatsUtils::getH( locA._x, locA._y, locA._z,
+                                        locB._x, locB._y, locB._z,
+                                        anisoTransform );
+
+        //bottleneck
+        result += GeostatsUtils::getGamma( model->getIt(i),
+                                           h,
+                                           model->get_a_hMax(i),
+                                           model->getCC(i) );
     }
     return result;
 }
@@ -114,6 +120,22 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
             double cov = GeostatsUtils::getGamma( variogramModel, rowCell._center, colCell._center );
             result(i, j) = cov;
         }
+    }
+    return result;
+}
+
+MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &samples,
+                                                 GridCell &estimationLocation,
+                                                 VariogramModel *variogramModel)
+{
+    MatrixNXM<double> result( samples.size(), 1 );
+
+    std::multiset<GridCell>::iterator rowsIt = samples.begin();
+
+    for( int i = 0; rowsIt != samples.end(); ++rowsIt, ++i ){
+        GridCell rowCell = *rowsIt;
+        double cov = GeostatsUtils::getGamma( variogramModel, rowCell._center, estimationLocation._center );
+        result(i, 0) = cov;
     }
     return result;
 }

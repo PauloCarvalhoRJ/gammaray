@@ -27,3 +27,8 @@ int GridCell::computeTopoDistance(GridCell &fromCell)
                     std::abs( _k - fromCell._k );
     return _topoDistance;
 }
+
+double GridCell::readValueFromGrid() const
+{
+    return _grid->dataIJK( _dataIndex, _i, _j, _k );
+}

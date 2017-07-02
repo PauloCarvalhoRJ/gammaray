@@ -32,7 +32,7 @@ private:
     NDVEstimation* _ndvEstimation;
 
     /** Estimate, by kriging, a single cell. */
-    double krige( GridCell cell );
+    double krige(GridCell cell , double meanSK);
 };
 
 #endif // NDVESTIMATIONRUNNER_H

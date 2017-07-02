@@ -45,6 +45,11 @@ public:
 
     /** Topological distance computed with computeTopoDistance(); */
     int _topoDistance;
+
+    /** Returns the value from the grid associated with this cell.
+     * It assumes all cell info are correct.
+    */
+    double readValueFromGrid() const;
 };
 
 /**

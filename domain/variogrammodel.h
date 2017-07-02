@@ -3,6 +3,7 @@
 
 #include "file.h"
 #include <QList>
+#include <QDateTime>
 
 /*! Variogram structure types. */
 enum class VariogramStructureType : int {
@@ -125,6 +126,12 @@ private:
     QList<double> m_Roll;
     //@}
 
+    /**
+     * Stores the file timestamp in the last call to readParameters().
+     * This time is used to detect whether there as a change in the file, to prevent
+     * unnecessary reads.
+     */
+    QDateTime _lastModifiedDateTimeLastRead;
 };
 
 #endif // VARIOGRAMMODEL_H

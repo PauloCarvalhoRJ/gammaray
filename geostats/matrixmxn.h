@@ -125,10 +125,11 @@ void MatrixNXM<T>::invert(){
     }
 }
 
+//TODO: naive matrix multiplication, improve performance
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
-   MatrixNXM<T> result;
    MatrixNXM<T>& a = *this;
+   MatrixNXM<T> result( a._n, b._m );
    for(int i = 0; i < a._n; ++i)
        for(int j = 0; j < b._m; ++j)
            for(int k = 0; k < a._m; ++k)

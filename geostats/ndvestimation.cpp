@@ -18,6 +18,7 @@ NDVEstimation::NDVEstimation(Attribute *at) :
     _vmodel( nullptr ),
     _useDefaultValue( false ),
     _defaultValue( 0.0 ),
+    _meanForSK( 0.0 ),
     _ndv( std::numeric_limits<double>::quiet_NaN() )
 {}
 
@@ -55,8 +56,8 @@ void NDVEstimation::run()
     uint nK = cg->getNZ();
 
     Application::instance()->logInfo("NDV Estimation started...");
-    //traverse the grid cells to run the estimation
-    //on unvalued ones
+
+    Application::instance()->logWarningOff();
 
     //estimation takes place in another thread, so we can show and update a progress bar
     //////////////////////////////////
@@ -81,6 +82,8 @@ void NDVEstimation::run()
         thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
         QCoreApplication::processEvents(); //let Qt repaint widgets
     }
+
+    Application::instance()->logWarningOn();
 
     Application::instance()->logInfo("NDV Estimation completed.");
 }
@@ -149,6 +152,16 @@ void NDVEstimation::setVmodel(VariogramModel *vmodel)
 {
     _vmodel = vmodel;
 }
+double NDVEstimation::meanForSK() const
+{
+    return _meanForSK;
+}
+
+void NDVEstimation::setMeanForSK(double meanForSK)
+{
+    _meanForSK = meanForSK;
+}
+
 
 
 

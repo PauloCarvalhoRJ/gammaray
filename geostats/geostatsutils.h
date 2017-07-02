@@ -59,6 +59,13 @@ public:
                                            VariogramModel *variogramModel);
 
     /**
+     * Creates a gamma matrix of the given set of samples against the estimation location cell.
+     */
+    static MatrixNXM<double> makeGammaMatrix(std::multiset<GridCell>& samples,
+                                             GridCell& estimationLocation,
+                                             VariogramModel *variogramModel);
+
+    /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
      */
     static std::multiset<GridCell> getValuedNeighborsTopoOrdered(GridCell &cell,

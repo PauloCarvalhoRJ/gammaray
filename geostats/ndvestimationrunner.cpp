@@ -35,7 +35,7 @@ void NDVEstimationRunner::doRun()
                 double value = cg->dataIJK( atIndex, i, j, k );
                 if( cg->isNDV( value ) ){
                     ++unvaluedCount;
-                    krige( GridCell(cg, atIndex, i,j,k) );
+                    krige( GridCell(cg, atIndex, i,j,k), _ndvEstimation->meanForSK() );
                 }
             }
         }
@@ -44,7 +44,7 @@ void NDVEstimationRunner::doRun()
     _finished = true;
 }
 
-double NDVEstimationRunner::krige(GridCell cell)
+double NDVEstimationRunner::krige(GridCell cell, double meanSK)
 {
     double result = std::numeric_limits<double>::quiet_NaN();
 
@@ -67,7 +67,24 @@ double NDVEstimationRunner::krige(GridCell cell)
     //TODO: improve performance by saving the covariances in a covariance table/cache, since
     //      the covariances from the variogram model are function of sample separation, not their values.
     //      This would take the advantage of the regular grid geometry.
-    GeostatsUtils::makeCovMatrix( vCells, _ndvEstimation->vmodel() );
+    //  This is a major bottleneck
+    MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vCells, _ndvEstimation->vmodel() );
+
+    //invert the covariance matrix.
+    covMat.invert();
+
+    //get the gamma matrix (covariances between sample and estimation locations)
+    MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel() );
+
+    //get the kriging weights vector: [w] = [Cov]^-1 * [gamma]
+    MatrixNXM<double> weights = covMat * gammaMat;  //covMat is inverted
+
+    //finally, compute the kriging (currently SK only)
+    result = meanSK;
+    std::multiset<GridCell>::iterator itSamples = vCells.begin();
+    for( int i = 0; i < vCells.size(); ++i, ++itSamples){
+        result += weights(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
+    }
 
     return result;
 }
