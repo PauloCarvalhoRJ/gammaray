@@ -58,6 +58,7 @@ void NDVEstimation::run()
     Application::instance()->logInfo("NDV Estimation started...");
 
     Application::instance()->logWarningOff();
+    Application::instance()->logErrorOff();
 
     //estimation takes place in another thread, so we can show and update a progress bar
     //////////////////////////////////
@@ -84,6 +85,7 @@ void NDVEstimation::run()
     }
 
     Application::instance()->logWarningOn();
+    Application::instance()->logErrorOn();
 
     Application::instance()->logInfo("NDV Estimation completed.");
 }

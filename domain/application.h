@@ -103,10 +103,15 @@ public:
     /** Adds a data file to the project.  Does nothing of there is no open project. */
     void addDataFile( const QString path );
 
-    /** Disables warnings. */
-    void logWarningOff(){ _logWarnings = false; }
-    /** Enables warnings. */
-    void logWarningOn(){ _logWarnings = true; }
+    /** Disables warning logging. */
+    void logWarningOff(){ logWarn("WARNING! Warning messages disabled! "); _logWarnings = false; }
+    /** Enables warning logging. */
+    void logWarningOn(){ logInfo("Warning messages back on. "); _logWarnings = true; }
+
+    /** Disables error logging. */
+    void logErrorOff(){ logWarn("WARNING! Error messages disabled! "); _logErrors = false; }
+    /** Enables error logging. */
+    void logErrorOn(){ logInfo("Error messages back on. "); _logErrors = true; }
 
 private:
     Application();
@@ -123,6 +128,9 @@ private:
 
     /** Flag that enables/disables warning logging/printing. */
     bool _logWarnings;
+
+    /** Flag that enables/disables error logging/printing. */
+    bool _logErrors;
 };
 
 #endif // APPLICATION_H

@@ -11,11 +11,8 @@ template <class T>
 class MatrixNXM
 {
 public:
-    /** Simplest constructor. */
-    MatrixNXM(unsigned int n, unsigned int m);
-
     /** Constructor that initializes the matrix elements with a value. */
-    MatrixNXM(unsigned int n, unsigned int m, T initValue );
+    MatrixNXM(unsigned int n, unsigned int m, T initValue = 0.0 );
 
     /** Returns the number of rows. */
     T getN(){ return _n; }
@@ -27,14 +24,14 @@ public:
      * Due to performance concern, no range check is performed.
      */
     T& operator() (unsigned int i, unsigned int j){
-      return _values[_n*i + j];
+      return _values[_m*i + j];
     }
 
     /** Operator () for r-value element access: e.g.: double x = a(2,3); .
       * Due to performance concern, no range check is performed.
       */
     T operator() (unsigned i, unsigned j) const {
-        return _values[_n*i + j];
+        return _values[_m*i + j];
     }
 
     /** Matrix multiplication operator. It is assumed the operands are compatible (this._m == b._n).*/
@@ -46,7 +43,7 @@ public:
     void invert();
 
 private:
-    /** Number of lines. */
+    /** Number of rows. */
     unsigned int _n;
     /** Number of columns. */
     unsigned int _m;
@@ -57,19 +54,11 @@ private:
 /////////////////////////////////////////IMPLEMENTATIONS////////////////////////////////////
 
 template <typename T>
-MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m) :
+MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue ) :
     _n(n),
-    _m(m)
-{
-    _values.reserve( n * m );
-}
-
-template <typename T>
-MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue )
-{
-    MatrixNXM( n, m );
-    _values.assign( n * m, initValue );
-}
+    _m(m),
+    _values( n*m, initValue )
+{}
 
 template <typename T>
 void MatrixNXM<T>::invert(){
@@ -125,14 +114,14 @@ void MatrixNXM<T>::invert(){
     }
 }
 
-//TODO: naive matrix multiplication, improve performance
+//TODO: naive matrix multiplication, improve performance (e.g. parallel)
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
    MatrixNXM<T>& a = *this;
    MatrixNXM<T> result( a._n, b._m );
    for(int i = 0; i < a._n; ++i)
        for(int j = 0; j < b._m; ++j)
-           for(int k = 0; k < a._m; ++k)
+           for(int k = 0; k < a._m; ++k) //a._m (number of cols) is supposed to be == b._n (number of rows)
                result(i,j) += a(i,k) * b(k,j);
    return result;
 }

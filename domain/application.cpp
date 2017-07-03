@@ -92,7 +92,8 @@ void Application::logWarn(const QString text)
 void Application::logError(const QString text)
 {
     Q_ASSERT(_mw != 0);
-    _mw->log_message( text, "error" );
+    if( _logErrors )
+        _mw->log_message( text, "error" );
 }
 
 void Application::refreshProjectTree()
