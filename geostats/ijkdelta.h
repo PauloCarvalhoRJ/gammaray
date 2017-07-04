@@ -2,6 +2,7 @@
 #define IJKDELTA_H
 
 #include <algorithm>
+#include <set>
 
 class IJKIndex;
 

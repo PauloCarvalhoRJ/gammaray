@@ -118,8 +118,10 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
         std::multiset<GridCell>::iterator colsIt = samples.begin();
         for( int j = 0; colsIt != samples.end(); ++colsIt, ++j ){
             GridCell colCell = *colsIt;
-            double cov = GeostatsUtils::getGamma( variogramModel, rowCell._center, colCell._center );
-            result(i, j) = cov;
+            //get semi-variance value
+            double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, colCell._center );
+            //get covariance
+            result(i, j) = variogramModel->getSill() - gamma;
         }
     }
     return result;
@@ -135,8 +137,10 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &sample
 
     for( int i = 0; rowsIt != samples.end(); ++rowsIt, ++i ){
         GridCell rowCell = *rowsIt;
-        double cov = GeostatsUtils::getGamma( variogramModel, rowCell._center, estimationLocation._center );
-        result(i, 0) = cov;
+        //get semi-variance value
+        double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, estimationLocation._center );
+        //get covariance
+        result(i, 0) = variogramModel->getSill() - gamma;
     }
     return result;
 }
@@ -153,13 +157,11 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null grid.  Returning empty list.");
         return result;
     }
+
+    //get the grid limits
     int row_limit = cg->getNY();
     int column_limit = cg->getNX();
     int slice_limit = cg->getNZ();
-    int i = cell._i;
-    int j = cell._j;
-    int k = cell._k;
-    int shell = 1; //shell of neighbors around the target cell (start with 1 cell distant).
 
     //generate all possible ijk deltas up to the neighborhood limits
     //the list of deltas is ordered by resulting distance with respect to a target cell
@@ -182,39 +184,44 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
         return result;
     }
 
+    //for each delta...
     std::set<IJKDelta>::iterator it = deltas.begin();
     for(; it != deltas.end(); ++it){
         IJKDelta delta = (*it);
-
-    }
-
-
-    //TODO: this algorithm is wrong.
-
-    //collect the neighbors starting from those immediately adjacent then outwards
-    for( ; ; ++shell ){ //shell expanding loop
-        for(int kk = std::max({0, k-shell, k-nSlicesAround/2}); kk < std::min({k+shell, slice_limit, k+nSlicesAround/2+1}); ++kk){
-            for(int jj = std::max({0, j-shell, j-nColsAround/2}); jj < std::min({j+shell, column_limit, j+nColsAround/2+1}); ++jj){
-                for(int ii = std::max({0, i-shell, i-nRowsAround/2}); ii < std::min({i+shell, row_limit, i+nRowsAround/2+1}); ++ii){
-                    if(ii != i || jj != j || kk != k ){
-                        double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
-                        if( ! cg->isNDV( value ) ){
-                            GridCell currentCell( cg, cell._dataIndex, ii, jj, kk );
-                            currentCell.computeTopoDistance( cell );
-                            result.insert( currentCell );
-                            if( result.size() == (unsigned)numberOfSamples * 2 ) //TODO: * 2 is a heuristic (think of a better way to collect the n-closest samples
-                                goto completed; //abort collect loop if a suficient number of values is reached (no need for traversing all neighbouring cells
-                        }
-                    }
+        //...get all the indexes from a delta (can yield 2, 4 or 8 coordinates, depending on the delta's degrees of freedom).
+        std::set<IJKIndex> indexes = delta.getIndexes( cell._indexIJK );
+        //for each topological coordinate (IJK index)...
+        std::set<IJKIndex>::iterator itIndexes = indexes.begin();
+        for(; itIndexes != indexes.end(); ++itIndexes){
+            int ii = (*itIndexes)._i;
+            int jj = (*itIndexes)._j;
+            int kk = (*itIndexes)._k;
+            //...if the index is within the grid limits...
+            if( ii >= 0 && ii < row_limit &&
+                jj >= 0 && jj < column_limit &&
+                kk >= 0 && kk < slice_limit ){
+                //...get the value corresponding to the cell index.
+                double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
+                //if the cell is valued...
+                if( ! cg->isNDV( value ) ){
+                    //...it is a valid neighbor.
+                    GridCell currentCell( cg, cell._dataIndex, ii, jj, kk );
+                    currentCell.computeTopoDistance( cell );
+                    result.insert( currentCell );
+                    //if the number of neighbors is reached...
+                    if( result.size() == (unsigned)numberOfSamples )
+                        //...interrupt the search
+                        goto completed;
                 }
             }
         }
     }
+
 completed:  //from goto in the loop above (or if the loops complete)
 
-    //keep only the closest n cells at most
-    while( result.size() > numberOfSamples )
-        result.erase( --result.end() );
+    //makes sure only the closest n cells at most
+    //while( result.size() > numberOfSamples )
+    //    result.erase( --result.end() );
 
     return result;
 }

@@ -19,7 +19,7 @@ public:
  * in STL or STL-like ordered containers.
  */
 inline bool operator<(const IJKIndex &e1, const IJKIndex &e2){
-    else if( e1._k < e2._k)
+    if( e1._k < e2._k)
         return true;
     else if( e1._k > e2._k)
         return false;

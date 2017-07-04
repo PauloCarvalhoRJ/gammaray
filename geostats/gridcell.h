@@ -2,6 +2,7 @@
 #define GRIDCELL_H
 
 #include "geostats/spatiallocation.h"
+#include "geostats/ijkindex.h"
 
 class CartesianGrid;
 
@@ -34,8 +35,8 @@ public:
     /** The grid object this cell refers to. */
     CartesianGrid* _grid;
 
-    /** Topological coordinates. */
-    int _i, _j, _k;
+    /** Topological coordinates (i,j,k). */
+    IJKIndex _indexIJK;
 
     /** Spatial coordinates of the cell center. */
     SpatialLocation _center;
