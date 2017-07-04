@@ -37,6 +37,10 @@
 
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
 
+/*static*/const long double Util::PI( 3.141592653589793238L );
+
+/*static*/const long double Util::PI_OVER_180( Util::PI / 180.0L );
+
 Util::Util()
 {
 }

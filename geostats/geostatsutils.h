@@ -19,9 +19,11 @@ public:
 
 
     /** Returns the transform matrix corresponding to the given anisotropy ellipse.
-     * The three angles follow the GSLib convention (though, angles are in radians).
-     *  E.g. azimuth 0 means that the semi-major axis
-     * points to North (y-axis aligned) and increases clockwise (geologist's convention).
+     * The three angles follow the GSLib convention (angles in degrees).
+     * E.g.: azimuth 90.0 means that the semi-major axis
+     * points to East (x-axis aligned) and increases clockwise (geologist's convention).
+     * Positive dip angles are "nose up" and posivite roll angles are "bank to right", following
+     * aircraft manuevers analogy.
      */
     static Matrix3X3<double> getAnisoTransform( double aSemiMajor, double aSemiMinor, double aSemiVert,
                                                 double azimuth, double dip, double roll );

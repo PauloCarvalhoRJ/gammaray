@@ -46,6 +46,12 @@ class Util
 public:
     Util();
 
+    /** The math constant PI. */
+    static const long double PI;
+
+    /** Constant used to convert degrees to radians. */
+    static const long double PI_OVER_180;
+
     /** Returns the list of variable names available in the given
      * GSLib format data file.  GSLib files are in GEO-EAS format.
      * The list is in the same order as found in the file, so you

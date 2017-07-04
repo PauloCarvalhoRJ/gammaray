@@ -4,6 +4,7 @@
 #include "domain/cartesiangrid.h"
 #include "spatiallocation.h"
 #include "ijkdelta.h"
+#include "util.h"
 
 #include <cmath>
 #include <limits>
@@ -19,16 +20,22 @@ Matrix3X3<double> GeostatsUtils::getAnisoTransform(double aSemiMajor,
                                                    double dip,
                                                    double roll)
 {
+
+    //convert the angles to radians and to trigonometric convention
+    double azimuthRad = (azimuth - 90.0) * Util::PI_OVER_180;
+    double dipRad = dip * Util::PI_OVER_180;
+    double rollRad = roll * Util::PI_OVER_180;
+
     //----------rotate the world so the aniso axes are parallel to world axes--------------------------
-    Matrix3X3<double> Tyaw( std::cos(azimuth), -std::sin(azimuth), 0.0,
-                            std::sin(azimuth), std::cos(azimuth),  0.0,
+    Matrix3X3<double> Tyaw( std::cos(azimuthRad), -std::sin(azimuthRad), 0.0,
+                            std::sin(azimuthRad), std::cos(azimuthRad),  0.0,
                             0.0,               0.0,                1.0);
-    Matrix3X3<double> Tpitch( std::cos(dip),  0.0, std::sin(dip),
+    Matrix3X3<double> Tpitch( std::cos(dipRad),  0.0, std::sin(dipRad),
                               0.0,            1.0,           0.0,
-                              -std::sin(dip), 0.0, std::cos(dip));
+                              -std::sin(dipRad), 0.0, std::cos(dipRad));
     Matrix3X3<double> Troll( 1.0,            0.0,             0.0,
-                             0.0, std::cos(roll), -std::sin(roll),
-                             0.0, std::sin(roll), std::cos(roll));
+                             0.0, std::cos(rollRad), std::sin(rollRad),
+                             0.0, -std::sin(rollRad), std::cos(rollRad));
     //----------stretches the world so the aniso ranges are now equal (spherical) --------------------
     Matrix3X3<double> S( 1.0,                   0.0,                  0.0,
                          0.0, aSemiMajor/aSemiMinor,                  0.0,
