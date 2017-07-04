@@ -3,6 +3,7 @@
 #include "gridcell.h"
 #include "domain/cartesiangrid.h"
 #include "spatiallocation.h"
+#include "ijkdelta.h"
 
 #include <cmath>
 #include <limits>
@@ -159,6 +160,36 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
     int j = cell._j;
     int k = cell._k;
     int shell = 1; //shell of neighbors around the target cell (start with 1 cell distant).
+
+    //generate all possible ijk deltas up to the neighborhood limits
+    //the list of deltas is ordered by resulting distance with respect to a target cell
+    //TODO: improve performance.  This list can be cached since the search neighborhood does not change.
+    std::set<IJKDelta> deltas;
+    {
+        for( int dk = 0; dk <= nSlicesAround/2; ++dk){
+            for( int dj = 0; dj <= nColsAround/2; ++dj ){
+                for( int di = 0; di <= nRowsAround/2; ++di){
+                    deltas.insert( IJKDelta( di, dj, dk) );
+                }
+            }
+        }
+        //the first element is always delta 0,0,0 (target cell itself)
+        deltas.erase( deltas.begin() );
+    }
+
+    if( deltas.empty() ){
+        Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null neighborhood.  Returning empty list.");
+        return result;
+    }
+
+    std::set<IJKDelta>::iterator it = deltas.begin();
+    for(; it != deltas.end(); ++it){
+        IJKDelta delta = (*it);
+
+    }
+
+
+    //TODO: this algorithm is wrong.
 
     //collect the neighbors starting from those immediately adjacent then outwards
     for( ; ; ++shell ){ //shell expanding loop

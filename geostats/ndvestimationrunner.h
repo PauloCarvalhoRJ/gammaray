@@ -20,6 +20,8 @@ public:
 
     bool isFinished(){ return _finished; }
 
+    std::vector<double> getResults(){ return _results; }
+
 signals:
     void progress(int);
 
@@ -30,6 +32,7 @@ private:
     bool _finished;
     Attribute* _at;
     NDVEstimation* _ndvEstimation;
+    std::vector<double> _results;
 
     /** Estimate, by kriging, a single cell. */
     double krige(GridCell cell , double meanSK);

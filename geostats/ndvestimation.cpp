@@ -22,11 +22,11 @@ NDVEstimation::NDVEstimation(Attribute *at) :
     _ndv( std::numeric_limits<double>::quiet_NaN() )
 {}
 
-void NDVEstimation::run()
+std::vector<double> NDVEstimation::run()
 {
     if( ! _vmodel ){
         Application::instance()->logError("NDVEstimation::run(): variogram model not specified. Aborted.");
-        return;
+        return std::vector<double>();
     } else {
         _vmodel->readFromFS();
     }
@@ -36,13 +36,13 @@ void NDVEstimation::run()
 
     if( ! cg->hasNoDataValue() ){
         Application::instance()->logError("NDVEstimation::run(): No-data-value not set for the grid. Aborted.");
-        return;
+        return std::vector<double>();
     } else {
         bool ok;
         _ndv = cg->getNoDataValue().toDouble( &ok );
         if( ! ok ){
             Application::instance()->logError("NDVEstimation::run(): No-data-value setting is not a valid number. Aborted.");
-            return;
+            return std::vector<double>();
         }
     }
 
@@ -87,7 +87,13 @@ void NDVEstimation::run()
     Application::instance()->logWarningOn();
     Application::instance()->logErrorOn();
 
+    std::vector<double> results = runner->getResults();
+
+    delete runner;
+
     Application::instance()->logInfo("NDV Estimation completed.");
+
+    return results;
 }
 
 void NDVEstimation::setSearchParameters(int searchMaxNumSamples,

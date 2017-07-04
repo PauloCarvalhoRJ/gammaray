@@ -106,12 +106,12 @@ public:
     /** Disables warning logging. */
     void logWarningOff(){ logWarn("WARNING! Warning messages disabled! "); _logWarnings = false; }
     /** Enables warning logging. */
-    void logWarningOn(){ logInfo("Warning messages back on. "); _logWarnings = true; }
+    void logWarningOn();
 
     /** Disables error logging. */
     void logErrorOff(){ logWarn("WARNING! Error messages disabled! "); _logErrors = false; }
     /** Enables error logging. */
-    void logErrorOn(){ logInfo("Error messages back on. "); _logErrors = true; }
+    void logErrorOn();
 
 private:
     Application();
@@ -131,6 +131,12 @@ private:
 
     /** Flag that enables/disables error logging/printing. */
     bool _logErrors;
+
+    /** Warning messages are stored here while their display is disabled. */
+    std::vector<QString> _warningBuffer;
+
+    /** Error messages are stored here while their display is disabled. */
+    std::vector<QString> _errorBuffer;
 };
 
 #endif // APPLICATION_H

@@ -27,16 +27,20 @@ void NDVEstimationRunner::doRun()
     uint nJ = cg->getNY();
     uint nK = cg->getNZ();
 
-    int unvaluedCount = 0;
+    //prepare the vector with the results (to not overwrite the original data)
+    _results.clear();
+    _results.reserve( nI * nJ * nK );
+
+    //for all grid cells
     for( uint k = 0; k <nK; ++k)
         for( uint j = 0; j <nJ; ++j){
             emit progress( j * nI + k * nI * nJ );
             for( uint i = 0; i <nI; ++i){
                 double value = cg->dataIJK( atIndex, i, j, k );
-                if( cg->isNDV( value ) ){
-                    ++unvaluedCount;
-                    krige( GridCell(cg, atIndex, i,j,k), _ndvEstimation->meanForSK() );
-                }
+                if( cg->isNDV( value ) )
+                    _results.push_back( krige( GridCell(cg, atIndex, i,j,k), _ndvEstimation->meanForSK() ) );
+                else
+                    _results.push_back( value ); //simple copy from valued cells
             }
         }
 

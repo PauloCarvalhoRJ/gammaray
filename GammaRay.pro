@@ -151,7 +151,9 @@ SOURCES += main.cpp\
     geostats/gridcell.cpp \
     geostats/ndvestimation.cpp \
     geostats/spatiallocation.cpp \
-    geostats/ndvestimationrunner.cpp
+    geostats/ndvestimationrunner.cpp \
+    geostats/ijkdelta.cpp \
+    geostats/ijkindex.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -284,7 +286,9 @@ HEADERS  += mainwindow.h \
     geostats/gridcell.h \
     geostats/ndvestimation.h \
     geostats/spatiallocation.h \
-    geostats/ndvestimationrunner.h
+    geostats/ndvestimationrunner.h \
+    geostats/ijkdelta.h \
+    geostats/ijkindex.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

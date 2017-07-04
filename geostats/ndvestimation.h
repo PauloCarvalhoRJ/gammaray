@@ -1,6 +1,8 @@
 #ifndef NDVESTIMATION_H
 #define NDVESTIMATION_H
 
+#include <vector>
+
 class Attribute;
 class GridCell;
 class VariogramModel;
@@ -14,7 +16,7 @@ public:
     NDVEstimation( Attribute* at );
 
     /** Preforms the kriging. Make sure all parameters have been set properly .*/
-    void run();
+    std::vector<double> run();
 
     void setSearchParameters(int searchMaxNumSamples,
                              int searchNumCols,

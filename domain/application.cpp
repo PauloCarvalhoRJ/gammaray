@@ -87,6 +87,8 @@ void Application::logWarn(const QString text)
     Q_ASSERT(_mw != 0);
     if( _logWarnings )
         _mw->log_message( text, "warning" );
+    else
+        _warningBuffer.push_back( text );
 }
 
 void Application::logError(const QString text)
@@ -94,6 +96,8 @@ void Application::logError(const QString text)
     Q_ASSERT(_mw != 0);
     if( _logErrors )
         _mw->log_message( text, "error" );
+    else
+        _errorBuffer.push_back( text );
 }
 
 void Application::refreshProjectTree()
@@ -119,6 +123,56 @@ void Application::addDataFile(const QString path)
 {
     if( this->hasOpenProject() ){
         _mw->doAddDataFile( path );
+    }
+}
+
+void Application::logWarningOn()
+{
+    _logWarnings = true;
+    logInfo("Warning messages back on.");
+    if( ! _warningBuffer.empty() ){
+        logInfo("Buffered warning messages dump:");
+        std::vector<QString>::iterator it = _warningBuffer.begin();
+        QString lastMessage;
+        int repeatedMessagesCount = 0;
+        for(; it != _warningBuffer.end(); ++it){
+            QString currentMessage = (*it);
+            if( currentMessage != lastMessage ){
+                if( repeatedMessagesCount > 0 )
+                    logWarn( "   Followed by more " + QString::number(repeatedMessagesCount) + " message(s) like that." );
+                logWarn( currentMessage );
+                repeatedMessagesCount = 0;
+            } else {
+                ++repeatedMessagesCount;
+            }
+            lastMessage = currentMessage;
+        }
+        _warningBuffer.clear();
+    }
+}
+
+void Application::logErrorOn()
+{
+    logInfo("Error messages back on. ");
+    _logErrors = true;
+    if( ! _errorBuffer.empty() ){
+        logInfo("Buffered error messages dump:");
+        std::vector<QString>::iterator it = _errorBuffer.begin();
+        QString lastMessage;
+        int repeatedMessagesCount = 0;
+        for(; it != _errorBuffer.end(); ++it){
+            QString currentMessage = (*it);
+            if( currentMessage != lastMessage ){
+                if( repeatedMessagesCount > 0 )
+                    logError("   Followed by more " + QString::number(repeatedMessagesCount) + " message(s) like that." );
+                logError( currentMessage );
+                repeatedMessagesCount = 0;
+            } else {
+                ++repeatedMessagesCount;
+            }
+            lastMessage = currentMessage;
+        }
+        _errorBuffer.clear();
     }
 }
 

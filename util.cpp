@@ -473,6 +473,28 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     file.close();
 }
 
+void Util::createGEOEASGrid(const QString columnName, std::vector<double> &array, QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //write out the GEO-EAS grid geader
+    out << "Grid file\n";
+    out << "1\n";
+    out << columnName << '\n';
+
+    //loop to output the values
+    std::vector<double>::iterator it = array.begin();
+    for( ; it != array.end(); ++it ){
+            out << (*it) << '\n';
+    }
+
+    //close file
+    file.close();
+}
+
 bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, CategoryDefinition *cd)
 {
     //get input data file

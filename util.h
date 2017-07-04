@@ -184,6 +184,16 @@ public:
                                   QString path );
 
     /**
+     * Creates a GEO-EAS regular grid file using the given grid specs and the values
+     * passed in the unidimensional vector of doubles.
+     * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
+     * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
+     */
+    static void createGEOEASGrid( const QString columnName,
+                                  std::vector< double > &array,
+                                  QString path );
+
+    /**
      * Runs the GSLib program pixelplt and opens the plot dialog to view a
      * variable in a regular grid.
      * @param parent Parent QWidget for the plot dialog.
