@@ -68,19 +68,31 @@ double GeostatsUtils::getH(double x0, double y0, double z0,
 
 double GeostatsUtils::getGamma(VariogramStructureType permissiveModel, double h, double range, double contribution)
 {
-    double h_over_a;
+    double h_over_a = h/range;
     switch( permissiveModel ){
     case VariogramStructureType::SPHERIC:
         if( h > range )
             return contribution;
-        h_over_a = h/range;
         return contribution * ( 1.5*h_over_a - 0.5*(h_over_a*h_over_a*h_over_a) );
-        break;
+    case VariogramStructureType::EXPONENTIAL:
+        if( Util::almostEqual2sComplement( h, 0.0, 1 ) )
+            return 0.0;
+        return contribution * ( 1.0 - std::exp(-3.0 * h_over_a) );
+    case VariogramStructureType::GAUSSIAN:
+        h_over_a = h/range;
+        if( Util::almostEqual2sComplement( h, 0.0, 1 ) )
+            return 0.0;
+        return contribution * ( 1.0 - std::exp(-9.0*(h_over_a*h_over_a)) );
+    case VariogramStructureType::POWER_LAW:
+        //TODO: using a constant power (1.5) since I don't know how it entered in GSLib par files.
+        Application::instance()->logWarn("GeostatsUtils::getGamma(): Power model using a constant power == 1.5");
+        return contribution * std::pow(h, 1.5);
+    case VariogramStructureType::COSINE_HOLE_EFFECT:
+        return contribution * ( 1.0 - std::cos( h_over_a * Util::PI ) );
     default:
-        Application::instance()->logError("GeostatsUtils::getGamma(): Unsupported structure type.  Assuming spheric.");
+        Application::instance()->logError("GeostatsUtils::getGamma(): Unknown structure type.  Assuming spheric.");
         if( h > range )
             return contribution;
-        h_over_a = h/range;
         return contribution * ( 1.5*h_over_a - 0.5*(h_over_a*h_over_a*h_over_a) );
     }
     return std::numeric_limits<double>::quiet_NaN();
@@ -114,9 +126,18 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
 }
 
 MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
-                                               VariogramModel *variogramModel)
+                                               VariogramModel *variogramModel,
+                                               KrigingType kType)
 {
-    MatrixNXM<double> result( samples.size(), samples.size() );
+    int append = 0;
+    switch( kType ){
+    case KrigingType::SK:
+        append = 0; break;
+    case KrigingType::OK:
+        append = 1; break;
+    }
+
+    MatrixNXM<double> result( samples.size() + append, samples.size() + append );
 
     std::multiset<GridCell>::iterator rowsIt = samples.begin();
 
@@ -131,14 +152,34 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
             result(i, j) = variogramModel->getSill() - gamma;
         }
     }
+
+    //prepare the cov matrix for an OK system, if this is the case.
+    switch( kType ){
+    case KrigingType::OK:
+        int dim = samples.size();
+        for( int i = 0; i < dim; ++i ){
+            result( dim, i ) = 1.0; //last row with ones
+            result( i, dim ) = 1.0; //last columns with ones
+        }
+        result( dim, dim ) = 0.0; //last element is zero
+    }
+
     return result;
 }
 
 MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &samples,
                                                  GridCell &estimationLocation,
-                                                 VariogramModel *variogramModel)
+                                                 VariogramModel *variogramModel, KrigingType kType)
 {
-    MatrixNXM<double> result( samples.size(), 1 );
+    int append = 0;
+    switch( kType ){
+    case KrigingType::SK:
+        append = 0; break;
+    case KrigingType::OK:
+        append = 1; break;
+    }
+
+    MatrixNXM<double> result( samples.size()+append, 1 );
 
     std::multiset<GridCell>::iterator rowsIt = samples.begin();
 
@@ -149,6 +190,13 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &sample
         //get covariance
         result(i, 0) = variogramModel->getSill() - gamma;
     }
+
+    //prepare the matrix for an OK system, if this is the case.
+    switch( kType ){
+    case KrigingType::OK:
+        result( samples.size(), 0 ) = 1.0; //last element is one
+    }
+
     return result;
 }
 

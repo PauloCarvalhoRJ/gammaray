@@ -60,10 +60,13 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK)
                                                            _ndvEstimation->searchNumRows(),
                                                            _ndvEstimation->searchNumSlices() );
 
+    //if no sample was found, either...
     if( vCells.empty() ){
         if( _ndvEstimation->useDefaultValue() )
+            //...return a default value (e.g. a global mean or expected value).
             return _ndvEstimation->defaultValue();
         else
+            //...or return a no-data-value.
             return _ndvEstimation->ndv();
     }
 
@@ -81,13 +84,42 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK)
     MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel() );
 
     //get the kriging weights vector: [w] = [Cov]^-1 * [gamma]
-    MatrixNXM<double> weights = covMat * gammaMat;  //covMat is inverted
+    MatrixNXM<double> weightsSK = covMat * gammaMat;  //covMat is inverted
 
-    //finally, compute the kriging (currently SK only)
-    result = meanSK;
-    std::multiset<GridCell>::iterator itSamples = vCells.begin();
-    for( int i = 0; i < vCells.size(); ++i, ++itSamples){
-        result += weights(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
+    //finally, compute the kriging
+    if( _ndvEstimation->ktype() == KrigingType::SK ){
+        //for SK mode
+        result = meanSK;
+        std::multiset<GridCell>::iterator itSamples = vCells.begin();
+        for( int i = 0; i < vCells.size(); ++i, ++itSamples){
+            result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
+        }
+    } else {
+        //for OK mode
+        //compute the OK weights (follows the same rationale of SK)
+        //TODO: improve performance.  Just expand SK matrices with the 1.0s and 0.0s instead of computing new ones.
+        MatrixNXM<double> covMatOK = GeostatsUtils::makeCovMatrix( vCells, _ndvEstimation->vmodel(), KrigingType::OK );
+        covMatOK.invert();
+        MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel(), KrigingType::OK );
+        MatrixNXM<double> weightsOK = covMatOK * gammaMatOK;  //covMat is inverted
+        //Estimate the OK local mean (use OK weights)
+        double mOK = 0.0;
+        std::multiset<GridCell>::iterator itSamples = vCells.begin();
+        for( int i = 0; i < weightsOK.getN()-1; ++i, ++itSamples){ //the last element in weightsOK is the Lagrangian (mu)
+            mOK += weightsOK(i,0) * (*itSamples).readValueFromGrid();
+        }
+        //compute the kriging weight for the local OK mean (use SK weights)
+        double wmOK = 1.0;
+        for( int i = 0; i < weightsSK.getN(); ++i){
+            wmOK -= weightsSK(i,0);
+        }
+        //krige (with SK weights plus the OK mean (with OK mean weight))
+        result = 0.0;
+        itSamples = vCells.begin();
+        for( int i = 0; i < vCells.size(); ++i, ++itSamples){
+            result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() );
+        }
+        result += wmOK * mOK;
     }
 
     return result;

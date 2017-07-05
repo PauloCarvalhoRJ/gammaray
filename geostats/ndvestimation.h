@@ -2,6 +2,7 @@
 #define NDVESTIMATION_H
 
 #include <vector>
+#include "geostatsutils.h"
 
 class Attribute;
 class GridCell;
@@ -49,6 +50,9 @@ public:
     double meanForSK() const;
     void setMeanForSK(double meanForSK);
 
+    KrigingType ktype() const;
+    void setKtype(const KrigingType &ktype);
+
 private:
     Attribute *_at;
     int _searchMaxNumSamples;
@@ -65,6 +69,8 @@ private:
     double _meanForSK;
 
     double _ndv;
+
+    KrigingType _ktype;
 };
 
 #endif // NDVESTIMATION_H

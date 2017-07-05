@@ -3,7 +3,6 @@
 #include "domain/cartesiangrid.h"
 #include "domain/attribute.h"
 #include "gridcell.h"
-#include "geostatsutils.h"
 #include "ndvestimationrunner.h"
 #include <limits>
 #include <QProgressDialog>
@@ -19,7 +18,8 @@ NDVEstimation::NDVEstimation(Attribute *at) :
     _useDefaultValue( false ),
     _defaultValue( 0.0 ),
     _meanForSK( 0.0 ),
-    _ndv( std::numeric_limits<double>::quiet_NaN() )
+    _ndv( std::numeric_limits<double>::quiet_NaN() ),
+    _ktype( KrigingType::SK )
 {}
 
 std::vector<double> NDVEstimation::run()
@@ -169,6 +169,16 @@ void NDVEstimation::setMeanForSK(double meanForSK)
 {
     _meanForSK = meanForSK;
 }
+KrigingType NDVEstimation::ktype() const
+{
+    return _ktype;
+}
+
+void NDVEstimation::setKtype(const KrigingType &ktype)
+{
+    _ktype = ktype;
+}
+
 
 
 

@@ -87,6 +87,10 @@ void NDVEstimationDialog::run()
     estimation->setUseDefaultValue( ui->chkUseSKMeanAsDefault->isChecked() );
     estimation->setDefaultValue( ui->txtMeanForSK->text().toDouble() );
     estimation->setMeanForSK( ui->txtMeanForSK->text().toDouble() );
+    if( ui->cmbKType->currentIndex() == 0 ) //label SK
+        estimation->setKtype( KrigingType::SK );
+    else
+        estimation->setKtype( KrigingType::OK );
     std::vector<double> results = estimation->run();
 
     //make a tmp file path
