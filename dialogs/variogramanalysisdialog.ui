@@ -231,6 +231,20 @@
        </widget>
       </item>
       <item>
+       <widget class="QPushButton" name="btnVarNReals">
+        <property name="toolTip">
+         <string>Variograms of realizations</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/icons32/varnreals32</normaloff>:/icons32/varnreals32</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -566,6 +580,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnVarNReals</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onVarNReals()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>137</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>4</x>
+     <y>151</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onOpenExperimentalVariogramParamaters()</slot>
@@ -577,5 +607,6 @@
   <slot>onOpenVariogramModelParamateres()</slot>
   <slot>onVmodelCompletion()</slot>
   <slot>onSaveVariogramModel()</slot>
+  <slot>onVarNReals()</slot>
  </slots>
 </ui>

@@ -11,6 +11,7 @@ class Attribute;
 class GSLibParameterFile;
 class CartesianGrid;
 class ExperimentalVariogram;
+class RealizationSelectionDialog;
 
 class VariogramAnalysisDialog : public QDialog
 {
@@ -45,6 +46,7 @@ private:
     GSLibParameterFile* m_gpf_gam;
     CartesianGrid* m_varmap_grid;
     GSLibParameterFile* m_gpf_vmodel;
+    RealizationSelectionDialog *m_realsSelecDiag;
     /** Does some UI details not in ui->setup(). */
     void finishUISetup();
     bool isCrossVariography();
@@ -59,6 +61,7 @@ private slots:
     void onOpenVariogramModelParamateres();
     void onVmodelCompletion();
     void onSaveVariogramModel();
+    void onVarNReals();
     // the slots below are called indirectly.
     void onGamv();
     void onGamvCompletion();

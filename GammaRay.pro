@@ -143,7 +143,8 @@ SOURCES += main.cpp\
     viewer3d/view3dviewdata.cpp \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.cpp \
     domain/auxiliary/dataloader.cpp \
-    array3d.cpp
+    array3d.cpp \
+    dialogs/realizationselectiondialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -268,7 +269,8 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dviewdata.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h \
     domain/auxiliary/dataloader.h \
-    array3d.h
+    array3d.h \
+    dialogs/realizationselectiondialog.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -322,7 +324,8 @@ FORMS    += mainwindow.ui \
     widgets/pswidget.ui \
     viewer3d/view3dwidget.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.ui \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.ui
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.ui \
+    dialogs/realizationselectiondialog.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)

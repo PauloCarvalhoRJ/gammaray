@@ -10,6 +10,7 @@
 #include "domain/project.h"
 #include "domain/attribute.h"
 #include "domain/application.h"
+#include "realizationselectiondialog.h"
 #include <QMessageBox>
 #include "displayplotdialog.h"
 #include <QDir>
@@ -31,7 +32,8 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(Attribute *head, Attribute *tai
     m_gpf_vargplt( nullptr ),
     m_gpf_gam( nullptr ),
     m_varmap_grid( nullptr ),
-    m_gpf_vmodel( nullptr )
+    m_gpf_vmodel( nullptr ),
+    m_realsSelecDiag( nullptr )
 {
     ui->setupUi(this);
 
@@ -703,6 +705,36 @@ void VariogramAnalysisDialog::onSaveVariogramModel()
                                              proposed_name, &ok);
     if (ok && !new_var_model_name.isEmpty()){
         Application::instance()->getProject()->importVariogramModel( var_model_file_path, new_var_model_name.append(".vmodel") );
+    }
+}
+
+void VariogramAnalysisDialog::onVarNReals()
+{
+    //Get the data file (can be either point set or grid).
+    DataFile* input_data_file = (DataFile*)m_head->getContainingFile();
+
+    //determine whether the data is regular (grid) or irregular (point cloud)
+    bool is_irregular = (input_data_file->getFileType().compare("POINTSET") == 0);
+
+    if( is_irregular ){
+        QMessageBox::critical( this, "Error", "This feature is unavailable for point sets.");
+        return;
+    }
+
+    //if execution reaches this point, then the file is a CartesianGrid
+    CartesianGrid* cg = (CartesianGrid*)input_data_file;
+
+    //construct dialog once (preserves user selection between calls
+    if( ! m_realsSelecDiag ){
+        m_realsSelecDiag = new RealizationSelectionDialog( this );
+        m_realsSelecDiag->setWindowTitle("Variograms for realizations");
+        m_realsSelecDiag->setNReals( cg->getNReal() );
+    }
+
+    //wait for user response
+    int response = m_realsSelecDiag->exec();
+    if( response == QDialog::Accepted ){
+        // m_realsSelecDiag->getSelectedRealizations();
     }
 }
 
