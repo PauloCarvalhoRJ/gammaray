@@ -5,6 +5,7 @@
 #include "spatiallocation.h"
 #include "ijkdelta.h"
 #include "util.h"
+#include "ijkdeltascache.h"
 
 #include <cmath>
 #include <limits>
@@ -155,6 +156,7 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
 
     //prepare the cov matrix for an OK system, if this is the case.
     switch( kType ){
+    case KrigingType::SK: break;
     case KrigingType::OK:
         int dim = samples.size();
         for( int i = 0; i < dim; ++i ){
@@ -193,6 +195,7 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &sample
 
     //prepare the matrix for an OK system, if this is the case.
     switch( kType ){
+    case KrigingType::SK: break;
     case KrigingType::OK:
         result( samples.size(), 0 ) = 1.0; //last element is one
     }
@@ -220,37 +223,47 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
 
     //generate all possible ijk deltas up to the neighborhood limits
     //the list of deltas is ordered by resulting distance with respect to a target cell
-    //TODO: improve performance.  This list can be cached since the search neighborhood does not change.
-    std::set<IJKDelta> deltas;
-    {
+    std::set<IJKDelta> *deltas = nullptr;
+    //try to reuse a list from the cache since making one anew is costly and the neighborhood does not change
+    IJKDeltasCacheMap::iterator itcache =
+            IJKDeltasCache::cache.find( IJKDeltasCacheKey( nColsAround, nRowsAround, nSlicesAround ) );
+    if( itcache != IJKDeltasCache::cache.end() ){ //cache hit
+        deltas = itcache->second;
+    } else { //cache miss, have to build the list
+        deltas = new std::set<IJKDelta>();
         for( int dk = 0; dk <= nSlicesAround/2; ++dk){
             for( int dj = 0; dj <= nColsAround/2; ++dj ){
                 for( int di = 0; di <= nRowsAround/2; ++di){
-                    deltas.insert( IJKDelta( di, dj, dk) );
+                    deltas->insert( IJKDelta( di, dj, dk) );
                 }
             }
         }
         //the first element is always delta 0,0,0 (target cell itself)
-        deltas.erase( deltas.begin() );
+        deltas->erase( deltas->begin() );
+        //store the list in the cache for later reuse
+        IJKDeltasCache::cache.emplace( IJKDeltasCacheKey( nColsAround,
+                                                         nRowsAround,
+                                                         nSlicesAround ), deltas );
     }
 
-    if( deltas.empty() ){
+    if( !deltas || deltas->empty() ){ //hope the second is not evaluated if deltas == nullptr
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null neighborhood.  Returning empty list.");
         return result;
     }
 
     //for each delta...
-    std::set<IJKDelta>::iterator it = deltas.begin();
-    for(; it != deltas.end(); ++it){
+    std::set<IJKDelta>::iterator it = deltas->begin();
+    IJKIndex indexes[8]; //eight indexes is the most possible (3 degrees of freedom)
+    for(; it != deltas->end(); ++it){
         IJKDelta delta = (*it);
         //...get all the indexes from a delta (can yield 2, 4 or 8 coordinates, depending on the delta's degrees of freedom).
-        std::set<IJKIndex> indexes = delta.getIndexes( cell._indexIJK );
+        // TODO: Performance: that getIndexes() function has improved, but maybe there is still some room for improvement
+        int countIndexes = delta.getIndexes( cell._indexIJK, indexes );
         //for each topological coordinate (IJK index)...
-        std::set<IJKIndex>::iterator itIndexes = indexes.begin();
-        for(; itIndexes != indexes.end(); ++itIndexes){
-            int ii = (*itIndexes)._i;
-            int jj = (*itIndexes)._j;
-            int kk = (*itIndexes)._k;
+        for( int iIndex = 0; iIndex < countIndexes; ++iIndex){
+            int ii = indexes[iIndex]._i;
+            int jj = indexes[iIndex]._j;
+            int kk = indexes[iIndex]._k;
             //...if the index is within the grid limits...
             if( ii >= 0 && ii < row_limit &&
                 jj >= 0 && jj < column_limit &&

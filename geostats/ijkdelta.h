@@ -17,8 +17,11 @@ public:
     int sum() const { return _di+_dj+_dk; }
     int max() const { return std::max({_di, _dj, _dk}); }
 
-    /** Returns the possible indexes from this delta, given a reference index. */
-    std::set<IJKIndex> getIndexes( IJKIndex& fromIndex );
+    /** Fills the given vector with the possible indexes from this delta, given a reference index.
+     * @param result An array with room for at least 8 elements.
+     * @return The number of first elements in result with the computed indexes (2, 4 or 8).
+     */
+    int getIndexes(IJKIndex& fromIndex, IJKIndex *result );
 
     int _di;
     int _dj;

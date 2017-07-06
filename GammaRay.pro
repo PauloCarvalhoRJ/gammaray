@@ -153,7 +153,8 @@ SOURCES += main.cpp\
     geostats/spatiallocation.cpp \
     geostats/ndvestimationrunner.cpp \
     geostats/ijkdelta.cpp \
-    geostats/ijkindex.cpp
+    geostats/ijkindex.cpp \
+    geostats/ijkdeltascache.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -288,7 +289,8 @@ HEADERS  += mainwindow.h \
     geostats/spatiallocation.h \
     geostats/ndvestimationrunner.h \
     geostats/ijkdelta.h \
-    geostats/ijkindex.h
+    geostats/ijkindex.h \
+    geostats/ijkdeltascache.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

@@ -6,20 +6,48 @@ IJKDelta::IJKDelta(int di, int dj, int dk) :
 {
 }
 
-std::set<IJKIndex> IJKDelta::getIndexes(IJKIndex &fromIndex)
+int IJKDelta::getIndexes(IJKIndex &fromIndex, IJKIndex *result)
 {
-    std::set<IJKIndex> result;
+    int possibleIs[2];
+    int possibleJs[2];
+    int possibleKs[2];
+    int li, lj, lk;
 
-    //tries to insert all eight combinations of deltas (plus and minus), but
-    //std::set ensures only a distinct set of indexes (may end up with as little as 2 indexes)
-    result.insert( IJKIndex( fromIndex._i + _di, fromIndex._j + _dj, fromIndex._k + _dk) );
-    result.insert( IJKIndex( fromIndex._i + _di, fromIndex._j + _dj, fromIndex._k - _dk) );
-    result.insert( IJKIndex( fromIndex._i + _di, fromIndex._j - _dj, fromIndex._k + _dk) );
-    result.insert( IJKIndex( fromIndex._i + _di, fromIndex._j - _dj, fromIndex._k - _dk) );
-    result.insert( IJKIndex( fromIndex._i - _di, fromIndex._j + _dj, fromIndex._k + _dk) );
-    result.insert( IJKIndex( fromIndex._i - _di, fromIndex._j + _dj, fromIndex._k - _dk) );
-    result.insert( IJKIndex( fromIndex._i - _di, fromIndex._j - _dj, fromIndex._k + _dk) );
-    result.insert( IJKIndex( fromIndex._i - _di, fromIndex._j - _dj, fromIndex._k - _dk) );
+    if( _di > 0 ){
+        li = 2;
+        possibleIs[0] = fromIndex._i + _di;
+        possibleIs[1] = fromIndex._i - _di;
+    } else {
+        li = 1;
+        possibleIs[0] = fromIndex._i;
+    }
 
-    return result;
+    if( _dj > 0 ){
+        lj = 2;
+        possibleJs[0] = fromIndex._j + _dj;
+        possibleJs[1] = fromIndex._j - _dj;
+    } else {
+        lj = 1;
+        possibleJs[0] = fromIndex._j;
+    }
+
+    if( _dk > 0 ){
+        lk = 2;
+        possibleKs[0] = fromIndex._k + _dk;
+        possibleKs[1] = fromIndex._k - _dk;
+    } else {
+        lk = 1;
+        possibleKs[0] = fromIndex._k;
+    }
+
+    int count = 0;
+    for( int k = 0; k < lk; ++k )
+        for( int j = 0; j < lj; ++j )
+            for( int i = 0; i < li; ++i ){
+                result[count]._i = possibleIs[i];
+                result[count]._j = possibleJs[j];
+                result[count]._k = possibleKs[k];
+                ++count;
+            }
+    return count;
 }

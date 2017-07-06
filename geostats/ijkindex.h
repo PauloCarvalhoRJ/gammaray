@@ -7,6 +7,11 @@
 class IJKIndex
 {
 public:
+    /** Default constructor for use to build arrays, containers, etc.
+     * inits the indexes to 0,0,0
+     */
+    IJKIndex();
+
     IJKIndex(int i, int j, int k );
 
     int _i;
