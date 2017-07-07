@@ -473,6 +473,42 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     file.close();
 }
 
+void Util::createGEOEASGridFile(const QString gridDescription,
+                                std::vector<QString> columnNames,
+                                std::vector<std::vector<double> > &array,
+                                QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //determine the number of columns
+    int nColumns = columnNames.size();
+
+    //write out the GEO-EAS grid geader
+    out << gridDescription << '\n';
+    out << nColumns << '\n';
+    std::vector<QString>::iterator itColNames = columnNames.begin();
+    for(; itColNames != columnNames.end(); ++itColNames){
+        out << *itColNames << '\n';
+    }
+
+    //loop to output the values
+    std::vector< std::vector<double> >::iterator it = array.begin();
+    for( ; it != array.end(); ++it ){
+        std::vector<double> dataLine = *it;
+        std::vector<double>::iterator itData = dataLine.begin();
+        for(; itData != dataLine.end(); ++itData){
+            out << *itData << '\t';  //TODO: it would be nice to not leave a useless trailing tab char
+        }
+        out << '\n';
+    }
+
+    //close file
+    file.close();
+}
+
 bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, CategoryDefinition *cd)
 {
     //get input data file

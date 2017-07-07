@@ -41,6 +41,10 @@ public:
      */
     void setInfoFromGridParameter( GSLibParGrid* pg );
 
+    /** Changes the grid metadata to the new cell dimensions/count.
+     */
+    void setCellGeometry( int nx, int ny, int nz, double dx, double dy, double dz );
+
     //@{
     /** Getters. */
     double getX0(){ return _x0; }
@@ -72,6 +76,15 @@ public:
      *  @param indexColumRealPart Column index (starting with 0) with the values for the imaginary part.
      */
     std::vector< std::complex<double> > getArray( int indexColumRealPart, int indexColumImaginaryPart = -1 );
+
+    /** Returns a data array skipping elements in the original data.
+     *  Passing rates 1,1,1 results in a simple copy.
+     *  This function is useful with large grids to produce a data subset for quick visualization,
+     *  histogram computing, etc.
+     *  The resulting grid dimensions are stored in the output parameters finalN*
+     */
+    std::vector< std::vector<double> > getResampledValues(int rateI, int rateJ, int rateK ,
+                                                          int &finalNI, int &finalNJ, int &finalNK);
 
     //DataFile interface
 public:

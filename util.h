@@ -171,7 +171,7 @@ public:
     static void createGEOEAScheckerboardGrid( CartesianGrid* cg, QString path );
 
     /**
-     * Creates a GEO-EAS regular grid file using the given grid specs and the values
+     * Creates a GEO-EAS regular grid file using the given values
      * passed in the unidimensional vector of complex values.
      * If you omit a name for a field/column, the corresponding values will not be
      * written to the file.  If you omit (empty string) both names, no file will be generated.
@@ -182,6 +182,18 @@ public:
                                   const QString columnNameForImaginaryPart,
                                   std::vector< std::complex<double> > &array,
                                   QString path );
+
+    /**
+     * Creates a GEO-EAS regular grid file using the given values
+     * passed in the bidimensional vector of values.
+     * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
+     * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
+     * @param gridDescription A descriptive text for the new grid.  It is the first line of the GEO-EAS grid file.
+     */
+    static void createGEOEASGridFile( const QString gridDescription,
+                                      std::vector<QString> columnNames,
+                                      std::vector< std::vector<double> > &array,
+                                      QString path );
 
     /**
      * Runs the GSLib program pixelplt and opens the plot dialog to view a
