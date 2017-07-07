@@ -383,6 +383,18 @@ public:
      *  @param isig 0 or 1 to transform or back-transform respectively.
      */
     static void fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig );
+
+    /** Compute the dip angle corresponding to grid steps.
+     * the d* parameters are the grid cell sizes.
+     * The returned angle is in degrees and follow the GSLib convention.
+     */
+    static double getDip(double dx, double dy, double dz, int xstep, int ystep, int zstep);
+
+    /** Compute the azimuth angle corresponding to grid steps.
+     * the d* parameters are the grid cell sizes.
+     * The returned angle is in degrees and follow the GSLib convention.
+     */
+    static double getAzimuth(double dx, double dy, int xstep, int ystep );
 };
 
 #endif // UTIL_H

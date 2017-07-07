@@ -26,6 +26,9 @@
      <property name="selectionMode">
       <enum>QAbstractItemView::MultiSelection</enum>
      </property>
+     <property name="modelColumn">
+      <number>0</number>
+     </property>
     </widget>
    </item>
    <item>
@@ -76,6 +79,22 @@
     <hint type="destinationlabel">
      <x>64</x>
      <y>299</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnOK</sender>
+   <signal>clicked()</signal>
+   <receiver>RealizationSelectionDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>108</x>
+     <y>293</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>11</x>
+     <y>297</y>
     </hint>
    </hints>
   </connection>

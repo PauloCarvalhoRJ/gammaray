@@ -37,6 +37,9 @@
 
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
 
+//TODO: move this to geostatsutils.h, or transfer its PI_OVER_180 constant here
+#define C_180_OVER_PI (180.0 / 3.14159265)
+
 Util::Util()
 {
 }
@@ -1444,4 +1447,44 @@ void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &val
             }
         }
     }
+}
+
+double Util::getDip( double dx, double dy, double dz, int xstep, int ystep, int zstep )
+{
+    double xlag = xstep * dx;
+    double ylag = ystep * dy;
+    double xylag = sqrt( xlag*xlag + ylag*ylag );
+    double zlag = zstep * dz;
+    //refer to gam program instructions for cell steps equivalency to angles.
+    double dip = 0.0; //dip defaults to zero
+    if( xstep == 0 && ystep == 0) //dip along z axis
+    {
+        if( zstep < 0 ) dip = 90.0; else dip = -90.0;
+    }
+    else
+        dip = -std::atan( zlag / xylag ) * C_180_OVER_PI;
+    return dip;
+}
+
+double Util::getAzimuth(double dx, double dy, int xstep, int ystep)
+{
+    //refer to gam program instructions for cell steps equivalency to angles.
+    double azimuth = 0.0; //azimuth defaults to zero
+    if( xstep == 0 ) //azimuth along x axis
+    {
+        if( ystep < 0 ) azimuth = 180.0; else azimuth = 0.0;
+    }
+    else if( ystep == 0 ) //azimuth along y axis
+    {
+        if( xstep < 0 ) azimuth = 270.0; else azimuth = 90.0;
+    }
+    else if( xstep > 0 && ystep > 0 ) //azimuth in 1st quadrant
+        azimuth = atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    else if( xstep > 0 && ystep < 0 ) //azimuth in 2nd quadrant
+        azimuth = 180.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    else if( xstep < 0 && ystep < 0 ) //azimuth in 3rd quadrant
+        azimuth = 180.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    else if( xstep < 0 && ystep > 0 ) //azimuth in 4th quadrant
+        azimuth = 360.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    return azimuth;
 }

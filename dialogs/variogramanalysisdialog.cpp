@@ -33,7 +33,8 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(Attribute *head, Attribute *tai
     m_gpf_gam( nullptr ),
     m_varmap_grid( nullptr ),
     m_gpf_vmodel( nullptr ),
-    m_realsSelecDiag( nullptr )
+    m_realsSelecDiag( nullptr ),
+    m_gpf_vargplt_for_nreals( nullptr )
 {
     ui->setupUi(this);
 
@@ -538,25 +539,7 @@ void VariogramAnalysisDialog::onOpenVariogramModelParamateres()
             GSLibParMultiValuedFixed *par7_0 = par7->getParameter<GSLibParMultiValuedFixed*>(i, 0);
             int xstep = par7_0->getParameter<GSLibParInt*>(0)->_value;
             int ystep = par7_0->getParameter<GSLibParInt*>(1)->_value;
-            //refer to gam program instructions for cell steps equivalency to angles.
-            double azimuth = 0.0; //azimuth defaults to zero
-            if( xstep == 0 ) //azimuth along x axis
-            {
-                if( ystep < 0 ) azimuth = 180.0; else azimuth = 0.0;
-            }
-            else if( ystep == 0 ) //azimuth along y axis
-            {
-                if( xstep < 0 ) azimuth = 270.0; else azimuth = 90.0;
-            }
-            else if( xstep > 0 && ystep > 0 ) //azimuth in 1st quadrant
-                azimuth = atan( xstep*xsize / ystep*ysize ) * C_180_OVER_PI;
-            else if( xstep > 0 && ystep < 0 ) //azimuth in 2nd quadrant
-                azimuth = 180.0 + atan( xstep*xsize / ystep*ysize ) * C_180_OVER_PI;
-            else if( xstep < 0 && ystep < 0 ) //azimuth in 3rd quadrant
-                azimuth = 180.0 + atan( xstep*xsize / ystep*ysize ) * C_180_OVER_PI;
-            else if( xstep < 0 && ystep > 0 ) //azimuth in 4th quadrant
-                azimuth = 360.0 + atan( xstep*xsize / ystep*ysize ) * C_180_OVER_PI;
-            azimuths.append( azimuth );
+            azimuths.append( Util::getAzimuth( xsize, ysize, xstep, ystep ) );
         }
     }
     if( m_ev )
@@ -588,19 +571,7 @@ void VariogramAnalysisDialog::onOpenVariogramModelParamateres()
             int xstep = par7_0->getParameter<GSLibParInt*>(0)->_value;
             int ystep = par7_0->getParameter<GSLibParInt*>(1)->_value;
             int zstep = par7_0->getParameter<GSLibParInt*>(2)->_value;
-            double xlag = xstep * xsize;
-            double ylag = ystep * ysize;
-            double xylag = sqrt( xlag*xlag + ylag*ylag );
-            double zlag = zstep * zsize;
-            //refer to gam program instructions for cell steps equivalency to angles.
-            double dip = 0.0; //dip defaults to zero
-            if( xstep == 0 && ystep == 0) //dip along z axis
-            {
-                if( zstep < 0 ) dip = 90.0; else dip = -90.0;
-            }
-            else
-                dip = -atan( zlag / xylag ) * C_180_OVER_PI;
-            dips.append( dip );
+            dips.append( Util::getDip(xsize, ysize, zsize, xstep, ystep, zstep) );
         }
     }
     if( m_ev )
@@ -734,7 +705,7 @@ void VariogramAnalysisDialog::onVarNReals()
     //wait for user response
     int response = m_realsSelecDiag->exec();
     if( response == QDialog::Accepted ){
-        // m_realsSelecDiag->getSelectedRealizations();
+        onGam( true );
     }
 }
 
@@ -1074,7 +1045,7 @@ void VariogramAnalysisDialog::onVargplt(const QString path_to_exp_variogram_data
     dpd->show();
 }
 
-void VariogramAnalysisDialog::onGam()
+void VariogramAnalysisDialog::onGam(bool forMultipleRealizations)
 {
     //if the parameter file object was not constructed
     if( ! m_gpf_gam ){
@@ -1164,12 +1135,185 @@ void VariogramAnalysisDialog::onGam()
     GSLibParametersDialog gslibpardiag( m_gpf_gam );
     int result = gslibpardiag.exec();
     if( result == QDialog::Accepted ){
-        //Generate the parameter file
-        QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
-        m_gpf_gam->save( par_file_path );
-        //run gam program
-        Application::instance()->logInfo("Starting gam program...");
-        GSLib::instance()->runProgram( "gam", par_file_path );
-        onVargpltExperimentalRegular();
+        //standard usage for variogram modeling (one variogram, single realization)
+        if( ! forMultipleRealizations ){
+
+            //Generate the parameter file
+            QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+            m_gpf_gam->save( par_file_path );
+            //run gam program
+            Application::instance()->logInfo("Starting gam program...");
+            GSLib::instance()->runProgram( "gam", par_file_path );
+            onVargpltExperimentalRegular();
+
+        } else { //usage for simulation validation (plot of several realization variograms)
+
+            std::vector<QString> expVarFilePaths;
+            std::vector<int> reals = m_realsSelecDiag->getSelectedRealizations();
+            std::vector<int>::iterator it = reals.begin();
+            //save the realization number setting for the variogram modeling workflow
+            int oldNReal = m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value;
+            //for each realization number...
+            for( ; it != reals.end(); ++it ){
+                int realNum = *it;
+                //...change the realization number parameter for gam
+                m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = realNum;
+                //...set an output file with experimental variogram values
+                m_gpf_gam->getParameter<GSLibParFile*>(3)->_path =
+                        Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+                expVarFilePaths.push_back( m_gpf_gam->getParameter<GSLibParFile*>(3)->_path );
+                //...Generate the parameter file
+                QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+                m_gpf_gam->save( par_file_path );
+                //...run gam program
+                Application::instance()->logInfo("Starting gam program for realization " +
+                                                 QString::number(realNum) + "...");
+                GSLib::instance()->runProgram( "gam", par_file_path );
+            }
+            //restore the realization number setting for the variogram modeling workflow
+            m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = oldNReal;
+            onVargpltNReals( expVarFilePaths );
+
+        }
     }
+}
+
+void VariogramAnalysisDialog::onVargpltNReals( std::vector<QString> &expVarFilePaths )
+{
+    //compute a number of variogram curves to plot depending on
+    //the experimental variogram calculation parameters
+    uint ncurves = 1; //default is one variogram to plot
+    uint ndirections = 1; //default is one direction
+    uint nvarios = 1; //default is one variogram
+    uint nreals = expVarFilePaths.size(); //one experimental variogram file per realization
+
+    //surely we're running gam
+    {
+        GSLibParMultiValuedFixed *par6 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(6);
+        ndirections = par6->getParameter<GSLibParUInt*>(0)->_value;
+        nvarios = m_gpf_gam->getParameter<GSLibParUInt*>(9)->_value;
+        ncurves = nreals * ndirections * nvarios;
+    }
+
+    //make list of captions for the legend text further down
+    QStringList legendCaptions;
+    for( uint i = 0; i < ndirections; ++i){
+        GSLibParRepeat *par7 = m_gpf_gam->getParameter<GSLibParRepeat*>(7); //repeat ndir-times
+        GSLibParMultiValuedFixed *par7_0 = par7->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        legendCaptions.append( "STEP X=" + QString::number(par7_0->getParameter<GSLibParInt*>(0)->_value)
+                               + " STEP Y=" + QString::number(par7_0->getParameter<GSLibParInt*>(1)->_value)
+                               + " STEP Z=" + QString::number(par7_0->getParameter<GSLibParInt*>(2)->_value));
+    }
+
+    //make a GLSib parameter object if it wasn't done yet.
+    if( ! m_gpf_vargplt_for_nreals ){
+        m_gpf_vargplt_for_nreals = new GSLibParameterFile( "vargplt" );
+
+        //Set default values so we need to change less parameters and let
+        //the user change the others as one may see fit.
+        m_gpf_vargplt_for_nreals->setDefaultValues();
+
+        //make plot/window title
+        QString title;
+        if( m_head && m_tail )
+        {
+            title.append( m_head->getContainingFile()->getName() );
+            title.append(": ");
+            title.append(m_head->getName());
+            title.append("(u) x ");
+            title.append(m_tail->getName());
+            title.append("(u+h)");
+        }
+
+        //--------------------set some parameter values-----------------------
+
+        //postscript file
+        m_gpf_vargplt_for_nreals->getParameter<GSLibParFile*>(0)->_path =
+                Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+        //suggest display settings for each variogram curve
+        GSLibParRepeat *par6 = m_gpf_vargplt_for_nreals->getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
+        par6->setCount( ncurves );
+        //the experimental curves
+        for(uint iReal = 0; iReal < nreals; ++iReal){
+            for(uint iDirVar = 0; iDirVar < ndirections*nvarios; ++iDirVar){
+                int i = iDirVar + iReal * ndirections*nvarios;
+                par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[i];
+                GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
+                par6_0_1->getParameter<GSLibParUInt*>(0)->_value = iDirVar + 1;
+                par6_0_1->getParameter<GSLibParUInt*>(1)->_value = 0;
+                par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 0;
+                par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
+                par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = (iReal % 15) + 1; //cycle through the available colors (except the gray tones)
+            }
+        }
+
+        //plot title
+        m_gpf_vargplt_for_nreals->getParameter<GSLibParString*>(5)->_value = title;
+    }
+
+    //suggest (number of directions * number of variograms * number of realizations) from the variogram calculation parameters
+    m_gpf_vargplt_for_nreals->getParameter<GSLibParUInt*>(1)->_value = ncurves; // nvarios
+
+    //adjust curve count as needed
+    GSLibParRepeat *par6 = m_gpf_vargplt_for_nreals->getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
+    uint old_count = par6->getCount();
+    par6->setCount( ncurves );
+
+    //determine wether the number of curves changed
+    bool curve_count_changed = ( old_count != ncurves  );
+
+    //suggest experimental variogram visual parameters if the number of curves changes
+    //also updates color legend
+    for(uint iReal = 0; iReal < nreals; ++iReal){
+        for(uint iDirVar = 0; iDirVar < ndirections*nvarios; ++iDirVar){
+            int i = iDirVar + iReal * ndirections*nvarios;
+            GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
+            par6_0_1->getParameter<GSLibParUInt*>(0)->_value = iDirVar + 1;
+            uint colorCode = 1;
+            if( curve_count_changed ){
+                colorCode = (iReal % 15) + 1; //cycle through the available colors (except the gray tones)
+                par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = colorCode; //cycle through the available colors (except the gray tones)
+            } else {
+                colorCode = par6_0_1->getParameter<GSLibParColor*>(4)->_color_code;
+            }
+            // TODO: add color legend per realization
+//            if( legendCaptions.size() == (int)ndirections )
+//                legendCaptions[ i % ndirections ] = Util::getGSLibColorName(colorCode) + ": " + legendCaptions[ i % ndirections ];
+//            else
+//                Application::instance()->logWarn("VariogramAnalysisDialog::onVargplt(): Generation or update of color legend text in variogram plot not available.");
+        }
+    }
+
+    //inputs are the outputs of gam for each realization
+    for(uint i = 0; i < ncurves; ++i) {
+        par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[i];
+    }
+
+    //save and use a txt file to serve as legend
+    if( ! legendCaptions.isEmpty() ){
+        QString legendTXTfilePath = Application::instance()->getProject()->generateUniqueTmpFilePath("txt");
+        m_gpf_vargplt_for_nreals->getParameter<GSLibParFile*>(7)->_path = legendTXTfilePath;
+        Util::saveText( legendTXTfilePath, legendCaptions);
+    }
+
+    //----------------------display plot------------------------------------------------------------
+
+    //Generate the parameter file
+    QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    m_gpf_vargplt_for_nreals->save( par_file_path );
+
+    //run vargplt program
+    Application::instance()->logInfo("Starting vargplt program...");
+    GSLib::instance()->runProgram( "vargplt", par_file_path );
+
+    GSLibParameterFile gpf = *m_gpf_vargplt_for_nreals;
+
+    //display the plot output
+    DisplayPlotDialog *dpd = new DisplayPlotDialog(m_gpf_vargplt_for_nreals->getParameter<GSLibParFile*>(0)->_path,
+                                                   m_gpf_vargplt_for_nreals->getParameter<GSLibParString*>(5)->_value,
+                                                   gpf,
+                                                   this);
+    dpd->show();
+
 }
