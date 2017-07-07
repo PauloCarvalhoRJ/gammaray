@@ -688,12 +688,39 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
     values->SetName("values");
 
+    //try a sampling rate to keep the number of elements below the threshold
+    int srate = 1;
+    int maxcells = Application::instance()->getMaxGridCellCountFor3DVisualizationSetting();
+    for( ; (nX*nY*nZ) / (srate*srate*srate) >  maxcells; ++srate);
+
+    //warn user if sampling rate is less than maximum detail
+    if( srate > 1){
+        QString message("Grid with too many cells (");
+        message += QString::number(nX*nY*nZ) +
+                " > " + QString::number(maxcells) + " ).  Sampling rate set to " +
+                QString::number(srate) + " (1 = max. detail)";
+        QMessageBox::warning( nullptr, "Warning", message);
+        Application::instance()->logWarn("View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping: " + message);
+    }
+
+    //set sub-sampled grid dimensions
+    int nXsub = nX / srate;
+    int nYsub = nY / srate;
+    int nZsub = nZ / srate;
+
     //read sample values
-    values->Allocate( nX*nY*nZ );
-    for( int i = 0; i < nX*nY*nZ; ++i){
-        // sample value
-        double value = cartesianGrid->data( i, var_index - 1 );
-        values->InsertNextValue( value );
+    values->Allocate( nXsub*nYsub*nZsub );
+    for( int k = 0; k < nZsub; ++k){
+        for( int j = 0; j < nYsub; ++j){
+            for( int i = 0; i < nXsub; ++i){
+                // sample value
+                double value = cartesianGrid->dataIJK( var_index - 1,
+                                                       std::min(i*srate, nX-1),
+                                                       std::min(j*srate, nY-1),
+                                                       std::min(k*srate, nZ-1) );
+                values->InsertNextValue( value );
+            }
+        }
     }
 
     //we don't need file's data anymore
@@ -711,13 +738,13 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
             vtkSmartPointer<vtkStructuredGrid>::New();
     vtkSmartPointer<vtkPoints> points =
             vtkSmartPointer<vtkPoints>::New();
-    for(int k = 0; k <= nZ; ++k)
-        for(int j = 0; j <= nY; ++j)
-            for(int i = 0; i <= nX; ++i)
-                points->InsertNextPoint( X0frame + i * dX,
-                                         Y0frame + j * dY,
-                                         Z0frame + k * dZ );
-    structuredGrid->SetDimensions( nX+1, nY+1, nZ+1 );
+    for(int k = 0; k <= nZsub; ++k)
+        for(int j = 0; j <= nYsub; ++j)
+            for(int i = 0; i <= nXsub; ++i)
+                points->InsertNextPoint( X0frame + i * dX * srate,
+                                         Y0frame + j * dY * srate,
+                                         Z0frame + k * dZ * srate );
+    structuredGrid->SetDimensions( nXsub+1, nYsub+1, nZsub+1 );
     structuredGrid->SetPoints(points);
 
     //assign the grid values to the grid cells
@@ -730,26 +757,11 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     transformFilter->SetTransform(xform);
     transformFilter->Update();
 
-    //try a sampling rate to keep the number of elements below the threshold
-    int srate = 1;
-    int maxcells = Application::instance()->getMaxGridCellCountFor3DVisualizationSetting();
-    for( ; (nX*nY*nZ) / (srate*srate*srate) >  maxcells; ++srate);
-
-    //warn user if sampling rate is less than maximum detail
-    if( srate > 1){
-        QString message("Grid with too many cells (");
-        message += QString::number(nX*nY*nZ) +
-                " > " + QString::number(maxcells) + " ).  Sampling rate set to " +
-                QString::number(srate) + " (1 = max. detail)";
-        QMessageBox::warning( nullptr, "Warning", message);
-        Application::instance()->logWarn("View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping: " + message);
-    }
-
     //apply a grid sub-sampler/re-sampler to handle clipping
     vtkSmartPointer<vtkExtractGrid> subGrid =
             vtkSmartPointer<vtkExtractGrid>::New();
     subGrid->SetInputConnection( transformFilter->GetOutputPort()  );
-    subGrid->SetVOI( 0, nX, 0, nY, 0, nZ );
+    subGrid->SetVOI( 0, nXsub, 0, nYsub, 0, nZsub );
     subGrid->SetSampleRate(srate, srate, srate);
 
     //assign a color table
@@ -768,7 +780,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     actor->GetProperty()->EdgeVisibilityOn();
-    return View3DViewData(actor, subGrid, mapper);
+    return View3DViewData(actor, subGrid, mapper, srate);
 }
 
 View3DViewData View3DBuilders::buildForStratGrid(ProjectComponent */*toBeSpecified*/, View3DWidget */*widget3D*/)
