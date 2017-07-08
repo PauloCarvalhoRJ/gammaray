@@ -26,9 +26,9 @@ V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(
     ui->sldKLowClip->blockSignals(true);
     ui->sldKHighClip->blockSignals(true);
 
-    int nXsub = cartesianGrid->getNX() / _viewObjects.samplingRate + _viewObjects.samplingRate;
-    int nYsub = cartesianGrid->getNY() / _viewObjects.samplingRate + _viewObjects.samplingRate;
-    int nZsub = cartesianGrid->getNZ() / _viewObjects.samplingRate + _viewObjects.samplingRate;
+    int nXsub = cartesianGrid->getNX() / _viewObjects.samplingRate + 1;
+    int nYsub = cartesianGrid->getNY() / _viewObjects.samplingRate + 1;
+    int nZsub = cartesianGrid->getNZ() / _viewObjects.samplingRate + 1;
     if( _viewObjects.samplingRate == 1 ){
         nXsub = cartesianGrid->getNX();
         nYsub = cartesianGrid->getNY();
@@ -55,6 +55,8 @@ V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(
     ui->sldKHighClip->setMinimum( 0 );
     ui->sldKHighClip->setMaximum( nZsub );
     ui->sldKHighClip->setValue( nZsub );
+
+    updateLabels();
 
     //restore signal processing
     ui->sldILowClip->blockSignals(false);
@@ -96,6 +98,8 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 
     mapper->SetInputConnection( subgrider->GetOutputPort());
 
+    updateLabels();
+
 //    subgrider->UpdateWholeExtent();
 //    subgrider->SetUpdateExtentToWholeExtent();
 //    int ext[]={0,5,0,5,0,5};
@@ -107,4 +111,27 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 //    subgrider->Set
 
     emit changed();
+}
+
+void V3DCfgWidForAttributeIn3DCartesianGrid::updateLabels()
+{
+    //the labels should show the IJK clipping indexes from the original size
+    //not of the subsampled cube.  This helps the user in locating an original slice
+    //for further analysis
+
+    ui->lblIlowClip->setText ( QString::number( ui->sldILowClip->value() * _viewObjects.samplingRate ) );
+    ui->lblIhighClip->setText( QString::number( ui->sldIHighClip->value() * _viewObjects.samplingRate ) );
+    ui->lblJlowClip->setText ( QString::number( ui->sldJLowClip->value() * _viewObjects.samplingRate ) );
+    ui->lblJhighClip->setText( QString::number( ui->sldJHighClip->value() * _viewObjects.samplingRate ) );
+    ui->lblKlowClip->setText ( QString::number( ui->sldKLowClip->value() * _viewObjects.samplingRate ) );
+    ui->lblKhighClip->setText( QString::number( ui->sldKHighClip->value() * _viewObjects.samplingRate ) );
+
+    if( _viewObjects.samplingRate > 1 ){
+        ui->lblIlowClip->setText ( "~ " + ui->lblIlowClip->text() );
+        ui->lblIhighClip->setText( "~ " + ui->lblIhighClip->text() );
+        ui->lblJlowClip->setText ( "~ " + ui->lblJlowClip->text() );
+        ui->lblJhighClip->setText( "~ " + ui->lblJhighClip->text() );
+        ui->lblKlowClip->setText ( "~ " + ui->lblKlowClip->text() );
+        ui->lblKhighClip->setText( "~ " + ui->lblKhighClip->text() );
+    }
 }
