@@ -14,14 +14,19 @@ class View3DViewData
 {
 public:
     View3DViewData();
+
     View3DViewData(vtkSmartPointer<vtkProp> pActor);
+
     View3DViewData(vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkStructuredGridClip> pClipper);
+
     View3DViewData(vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkExtractGrid> pSubgrider);
+
     View3DViewData(vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkExtractGrid> pSubgrider,
-                   vtkSmartPointer<vtkDataSetMapper> pMapper);
+                   vtkSmartPointer<vtkDataSetMapper> pMapper,
+                   int sRate = 1);
 
 
     /** All objects must have a VTKActor to become visible. */
@@ -35,6 +40,9 @@ public:
 
     /** Some objects may have a configurable data set mapper. */
     vtkSmartPointer<vtkDataSetMapper> mapper;
+
+    /** Sampling rate. Default is 1: 1 cell per 1 sample in each topological direction (I, J, K). */
+    int samplingRate;
 };
 
 #endif // VIEW3DVIEWDATA_H

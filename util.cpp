@@ -476,6 +476,42 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     file.close();
 }
 
+void Util::createGEOEASGridFile(const QString gridDescription,
+                                std::vector<QString> columnNames,
+                                std::vector<std::vector<double> > &array,
+                                QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //determine the number of columns
+    int nColumns = columnNames.size();
+
+    //write out the GEO-EAS grid geader
+    out << gridDescription << '\n';
+    out << nColumns << '\n';
+    std::vector<QString>::iterator itColNames = columnNames.begin();
+    for(; itColNames != columnNames.end(); ++itColNames){
+        out << *itColNames << '\n';
+    }
+
+    //loop to output the values
+    std::vector< std::vector<double> >::iterator it = array.begin();
+    for( ; it != array.end(); ++it ){
+        std::vector<double> dataLine = *it;
+        std::vector<double>::iterator itData = dataLine.begin();
+        for(; itData != dataLine.end(); ++itData){
+            out << *itData << '\t';  //TODO: it would be nice to not leave a useless trailing tab char
+        }
+        out << '\n';
+    }
+
+    //close file
+    file.close();
+}
+
 bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, CategoryDefinition *cd)
 {
     //get input data file
@@ -902,7 +938,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
+    previousVersions << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
                         "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();

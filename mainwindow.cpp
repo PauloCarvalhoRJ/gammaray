@@ -52,6 +52,7 @@
 #include "dialogs/bidistributionmodelingdialog.h"
 #include "dialogs/valuespairsdialog.h"
 #include "dialogs/indicatorkrigingdialog.h"
+#include "dialogs/gridresampledialog.h"
 #include "spatialindex/spatialindexpoints.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
@@ -413,6 +414,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ){
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
+                _projectContextMenu->addAction("Resample", this, SLOT(onResampleGrid()));
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
@@ -1341,6 +1343,78 @@ void MainWindow::onFFT()
     Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
 
     Application::instance()->logInfo("FFT 2D completed.");
+}
+
+void MainWindow::onResampleGrid()
+{
+    //========================user input part===============================
+
+    //Get the Cartesian grid object.
+    CartesianGrid* cg = (CartesianGrid*)_right_clicked_file;
+
+    //Get sampling rates from user
+    GridResampleDialog grd( cg, this );
+
+    int result = grd.exec(); //wait for user response
+
+    //if the user canceled the dialog
+    if( result != QDialog::Accepted )
+        return;
+
+    //propose a name for the new grid to contain the FFT image
+    QString proposed_name = _right_clicked_file->getName() + "_RESAMPLED.dat";
+
+    //user enters the name for the new grid with FFT image
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid",
+                                             "Name for the resampled grid:", QLineEdit::Normal,
+                                             proposed_name );
+
+    //if the user canceled the input box
+    if ( new_cg_name.isEmpty() ){
+        //abort
+        return;
+    }
+
+    //=====================if user didn't cancel, proceed to task===================
+
+    int iIrate = grd.getIrate();
+    int iJrate = grd.getJrate();
+    int iKrate = grd.getKrate();
+
+    int newNI, newNJ, newNK;
+
+    std::vector< std::vector<double> > resampledData = cg->getResampledValues( iIrate, iJrate, iKrate,
+                                                                               newNI, newNJ, newNK);
+
+    //make a tmp file path
+    QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+    //crate a new cartesian grid pointing to the tmp path
+    CartesianGrid * new_cg = new CartesianGrid( tmp_file_path );
+
+    //init the grid geometry info
+    new_cg->setInfoFromOtherCG( cg );
+
+    //adjust some grid geometry parameters to reflect the resampling
+    double dx, dy, dz;
+    dx = cg->getDX() * cg->getNX()/(double)newNI;
+    dy = cg->getDY() * cg->getNY()/(double)newNJ;
+    dz = cg->getDZ() * cg->getNZ()/(double)newNK;
+    new_cg->setCellGeometry( newNI, newNJ, newNK, dx, dy, dz );
+
+    //get the file's data GEO-EAS column names
+    QStringList colNames = Util::getFieldNames( cg->getPath() );
+
+    //get the file's GEO-EAS description (first text line)
+    QString fileDescription = Util::getGEOEAScomment( cg->getPath() );
+
+    //save the results in the project's tmp directory
+    Util::createGEOEASGridFile(fileDescription, colNames.toVector().toStdVector(), resampledData, tmp_file_path);
+
+    //import the saved file to the project
+    Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
+
+    Application::instance()->logInfo("Grid resampling completed.");
 }
 
 void MainWindow::onCreateCategoryDefinition()

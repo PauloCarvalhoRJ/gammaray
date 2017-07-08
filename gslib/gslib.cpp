@@ -38,7 +38,7 @@ void GSLib::runProgram(const QString program_name, const QString par_file_path, 
     if( parFromStdIn ){
         process.write( QString(par_file_path).append('\n').toStdString().c_str() );
     }
-    if(! process.waitForFinished() ){
+    if(! process.waitForFinished(-1) ){
         Application::instance()->logError(QString("ERROR: call to external program ").append(program_name).append(" abnormally ended."));
         QString errorCause;
         switch( process.error() ){
