@@ -26,26 +26,37 @@ V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(
     ui->sldKLowClip->blockSignals(true);
     ui->sldKHighClip->blockSignals(true);
 
+    int nXsub = cartesianGrid->getNX() / _viewObjects.samplingRate + 1;
+    int nYsub = cartesianGrid->getNY() / _viewObjects.samplingRate + 1;
+    int nZsub = cartesianGrid->getNZ() / _viewObjects.samplingRate + 1;
+    if( _viewObjects.samplingRate == 1 ){
+        nXsub = cartesianGrid->getNX();
+        nYsub = cartesianGrid->getNY();
+        nZsub = cartesianGrid->getNZ();
+    }
+
     ui->sldILowClip->setMinimum( 0 );
-    ui->sldILowClip->setMaximum( cartesianGrid->getNX() );
+    ui->sldILowClip->setMaximum( nXsub );
     ui->sldILowClip->setValue(0);
     ui->sldIHighClip->setMinimum( 0 );
-    ui->sldIHighClip->setMaximum( cartesianGrid->getNX() );
-    ui->sldIHighClip->setValue(cartesianGrid->getNX());
+    ui->sldIHighClip->setMaximum( nXsub );
+    ui->sldIHighClip->setValue( nXsub );
 
     ui->sldJLowClip->setMinimum( 0 );
-    ui->sldJLowClip->setMaximum( cartesianGrid->getNY() );
+    ui->sldJLowClip->setMaximum( nYsub );
     ui->sldJLowClip->setValue(0);
     ui->sldJHighClip->setMinimum( 0 );
-    ui->sldJHighClip->setMaximum( cartesianGrid->getNY() );
-    ui->sldJHighClip->setValue(cartesianGrid->getNY());
+    ui->sldJHighClip->setMaximum( nYsub );
+    ui->sldJHighClip->setValue( nYsub );
 
     ui->sldKLowClip->setMinimum( 0 );
-    ui->sldKLowClip->setMaximum( cartesianGrid->getNZ() );
+    ui->sldKLowClip->setMaximum( nZsub );
     ui->sldKLowClip->setValue(0);
     ui->sldKHighClip->setMinimum( 0 );
-    ui->sldKHighClip->setMaximum( cartesianGrid->getNZ() );
-    ui->sldKHighClip->setValue(cartesianGrid->getNZ());
+    ui->sldKHighClip->setMaximum( nZsub );
+    ui->sldKHighClip->setValue( nZsub );
+
+    updateLabels();
 
     //restore signal processing
     ui->sldILowClip->blockSignals(false);
@@ -87,6 +98,8 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 
     mapper->SetInputConnection( subgrider->GetOutputPort());
 
+    updateLabels();
+
 //    subgrider->UpdateWholeExtent();
 //    subgrider->SetUpdateExtentToWholeExtent();
 //    int ext[]={0,5,0,5,0,5};
@@ -98,4 +111,27 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 //    subgrider->Set
 
     emit changed();
+}
+
+void V3DCfgWidForAttributeIn3DCartesianGrid::updateLabels()
+{
+    //the labels should show the IJK clipping indexes from the original size
+    //not of the subsampled cube.  This helps the user in locating an original slice
+    //for further analysis
+
+    ui->lblIlowClip->setText ( QString::number( ui->sldILowClip->value() * _viewObjects.samplingRate ) );
+    ui->lblIhighClip->setText( QString::number( ui->sldIHighClip->value() * _viewObjects.samplingRate ) );
+    ui->lblJlowClip->setText ( QString::number( ui->sldJLowClip->value() * _viewObjects.samplingRate ) );
+    ui->lblJhighClip->setText( QString::number( ui->sldJHighClip->value() * _viewObjects.samplingRate ) );
+    ui->lblKlowClip->setText ( QString::number( ui->sldKLowClip->value() * _viewObjects.samplingRate ) );
+    ui->lblKhighClip->setText( QString::number( ui->sldKHighClip->value() * _viewObjects.samplingRate ) );
+
+    if( _viewObjects.samplingRate > 1 ){
+        ui->lblIlowClip->setText ( "~ " + ui->lblIlowClip->text() );
+        ui->lblIhighClip->setText( "~ " + ui->lblIhighClip->text() );
+        ui->lblJlowClip->setText ( "~ " + ui->lblJlowClip->text() );
+        ui->lblJhighClip->setText( "~ " + ui->lblJhighClip->text() );
+        ui->lblKlowClip->setText ( "~ " + ui->lblKlowClip->text() );
+        ui->lblKhighClip->setText( "~ " + ui->lblKhighClip->text() );
+    }
 }
