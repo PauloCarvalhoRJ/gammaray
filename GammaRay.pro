@@ -145,7 +145,8 @@ SOURCES += main.cpp\
     domain/auxiliary/dataloader.cpp \
     array3d.cpp \
     dialogs/realizationselectiondialog.cpp \
-    dialogs/gridresampledialog.cpp
+    dialogs/gridresampledialog.cpp \
+    dialogs/multivariogramdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -272,7 +273,8 @@ HEADERS  += mainwindow.h \
     domain/auxiliary/dataloader.h \
     array3d.h \
     dialogs/realizationselectiondialog.h \
-    dialogs/gridresampledialog.h
+    dialogs/gridresampledialog.h \
+    dialogs/multivariogramdialog.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -328,7 +330,8 @@ FORMS    += mainwindow.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.ui \
     dialogs/realizationselectiondialog.ui \
-    dialogs/gridresampledialog.ui
+    dialogs/gridresampledialog.ui \
+    dialogs/multivariogramdialog.ui
 
 # The Boost include path.
 BOOST_INSTALL = $$(BOOST_ROOT)
