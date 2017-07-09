@@ -4,6 +4,7 @@
 #include <QDialog>
 
 class Attribute;
+class GSLibParameterFile;
 
 namespace Ui {
 class MultiVariogramDialog;
@@ -20,10 +21,13 @@ public:
 
 private:
     Ui::MultiVariogramDialog *ui;
-    std::vector<Attribute *> _attributes;
+    std::vector<Attribute *> m_attributes;
+    GSLibParameterFile* m_gpf_gam;
+    GSLibParameterFile* m_gpf_vargplt;
 
 private slots:
     void onGam();
+    void onVargplt(std::vector<QString> &expVarFilePaths);
 };
 
 #endif // MULTIVARIOGRAMDIALOG_H

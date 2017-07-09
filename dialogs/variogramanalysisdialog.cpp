@@ -85,6 +85,8 @@ VariogramAnalysisDialog::~VariogramAnalysisDialog()
         delete m_gpf_pixelplt;
     if( m_gpf_vargplt )
         delete m_gpf_vargplt;
+    if( m_gpf_vargplt_for_nreals )
+        delete m_gpf_vargplt_for_nreals;
     if( m_gpf_gam )
         delete m_gpf_gam;
     if( m_gpf_vmodel )
