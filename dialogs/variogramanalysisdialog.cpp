@@ -30,11 +30,11 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(Attribute *head, Attribute *tai
     m_gpf_pixelplt( nullptr ),
     m_gpf_gamv( nullptr ),
     m_gpf_vargplt( nullptr ),
+    m_gpf_vargplt_for_nreals( nullptr ),
     m_gpf_gam( nullptr ),
     m_varmap_grid( nullptr ),
     m_gpf_vmodel( nullptr ),
-    m_realsSelecDiag( nullptr ),
-    m_gpf_vargplt_for_nreals( nullptr )
+    m_realsSelecDiag( nullptr )
 {
     ui->setupUi(this);
 
@@ -56,9 +56,11 @@ VariogramAnalysisDialog::VariogramAnalysisDialog(ExperimentalVariogram *ev, QWid
     m_gpf_pixelplt( nullptr ),
     m_gpf_gamv( nullptr ),
     m_gpf_vargplt( nullptr ),
+    m_gpf_vargplt_for_nreals( nullptr ),
     m_gpf_gam( nullptr ),
     m_varmap_grid( nullptr ),
-    m_gpf_vmodel( nullptr )
+    m_gpf_vmodel( nullptr ),
+    m_realsSelecDiag( nullptr )
 {
     ui->setupUi(this);
     this->setWindowTitle( QString("Fit variogram model for ").append( ev->getName() ) );
@@ -102,6 +104,17 @@ void VariogramAnalysisDialog::finishUISetup()
         ui->btnVarioMapSave->setIcon( QIcon(":icons32/save32") );
         ui->btnVarmapPar->setIcon( QIcon(":icons32/setting32") );
         ui->btnVarmapPlot->setIcon( QIcon(":icons32/plot32") );
+    }
+
+    //the multiple realizations variograms button is hidden by default
+    ui->btnVarNReals->hide();
+    if( m_head ){
+        File* file = m_head->getContainingFile();
+        if( file->getFileType() == "CARTESIANGRID" ){
+            CartesianGrid* cg = (CartesianGrid*)file;
+            if( cg->getNReal() > 1 )
+                ui->btnVarNReals->show();
+        }
     }
 
     adjustSize();
@@ -1236,15 +1249,17 @@ void VariogramAnalysisDialog::onVargpltNReals( std::vector<QString> &expVarFileP
         par6->setCount( ncurves );
         //the experimental curves
         for(uint iReal = 0; iReal < nreals; ++iReal){
-            for(uint iDirVar = 0; iDirVar < ndirections*nvarios; ++iDirVar){
-                int i = iDirVar + iReal * ndirections*nvarios;
-                par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[i];
-                GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
-                par6_0_1->getParameter<GSLibParUInt*>(0)->_value = iDirVar + 1;
-                par6_0_1->getParameter<GSLibParUInt*>(1)->_value = 0;
-                par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 0;
-                par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
-                par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = (iReal % 15) + 1; //cycle through the available colors (except the gray tones)
+            for(uint iVar = 0; iVar < nvarios; ++iVar){
+                for(uint iDir = 0; iDir < ndirections; ++iDir){
+                    int i = iVar + iDir*nvarios + iReal*ndirections*nvarios;
+                    par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[iReal];
+                    GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
+                    par6_0_1->getParameter<GSLibParUInt*>(0)->_value = iDir+iVar*ndirections + 1;
+                    par6_0_1->getParameter<GSLibParUInt*>(1)->_value = iDir; //BUG1234: line style should alternat between directions
+                    par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 0;
+                    par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
+                    par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = (iReal % 15) + 1; //cycle through the available colors (except the gray tones)
+                }
             }
         }
 
@@ -1286,8 +1301,11 @@ void VariogramAnalysisDialog::onVargpltNReals( std::vector<QString> &expVarFileP
     }
 
     //inputs are the outputs of gam for each realization
-    for(uint i = 0; i < ncurves; ++i) {
-        par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[i];
+    for(uint iReal = 0; iReal < nreals; ++iReal){
+        for(uint iDirVar = 0; iDirVar < ndirections*nvarios; ++iDirVar){
+            int i = iDirVar + iReal * ndirections*nvarios;
+            par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[iReal];
+        }
     }
 
     //save and use a txt file to serve as legend
