@@ -915,7 +915,7 @@ void GSLibParameterFile::setDefaultValuesForGam()
     par2->getParameter<GSLibParDouble*>(1)->_value = 10000.0;
 
     this->getParameter<GSLibParFile*>(3)->_path = "";
-    this->getParameter<GSLibParUInt*>(4)->_value = 1;
+    this->getParameter<GSLibParUInt*>(4)->_value = 1; //realization number
 
     GSLibParGrid* par5;
     par5 = this->getParameter<GSLibParGrid*>(5);

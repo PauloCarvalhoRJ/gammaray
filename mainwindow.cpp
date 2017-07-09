@@ -56,6 +56,7 @@
 #include "spatialindex/spatialindexpoints.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
+#include "dialogs/multivariogramdialog.h"
 #include "viewer3d/view3dwidget.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -552,6 +553,23 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             menu_caption.append(" X ");
             menu_caption.append((static_cast<ProjectComponent*>( index3.internalPointer() ))->getName());
             _projectContextMenu->addAction(menu_caption, this, SLOT(onXPlot()));
+        }
+    }
+
+    //variable combinations of selected items
+    {
+        //determine whether all selected items are Attributes
+        bool areAllItemsAttributes = true;
+        QModelIndexList::iterator it = selected_indexes.begin();
+        for(;  it != selected_indexes.end(); ++it){
+            QModelIndex index = *it;
+            if( !index.isValid() || !(static_cast<ProjectComponent*>( index.internalPointer() ))->isAttribute() ){
+                areAllItemsAttributes = false;
+            }
+        }
+        //if all selected items are attributes (two or more)
+        if( areAllItemsAttributes && selected_indexes.size() > 1 ){
+            _projectContextMenu->addAction("Multiple variograms", this, SLOT(onMultiVariogram()));
         }
     }
 
@@ -1415,6 +1433,13 @@ void MainWindow::onResampleGrid()
     Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
 
     Application::instance()->logInfo("Grid resampling completed.");
+}
+
+void MainWindow::onMultiVariogram()
+{
+    QList<Attribute *> selectedAttributes = getSelectedAttributes();
+    MultiVariogramDialog * mvd = new MultiVariogramDialog( selectedAttributes.toVector().toStdVector(), this );
+    mvd->show(); //shows dialgo asynchronolously
 }
 
 void MainWindow::onCreateCategoryDefinition()
