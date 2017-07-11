@@ -170,7 +170,7 @@
         <item>
          <widget class="QLabel" name="label_12">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>realizations:</string>
@@ -180,7 +180,7 @@
         <item>
          <widget class="QLineEdit" name="txtRealizationCount">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>1</string>

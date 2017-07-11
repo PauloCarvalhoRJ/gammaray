@@ -1,4 +1,4 @@
-#include "util.h"
+﻿#include "util.h"
 #include <QFile>
 #include <QTextStream>
 #include <QRegularExpression>
@@ -40,6 +40,10 @@
 /*static*/const long double Util::PI( 3.141592653589793238L );
 
 /*static*/const long double Util::PI_OVER_180( Util::PI / 180.0L );
+
+//TODO: move this to geostatsutils.h, or transfer its PI_OVER_180 constant here
+#define C_180_OVER_PI (180.0 / 3.14159265)
+
 
 Util::Util()
 {
@@ -477,22 +481,36 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     file.close();
 }
 
-void Util::createGEOEASGrid(const QString columnName, std::vector<double> &array, QString path)
+void Util::createGEOEASGridFile(const QString gridDescription,
+                                std::vector<QString> columnNames,
+                                std::vector<std::vector<double> > &array,
+                                QString path)
 {
     //open file for writing
     QFile file( path );
     file.open( QFile::WriteOnly | QFile::Text );
     QTextStream out(&file);
 
+    //determine the number of columns
+    int nColumns = columnNames.size();
+
     //write out the GEO-EAS grid geader
-    out << "Grid file\n";
-    out << "1\n";
-    out << columnName << '\n';
+    out << gridDescription << '\n';
+    out << nColumns << '\n';
+    std::vector<QString>::iterator itColNames = columnNames.begin();
+    for(; itColNames != columnNames.end(); ++itColNames){
+        out << *itColNames << '\n';
+    }
 
     //loop to output the values
-    std::vector<double>::iterator it = array.begin();
+    std::vector< std::vector<double> >::iterator it = array.begin();
     for( ; it != array.end(); ++it ){
-            out << (*it) << '\n';
+        std::vector<double> dataLine = *it;
+        std::vector<double>::iterator itData = dataLine.begin();
+        for(; itData != dataLine.end(); ++itData){
+            out << *itData << '\t';  //TODO: it would be nice to not leave a useless trailing tab char
+        }
+        out << '\n';
     }
 
     //close file
@@ -925,7 +943,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
+    previousVersions << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
                         "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
@@ -1470,4 +1488,44 @@ void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &val
             }
         }
     }
+}
+
+double Util::getDip( double dx, double dy, double dz, int xstep, int ystep, int zstep )
+{
+    double xlag = xstep * dx;
+    double ylag = ystep * dy;
+    double xylag = sqrt( xlag*xlag + ylag*ylag );
+    double zlag = zstep * dz;
+    //refer to gam program instructions for cell steps equivalency to angles.
+    double dip = 0.0; //dip defaults to zero
+    if( xstep == 0 && ystep == 0) //dip along z axis
+    {
+        if( zstep < 0 ) dip = 90.0; else dip = -90.0;
+    }
+    else
+        dip = -std::atan( zlag / xylag ) * C_180_OVER_PI;
+    return dip;
+}
+
+double Util::getAzimuth(double dx, double dy, int xstep, int ystep)
+{
+    //refer to gam program instructions for cell steps equivalency to angles.
+    double azimuth = 0.0; //azimuth defaults to zero
+    if( xstep == 0 ) //azimuth along x axis
+    {
+        if( ystep < 0 ) azimuth = 180.0; else azimuth = 0.0;
+    }
+    else if( ystep == 0 ) //azimuth along y axis
+    {
+        if( xstep < 0 ) azimuth = 270.0; else azimuth = 90.0;
+    }
+    else if( xstep > 0 && ystep > 0 ) //azimuth in 1st quadrant
+        azimuth = atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    else if( xstep > 0 && ystep < 0 ) //azimuth in 2nd quadrant
+        azimuth = 180.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    else if( xstep < 0 && ystep < 0 ) //azimuth in 3rd quadrant
+        azimuth = 180.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    else if( xstep < 0 && ystep > 0 ) //azimuth in 4th quadrant
+        azimuth = 360.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
+    return azimuth;
 }

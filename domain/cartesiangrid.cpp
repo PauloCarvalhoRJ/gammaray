@@ -181,6 +181,12 @@ void CartesianGrid::setInfoFromGridParameter(GSLibParGrid *pg)
     this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal, ndv, empty, empty2);
 }
 
+void CartesianGrid::setCellGeometry(int nx, int ny, int nz, double dx, double dy, double dz)
+{
+    this->setInfo( _x0, _y0, _z0, dx, dy, dz, nx, ny, nz, _rot, _nreal,
+                   _no_data_value, _nsvar_var_trn, _categorical_attributes);
+}
+
 double CartesianGrid::dataIJK(uint column, uint i, uint j, uint k)
 {
     uint dataRow = i + j*_nx + k*_ny*_nx;
@@ -202,6 +208,34 @@ std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPar
                     im = dataIJK( indexColumImaginaryPart, i, j, k);
                 result[i + j*_nx + k*_ny*_nx] = std::complex<double>(real, im);
             }
+
+    return result;
+}
+
+std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, int rateJ, int rateK,
+                                                                    int &finalNI, int &finalNJ, int &finalNK)
+{
+    std::vector< std::vector<double> > result;
+
+    uint nDataColumns = getDataColumnCount();
+
+    result.reserve( (_nx/rateI) * (_ny/rateJ) * (_nz/rateK) * nDataColumns );
+
+    finalNK = 0;
+    for( uint k = 0; k < _nz; k += rateK, ++finalNK ){
+        finalNJ = 0;
+        for( uint j = 0; j < _ny; j += rateJ, ++finalNJ ){
+            finalNI = 0;
+            for( uint i = 0; i < _nx; i += rateI, ++finalNI ){
+                std::vector<double> dataLine;
+                dataLine.reserve( nDataColumns );
+                for( uint d = 0; d < nDataColumns; ++d){
+                    dataLine.push_back( dataIJK( d, i, j, k ) );
+                }
+                result.push_back( dataLine );
+            }
+        }
+    }
 
     return result;
 }

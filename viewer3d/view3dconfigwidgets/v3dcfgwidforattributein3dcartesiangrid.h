@@ -30,6 +30,7 @@ private:
 
 private slots:
     void onUserMadeChanges();
+    void updateLabels();
 };
 
 #endif // V3DCFGWIDFORATTRIBUTEIN3DCARTESIANGRID_H

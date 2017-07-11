@@ -524,6 +524,7 @@ uint DataFile::getDataLineCount()
 
 uint DataFile::getDataColumnCount()
 {
+    loadData();
     if( getDataLineCount() > 0 )
         return _data[0].size();
     else

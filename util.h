@@ -1,4 +1,4 @@
-#ifndef UTIL_H
+﻿#ifndef UTIL_H
 #define UTIL_H
 #include <QStringList>
 #include <QString>
@@ -177,7 +177,7 @@ public:
     static void createGEOEAScheckerboardGrid( CartesianGrid* cg, QString path );
 
     /**
-     * Creates a GEO-EAS regular grid file using the given grid specs and the values
+     * Creates a GEO-EAS regular grid file using the given values
      * passed in the unidimensional vector of complex values.
      * If you omit a name for a field/column, the corresponding values will not be
      * written to the file.  If you omit (empty string) both names, no file will be generated.
@@ -190,14 +190,17 @@ public:
                                   QString path );
 
     /**
-     * Creates a GEO-EAS regular grid file using the given grid specs and the values
-     * passed in the unidimensional vector of doubles.
+     * Creates a GEO-EAS regular grid file using the given values
+     * passed in the bidimensional vector of values.
      * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
      * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
+     * @param gridDescription A descriptive text for the new grid.  It is the first line of the GEO-EAS grid file.
      */
-    static void createGEOEASGrid( const QString columnName,
-                                  std::vector< double > &array,
-                                  QString path );
+    static void createGEOEASGridFile( const QString gridDescription,
+                                      std::vector<QString> columnNames,
+                                      std::vector< std::vector<double> > &array,
+                                      QString path );
+
 
     /**
      * Runs the GSLib program pixelplt and opens the plot dialog to view a
@@ -399,6 +402,18 @@ public:
      *  @param isig 0 or 1 to transform or back-transform respectively.
      */
     static void fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig );
+
+    /** Compute the dip angle corresponding to grid steps.
+     * the d* parameters are the grid cell sizes.
+     * The returned angle is in degrees and follow the GSLib convention.
+     */
+    static double getDip(double dx, double dy, double dz, int xstep, int ystep, int zstep);
+
+    /** Compute the azimuth angle corresponding to grid steps.
+     * the d* parameters are the grid cell sizes.
+     * The returned angle is in degrees and follow the GSLib convention.
+     */
+    static double getAzimuth(double dx, double dy, int xstep, int ystep );
 };
 
 #endif // UTIL_H

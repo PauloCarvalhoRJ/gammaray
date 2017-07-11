@@ -11,6 +11,7 @@ class Attribute;
 class GSLibParameterFile;
 class CartesianGrid;
 class ExperimentalVariogram;
+class RealizationSelectionDialog;
 
 class VariogramAnalysisDialog : public QDialog
 {
@@ -42,9 +43,11 @@ private:
     GSLibParameterFile* m_gpf_pixelplt;
     GSLibParameterFile* m_gpf_gamv;
     GSLibParameterFile* m_gpf_vargplt;
+    GSLibParameterFile* m_gpf_vargplt_for_nreals;
     GSLibParameterFile* m_gpf_gam;
     CartesianGrid* m_varmap_grid;
     GSLibParameterFile* m_gpf_vmodel;
+    RealizationSelectionDialog *m_realsSelecDiag;
     /** Does some UI details not in ui->setup(). */
     void finishUISetup();
     bool isCrossVariography();
@@ -59,15 +62,20 @@ private slots:
     void onOpenVariogramModelParamateres();
     void onVmodelCompletion();
     void onSaveVariogramModel();
+    void onVarNReals();
     // the slots below are called indirectly.
     void onGamv();
     void onGamvCompletion();
     void onVarmapCompletion();
     void onVargpltExperimentalIrregular();
     void onVargpltExperimentalRegular();
-    /** @par4 path_to_vmodel_output If empty, only the experimental variogram is plotted. */
+    /** @param path_to_vmodel_output If empty, only the experimental variogram is plotted. */
     void onVargplt(const QString path_to_exp_variogram_data, const QString path_to_vmodel_output);
-    void onGam();
+    /** @param forMultipleRealizations onGam is used for simulation validation, to generate a single plot
+     *  of several realization variograms instead of for modeling purposes.
+     */
+    void onGam( bool forMultipleRealizations = false );
+    void onVargpltNReals(std::vector<QString> &expVarFilePaths);
 };
 
 #endif // VARIOGRAMANALYSISDIALOG_H

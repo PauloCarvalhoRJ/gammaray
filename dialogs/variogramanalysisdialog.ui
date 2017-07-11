@@ -102,7 +102,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
         </property>
        </widget>
@@ -116,7 +116,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/plot16</normaloff>:/icons/plot16</iconset>
         </property>
        </widget>
@@ -130,7 +130,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
         </property>
        </widget>
@@ -197,7 +197,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
         </property>
        </widget>
@@ -211,7 +211,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/plot16</normaloff>:/icons/plot16</iconset>
         </property>
        </widget>
@@ -225,8 +225,22 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnVarNReals">
+        <property name="toolTip">
+         <string>Variograms of realizations</string>
+        </property>
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/icons32/varnreals32</normaloff>:/icons32/varnreals32</iconset>
         </property>
        </widget>
       </item>
@@ -292,7 +306,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
         </property>
        </widget>
@@ -306,7 +320,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/plot16</normaloff>:/icons/plot16</iconset>
         </property>
        </widget>
@@ -320,7 +334,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
         </property>
        </widget>
@@ -403,7 +417,7 @@
   <zorder>frmSelection</zorder>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
@@ -566,6 +580,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnVarNReals</sender>
+   <signal>clicked()</signal>
+   <receiver>VariogramAnalysisDialog</receiver>
+   <slot>onVarNReals()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>248</x>
+     <y>137</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>4</x>
+     <y>151</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onOpenExperimentalVariogramParamaters()</slot>
@@ -577,5 +607,6 @@
   <slot>onOpenVariogramModelParamateres()</slot>
   <slot>onVmodelCompletion()</slot>
   <slot>onSaveVariogramModel()</slot>
+  <slot>onVarNReals()</slot>
  </slots>
 </ui>

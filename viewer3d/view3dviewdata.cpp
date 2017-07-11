@@ -6,14 +6,16 @@ View3DViewData::View3DViewData() :
     actor( vtkSmartPointer<vtkActor>::New() ),
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() )
+    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    samplingRate( 1 )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor) :
     actor( pActor ),
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() )
+    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    samplingRate( 1 )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
@@ -21,21 +23,25 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
     actor( pActor ),
     clipper( pClipper ),
     subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() )
+    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    samplingRate( 1 )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor, vtkSmartPointer<vtkExtractGrid> pSubgrider) :
     actor( pActor ),
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( pSubgrider ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() )
+    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    samplingRate( 1 )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkExtractGrid> pSubgrider,
-                               vtkSmartPointer<vtkDataSetMapper> pMapper):
+                               vtkSmartPointer<vtkDataSetMapper> pMapper,
+                               int sRate):
     actor( pActor ),
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( pSubgrider ),
-    mapper( pMapper )
+    mapper( pMapper ),
+    samplingRate( sRate )
 {}

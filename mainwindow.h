@@ -145,6 +145,8 @@ private slots:
     void onFreeLoadedData();
     void onFFT();
     void onNDVEstimation();
+    void onResampleGrid();
+    void onMultiVariogram();
 
 private:
     /**
