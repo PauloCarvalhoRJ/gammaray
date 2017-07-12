@@ -91,7 +91,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK)
         //for SK mode
         result = meanSK;
         std::multiset<GridCell>::iterator itSamples = vCells.begin();
-        for( int i = 0; i < vCells.size(); ++i, ++itSamples){
+        for( uint i = 0; i < vCells.size(); ++i, ++itSamples){
             result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
         }
     } else {
@@ -116,7 +116,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK)
         //krige (with SK weights plus the OK mean (with OK mean weight))
         result = 0.0;
         itSamples = vCells.begin();
-        for( int i = 0; i < vCells.size(); ++i, ++itSamples){
+        for( uint i = 0; i < vCells.size(); ++i, ++itSamples){
             result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() );
         }
         result += wmOK * mOK;

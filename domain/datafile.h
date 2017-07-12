@@ -205,6 +205,13 @@ public:
     /** De-allocates the data loaded with loadData(). */
     void freeLoadedData();
 
+    /** Sets the data page (first and last data line to load).
+     * Setting a page, causes a reload in next calls to data() or loadData().
+     * To read all data lines in the file, set any interval that will surely include
+     * all data lines such as 0 and std::numeric_limits<long>::max().
+     */
+    void setDataPage( long firstDataLine, long lastDataLine );
+
 //File interface
     void deleteFromFS();
     void writeToFS();
@@ -241,6 +248,12 @@ protected:
      * unnecessary data reloads.
      */
     QDateTime _lastModifiedDateTimeLastLoad;
+
+    /** The first line of file to load. Default is 0 (first data line). */
+    long _dataPageFirstLine;
+
+    /** The last line of file to load.  Default is infinity (read all data). */
+    long _dataPageLastLine;
 };
 
 #endif // DATAFILE_H

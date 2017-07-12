@@ -15,6 +15,8 @@ public:
     explicit DataLoader(QFile &file,
                         std::vector< std::vector<double> > &data,
                         uint &data_line_count,
+                        ulong firstDataLineToRead,
+                        ulong lastDataLineToRead,
                         QObject *parent = 0);
 
     bool isFinished(){ return _finished; }
@@ -29,6 +31,8 @@ private:
     std::vector< std::vector<double> > &_data;
     uint &_data_line_count;
     bool _finished;
+    ulong _firstDataLineToRead;
+    ulong _lastDataLineToRead;
 };
 
 #endif // DATALOADER_H
