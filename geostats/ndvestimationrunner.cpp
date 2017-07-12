@@ -8,9 +8,9 @@
 
 NDVEstimationRunner::NDVEstimationRunner(NDVEstimation *ndvEstimation, Attribute *at, QObject *parent) :
     QObject(parent),
+    _finished( false ),
     _at(at),
-    _ndvEstimation(ndvEstimation),
-    _finished( false )
+    _ndvEstimation(ndvEstimation)
 {
 }
 

@@ -191,6 +191,16 @@ public:
 
     /**
      * Creates a GEO-EAS regular grid file using the given values
+     * passed in the unidimensional vector of doubles.
+     * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
+     * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
+     */
+    static void createGEOEASGrid( const QString columnName,
+                                  std::vector< double > &values,
+                                  QString path );
+
+    /**
+     * Creates a GEO-EAS regular grid file using the given values
      * passed in the bidimensional vector of values.
      * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
      * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]

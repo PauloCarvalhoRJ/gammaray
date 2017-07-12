@@ -71,6 +71,9 @@ void MatrixNXM<T>::invert(){
     int i, icol, irow, j, k, l , ll, n = a.getN();
     double big, dum, pivinv;
     std::vector<int> indxc(n), indxr(n), ipiv(n); //index bookkeeping vectors
+
+    icol = irow = -1; //get rid of compiler warning (uninitialized variables)
+
     ipiv.assign(n, 0);
     for ( i=0; i<n; ++i) {
         big = 0.0;

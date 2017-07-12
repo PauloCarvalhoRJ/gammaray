@@ -456,7 +456,7 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     if( nColumns == 0)
         return;
 
-    //write out the GEO-EAS grid geader
+    //write out the GEO-EAS grid header
     out << "Grid file\n";
     out << nColumns << '\n';
     if( ! columnNameForRealPart.isEmpty() )
@@ -481,6 +481,28 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     file.close();
 }
 
+void Util::createGEOEASGrid(const QString columnName, std::vector<double> &values, QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //write out the GEO-EAS grid header
+    out << "Grid file\n";
+    out << "1\n";
+    out << columnName << '\n';
+
+    //loop to output the values
+    std::vector< double >::iterator it = values.begin();
+    for( ; it != values.end(); ++it ){
+        out << (*it) << '\n';
+    }
+
+    //close file
+    file.close();
+}
+
 void Util::createGEOEASGridFile(const QString gridDescription,
                                 std::vector<QString> columnNames,
                                 std::vector<std::vector<double> > &array,
@@ -494,7 +516,7 @@ void Util::createGEOEASGridFile(const QString gridDescription,
     //determine the number of columns
     int nColumns = columnNames.size();
 
-    //write out the GEO-EAS grid geader
+    //write out the GEO-EAS grid header
     out << gridDescription << '\n';
     out << nColumns << '\n';
     std::vector<QString>::iterator itColNames = columnNames.begin();
