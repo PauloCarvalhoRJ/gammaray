@@ -25,7 +25,7 @@
 
 DataFile::DataFile(QString path) : File( path ),
     _lastModifiedDateTimeLastLoad( ),
-    _dataPageFirstLine( 1 ),
+    _dataPageFirstLine( 0 ),
     _dataPageLastLine( std::numeric_limits<long>::max() )
 {
 }
@@ -595,7 +595,16 @@ void DataFile::freeLoadedData()
 
 void DataFile::setDataPage(long firstDataLine, long lastDataLine)
 {
+    //does nothing if page didn't actually change
+    if( firstDataLine == _dataPageFirstLine &&
+        lastDataLine == _dataPageLastLine )
+        return;
     freeLoadedData();
     _dataPageFirstLine = firstDataLine;
     _dataPageLastLine = lastDataLine;
+}
+
+void DataFile::setDataPageToAll()
+{
+    setDataPage(0, std::numeric_limits<long>::max() );
 }

@@ -212,6 +212,11 @@ public:
      */
     void setDataPage( long firstDataLine, long lastDataLine );
 
+    /** Sets data page to cover the entire file (from line 0 to infinity).
+     * @note WARNING! Makes the entire file to be loaded into memory!
+     */
+    void setDataPageToAll();
+
 //File interface
     void deleteFromFS();
     void writeToFS();
