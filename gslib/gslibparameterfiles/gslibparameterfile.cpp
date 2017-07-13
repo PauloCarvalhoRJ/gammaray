@@ -1687,6 +1687,69 @@ void GSLibParameterFile::setDefaultValuesForCokb3d()
     }
 }
 
+void GSLibParameterFile::setDefaultValuesForHistpltsim()
+{
+    //file with lithology information
+    this->getParameter<GSLibParFile*>(0)->_path = "foo/lothology.dat";
+    //   lithology column (0=not used), code
+    GSLibParMultiValuedFixed* par1 = this->getParameter<GSLibParMultiValuedFixed*>(1);
+    par1->getParameter<GSLibParUInt*>(0)->_value = 0;
+    par1->getParameter<GSLibParUInt*>(1)->_value = 0;
+    //file with reference distribution
+    this->getParameter<GSLibParFile*>(2)->_path = "foo/primary.dat";
+    //   columns for reference variable and weight
+    GSLibParMultiValuedFixed* par3 = this->getParameter<GSLibParMultiValuedFixed*>(3);
+    par3->getParameter<GSLibParUInt*>(0)->_value = 3;
+    par3->getParameter<GSLibParUInt*>(1)->_value = 0;
+    //file with distributions to check
+    this->getParameter<GSLibParFile*>(4)->_path = "foo/sgsim.out";
+    //   columns for variable and weight
+    GSLibParMultiValuedFixed* par5 = this->getParameter<GSLibParMultiValuedFixed*>(5);
+    par5->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par5->getParameter<GSLibParUInt*>(1)->_value = 0;
+    //   data, numeric output
+    GSLibParMultiValuedFixed* par6 = this->getParameter<GSLibParMultiValuedFixed*>(6);
+    par6->getParameter<GSLibParOption*>(0)->_selected_value = 0;
+    par6->getParameter<GSLibParUInt*>(1)->_value = 0;
+    //   start and finish histograms (usually 1 and nreal)
+    GSLibParMultiValuedFixed* par7 = this->getParameter<GSLibParMultiValuedFixed*>(7);
+    par7->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par7->getParameter<GSLibParUInt*>(1)->_value = 10;
+    //   nx, ny, nz
+    GSLibParMultiValuedFixed* par8 = this->getParameter<GSLibParMultiValuedFixed*>(8);
+    par8->getParameter<GSLibParUInt*>(0)->_value = 10;
+    par8->getParameter<GSLibParUInt*>(1)->_value = 10;
+    par8->getParameter<GSLibParUInt*>(2)->_value = 10;
+    //   trimming limits
+    GSLibParMultiValuedFixed* par9 = this->getParameter<GSLibParMultiValuedFixed*>(9);
+    par9->getParameter<GSLibParDouble*>(0)->_value = -1e10;
+    par9->getParameter<GSLibParDouble*>(1)->_value = 1e10;
+    //file for PostScript output
+    this->getParameter<GSLibParFile*>(10)->_path = "foo/histograms.ps";
+    //file for summary output (always used)
+    this->getParameter<GSLibParFile*>(11)->_path = "foo/summary.txt";
+    //file for numeric output (used if flag set above)
+    this->getParameter<GSLibParFile*>(12)->_path = "foo/numeric_results.dat";
+    //attribute minimum and maximum
+    GSLibParMultiValuedFixed* par13 = this->getParameter<GSLibParMultiValuedFixed*>(13);
+    par13->getParameter<GSLibParDouble*>(0)->_value = -1e10;
+    par13->getParameter<GSLibParDouble*>(1)->_value = 1e10;
+    //number of cumulative quantiles to plot (<0 for all)
+    this->getParameter<GSLibParInt*>(14)->_value = -1;
+    //number of values to use to establish CDF (<0 for all)
+    this->getParameter<GSLibParInt*>(15)->_value = -1;
+    //0=arithmetic, 1=log scaling
+    this->getParameter<GSLibParOption*>(16)->_selected_value = 0;
+    //number of decimal places (<0 for auto.)
+    this->getParameter<GSLibParInt*>(17)->_value = -1;
+    //title
+    this->getParameter<GSLibParString*>(18)->_value = "Realizations histograms";
+    //positioning of stats (L to R: -1 to 1)
+    this->getParameter<GSLibParRange*>(19)->_value = 0.0;
+    //reference value for box plot
+    this->getParameter<GSLibParDouble*>(20)->_value = 0.0;
+}
+
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
 {
     GSLibParMultiValuedVariable *mvv = new GSLibParMultiValuedVariable( parameter );
@@ -2341,6 +2404,39 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<repeat [nvar]>\n";
         out << "   <uint> <uint>                                          -variable indexes (e.g. 1 ).\n";
         out << "   <vmodel>                                               -variogram model.\n";
+    }
+    par_file.close();
+
+    par_file_path = dir.absoluteFilePath("histpltsim.par.tpl");
+    par_file.setFileName( par_file_path );
+    if( !par_file.exists() ){
+        par_file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&par_file);
+        out << "                  Parameters for HISTPLTSIM\n";
+        out << "                  *************************\n";
+        out << '\n';
+        out << "START OF PARAMETERS:\n";
+        out << "<file>                                              -file with lithology information\n";
+        out << "<uint> <uint>                                       -   lithology column (0=not used), code\n";
+        out << "<file>                                              -file with reference distribution\n";
+        out << "<uint> <uint>                                       -   columns for reference variable and weight\n";
+        out << "<file>                                              -file with distributions to check\n";
+        out << "<uint> <uint>                                       -   columns for variable and weight\n";
+        out << "<option [0:simulation] [1:multi columns]> <uint>    -   data, numeric output\n";
+        out << "<uint> <uint>                                       -   start and finish histograms (usually 1 and nreal)\n";
+        out << "<uint> <uint> <uint>                                -   nx, ny, nz\n";
+        out << "<double> <double>                                   -   trimming limits\n";
+        out << "<file>                                              -file for PostScript output\n";
+        out << "<file>                                              -file for summary output (always used)\n";
+        out << "<file>                                              -file for numeric output (used if flag set above)\n";
+        out << "<double> <double>                                   -attribute minimum and maximum\n";
+        out << "<int>                                               -number of cumulative quantiles to plot (<0 for all)\n";
+        out << "<int>                                               -number of values to use to establish CDF (<0 for all)\n";
+        out << "<option [0:arithmetic] [1:log scaling]>             -0=arithmetic, 1=log scaling\n";
+        out << "<int>                                               -number of decimal places (<0 for auto.)\n";
+        out << "<string>                                            -title\n";
+        out << "<range [-1:L] [1:R]>                                -positioning of stats (L to R: -1 to 1)\n";
+        out << "<double>                                            -reference value for box plot\n";
     }
     par_file.close();
 }
