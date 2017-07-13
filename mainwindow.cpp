@@ -454,6 +454,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
+                CartesianGrid* cg = (CartesianGrid*)parent_file;
+                if( cg->getNReal() > 1) //if parent file is Cartesian grid and has more than one realization
+                    _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -487,6 +490,19 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _right_clicked_attribute = static_cast<Attribute*>( index1.internalPointer() );
             _right_clicked_attribute2 = static_cast<Attribute*>( index2.internalPointer() );
             _projectContextMenu->addAction("Q-Q/P-P plot", this, SLOT(onQpplt()));
+            //if one parent is a point set and the other is a Cartesian grid
+            if( (_right_clicked_attribute ->getContainingFile()->getFileType()=="POINTSET" &&
+                 _right_clicked_attribute2->getContainingFile()->getFileType()=="CARTESIANGRID") ||
+                (_right_clicked_attribute2->getContainingFile()->getFileType()=="POINTSET" &&
+                 _right_clicked_attribute ->getContainingFile()->getFileType()=="CARTESIANGRID")){
+                CartesianGrid* cg;
+                if( _right_clicked_attribute2->getContainingFile()->getFileType()=="CARTESIANGRID" )
+                    cg = (CartesianGrid*)_right_clicked_attribute2->getContainingFile();
+                else
+                    cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
+                if( cg->getNReal() > 1)
+                    _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
+            }
         }
         //if one object is a cartesian grid and the other object is a point set
         // then Get Points can be called, which
@@ -520,7 +536,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     cartesian_grid = static_cast<CartesianGrid*>( file2 );
             }
 
-            //if user selected a point set file and a property of a grid
+            //if user selected a point set file and a grid
             if( point_set && cartesian_grid ){
                 _right_clicked_cartesian_grid = cartesian_grid;
                 _right_clicked_point_set = point_set;
@@ -1440,6 +1456,11 @@ void MainWindow::onMultiVariogram()
     QList<Attribute *> selectedAttributes = getSelectedAttributes();
     MultiVariogramDialog * mvd = new MultiVariogramDialog( selectedAttributes.toVector().toStdVector(), this );
     mvd->show(); //shows dialgo asynchronolously
+}
+
+void MainWindow::onHistpltsim()
+{
+
 }
 
 void MainWindow::onCreateCategoryDefinition()
