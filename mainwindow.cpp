@@ -455,8 +455,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
-                if( cg->getNReal() > 1) //if parent file is Cartesian grid and has more than one realization
+                if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
+                    _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
+                }
             }
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -1460,7 +1462,114 @@ void MainWindow::onMultiVariogram()
 
 void MainWindow::onHistpltsim()
 {
+    //get realizations attribute and attribute with reference distribution (if any)
+    Attribute* realizationsAttribute = nullptr;
+    Attribute* refDistAttribute = nullptr;
+    CartesianGrid* grid = nullptr;
+    PointSet* pointSet = nullptr;
+    if( _right_clicked_attribute &&
+        _right_clicked_attribute->getContainingFile()->getFileType() == "CARTESIANGRID" ){
+        realizationsAttribute = _right_clicked_attribute;
+        refDistAttribute = _right_clicked_attribute2;
+    } else {
+        realizationsAttribute = _right_clicked_attribute2;
+        refDistAttribute = _right_clicked_attribute;
+    }
 
+    //get the files
+    grid = (CartesianGrid*)realizationsAttribute->getContainingFile();
+    if( refDistAttribute )
+        pointSet = (PointSet*)refDistAttribute->getContainingFile();
+
+    //load the data in grid
+    grid->loadData();
+
+    //get the maximum and minimun of selected variable, excluding no-data value
+    double data_min = grid->min( realizationsAttribute->getAttributeGEOEASgivenIndex()-1 );
+    double data_max = grid->max( realizationsAttribute->getAttributeGEOEASgivenIndex()-1 );
+    data_min -= std::fabs( data_min / 100.0 );
+    data_max += std::fabs( data_max / 100.0 );
+
+    //------------------------------parameters setting--------------------------------------
+
+    GSLibParameterFile gpf( "histpltsim" );
+
+    //Set default values so we need to change less parameters and let
+    //the user change the others as one may see fit.
+    gpf.setDefaultValues();
+
+    GSLibParMultiValuedFixed* par3 = gpf.getParameter<GSLibParMultiValuedFixed*>(3);
+    if( refDistAttribute ){
+        //file with reference distribution
+        gpf.getParameter<GSLibParFile*>(2)->_path = pointSet->getPath();
+        //   columns for reference variable and weight
+        par3->getParameter<GSLibParUInt*>(0)->_value = refDistAttribute->getAttributeGEOEASgivenIndex();
+        par3->getParameter<GSLibParUInt*>(1)->_value = 0;
+    } else{
+        gpf.getParameter<GSLibParFile*>(2)->_path = "NOFILE";
+        par3->getParameter<GSLibParUInt*>(0)->_value = 0;
+        par3->getParameter<GSLibParUInt*>(1)->_value = 0;
+    }
+
+    //file with distributions to check
+    gpf.getParameter<GSLibParFile*>(4)->_path = grid->getPath();
+
+    //   columns for variable and weight
+    GSLibParMultiValuedFixed* par5 = gpf.getParameter<GSLibParMultiValuedFixed*>(5);
+    par5->getParameter<GSLibParUInt*>(0)->_value = realizationsAttribute->getAttributeGEOEASgivenIndex();
+    par5->getParameter<GSLibParUInt*>(1)->_value = 0;
+
+    //   start and finish histograms (usually 1 and nreal)
+    GSLibParMultiValuedFixed* par7 = gpf.getParameter<GSLibParMultiValuedFixed*>(7);
+    par7->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par7->getParameter<GSLibParUInt*>(1)->_value = grid->getNReal();
+
+    //   nx, ny, nz
+    GSLibParMultiValuedFixed* par8 = gpf.getParameter<GSLibParMultiValuedFixed*>(8);
+    par8->getParameter<GSLibParUInt*>(0)->_value = grid->getNX();
+    par8->getParameter<GSLibParUInt*>(1)->_value = grid->getNY();
+    par8->getParameter<GSLibParUInt*>(2)->_value = grid->getNZ();
+
+    //   trimming limits
+    GSLibParMultiValuedFixed* par9 = gpf.getParameter<GSLibParMultiValuedFixed*>(9);
+    par9->getParameter<GSLibParDouble*>(0)->_value = data_min;
+    par9->getParameter<GSLibParDouble*>(1)->_value = data_max;
+
+    //file for PostScript output
+    gpf.getParameter<GSLibParFile*>(10)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+    //file for summary output (always used)
+    gpf.getParameter<GSLibParFile*>(11)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("txt");
+
+    //file for numeric output (used if flag set above)
+    gpf.getParameter<GSLibParFile*>(12)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");;
+
+    //attribute minimum and maximum
+    GSLibParMultiValuedFixed* par13 = gpf.getParameter<GSLibParMultiValuedFixed*>(13);
+    par13->getParameter<GSLibParDouble*>(0)->_value = data_min;
+    par13->getParameter<GSLibParDouble*>(1)->_value = data_max;
+
+    //title
+    QString title = grid->getName() + "/" +
+            realizationsAttribute->getName() + ": realizations";
+    gpf.getParameter<GSLibParString*>(18)->_value = title;
+
+    //reference value for box plot
+    gpf.getParameter<GSLibParDouble*>(20)->_value = grid->mean( realizationsAttribute->getAttributeGEOEASgivenIndex()-1 );
+
+    //----------------------------------------------------------------------------------
+
+    //Generate the parameter file
+    QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    gpf.save( par_file_path );
+
+    //run histpltsim program
+    Application::instance()->logInfo("Starting histpltsim program...");
+    GSLib::instance()->runProgram( "histpltsim", par_file_path );
+
+    //display the plot output
+    DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(10)->_path, title, gpf, this);
+    dpd->show(); //show() makes dialog modalless
 }
 
 void MainWindow::onCreateCategoryDefinition()

@@ -111,6 +111,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForPostik();
     } else if ( this->_program_name == "cokb3d" ){
         this->setDefaultValuesForCokb3d();
+    } else if ( this->_program_name == "histpltsim" ){
+        this->setDefaultValuesForHistpltsim();
     } else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
@@ -1690,7 +1692,7 @@ void GSLibParameterFile::setDefaultValuesForCokb3d()
 void GSLibParameterFile::setDefaultValuesForHistpltsim()
 {
     //file with lithology information
-    this->getParameter<GSLibParFile*>(0)->_path = "foo/lothology.dat";
+    this->getParameter<GSLibParFile*>(0)->_path = "foo/lithology.dat";
     //   lithology column (0=not used), code
     GSLibParMultiValuedFixed* par1 = this->getParameter<GSLibParMultiValuedFixed*>(1);
     par1->getParameter<GSLibParUInt*>(0)->_value = 0;
