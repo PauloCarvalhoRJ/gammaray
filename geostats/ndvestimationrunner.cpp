@@ -60,6 +60,8 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK)
                                                            _ndvEstimation->searchNumRows(),
                                                            _ndvEstimation->searchNumSlices() );
 
+    return 0;////////////////////////REMOVE THIS AFTER IMPROVING PERFORMANCE OF GeostatsUtils::getValuedNeighborsTopoOrdered()
+
     //if no sample was found, either...
     if( vCells.empty() ){
         if( _ndvEstimation->useDefaultValue() )

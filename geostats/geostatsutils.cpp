@@ -223,14 +223,15 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
 
     //generate all possible ijk deltas up to the neighborhood limits
     //the list of deltas is ordered by resulting distance with respect to a target cell
-    std::set<IJKDelta> *deltas = nullptr;
+    std::vector<IJKDelta> *deltasV = nullptr;
     //try to reuse a list from the cache since making one anew is costly and the neighborhood does not change
     IJKDeltasCacheMap::iterator itcache =
             IJKDeltasCache::cache.find( IJKDeltasCacheKey( nColsAround, nRowsAround, nSlicesAround ) );
     if( itcache != IJKDeltasCache::cache.end() ){ //cache hit
-        deltas = itcache->second;
+        deltasV = itcache->second;
     } else { //cache miss, have to build the list
-        deltas = new std::set<IJKDelta>();
+        //build the list as a set to get free ordering
+        std::set<IJKDelta> *deltas = new std::set<IJKDelta>();
         for( int dk = 0; dk <= nSlicesAround/2; ++dk){
             for( int dj = 0; dj <= nColsAround/2; ++dj ){
                 for( int di = 0; di <= nRowsAround/2; ++di){
@@ -240,22 +241,30 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
         }
         //the first element is always delta 0,0,0 (target cell itself)
         deltas->erase( deltas->begin() );
-        //store the list in the cache for later reuse
+        //now that std::set assured an ordered collection, transform it into an std::vector
+        //which is faster to iterate because there is no pointer chasing and std::vector elements
+        //are stored in continuous blocks of memory (memory locality increases cache hits)
+        deltasV = new std::vector<IJKDelta>();
+        deltasV->reserve( deltas->size() );
+        std::copy(deltas->begin(), deltas->end(), std::back_inserter(*deltasV));
+        //store the list in the cache for later reuse.
         IJKDeltasCache::cache.emplace( IJKDeltasCacheKey( nColsAround,
                                                          nRowsAround,
-                                                         nSlicesAround ), deltas );
+                                                         nSlicesAround ), deltasV );
+        //we don't need the std::set anymore
+        delete deltas;
     }
 
-    if( !deltas || deltas->empty() ){ //hope the second is not evaluated if deltas == nullptr
+    if( !deltasV || deltasV->empty() ){ //hope the second is not evaluated if deltas == nullptr
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null neighborhood.  Returning empty list.");
         return result;
     }
 
     //for each delta...
-    std::set<IJKDelta>::iterator it = deltas->begin();
+    std::vector<IJKDelta>::const_iterator it = deltasV->cbegin();
     IJKIndex indexes[8]; //eight indexes is the most possible (3 degrees of freedom)
-    for(; it != deltas->end(); ++it){
-        IJKDelta delta = (*it);
+    for(; it != deltasV->end(); ++it){
+        const IJKDelta &delta = (*it);
         //...get all the indexes from a delta (can yield 2, 4 or 8 coordinates, depending on the delta's degrees of freedom).
         // TODO: Performance: that getIndexes() function has improved, but maybe there is still some room for improvement
         int countIndexes = delta.getIndexes( cell._indexIJK, indexes );

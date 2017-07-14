@@ -19,7 +19,7 @@ public:
 };
 
 /** Define a type for brevity. */
-typedef std::map< IJKDeltasCacheKey, std::set<IJKDelta>* > IJKDeltasCacheMap;
+typedef std::map< IJKDeltasCacheKey, std::vector<IJKDelta>* > IJKDeltasCacheMap;
 
 /** Cache used to fetch previously created lists of IJKDelta objects. */
 class IJKDeltasCache

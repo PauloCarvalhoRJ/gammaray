@@ -6,7 +6,7 @@ IJKDelta::IJKDelta(int di, int dj, int dk) :
 {
 }
 
-int IJKDelta::getIndexes(IJKIndex &fromIndex, IJKIndex *result)
+int IJKDelta::getIndexes(IJKIndex &fromIndex, IJKIndex *result) const
 {
     int possibleIs[2];
     int possibleJs[2];
