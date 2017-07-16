@@ -194,10 +194,6 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
     }
 
     //get the covariance matrix for the neighbors cell.
-    //TODO: improve performance by saving the covariances in a covariance table/cache, since
-    //      the covariances from the variogram model are function of sample separation, not their values.
-    //      This would take the advantage of the regular grid geometry.
-    //  This is a major bottleneck
     MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vCells,
                                                              _ndvEstimation->vmodel(),
                                                              variogramSill );
