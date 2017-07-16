@@ -147,6 +147,7 @@ private slots:
     void onNDVEstimation();
     void onResampleGrid();
     void onMultiVariogram();
+    void onHistpltsim();
 
 private:
     /**
