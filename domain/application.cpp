@@ -173,6 +173,8 @@ void Application::logErrorOn()
             lastMessage = currentMessage;
         }
         _errorBuffer.clear();
+        if( repeatedMessagesCount > 0 )
+            logError("   Followed by more " + QString::number(repeatedMessagesCount) + " message(s) like that." );
     }
 }
 

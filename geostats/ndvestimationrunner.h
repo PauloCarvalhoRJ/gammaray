@@ -24,6 +24,7 @@ public:
 
 signals:
     void progress(int);
+    void setLabel(QString);
 
 public slots:
     void doRun( );
@@ -35,7 +36,7 @@ private:
     std::vector<double> _results;
 
     /** Estimate, by kriging, a single cell. */
-    double krige(GridCell cell , double meanSK);
+    double krige(GridCell cell , double meanSK, bool hasNDV, double NDV);
 };
 
 #endif // NDVESTIMATIONRUNNER_H

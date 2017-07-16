@@ -203,17 +203,18 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &sample
     return result;
 }
 
-std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
+void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
                                                         int numberOfSamples,
                                                         int nColsAround,
                                                         int nRowsAround,
-                                                        int nSlicesAround)
+                                                        int nSlicesAround,
+                                                        bool hasNDV,
+                                                        double NDV,
+                                                        std::multiset<GridCell> &list)
 {
-    std::multiset<GridCell> result;
     CartesianGrid* cg = cell._grid;
     if( ! cg ){
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null grid.  Returning empty list.");
-        return result;
     }
 
     //get the grid limits
@@ -223,6 +224,7 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
 
     //generate all possible ijk deltas up to the neighborhood limits
     //the list of deltas is ordered by resulting distance with respect to a target cell
+    //////////the block of code below is considered optimal (speed)
     std::vector<IJKDelta> *deltasV = nullptr;
     //try to reuse a list from the cache since making one anew is costly and the neighborhood does not change
     IJKDeltasCacheMap::iterator itcache =
@@ -257,8 +259,8 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
 
     if( !deltasV || deltasV->empty() ){ //hope the second is not evaluated if deltas == nullptr
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null neighborhood.  Returning empty list.");
-        return result;
     }
+    //////////////////////////////////////////////////
 
     //for each delta...
     std::vector<IJKDelta>::const_iterator it = deltasV->cbegin();
@@ -279,26 +281,18 @@ std::multiset<GridCell> GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &c
                 kk >= 0 && kk < slice_limit ){
                 //...get the value corresponding to the cell index.
                 double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
-                //if the cell is valued...
-                if( ! cg->isNDV( value ) ){
+                //if the cell is valued... DataFile::hasNDV() is slow.
+                if( !hasNDV || !Util::almostEqual2sComplement( NDV, value, 1 ) ){
                     //...it is a valid neighbor.
                     GridCell currentCell( cg, cell._dataIndex, ii, jj, kk );
                     currentCell.computeTopoDistance( cell );
-                    result.insert( currentCell );
+                    list.insert( currentCell );
                     //if the number of neighbors is reached...
-                    if( result.size() == (unsigned)numberOfSamples )
+                    if( list.size() == (unsigned)numberOfSamples )
                         //...interrupt the search
-                        goto completed;
+                        return;
                 }
             }
         }
     }
-
-completed:  //from goto in the loop above (or if the loops complete)
-
-    //makes sure only the closest n cells at most
-    //while( result.size() > numberOfSamples )
-    //    result.erase( --result.end() );
-
-    return result;
 }

@@ -187,12 +187,6 @@ void CartesianGrid::setCellGeometry(int nx, int ny, int nz, double dx, double dy
                    _no_data_value, _nsvar_var_trn, _categorical_attributes);
 }
 
-double CartesianGrid::dataIJK(uint column, uint i, uint j, uint k)
-{
-    uint dataRow = i + j*_nx + k*_ny*_nx;
-    return data( dataRow, column );
-}
-
 std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPart, int indexColumImaginaryPart)
 {
     std::vector< std::complex<double> > result( _nx * _ny * _nz ); //[_nx][_ny][_nz]

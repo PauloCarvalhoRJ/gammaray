@@ -3,8 +3,7 @@
 
 #include <algorithm>
 #include <set>
-
-class IJKIndex;
+#include "ijkindex.h"
 
 /** A data structure used in geostats algorithms.
  * It represents a difference in topological coordinates.
@@ -18,10 +17,55 @@ public:
     int max() const { return std::max({_di, _dj, _dk}); }
 
     /** Fills the given vector with the possible indexes from this delta, given a reference index.
+     * It was made inline for performance and beacuse it is called in one place.
      * @param result An array with room for at least 8 elements.
      * @return The number of first elements in result with the computed indexes (2, 4 or 8).
      */
-    int getIndexes(IJKIndex& fromIndex, IJKIndex *result ) const;
+    inline int getIndexes(IJKIndex& fromIndex, IJKIndex *result ) const
+    {
+        int possibleIs[2];
+        int possibleJs[2];
+        int possibleKs[2];
+        int li, lj, lk;
+
+        if( _di > 0 ){
+            li = 2;
+            possibleIs[0] = fromIndex._i + _di;
+            possibleIs[1] = fromIndex._i - _di;
+        } else {
+            li = 1;
+            possibleIs[0] = fromIndex._i;
+        }
+
+        if( _dj > 0 ){
+            lj = 2;
+            possibleJs[0] = fromIndex._j + _dj;
+            possibleJs[1] = fromIndex._j - _dj;
+        } else {
+            lj = 1;
+            possibleJs[0] = fromIndex._j;
+        }
+
+        if( _dk > 0 ){
+            lk = 2;
+            possibleKs[0] = fromIndex._k + _dk;
+            possibleKs[1] = fromIndex._k - _dk;
+        } else {
+            lk = 1;
+            possibleKs[0] = fromIndex._k;
+        }
+
+        int count = 0;
+        for( int k = 0; k < lk; ++k )
+            for( int j = 0; j < lj; ++j )
+                for( int i = 0; i < li; ++i ){
+                    result[count]._i = possibleIs[i];
+                    result[count]._j = possibleJs[j];
+                    result[count]._k = possibleKs[k];
+                    ++count;
+                }
+        return count;
+    }
 
     int _di;
     int _dj;

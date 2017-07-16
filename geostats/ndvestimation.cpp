@@ -74,6 +74,7 @@ std::vector<double> NDVEstimation::run()
     runner->connect(thread, SIGNAL(finished()), runner, SLOT(deleteLater()));
     runner->connect(thread, SIGNAL(started()), runner, SLOT(doRun()));
     runner->connect(runner, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
+    runner->connect(runner, SIGNAL(setLabel(QString)), &progressDialog, SLOT(setLabelText(QString)));
     thread->start();
     /////////////////////////////////
 

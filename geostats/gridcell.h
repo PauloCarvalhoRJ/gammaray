@@ -3,6 +3,7 @@
 
 #include "geostats/spatiallocation.h"
 #include "geostats/ijkindex.h"
+#include "domain/cartesiangrid.h"
 
 class CartesianGrid;
 
@@ -24,12 +25,23 @@ public:
      * @param j Topological coordinate (crossline/row)
      * @param k Topological coordinate (horizontal slice)
      */
-    GridCell( CartesianGrid* grid, int dataIndex, int i, int j, int k );
+    inline GridCell( CartesianGrid* grid, int dataIndex, int i, int j, int k ) :
+        _grid(grid), _indexIJK(i,j,k), _dataIndex(dataIndex)
+    {
+        _center._x = grid->getX0() + _indexIJK._i * grid->getDX();
+        _center._y = grid->getY0() + _indexIJK._j * grid->getDY();
+        _center._z = grid->getZ0() + _indexIJK._k * grid->getDZ();
+    }
 
     /** Computes the topological distance from the given cell.
      * The result is also stored in _topoDistance member variable.
      */
-    int computeTopoDistance( GridCell &fromCell );
+    inline int computeTopoDistance( GridCell &fromCell ){
+        _topoDistance = std::abs( _indexIJK._i - fromCell._indexIJK._i ) +
+                        std::abs( _indexIJK._j - fromCell._indexIJK._j ) +
+                        std::abs( _indexIJK._k - fromCell._indexIJK._k );
+        return _topoDistance;
+    }
 
 //--------------------member variables---------------------
     /** The grid object this cell refers to. */

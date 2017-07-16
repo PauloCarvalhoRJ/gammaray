@@ -84,11 +84,14 @@ public:
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
      */
-    static std::multiset<GridCell> getValuedNeighborsTopoOrdered(GridCell &cell,
+    static void getValuedNeighborsTopoOrdered(GridCell &cell,
                                                             int numberOfSamples,
                                                             int nColsAround,
                                                             int nRowsAround,
-                                                            int nSlicesAround);
+                                                            int nSlicesAround,
+                                                            bool hasNDV,
+                                                            double NDV,
+                                                            std::multiset<GridCell>& list);
 };
 
 #endif // GEOSTATSUTILS_H
