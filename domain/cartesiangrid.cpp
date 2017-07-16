@@ -4,6 +4,7 @@
 #include "../util.h"
 #include "attribute.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
+#include "geostats/gridcell.h"
 
 CartesianGrid::CartesianGrid( QString path )  : DataFile( path )
 {
@@ -186,12 +187,6 @@ void CartesianGrid::setCellGeometry(int nx, int ny, int nz, double dx, double dy
                    _no_data_value, _nsvar_var_trn, _categorical_attributes);
 }
 
-double CartesianGrid::dataIJK(uint column, uint i, uint j, uint k)
-{
-    uint dataRow = i + j*_nx + k*_ny*_nx;
-    return data( dataRow, column );
-}
-
 std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPart, int indexColumImaginaryPart)
 {
     std::vector< std::complex<double> > result( _nx * _ny * _nz ); //[_nx][_ny][_nz]
@@ -216,25 +211,42 @@ std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, i
 {
     std::vector< std::vector<double> > result;
 
+    uint totDataLinesPerRealization = _nx * _ny * _nz;
+
+    //load just the first line to get the number of columns (assuming the file is right)
+    setDataPage( 0, 0 );
     uint nDataColumns = getDataColumnCount();
 
-    result.reserve( (_nx/rateI) * (_ny/rateJ) * (_nz/rateK) * nDataColumns );
+    result.reserve( _nreal * (_nx/rateI) * (_ny/rateJ) * (_nz/rateK) * nDataColumns );
 
-    finalNK = 0;
-    for( uint k = 0; k < _nz; k += rateK, ++finalNK ){
-        finalNJ = 0;
-        for( uint j = 0; j < _ny; j += rateJ, ++finalNJ ){
-            finalNI = 0;
-            for( uint i = 0; i < _nx; i += rateI, ++finalNI ){
-                std::vector<double> dataLine;
-                dataLine.reserve( nDataColumns );
-                for( uint d = 0; d < nDataColumns; ++d){
-                    dataLine.push_back( dataIJK( d, i, j, k ) );
+    //for each realization (at least one)
+    for( uint r = 0; r < _nreal; ++r ){
+        //compute the first and last data lines to load (does not need to load everything at once)
+        ulong firstDataLine = r * totDataLinesPerRealization;
+        ulong lastDataLine = firstDataLine + totDataLinesPerRealization - 1;
+        //load the data corresponding to a realization
+        setDataPage( firstDataLine, lastDataLine );
+        loadData();
+        //perform the resampling for a realization
+        finalNK = 0;
+        for( uint k = 0; k < _nz; k += rateK, ++finalNK ){
+            finalNJ = 0;
+            for( uint j = 0; j < _ny; j += rateJ, ++finalNJ ){
+                finalNI = 0;
+                for( uint i = 0; i < _nx; i += rateI, ++finalNI ){
+                    std::vector<double> dataLine;
+                    dataLine.reserve( nDataColumns );
+                    for( uint d = 0; d < nDataColumns; ++d){
+                        dataLine.push_back( dataIJK( d, i, j, k ) );
+                    }
+                    result.push_back( dataLine );
                 }
-                result.push_back( dataLine );
             }
         }
     }
+
+    //TODO: remove this when all GammaRay features become realization-aware.
+    setDataPageToAll();
 
     return result;
 }

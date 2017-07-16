@@ -144,6 +144,17 @@ SOURCES += main.cpp\
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.cpp \
     domain/auxiliary/dataloader.cpp \
     array3d.cpp \
+    geostats/geostatsutils.cpp \
+    geostats/matrix3x3.cpp \
+    geostats/matrixmxn.cpp \
+    dialogs/ndvestimationdialog.cpp \
+    geostats/gridcell.cpp \
+    geostats/ndvestimation.cpp \
+    geostats/spatiallocation.cpp \
+    geostats/ndvestimationrunner.cpp \
+    geostats/ijkdelta.cpp \
+    geostats/ijkindex.cpp \
+    geostats/ijkdeltascache.cpp \
     dialogs/realizationselectiondialog.cpp \
     dialogs/gridresampledialog.cpp \
     dialogs/multivariogramdialog.cpp
@@ -272,6 +283,17 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h \
     domain/auxiliary/dataloader.h \
     array3d.h \
+    geostats/geostatsutils.h \
+    geostats/matrix3x3.h \
+    geostats/matrixmxn.h \
+    dialogs/ndvestimationdialog.h \
+    geostats/gridcell.h \
+    geostats/ndvestimation.h \
+    geostats/spatiallocation.h \
+    geostats/ndvestimationrunner.h \
+    geostats/ijkdelta.h \
+    geostats/ijkindex.h \
+    geostats/ijkdeltascache.h \
     dialogs/realizationselectiondialog.h \
     dialogs/gridresampledialog.h \
     dialogs/multivariogramdialog.h
@@ -329,6 +351,7 @@ FORMS    += mainwindow.ui \
     viewer3d/view3dwidget.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.ui \
+    dialogs/ndvestimationdialog.ui \
     dialogs/realizationselectiondialog.ui \
     dialogs/gridresampledialog.ui \
     dialogs/multivariogramdialog.ui
@@ -379,7 +402,7 @@ LIBS        += -lvtkGUISupportQt$$VTK_VERSION_SUFFIX \
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 2.4
+VERSION = 2.5
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

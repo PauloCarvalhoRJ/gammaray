@@ -57,7 +57,7 @@ private:
     /** Returns nullptr if the head/tail combination does not exist.
      * @note 1,3 == 3,1 due to assumed cross variogram symmetry (no lag effect).
      */
-    VariogramModel* getVariogramModel( uint head, uint tail );
+    VariogramModel *getVariogramModel( uint head, uint tail );
     void preview();
     void save( bool estimates );
 };

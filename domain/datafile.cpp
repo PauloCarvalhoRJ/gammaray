@@ -24,7 +24,9 @@
 #include "auxiliary/dataloader.h"
 
 DataFile::DataFile(QString path) : File( path ),
-    _lastModifiedDateTimeLastLoad( )
+    _lastModifiedDateTimeLastLoad( ),
+    _dataPageFirstLine( 0 ),
+    _dataPageLastLine( std::numeric_limits<long>::max() )
 {
 }
 
@@ -63,7 +65,11 @@ void DataFile::loadData()
     progressDialog.setValue( 0 );
     progressDialog.setMaximum( getFileSize() / 100 ); //see DataLoader::doLoad(). Dividing by 100 allows a max value of ~400GB when converting from long to int
     QThread* thread = new QThread();  //does it need to set parent (a QObject)?
-    DataLoader* dl = new DataLoader(file, _data, data_line_count); // Do not set a parent. The object cannot be moved if it has a parent.
+    DataLoader* dl = new DataLoader(file,
+                                    _data,
+                                    data_line_count,
+                                    _dataPageFirstLine,
+                                    _dataPageLastLine); // Do not set a parent. The object cannot be moved if it has a parent.
     dl->moveToThread(thread);
     dl->connect(thread, SIGNAL(finished()), dl, SLOT(deleteLater()));
     dl->connect(thread, SIGNAL(started()), dl, SLOT(doLoad()));
@@ -85,7 +91,10 @@ void DataFile::loadData()
         CartesianGrid* cg = (CartesianGrid*)this;
         uint expected_total_lines = cg->getNX() * cg->getNY() * cg->getNZ() * cg->getNReal();
         if( data_line_count != expected_total_lines )
-            Application::instance()->logWarn( QString("DataFile::loadData(): number of parsed data lines differs from the expected lines computed from the cartesian grid parameters. The application, a GSLib program or Ghostscript may fail.") );
+            Application::instance()->logWarn( QString("DataFile::loadData(): number of parsed data lines (" +
+                                                      QString::number( data_line_count ) +
+                                                      + ") differs from the expected lines computed from the cartesian grid parameters (" +
+                                                      QString::number( expected_total_lines )+ ")."));
     }
 
     Application::instance()->logInfo("Finished loading data.");
@@ -582,4 +591,20 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc, cons
 void DataFile::freeLoadedData()
 {
     _data.clear();
+}
+
+void DataFile::setDataPage(long firstDataLine, long lastDataLine)
+{
+    //does nothing if page didn't actually change
+    if( firstDataLine == _dataPageFirstLine &&
+        lastDataLine == _dataPageLastLine )
+        return;
+    freeLoadedData();
+    _dataPageFirstLine = firstDataLine;
+    _dataPageLastLine = lastDataLine;
+}
+
+void DataFile::setDataPageToAll()
+{
+    setDataPage(0, std::numeric_limits<long>::max() );
 }

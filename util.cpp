@@ -1,4 +1,4 @@
-#include "util.h"
+﻿#include "util.h"
 #include <QFile>
 #include <QTextStream>
 #include <QRegularExpression>
@@ -37,8 +37,13 @@
 
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
 
+/*static*/const long double Util::PI( 3.141592653589793238L );
+
+/*static*/const long double Util::PI_OVER_180( Util::PI / 180.0L );
+
 //TODO: move this to geostatsutils.h, or transfer its PI_OVER_180 constant here
 #define C_180_OVER_PI (180.0 / 3.14159265)
+
 
 Util::Util()
 {
@@ -182,27 +187,6 @@ bool Util::almostEqual2sComplement(float A, float B, int maxUlps)
         bInt = 0x80000000 - bInt;
     int intDiff = abs(aInt - bInt);
     if (intDiff <= maxUlps)
-        return true;
-    return false;
-}
-
-bool Util::almostEqual2sComplement(double A, double B, int maxUlps)
-{
-    // Make sure maxUlps is non-negative and small enough that the
-    // default NAN won't compare as equal to anything.
-    //<cassert>'s assert doesn't accept longs
-    //assert(maxUlps > 0 && maxUlps < 2 * 1024 * 1024 * 1024 * 1024 * 1024);
-    assert(maxUlps > 0 && maxUlps < 4 * 1024 * 1024);
-    int64_t aLong = *reinterpret_cast<int64_t*>( &A ); //use the raw bytes from the double to make a long int value (type punning)
-    // Make aLong lexicographically ordered as a twos-complement long
-    if (aLong < 0)
-        aLong = 0x8000000000000000 - aLong;
-    // Make bLong lexicographically ordered as a twos-complement long
-    int64_t bLong = *reinterpret_cast<int64_t*>( &B ); //use the raw bytes from the double to make a long int value (type punning)
-    if (bLong < 0)
-        bLong = 0x8000000000000000 - bLong;
-    int64_t longDiff = (aLong - bLong) & 0x7FFFFFFFFFFFFFFF;
-    if (longDiff <= maxUlps)
         return true;
     return false;
 }
@@ -451,7 +435,7 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     if( nColumns == 0)
         return;
 
-    //write out the GEO-EAS grid geader
+    //write out the GEO-EAS grid header
     out << "Grid file\n";
     out << nColumns << '\n';
     if( ! columnNameForRealPart.isEmpty() )
@@ -476,6 +460,28 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     file.close();
 }
 
+void Util::createGEOEASGrid(const QString columnName, std::vector<double> &values, QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //write out the GEO-EAS grid header
+    out << "Grid file\n";
+    out << "1\n";
+    out << columnName << '\n';
+
+    //loop to output the values
+    std::vector< double >::iterator it = values.begin();
+    for( ; it != values.end(); ++it ){
+        out << (*it) << '\n';
+    }
+
+    //close file
+    file.close();
+}
+
 void Util::createGEOEASGridFile(const QString gridDescription,
                                 std::vector<QString> columnNames,
                                 std::vector<std::vector<double> > &array,
@@ -489,7 +495,7 @@ void Util::createGEOEASGridFile(const QString gridDescription,
     //determine the number of columns
     int nColumns = columnNames.size();
 
-    //write out the GEO-EAS grid geader
+    //write out the GEO-EAS grid header
     out << gridDescription << '\n';
     out << nColumns << '\n';
     std::vector<QString>::iterator itColNames = columnNames.begin();
@@ -938,7 +944,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
+    previousVersions << "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
                         "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();

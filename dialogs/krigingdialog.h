@@ -37,7 +37,7 @@ private:
     void preview();
     /** Called when the user changes the variogram model, so the variogram parameters
      * in m_gpf_kt3d are read from the newly selected variogram model.*/
-    void updateVariogramParameters( VariogramModel* vm );
+    void updateVariogramParameters(VariogramModel *vm );
 
 private slots:
     void onParameters();

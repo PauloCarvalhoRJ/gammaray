@@ -3,8 +3,10 @@
 
 #include "datafile.h"
 #include <complex>
+#include <set>
 
 class GSLibParGrid;
+class GridCell;
 
 class CartesianGrid : public DataFile
 {
@@ -66,7 +68,10 @@ public:
      * @param j must be between 0 and NY-1.
      * @param k must be between 0 and NZ-1.
      */
-    double dataIJK(uint column, uint i, uint j, uint k);
+    inline double dataIJK(uint column, uint i, uint j, uint k){
+        uint dataRow = i + j*_nx + k*_ny*_nx;
+        return data( dataRow, column );
+    }
 
     /** Creates a vector of complex numbers with the values taken from data columns.
      *  Specify -1 to omit a column, which causes the repective part to be filled with zeros.

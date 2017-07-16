@@ -103,6 +103,16 @@ public:
     /** Adds a data file to the project.  Does nothing of there is no open project. */
     void addDataFile( const QString path );
 
+    /** Disables warning logging. */
+    void logWarningOff(){ logWarn("WARNING! Warning messages disabled! "); _logWarnings = false; }
+    /** Enables warning logging. */
+    void logWarningOn();
+
+    /** Disables error logging. */
+    void logErrorOff(){ logWarn("WARNING! Error messages disabled! "); _logErrors = false; }
+    /** Enables error logging. */
+    void logErrorOn();
+
 private:
     Application();
     ~Application();
@@ -115,6 +125,18 @@ private:
 
     /** Pointer to the main window. */
     MainWindow* _mw;
+
+    /** Flag that enables/disables warning logging/printing. */
+    bool _logWarnings;
+
+    /** Flag that enables/disables error logging/printing. */
+    bool _logErrors;
+
+    /** Warning messages are stored here while their display is disabled. */
+    std::vector<QString> _warningBuffer;
+
+    /** Error messages are stored here while their display is disabled. */
+    std::vector<QString> _errorBuffer;
 };
 
 #endif // APPLICATION_H

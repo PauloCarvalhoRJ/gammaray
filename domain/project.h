@@ -58,7 +58,7 @@ public:
     void addExperimentalVariogram( ExperimentalVariogram *exp_var );
 
     /** Adds the given variogram model object to this project. */
-    void addVariogramModel( VariogramModel *var_model );
+    void addVariogramModel(VariogramModel *var_model );
 
     /** Adds the given distribution object to this project. */
     void addDistribution( Distribution *dist );

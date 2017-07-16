@@ -16,6 +16,7 @@
 #include "dialogs/krigingdialog.h"
 #include "dialogs/triadseditordialog.h"
 #include "dialogs/postikdialog.h"
+#include "dialogs/ndvestimationdialog.h"
 #include "domain/pointset.h"
 #include "domain/cartesiangrid.h"
 #include "domain/categorydefinition.h"
@@ -454,6 +455,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
+                _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
@@ -1379,6 +1381,12 @@ void MainWindow::onFFT()
     Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
 
     Application::instance()->logInfo("FFT 2D completed.");
+}
+
+void MainWindow::onNDVEstimation()
+{
+    NDVEstimationDialog* ndved = new NDVEstimationDialog( _right_clicked_attribute, this );
+    ndved->show();
 }
 
 void MainWindow::onResampleGrid()

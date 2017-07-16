@@ -88,7 +88,7 @@ public:
      * the given variogram model object.
      * This method has no effect if this parameter set does not have a variogram model.
      */
-    void setVariogramModel( VariogramModel* vm );
+    void setVariogramModel(VariogramModel *vm );
 
     /**
      * Saves the variogram model parameters as a vmodel program parameter file given a full path to it.

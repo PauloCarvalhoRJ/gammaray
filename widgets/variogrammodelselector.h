@@ -18,7 +18,7 @@ public:
     ~VariogramModelSelector();
 
     /** Returns the pointer to the selected variogram model or nullptr if none was selected. */
-    VariogramModel* getSelectedVModel();
+    VariogramModel *getSelectedVModel();
 
     /** Re-populates the variogram model list. */
     void updateList();

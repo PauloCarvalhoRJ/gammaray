@@ -1,9 +1,10 @@
-#ifndef UTIL_H
+﻿#ifndef UTIL_H
 #define UTIL_H
 #include <QStringList>
 #include <QString>
 #include <QList>
 #include <complex>
+#include <cassert>
 #include "array3d.h"
 
 //macro used to do printf on QString for debugging purposes
@@ -45,6 +46,12 @@ class Util
 {
 public:
     Util();
+
+    /** The math constant PI. */
+    static const long double PI;
+
+    /** Constant used to convert degrees to radians. */
+    static const long double PI_OVER_180;
 
     /** Returns the list of variable names available in the given
      * GSLib format data file.  GSLib files are in GEO-EAS format.
@@ -107,7 +114,25 @@ public:
     /**
      * 64-bit version of almostEqual2sComplement by me.
      */
-    static bool almostEqual2sComplement(double A, double B, int maxUlps);
+    inline static bool almostEqual2sComplement(double A, double B, int maxUlps) {
+        // Make sure maxUlps is non-negative and small enough that the
+        // default NAN won't compare as equal to anything.
+        //<cassert>'s assert doesn't accept longs
+        //assert(maxUlps > 0 && maxUlps < 2 * 1024 * 1024 * 1024 * 1024 * 1024);
+        assert(maxUlps > 0 && maxUlps < 4 * 1024 * 1024);
+        int64_t aLong = *reinterpret_cast<int64_t*>( &A ); //use the raw bytes from the double to make a long int value (type punning)
+        // Make aLong lexicographically ordered as a twos-complement long
+        if (aLong < 0)
+            aLong = 0x8000000000000000 - aLong;
+        // Make bLong lexicographically ordered as a twos-complement long
+        int64_t bLong = *reinterpret_cast<int64_t*>( &B ); //use the raw bytes from the double to make a long int value (type punning)
+        if (bLong < 0)
+            bLong = 0x8000000000000000 - bLong;
+        int64_t longDiff = (aLong - bLong) & 0x7FFFFFFFFFFFFFFF;
+        if (longDiff <= maxUlps)
+            return true;
+        return false;
+    }
 
     /**
       *  Remove all child widgets from the given widget.
@@ -185,6 +210,16 @@ public:
 
     /**
      * Creates a GEO-EAS regular grid file using the given values
+     * passed in the unidimensional vector of doubles.
+     * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
+     * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
+     */
+    static void createGEOEASGrid( const QString columnName,
+                                  std::vector< double > &values,
+                                  QString path );
+
+    /**
+     * Creates a GEO-EAS regular grid file using the given values
      * passed in the bidimensional vector of values.
      * @note the array elements are expected to follow the GEO-EAS grid scan protocol for the elemental
      * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
@@ -194,6 +229,7 @@ public:
                                       std::vector<QString> columnNames,
                                       std::vector< std::vector<double> > &array,
                                       QString path );
+
 
     /**
      * Runs the GSLib program pixelplt and opens the plot dialog to view a
@@ -337,7 +373,7 @@ public:
      *  @param vmVar2 Autovariogram of 2nd variable.
      *  @param crossVariogram Cross variogram between the variables (no lag effect assumed).
      */
-    static bool isLMC( VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel* crossVariogram );
+    static bool isLMC(VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel *crossVariogram );
 
     /** Saves the given list of strings as lines in the given text file. */
     static void saveText( const QString filePath, const QStringList lines);

@@ -6,12 +6,19 @@
 #include "../application.h"
 
 
-DataLoader::DataLoader(QFile &file, std::vector<std::vector<double> > &data, uint &data_line_count, QObject *parent) :
+DataLoader::DataLoader(QFile &file,
+                       std::vector<std::vector<double> > &data,
+                       uint &data_line_count,
+                       ulong firstDataLineToRead,
+                       ulong lastDataLineToRead,
+                       QObject *parent) :
     QObject(parent),
     _file(file),
     _data(data),
     _data_line_count(data_line_count),
-    _finished(false)
+    _finished(false),
+    _firstDataLineToRead( firstDataLineToRead ),
+    _lastDataLineToRead( lastDataLineToRead )
 {
 }
 
@@ -28,7 +35,7 @@ void DataLoader::doLoad() { /* do what you need and emit progress signal */
        QString line = in.readLine();
 
        //updates the progress
-       bytesReadSofar += line.size();
+       bytesReadSofar += line.size() + 1; //account for line break char (in Windows may have 2, though.)
 
        if( ! ( i % 100 ) ){ //update progress for each 100 lines to not impact performance much
            // allows tracking progress of a file up to about 400GB
@@ -42,7 +49,8 @@ void DataLoader::doLoad() { /* do what you need and emit progress signal */
        } else if ( i > 1 && var_count < n_vars ){ //the variables names
            list << line;
            ++var_count;
-       } else { //lines containing data
+       } else if( _data_line_count >= _firstDataLineToRead &&
+                  _data_line_count <= _lastDataLineToRead ) { //parse lines containing data (must be within the target interval)
            std::vector<double> data_line;
            //QStringList values = line.split(QRegularExpression("\\s+"), QString::SkipEmptyParts); //this is a bottleneck
            QStringList values = Util::fastSplit( line );
@@ -65,6 +73,8 @@ void DataLoader::doLoad() { /* do what you need and emit progress signal */
                _data.push_back( std::move( data_line ) );
                ++_data_line_count;
            }
+       } else { //if the data line is not within the target interval
+           ++_data_line_count; //just count it as parsed.
        }
     }
     _finished = true;
