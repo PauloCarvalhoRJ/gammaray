@@ -69,7 +69,9 @@ public:
      */
     static MatrixNXM<double> makeCovMatrix(std::multiset<GridCell>& samples,
                                            VariogramModel *variogramModel,
-                                           KrigingType kType = KrigingType::SK );
+                                           double variogramSill,
+                                           KrigingType kType = KrigingType::SK
+                                           );
 
     /**
      * Creates a gamma matrix of the given set of samples against the estimation location cell.

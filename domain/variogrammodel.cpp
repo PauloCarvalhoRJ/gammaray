@@ -7,73 +7,74 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "util.h"
 
-VariogramModel::VariogramModel(const QString path) : File( path )
+VariogramModel::VariogramModel(const QString path) : File( path ),
+    _forceReread (true)
 {
 }
 
 double VariogramModel::getSill()
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_Sill;
 }
 
 double VariogramModel::getNugget()
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_Nugget;
 }
 
 uint VariogramModel::getNst()
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_nst;
 }
 
 VariogramStructureType VariogramModel::getIt(int structure)
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_it.at( structure );
 }
 
 double VariogramModel::getCC(int structure)
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_cc.at( structure );
 }
 
 double VariogramModel::get_a_hMax(int structure)
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_a_hMax.at( structure );
 }
 
 double VariogramModel::get_a_hMin( int structure )
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_a_hMin.at( structure );
 }
 
 double VariogramModel::get_a_vert(int structure)
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_a_vert.at( structure );
 }
 
 double VariogramModel::getAzimuth(int structure)
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_Azimuth.at( structure );
 }
 
 double VariogramModel::getDip(int structure)
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_Dip.at( structure );
 }
 
 double VariogramModel::getRoll(int structure)
 {
-    readParameters();
+    if(_forceReread) readParameters();
     return m_Roll.at( structure );
 }
 
@@ -190,3 +191,17 @@ void VariogramModel::readParameters()
         m_a_vert.append( par4_1->getParameter<GSLibParDouble*>(2)->_value );
     }
 }
+bool VariogramModel::forceReread() const
+{
+    return _forceReread;
+}
+
+void VariogramModel::setForceReread(bool forceReread)
+{
+    if( ! forceReread)
+        Application::instance()->logWarn("VariogramModel::setForceReread(): WARNING! Automatic reread disabled!");
+    else
+        Application::instance()->logInfo("VariogramModel::setForceReread(): Automatic reread restored.");
+    _forceReread = forceReread;
+}
+

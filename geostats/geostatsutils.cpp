@@ -10,6 +10,12 @@
 #include <cmath>
 #include <limits>
 
+//the aniso transforms only change if variogram model changes
+struct AnisoCache{
+    VariogramModel* vModel;
+    std::vector<Matrix3X3<double>> anisoTransforms;
+} anisoCache;
+
 GeostatsUtils::GeostatsUtils()
 {
 }
@@ -85,7 +91,7 @@ double GeostatsUtils::getGamma(VariogramStructureType permissiveModel, double h,
             return 0.0;
         return contribution * ( 1.0 - std::exp(-9.0*(h_over_a*h_over_a)) );
     case VariogramStructureType::POWER_LAW:
-        //TODO: using a constant power (1.5) since I don't know how it entered in GSLib par files.
+        //TODO: using a constant power (1.5) since I don't know how it is entered in GSLib par files.
         Application::instance()->logWarn("GeostatsUtils::getGamma(): Power model using a constant power == 1.5");
         return contribution * std::pow(h, 1.5);
     case VariogramStructureType::COSINE_HOLE_EFFECT:
@@ -106,30 +112,42 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
     int nst = model->getNst();
 
     for( int i = 0; i < nst; ++i){
-        //TODO: improve performance by saving the aniso transforms in a cache, assuming the anisotropy
+        Matrix3X3<double> anisoTransform;
+        //improving performance by saving the aniso transforms in a cache, assuming the anisotropy
         //      is the same in all locations.
-        //major bottleneck
-        Matrix3X3<double> anisoTransform = GeostatsUtils::getAnisoTransform(
-                    model->get_a_hMax(i), model->get_a_hMin(i), model->get_a_vert(i),
-                    model->getAzimuth(i), model->getDip(i), model->getRoll(i));
+        if( anisoCache.vModel != model){
+            anisoTransform = GeostatsUtils::getAnisoTransform(
+                        model->get_a_hMax(i), model->get_a_hMin(i), model->get_a_vert(i),
+                        model->getAzimuth(i), model->getDip(i), model->getRoll(i));
+            anisoCache.anisoTransforms.push_back( anisoTransform );
+        } else {
+            anisoTransform = anisoCache.anisoTransforms[i];
+        }
 
+        //get the separation corrected by anisotropy
         double h = GeostatsUtils::getH( locA._x, locA._y, locA._z,
                                         locB._x, locB._y, locB._z,
                                         anisoTransform );
 
-        //bottleneck
         result += GeostatsUtils::getGamma( model->getIt(i),
                                            h,
                                            model->get_a_hMax(i),
                                            model->getCC(i) );
     }
+
+    //sets the cache's key (variogram model pointer) so we know whether we can reuse the aniso transforms
+    //saved in the cache
+    anisoCache.vModel = model;
+
     return result;
 }
 
 MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
                                                VariogramModel *variogramModel,
+                                               double variogramSill,
                                                KrigingType kType)
 {
+    //Define the dimension of cov matrix, which depends on kriging type
     int append = 0;
     switch( kType ){
     case KrigingType::SK:
@@ -138,19 +156,28 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
         append = 1; break;
     }
 
-    MatrixNXM<double> result( samples.size() + append, samples.size() + append );
+    //Create the cov matrix.
+    MatrixNXM<double> covMatrix( samples.size() + append, samples.size() + append );
 
-    std::multiset<GridCell>::iterator rowsIt = samples.begin();
+    //convert the std::multiset into a std::vector for faster traversal
+    //(memory locality and less pointer chasing)
+    std::vector<GridCell> samplesV;
+    samplesV.reserve( samples.size() );
+    std::copy(samples.begin(), samples.end(), std::back_inserter(samplesV));
 
-    for( int i = 0; rowsIt != samples.end(); ++rowsIt, ++i ){
+    //For each sample.
+    std::vector<GridCell>::iterator rowsIt = samplesV.begin();
+    for( int i = 0; rowsIt != samplesV.end(); ++rowsIt, ++i ){
         GridCell rowCell = *rowsIt;
-        std::multiset<GridCell>::iterator colsIt = samples.begin();
-        for( int j = 0; colsIt != samples.end(); ++colsIt, ++j ){
+        //For each sample.
+        std::vector<GridCell>::iterator colsIt = samplesV.begin();
+        for( int j = 0; colsIt != samplesV.end(); ++colsIt, ++j ){
             GridCell colCell = *colsIt;
-            //get semi-variance value
+            //get semi-variance value from the separation between two samples in a pair
             double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, colCell._center );
-            //get covariance
-            result(i, j) = variogramModel->getSill() - gamma;
+            //get covariance for the sample pair and assign it the corresponding element in the
+            //cov matrix
+            covMatrix(i, j) = variogramSill - gamma;
         }
     }
 
@@ -160,13 +187,13 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
     case KrigingType::OK:
         int dim = samples.size();
         for( int i = 0; i < dim; ++i ){
-            result( dim, i ) = 1.0; //last row with ones
-            result( i, dim ) = 1.0; //last columns with ones
+            covMatrix( dim, i ) = 1.0; //last row with ones
+            covMatrix( i, dim ) = 1.0; //last columns with ones
         }
-        result( dim, dim ) = 0.0; //last element is zero
+        covMatrix( dim, dim ) = 0.0; //last element is zero
     }
 
-    return result;
+    return covMatrix;
 }
 
 MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &samples,

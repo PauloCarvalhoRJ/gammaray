@@ -118,6 +118,15 @@ set_flag:               mask[ i + j*nI + k*nJ*nI ] = flagToSet;
         //...or assign a no-data-value.
         valueForNoValuesInNeighborhood = _ndvEstimation->ndv();
 
+    //get the sill in a separate variable because VariogramModel::getSill() is slow.
+    double variogramSill = _ndvEstimation->vmodel()->getSill();
+
+    //reads variogram parameters from file
+    _ndvEstimation->vmodel()->readParameters();
+
+    //disable reread in model's getters to improve performance
+    _ndvEstimation->vmodel()->setForceReread( false );
+
     //for all grid cells
     int nCopies = 0;
     int nTrivial = 0;
@@ -137,7 +146,7 @@ set_flag:               mask[ i + j*nI + k*nJ*nI ] = flagToSet;
                         GridCell cell(cg, atIndex, i,j,k);
                         //estimate if at least one value exists in the neighborhood
                         ++nKriging;
-                        _results.push_back( krige( cell , _ndvEstimation->meanForSK(), hasNDV, NDV ) );
+                        _results.push_back( krige( cell , _ndvEstimation->meanForSK(), hasNDV, NDV, variogramSill ) );
                     } else {
                         ++nTrivial;
                         _results.push_back( valueForNoValuesInNeighborhood );
@@ -150,11 +159,14 @@ set_flag:               mask[ i + j*nI + k*nJ*nI ] = flagToSet;
             }
         }
 
+    //restore automatic reread in model's getters
+    _ndvEstimation->vmodel()->setForceReread( true );
+
     //inform the calling thread computation has finished
     _finished = true;
 }
 
-double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, double NDV )
+double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, double NDV, double variogramSill )
 {
     double result = std::numeric_limits<double>::quiet_NaN();
 
@@ -171,8 +183,6 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
                                                            NDV,
                                                            vCells);
 
-    return 0;////////////////////////REMOVE THIS AFTER IMPROVING PERFORMANCE OF GeostatsUtils::getValuedNeighborsTopoOrdered()
-
     //if no sample was found, either...
     if( vCells.empty() ){
         if( _ndvEstimation->useDefaultValue() )
@@ -188,7 +198,9 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
     //      the covariances from the variogram model are function of sample separation, not their values.
     //      This would take the advantage of the regular grid geometry.
     //  This is a major bottleneck
-    MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vCells, _ndvEstimation->vmodel() );
+    MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vCells,
+                                                             _ndvEstimation->vmodel(),
+                                                             variogramSill );
 
     //invert the covariance matrix.
     covMat.invert();
@@ -211,7 +223,10 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
         //for OK mode
         //compute the OK weights (follows the same rationale of SK)
         //TODO: improve performance.  Just expand SK matrices with the 1.0s and 0.0s instead of computing new ones.
-        MatrixNXM<double> covMatOK = GeostatsUtils::makeCovMatrix( vCells, _ndvEstimation->vmodel(), KrigingType::OK );
+        MatrixNXM<double> covMatOK = GeostatsUtils::makeCovMatrix( vCells,
+                                                                   _ndvEstimation->vmodel(),
+                                                                   variogramSill,
+                                                                   KrigingType::OK );
         covMatOK.invert();
         MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel(), KrigingType::OK );
         MatrixNXM<double> weightsOK = covMatOK * gammaMatOK;  //covMat is inverted

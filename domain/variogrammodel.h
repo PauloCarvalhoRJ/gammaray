@@ -96,6 +96,19 @@ public:
     /** Returns the highest vertical axis range amongst the nested structures. */
     double get_max_vert();
 
+    bool forceReread() const;
+
+    /** Sets whether the getters call readParameters() automatically.
+     * Setting true, getters ensture an updated read with respect to the file, but results in a slow execution.
+     * Setting false, getters only return the values in the member varaibles, which can be intersting in
+     * performance critical code, but at risk of outdated information if the file is expected to change.
+     * By default, _forceReread is true.
+     */
+    void setForceReread(bool forceReread);
+
+    /** Reads the variogram model parameters from file. */
+    void readParameters();
+
 // File interface
 public:
     QString getFileType(){ return "VMODEL"; }
@@ -109,7 +122,6 @@ public:
     void save(QTextStream *txt_stream);
 
 private:
-    void readParameters();
 
     /** These variables are set by readParameters(). */
     //@{
@@ -132,6 +144,12 @@ private:
      * unnecessary reads.
      */
     QDateTime _lastModifiedDateTimeLastRead;
+
+    /** If true, each get*() method calls readParameters(), which assures updating, but is slow.
+     * If false, the getters only returns the values stores in the member variables, but is subject to return
+     * outdated values.  By default this variable is true.
+     */
+    bool _forceReread;
 };
 
 #endif // VARIOGRAMMODEL_H
