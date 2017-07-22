@@ -2,7 +2,7 @@
 #define IJKDELTASCACHE_H
 
 #include <map>
-#include <set>
+#include <vector>
 #include "ijkdelta.h"
 
 

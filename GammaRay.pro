@@ -11,19 +11,21 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = GammaRay
 TEMPLATE = app
 
-release:DESTDIR = ../GammaRay_release/dest
+release:DESTDIR = ../GammaRay_release/dist
 release:OBJECTS_DIR = ../GammaRay_release/obj
 release:MOC_DIR = ../GammaRay_release/moc
 release:RCC_DIR = ../GammaRay_release/rcc
 release:UI_DIR = ../GammaRay_release/ui
 
-debug:DESTDIR = ../GammaRay_debug/dest
+debug:DESTDIR = ../GammaRay_debug/dist
 debug:OBJECTS_DIR = ../GammaRay_debug/obj
 debug:MOC_DIR = ../GammaRay_debug/moc
 debug:RCC_DIR = ../GammaRay_debug/rcc
 debug:UI_DIR = ../GammaRay_debug/ui
 
 CONFIG += c++11
+
+QMAKE_CXXFLAGS += -m64
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -356,48 +358,63 @@ FORMS    += mainwindow.ui \
     dialogs/gridresampledialog.ui \
     dialogs/multivariogramdialog.ui
 
-# The Boost include path.
-BOOST_INSTALL = $$(BOOST_ROOT)
-isEmpty(BOOST_INSTALL){
-    error(BOOST_ROOT environment variable not defined.)
+#==================== The Boost include path.==================
+_BOOST_INCLUDE = $$(BOOST_INCLUDE)
+isEmpty(_BOOST_INCLUDE){
+    error(BOOST_INCLUDE environment variable not defined.)
 }
-INCLUDEPATH += $$BOOST_INSTALL/include
+INCLUDEPATH += $$_BOOST_INCLUDE
+#==============================================================
 
-# The Qwt include and lib path and libraries.
-QWT_INSTALL = $$(QWT_ROOT)
-isEmpty(QWT_INSTALL){
-    error(QWT_ROOT environment variable not defined.)
+#========= The Qwt include and lib path and libraries.=========
+_QWT_INCLUDE = $$(QWT_INCLUDE)
+isEmpty(_QWT_INCLUDE){
+    error(QWT_INCLUDE environment variable not defined.)
 }
-INCLUDEPATH += $$QWT_INSTALL/include
-LIBPATH     += $$QWT_INSTALL/lib
+_QWT_LIB = $$(QWT_LIB)
+isEmpty(_QWT_LIB){
+    error(QWT_LIB environment variable not defined.)
+}
+INCLUDEPATH += $$_QWT_INCLUDE
+LIBPATH     += $$_QWT_LIB
 LIBS        += -lqwt
+#==============================================================
 
-# The VTK include and lib paths and libraries
-VTK_INSTALL = $$(VTK_ROOT)
-isEmpty(VTK_INSTALL){
-    error(VTK_ROOT environment variable not defined.)
+#========== The VTK include and lib paths and libraries==================
+_VTK_INCLUDE = $$(VTK_INCLUDE)
+isEmpty(_VTK_INCLUDE){
+    error(VTK_INCLUDE environment variable not defined.)
 }
-VTK_VERSION_SUFFIX=-6.3  #this suffix may be empty
-INCLUDEPATH += $$VTK_INSTALL/include/vtk$$VTK_VERSION_SUFFIX
-LIBPATH     += $$VTK_INSTALL/lib
-LIBS        += -lvtkGUISupportQt$$VTK_VERSION_SUFFIX \
-               -lvtkCommonCore$$VTK_VERSION_SUFFIX \
-               -lvtkFiltersSources$$VTK_VERSION_SUFFIX \
-               -lvtkRenderingCore$$VTK_VERSION_SUFFIX \
-               -lvtkCommonExecutionModel$$VTK_VERSION_SUFFIX \
-               -lvtkInteractionStyle$$VTK_VERSION_SUFFIX \
-               -lvtkRenderingOpenGL2$$VTK_VERSION_SUFFIX \
-               -lvtkRenderingAnnotation$$VTK_VERSION_SUFFIX \
-               -lvtkRenderingFreeType$$VTK_VERSION_SUFFIX \
-               -lvtkInteractionWidgets$$VTK_VERSION_SUFFIX \
-               -lvtkCommonDataModel$$VTK_VERSION_SUFFIX \
-               -lvtkFiltersGeneral$$VTK_VERSION_SUFFIX \
-               -lvtkCommonTransforms$$VTK_VERSION_SUFFIX \
-               -lvtkImagingSources$$VTK_VERSION_SUFFIX \
-               -lvtkImagingCore$$VTK_VERSION_SUFFIX \
-               -lvtkFiltersCore$$VTK_VERSION_SUFFIX \
-               -lvtkFiltersExtraction$$VTK_VERSION_SUFFIX \
-               -lvtkImagingFourier$$VTK_VERSION_SUFFIX
+_VTK_LIB = $$(VTK_LIB)
+isEmpty(_VTK_LIB){
+    error(VTK_LIB environment variable not defined.)
+}
+_VTK_VERSION_SUFFIX = $$(VTK_VERSION_SUFFIX)
+isEmpty(_VTK_VERSION_SUFFIX){
+    warning(VTK_VERSION_SUFFIX environment variable not defined or empty.)
+}
+INCLUDEPATH += $$_VTK_INCLUDE
+LIBPATH     += $$_VTK_LIB
+LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
+               -lvtkCommonCore$$_VTK_VERSION_SUFFIX \
+               -lvtkFiltersSources$$_VTK_VERSION_SUFFIX \
+               -lvtkRenderingCore$$_VTK_VERSION_SUFFIX \
+               -lvtkCommonExecutionModel$$_VTK_VERSION_SUFFIX \
+               -lvtkInteractionStyle$$_VTK_VERSION_SUFFIX \
+               -lvtkRenderingOpenGL2$$_VTK_VERSION_SUFFIX \
+               -lvtkRenderingAnnotation$$_VTK_VERSION_SUFFIX \
+               -lvtkRenderingFreeType$$_VTK_VERSION_SUFFIX \
+               -lvtkInteractionWidgets$$_VTK_VERSION_SUFFIX \
+               -lvtkCommonDataModel$$_VTK_VERSION_SUFFIX \
+               -lvtkFiltersGeneral$$_VTK_VERSION_SUFFIX \
+               -lvtkCommonTransforms$$_VTK_VERSION_SUFFIX \
+               -lvtkImagingSources$$_VTK_VERSION_SUFFIX \
+               -lvtkImagingCore$$_VTK_VERSION_SUFFIX \
+               -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
+               -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
+               -lvtkImagingFourier$$_VTK_VERSION_SUFFIX
+#=============================================================================
+
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
