@@ -122,9 +122,9 @@ template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
    MatrixNXM<T>& a = *this;
    MatrixNXM<T> result( a._n, b._m );
-   for(int i = 0; i < a._n; ++i)
-       for(int j = 0; j < b._m; ++j)
-           for(int k = 0; k < a._m; ++k) //a._m (number of cols) is supposed to be == b._n (number of rows)
+   for(uint i = 0; i < a._n; ++i)
+       for(uint j = 0; j < b._m; ++j)
+           for(uint k = 0; k < a._m; ++k) //a._m (number of cols) is supposed to be == b._n (number of rows)
                result(i,j) += a(i,k) * b(k,j);
    return result;
 }

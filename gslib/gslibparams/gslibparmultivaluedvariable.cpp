@@ -23,7 +23,7 @@ QString GSLibParMultiValuedVariable::getAllowedParameterTypeName()
 template<typename T>
 void GSLibParMultiValuedVariable::assureLoop(uint n)
 {
-    for(int i = _parameters.size(); i < n; ++i){
+    for(uint i = _parameters.size(); i < n; ++i){
         _parameters.append( new T("","","") );
     }
 }
