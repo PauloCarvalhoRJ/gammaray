@@ -34,6 +34,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkImageData.h>
 #include <vtkImageFFT.h>
+#include <vtkImageRFFT.h>
 
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
 
@@ -944,8 +945,8 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" <<
-                        "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6"
+                           << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -1447,16 +1448,24 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     return result;
 }
 
-void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode /*isig*/)
+void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig)
 {
     //create a vtk image from the value array
+    ////// index_shift = ( index + nINDEX/2) % nINDEX), if in reverse FFT mode,
+    ////// shifts the lower frequencies components to the corners of the image for compatibility with RFFT algorithm/////
     vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
     image->SetDimensions( nI, nJ, nK );
     image->AllocateScalars( VTK_DOUBLE, 2 ); // two components: real and imaginary parts.
     for(unsigned int k = 0; k < (unsigned int)nK; ++k) {
+        int k_shift = (k + nK/2) % nK;
+        if( isig == FFTComputationMode::DIRECT ) k_shift = k;
         for(unsigned int j = 0; j < (unsigned int)nJ; ++j){
+            int j_shift = (j + nJ/2) % nJ;
+            if( isig == FFTComputationMode::DIRECT ) j_shift = j;
             for(unsigned int i = 0; i < (unsigned int)nI; ++i){
-                std::complex<double> value = values[i + j*nI + k*nJ*nI];
+                int i_shift = (i + nI/2) % nI;
+                if( isig == FFTComputationMode::DIRECT ) i_shift = i;
+                std::complex<double> value = values[i_shift + j_shift*nI + k_shift*nJ*nI];
                 double* cell = static_cast<double*>(image->GetScalarPointer(i,j,k));
                 cell[0] = value.real();
                 cell[1] = value.imag();
@@ -1465,24 +1474,32 @@ void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &val
     }
     image->Modified();
 
-    // Compute the FFT of the image
-    vtkSmartPointer<vtkImageFFT> fftFilter = vtkSmartPointer<vtkImageFFT>::New();
+    vtkSmartPointer<vtkImageFourierFilter> fftFilter;
+    if( isig == FFTComputationMode::DIRECT )
+        // Compute the FFT of the image
+        fftFilter = vtkSmartPointer<vtkImageFFT>::New();
+    else // FFTComputationMode::REVERSE
+        // Compute the reverse FFT of the image
+        fftFilter = vtkSmartPointer<vtkImageRFFT>::New();
     //fftFilter->SetInputConnection( image->GetData() );
     fftFilter->SetInputData( image );
     fftFilter->Update();
 
-    //get the image in frequency domain
-    ////// index_shift = ( index + nINDEX/2) % nINDEX)
+    //get the image in frequency/real domain
+    ////// index_shift = ( index + nINDEX/2) % nINDEX), if in forward FFT mode,
     ////// shifts the lower frequencies components to the center of the image for ease of interpretation/////
-    vtkSmartPointer<vtkImageData> imageFFT = fftFilter->GetOutput();
+    vtkSmartPointer<vtkImageData> imageOutput = fftFilter->GetOutput();
     for(unsigned int k = 0; k < (unsigned int)nK; ++k) {
         int k_shift = (k + nK/2) % nK;
+        if( isig == FFTComputationMode::REVERSE ) k_shift = k;
         for(unsigned int j = 0; j < (unsigned int)nJ; ++j){
             int j_shift = (j + nJ/2) % nJ;
+            if( isig == FFTComputationMode::REVERSE ) j_shift = j;
             for(unsigned int i = 0; i < (unsigned int)nI; ++i){
                 int i_shift = (i + nI/2) % nI;
+                if( isig == FFTComputationMode::REVERSE ) i_shift = i;
                 std::complex<double> value;
-                double* cell = static_cast<double*>(imageFFT->GetScalarPointer(i,j,k));
+                double* cell = static_cast<double*>(imageOutput->GetScalarPointer(i,j,k));
                 value.real( cell[0] );
                 value.imag( cell[1] );
                 values[i_shift + j_shift*nI + k_shift*nJ*nI] = value;

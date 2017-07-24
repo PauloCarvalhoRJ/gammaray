@@ -148,6 +148,7 @@ private slots:
     void onResampleGrid();
     void onMultiVariogram();
     void onHistpltsim();
+    void onRFFT();
 
 private:
     /**
