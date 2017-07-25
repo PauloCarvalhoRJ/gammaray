@@ -37,6 +37,12 @@
 #include <vtkRenderer.h>
 #include <vtkCallbackCommand.h>
 #include <vtkRenderWindow.h>
+
+
+#include <vtkImageData.h>
+#include <vtkImageMathematics.h>
+#include <vtkAlgorithmOutput.h>
+
 #include <QMessageBox>
 
 void RefreshCallback( vtkObject* vtkNotUsed(caller),
@@ -527,6 +533,20 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     //we don't need file's data anymore
     cartesianGrid->freeLoadedData();
 
+
+
+    vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
+    imageData->SetDimensions( nX,  nY,  1 );
+    imageData->AllocateScalars( VTK_FLOAT, 1 );
+    imageData->GetCellData()->SetScalars( values );
+
+    vtkSmartPointer<vtkImageMathematics> imageMath = vtkSmartPointer<vtkImageMathematics>::New();
+    imageMath->SetOperationToCos();
+    imageMath->SetInput1Data( imageData );
+    imageMath->Update();
+
+
+
     // set up a transform to apply the rotation about the grid origin (location of the first data point)
     vtkSmartPointer<vtkTransform> xform = vtkSmartPointer<vtkTransform>::New();
     xform->Translate( X0, Y0, 0);
@@ -547,9 +567,10 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
                                          0 + k * 1 );
     structuredGrid->SetDimensions( nX+1, nY+1, 1 );
     structuredGrid->SetPoints(points);
-
     //assign the grid values to the grid cells
-    structuredGrid->GetCellData()->SetScalars( values );
+    //structuredGrid->GetCellData()->SetScalars( values );
+    //structuredGrid->GetCellData()->SetScalars( imageData->GetCellData()->GetScalars() );
+    structuredGrid->GetCellData()->SetScalars( imageMath->GetOutput()->GetCellData()->GetScalars() );
 
     //apply the transform (rotation) to the grid
     vtkSmartPointer<vtkTransformFilter> transformFilter =

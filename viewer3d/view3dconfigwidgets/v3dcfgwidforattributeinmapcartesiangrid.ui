@@ -36,6 +36,13 @@
        <string>Misc.</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
+       <item row="0" column="4">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>cells (in I and J directions) per sample</string>
+         </property>
+        </widget>
+       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_3">
          <property name="text">
@@ -43,10 +50,10 @@
          </property>
         </widget>
        </item>
-       <item row="0" column="4">
-        <widget class="QLabel" name="label_2">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label">
          <property name="text">
-          <string>cells (in I and J directions) per sample</string>
+          <string>Sampling Rate:</string>
          </property>
         </widget>
        </item>
@@ -57,13 +64,6 @@
          </property>
          <property name="maximum">
           <double>1000000000.000000000000000</double>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>Sampling Rate:</string>
          </property>
         </widget>
        </item>
@@ -107,12 +107,22 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>Scaling:</string>
+          <string>Color scaling:</string>
          </property>
         </widget>
        </item>
        <item row="2" column="1">
         <widget class="QComboBox" name="cmbScaling"/>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Value scaling:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QComboBox" name="cmbValueScaling"/>
        </item>
       </layout>
      </widget>
@@ -130,7 +140,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>196</x>
-     <y>60</y>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>189</x>
@@ -145,8 +155,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>193</x>
-     <y>97</y>
+     <x>196</x>
+     <y>83</y>
     </hint>
     <hint type="destinationlabel">
      <x>189</x>
@@ -162,7 +172,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>380</x>
-     <y>97</y>
+     <y>83</y>
     </hint>
     <hint type="destinationlabel">
      <x>189</x>
@@ -177,12 +187,28 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>164</x>
-     <y>126</y>
+     <x>196</x>
+     <y>113</y>
     </hint>
     <hint type="destinationlabel">
      <x>396</x>
      <y>127</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbValueScaling</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>V3DCfgWidForAttributeInMapCartesianGrid</receiver>
+   <slot>onUserMadeChanges()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>174</x>
+     <y>136</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>395</x>
+     <y>118</y>
     </hint>
    </hints>
   </connection>

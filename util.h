@@ -39,9 +39,14 @@ enum class FFT1DDirection : int {
     DIR_K      /*!< Computes along K (traces). */
 };
 
-enum class Scaling : uint {
+enum class ColorScaling : uint {
     ARITHMETIC = 0,
     LOG
+};
+
+enum class ValueScaling : uint {
+    DIRECT = 0,
+    ABS
 };
 
 /**

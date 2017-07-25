@@ -37,10 +37,15 @@ V3DCfgWidForAttributeInMapCartesianGrid::V3DCfgWidForAttributeInMapCartesianGrid
 
     //setup the dropdown menu with the color scaling options.
     ui->cmbScaling->blockSignals(true);
-    ui->cmbScaling->addItem("Arithmetic", QVariant( (uint)Scaling::ARITHMETIC ));
-    ui->cmbScaling->addItem("Logarithmic", QVariant( (uint)Scaling::LOG ));
+    ui->cmbScaling->addItem("Arithmetic", QVariant( (uint)ColorScaling::ARITHMETIC ));
+    ui->cmbScaling->addItem("Logarithmic", QVariant( (uint)ColorScaling::LOG ));
     ui->cmbScaling->blockSignals(false);
 
+    //setup the dropdown menu with the value scaling options.
+    ui->cmbValueScaling->blockSignals(true);
+    ui->cmbValueScaling->addItem("Direct", QVariant( (uint)ValueScaling::DIRECT ));
+    ui->cmbValueScaling->addItem("Absolute values", QVariant( (uint)ValueScaling::ABS ));
+    ui->cmbValueScaling->blockSignals(false);
 }
 
 V3DCfgWidForAttributeInMapCartesianGrid::~V3DCfgWidForAttributeInMapCartesianGrid()
@@ -69,9 +74,9 @@ void V3DCfgWidForAttributeInMapCartesianGrid::onUserMadeChanges()
 
     //change the color scaling
     //downcasting to vtkLookupTable (assuming the color table was built in one of the View3dColorTables functions)
-    if( ui->cmbScaling->currentData().toUInt() == (uint)Scaling::ARITHMETIC )
+    if( ui->cmbScaling->currentData().toUInt() == (uint)ColorScaling::ARITHMETIC )
         ((vtkLookupTable*)mapper->GetLookupTable())->SetScaleToLinear();
-    if( ui->cmbScaling->currentData().toUInt() == (uint)Scaling::LOG )
+    if( ui->cmbScaling->currentData().toUInt() == (uint)ColorScaling::LOG )
         ((vtkLookupTable*)mapper->GetLookupTable())->SetScaleToLog10();
 
     emit changed();
