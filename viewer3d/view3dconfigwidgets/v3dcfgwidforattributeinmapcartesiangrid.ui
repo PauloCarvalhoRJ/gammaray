@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>380</width>
+    <width>395</width>
     <height>159</height>
    </rect>
   </property>
@@ -36,6 +36,30 @@
        <string>Misc.</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Color table min:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="4">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>cells (in I and J directions) per sample</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="spinColorMin">
+         <property name="minimum">
+          <double>-1000000000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
@@ -56,30 +80,6 @@
          </property>
          <property name="maximum">
           <number>30</number>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="4">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>cells (in I and J directions) per sample</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Color table min:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QDoubleSpinBox" name="spinColorMin">
-         <property name="minimum">
-          <double>-1000000000.000000000000000</double>
-         </property>
-         <property name="maximum">
-          <double>1000000000.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -104,6 +104,16 @@
          </item>
         </layout>
        </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Scaling:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QComboBox" name="cmbScaling"/>
+       </item>
       </layout>
      </widget>
     </widget>
@@ -119,8 +129,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>144</x>
-     <y>87</y>
+     <x>196</x>
+     <y>60</y>
     </hint>
     <hint type="destinationlabel">
      <x>189</x>
@@ -135,8 +145,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>140</x>
-     <y>111</y>
+     <x>193</x>
+     <y>97</y>
     </hint>
     <hint type="destinationlabel">
      <x>189</x>
@@ -151,12 +161,28 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>323</x>
-     <y>111</y>
+     <x>380</x>
+     <y>97</y>
     </hint>
     <hint type="destinationlabel">
      <x>189</x>
      <y>79</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbScaling</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>V3DCfgWidForAttributeInMapCartesianGrid</receiver>
+   <slot>onUserMadeChanges()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>164</x>
+     <y>126</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>396</x>
+     <y>127</y>
     </hint>
    </hints>
   </connection>

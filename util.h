@@ -28,8 +28,8 @@ enum class DisplayResolution : uint {
 
 /*! FFT computation mode for fft1d() and fft2d(). */
 enum class FFTComputationMode : int {
-    DIRECT = 0, /*!< Functions fft1d() and fft2d() takes an input in real space and result is in frequency space. */
-    REVERSE     /*!< Functions fft1d() and fft2d() takes an input in frequency space and result is in real space. */
+    DIRECT = 0, /*!< Functions fft*() take an input in real space and result is in frequency space. */
+    REVERSE     /*!< Functions fft*() take an input in frequency space and result is in real space. */
 };
 
 /*! Computation direction for fft1d() when taking a 3D array. */
@@ -37,6 +37,11 @@ enum class FFT1DDirection : int {
     DIR_I = 0, /*!< Computes along I (inlines). */
     DIR_J,     /*!< Computes along J (crosslines). */
     DIR_K      /*!< Computes along K (traces). */
+};
+
+enum class Scaling : uint {
+    ARITHMETIC = 0,
+    LOG
 };
 
 /**
