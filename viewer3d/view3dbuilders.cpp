@@ -541,9 +541,11 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     imageData->GetCellData()->SetScalars( values );
 
     vtkSmartPointer<vtkImageMathematics> imageMath = vtkSmartPointer<vtkImageMathematics>::New();
-    imageMath->SetOperationToCos();
-    imageMath->SetInput1Data( imageData );
+    imageMath->SetOperationToExp();
+    imageMath->SetInputData( imageData );
     imageMath->Update();
+
+
 
 
 
@@ -571,6 +573,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     //structuredGrid->GetCellData()->SetScalars( values );
     //structuredGrid->GetCellData()->SetScalars( imageData->GetCellData()->GetScalars() );
     structuredGrid->GetCellData()->SetScalars( imageMath->GetOutput()->GetCellData()->GetScalars() );
+
 
     //apply the transform (rotation) to the grid
     vtkSmartPointer<vtkTransformFilter> transformFilter =
@@ -604,7 +607,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
 
     // Create mappers (visualization parameters) for each level-of-detail
     vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputConnection( sg->GetOutputPort() );
+    mapper->SetInputConnection( imageMath->GetOutputPort() /*sg->GetOutputPort()*/ );
     mapper->SetLookupTable(lut);
     mapper->SetScalarRange(min, max);
     mapper->Update();
