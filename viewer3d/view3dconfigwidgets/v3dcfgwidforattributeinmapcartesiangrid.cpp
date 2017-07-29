@@ -41,11 +41,6 @@ V3DCfgWidForAttributeInMapCartesianGrid::V3DCfgWidForAttributeInMapCartesianGrid
     ui->cmbScaling->addItem("Logarithmic", QVariant( (uint)ColorScaling::LOG ));
     ui->cmbScaling->blockSignals(false);
 
-    //setup the dropdown menu with the value scaling options.
-    ui->cmbValueScaling->blockSignals(true);
-    ui->cmbValueScaling->addItem("Direct", QVariant( (uint)ValueScaling::DIRECT ));
-    ui->cmbValueScaling->addItem("Absolute values", QVariant( (uint)ValueScaling::ABS ));
-    ui->cmbValueScaling->blockSignals(false);
 }
 
 V3DCfgWidForAttributeInMapCartesianGrid::~V3DCfgWidForAttributeInMapCartesianGrid()
