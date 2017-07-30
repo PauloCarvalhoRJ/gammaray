@@ -20,7 +20,7 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     ui->frmGridPlot->layout()->addWidget( m_gridPlot );
 
     //the combo box to choose a Cartesian grid containing a Fourier image
-    m_cgSelector = new CartesianGridSelector();
+    m_cgSelector = new CartesianGridSelector( true );
     ui->frmCmbGridPlaceholder->layout()->addWidget( m_cgSelector );
 
     //the combo box to choose the variable with the real part
