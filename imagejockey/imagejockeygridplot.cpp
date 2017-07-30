@@ -223,8 +223,6 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     } else {
         m_spectrumData->setAttribute( at );
     }
-    m_spectrogram->plot()->replot();
-    m_spectrogram->setDisplayMode( QwtPlotSpectrogram::ImageMode, true );
     replot();
 }
 
