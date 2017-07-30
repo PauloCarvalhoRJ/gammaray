@@ -6,6 +6,7 @@
 class CartesianGridSelector;
 class VariableSelector;
 class ImageJockeyGridPlot;
+class Attribute;
 
 namespace Ui {
 class ImageJockeyDialog;
@@ -36,7 +37,7 @@ private:
     ImageJockeyGridPlot* m_gridPlot;
 
 private Q_SLOTS:
-    void onUpdateGridPlot();
+    void onUpdateGridPlot( Attribute *at );
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

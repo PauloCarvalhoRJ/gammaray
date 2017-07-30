@@ -4,6 +4,8 @@
 #include <qwt_plot.h>
 
 class QwtPlotSpectrogram;
+class Attribute;
+class SpectrogramData;
 
 /** Widget used in ImageJockeyDialog to display grid data. */
 class ImageJockeyGridPlot: public QwtPlot
@@ -21,6 +23,9 @@ public:
 
     ImageJockeyGridPlot( QWidget * = nullptr );
 
+    /** Sets the Cartesian grid Attribute to display. */
+    void setAttribute( Attribute *at );
+
 public Q_SLOTS:
     void showContour( bool on );
     void showSpectrogram( bool on );
@@ -33,6 +38,12 @@ private:
 
     int m_mapType;
     int m_alpha;
+
+    /** Attribute (of a Cartesian grid) being displayed. */
+    Attribute* m_at;
+
+    /** Adapter between QwtRasterData and Attribute of a Cartesian grid. */
+    SpectrogramData* m_spectrumData;
 };
 
 #endif // IMAGEJOCKEYGRIDPLOT_H

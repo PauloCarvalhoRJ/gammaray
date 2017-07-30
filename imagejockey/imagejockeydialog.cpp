@@ -29,7 +29,7 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     connect( m_cgSelector, SIGNAL(cartesianGridSelected(DataFile*)),
              m_atSelector, SLOT(onListVariables(DataFile*)) );
     connect( m_atSelector, SIGNAL(variableSelected(Attribute*)),
-             this, SLOT(onUpdateGridPlot()));
+             this, SLOT(onUpdateGridPlot(Attribute*)));
 
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
@@ -43,7 +43,7 @@ ImageJockeyDialog::~ImageJockeyDialog()
     Application::instance()->logInfo("ImageJockeyDialog destroyed.");
 }
 
-void ImageJockeyDialog::onUpdateGridPlot()
+void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
 {
-
+    m_gridPlot->setAttribute( at );
 }

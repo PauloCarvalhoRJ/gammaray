@@ -9,7 +9,13 @@
 #include <qwt_plot_panner.h>
 #include <qwt_plot_layout.h>
 #include <qwt_plot_renderer.h>
+#include <qwt_plot_canvas.h>
 
+#include <qapplication.h>
+
+#include "domain/attribute.h"
+#include "domain/file.h"
+#include "domain/application.h"
 
 class MyZoomer: public QwtPlotZoomer
 {
@@ -31,26 +37,22 @@ public:
     }
 };
 
-class SpectrogramData: public QwtRasterData
-{
+class SpectrogramData: public QwtRasterData{
 public:
-    SpectrogramData()
-    {
+    SpectrogramData() : m_at( nullptr ) {
         setInterval( Qt::XAxis, QwtInterval( -1.5, 1.5 ) );
         setInterval( Qt::YAxis, QwtInterval( -1.5, 1.5 ) );
         setInterval( Qt::ZAxis, QwtInterval( 0.0, 10.0 ) );
     }
-
-    virtual double value( double x, double y ) const
-    {
-        const double c = 0.842;
-        //const double c = 0.33;
-
-        const double v1 = x * x + ( y - c ) * ( y + c );
-        const double v2 = x * ( y + c ) + x * ( y + c );
-
-        return 1.0 / ( v1 * v1 + v2 * v2 );
+    virtual double value( double x, double y ) const {
+        if( ! m_at )
+            return 0.0d;
+        else
+            return 5.0d;
     }
+    void setAttribute( Attribute* at ){ m_at = at; }
+private:
+    Attribute* m_at; //the attribute being displayed.
 };
 
 class LinearColorMapRGB: public QwtLinearColorMap
@@ -154,7 +156,8 @@ public:
 
 ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     QwtPlot( parent ),
-    m_alpha(255)
+    m_alpha(255),
+    m_at( nullptr )
 {
     m_spectrogram = new QwtPlotSpectrogram();
     m_spectrogram->setRenderThreadCount( 0 ); // use system specific thread count
@@ -165,7 +168,8 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
         contourLevels += level;
     m_spectrogram->setContourLevels( contourLevels );
 
-    m_spectrogram->setData( new SpectrogramData() );
+    m_spectrumData = new SpectrogramData();
+    m_spectrogram->setData( m_spectrumData );
     m_spectrogram->attach( this );
 
     const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
@@ -207,6 +211,21 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     const QColor c( Qt::darkBlue );
     zoomer->setRubberBandPen( c );
     zoomer->setTrackerPen( c );
+}
+
+void ImageJockeyGridPlot::setAttribute(Attribute *at)
+{
+    File *file = at->getContainingFile();
+    if( file->getFileType() != "CARTESIANGRID" ){
+        Application::instance()->logError("ImageJockeyGridPlot::setAttribute(): Attributes of " +
+                                          file->getFileType() + " files not accepted.");
+        m_spectrumData->setAttribute( nullptr );
+    } else {
+        m_spectrumData->setAttribute( at );
+    }
+    m_spectrogram->plot()->replot();
+    m_spectrogram->setDisplayMode( QwtPlotSpectrogram::ImageMode, true );
+    replot();
 }
 
 void ImageJockeyGridPlot::showContour( bool on )

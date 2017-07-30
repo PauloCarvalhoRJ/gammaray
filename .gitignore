@@ -3,3 +3,6 @@ GammaRay.pro.user*
 
 # Temporary file created by Microsoft Word when editing GammaRayManual.docx
 docs/~*.docx
+
+# Some editor keeps these *.autosave files and sometimes it leaves them over
+*.autosave
