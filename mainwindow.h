@@ -57,6 +57,7 @@ public slots:
     void showMessagesConsoleCustomContextMenu(const QPoint &pt);
     void openIKPostProcessing();
     void openCokriging();
+    void openImageJockey();
 
 private:
     Ui::MainWindow *ui;

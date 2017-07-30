@@ -59,6 +59,7 @@
 #include "dialogs/cokrigingdialog.h"
 #include "dialogs/multivariogramdialog.h"
 #include "viewer3d/view3dwidget.h"
+#include "imagejockey/imagejockeydialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -2025,4 +2026,10 @@ void MainWindow::openCokriging()
 {
     CokrigingDialog* cokd = new CokrigingDialog( this );
     cokd->show();
+}
+
+void MainWindow::openImageJockey()
+{
+    ImageJockeyDialog *ijd = new ImageJockeyDialog( this );
+    ijd->show();
 }

@@ -273,8 +273,15 @@
     <addaction name="actionIK_Post_processing"/>
     <addaction name="actionCokriging"/>
    </widget>
+   <widget class="QMenu" name="menuTools">
+    <property name="title">
+     <string>Tools</string>
+    </property>
+    <addaction name="actionImage_Jockey"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEstimation"/>
+   <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
@@ -340,6 +347,11 @@
   <action name="actionCokriging">
    <property name="text">
     <string>Cokriging (cokb3d)</string>
+   </property>
+  </action>
+  <action name="actionImage_Jockey">
+   <property name="text">
+    <string>Image Jockey</string>
    </property>
   </action>
  </widget>
@@ -515,6 +527,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionImage_Jockey</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openImageJockey()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -526,5 +554,6 @@
   <slot>openIKCategorical()</slot>
   <slot>openIKPostProcessing()</slot>
   <slot>openCokriging()</slot>
+  <slot>openImageJockey()</slot>
  </slots>
 </ui>

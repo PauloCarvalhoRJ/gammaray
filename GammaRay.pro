@@ -159,7 +159,9 @@ SOURCES += main.cpp\
     geostats/ijkdeltascache.cpp \
     dialogs/realizationselectiondialog.cpp \
     dialogs/gridresampledialog.cpp \
-    dialogs/multivariogramdialog.cpp
+    dialogs/multivariogramdialog.cpp \
+    imagejockey/imagejockeydialog.cpp \
+    imagejockey/imagejockeygridplot.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -298,7 +300,9 @@ HEADERS  += mainwindow.h \
     geostats/ijkdeltascache.h \
     dialogs/realizationselectiondialog.h \
     dialogs/gridresampledialog.h \
-    dialogs/multivariogramdialog.h
+    dialogs/multivariogramdialog.h \
+    imagejockey/imagejockeydialog.h \
+    imagejockey/imagejockeygridplot.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -356,7 +360,8 @@ FORMS    += mainwindow.ui \
     dialogs/ndvestimationdialog.ui \
     dialogs/realizationselectiondialog.ui \
     dialogs/gridresampledialog.ui \
-    dialogs/multivariogramdialog.ui
+    dialogs/multivariogramdialog.ui \
+    imagejockey/imagejockeydialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
