@@ -251,6 +251,52 @@ std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, i
     return result;
 }
 
+double CartesianGrid::valueAt(uint dataColumn, double x, double y, double z)
+{
+    //TODO: add support for rotations
+    if( Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
+        Application::instance()->logError("CartesianGrid::valueAt(): rotation not supported yet.  Returning NDV or NaN.");
+        if( this->hasNoDataValue() )
+            return getNoDataValueAsDouble();
+        else
+            return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    //compute the indexes from the spatial location.
+    double xWest = _x0 - _dx/2.0;
+    double ySouth = _y0 - _dy/2.0;
+    double zBottom = _z0 - _dz/2.0;
+    int i = (x - xWest) / _dx;
+    int j = (y - ySouth) / _dy;
+    int k = 0;
+    if( _nz > 1 )
+        k = (z - zBottom) / _dz;
+
+    //check whether the location is outside the grid
+    if( i < 0 || i >= (int)_nx || j < 0 || j >= (int)_ny || k < 0 || k >= (int)_nz ){
+        //returns NDV if it is defined, NaN otherwise
+        if( this->hasNoDataValue() )
+            return getNoDataValueAsDouble();
+        else
+            return std::numeric_limits<double>::quiet_NaN();
+    }
+
+    //get the value
+    return this->dataIJK( dataColumn, i, j, k);
+}
+
+void CartesianGrid::setDataPageToRealization(uint nreal)
+{
+    if( nreal >= _nreal ){
+        Application::instance()->logError("CartesianGrid::setDataPageToRealization(): invalid realization number: " +
+                                          QString::number( nreal ) + " (max. == " + QString::number( _nreal ) + "). Nothing done.");
+        return;
+    }
+    ulong firstLine = nreal * _nx * _ny * _nz;
+    ulong lastLine = (nreal+1) * _nx * _ny * _nz - 1; //the interval in DataFile::setDataPage() is inclusive.
+    setDataPage( firstLine, lastLine );
+}
+
 bool CartesianGrid::canHaveMetaData()
 {
     return true;

@@ -46,4 +46,15 @@ ImageJockeyDialog::~ImageJockeyDialog()
 void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
 {
     m_gridPlot->setAttribute( at );
+    //Perturb the splitter to force a redraw.
+    //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working in setAttribute())
+    {
+        QList<int> oldSizes = ui->splitter->sizes();
+        QList<int> tmpSizes = oldSizes;
+        tmpSizes[0] = oldSizes[0] + 1;
+        tmpSizes[1] = oldSizes[1] - 1;
+        ui->splitter->setSizes( tmpSizes );
+        qApp->processEvents();
+        ui->splitter->setSizes( oldSizes );
+    }
 }

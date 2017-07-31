@@ -16,6 +16,7 @@
 #include "domain/attribute.h"
 #include "domain/file.h"
 #include "domain/application.h"
+#include "domain/cartesiangrid.h"
 
 class MyZoomer: public QwtPlotZoomer
 {
@@ -39,7 +40,7 @@ public:
 
 class SpectrogramData: public QwtRasterData{
 public:
-    SpectrogramData() : m_at( nullptr ) {
+    SpectrogramData() : m_at( nullptr ), m_cg( nullptr ) {
         setInterval( Qt::XAxis, QwtInterval( -1.5, 1.5 ) );
         setInterval( Qt::YAxis, QwtInterval( -1.5, 1.5 ) );
         setInterval( Qt::ZAxis, QwtInterval( 0.0, 10.0 ) );
@@ -47,12 +48,28 @@ public:
     virtual double value( double x, double y ) const {
         if( ! m_at )
             return 0.0d;
-        else
+        else{
             return 5.0d;
+//            return m_cg->valueAt( m_at->getAttributeGEOEASgivenIndex()-1, x, y, 0);
+        }
     }
-    void setAttribute( Attribute* at ){ m_at = at; }
+    void setAttribute( Attribute* at ){
+        m_at = at;
+        if( at ){
+            m_cg = (CartesianGrid*)at->getContainingFile(); //assumes Attribute's parent file is a Cartesian grid
+//            setInterval( Qt::XAxis, QwtInterval( m_cg->getX0() - m_cg->getDX(),
+//                                                 m_cg->getX0() + m_cg->getDX() * m_cg->getNX() ) );
+//            setInterval( Qt::YAxis, QwtInterval( m_cg->getY0() - m_cg->getDY(),
+//                                                 m_cg->getY0() + m_cg->getDY() * m_cg->getNY() ) );
+//            setInterval( Qt::ZAxis, QwtInterval( m_cg->getZ0() - m_cg->getDZ(),
+//                                                 m_cg->getZ0() + m_cg->getDZ() * m_cg->getNZ() ) );
+        }
+        else
+            m_cg = nullptr;
+    }
 private:
     Attribute* m_at; //the attribute being displayed.
+    CartesianGrid* m_cg; //the attribute's Cartesian grid.
 };
 
 class LinearColorMapRGB: public QwtLinearColorMap

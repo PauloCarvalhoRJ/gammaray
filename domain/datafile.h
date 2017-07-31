@@ -206,9 +206,12 @@ public:
     void freeLoadedData();
 
     /** Sets the data page (first and last data line to load).
-     * Setting a page, causes a reload in next calls to data() or loadData().
+     * Setting a page, causes a reload in next calls to data() or loadData().  The interval is inclusive,
+     * for example, 0 and 2 causes the first three lines of the data file to be loaded, so pay attention when computing
+     * data line numbers from grid indexes and realization numbers.
      * To read all data lines in the file, set any interval that will surely include
      * all data lines such as 0 and std::numeric_limits<long>::max().
+     * Setting a data page also helps in selecting a realization or range of realizations in Cartesian grids.
      */
     void setDataPage( long firstDataLine, long lastDataLine );
 

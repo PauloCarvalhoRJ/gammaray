@@ -91,6 +91,21 @@ public:
     std::vector< std::vector<double> > getResampledValues(int rateI, int rateJ, int rateK ,
                                                           int &finalNI, int &finalNJ, int &finalNK);
 
+    /** Returns the value of the variable (given by its zero-based index) at the given spatial location.
+     *  The function returns the value of grid cell that contains the given location.  The z coordinate is ignored
+     * if the grid is 2D.
+     * Make sure you load the desired realization with DataFile::setDataPage(), otherwise the value of the first
+     * realization will be returned.
+     */
+    double valueAt(uint dataColumn, double x, double y, double z);
+
+    /**
+     * Make a call to DataFile::setDataPage() such that only the given realization number is loaded into memory.
+     * First realization is number 0 (zero).  To restore the default behavior (load entire data), call
+     * DataFile::setDataPageToAll().
+     */
+    void setDataPageToRealization( uint nreal );
+
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
