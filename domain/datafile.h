@@ -41,10 +41,22 @@ public:
     double max( uint column );
 
     /**
+     * Returns the maximum absolute value in the given column.
+     * First column is 0.
+     */
+    double maxAbs( uint column );
+
+    /**
      * Returns the minimum value in the given column.
      * First column is 0.
      */
     double min( uint column );
+
+    /**
+     * Returns the minimum absolute value in the given column.
+     * First column is 0.
+     */
+    double minAbs( uint column );
 
     /**
      * Returns the arithmetic mean of the values in the given column.

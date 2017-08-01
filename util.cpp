@@ -1547,3 +1547,8 @@ double Util::getAzimuth(double dx, double dy, int xstep, int ystep)
         azimuth = 360.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
     return azimuth;
 }
+
+double Util::dB(double value, double refLevel)
+{
+    return 20.0d * std::log10<double>( value / refLevel ).real();
+}

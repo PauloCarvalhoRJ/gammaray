@@ -17,11 +17,12 @@
 #include "domain/file.h"
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
+#include "util.h"
 
-class MyZoomer: public QwtPlotZoomer
+class SpectrogramZoomer: public QwtPlotZoomer
 {
 public:
-    MyZoomer( QWidget *canvas ):
+    SpectrogramZoomer( QWidget *canvas ):
         QwtPlotZoomer( canvas )
     {
         setTrackerMode( AlwaysOn );
@@ -49,20 +50,30 @@ public:
         if( ! m_at )
             return 0.0d;
         else{
-            return 5.0d;
-//            return m_cg->valueAt( m_at->getAttributeGEOEASgivenIndex()-1, x, y, 0);
+            double value = m_cg->valueAt( m_at->getAttributeGEOEASgivenIndex()-1, x, y, 0);
+            if( m_cg->isNDV(value) )
+                value = std::numeric_limits<double>::quiet_NaN();
+            else
+                //for Fourier images, get the absolute values for ease of interpretation
+                value = Util::dB( value, 100.0 );
+            return value;
         }
     }
     void setAttribute( Attribute* at ){
         m_at = at;
         if( at ){
             m_cg = (CartesianGrid*)at->getContainingFile(); //assumes Attribute's parent file is a Cartesian grid
-//            setInterval( Qt::XAxis, QwtInterval( m_cg->getX0() - m_cg->getDX(),
-//                                                 m_cg->getX0() + m_cg->getDX() * m_cg->getNX() ) );
-//            setInterval( Qt::YAxis, QwtInterval( m_cg->getY0() - m_cg->getDY(),
-//                                                 m_cg->getY0() + m_cg->getDY() * m_cg->getNY() ) );
-//            setInterval( Qt::ZAxis, QwtInterval( m_cg->getZ0() - m_cg->getDZ(),
-//                                                 m_cg->getZ0() + m_cg->getDZ() * m_cg->getNZ() ) );
+            int columnIndex = at->getAttributeGEOEASgivenIndex() - 1;
+            setInterval( Qt::XAxis, QwtInterval( m_cg->getX0() - m_cg->getDX(),
+                                                 m_cg->getX0() + m_cg->getDX() * m_cg->getNX() ) );
+            setInterval( Qt::YAxis, QwtInterval( m_cg->getY0() - m_cg->getDY(),
+                                                 m_cg->getY0() + m_cg->getDY() * m_cg->getNY() ) );
+            //Z in a raster plot is the attribute value, not the Z coordinate.
+            m_cg->loadData();
+            //for Fourier images, get the absolute values for ease of interpretation
+            double min = Util::dB( m_cg->minAbs( columnIndex ), 100.0 );
+            double max = Util::dB( m_cg->maxAbs( columnIndex ), 100.0 );
+            setInterval( Qt::ZAxis, QwtInterval( min, max ));
         }
         else
             m_cg = nullptr;
@@ -76,11 +87,11 @@ class LinearColorMapRGB: public QwtLinearColorMap
 {
 public:
     LinearColorMapRGB():
-        QwtLinearColorMap( Qt::darkCyan, Qt::red, QwtColorMap::RGB )
+        QwtLinearColorMap( Qt::darkBlue, Qt::red, QwtColorMap::RGB )
     {
-        addColorStop( 0.1, Qt::cyan );
-        addColorStop( 0.6, Qt::green );
-        addColorStop( 0.95, Qt::yellow );
+        addColorStop( 0.25, Qt::cyan );
+        addColorStop( 0.5, Qt::green );
+        addColorStop( 0.75, Qt::yellow );
     }
 };
 
@@ -174,7 +185,8 @@ public:
 ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     QwtPlot( parent ),
     m_alpha(255),
-    m_at( nullptr )
+    m_at( nullptr ),
+    m_zoomer( nullptr )
 {
     m_spectrogram = new QwtPlotSpectrogram();
     m_spectrogram->setRenderThreadCount( 0 ); // use system specific thread count
@@ -193,7 +205,7 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
 
     // A color bar on the right axis
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
-    rightAxis->setTitle( "Intensity" );
+    rightAxis->setTitle( "" );
     rightAxis->setColorBarEnabled( true );
 
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
@@ -208,10 +220,10 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     // RightButton: zoom out by 1
     // Ctrl+RighButton: zoom out to full size
 
-    QwtPlotZoomer* zoomer = new MyZoomer( canvas() );
-    zoomer->setMousePattern( QwtEventPattern::MouseSelect2,
+    m_zoomer = new SpectrogramZoomer( canvas() );
+    m_zoomer->setMousePattern( QwtEventPattern::MouseSelect2,
         Qt::RightButton, Qt::ControlModifier );
-    zoomer->setMousePattern( QwtEventPattern::MouseSelect3,
+    m_zoomer->setMousePattern( QwtEventPattern::MouseSelect3,
         Qt::RightButton );
 
     QwtPlotPanner *panner = new QwtPlotPanner( canvas() );
@@ -226,12 +238,13 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     sd->setMinimumExtent( fm.width( "100.00" ) );
 
     const QColor c( Qt::darkBlue );
-    zoomer->setRubberBandPen( c );
-    zoomer->setTrackerPen( c );
+    m_zoomer->setRubberBandPen( c );
+    m_zoomer->setTrackerPen( c );
 }
 
 void ImageJockeyGridPlot::setAttribute(Attribute *at)
 {
+    //get the data
     File *file = at->getContainingFile();
     if( file->getFileType() != "CARTESIANGRID" ){
         Application::instance()->logError("ImageJockeyGridPlot::setAttribute(): Attributes of " +
@@ -240,6 +253,18 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     } else {
         m_spectrumData->setAttribute( at );
     }
+
+    //redefine color scale/legend
+    const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
+    // A color bar on the right axis
+    QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
+    rightAxis->setTitle( at->getName() + "(dB)" );
+    setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
+    setColorMap( ImageJockeyGridPlot::RGBMap );
+
+    //reset the zoom stack to the possibly new geographic region.
+    m_zoomer->setZoomBase();
+
     replot();
 }
 

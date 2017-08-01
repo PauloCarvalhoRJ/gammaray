@@ -453,6 +453,13 @@ public:
      * The returned angle is in degrees and follow the GSLib convention.
      */
     static double getAzimuth(double dx, double dy, int xstep, int ystep );
+
+    /** Returns decibels of an input value with respect to a reference value.
+     * Examples.: dBm is defined as the decibel level of value in milliwatts with respect to 1mW.
+     *            dBi is defined as the gain in decibels of an antenna with respect to the ideal isotropic antenna.
+     * refLevel cannot be zero or a divison by zero error ensues.
+     */
+    static double dB( double value, double refLevel);
 };
 
 #endif // UTIL_H

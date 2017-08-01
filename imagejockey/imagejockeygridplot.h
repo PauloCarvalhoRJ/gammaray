@@ -6,6 +6,7 @@
 class QwtPlotSpectrogram;
 class Attribute;
 class SpectrogramData;
+class QwtPlotZoomer;
 
 /** Widget used in ImageJockeyDialog to display grid data. */
 class ImageJockeyGridPlot: public QwtPlot
@@ -44,6 +45,9 @@ private:
 
     /** Adapter between QwtRasterData and Attribute of a Cartesian grid. */
     SpectrogramData* m_spectrumData;
+
+    /** Object that controls the grid's zoom stack. */
+    QwtPlotZoomer* m_zoomer;
 };
 
 #endif // IMAGEJOCKEYGRIDPLOT_H

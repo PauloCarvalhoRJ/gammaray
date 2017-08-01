@@ -124,6 +124,21 @@ double DataFile::max(uint column)
     return result;
 }
 
+double DataFile::maxAbs(uint column)
+{
+    if( _data.size() == 0 )
+        Application::instance()->logError("DataFile::maxAbs(): Data not loaded. Unspecified value was returned.");
+    double ndv = this->getNoDataValue().toDouble();
+    bool has_ndv = this->hasNoDataValue();
+    double result = 0.0d;
+    for( uint i = 0; i < _data.size(); ++i ){
+        double value = data(i, column);
+        if( std::abs<double>(value) > result && ( !has_ndv || !Util::almostEqual2sComplement( ndv, value, 1 ) ) )
+            result = std::abs<double>(value);
+    }
+    return result;
+}
+
 //TODO: consider adding a flag to disable NDV checking (applicable to coordinates)
 double DataFile::min(uint column)
 {
@@ -136,6 +151,21 @@ double DataFile::min(uint column)
         double value = data(i, column);
         if( value < result && ( !has_ndv || !Util::almostEqual2sComplement( ndv, value, 1 ) ) )
             result = value;
+    }
+    return result;
+}
+
+double DataFile::minAbs(uint column)
+{
+    if( _data.size() == 0 )
+        Application::instance()->logError("DataFile::minAbs(): Data not loaded. Unspecified value was returned.");
+    double ndv = this->getNoDataValue().toDouble();
+    bool has_ndv = this->hasNoDataValue();
+    double result = std::numeric_limits<double>::max();
+    for( uint i = 0; i < _data.size(); ++i ){
+        double value = data(i, column);
+        if( std::abs<double>(value) < result && ( !has_ndv || !Util::almostEqual2sComplement( ndv, value, 1 ) ) )
+            result = std::abs<double>(value);
     }
     return result;
 }

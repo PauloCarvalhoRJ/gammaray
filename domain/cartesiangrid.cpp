@@ -254,7 +254,7 @@ std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, i
 double CartesianGrid::valueAt(uint dataColumn, double x, double y, double z)
 {
     //TODO: add support for rotations
-    if( Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
+    if( ! Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
         Application::instance()->logError("CartesianGrid::valueAt(): rotation not supported yet.  Returning NDV or NaN.");
         if( this->hasNoDataValue() )
             return getNoDataValueAsDouble();
