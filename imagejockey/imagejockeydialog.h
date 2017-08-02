@@ -7,6 +7,7 @@ class CartesianGridSelector;
 class VariableSelector;
 class ImageJockeyGridPlot;
 class Attribute;
+class QwtWheel;
 
 namespace Ui {
 class ImageJockeyDialog;
@@ -36,8 +37,18 @@ private:
     /** Widget that displays the grid. */
     ImageJockeyGridPlot* m_gridPlot;
 
+    /** Controls the color scale dB max. value. */
+    QwtWheel* m_wheelColorMax;
+
+    /** Controls the color scale dB min. value. */
+    QwtWheel* m_wheelColorMin;
+
+    /** Controls the reference dB value (0dB). */
+    QwtWheel* m_wheelColorDecibelReference;
+
 private Q_SLOTS:
     void onUpdateGridPlot( Attribute *at );
+
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

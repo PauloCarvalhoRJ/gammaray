@@ -186,7 +186,9 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     QwtPlot( parent ),
     m_alpha(255),
     m_at( nullptr ),
-    m_zoomer( nullptr )
+    m_zoomer( nullptr ),
+    m_colorScaleMax( 10.0 ),
+    m_colorScaleMin( 0.0 )
 {
     m_spectrogram = new QwtPlotSpectrogram();
     m_spectrogram->setRenderThreadCount( 0 ); // use system specific thread count
@@ -258,7 +260,7 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
     // A color bar on the right axis
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
-    rightAxis->setTitle( at->getName() + "(dB)" );
+    rightAxis->setTitle( at->getName() + " (dB)" );
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
     setColorMap( ImageJockeyGridPlot::RGBMap );
 
@@ -266,6 +268,16 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     m_zoomer->setZoomBase();
 
     replot();
+}
+
+double ImageJockeyGridPlot::getScaleMaxValue()
+{
+    return m_spectrogram->data()->interval( Qt::ZAxis ).maxValue();
+}
+
+double ImageJockeyGridPlot::getScaleMinValue()
+{
+    return m_spectrogram->data()->interval( Qt::ZAxis ).minValue();
 }
 
 void ImageJockeyGridPlot::showContour( bool on )
@@ -286,7 +298,8 @@ void ImageJockeyGridPlot::showSpectrogram( bool on )
 void ImageJockeyGridPlot::setColorMap( int type )
 {
     QwtScaleWidget *axis = axisWidget( QwtPlot::yRight );
-    const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
+    //const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
+    const QwtInterval zInterval( m_colorScaleMin, m_colorScaleMax );
 
     m_mapType = type;
 
@@ -335,6 +348,22 @@ void ImageJockeyGridPlot::setAlpha( int alpha )
         m_spectrogram->setAlpha( alpha );
         replot();
     }
+}
+
+void ImageJockeyGridPlot::setColorScaleMax(double value)
+{
+    m_colorScaleMax = value;
+    setColorMap( ImageJockeyGridPlot::RGBMap );
+    m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+    replot();
+}
+
+void ImageJockeyGridPlot::setColorScaleMin(double value)
+{
+    m_colorScaleMin = value;
+    setColorMap( ImageJockeyGridPlot::RGBMap );
+    m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+    replot();
 }
 
 

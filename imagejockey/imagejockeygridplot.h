@@ -27,11 +27,16 @@ public:
     /** Sets the Cartesian grid Attribute to display. */
     void setAttribute( Attribute *at );
 
+    double getScaleMaxValue();
+    double getScaleMinValue();
+
 public Q_SLOTS:
     void showContour( bool on );
     void showSpectrogram( bool on );
     void setColorMap( int );
     void setAlpha( int );
+    void setColorScaleMax( double value );
+    void setColorScaleMin( double value );
 
 
 private:
@@ -48,6 +53,9 @@ private:
 
     /** Object that controls the grid's zoom stack. */
     QwtPlotZoomer* m_zoomer;
+
+    double m_colorScaleMax;
+    double m_colorScaleMin;
 };
 
 #endif // IMAGEJOCKEYGRIDPLOT_H

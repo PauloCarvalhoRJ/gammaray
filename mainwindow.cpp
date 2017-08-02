@@ -2031,5 +2031,6 @@ void MainWindow::openCokriging()
 void MainWindow::openImageJockey()
 {
     ImageJockeyDialog *ijd = new ImageJockeyDialog( this );
-    ijd->show();
+    //ijd->show();
+    ijd->showMaximized();
 }
