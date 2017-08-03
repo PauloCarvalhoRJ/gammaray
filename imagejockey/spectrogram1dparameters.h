@@ -6,6 +6,9 @@
 /** This class contains parameters to calculate a 1D spectrogram from a band in a 2D spectrogram. */
 class Spectrogram1DParameters : public ExperimentalVariogramParameters
 {
+
+    Q_OBJECT
+
 public:
     Spectrogram1DParameters();
 
@@ -17,6 +20,7 @@ public Q_SLOTS:
 protected:
     /** The radius from the spectrogram center where the band starts outwardly. */
     double _radius;
+
 };
 
 #endif // SPECTROGRAM1DPARAMETERS_H

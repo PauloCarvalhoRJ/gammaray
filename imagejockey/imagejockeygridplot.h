@@ -7,6 +7,7 @@ class QwtPlotSpectrogram;
 class Attribute;
 class SpectrogramData;
 class QwtPlotZoomer;
+class QwtPlotCurve;
 
 /** Widget used in ImageJockeyDialog to display a grid containing a Fourier image
  *  The grid values are displayed as their absolute values in decibel scaling for ease of
@@ -62,6 +63,10 @@ private:
 
     /** Begin-of-scale value. */
     double m_colorScaleMin;
+
+    QwtPlotCurve *m_curve1DSpectrogramBand1;
+    QwtPlotCurve *m_curve1DSpectrogramBand2;
+    void draw1DSpectrogramBand();
 };
 
 #endif // IMAGEJOCKEYGRIDPLOT_H

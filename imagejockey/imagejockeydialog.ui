@@ -35,12 +35,6 @@
       <enum>Qt::Horizontal</enum>
      </property>
      <widget class="QFrame" name="frmLeft">
-      <property name="maximumSize">
-       <size>
-        <width>500</width>
-        <height>16777215</height>
-       </size>
-      </property>
       <property name="frameShape">
        <enum>QFrame::Panel</enum>
       </property>

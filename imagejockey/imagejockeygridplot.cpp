@@ -10,6 +10,7 @@
 #include <qwt_plot_layout.h>
 #include <qwt_plot_renderer.h>
 #include <qwt_plot_canvas.h>
+#include <qwt_plot_curve.h>
 
 #include <qapplication.h>
 
@@ -242,7 +243,9 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     m_at( nullptr ),
     m_zoomer( nullptr ),
     m_colorScaleMax( 10.0 ),
-    m_colorScaleMin( 0.0 )
+    m_colorScaleMin( 0.0 ),
+    m_curve1DSpectrogramBand1( nullptr ),
+    m_curve1DSpectrogramBand2( nullptr )
 {
     m_spectrogram = new QwtPlotSpectrogram();
     m_spectrogram->setRenderThreadCount( 0 ); // use system specific thread count
@@ -296,6 +299,8 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     const QColor c( Qt::darkBlue );
     m_zoomer->setRubberBandPen( c );
     m_zoomer->setTrackerPen( c );
+
+    draw1DSpectrogramBand();
 }
 
 void ImageJockeyGridPlot::setAttribute(Attribute *at)
@@ -439,6 +444,38 @@ void ImageJockeyGridPlot::setDecibelRefValue(double value)
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
 
     replot();
+}
+
+void ImageJockeyGridPlot::draw1DSpectrogramBand()
+{
+    double x[5];
+    double y[5];
+
+
+    if( ! m_curve1DSpectrogramBand1 ){
+        m_curve1DSpectrogramBand1 = new QwtPlotCurve();
+        m_curve1DSpectrogramBand1->attach( this );
+        m_curve1DSpectrogramBand1->setPen( QPen( QColor( Qt::black ) ) );
+    }
+    x[0] = -3000.0;  y[0] = 10000.0;
+    x[1] = -3000.0;  y[1] = 3000.0;
+    x[2] = 0.0;      y[2] = 0.0;
+    x[3] = 3000.0;   y[3] = 3000.0;
+    x[4] = 3000.0;   y[4] = 10000.0;
+    m_curve1DSpectrogramBand1->setSamples( x, y, 5 );
+
+    if( ! m_curve1DSpectrogramBand2 ){
+        m_curve1DSpectrogramBand2 = new QwtPlotCurve();
+        m_curve1DSpectrogramBand2->attach( this );
+        m_curve1DSpectrogramBand2->setPen( QPen( QColor( Qt::black ) ) );
+    }
+    x[0] = -3000.0;  y[0] = -10000.0;
+    x[1] = -3000.0;  y[1] = -3000.0;
+    x[2] = 0.0;      y[2] = 0.0;
+    x[3] = 3000.0;   y[3] = -3000.0;
+    x[4] = 3000.0;   y[4] = -10000.0;
+    m_curve1DSpectrogramBand2->setSamples( x, y, 5 );
+
 }
 
 
