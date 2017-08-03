@@ -2,16 +2,19 @@
 #include "ui_imagejockeydialog.h"
 #include "widgets/cartesiangridselector.h"
 #include "widgets/variableselector.h"
+#include "widgets/grcompass.h"
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
 #include "domain/attribute.h"
 #include "imagejockeygridplot.h"
+#include "spectrogram1dparameters.h"
 
 #include <qwt_wheel.h>
 
 ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::ImageJockeyDialog)
+    ui(new Ui::ImageJockeyDialog),
+    m_spectrogram1Dparams( new Spectrogram1DParameters() )
 {
     ui->setupUi(this);
 
@@ -50,22 +53,38 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     m_wheelColorDecibelReference->setOrientation( Qt::Vertical );
     ui->frmDecibelRefCtrlPlace->layout()->addWidget( m_wheelColorDecibelReference );
     m_wheelColorDecibelReference->setToolTip("0dB reference level");
+    //connects the wheel widgets events to the grid plot widget so the formers can be used to control the latter
+    connect( m_wheelColorMax, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMax(double)) );
+    connect( m_wheelColorMin, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMin(double)) );
+    connect( m_wheelColorDecibelReference, SIGNAL(valueChanged(double)),
+             m_gridPlot, SLOT(setDecibelRefValue(double)));
+
+
+    //these widgets control the band used to get a 1D spectrogram from the 2D spectrogram.
+    m_azimuthCompass = new GRCompass(2);
+    ui->frmAzimuthControl->layout()->addWidget( m_azimuthCompass );
+    m_azimthTolControl = new QwtWheel();
+    ui->frmAzimuthTolControl->layout()->addWidget( m_azimthTolControl );
+    m_bandwidthControl = new QwtWheel();
+    ui->frmBandwidthControl->layout()->addWidget( m_bandwidthControl );
+    m_radiusControl = new QwtWheel();
+    ui->frmRadiusControl->layout()->addWidget( m_radiusControl );
+    //connect the controls' events to the 1D spectrogram calculation object so the user can control it
+    connect( m_azimuthCompass, SIGNAL(valueChanged(double)), m_spectrogram1Dparams, SLOT(setAzimuth(double)) );
+    connect( m_azimthTolControl, SIGNAL(valueChanged(double)), m_spectrogram1Dparams, SLOT(setAzimuthTolerance(double)) );
+    connect( m_bandwidthControl, SIGNAL(valueChanged(double)), m_spectrogram1Dparams, SLOT(setBandWidth(double)) );
+    connect( m_radiusControl, SIGNAL(valueChanged(double)), m_spectrogram1Dparams, SLOT(setRadius(double)) );
 
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
     m_cgSelector->onSelection( 0 );
-
-    //connects the wheel widgets events to the grid plot widget so the former can be used to control the latter
-    connect( m_wheelColorMax, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMax(double)) );
-    connect( m_wheelColorMin, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMin(double)) );
-    connect( m_wheelColorDecibelReference, SIGNAL(valueChanged(double)),
-             m_gridPlot, SLOT(setDecibelRefValue(double)));
 }
 
 ImageJockeyDialog::~ImageJockeyDialog()
 {
     delete ui;
+    delete m_spectrogram1Dparams;
     Application::instance()->logInfo("ImageJockeyDialog destroyed.");
 }
 

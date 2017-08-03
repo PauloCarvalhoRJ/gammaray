@@ -8,6 +8,8 @@ class VariableSelector;
 class ImageJockeyGridPlot;
 class Attribute;
 class QwtWheel;
+class GRCompass;
+class Spectrogram1DParameters;
 
 namespace Ui {
 class ImageJockeyDialog;
@@ -45,6 +47,21 @@ private:
 
     /** Controls the reference dB value (0dB). */
     QwtWheel* m_wheelColorDecibelReference;
+
+    /** Controls the azimuth of the band to collect 1D spectrum data. */
+    GRCompass* m_azimuthCompass;
+
+    /** Controls the angle variation around the azimuth to collect 1D spectrum data. */
+    QwtWheel* m_azimthTolControl;
+
+    /** Controls the width of the band to collect 1D spectrum data. */
+    QwtWheel* m_bandwidthControl;
+
+    /** Controls the distance from the spectrogram center to collect 1D spectrum data. */
+    QwtWheel* m_radiusControl;
+
+    /** The set of parameters used to calculate a 1D spectrogram from a band on a 2D spectrogram. */
+    Spectrogram1DParameters* m_spectrogram1Dparams;
 
 private Q_SLOTS:
     void onUpdateGridPlot( Attribute *at );

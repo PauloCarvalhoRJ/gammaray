@@ -161,7 +161,10 @@ SOURCES += main.cpp\
     dialogs/gridresampledialog.cpp \
     dialogs/multivariogramdialog.cpp \
     imagejockey/imagejockeydialog.cpp \
-    imagejockey/imagejockeygridplot.cpp
+    imagejockey/imagejockeygridplot.cpp \
+    widgets/grcompass.cpp \
+    geostats/experimentalvariogramparameters.cpp \
+    imagejockey/spectrogram1dparameters.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -302,7 +305,10 @@ HEADERS  += mainwindow.h \
     dialogs/gridresampledialog.h \
     dialogs/multivariogramdialog.h \
     imagejockey/imagejockeydialog.h \
-    imagejockey/imagejockeygridplot.h
+    imagejockey/imagejockeygridplot.h \
+    widgets/grcompass.h \
+    geostats/experimentalvariogramparameters.h \
+    imagejockey/spectrogram1dparameters.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
