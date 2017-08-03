@@ -8,7 +8,10 @@ class Attribute;
 class SpectrogramData;
 class QwtPlotZoomer;
 
-/** Widget used in ImageJockeyDialog to display grid data. */
+/** Widget used in ImageJockeyDialog to display a grid containing a Fourier image
+ *  The grid values are displayed as their absolute values in decibel scaling for ease of
+ *  interpretation since the frequency component intensities show great variation in order of magnitude.
+ */
 class ImageJockeyGridPlot: public QwtPlot
 {
     Q_OBJECT
@@ -37,7 +40,7 @@ public Q_SLOTS:
     void setAlpha( int );
     void setColorScaleMax( double value );
     void setColorScaleMin( double value );
-
+    void setDecibelRefValue( double value );
 
 private:
     QwtPlotSpectrogram *m_spectrogram;
@@ -54,7 +57,10 @@ private:
     /** Object that controls the grid's zoom stack. */
     QwtPlotZoomer* m_zoomer;
 
+    /** End-of-scale value. */
     double m_colorScaleMax;
+
+    /** Begin-of-scale value. */
     double m_colorScaleMin;
 };
 

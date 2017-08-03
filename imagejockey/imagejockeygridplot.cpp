@@ -19,17 +19,19 @@
 #include "domain/cartesiangrid.h"
 #include "util.h"
 
+
+
+
+//////////////////////////////////////////////ZOOMER CLASS////////////////////////////
 class SpectrogramZoomer: public QwtPlotZoomer
 {
 public:
-    SpectrogramZoomer( QWidget *canvas ):
-        QwtPlotZoomer( canvas )
-    {
+    SpectrogramZoomer( QWidget *canvas ):  QwtPlotZoomer( canvas ) {
         setTrackerMode( AlwaysOn );
     }
-
-    virtual QwtText trackerTextF( const QPointF &pos ) const
-    {
+    /** Returns the text to be displayed next to the mouse pointer while it hovers
+     * over the grid plot area. */
+    virtual QwtText trackerTextF( const QPointF &pos ) const  {
         QColor bg( Qt::white );
         bg.setAlpha( 200 );
 
@@ -39,50 +41,77 @@ public:
     }
 };
 
+
+
+
+///////////////////////////////////////////RASTER DATA ADAPTER: QwtRasterData <-> CartesianGrid ///////////////////////
 class SpectrogramData: public QwtRasterData{
 public:
-    SpectrogramData() : m_at( nullptr ), m_cg( nullptr ) {
+    SpectrogramData() : m_at( nullptr ), m_cg( nullptr ), m_decibelRefValue(100.0) {
+        //set some default values before the user chooses a grid
         setInterval( Qt::XAxis, QwtInterval( -1.5, 1.5 ) );
         setInterval( Qt::YAxis, QwtInterval( -1.5, 1.5 ) );
         setInterval( Qt::ZAxis, QwtInterval( 0.0, 10.0 ) );
     }
+    /** Returns a grid value as a function of spatial location.
+     *  Returns NaN if the location is outside the grid or corresponds to an unvalued cell.
+     */
     virtual double value( double x, double y ) const {
-        if( ! m_at )
-            return 0.0d;
+        if( ! m_at ) //no grid selected
+            //returning a NaN means a blank plot
+            return std::numeric_limits<double>::quiet_NaN();
         else{
+            // get the grid value as is
             double value = m_cg->valueAt( m_at->getAttributeGEOEASgivenIndex()-1, x, y, 0);
-            if( m_cg->isNDV(value) )
-                value = std::numeric_limits<double>::quiet_NaN();
+            if( m_cg->isNDV(value) ) //if there is no value there
+                value = std::numeric_limits<double>::quiet_NaN(); //returns NaN (blank plot)
             else
-                //for Fourier images, get the absolute values for ease of interpretation
-                value = Util::dB( value, 100.0 );
+                //for Fourier images, get the absolute values in decibel for ease of interpretation
+                value = Util::dB( std::abs<double>(value), m_decibelRefValue );
             return value;
         }
     }
+    /** Define the Attribute of a Cartesian grid.  Resets the plot. */
     void setAttribute( Attribute* at ){
         m_at = at;
         if( at ){
-            m_cg = (CartesianGrid*)at->getContainingFile(); //assumes Attribute's parent file is a Cartesian grid
+            //assumes Attribute's parent file is a Cartesian grid
+            m_cg = (CartesianGrid*)at->getContainingFile();
+            //get the column number in the GEO-EAS file corresponding to the Attribute
             int columnIndex = at->getAttributeGEOEASgivenIndex() - 1;
+            //resets the map display coverage to show the entire map
             setInterval( Qt::XAxis, QwtInterval( m_cg->getX0() - m_cg->getDX(),
                                                  m_cg->getX0() + m_cg->getDX() * m_cg->getNX() ) );
             setInterval( Qt::YAxis, QwtInterval( m_cg->getY0() - m_cg->getDY(),
                                                  m_cg->getY0() + m_cg->getDY() * m_cg->getNY() ) );
-            //Z in a raster plot is the attribute value, not the Z coordinate.
+            //load data from file
             m_cg->loadData();
-            //for Fourier images, get the absolute values for ease of interpretation
-            double min = Util::dB( m_cg->minAbs( columnIndex ), 100.0 );
-            double max = Util::dB( m_cg->maxAbs( columnIndex ), 100.0 );
+            //for Fourier images, get the absolute values in decibel for ease of interpretation
+            double min = Util::dB( m_cg->minAbs( columnIndex ), m_decibelRefValue );
+            double max = Util::dB( m_cg->maxAbs( columnIndex ), m_decibelRefValue );
+            //Z in a 2D raster plot is the attribute value, not the Z coordinate.
             setInterval( Qt::ZAxis, QwtInterval( min, max ));
         }
         else
-            m_cg = nullptr;
+            m_cg = nullptr; //resets Cartesian grid pointer if Attribute is null
+    }
+    /** Defines the reference value for decibel scaling. */
+    void setDecibelRefValue( double value ){
+        m_decibelRefValue = value;
     }
 private:
-    Attribute* m_at; //the attribute being displayed.
-    CartesianGrid* m_cg; //the attribute's Cartesian grid.
+    /** The attribute being displayed. */
+    Attribute* m_at;
+    /** The attribute's Cartesian grid. */
+    CartesianGrid* m_cg;
+    /** The reference value for decibel scaling. */
+    double m_decibelRefValue;
 };
 
+
+
+
+/////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class LinearColorMapRGB: public QwtLinearColorMap
 {
 public:
@@ -95,6 +124,10 @@ public:
     }
 };
 
+
+
+
+/////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class LinearColorMapIndexed: public QwtLinearColorMap
 {
 public:
@@ -107,6 +140,12 @@ public:
     }
 };
 
+
+
+
+
+
+/////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class HueColorMap: public QwtColorMap
 {
 public:
@@ -172,6 +211,13 @@ private:
     QRgb d_rgbMin, d_rgbMax, d_rgbTable[360];
 };
 
+
+
+
+
+
+
+/////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class AlphaColorMap: public QwtAlphaColorMap
 {
 public:
@@ -182,6 +228,14 @@ public:
     }
 };
 
+
+
+
+
+
+
+
+/////////////////////////////////////////////THE IMAGE JOCKEY PLOT CLASS ITSELF/////////////////////////////
 ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     QwtPlot( parent ),
     m_alpha(255),
@@ -355,6 +409,10 @@ void ImageJockeyGridPlot::setColorScaleMax(double value)
     m_colorScaleMax = value;
     setColorMap( ImageJockeyGridPlot::RGBMap );
     m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+
+    const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
+    setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
+
     replot();
 }
 
@@ -363,6 +421,23 @@ void ImageJockeyGridPlot::setColorScaleMin(double value)
     m_colorScaleMin = value;
     setColorMap( ImageJockeyGridPlot::RGBMap );
     m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+
+    const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
+    setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
+
+    replot();
+}
+
+void ImageJockeyGridPlot::setDecibelRefValue(double value)
+{
+    m_spectrumData->setDecibelRefValue( value );
+    setColorMap( ImageJockeyGridPlot::RGBMap );
+    m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+
+    //update the z scale (color table ticks)
+    const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
+    setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
+
     replot();
 }
 
