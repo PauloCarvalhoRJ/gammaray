@@ -42,6 +42,7 @@ public Q_SLOTS:
     void setColorScaleMax( double value );
     void setColorScaleMin( double value );
     void setDecibelRefValue( double value );
+    void draw1DSpectrogramBand();
 
 private:
     QwtPlotSpectrogram *m_spectrogram;
@@ -64,9 +65,8 @@ private:
     /** Begin-of-scale value. */
     double m_colorScaleMin;
 
-    QwtPlotCurve *m_curve1DSpectrogramBand1;
-    QwtPlotCurve *m_curve1DSpectrogramBand2;
-    void draw1DSpectrogramBand();
+    QwtPlotCurve *m_curve1DSpectrogramHalfBand1;
+    QwtPlotCurve *m_curve1DSpectrogramHalfBand2;
 };
 
 #endif // IMAGEJOCKEYGRIDPLOT_H

@@ -11,6 +11,7 @@ double ExperimentalVariogramParameters::azimuth() const
 void ExperimentalVariogramParameters::setAzimuth(double azimuth)
 {
     _azimuth = azimuth;
+    emit updated();
 }
 double ExperimentalVariogramParameters::azimuthTolerance() const
 {
@@ -20,6 +21,7 @@ double ExperimentalVariogramParameters::azimuthTolerance() const
 void ExperimentalVariogramParameters::setAzimuthTolerance(double azimuthTolerance)
 {
     _azimuthTolerance = azimuthTolerance;
+    emit updated();
 }
 double ExperimentalVariogramParameters::bandWidth() const
 {
@@ -29,7 +31,18 @@ double ExperimentalVariogramParameters::bandWidth() const
 void ExperimentalVariogramParameters::setBandWidth(double bandWidth)
 {
     _bandWidth = bandWidth;
+    emit updated();
 }
+SpatialLocation ExperimentalVariogramParameters::refCenter() const
+{
+    return _refCenter;
+}
+
+void ExperimentalVariogramParameters::setRefCenter(const SpatialLocation &refCenter)
+{
+    _refCenter = refCenter;
+}
+
 
 
 

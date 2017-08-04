@@ -297,6 +297,56 @@ void CartesianGrid::setDataPageToRealization(uint nreal)
     setDataPage( firstLine, lastLine );
 }
 
+double CartesianGrid::getDiagonalLength()
+{
+    //TODO: add support for rotations
+    if( ! Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
+        Application::instance()->logError("CartesianGrid::getDiagonalLength(): rotation not supported yet.  Returning NDV or NaN.");
+        if( this->hasNoDataValue() )
+            return getNoDataValueAsDouble();
+        else
+            return std::numeric_limits<double>::quiet_NaN();
+    }
+    double x0 = _x0 - _dx / 2.0d;
+    double y0 = _y0 - _dy / 2.0d;
+    double z0 = _z0 - _dz / 2.0d;
+    double xf = x0 + _dx * _nx;
+    double yf = y0 + _dy * _ny;
+    double zf = z0 + _dz * _nz;
+    double dx = xf - x0;
+    double dy = yf - y0;
+    double dz = zf - z0;
+    return std::sqrt<double>( dx*dx + dy*dy + dz*dz ).real();
+}
+
+SpatialLocation CartesianGrid::getCenter()
+{
+    SpatialLocation result;
+    //TODO: add support for rotations
+    if( ! Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
+        Application::instance()->logError("CartesianGrid::getCenter(): rotation not supported yet.  Returning NDV or NaN.");
+        double errorValue;
+        if( this->hasNoDataValue() )
+            errorValue = getNoDataValueAsDouble();
+        else
+            errorValue = std::numeric_limits<double>::quiet_NaN();
+        result._x = errorValue;
+        result._y = errorValue;
+        result._z = errorValue;
+        return result;
+    }
+    double x0 = _x0 - _dx / 2.0d;
+    double y0 = _y0 - _dy / 2.0d;
+    double z0 = _z0 - _dz / 2.0d;
+    double xf = x0 + _dx * _nx;
+    double yf = y0 + _dy * _ny;
+    double zf = z0 + _dz * _nz;
+    result._x = (xf - x0) / 2.0;
+    result._y = (yf - y0) / 2.0;
+    result._z = (zf - z0) / 2.0;
+    return result;
+}
+
 bool CartesianGrid::canHaveMetaData()
 {
     return true;

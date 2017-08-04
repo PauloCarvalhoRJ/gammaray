@@ -14,12 +14,18 @@ public:
 
     double radius() const;
 
+    double endRadius() const;
+
 public Q_SLOTS:
     void setRadius(double radius);
+    void setEndRadius(double endRadius);
 
 protected:
     /** The radius from the spectrogram center where the band starts outwardly. */
     double _radius;
+
+    /** The radius from the spectrogram center where the band ends. */
+    double _endRadius;
 
 };
 

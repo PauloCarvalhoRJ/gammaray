@@ -19,9 +19,9 @@
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
 #include "util.h"
-
-
-
+#include "spectrogram1dparameters.h"
+#include "geostats/matrix3x3.h"
+#include "geostats/geostatsutils.h"
 
 //////////////////////////////////////////////ZOOMER CLASS////////////////////////////
 class SpectrogramZoomer: public QwtPlotZoomer
@@ -244,8 +244,8 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     m_zoomer( nullptr ),
     m_colorScaleMax( 10.0 ),
     m_colorScaleMin( 0.0 ),
-    m_curve1DSpectrogramBand1( nullptr ),
-    m_curve1DSpectrogramBand2( nullptr )
+    m_curve1DSpectrogramHalfBand1( nullptr ),
+    m_curve1DSpectrogramHalfBand2( nullptr )
 {
     m_spectrogram = new QwtPlotSpectrogram();
     m_spectrogram->setRenderThreadCount( 0 ); // use system specific thread count
@@ -296,11 +296,16 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     QwtScaleDraw *sd = axisScaleDraw( QwtPlot::yLeft );
     sd->setMinimumExtent( fm.width( "100.00" ) );
 
+    //the visual presentation of the band to compute the 1D spectrogram
     const QColor c( Qt::darkBlue );
     m_zoomer->setRubberBandPen( c );
     m_zoomer->setTrackerPen( c );
-
-    draw1DSpectrogramBand();
+    m_curve1DSpectrogramHalfBand1 = new QwtPlotCurve();
+    m_curve1DSpectrogramHalfBand1->attach( this );
+    m_curve1DSpectrogramHalfBand1->setPen( QPen( QColor( Qt::black ) ) );
+    m_curve1DSpectrogramHalfBand2 = new QwtPlotCurve();
+    m_curve1DSpectrogramHalfBand2->attach( this );
+    m_curve1DSpectrogramHalfBand2->setPen( QPen( QColor( Qt::black ) ) );
 }
 
 void ImageJockeyGridPlot::setAttribute(Attribute *at)
@@ -448,34 +453,64 @@ void ImageJockeyGridPlot::setDecibelRefValue(double value)
 
 void ImageJockeyGridPlot::draw1DSpectrogramBand()
 {
+    //get the object that triggered the call to this slot
+    QObject* obj = sender();
+
+    //check whether it is a Spectrogram1DParameters
+    Spectrogram1DParameters* spectr1DPar = qobject_cast<Spectrogram1DParameters*>( obj );
+    if( ! spectr1DPar ){
+        Application::instance()->logError("ImageJockeyGridPlot::draw1DSpectrogramBand(): sender is not an Spectrogram1DParameters object. Nothing done.");
+        return;
+    }
+
     double x[5];
     double y[5];
 
+    //get the band geometry
+    double x0 = spectr1DPar->refCenter()._x;
+    double y0 = spectr1DPar->refCenter()._y;
+    double gridExtent = spectr1DPar->endRadius();
+    double radius = spectr1DPar->radius();
+    double bandw = spectr1DPar->bandWidth();
+    double ySect = bandw * std::tan( Util::PI/2.0d - spectr1DPar->azimuthTolerance() * Util::PI_OVER_180 ); //90deg - azimuth
 
-    if( ! m_curve1DSpectrogramBand1 ){
-        m_curve1DSpectrogramBand1 = new QwtPlotCurve();
-        m_curve1DSpectrogramBand1->attach( this );
-        m_curve1DSpectrogramBand1->setPen( QPen( QColor( Qt::black ) ) );
+    //get the a semi-band geometry
+    x[0] = - bandw;  y[0] = gridExtent + radius;
+    x[1] = x[0];  y[1] = ySect + radius;
+    x[2] = 0.0;      y[2] = radius;
+    x[3] = bandw;   y[3] = y[1];
+    x[4] = x[3];   y[4] = y[0];
+
+    //rotates the geometry towards the desired azimuth and
+    //translates the geometry to the grid's center
+    Matrix3X3<double> xform = GeostatsUtils::getAnisoTransform( 1.0, 1.0, 1.0, spectr1DPar->azimuth(), 0.0, 0.0 );
+    double not_used_in_2D;
+    for(int i = 0; i < 5; ++i){
+        GeostatsUtils::transform( xform, x[i], y[i], not_used_in_2D );
+        x[i] += x0;
+        y[i] += y0;
     }
-    x[0] = -3000.0;  y[0] = 10000.0;
-    x[1] = -3000.0;  y[1] = 3000.0;
-    x[2] = 0.0;      y[2] = 0.0;
-    x[3] = 3000.0;   y[3] = 3000.0;
-    x[4] = 3000.0;   y[4] = 10000.0;
-    m_curve1DSpectrogramBand1->setSamples( x, y, 5 );
 
-    if( ! m_curve1DSpectrogramBand2 ){
-        m_curve1DSpectrogramBand2 = new QwtPlotCurve();
-        m_curve1DSpectrogramBand2->attach( this );
-        m_curve1DSpectrogramBand2->setPen( QPen( QColor( Qt::black ) ) );
+    m_curve1DSpectrogramHalfBand1->setSamples( x, y, 5 );
+
+    //the other semi-band is symmetrical
+    x[0] = - bandw;  y[0] = -gridExtent - radius;
+    x[1] = x[0];  y[1] = -ySect - radius;
+    x[2] = 0.0;      y[2] = -radius;
+    x[3] = + bandw;   y[3] = y[1];
+    x[4] = x[3];   y[4] = y[0];
+
+    //rotates the geometry towards the desired azimuth and
+    //translates the geometry to the grid's center
+    for(int i = 0; i < 5; ++i){
+        GeostatsUtils::transform( xform, x[i], y[i], not_used_in_2D );
+        x[i] += x0;
+        y[i] += y0;
     }
-    x[0] = -3000.0;  y[0] = -10000.0;
-    x[1] = -3000.0;  y[1] = -3000.0;
-    x[2] = 0.0;      y[2] = 0.0;
-    x[3] = 3000.0;   y[3] = -3000.0;
-    x[4] = 3000.0;   y[4] = -10000.0;
-    m_curve1DSpectrogramBand2->setSamples( x, y, 5 );
 
+    m_curve1DSpectrogramHalfBand2->setSamples( x, y, 5 );
+
+    replot();
 }
 
 

@@ -2,6 +2,7 @@
 #define CARTESIANGRID_H
 
 #include "datafile.h"
+#include "geostats/spatiallocation.h"
 #include <complex>
 #include <set>
 
@@ -105,6 +106,12 @@ public:
      * DataFile::setDataPageToAll().
      */
     void setDataPageToRealization( uint nreal );
+
+    /** Returns the length of the grid's box diagonal. */
+    double getDiagonalLength();
+
+    /** Returns the grid's center. */
+    SpatialLocation getCenter();
 
     //DataFile interface
 public:

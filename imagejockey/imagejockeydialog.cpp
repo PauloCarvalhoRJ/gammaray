@@ -75,6 +75,16 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     connect( m_bandwidthControl, SIGNAL(valueChanged(double)), m_spectrogram1Dparams, SLOT(setBandWidth(double)) );
     connect( m_radiusControl, SIGNAL(valueChanged(double)), m_spectrogram1Dparams, SLOT(setRadius(double)) );
 
+    //set some default parameters for the 1D spectrogram calculation band
+    m_spectrogram1Dparams->setAzimuth( 0.0 );
+    m_spectrogram1Dparams->setAzimuthTolerance( 22.5 );
+    m_spectrogram1Dparams->setBandWidth( 3000.0 );
+    m_spectrogram1Dparams->setRadius( 0.0 );
+
+    //update the visual representation of the 1D spectrogram calculation band whenever one of its
+    //paramaters (e.g. azimuth) changes
+    connect( m_spectrogram1Dparams, SIGNAL(updated()), m_gridPlot, SLOT(draw1DSpectrogramBand()) );
+
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
@@ -110,6 +120,19 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     m_wheelColorDecibelReference->setMaximum( max );
     m_wheelColorDecibelReference->setMinimum( min );
     m_wheelColorDecibelReference->setValue( (max + min) / 2.0d);
+
+    //setup the 1D spectrogram calculation band controls
+    m_bandwidthControl->setMaximum( cg->getDiagonalLength() / 10.0d );
+    m_radiusControl->setMaximum( cg->getDiagonalLength() / 2.0d );
+    m_azimthTolControl->setMinimum( 10.0d ); //10 degrees
+    m_azimthTolControl->setMaximum( 90.0d ); //90 degrees
+    m_azimthTolControl->setValue( 45.0d );
+    m_azimuthCompass->setValue( 0.0d ); //N000E (north)
+
+    //the length of a half band for the 1D spectrogram calculation is half the diagonal of the grid
+    //this ensures total grid coverage regardless of azimuth choice
+    m_spectrogram1Dparams->setEndRadius( cg->getDiagonalLength() / 2.0d );
+    m_spectrogram1Dparams->setRefCenter( cg->getCenter() );
 
     //Perturb the splitter to force a redraw.
     //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working in setAttribute())
