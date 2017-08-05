@@ -1548,7 +1548,15 @@ double Util::getAzimuth(double dx, double dy, int xstep, int ystep)
     return azimuth;
 }
 
-double Util::dB(double value, double refLevel)
+double Util::dB(double value, double refLevel, double epsilon)
 {
-    return 20.0d * std::log10<double>( value / refLevel ).real();
+    double absValue = std::abs<double>( value );
+    double valueToUse = value;
+    if( absValue < epsilon ){
+        if( value < 0.0 )
+            valueToUse = -epsilon;
+        else
+            valueToUse = epsilon;
+    }
+    return 20.0d * std::log10<double>( valueToUse / refLevel ).real();
 }

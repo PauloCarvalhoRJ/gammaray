@@ -60,6 +60,10 @@ void VariableSelector::onSelection(int /*index*/)
     }
     //by selecting a variable name, surely the object is an Attribute
     Attribute* at = (Attribute*)m_dataFile->getChildByName( ui->cmbVariable->currentText() );
+    if( ! at ){
+        Application::instance()->logWarn("VariableSelector::onSelection(): Selection event resulted in null attribute. Ignoring.");
+        return;
+    }
     emit variableSelected( at );
     return;
 }

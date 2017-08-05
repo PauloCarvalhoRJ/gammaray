@@ -458,8 +458,9 @@ public:
      * Examples.: dBm is defined as the decibel level of value in milliwatts with respect to 1mW.
      *            dBi is defined as the gain in decibels of an antenna with respect to the ideal isotropic antenna.
      * refLevel cannot be zero or a divison by zero error ensues.
+     * epsilon The smallest allowed absolute value as to avoid large negative results or even -inf (value = 0.0).
      */
-    static double dB( double value, double refLevel);
+    static double dB( double value, double refLevel, double epsilon);
 };
 
 #endif // UTIL_H

@@ -68,7 +68,7 @@ public:
                 value = std::numeric_limits<double>::quiet_NaN(); //returns NaN (blank plot)
             else
                 //for Fourier images, get the absolute values in decibel for ease of interpretation
-                value = Util::dB( std::abs<double>(value), m_decibelRefValue );
+                value = Util::dB( std::abs<double>(value), m_decibelRefValue, 0.0000001 );
             return value;
         }
     }
@@ -88,8 +88,8 @@ public:
             //load data from file
             m_cg->loadData();
             //for Fourier images, get the absolute values in decibel for ease of interpretation
-            double min = Util::dB( m_cg->minAbs( columnIndex ), m_decibelRefValue );
-            double max = Util::dB( m_cg->maxAbs( columnIndex ), m_decibelRefValue );
+            double min = Util::dB( m_cg->minAbs( columnIndex ), m_decibelRefValue, 0.0000001 );
+            double max = Util::dB( m_cg->maxAbs( columnIndex ), m_decibelRefValue, 0.0000001 );
             //Z in a 2D raster plot is the attribute value, not the Z coordinate.
             setInterval( Qt::ZAxis, QwtInterval( min, max ));
         }
