@@ -164,7 +164,8 @@ SOURCES += main.cpp\
     imagejockey/imagejockeygridplot.cpp \
     widgets/grcompass.cpp \
     geostats/experimentalvariogramparameters.cpp \
-    imagejockey/spectrogram1dparameters.cpp
+    imagejockey/spectrogram1dparameters.cpp \
+    imagejockey/spectrogram1dplot.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -308,7 +309,8 @@ HEADERS  += mainwindow.h \
     imagejockey/imagejockeygridplot.h \
     widgets/grcompass.h \
     geostats/experimentalvariogramparameters.h \
-    imagejockey/spectrogram1dparameters.h
+    imagejockey/spectrogram1dparameters.h \
+    imagejockey/spectrogram1dplot.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

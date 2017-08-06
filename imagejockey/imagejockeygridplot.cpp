@@ -328,6 +328,7 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
     setColorMap( ImageJockeyGridPlot::RGBMap );
 
+    //set zoom to cover the entire grid
     const QwtInterval xInterval = m_spectrogram->data()->interval( Qt::XAxis );
     setAxisScale( QwtPlot::xBottom, xInterval.minValue(), xInterval.maxValue() );
     const QwtInterval yInterval = m_spectrogram->data()->interval( Qt::YAxis );
@@ -461,21 +462,20 @@ void ImageJockeyGridPlot::draw1DSpectrogramBand()
     //get the object that triggered the call to this slot
     QObject* obj = sender();
 
-    //check whether it is a Spectrogram1DParameters
+    //check whether the event sender is a Spectrogram1DParameters
     Spectrogram1DParameters* spectr1DPar = qobject_cast<Spectrogram1DParameters*>( obj );
     if( ! spectr1DPar ){
         Application::instance()->logError("ImageJockeyGridPlot::draw1DSpectrogramBand(): sender is not an Spectrogram1DParameters object. Nothing done.");
         return;
     }
 
+    //set the curves geometry to reflect the geometry of the 1D Spectrogram calculation half-bands.
     m_curve1DSpectrogramHalfBand1->setSamples( spectr1DPar->get2DBand1Xs(),
                                                spectr1DPar->get2DBand1Ys(),
                                                spectr1DPar->getNPointsPerBandIn2DGeometry() );
-
     m_curve1DSpectrogramHalfBand2->setSamples( spectr1DPar->get2DBand2Xs(),
                                                spectr1DPar->get2DBand2Ys(),
                                                spectr1DPar->getNPointsPerBandIn2DGeometry() );
-
     replot();
 }
 

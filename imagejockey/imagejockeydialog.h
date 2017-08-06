@@ -10,6 +10,7 @@ class Attribute;
 class QwtWheel;
 class GRCompass;
 class Spectrogram1DParameters;
+class Spectrogram1DPlot;
 
 namespace Ui {
 class ImageJockeyDialog;
@@ -62,6 +63,9 @@ private:
 
     /** The set of parameters used to calculate a 1D spectrogram from a band on a 2D spectrogram. */
     Spectrogram1DParameters* m_spectrogram1Dparams;
+
+    /** The plot widget with the 1D spectrogram taken from a band in the 2D spectrogram map. */
+    Spectrogram1DPlot* m_spectrogram1Dplot;
 
 private Q_SLOTS:
     void onUpdateGridPlot( Attribute *at );

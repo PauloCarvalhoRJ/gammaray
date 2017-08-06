@@ -8,6 +8,7 @@
 #include "domain/attribute.h"
 #include "imagejockeygridplot.h"
 #include "spectrogram1dparameters.h"
+#include "spectrogram1dplot.h"
 
 #include <qwt_wheel.h>
 
@@ -81,6 +82,11 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     m_spectrogram1Dparams->setBandWidth( 3000.0 );
     m_spectrogram1Dparams->setRadius( 0.0 );
 
+    //the 1D spectrogram plot
+    m_spectrogram1Dplot = new Spectrogram1DPlot();
+    ui->frm1DSpectrogram->layout()->addWidget( m_spectrogram1Dplot );
+    ui->frm1DSpectrogram->setStyleSheet("background-color: black; border-radius: 10px; color: #00FF00;");
+
     //update the visual representation of the 1D spectrogram calculation band whenever one of its
     //paramaters (e.g. azimuth) changes
     connect( m_spectrogram1Dparams, SIGNAL(updated()), m_gridPlot, SLOT(draw1DSpectrogramBand()) );
@@ -144,6 +150,9 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     //this ensures total grid coverage regardless of azimuth choice
     m_spectrogram1Dparams->setEndRadius( gridDiagLength / 2.0d );
     m_spectrogram1Dparams->setRefCenter( cg->getCenter() );
+
+    //set the attribute for the 1D spectrogram plot
+    m_spectrogram1Dplot->setAttribute( at );
 
     //Perturb the splitter to force a redraw.
     //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working in setAttribute())
