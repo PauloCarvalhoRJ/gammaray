@@ -33,6 +33,8 @@ protected:
     double _azimuthTolerance;
     double _bandWidth;
     SpatialLocation _refCenter;
+    /** Geometry is the set of geometric primitives that results from the parameters. */
+    virtual void updateGeometry();
 };
 
 #endif // EXPERIMENTALVARIOGRAMPARAMETERS_H

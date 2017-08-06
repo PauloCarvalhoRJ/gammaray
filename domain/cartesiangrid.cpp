@@ -341,9 +341,9 @@ SpatialLocation CartesianGrid::getCenter()
     double xf = x0 + _dx * _nx;
     double yf = y0 + _dy * _ny;
     double zf = z0 + _dz * _nz;
-    result._x = (xf - x0) / 2.0;
-    result._y = (yf - y0) / 2.0;
-    result._z = (zf - z0) / 2.0;
+    result._x = (xf + x0) / 2.0;
+    result._y = (yf + y0) / 2.0;
+    result._z = (zf + z0) / 2.0;
     return result;
 }
 

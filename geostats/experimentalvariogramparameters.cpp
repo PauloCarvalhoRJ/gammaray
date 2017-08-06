@@ -1,4 +1,5 @@
 #include "experimentalvariogramparameters.h"
+#include "domain/application.h"
 
 ExperimentalVariogramParameters::ExperimentalVariogramParameters() : QObject()
 {
@@ -11,6 +12,7 @@ double ExperimentalVariogramParameters::azimuth() const
 void ExperimentalVariogramParameters::setAzimuth(double azimuth)
 {
     _azimuth = azimuth;
+    updateGeometry();
     emit updated();
 }
 double ExperimentalVariogramParameters::azimuthTolerance() const
@@ -21,6 +23,7 @@ double ExperimentalVariogramParameters::azimuthTolerance() const
 void ExperimentalVariogramParameters::setAzimuthTolerance(double azimuthTolerance)
 {
     _azimuthTolerance = azimuthTolerance;
+    updateGeometry();
     emit updated();
 }
 double ExperimentalVariogramParameters::bandWidth() const
@@ -31,6 +34,7 @@ double ExperimentalVariogramParameters::bandWidth() const
 void ExperimentalVariogramParameters::setBandWidth(double bandWidth)
 {
     _bandWidth = bandWidth;
+    updateGeometry();
     emit updated();
 }
 SpatialLocation ExperimentalVariogramParameters::refCenter() const
@@ -41,6 +45,13 @@ SpatialLocation ExperimentalVariogramParameters::refCenter() const
 void ExperimentalVariogramParameters::setRefCenter(const SpatialLocation &refCenter)
 {
     _refCenter = refCenter;
+    updateGeometry();
+    emit updated();
+}
+
+void ExperimentalVariogramParameters::updateGeometry()
+{
+    Application::instance()->logError("ExperimentalVariogramParameters::updateGeometry(): not implemented.  No geometry.");
 }
 
 

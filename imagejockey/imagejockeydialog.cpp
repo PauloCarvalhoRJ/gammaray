@@ -106,10 +106,12 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     //setup the color scale wheel widgets
     m_wheelColorMax->setMaximum( m_gridPlot->getScaleMaxValue() );
     m_wheelColorMax->setMinimum( m_gridPlot->getScaleMinValue() );
+    m_wheelColorMax->setSingleStep( (m_wheelColorMax->maximum()-m_wheelColorMax->minimum()) / 360.0d );
+    m_wheelColorMax->setValue( m_wheelColorMax->maximum() );
     m_wheelColorMin->setMaximum( m_gridPlot->getScaleMaxValue() );
     m_wheelColorMin->setMinimum( m_gridPlot->getScaleMinValue() );
-    m_wheelColorMax->setValue( m_wheelColorMax->maximum() );
     m_wheelColorMin->setValue( m_wheelColorMin->minimum() );
+    m_wheelColorMin->setSingleStep( (m_wheelColorMin->maximum()-m_wheelColorMin->minimum()) / 360.0d );
 
     //setup the dB reference wheel widget
     int columnIndex = at->getAttributeGEOEASgivenIndex() - 1;
@@ -119,19 +121,28 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     double max = cg->maxAbs( columnIndex );
     m_wheelColorDecibelReference->setMaximum( max );
     m_wheelColorDecibelReference->setMinimum( min );
+    m_wheelColorDecibelReference->setSingleStep( (max - min) / 360.0d );
     m_wheelColorDecibelReference->setValue( (max + min) / 2.0d);
 
     //setup the 1D spectrogram calculation band controls
-    m_bandwidthControl->setMaximum( cg->getDiagonalLength() / 10.0d );
-    m_radiusControl->setMaximum( cg->getDiagonalLength() / 2.0d );
+    double gridDiagLength = cg->getDiagonalLength();
+    m_bandwidthControl->setMaximum( gridDiagLength / 10.0d );
+    m_bandwidthControl->setMinimum( 0.0d );
+    m_bandwidthControl->setValue( m_bandwidthControl->maximum() / 2.0d );
+    m_bandwidthControl->setSingleStep( m_bandwidthControl->maximum() / 360.0d );
+    m_radiusControl->setMaximum( gridDiagLength / 2.0d );
+    m_radiusControl->setMinimum( 0.0d );
+    m_radiusControl->setValue( 0.0d );
+    m_radiusControl->setSingleStep( m_radiusControl->maximum() / 360.0d );
     m_azimthTolControl->setMinimum( 10.0d ); //10 degrees
     m_azimthTolControl->setMaximum( 90.0d ); //90 degrees
     m_azimthTolControl->setValue( 45.0d );
+    m_azimthTolControl->setSingleStep( (m_azimthTolControl->maximum()-m_azimthTolControl->minimum()) / 360.0d );
     m_azimuthCompass->setValue( 0.0d ); //N000E (north)
 
     //the length of a half band for the 1D spectrogram calculation is half the diagonal of the grid
     //this ensures total grid coverage regardless of azimuth choice
-    m_spectrogram1Dparams->setEndRadius( cg->getDiagonalLength() / 2.0d );
+    m_spectrogram1Dparams->setEndRadius( gridDiagLength / 2.0d );
     m_spectrogram1Dparams->setRefCenter( cg->getCenter() );
 
     //Perturb the splitter to force a redraw.

@@ -463,52 +463,13 @@ void ImageJockeyGridPlot::draw1DSpectrogramBand()
         return;
     }
 
-    double x[5];
-    double y[5];
+    m_curve1DSpectrogramHalfBand1->setSamples( spectr1DPar->get2DBand1Xs(),
+                                               spectr1DPar->get2DBand1Ys(),
+                                               spectr1DPar->getNPointsPerBandIn2DGeometry() );
 
-    //get the band geometry
-    double x0 = spectr1DPar->refCenter()._x;
-    double y0 = spectr1DPar->refCenter()._y;
-    double gridExtent = spectr1DPar->endRadius();
-    double radius = spectr1DPar->radius();
-    double bandw = spectr1DPar->bandWidth();
-    double ySect = bandw * std::tan( Util::PI/2.0d - spectr1DPar->azimuthTolerance() * Util::PI_OVER_180 ); //90deg - azimuth
-
-    //get the a semi-band geometry
-    x[0] = - bandw;  y[0] = gridExtent + radius;
-    x[1] = x[0];  y[1] = ySect + radius;
-    x[2] = 0.0;      y[2] = radius;
-    x[3] = bandw;   y[3] = y[1];
-    x[4] = x[3];   y[4] = y[0];
-
-    //rotates the geometry towards the desired azimuth and
-    //translates the geometry to the grid's center
-    Matrix3X3<double> xform = GeostatsUtils::getAnisoTransform( 1.0, 1.0, 1.0, spectr1DPar->azimuth(), 0.0, 0.0 );
-    double not_used_in_2D;
-    for(int i = 0; i < 5; ++i){
-        GeostatsUtils::transform( xform, x[i], y[i], not_used_in_2D );
-        x[i] += x0;
-        y[i] += y0;
-    }
-
-    m_curve1DSpectrogramHalfBand1->setSamples( x, y, 5 );
-
-    //the other semi-band is symmetrical
-    x[0] = - bandw;  y[0] = -gridExtent - radius;
-    x[1] = x[0];  y[1] = -ySect - radius;
-    x[2] = 0.0;      y[2] = -radius;
-    x[3] = + bandw;   y[3] = y[1];
-    x[4] = x[3];   y[4] = y[0];
-
-    //rotates the geometry towards the desired azimuth and
-    //translates the geometry to the grid's center
-    for(int i = 0; i < 5; ++i){
-        GeostatsUtils::transform( xform, x[i], y[i], not_used_in_2D );
-        x[i] += x0;
-        y[i] += y0;
-    }
-
-    m_curve1DSpectrogramHalfBand2->setSamples( x, y, 5 );
+    m_curve1DSpectrogramHalfBand2->setSamples( spectr1DPar->get2DBand2Xs(),
+                                               spectr1DPar->get2DBand2Ys(),
+                                               spectr1DPar->getNPointsPerBandIn2DGeometry() );
 
     replot();
 }
