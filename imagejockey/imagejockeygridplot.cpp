@@ -328,6 +328,11 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
     setColorMap( ImageJockeyGridPlot::RGBMap );
 
+    const QwtInterval xInterval = m_spectrogram->data()->interval( Qt::XAxis );
+    setAxisScale( QwtPlot::xBottom, xInterval.minValue(), xInterval.maxValue() );
+    const QwtInterval yInterval = m_spectrogram->data()->interval( Qt::YAxis );
+    setAxisScale( QwtPlot::yLeft, yInterval.minValue(), yInterval.maxValue() );
+
     //reset the zoom stack to the possibly new geographic region.
     m_zoomer->setZoomBase();
 
