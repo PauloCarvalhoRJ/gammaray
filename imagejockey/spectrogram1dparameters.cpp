@@ -52,6 +52,7 @@ void Spectrogram1DParameters::updateGeometry()
     double radiusp = radius();
     double bandw = bandWidth();
     double ySect = bandw * std::tan( Util::PI/2.0d - azimuthTolerance() * Util::PI_OVER_180 ); //90deg - azimuth
+    double azimuthp = -azimuth() - 90.0d;
 
     //==========================SET BAND 1=======================================
 
@@ -65,7 +66,7 @@ void Spectrogram1DParameters::updateGeometry()
 
     //rotates the geometry towards the desired azimuth and
     //translates the geometry to the grid's center
-    Matrix3X3<double> xform = GeostatsUtils::getAnisoTransform( 1.0, 1.0, 1.0, azimuth(), 0.0, 0.0 );
+    Matrix3X3<double> xform = GeostatsUtils::getAnisoTransform( 1.0, 1.0, 1.0, azimuthp, 0.0, 0.0 );
     double not_used_in_2D;
     for(int i = 0; i < n; ++i){
         GeostatsUtils::transform( xform, x[i], y[i], not_used_in_2D );
