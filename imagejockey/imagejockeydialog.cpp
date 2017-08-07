@@ -109,26 +109,33 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     //set the attribute
     m_gridPlot->setAttribute( at );
 
+    //read decibel extrema before assigning them to the widgets to prevent
+    //that some unpredicted signal/slot chaining causes unpredicted behavior
+    double dBmin = m_gridPlot->getScaleMinValue();
+    double dBmax = m_gridPlot->getScaleMaxValue();
+    double dBstep = (dBmax-dBmin) / 360.0d; //dividing the span into units per wheel degree
+
     //setup the color scale wheel widgets
-    m_wheelColorMax->setMaximum( m_gridPlot->getScaleMaxValue() );
-    m_wheelColorMax->setMinimum( m_gridPlot->getScaleMinValue() );
-    m_wheelColorMax->setSingleStep( (m_wheelColorMax->maximum()-m_wheelColorMax->minimum()) / 360.0d );
-    m_wheelColorMax->setValue( m_wheelColorMax->maximum() );
-    m_wheelColorMin->setMaximum( m_gridPlot->getScaleMaxValue() );
-    m_wheelColorMin->setMinimum( m_gridPlot->getScaleMinValue() );
-    m_wheelColorMin->setValue( m_wheelColorMin->minimum() );
-    m_wheelColorMin->setSingleStep( (m_wheelColorMin->maximum()-m_wheelColorMin->minimum()) / 360.0d );
+    m_wheelColorMax->setMaximum( dBmax );
+    m_wheelColorMax->setMinimum( dBmin );
+    m_wheelColorMax->setSingleStep( dBstep );
+    m_wheelColorMax->setValue( dBmax );
+    m_wheelColorMin->setMaximum( dBmax );
+    m_wheelColorMin->setMinimum( dBmin );
+    m_wheelColorMin->setValue( dBmin );
+    m_wheelColorMin->setSingleStep( dBstep );
 
     //setup the dB reference wheel widget
     int columnIndex = at->getAttributeGEOEASgivenIndex() - 1;
     CartesianGrid* cg = (CartesianGrid*)at->getContainingFile(); //assumes Attribute's parent file is a Cartesian grid
     cg->loadData();
-    double min = cg->minAbs( columnIndex );
-    double max = cg->maxAbs( columnIndex );
-    m_wheelColorDecibelReference->setMaximum( max );
-    m_wheelColorDecibelReference->setMinimum( min );
-    m_wheelColorDecibelReference->setSingleStep( (max - min) / 360.0d );
-    m_wheelColorDecibelReference->setValue( (max + min) / 2.0d);
+    double dataAbsMin = cg->minAbs( columnIndex );
+    double dataAbsMax = cg->maxAbs( columnIndex );
+    double dataAbsStep = (dataAbsMax - dataAbsMin) / 360.0d; //dividing the span into units per wheel degree
+    m_wheelColorDecibelReference->setMaximum( dataAbsMax );
+    m_wheelColorDecibelReference->setMinimum( dataAbsMin );
+    m_wheelColorDecibelReference->setSingleStep( dataAbsStep );
+    m_wheelColorDecibelReference->setValue( (dataAbsMax + dataAbsMin) / 2.0d ); //set the 0dB reference in the middle
 
     //setup the 1D spectrogram calculation band controls
     double gridDiagLength = cg->getDiagonalLength();
