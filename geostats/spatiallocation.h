@@ -12,6 +12,12 @@ public:
     double _x;
     double _y;
     double _z;
+
+    /** Returns this.x*other.y - this.y*other.x. Use only with 2D geometry computations. */
+    double crossProduct2D( const SpatialLocation& otherLocation );
+
+    /** Returns the distance between origin and this location in the XY plane. */
+    double norm2D();
 };
 
 #endif // SPATIALLOCATION_H

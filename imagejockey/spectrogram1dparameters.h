@@ -27,6 +27,9 @@ public:
     const double* get2DBand2Ys() const { return _2DBand2y; }
     //@}
 
+    /** Returns the distance between the axis along _azimuth and the location given by (x,y). */
+    double distanceToAxis( double x, double y );
+
 public Q_SLOTS:
     void setRadius(double radius);
     void setEndRadius(double endRadius);
@@ -48,6 +51,7 @@ protected:
     double _2DBand1y[_n2DBandPoints];
     double _2DBand2x[_n2DBandPoints];
     double _2DBand2y[_n2DBandPoints];
+    SpatialLocation _aPointOnAxis; //a point located on the axis along _azimuth (useful for the distanceToAxis() function).
     //@}
 };
 

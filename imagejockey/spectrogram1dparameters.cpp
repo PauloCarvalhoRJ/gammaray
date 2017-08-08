@@ -31,6 +31,27 @@ int Spectrogram1DParameters::getNPointsPerBandIn2DGeometry() const
     return _n2DBandPoints;
 }
 
+double Spectrogram1DParameters::distanceToAxis(double x, double y)
+{
+    SpatialLocation end;
+    SpatialLocation point;
+    point._x = x;
+    point._y = y;
+
+    //translate the key locations to origin
+    end._x = _aPointOnAxis._x - _refCenter._x;
+    end._y = _aPointOnAxis._y - _refCenter._y;
+    point._x -= _refCenter._x;
+    point._y -= _refCenter._y;
+
+    //origin, point and end locations form a triangle.
+    double area = point.crossProduct2D( end );
+
+    //you can tell which side of the axis the point is by the sign of area.
+    //if area is zero, then the point is exactly on the axis.
+    return std::abs( area / end.norm2D() );
+}
+
 void Spectrogram1DParameters::setEndRadius(double endRadius)
 {
     _endRadius = endRadius;
@@ -56,8 +77,9 @@ void Spectrogram1DParameters::updateGeometry()
 
     //==========================SET BAND 1=======================================
 
-    //get the 1 semi-band geometry
-    x[0] = - bandw;  y[0] = gridExtent + radiusp;
+    //init the 1 semi-band geometry sitting on origin and aligned with y axis (north-south)
+    //to make code less difficult to follow
+    x[0] = -bandw;   y[0] = gridExtent + radiusp;
     x[1] = x[0];     y[1] = ySect + radiusp;
     x[2] = 0.0;      y[2] = radiusp;
     x[3] = bandw;    y[3] = y[1];
@@ -74,13 +96,25 @@ void Spectrogram1DParameters::updateGeometry()
         _2DBand1y[i] = y[i] + y0;
     }
 
+    //============================SET A PONINT-ON-AXIS USEFUL FOR COMPUTATIONAL GEOMETRY================
+
+    //init the point-on-axis some distance away from center along the y-axis, because the
+    //axis of the 1D spectrogram calculcation band is initially aligned with y-axis
+    _aPointOnAxis._x = 0.0;
+    _aPointOnAxis._y = gridExtent;
+
+    //also rotates and translates the point-on-axis so it sits where it should be
+    GeostatsUtils::transform( xform, _aPointOnAxis._x, _aPointOnAxis._y, not_used_in_2D);
+    _aPointOnAxis._x += x0;
+    _aPointOnAxis._y += y0;
+
     //==========================SET BAND 2=======================================
 
     //the other semi-band is symmetrical
-    x[0] = - bandw;  y[0] = -gridExtent - radiusp;
+    x[0] = -bandw;   y[0] = -gridExtent - radiusp;
     x[1] = x[0];     y[1] = -ySect - radiusp;
     x[2] = 0.0;      y[2] = -radiusp;
-    x[3] = + bandw;  y[3] = y[1];
+    x[3] = bandw;    y[3] = y[1];
     x[4] = x[3];     y[4] = y[0];
     x[5] = x[0];     y[5] = y[0];
 

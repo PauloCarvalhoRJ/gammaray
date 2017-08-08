@@ -57,7 +57,10 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     QwtPlot( parent ),
     m_at( nullptr ),
     m_curve( new QwtPlotCurve() ),
-    m_decibelRefValue(1000.0) //1000.0 has no special meaning
+    m_decibelRefValue(1000.0), //1000.0 intial reference for dB has no special meaning
+    m_yScaleMax(20), //init dB scale max of 20 fits most cases
+    m_yScaleMin(-150), //init dB scale min of -150 fits most cases
+    m_xScaleMax(1000.0) //init frquency scale max with a reasonable value
 {
     QwtPlotCanvas *canvas = new QwtPlotCanvas();
     canvas->setPalette( Qt::black );
@@ -67,7 +70,7 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     QwtPlotGrid *grid = new Spectrogram1DGrid();
     grid->attach( this );
 
-    // plot curve
+    // visual object containing the sample points
     m_curve->setRenderHint( QwtPlotItem::RenderAntialiased );
     m_curve->setStyle( QwtPlotCurve::Dots );
     m_curve->setPen( Qt::green, 0 );
@@ -85,6 +88,12 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
 void Spectrogram1DPlot::setAttribute(Attribute *at)
 {
     m_at = at;
+    if( ! m_at ){
+        return;
+    }
+    //assumes the Attribute's parent file is a Cartesian grid
+    CartesianGrid* cg = (CartesianGrid*)m_at->getContainingFile();
+    setHorizontalScaleMax( cg->getDiagonalLength() / 2.0 );
 }
 
 void Spectrogram1DPlot::rereadSpectrogramData()
@@ -135,9 +144,8 @@ void Spectrogram1DPlot::rereadSpectrogramData()
     QVector<QPointF> spectrogram1Dsamples;
 
     //scan the grid, testing each cell whether it lies in the 1D spectrogram calculation band.
-    //TODO: this code assumes no rotation and that the grid is 2D.
+    //TODO: this code assumes no grid rotation and that the grid is 2D.
     SpatialLocation gridCenter = cg->getCenter();
-    double gridDiag = cg->getDiagonalLength() / 2.0;
     for( uint k = 0; k < cg->getNZ(); ++k ){
         // z coordinate is ignored in 2D spectrograms
         for( uint j = 0; j < cg->getNY(); ++j ){
@@ -146,7 +154,13 @@ void Spectrogram1DPlot::rereadSpectrogramData()
                 double cellCenterX = cg->getX0() + i * cg->getDX();
                 boostPoint2D p(cellCenterX, cellCenterY);
                 // if the cell center lies within the 1D spectrogram calculation band
-                if( boost::geometry::within(p, poly) ){
+                // the distance-to-axis test runs faster than the point-in-poly test, so it allows a faster
+                // discard of grid cells obviously outside the band.  The 1D spectrogram then refreshes faster
+                // with narrower bands.
+                if(     spectr1DPar->distanceToAxis(cellCenterX, cellCenterY) <= spectr1DPar->bandWidth()
+                        &&
+                        boost::geometry::within(p, poly)
+                        ){
                     double intensity;
                     // get the grid value as is
                     double value = cg->dataIJK( columnIndex, i, j, k );
@@ -177,5 +191,26 @@ void Spectrogram1DPlot::rereadSpectrogramData()
 void Spectrogram1DPlot::setDecibelRefValue(double value)
 {
     m_decibelRefValue = value;
+    replot();
+}
+
+void Spectrogram1DPlot::setVerticalScaleMax(double value)
+{
+    m_yScaleMax = value;
+    setAxisScale( QwtPlot::yLeft, m_yScaleMin, m_yScaleMax );
+    replot();
+}
+
+void Spectrogram1DPlot::setVerticalScaleMin(double value)
+{
+    m_yScaleMin = value;
+    setAxisScale( QwtPlot::yLeft, m_yScaleMin, m_yScaleMax );
+    replot();
+}
+
+void Spectrogram1DPlot::setHorizontalScaleMax(double value)
+{
+    m_xScaleMax = value;
+    setAxisScale( QwtPlot::xBottom, 0, m_xScaleMax );
     replot();
 }

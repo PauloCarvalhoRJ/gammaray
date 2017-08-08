@@ -87,6 +87,8 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     ui->frm1DSpectrogram->setStyleSheet("background-color: black; border-radius: 10px; color: #00FF00;");
     connect( m_wheelColorDecibelReference, SIGNAL(valueChanged(double)),
              m_spectrogram1Dplot, SLOT(setDecibelRefValue(double)));
+    connect( m_wheelColorMax, SIGNAL(valueChanged(double)), m_spectrogram1Dplot, SLOT(setVerticalScaleMax(double)) );
+    connect( m_wheelColorMin, SIGNAL(valueChanged(double)), m_spectrogram1Dplot, SLOT(setVerticalScaleMin(double)) );
 
     //update the visual representation of the 1D spectrogram calculation band whenever one of its
     //paramaters (e.g. azimuth) changes.

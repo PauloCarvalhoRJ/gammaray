@@ -37,7 +37,7 @@ void ExperimentalVariogramParameters::setBandWidth(double bandWidth)
     updateGeometry();
     emit updated();
 }
-SpatialLocation ExperimentalVariogramParameters::refCenter() const
+const SpatialLocation &ExperimentalVariogramParameters::refCenter() const
 {
     return _refCenter;
 }

@@ -17,7 +17,7 @@ public:
     double azimuthTolerance() const;
     double bandWidth() const;
     /** A spatial location needed to visualize this object. It is not needed for variogram calculation.*/
-    SpatialLocation refCenter() const;
+    const SpatialLocation& refCenter() const;
 
 Q_SIGNALS:
     void updated();
