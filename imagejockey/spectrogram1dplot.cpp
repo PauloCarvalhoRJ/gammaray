@@ -5,10 +5,19 @@
 #include <qwt_plot_grid.h>
 #include <qwt_plot_curve.h>
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/scoped_array.hpp>
+
 #include "domain/attribute.h"
+#include "domain/application.h"
+#include "domain/cartesiangrid.h"
+#include "spectrogram1dparameters.h"
+#include "util.h"
 
 
-///================================THE GRID PATTERN FOR THE 1D SPECTROGRAM===============
+///================================THE VISUAL GRID PATTERN FOR THE 1D SPECTROGRAM===============
 class Spectrogram1DGrid: public QwtPlotGrid
 {
 public:
@@ -47,25 +56,26 @@ public:
 Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     QwtPlot( parent ),
     m_at( nullptr ),
-    m_curve( new QwtPlotCurve() )
+    m_curve( new QwtPlotCurve() ),
+    m_decibelRefValue(1000.0) //1000.0 has no special meaning
 {
     QwtPlotCanvas *canvas = new QwtPlotCanvas();
     canvas->setPalette( Qt::black );
     setCanvas( canvas );
 
-    // grid
+    // plot grid
     QwtPlotGrid *grid = new Spectrogram1DGrid();
     grid->attach( this );
 
     // plot curve
     m_curve->setRenderHint( QwtPlotItem::RenderAntialiased );
     m_curve->setStyle( QwtPlotCurve::Dots );
-    m_curve->setPen( Qt::green, 5 );
+    m_curve->setPen( Qt::green, 0 );
     m_curve->attach( this );
 
     //axes text styles
-    setAxisTitle( QwtPlot::yLeft, "<span style=\" font-size:7pt;\">dB</span>");
-    setAxisTitle( QwtPlot::xBottom, "<span style=\" font-size:7pt;\">frequency</span>");
+    setAxisTitle( QwtPlot::yLeft, "<span style=\" font-size:7pt;\">info. contr. (dB)</span>");
+    setAxisTitle( QwtPlot::xBottom, "<span style=\" font-size:7pt;\">spatial frequency (feature size <sup>-1</sup>)</span>");
     QwtScaleWidget* xaxisw = axisWidget( Axis::yLeft );
     xaxisw->setStyleSheet("font: 7pt;");
     QwtScaleWidget* yaxisw = axisWidget( Axis::xBottom );
@@ -75,13 +85,97 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
 void Spectrogram1DPlot::setAttribute(Attribute *at)
 {
     m_at = at;
+}
 
+void Spectrogram1DPlot::rereadSpectrogramData()
+{
+    //some typedefs to shorten code
+    typedef boost::geometry::model::d2::point_xy<double> boostPoint2D;
+    typedef boost::geometry::model::polygon<boostPoint2D> boostPolygon;
 
-    QVector<QPointF> samples;
-    samples.push_back( QPointF(100,100) );
-    samples.push_back( QPointF(300,150) );
-    samples.push_back( QPointF(500,600) );
-    samples.push_back( QPointF(700,400) );
-    m_curve->setSamples( samples );
+    //check whether we the necessary data
+    if( ! m_at ){
+        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): Attribute is null.  Nothing done.");
+        return;
+    }
+
+    //get the attribute's GEO-EAS column index
+    uint columnIndex = m_at->getAttributeGEOEASgivenIndex() - 1;
+
+    //get the object that triggered the call to this slot
+    QObject* obj = sender();
+
+    //check whether the event sender is a Spectrogram1DParameters
+    Spectrogram1DParameters* spectr1DPar = qobject_cast<Spectrogram1DParameters*>( obj );
+    if( ! spectr1DPar ){
+        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): sender is not an Spectrogram1DParameters object. Nothing done.");
+        return;
+    }
+
+    //assumes the Attribute's parent file is a Cartesian grid
+    CartesianGrid* cg = (CartesianGrid*)m_at->getContainingFile();
+
+    //TODO: add support for rotations
+    if( ! Util::almostEqual2sComplement( cg->getRot(), 0.0, 1) ){
+        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): rotation not supported yet.  Nothing done.");
+        return;
+    }
+
+    //define a Boost polygon from the 1D spectrogram calculation half-band geometry (assumes the 2D spectrogram is symmetrical)
+    const std::size_t n = spectr1DPar->getNPointsPerBandIn2DGeometry();
+    boost::scoped_array<boostPoint2D> points(new boostPoint2D[n]); //scoped_array frees memory when its scope ends.
+    for(std::size_t i = 0; i < n; ++i)
+        points[i] = boostPoint2D(spectr1DPar->get2DBand1Xs()[i], spectr1DPar->get2DBand1Ys()[i]);
+    boostPolygon poly;
+    boost::geometry::assign_points( poly, std::make_pair(&points[0], &points[0] + n));
+
+    //this list contains pairs of values ready for 1D spectrogram display
+    //the X value is the spatial frequency (distance from the center of the 2D spectrogram grid)
+    //the Y value is the intensity (variable value in the grid, normaly in decibel scale)
+    QVector<QPointF> spectrogram1Dsamples;
+
+    //scan the grid, testing each cell whether it lies in the 1D spectrogram calculation band.
+    //TODO: this code assumes no rotation and that the grid is 2D.
+    SpatialLocation gridCenter = cg->getCenter();
+    double gridDiag = cg->getDiagonalLength() / 2.0;
+    for( uint k = 0; k < cg->getNZ(); ++k ){
+        // z coordinate is ignored in 2D spectrograms
+        for( uint j = 0; j < cg->getNY(); ++j ){
+            double cellCenterY = cg->getY0() + j * cg->getDY();
+            for( uint i = 0; i < cg->getNX(); ++i ){
+                double cellCenterX = cg->getX0() + i * cg->getDX();
+                boostPoint2D p(cellCenterX, cellCenterY);
+                // if the cell center lies within the 1D spectrogram calculation band
+                if( boost::geometry::within(p, poly) ){
+                    double intensity;
+                    // get the grid value as is
+                    double value = cg->dataIJK( columnIndex, i, j, k );
+                    // calculate the intensity value from the raw spectrogram value
+                    if( cg->isNDV(value) ) //if there is no value there
+                        intensity = std::numeric_limits<double>::quiet_NaN(); //intensity is NaN (blank plot)
+                    else
+                        //for Fourier images, get the absolute values in decibel for ease of interpretation
+                        intensity = Util::dB( std::abs<double>(value), m_decibelRefValue, 0.0000001 );
+                    // get the distance orthogonal distance components
+                    double dX = cellCenterX - gridCenter._x;
+                    double dY = cellCenterY - gridCenter._y;
+                    // the spatial frequency in a spectrogram is proportional to the distance from its center
+                    // the spatial frequency is the inverse of feature size
+                    double spatialFrequency = std::sqrt<double>( dX*dX + dY*dY ).real();
+                    // store the pair for plot
+                    spectrogram1Dsamples.push_back( QPointF(spatialFrequency, intensity) );
+                }
+            }
+        }
+    }
+
+    //plot the 1D spectrogram corresponding to a band over the 2D spectrogram
+    m_curve->setSamples( spectrogram1Dsamples );
+    replot();
+}
+
+void Spectrogram1DPlot::setDecibelRefValue(double value)
+{
+    m_decibelRefValue = value;
     replot();
 }

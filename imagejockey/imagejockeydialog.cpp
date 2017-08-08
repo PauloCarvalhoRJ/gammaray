@@ -60,7 +60,6 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     connect( m_wheelColorDecibelReference, SIGNAL(valueChanged(double)),
              m_gridPlot, SLOT(setDecibelRefValue(double)));
 
-
     //these widgets control the band used to get a 1D spectrogram from the 2D spectrogram.
     m_azimuthCompass = new GRCompass(2);
     ui->frmAzimuthControl->layout()->addWidget( m_azimuthCompass );
@@ -86,10 +85,16 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     m_spectrogram1Dplot = new Spectrogram1DPlot();
     ui->frm1DSpectrogram->layout()->addWidget( m_spectrogram1Dplot );
     ui->frm1DSpectrogram->setStyleSheet("background-color: black; border-radius: 10px; color: #00FF00;");
+    connect( m_wheelColorDecibelReference, SIGNAL(valueChanged(double)),
+             m_spectrogram1Dplot, SLOT(setDecibelRefValue(double)));
 
     //update the visual representation of the 1D spectrogram calculation band whenever one of its
-    //paramaters (e.g. azimuth) changes
-    connect( m_spectrogram1Dparams, SIGNAL(updated()), m_gridPlot, SLOT(draw1DSpectrogramBand()) );
+    //paramaters (e.g. azimuth) changes.
+    connect( m_spectrogram1Dparams, SIGNAL(updated()), m_gridPlot, SLOT( draw1DSpectrogramBand()) );
+
+    //update the 1D spectrogram plot whenever the 1D spectrogram calculation band changes one of its
+    //paramaters (e.g. azimuth).
+    connect( m_spectrogram1Dparams, SIGNAL(updated()), m_spectrogram1Dplot, SLOT( rereadSpectrogramData()) );
 
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
