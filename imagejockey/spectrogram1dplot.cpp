@@ -1,5 +1,7 @@
 #include "spectrogram1dplot.h"
 
+#include <QEvent>
+
 #include <qwt_plot_canvas.h>
 #include <qwt_scale_widget.h>
 #include <qwt_plot_grid.h>
@@ -14,6 +16,7 @@
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
 #include "spectrogram1dparameters.h"
+#include "spectrogram1dplotpicker.h"
 #include "util.h"
 
 
@@ -64,11 +67,12 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     m_frequencyWindowBeginCurve( new QwtPlotCurve() ), //TODO: this should be deleted in the destructor
     m_frequencyWindowEndCurve( new QwtPlotCurve() ), //TODO: this should be deleted in the destructor
     m_freqWindowBegin(0.0),
-    m_freqWindowEnd(1000.0)
+    m_freqWindowEnd(1000.0),
+    m_referenceCurve( new QwtPlotCurve() ) //TODO: this should be deleted in the destructor
 {
-    QwtPlotCanvas *canvas = new QwtPlotCanvas();
-    canvas->setPalette( Qt::black );
-    setCanvas( canvas );
+    QwtPlotCanvas *myCanvas = new QwtPlotCanvas();
+    myCanvas->setPalette( Qt::black );
+    setCanvas( myCanvas );
 
     // plot grid
     QwtPlotGrid *grid = new Spectrogram1DGrid();
@@ -88,6 +92,12 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     m_frequencyWindowEndCurve->setPen( Qt::green, 0 );
     m_frequencyWindowEndCurve->attach( this );
 
+    //the user-drawn curve that represents a reference spectrum so one can compare
+    //several 1D spectra along different azimuths
+    m_referenceCurve->setStyle( QwtPlotCurve::Lines );
+    m_referenceCurve->setPen( Qt::green, 0 );
+    m_referenceCurve->attach( this );
+
     //axes text styles
     setAxisTitle( QwtPlot::yLeft, "<span style=\" font-size:7pt;\">info. contr. (dB)</span>");
     setAxisTitle( QwtPlot::xBottom, "<span style=\" font-size:7pt;\">spatial frequency (feature size <sup>-1</sup>)</span>");
@@ -95,6 +105,13 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     xaxisw->setStyleSheet("font: 7pt;");
     QwtScaleWidget* yaxisw = axisWidget( Axis::xBottom );
     yaxisw->setStyleSheet("font: 7pt;");
+
+    // The canvas picker handles all mouse and key
+    // events on the plot canvas
+    canvas()->installEventFilter( this );
+    Spectrogram1DPlotPicker* plotPicker = new Spectrogram1DPlotPicker( m_referenceCurve, this ); //TODO: delete?
+    //To be notified when a calibration curve is edited by the used.
+    connect( plotPicker, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onReferenceCurveChanged(QwtPlotCurve*)) );
 }
 
 void Spectrogram1DPlot::setAttribute(Attribute *at)
@@ -248,4 +265,25 @@ void Spectrogram1DPlot::updateFrequencyWindowLines( )
     points.push_back( QPointF( m_freqWindowEnd, m_yScaleMax ) );
     m_frequencyWindowEndCurve->setSamples( points );
     replot();
+}
+
+bool Spectrogram1DPlot::eventFilter(QObject *object, QEvent *e)
+{
+    Application::instance()->logError("hhhhhhhhhhhhhhhhhhhh");
+    if ( e->type() == QEvent::Resize )
+    {
+        if ( object == axisWidget( yLeft ) )
+        {
+        }
+        if ( object == canvas() )
+        {
+        }
+    }
+
+    return QwtPlot::eventFilter( object, e );
+}
+
+void Spectrogram1DPlot::onReferenceCurveChanged(QwtPlotCurve */*refCurve*/)
+{
+
 }

@@ -18,6 +18,7 @@ class Spectrogram1DPlot : public QwtPlot
 
 public:
     Spectrogram1DPlot(QWidget * parent = nullptr);
+    virtual bool eventFilter(QObject *object, QEvent * e);
 
 public Q_SLOTS:
     void setAttribute( Attribute* at );
@@ -50,6 +51,12 @@ private:
     double m_freqWindowEnd;
     void updateFrequencyWindowLines();
     //@}
+
+    /** A user-drawn curve so one can visually compare several 1D spectra against a reference spectrum. */
+    QwtPlotCurve *m_referenceCurve;
+
+private Q_SLOTS:
+    void onReferenceCurveChanged( QwtPlotCurve* refCurve );
 };
 
 #endif // SPECTROGRAM1DPLOT_H

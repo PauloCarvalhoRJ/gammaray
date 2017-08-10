@@ -14,8 +14,8 @@ EqualizerSlider::EqualizerSlider(double centralFrequency, bool showScale, QWidge
 
     //add the slider
     m_slider = new QwtSlider( Qt::Vertical );
-    m_slider->setUpperBound( 100.0d );
-    m_slider->setLowerBound( -100.0d );
+    m_slider->setUpperBound( 100.0d );  //greatest amplification = +100dB
+    m_slider->setLowerBound( -100.0d ); //greatest attenuation = -100dB
     if( ! showScale )
         m_slider->setScalePosition( QwtSlider::ScalePosition::NoScale );
     ui->frmSliderPlace->layout()->addWidget( m_slider );
