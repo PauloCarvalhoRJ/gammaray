@@ -165,7 +165,10 @@ SOURCES += main.cpp\
     widgets/grcompass.cpp \
     geostats/experimentalvariogramparameters.cpp \
     imagejockey/spectrogram1dparameters.cpp \
-    imagejockey/spectrogram1dplot.cpp
+    imagejockey/spectrogram1dplot.cpp \
+    imagejockey/spectrogram1dplotpicker.cpp \
+    imagejockey/equalizer/equalizerwidget.cpp \
+    imagejockey/equalizer/equalizerslider.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -310,7 +313,10 @@ HEADERS  += mainwindow.h \
     widgets/grcompass.h \
     geostats/experimentalvariogramparameters.h \
     imagejockey/spectrogram1dparameters.h \
-    imagejockey/spectrogram1dplot.h
+    imagejockey/spectrogram1dplot.h \
+    imagejockey/spectrogram1dplotpicker.h \
+    imagejockey/equalizer/equalizerwidget.h \
+    imagejockey/equalizer/equalizerslider.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -369,7 +375,9 @@ FORMS    += mainwindow.ui \
     dialogs/realizationselectiondialog.ui \
     dialogs/gridresampledialog.ui \
     dialogs/multivariogramdialog.ui \
-    imagejockey/imagejockeydialog.ui
+    imagejockey/imagejockeydialog.ui \
+    imagejockey/equalizer/equalizerwidget.ui \
+    imagejockey/equalizer/equalizerslider.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

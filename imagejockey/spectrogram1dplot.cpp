@@ -56,11 +56,15 @@ public:
 Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     QwtPlot( parent ),
     m_at( nullptr ),
-    m_curve( new QwtPlotCurve() ),
+    m_curve( new QwtPlotCurve() ), //TODO: this should be deleted in the destructor
     m_decibelRefValue(1000.0), //1000.0 intial reference for dB has no special meaning
     m_yScaleMax(20), //init dB scale max of 20 fits most cases
     m_yScaleMin(-150), //init dB scale min of -150 fits most cases
-    m_xScaleMax(1000.0) //init frquency scale max with a reasonable value
+    m_xScaleMax(1000.0), //init frquency scale max with a reasonable value
+    m_frequencyWindowBeginCurve( new QwtPlotCurve() ), //TODO: this should be deleted in the destructor
+    m_frequencyWindowEndCurve( new QwtPlotCurve() ), //TODO: this should be deleted in the destructor
+    m_freqWindowBegin(0.0),
+    m_freqWindowEnd(1000.0)
 {
     QwtPlotCanvas *canvas = new QwtPlotCanvas();
     canvas->setPalette( Qt::black );
@@ -75,6 +79,14 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     m_curve->setStyle( QwtPlotCurve::Dots );
     m_curve->setPen( Qt::green, 0 );
     m_curve->attach( this );
+
+    //the two vertical lines represting the frequency window for the equalizer
+    m_frequencyWindowBeginCurve->setStyle( QwtPlotCurve::Lines );
+    m_frequencyWindowBeginCurve->setPen( Qt::green, 0 );
+    m_frequencyWindowBeginCurve->attach( this );
+    m_frequencyWindowEndCurve->setStyle( QwtPlotCurve::Lines );
+    m_frequencyWindowEndCurve->setPen( Qt::green, 0 );
+    m_frequencyWindowEndCurve->attach( this );
 
     //axes text styles
     setAxisTitle( QwtPlot::yLeft, "<span style=\" font-size:7pt;\">info. contr. (dB)</span>");
@@ -198,6 +210,7 @@ void Spectrogram1DPlot::setVerticalScaleMax(double value)
 {
     m_yScaleMax = value;
     setAxisScale( QwtPlot::yLeft, m_yScaleMin, m_yScaleMax );
+    updateFrequencyWindowLines();
     replot();
 }
 
@@ -205,6 +218,7 @@ void Spectrogram1DPlot::setVerticalScaleMin(double value)
 {
     m_yScaleMin = value;
     setAxisScale( QwtPlot::yLeft, m_yScaleMin, m_yScaleMax );
+    updateFrequencyWindowLines();
     replot();
 }
 
@@ -212,5 +226,26 @@ void Spectrogram1DPlot::setHorizontalScaleMax(double value)
 {
     m_xScaleMax = value;
     setAxisScale( QwtPlot::xBottom, 0, m_xScaleMax );
+    updateFrequencyWindowLines();
+    replot();
+}
+
+void Spectrogram1DPlot::updateFrequencyWindow(double begin, double end)
+{
+    m_freqWindowBegin = begin;
+    m_freqWindowEnd = end;
+    updateFrequencyWindowLines();
+}
+
+void Spectrogram1DPlot::updateFrequencyWindowLines( )
+{
+    QVector<QPointF> points;
+    points.push_back( QPointF( m_freqWindowBegin, m_yScaleMin ) );
+    points.push_back( QPointF( m_freqWindowBegin, m_yScaleMax ) );
+    m_frequencyWindowBeginCurve->setSamples( points );
+    points.clear();
+    points.push_back( QPointF( m_freqWindowEnd, m_yScaleMin ) );
+    points.push_back( QPointF( m_freqWindowEnd, m_yScaleMax ) );
+    m_frequencyWindowEndCurve->setSamples( points );
     replot();
 }

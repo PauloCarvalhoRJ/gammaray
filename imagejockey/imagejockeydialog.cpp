@@ -9,6 +9,7 @@
 #include "imagejockeygridplot.h"
 #include "spectrogram1dparameters.h"
 #include "spectrogram1dplot.h"
+#include "equalizer/equalizerwidget.h"
 
 #include <qwt_wheel.h>
 
@@ -98,6 +99,15 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     //paramaters (e.g. azimuth).
     connect( m_spectrogram1Dparams, SIGNAL(updated()), m_spectrogram1Dplot, SLOT( rereadSpectrogramData()) );
 
+    //the set of sliders to attenuate or amplify frquency components.
+    m_equalizerWidget = new EqualizerWidget();
+    ui->frmEqualizer->layout()->addWidget( m_equalizerWidget );
+
+    //update the two vertical lines in the 1D spectrogram plot that visually represent the frequency
+    //window selected in the equalizer widget.
+    connect( m_equalizerWidget, SIGNAL(frequencyWindowUpdated(double,double)),
+             m_spectrogram1Dplot, SLOT(updateFrequencyWindow(double,double)) );
+
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
@@ -167,6 +177,9 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
 
     //set the attribute for the 1D spectrogram plot
     m_spectrogram1Dplot->setAttribute( at );
+
+    //assuming Fourier image symmetry, the frequency limits range between 0.0 (DC) and half grid size
+    m_equalizerWidget->setFrequencyLimits(0.0d, gridDiagLength / 2.0d);
 
     //Perturb the splitter to force a redraw.
     //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working in setAttribute())

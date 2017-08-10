@@ -1560,3 +1560,25 @@ double Util::dB(double value, double refLevel, double epsilon)
     }
     return 20.0d * std::log10<double>( valueToUse / refLevel ).real();
 }
+
+QString Util::humanReadable(double value)
+{
+    //buffer string for formatting the output (QString's sptrintf doesn't honor field size)
+    char buffer[50];
+    //define base unit to change suffix (could be 1024 for ISO bytes (iB), for instance)
+    double unit = 1000.0d;
+    //return the plain value if it doesn't require a multiplier suffix (small values)
+    if (value <= unit){
+        std::sprintf(buffer, "%.1f", value);
+        return QString( buffer );
+    }
+    //compute the order of magnitude (approx. power of 1000) of the value
+    int exp = (int) (std::log10<double>(value).real() / std::log10<double>(unit).real());
+    //string that is a list of available multiplier suffixes
+    QString suffixes = "pnum kMGTPE";
+    //select the suffix
+    char suffix = suffixes.at( 5+exp-1 ).toLatin1(); //-5 because pico would result in a -5 index.
+    //format output, dividing the value by the power of 1000 found
+    std::sprintf(buffer, "%.1f%c", value / std::pow<double, int>(unit, exp), suffix);
+    return QString( buffer );
+}

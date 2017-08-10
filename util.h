@@ -461,6 +461,13 @@ public:
      * epsilon The smallest allowed absolute value as to avoid large negative results or even -inf (value = 0.0).
      */
     static double dB( double value, double refLevel, double epsilon);
+
+    /** Returns a text containing a better human readable value.
+     * E.g.: 25000000 results in "25M".  Client code can then append a basic unit: "25M" + "Hz" to make "25MHz".
+     * This function supports multiplier suffixes from pico (p) to Exa (E).  More can be added with small changes
+     * to its code.
+     */
+    static QString humanReadable( double value );
 };
 
 #endif // UTIL_H

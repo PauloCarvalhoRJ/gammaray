@@ -11,6 +11,7 @@ class QwtWheel;
 class GRCompass;
 class Spectrogram1DParameters;
 class Spectrogram1DPlot;
+class EqualizerWidget;
 
 namespace Ui {
 class ImageJockeyDialog;
@@ -66,6 +67,9 @@ private:
 
     /** The plot widget with the 1D spectrogram taken from a band in the 2D spectrogram map. */
     Spectrogram1DPlot* m_spectrogram1Dplot;
+
+    /** The set of sliders to attenuate or amplify frequency components. */
+    EqualizerWidget* m_equalizerWidget;
 
 private Q_SLOTS:
     void onUpdateGridPlot( Attribute *at );

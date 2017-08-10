@@ -27,6 +27,7 @@ public Q_SLOTS:
     void setVerticalScaleMax( double value );
     void setVerticalScaleMin( double value );
     void setHorizontalScaleMax( double value ); //minimum is always zero (DC == 0 frquency).
+    void updateFrequencyWindow( double begin, double end );
 
 private:
     Attribute* m_at;
@@ -39,7 +40,16 @@ private:
 
     double m_yScaleMax;
     double m_yScaleMin;
-    double m_xScaleMax;
+    double m_xScaleMax; //minimum frequency is always zero (DC) for Fourier images computed from real-only values.
+
+    //@{
+    /** The two vertical lines representing the current frequency window for the graphic equalizer. */
+    QwtPlotCurve *m_frequencyWindowBeginCurve;
+    QwtPlotCurve *m_frequencyWindowEndCurve;
+    double m_freqWindowBegin;
+    double m_freqWindowEnd;
+    void updateFrequencyWindowLines();
+    //@}
 };
 
 #endif // SPECTROGRAM1DPLOT_H
