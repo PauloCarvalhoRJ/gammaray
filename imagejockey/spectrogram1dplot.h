@@ -29,6 +29,7 @@ public Q_SLOTS:
     void setVerticalScaleMin( double value );
     void setHorizontalScaleMax( double value ); //minimum is always zero (DC == 0 frquency).
     void updateFrequencyWindow( double begin, double end );
+    void resetReferenceCurve();
 
 private:
     Attribute* m_at;

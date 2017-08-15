@@ -527,6 +527,34 @@
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout" name="gridLayout_2">
+             <item row="2" column="0">
+              <widget class="QFrame" name="frmBandwidthControl">
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_12">
+                <item>
+                 <widget class="QLabel" name="label_4">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Bandw.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
              <item row="1" column="1">
               <widget class="QFrame" name="frmAzimuthTolControl">
                <property name="frameShape">
@@ -555,32 +583,15 @@
                </layout>
               </widget>
              </item>
-             <item row="2" column="0">
-              <widget class="QFrame" name="frmBandwidthControl">
+             <item row="1" column="0">
+              <widget class="QFrame" name="frmAzimuthControl">
                <property name="frameShape">
                 <enum>QFrame::StyledPanel</enum>
                </property>
                <property name="frameShadow">
                 <enum>QFrame::Raised</enum>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_12">
-                <item>
-                 <widget class="QLabel" name="label_4">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Bandw.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
+               <layout class="QVBoxLayout" name="verticalLayout_10"/>
               </widget>
              </item>
              <item row="2" column="1">
@@ -611,15 +622,42 @@
                </layout>
               </widget>
              </item>
-             <item row="1" column="0">
-              <widget class="QFrame" name="frmAzimuthControl">
+             <item row="3" column="0">
+              <widget class="QFrame" name="frame_2">
                <property name="frameShape">
                 <enum>QFrame::StyledPanel</enum>
                </property>
                <property name="frameShadow">
                 <enum>QFrame::Raised</enum>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_10"/>
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
+                <item>
+                 <widget class="QPushButton" name="btnRemoveCurve">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>reset reference curve</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../resources.qrc">
+                    <normaloff>:/icons32/removecurve32</normaloff>:/icons32/removecurve32</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>32</width>
+                    <height>32</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
               </widget>
              </item>
             </layout>
@@ -661,7 +699,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>btnDismiss</sender>
@@ -670,8 +710,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>267</x>
-     <y>326</y>
+     <x>634</x>
+     <y>608</y>
     </hint>
     <hint type="destinationlabel">
      <x>646</x>
@@ -679,5 +719,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnRemoveCurve</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageJockeyDialog</receiver>
+   <slot>resetReferenceCurve()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>976</x>
+     <y>246</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1158</x>
+     <y>281</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>resetReferenceCurve()</slot>
+ </slots>
 </ui>

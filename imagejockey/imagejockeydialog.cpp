@@ -194,4 +194,9 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     //    }
 }
 
+void ImageJockeyDialog::resetReferenceCurve()
+{
+    m_spectrogram1Dplot->resetReferenceCurve();
+}
+
 

@@ -67,49 +67,15 @@ bool Spectrogram1DPlotPicker::event( QEvent *ev ){
     return QObject::event( ev );
 }
 
-// Select the point at a position. If there is no point
-// deselect the selected point
-void Spectrogram1DPlotPicker::beginDraw( const QPoint &pos ){
-    QwtPlotCurve *curve = nullptr;
-    double dist = 10e10;
-    int index = -1;
-
-    const QwtPlotItemList& itmList = plot()->itemList();
-    for ( QwtPlotItemIterator it = itmList.begin();
-        it != itmList.end(); ++it )
-    {
-        if ( ( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve )
-        {
-            QwtPlotCurve *c = static_cast<QwtPlotCurve *>( *it );
-
-            double d;
-            int idx = c->closestPoint( pos, &d );
-            if ( d < dist )
-            {
-                curve = c;
-                index = idx;
-                dist = d;
-            }
-        }
-    }
-
-    showCursor( false );
-
-    if ( curve && dist < 10 ) // 10 pixels tolerance
-    {
-        m_drawingCurve = curve;
-        showCursor( true );
-    }
-}
-
-// Move the selected point
 void Spectrogram1DPlotPicker::draw( const QPoint &pos )
 {
-    if ( !m_drawingCurve )
+    //check whether there is a curve object to edit
+    if ( !m_drawingCurve ){
+        Application::instance()->logWarn("Spectrogram1DPlotPicker::draw: m_drawingCurve is null.");
         return;
+    }
 
-    Application::instance()->logError("LALALAL");
-
+    //get the current geometry points
     QVector<QPointF> drawnPointsSoFar;
     for( int i = 0; i < m_drawingCurve->data()->size(); ++i){
         drawnPointsSoFar.push_back( m_drawingCurve->data()->sample( i ) );
@@ -119,8 +85,10 @@ void Spectrogram1DPlotPicker::draw( const QPoint &pos )
     double x = plot()->invTransform( m_drawingCurve->xAxis(), pos.x() );
     double y = plot()->invTransform( m_drawingCurve->yAxis(), pos.y() );
 
+    //append the new point to the list with the current curve points
     drawnPointsSoFar.push_back( QPointF( x, y ) );
 
+    //set curve geometry
     m_drawingCurve->setSamples( drawnPointsSoFar );
 
     /*
@@ -134,94 +102,21 @@ void Spectrogram1DPlotPicker::draw( const QPoint &pos )
     plot()->replot();
     plotCanvas->setPaintAttribute( QwtPlotCanvas::ImmediatePaint, false );
 
-    showCursor( true );
-
     //notify any listening client code of changes in the drawing curve
     emit curveChanged( m_drawingCurve );
 }
 
-// Select the next/previous curve
-void Spectrogram1DPlotPicker::shiftCurveCursor( bool up )
-{
-    QwtPlotItemIterator it;
-
-    const QwtPlotItemList &itemList = plot()->itemList();
-
-    QwtPlotItemList curveList;
-    for ( it = itemList.begin(); it != itemList.end(); ++it )
-    {
-        if ( ( *it )->rtti() == QwtPlotItem::Rtti_PlotCurve )
-            curveList += *it;
-    }
-    if ( curveList.isEmpty() )
-        return;
-
-    it = curveList.begin();
-
-    if ( m_drawingCurve )
-    {
-        for ( it = curveList.begin(); it != curveList.end(); ++it )
-        {
-            if ( m_drawingCurve == *it )
-                break;
-        }
-        if ( it == curveList.end() ) // not found
-            it = curveList.begin();
-
-        if ( up )
-        {
-            ++it;
-            if ( it == curveList.end() )
-                it = curveList.begin();
-        }
-        else
-        {
-            if ( it == curveList.begin() )
-                it = curveList.end();
-            --it;
-        }
-    }
-
-    showCursor( false );
-    m_drawingCurve = static_cast<QwtPlotCurve *>( *it );
-    showCursor( true );
-}
-
-// Select the next/previous neighbour of the selected point
-void Spectrogram1DPlotPicker::shiftPointCursor( bool up )
-{
-    if ( !m_drawingCurve )
-        return;
-}
 
 bool Spectrogram1DPlotPicker::eventFilter( QObject *object, QEvent *event ){
-    Application::instance()->logError("LILILILI");
     if ( plot() == nullptr || object != plot()->canvas() )
         return false;
 
-    Application::instance()->logError("LOLOLOLO");
-
     switch( event->type() )
     {
-        case QEvent::FocusIn:
-        {
-            showCursor( true );
-            break;
-        }
-        case QEvent::FocusOut:
-        {
-            showCursor( false );
-            break;
-        }
-        case QEvent::Paint:
-        {
-            //QApplication::postEvent( this, new QEvent( QEvent::User ) );
-            break;
-        }
         case QEvent::MouseButtonPress:
         {
             const QMouseEvent *mouseEvent = static_cast<QMouseEvent *>( event );
-            beginDraw( mouseEvent->pos() );
+            draw( mouseEvent->pos() );
             return true;
         }
         case QEvent::MouseMove:

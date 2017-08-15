@@ -95,7 +95,8 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     //the user-drawn curve that represents a reference spectrum so one can compare
     //several 1D spectra along different azimuths
     m_referenceCurve->setStyle( QwtPlotCurve::Lines );
-    m_referenceCurve->setPen( Qt::green, 0 );
+    m_referenceCurve->setRenderHint( QwtPlotItem::RenderAntialiased );
+    m_referenceCurve->setPen( Qt::red, 3 );
     m_referenceCurve->attach( this );
 
     //axes text styles
@@ -254,6 +255,13 @@ void Spectrogram1DPlot::updateFrequencyWindow(double begin, double end)
     updateFrequencyWindowLines();
 }
 
+void Spectrogram1DPlot::resetReferenceCurve()
+{
+    //setting samples with an empty list clears the curve geometry
+    m_referenceCurve->setSamples( QVector<QPointF>() );
+    replot();
+}
+
 void Spectrogram1DPlot::updateFrequencyWindowLines( )
 {
     QVector<QPointF> points;
@@ -269,7 +277,6 @@ void Spectrogram1DPlot::updateFrequencyWindowLines( )
 
 bool Spectrogram1DPlot::eventFilter(QObject *object, QEvent *e)
 {
-    Application::instance()->logError("hhhhhhhhhhhhhhhhhhhh");
     if ( e->type() == QEvent::Resize )
     {
         if ( object == axisWidget( yLeft ) )

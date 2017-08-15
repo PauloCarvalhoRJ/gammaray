@@ -73,6 +73,7 @@ private:
 
 private Q_SLOTS:
     void onUpdateGridPlot( Attribute *at );
+    void resetReferenceCurve();
 
 };
 
