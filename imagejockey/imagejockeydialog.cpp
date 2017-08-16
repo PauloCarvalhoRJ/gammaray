@@ -205,6 +205,16 @@ void ImageJockeyDialog::resetReferenceCurve()
 
 void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
 {
+    //assuming the selected file is a Cartesian grid
+    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! cg )
+        return;
+
+    //get the variable
+    Attribute* at = cg->getAttributeFromGEOEASIndex( m_atSelector->getSelectedVariableGEOEASIndex() );
+
+
+
     Application::instance()->logError(QString("NNNNNNNNNNNNNNNNNNNNNNNN") + QString::number(centralFrequency) + " " + QString::number(dB) );
 }
 
