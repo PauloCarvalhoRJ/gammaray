@@ -19,6 +19,7 @@ EqualizerSlider::EqualizerSlider(double centralFrequency, bool showScale, QWidge
     if( ! showScale )
         m_slider->setScalePosition( QwtSlider::ScalePosition::NoScale );
     ui->frmSliderPlace->layout()->addWidget( m_slider );
+    connect( m_slider, SIGNAL(valueChanged(double)), this, SLOT(setValue(double)) );
 
     //display the current center frequency
     ui->lblCenterFrequency->setText( Util::humanReadable( m_centralFrequency ) );
@@ -37,5 +38,10 @@ void EqualizerSlider::setCentralFrequency(double centralFrequency)
 {
     m_centralFrequency = centralFrequency;
     ui->lblCenterFrequency->setText( Util::humanReadable( m_centralFrequency ) );
+}
+
+void EqualizerSlider::setValue(double value)
+{
+    emit adjustmentMade( m_centralFrequency, value );
 }
 

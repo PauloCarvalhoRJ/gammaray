@@ -20,6 +20,14 @@ public:
     double centralFrequency() const;
     void setCentralFrequency(double centralFrequency);
 
+Q_SIGNALS:
+    /** Negative dB means attentuation.  Positive values mean amplification. */
+    void adjustmentMade( double centralFrequency, double dB );
+
+private Q_SLOTS:
+    /** User slided the equalizer knob. */
+    void setValue( double value );
+
 private:
     Ui::EqualizerSlider *ui;
 

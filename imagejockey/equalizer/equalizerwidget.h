@@ -30,6 +30,8 @@ public:
 
 Q_SIGNALS:
     void frequencyWindowUpdated( double begin, double end );
+    /** Negative dB means attenuation, positive values mean amplification. */
+    void equalizerAdjusted( double centralFrequency, double dB );
 
 public Q_SLOTS:
     /** Sets the absolute limits the selected frequency limits can vary within. */
@@ -40,6 +42,10 @@ private Q_SLOTS:
     void setNumberOfCentralFrequencies(int indexInCombobox );
     void setFrequencyWindowBegin(double value);
     void setFrequencyWindowEnd(double value);
+    /** Negative dB means attentuation, positive values mean amplification.
+     * This is slot is normally connect to EqualizerSliders' adjustmentMade() signals.
+     */
+    void makeAdjustment( double centralFrequency, double dB );
 
 private:
     /** Re-sets the central frequencies of the sliders.  This is normally called after the

@@ -90,6 +90,11 @@ void EqualizerWidget::setFrequencyWindowEnd(double value)
     emit frequencyWindowUpdated( m_frequencyWindowBegin, m_frequencyWindowEnd );
 }
 
+void EqualizerWidget::makeAdjustment(double centralFrequency, double dB)
+{
+    emit equalizerAdjusted( centralFrequency, dB );
+}
+
 void EqualizerWidget::setNumberOfCentralFrequencies( int /*indexInCombobox*/ )
 {
     //get the selected number of central frequencies
@@ -115,6 +120,8 @@ void EqualizerWidget::setNumberOfCentralFrequencies( int /*indexInCombobox*/ )
         ui->frmSliders->layout()->addWidget( slider );
         m_sliders.push_back( slider );
         showScale = false; //its only necessary to show the scale for the first slider.
+        //connect the sliders to this widget's slot to be notified of equalizer changes
+        connect( slider, SIGNAL(adjustmentMade(double,double)), this, SLOT(makeAdjustment(double,double)) );
     }
 
     //set the sliders' central frequencies

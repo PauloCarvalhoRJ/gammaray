@@ -74,7 +74,8 @@ private:
 private Q_SLOTS:
     void onUpdateGridPlot( Attribute *at );
     void resetReferenceCurve();
-
+    /** Negative dB means attenuation, positive values mean amplification. */
+    void equalizerAdjusted( double centralFrequency, double dB );
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

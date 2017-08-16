@@ -108,6 +108,10 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     connect( m_equalizerWidget, SIGNAL(frequencyWindowUpdated(double,double)),
              m_spectrogram1Dplot, SLOT(updateFrequencyWindow(double,double)) );
 
+    //to be notified when the user adjusts the equalizer sliders
+    connect( m_equalizerWidget, SIGNAL(equalizerAdjusted(double,double)),
+             this, SLOT(equalizerAdjusted(double,double)) );
+
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
@@ -197,6 +201,11 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
 void ImageJockeyDialog::resetReferenceCurve()
 {
     m_spectrogram1Dplot->resetReferenceCurve();
+}
+
+void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
+{
+    Application::instance()->logError(QString("NNNNNNNNNNNNNNNNNNNNNNNN") + QString::number(centralFrequency) + " " + QString::number(dB) );
 }
 
 

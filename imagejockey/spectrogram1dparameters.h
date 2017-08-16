@@ -12,8 +12,10 @@ class Spectrogram1DParameters : public ExperimentalVariogramParameters
 public:
     Spectrogram1DParameters();
 
+    /** Returns the radius from the spectrogram center where the band starts outwardly. */
     double radius() const;
 
+    /** Returns the radius from the spectrogram center where the band ends. */
     double endRadius() const;
 
     /** Returns the number of vertexes per band (2 total) in the 2D (map view) geometry. */
@@ -30,15 +32,19 @@ public:
     /** Returns the distance between the axis along _azimuth and the location given by (x,y). */
     double distanceToAxis( double x, double y );
 
+    /** Returns a polygon of a domain of influence around a center frequency given a frequency span around it.
+     * The domain is normally a rectangular area centered at the x,y location in the 2D spectrogram corresponding
+     * to the centerFrequency, oriented towards _azimuth, with _bandWidth wide and frequencySpan long.
+     * The _azimuthTolerance setting may result in clipping the rectanglar domain.
+     */
+    QList<QPointF> getAreaOfInfluence( double centerFrequency, double frequencySpan );
+
 public Q_SLOTS:
     void setRadius(double radius);
     void setEndRadius(double endRadius);
 
 protected:
-    /** The radius from the spectrogram center where the band starts outwardly. */
     double _radius;
-
-    /** The radius from the spectrogram center where the band ends. */
     double _endRadius;
 
 // ExperimentalVariogramParameters interface
