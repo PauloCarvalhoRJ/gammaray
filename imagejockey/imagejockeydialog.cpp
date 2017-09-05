@@ -213,9 +213,41 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
     //get the variable
     Attribute* at = cg->getAttributeFromGEOEASIndex( m_atSelector->getSelectedVariableGEOEASIndex() );
 
+    Application::instance()->logError(QString("NNNNNNNNNNNNNNNNNNNNNNNN = ") + QString::number(centralFrequency) + " " + QString::number(dB) );
 
+    //get the geometry of the area of influence in the 2D spectrogram.
+    //The central frequency is the distance from the center of the 2D spectrogram.
+    //The resulting area is defined taking into account the azimuth, which is set
+    //   in the Spectrogram1DParamaters object.
+    QList<QPointF> aoi = m_spectrogram1Dparams->getAreaOfInfluence( centralFrequency, m_equalizerWidget->getFrequencyStep() );
 
-    Application::instance()->logError(QString("NNNNNNNNNNNNNNNNNNNNNNNN") + QString::number(centralFrequency) + " " + QString::number(dB) );
+    //perform the equalization of values
+    cg->equalizeValues( aoi, dB, at->getAttributeGEOEASgivenIndex()-1 );
+
+    QList<QPointF>::iterator it = aoi.begin();
+    for( ; it != aoi.end(); ++it){
+        (*it).setX( (*it).x() * 2 );
+        (*it).setY( (*it).y() * 2 );
+    }
+
+    cg->equalizeValues( aoi, dB, at->getAttributeGEOEASgivenIndex()-1 );
+
+    //Perturb the splitter to force a grid redraw.
+    //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working)
+    {
+        QList<int> oldSizes = ui->splitter->sizes();
+        QList<int> tmpSizes = oldSizes;
+        tmpSizes[0] = oldSizes[0] + 1;
+        tmpSizes[1] = oldSizes[1] - 1;
+        ui->splitter->setSizes( tmpSizes );
+        qApp->processEvents();
+        ui->splitter->setSizes( oldSizes );
+        qApp->processEvents();
+    }
+
+    //causes an update in the 1D spectrogram widget
+    //TODO: this is not very elegant
+    m_spectrogram1Dparams->setAzimuth( m_spectrogram1Dparams->azimuth() );
 }
 
 

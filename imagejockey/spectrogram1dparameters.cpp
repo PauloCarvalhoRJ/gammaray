@@ -57,7 +57,8 @@ QList<QPointF> Spectrogram1DParameters::getAreaOfInfluence(double centerFrequenc
     QList<QPointF> result;
 
     //convert the azimuth into a trigonometric angle in radians
-    double angleRadians = ( _azimuth - 90.0d ) * Util::PI_OVER_180;
+    double azimuthp = -_azimuth - 90.0d ;
+    double angleRadians = ( azimuthp ) * Util::PI_OVER_180;
 
     // Center frequency and azimuth can by regarded as the radius and angle of polar coordinate in a 2D spectrogram.
     // then we convert them to x,y to get a 2D Cartesian location.
@@ -71,13 +72,13 @@ QList<QPointF> Spectrogram1DParameters::getAreaOfInfluence(double centerFrequenc
     result.push_back( QPointF(   _bandWidth,   halfFreqSpan ) );
     result.push_back( QPointF(   _bandWidth, - halfFreqSpan ) );
     result.push_back( QPointF( - _bandWidth, - halfFreqSpan ) );
+    result.push_back( QPointF( - _bandWidth,   halfFreqSpan ) );
 
     //rotates the rectangle towards the desired azimuth and
     //translates it the position corresponding to the 1D center frequency
-    double azimuthp = -_azimuth - 90.0d;
     Matrix3X3<double> xform = GeostatsUtils::getAnisoTransform( 1.0, 1.0, 1.0, azimuthp, 0.0, 0.0 );
     double not_used_in_2D;
-    for(int i = 0; i < 4; ++i){
+    for(int i = 0; i < 5; ++i){
         double x = result[i].x();
         double y = result[i].y();
         GeostatsUtils::transform( xform, x, y, not_used_in_2D );

@@ -97,8 +97,10 @@ public:
      * if the grid is 2D.
      * Make sure you load the desired realization with DataFile::setDataPage(), otherwise the value of the first
      * realization will be returned.
+     * @param logOnError Enables error logging.  Enabling this might cause overflow error if called frequently
+     *        with invalid coordinates, which is common when called from framework callbacks (e.g. grid rendering)
      */
-    double valueAt(uint dataColumn, double x, double y, double z);
+    double valueAt(uint dataColumn, double x, double y, double z, bool logOnError = false);
 
     /**
      * Make a call to DataFile::setDataPage() such that only the given realization number is loaded into memory.
@@ -112,6 +114,23 @@ public:
 
     /** Returns the grid's center. */
     SpatialLocation getCenter();
+
+    /** Amplifies (dB > 0) or attenuates (dB < 0) the values in the given data column (zero == first data column)
+     * Amplification means that positive values increase and negative values decrease.
+     * Attenuation means that values get closer to zero, so positive values decrease and negative
+     * values increase.
+     * @param area A set of points delimiting the area of the grid whithin the equalization will take place.
+     * @param dB A value in decibel scaling used to amplify or attenuate the values.
+     * @param dataColumn The zero-based index of the data column containing the values to be equalized.
+     */
+    void equalizeValues( QList<QPointF>& area, double dB, uint dataColumn );
+
+    /**
+     * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
+     * Returns false if the spatial coordinate lies outside the grid.
+     */
+    bool XYZtoIJK( double x, double y, double z,
+                   uint& i,   uint& j,   uint& k );
 
     //DataFile interface
 public:
@@ -136,6 +155,14 @@ public:
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;
     uint _nx, _ny, _nz, _nreal;
+
+    /**
+     * Sets a value in the data column (0 = 1st column) given a grid topological coordinate (IJK).
+     * @param i must be between 0 and NX-1.
+     * @param j must be between 0 and NY-1.
+     * @param k must be between 0 and NZ-1.
+     */
+    void setDataIJK( uint column, uint i, uint j, uint k, double value );
 };
 
 #endif // CARTESIANGRID_H

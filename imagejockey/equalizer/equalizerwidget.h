@@ -28,6 +28,11 @@ public:
     /** This is necessary to enable this QWidget subclass to be usable in stylesheets. */
     void paintEvent(QPaintEvent *pe);
 
+    /** Returns the frequency separation between each equalizer slider.
+     * Returns the entire frequency window if there is just one slider.
+     */
+    double getFrequencyStep();
+
 Q_SIGNALS:
     void frequencyWindowUpdated( double begin, double end );
     /** Negative dB means attenuation, positive values mean amplification. */

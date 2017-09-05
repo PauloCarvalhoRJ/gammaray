@@ -65,6 +65,18 @@ void EqualizerWidget::paintEvent(QPaintEvent */*pe*/)
     style()->drawPrimitive( QStyle::PE_Widget, &o, &p, this );
 }
 
+double EqualizerWidget::getFrequencyStep()
+{
+    //just one equalizer slider
+    if( m_sliders.size() == 1 )
+        //returns the frequency span of the entire frequency window
+        return getFrequencyWindowEnd() - getFrequencyWindowBegin();
+    else //two or more sliders
+        //returns the frequency separation between the first and second sliders
+        //assumes separation is the same for all equalizer sliders.
+        return m_sliders[1]->centralFrequency() - m_sliders[0]->centralFrequency();
+}
+
 void EqualizerWidget::setFrequencyLimits(double minFreqLim, double maxFreqLim)
 {
     m_maxFrequencyLimit = maxFreqLim;

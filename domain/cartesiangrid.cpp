@@ -6,6 +6,11 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "geostats/gridcell.h"
 
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/scoped_array.hpp>
+
 CartesianGrid::CartesianGrid( QString path )  : DataFile( path )
 {
     this->_dx = 0.0;
@@ -187,6 +192,13 @@ void CartesianGrid::setCellGeometry(int nx, int ny, int nz, double dx, double dy
                    _no_data_value, _nsvar_var_trn, _categorical_attributes);
 }
 
+void CartesianGrid::setDataIJK(uint column, uint i, uint j, uint k, double value)
+{
+    //TODO: verify any data update flags (specially in DataFile class)
+    uint dataRow = i + j*_nx + k*_ny*_nx;
+    _data[dataRow][column] = value;
+}
+
 std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPart, int indexColumImaginaryPart)
 {
     std::vector< std::complex<double> > result( _nx * _ny * _nz ); //[_nx][_ny][_nz]
@@ -251,30 +263,12 @@ std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, i
     return result;
 }
 
-double CartesianGrid::valueAt(uint dataColumn, double x, double y, double z)
+double CartesianGrid::valueAt(uint dataColumn, double x, double y, double z, bool logOnError )
 {
-    //TODO: add support for rotations
-    if( ! Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
-        Application::instance()->logError("CartesianGrid::valueAt(): rotation not supported yet.  Returning NDV or NaN.");
-        if( this->hasNoDataValue() )
-            return getNoDataValueAsDouble();
-        else
-            return std::numeric_limits<double>::quiet_NaN();
-    }
-
-    //compute the indexes from the spatial location.
-    double xWest = _x0 - _dx/2.0;
-    double ySouth = _y0 - _dy/2.0;
-    double zBottom = _z0 - _dz/2.0;
-    int i = (x - xWest) / _dx;
-    int j = (y - ySouth) / _dy;
-    int k = 0;
-    if( _nz > 1 )
-        k = (z - zBottom) / _dz;
-
-    //check whether the location is outside the grid
-    if( i < 0 || i >= (int)_nx || j < 0 || j >= (int)_ny || k < 0 || k >= (int)_nz ){
-        //returns NDV if it is defined, NaN otherwise
+    uint i, j, k;
+    if( ! XYZtoIJK( x, y, z, i, j, k ) ){
+        if( logOnError )
+            Application::instance()->logError("CartesianGrid::valueAt(): conversion from grid coordinates to spatial coordinates failed.  Returning NDV or NaN.");
         if( this->hasNoDataValue() )
             return getNoDataValueAsDouble();
         else
@@ -345,6 +339,73 @@ SpatialLocation CartesianGrid::getCenter()
     result._y = (yf + y0) / 2.0;
     result._z = (zf + z0) / 2.0;
     return result;
+}
+
+void CartesianGrid::equalizeValues(QList<QPointF> &area, double dB, uint dataColumn)
+{
+    //some typedefs to shorten code
+    typedef boost::geometry::model::d2::point_xy<double> boostPoint2D;
+    typedef boost::geometry::model::polygon<boostPoint2D> boostPolygon;
+
+    //define a Boost polygon from the area geometry points
+    const std::size_t n = area.size();
+    boost::scoped_array<boostPoint2D> points(new boostPoint2D[n]); //scoped_array frees memory when its scope ends.
+    for(std::size_t i = 0; i < n; ++i)
+        points[i] = boostPoint2D( area[i].x(), area[i].y() );
+    boostPolygon poly;
+    boost::geometry::assign_points( poly, std::make_pair(&points[0], &points[0] + n));
+
+    //scan the grid, testing each cell whether it lies within the area.
+    //TODO: this code assumes no grid rotation and that the grid is 2D.
+    SpatialLocation gridCenter = getCenter();
+    for( uint k = 0; k < getNZ(); ++k ){
+        // z coordinate is ignored in 2D spectrograms
+        for( uint j = 0; j < getNY(); ++j ){
+            double cellCenterY = getY0() + j * getDY();
+            for( uint i = 0; i < getNX(); ++i ){
+                double cellCenterX = getX0() + i * getDX();
+                boostPoint2D p(cellCenterX, cellCenterY);
+                // if the cell center lies within the area
+                // TODO: add a faster test (e.g. Cartesian distance to discard obviously out cells)
+                //       before the slower point-in-poly test.
+                if( boost::geometry::within(p, poly) ){
+                    double intensity;
+                    // get the grid value as is
+                    double value = dataIJK( dataColumn, i, j, k );
+                    // attenuate/amplify the value
+                    // TODO: implement the attenuation/amplification code
+                    value = 0.0;
+                    // set the value to the grid
+                    setDataIJK( dataColumn, i, j, k, value );
+                }
+            }
+        }
+    }
+}
+
+bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uint &k)
+{
+    //TODO: add support for rotations
+    if( ! Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
+        Application::instance()->logError("CartesianGrid::XYZtoIJK(): rotation not supported yet.  Returning false (invalid return values).");
+        return false;
+    }
+
+    //compute the indexes from the spatial location.
+    double xWest = _x0 - _dx/2.0;
+    double ySouth = _y0 - _dy/2.0;
+    double zBottom = _z0 - _dz/2.0;
+    i = (x - xWest) / _dx;
+    j = (y - ySouth) / _dy;
+    k = 0;
+    if( _nz > 1 )
+        k = (z - zBottom) / _dz;
+
+    //check whether the location is outside the grid
+    if( i < 0 || i >= (int)_nx || j < 0 || j >= (int)_ny || k < 0 || k >= (int)_nz ){
+        return false;
+    }
+    return true;
 }
 
 bool CartesianGrid::canHaveMetaData()
