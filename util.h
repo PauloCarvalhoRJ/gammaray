@@ -18,6 +18,7 @@ class CartesianGrid;
 class Attribute;
 class CategoryDefinition;
 class VariogramModel;
+class SpatialLocation;
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -468,6 +469,9 @@ public:
      * to its code.
      */
     static QString humanReadable( double value );
+
+    /** Mirrors a geometry (given as a set of QPointF) with respect a given point in space. */
+    static void mirror2D(QList<QPointF>& points, const SpatialLocation& point );
 };
 
 #endif // UTIL_H

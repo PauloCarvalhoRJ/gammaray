@@ -10,6 +10,7 @@
 #include "spectrogram1dparameters.h"
 #include "spectrogram1dplot.h"
 #include "equalizer/equalizerwidget.h"
+#include "util.h"
 
 #include <qwt_wheel.h>
 
@@ -224,11 +225,7 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
     //perform the equalization of values
     cg->equalizeValues( aoi, dB, at->getAttributeGEOEASgivenIndex()-1 );
 
-    QList<QPointF>::iterator it = aoi.begin();
-    for( ; it != aoi.end(); ++it){
-        (*it).setX( (*it).x() * 2 );
-        (*it).setY( (*it).y() * 2 );
-    }
+    Util::mirror2D( aoi, cg->getCenter() );
 
     cg->equalizeValues( aoi, dB, at->getAttributeGEOEASgivenIndex()-1 );
 

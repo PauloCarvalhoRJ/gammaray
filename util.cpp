@@ -1582,3 +1582,14 @@ QString Util::humanReadable(double value)
     std::sprintf(buffer, "%.1f%c", value / std::pow<double, int>(unit, exp), suffix);
     return QString( buffer );
 }
+
+void Util::mirror2D(QList<QPointF> &points, const SpatialLocation &point)
+{
+    QList<QPointF>::iterator it = points.begin();
+    for( ; it != points.end(); ++it){
+        double dx = (*it).x() - point._x;
+        double dy = (*it).y() - point._y;
+        (*it).setX( point._x - dx );
+        (*it).setY( point._y - dy );
+    }
+}
