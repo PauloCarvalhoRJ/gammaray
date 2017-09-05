@@ -120,10 +120,11 @@ public:
      * Attenuation means that values get closer to zero, so positive values decrease and negative
      * values increase.
      * @param area A set of points delimiting the area of the grid whithin the equalization will take place.
-     * @param dB A value in decibel scaling used to amplify or attenuate the values.
+     * @param delta_dB The mplification or attenuation factor.
      * @param dataColumn The zero-based index of the data column containing the values to be equalized.
+     * @param dB_reference The value corresponding to 0dB.
      */
-    void equalizeValues( QList<QPointF>& area, double dB, uint dataColumn );
+    void equalizeValues(QList<QPointF>& area, double delta_dB, uint dataColumn , double dB_reference);
 
     /**
      * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.

@@ -206,6 +206,8 @@ void ImageJockeyDialog::resetReferenceCurve()
 
 void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
 {
+    static double old_dB = 0.0d;
+
     //assuming the selected file is a Cartesian grid
     CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
     if( ! cg )
@@ -214,20 +216,26 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
     //get the variable
     Attribute* at = cg->getAttributeFromGEOEASIndex( m_atSelector->getSelectedVariableGEOEASIndex() );
 
-    Application::instance()->logError(QString("NNNNNNNNNNNNNNNNNNNNNNNN = ") + QString::number(centralFrequency) + " " + QString::number(dB) );
-
     //get the geometry of the area of influence in the 2D spectrogram.
     //The central frequency is the distance from the center of the 2D spectrogram.
     //The resulting area is defined taking into account the azimuth, which is set
     //   in the Spectrogram1DParamaters object.
     QList<QPointF> aoi = m_spectrogram1Dparams->getAreaOfInfluence( centralFrequency, m_equalizerWidget->getFrequencyStep() );
 
-    //perform the equalization of values
-    cg->equalizeValues( aoi, dB, at->getAttributeGEOEASgivenIndex()-1 );
+    //compute the dB variation with respect the previous adjstment command
+    double delta_dB = dB - old_dB;
 
+    //perform the equalization of values
+    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value() );
+
+    //mirror the area of influence about the center of the 2D spectrogram
     Util::mirror2D( aoi, cg->getCenter() );
 
-    cg->equalizeValues( aoi, dB, at->getAttributeGEOEASgivenIndex()-1 );
+    //perform the equalization in the opposite area to preserve the 2D spectrogram's symmetry
+    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value() );
+
+    //save the current dB setting for the next adjstment iteration
+    old_dB = dB;
 
     //Perturb the splitter to force a grid redraw.
     //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working)

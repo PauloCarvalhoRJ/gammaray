@@ -341,7 +341,7 @@ SpatialLocation CartesianGrid::getCenter()
     return result;
 }
 
-void CartesianGrid::equalizeValues(QList<QPointF> &area, double dB, uint dataColumn)
+void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint dataColumn, double dB_reference )
 {
     //some typedefs to shorten code
     typedef boost::geometry::model::d2::point_xy<double> boostPoint2D;
@@ -357,7 +357,6 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double dB, uint dataCol
 
     //scan the grid, testing each cell whether it lies within the area.
     //TODO: this code assumes no grid rotation and that the grid is 2D.
-    SpatialLocation gridCenter = getCenter();
     for( uint k = 0; k < getNZ(); ++k ){
         // z coordinate is ignored in 2D spectrograms
         for( uint j = 0; j < getNY(); ++j ){
@@ -369,13 +368,22 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double dB, uint dataCol
                 // TODO: add a faster test (e.g. Cartesian distance to discard obviously out cells)
                 //       before the slower point-in-poly test.
                 if( boost::geometry::within(p, poly) ){
-                    double intensity;
                     // get the grid value as is
                     double value = dataIJK( dataColumn, i, j, k );
-                    // attenuate/amplify the value
-                    // TODO: implement the attenuation/amplification code
-                    value = 0.0;
-                    // set the value to the grid
+                    // determine whether the value is negative
+                    bool isNegative = value < 0.0;
+                    // get the absolute value
+                    value = std::abs(value);
+                    // get the absolute value in dB
+                    double value_dB = Util::dB( value, dB_reference, 0.00001);
+                    // apply adjustment in dB
+                    value_dB += delta_dB;
+                    // attenuate/amplify the absolute value
+                    value = std::pow( 10.0d, value_dB / 20.0d ) * dB_reference;
+                    // add negative sign if the original value was negative
+                    if( isNegative )
+                        value = -value;
+                    // set the amplified/attenuated value to the grid
                     setDataIJK( dataColumn, i, j, k, value );
                 }
             }
