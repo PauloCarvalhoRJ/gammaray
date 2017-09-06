@@ -204,10 +204,8 @@ void ImageJockeyDialog::resetReferenceCurve()
     m_spectrogram1Dplot->resetReferenceCurve();
 }
 
-void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
+void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double delta_dB )
 {
-    static double old_dB = 0.0d;
-
     //assuming the selected file is a Cartesian grid
     CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
     if( ! cg )
@@ -222,9 +220,6 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
     //   in the Spectrogram1DParamaters object.
     QList<QPointF> aoi = m_spectrogram1Dparams->getAreaOfInfluence( centralFrequency, m_equalizerWidget->getFrequencyStep() );
 
-    //compute the dB variation with respect the previous adjstment command
-    double delta_dB = dB - old_dB;
-
     //perform the equalization of values
     cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value() );
 
@@ -233,9 +228,6 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double dB)
 
     //perform the equalization in the opposite area to preserve the 2D spectrogram's symmetry
     cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value() );
-
-    //save the current dB setting for the next adjstment iteration
-    old_dB = dB;
 
     //Perturb the splitter to force a grid redraw.
     //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working)

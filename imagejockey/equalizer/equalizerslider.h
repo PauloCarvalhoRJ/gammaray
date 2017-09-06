@@ -21,8 +21,8 @@ public:
     void setCentralFrequency(double centralFrequency);
 
 Q_SIGNALS:
-    /** Negative dB means attentuation.  Positive values mean amplification. */
-    void adjustmentMade( double centralFrequency, double dB );
+    /** Negative dB variation means attentuation.  Positive variations mean amplification. */
+    void adjustmentMade( double centralFrequency, double delta_dB );
 
 private Q_SLOTS:
     /** User slided the equalizer knob. */
@@ -33,6 +33,7 @@ private:
 
     QwtSlider* m_slider;
     double m_centralFrequency;
+    double m_previous_dB;
 };
 
 #endif // EQUALIZERSLIDER_H

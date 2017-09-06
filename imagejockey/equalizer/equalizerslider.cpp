@@ -8,7 +8,8 @@
 EqualizerSlider::EqualizerSlider(double centralFrequency, bool showScale, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::EqualizerSlider),
-    m_centralFrequency( centralFrequency )
+    m_centralFrequency( centralFrequency ),
+    m_previous_dB( 0.0d )
 {
     ui->setupUi(this);
 
@@ -42,6 +43,8 @@ void EqualizerSlider::setCentralFrequency(double centralFrequency)
 
 void EqualizerSlider::setValue(double value)
 {
-    emit adjustmentMade( m_centralFrequency, value );
+    double delta_dB = value - m_previous_dB;
+    emit adjustmentMade( m_centralFrequency, delta_dB );
+    m_previous_dB = value;
 }
 

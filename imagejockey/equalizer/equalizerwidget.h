@@ -35,8 +35,8 @@ public:
 
 Q_SIGNALS:
     void frequencyWindowUpdated( double begin, double end );
-    /** Negative dB means attenuation, positive values mean amplification. */
-    void equalizerAdjusted( double centralFrequency, double dB );
+    /** Negative dB variation means attenuation, positive values mean amplification. */
+    void equalizerAdjusted( double centralFrequency, double delta_dB );
 
 public Q_SLOTS:
     /** Sets the absolute limits the selected frequency limits can vary within. */
