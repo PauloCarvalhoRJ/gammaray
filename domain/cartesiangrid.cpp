@@ -355,6 +355,19 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
     boostPolygon poly;
     boost::geometry::assign_points( poly, std::make_pair(&points[0], &points[0] + n));
 
+    //get the 2D bounding box of the polygon
+    double minX = std::numeric_limits<double>::max();
+    double maxX = std::numeric_limits<double>::lowest();
+    double minY = std::numeric_limits<double>::max();
+    double maxY = std::numeric_limits<double>::lowest();
+    QList<QPointF>::iterator it = area.begin();
+    for( ; it != area.end(); ++it){
+        minX = std::min<double>( minX, (*it).x() );
+        maxX = std::max<double>( maxX, (*it).x() );
+        minY = std::min<double>( minY, (*it).y() );
+        maxY = std::max<double>( maxY, (*it).y() );
+    }
+
     //scan the grid, testing each cell whether it lies within the area.
     //TODO: this code assumes no grid rotation and that the grid is 2D.
     for( uint k = 0; k < getNZ(); ++k ){
@@ -365,9 +378,10 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
                 double cellCenterX = getX0() + i * getDX();
                 boostPoint2D p(cellCenterX, cellCenterY);
                 // if the cell center lies within the area
-                // TODO: add a faster test (e.g. Cartesian distance to discard obviously out cells)
-                //       before the slower point-in-poly test.
-                if( boost::geometry::within(p, poly) ){
+                // The bounding box test is a faster test to promplty discard cells obviously outside.
+                if(     Util::isWithinBBox( cellCenterX, cellCenterY, minX, minY, maxX, maxY )
+                        &&
+                        boost::geometry::within(p, poly) ){
                     // get the grid value as is
                     double value = dataIJK( dataColumn, i, j, k );
                     // determine whether the value is negative

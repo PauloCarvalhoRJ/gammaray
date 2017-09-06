@@ -472,6 +472,11 @@ public:
 
     /** Mirrors a geometry (given as a set of QPointF) with respect a given point in space. */
     static void mirror2D(QList<QPointF>& points, const SpatialLocation& point );
+
+    /** Tests whether the diven 2D location lies within the given 2D bounding box. */
+    static bool isWithinBBox( double x, double y,
+                                double minX, double minY,
+                                double maxX, double maxY );
 };
 
 #endif // UTIL_H
