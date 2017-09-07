@@ -6,6 +6,7 @@
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
 #include "domain/attribute.h"
+#include "domain/project.h"
 #include "imagejockeygridplot.h"
 #include "spectrogram1dparameters.h"
 #include "spectrogram1dplot.h"
@@ -44,6 +45,12 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
              m_atSelector, SLOT(onListVariables(DataFile*)) );
     connect( m_atSelector, SIGNAL(variableSelected(Attribute*)),
              this, SLOT(onUpdateGridPlot(Attribute*)));
+
+    //the combo box to choose the variable with the imaginary part
+    m_atSelectorImag = new VariableSelector();
+    ui->frmCmbImagPartPlaceholder->layout()->addWidget( m_atSelectorImag );
+    connect( m_cgSelector, SIGNAL(cartesianGridSelected(DataFile*)),
+             m_atSelectorImag, SLOT(onListVariables(DataFile*)) );
 
     //these wheels control the visual scale in decibels (dB)
     m_wheelColorMax = new QwtWheel();
@@ -124,6 +131,19 @@ ImageJockeyDialog::~ImageJockeyDialog()
     delete ui;
     delete m_spectrogram1Dparams;
     Application::instance()->logInfo("ImageJockeyDialog destroyed.");
+}
+
+void ImageJockeyDialog::spectrogramGridReplot()
+{
+    //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working)
+    QList<int> oldSizes = ui->splitter->sizes();
+    QList<int> tmpSizes = oldSizes;
+    tmpSizes[0] = oldSizes[0] + 1;
+    tmpSizes[1] = oldSizes[1] - 1;
+    ui->splitter->setSizes( tmpSizes );
+    qApp->processEvents();
+    ui->splitter->setSizes( oldSizes );
+    qApp->processEvents();
 }
 
 void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
@@ -229,18 +249,69 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double delta_
     //perform the equalization in the opposite area to preserve the 2D spectrogram's symmetry
     cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value() );
 
-    //Perturb the splitter to force a grid redraw.
-    //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working)
-    {
-        QList<int> oldSizes = ui->splitter->sizes();
-        QList<int> tmpSizes = oldSizes;
-        tmpSizes[0] = oldSizes[0] + 1;
-        tmpSizes[1] = oldSizes[1] - 1;
-        ui->splitter->setSizes( tmpSizes );
-        qApp->processEvents();
-        ui->splitter->setSizes( oldSizes );
-        qApp->processEvents();
-    }
+    //update the 2D spectrogram plot
+    spectrogramGridReplot();
+
+    //causes an update in the 1D spectrogram widget
+    //TODO: this is not very elegant
+    m_spectrogram1Dparams->setAzimuth( m_spectrogram1Dparams->azimuth() );
+}
+
+void ImageJockeyDialog::save()
+{
+
+}
+
+void ImageJockeyDialog::preview()
+{
+    //assuming the selected file is a Cartesian grid
+    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! cg )
+        return;
+
+    //creates a tmp path for the Cartesian grid with the FFT image
+    QString tmpPathFFT = Application::instance()->getProject()->generateUniqueTmpFilePath( "dat" );
+
+    //create a Cartesian grid object pointing to the newly created file
+    CartesianGrid* cgFFTtmp = new CartesianGrid( tmpPathFFT );
+
+    //get the gridspecs from the original FFT image
+    cgFFTtmp->setInfoFromOtherCG( cg );
+
+    //get the edited Fourier data
+    std::vector<std::complex<double> > data =
+         cg->getArray( m_atSelector->getSelectedVariableGEOEASIndex()-1,
+                       m_atSelectorImag->getSelectedVariableGEOEASIndex()-1
+                     );
+
+    //reverse FFT the edited data (result is written back to the input data array).
+    Util::fft3D( cg->getNX(), cg->getNY(), cg->getNZ(), data, FFTComputationMode::REVERSE );
+
+    //add the in-memory data (now in real space) to the new Cartesian grid object
+    cgFFTtmp->addDataColumns( data, "real part of rFFT", "imaginary part of rFFT" );
+
+    //save the grid to filesystem
+    cgFFTtmp->writeToFS();
+
+    //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
+    Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+}
+
+void ImageJockeyDialog::restore()
+{
+    //assuming the selected file is a Cartesian grid
+    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! cg )
+        return;
+
+    //delete data in memory (possibly edited)
+    cg->freeLoadedData();
+
+    //reread data from filesystem.
+    cg->loadData();
+
+    //update the 2D spectrogram plot
+    spectrogramGridReplot();
 
     //causes an update in the 1D spectrogram widget
     //TODO: this is not very elegant

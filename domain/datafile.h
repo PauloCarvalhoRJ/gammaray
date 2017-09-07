@@ -5,6 +5,7 @@
 #include <vector>
 #include <QMap>
 #include <QDateTime>
+#include <complex>
 
 class Attribute;
 class UnivariateCategoryClassification;
@@ -177,6 +178,7 @@ public:
      * @param categorical If true, the attribute is handled as a categorical variable.
      * @param cd The pointer to the CategoryDefinition object used to create the categorical attribute, normally
      *           set when the categorical paramater is true.
+     * @note This is a file-to-file operation.  To add in-memory data columns, try addDataColumn().
      */
     void addGEOEASColumn(Attribute *at,
                          const QString new_name = "",
@@ -232,6 +234,16 @@ public:
      */
     void setDataPageToAll();
 
+    /**
+     * Adds the given values in a vector of complex numbers as new or the first two columns of the in-memory data
+     * array (_data member variable). New Attribute objects are created to match the newly added data columns.  So,
+     * if the data file is saved, the GEO-EAS file will have names for the GEO-EAS data columns.
+     * ATTENTION: It is necessary to call File::writeToFS() to commit changes to the filesystem.
+     */
+    void addDataColumns( std::vector< std::complex<double> >& columns,
+                         const QString nameForNewAttributeOfRealPart,
+                         const QString nameForNewAttributeOfImaginaryPart);
+
 //File interface
     void deleteFromFS();
     void writeToFS();
@@ -240,6 +252,8 @@ protected:
 
     /**
      * The data table.  A matrix of doubles.
+     * Outer vector are rows of data.
+     * Inner vector are values in a row of data.
      */
     std::vector< std::vector<double> > _data;
 

@@ -638,3 +638,41 @@ void DataFile::setDataPageToAll()
 {
     setDataPage(0, std::numeric_limits<long>::max() );
 }
+
+void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
+                              const QString nameForNewAttributeOfRealPart,
+                              const QString nameForNewAttributeOfImaginaryPart)
+{
+    if( _data.empty() ){ //no data, column will be first column
+        _data.reserve( columns.size() );
+        std::vector< std::complex<double> >::iterator it = columns.begin();
+        for( ; it != columns.end(); ++it)
+            _data.push_back( { (*it).real(), (*it).imag() } );
+    } else { //there are data already, column will be appended to the current ones
+        std::vector< std::complex<double> >::iterator itColumn = columns.begin();
+        std::vector< std::vector<double> >::iterator itData = _data.begin();
+        //hopefully both iterators end at the same time
+        for( ; itColumn != columns.end(), itData != _data.end(); ++itColumn, ++itData ){
+            (*itData).push_back( (*itColumn).real() );
+            (*itData).push_back( (*itColumn).imag() );
+        }
+        if( itData != _data.end() || itColumn != columns.end() )
+            Application::instance()->logError("DataFile::addDataColumn(): number of values to add mismatched number of data rows.");
+    }
+
+    //get the GEO-EAS index for new attributes
+    uint indexGEOEASreal = _data[0].size() - 1; //assumes the first row has the correct number of data columns
+    uint indexGEOEASimag = _data[0].size(); //assumes the first row has the correct number of data columns
+
+    //Create new Attribute objects that correspond to the new data columns in memory
+    Attribute *newAttributeReal = new Attribute( nameForNewAttributeOfRealPart, indexGEOEASreal );
+    Attribute *newAttributeImag = new Attribute( nameForNewAttributeOfImaginaryPart, indexGEOEASimag );
+
+    //Add the new Attributes as child project component of this one
+    addChild( newAttributeReal );
+    addChild( newAttributeImag );
+
+    //sets this as parent of the new Attributes
+    newAttributeReal->setParent( this );
+    newAttributeImag->setParent( this );
+}

@@ -437,7 +437,7 @@ public:
      *  @note The array should be created by making a[nI*nJ*nK] and not a[nI][nJ][nK] to preserve memory locality (maximize cache hits)
      *  @param nI Number of elements in X/I direction.
      *  @param nJ Number of elements in Y/J direction.
-     *  @param nJ Number of elements in Y/J direction.
+     *  @param nK Number of elements in Z/K direction.
      *  @param values Input/output array of values (complex numbers).
      *  @param isig 0 or 1 to transform or back-transform respectively.
      */

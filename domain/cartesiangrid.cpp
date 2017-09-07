@@ -424,7 +424,7 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
         k = (z - zBottom) / _dz;
 
     //check whether the location is outside the grid
-    if( i < 0 || i >= (int)_nx || j < 0 || j >= (int)_ny || k < 0 || k >= (int)_nz ){
+    if( /*i < 0 ||*/ i >= (int)_nx || /*j < 0 ||*/ j >= (int)_ny || /*k < 0 ||*/ k >= (int)_nz ){
         return false;
     }
     return true;

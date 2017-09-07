@@ -38,6 +38,9 @@ private:
     /** Variable with the real part of the Fourier transform. */
     VariableSelector* m_atSelector;
 
+    /** Variable with the imaginary part of the Fourier transform. */
+    VariableSelector* m_atSelectorImag;
+
     /** Widget that displays the grid. */
     ImageJockeyGridPlot* m_gridPlot;
 
@@ -71,11 +74,19 @@ private:
     /** The set of sliders to attenuate or amplify frequency components. */
     EqualizerWidget* m_equalizerWidget;
 
+    /** Causes a replot in the 2D grid spectrogram display.
+     * TODO: Think of a more elegant way to trigger a replot, since QwtPlot's replot() is not working.
+    */
+    void spectrogramGridReplot();
+
 private Q_SLOTS:
     void onUpdateGridPlot( Attribute *at );
     void resetReferenceCurve();
     /** Negative dB variation means attenuation, positive variations mean amplification. */
     void equalizerAdjusted( double centralFrequency, double delta_dB );
+    void save();
+    void preview();
+    void restore();
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

@@ -3,7 +3,6 @@
 
 #include "datafile.h"
 #include "geostats/spatiallocation.h"
-#include <complex>
 #include <set>
 
 class GSLibParGrid;
@@ -32,12 +31,6 @@ public:
      *        turning them into common attributes, interpreted as continuous values.
      */
     void setInfoFromOtherCG( CartesianGrid* other_cg, bool copyCategoricalAttributesList = true );
-
-    /**
-     * @brief setGeometryFromOtherCG
-     * @param other_cg
-     */
-    void setGeometryFromOtherCG( CartesianGrid* other_cg );
 
     /**
      * Sets the cartesian grid metadata from the values in a grid paraemeter object.
