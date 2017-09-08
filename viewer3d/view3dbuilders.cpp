@@ -547,7 +547,6 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
                                          0 + k * 1 );
     structuredGrid->SetDimensions( nX+1, nY+1, 1 );
     structuredGrid->SetPoints(points);
-
     //assign the grid values to the grid cells
     structuredGrid->GetCellData()->SetScalars( values );
 

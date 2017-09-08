@@ -945,7 +945,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6"
+    previousVersions << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6"
                            << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
@@ -1546,4 +1546,59 @@ double Util::getAzimuth(double dx, double dy, int xstep, int ystep)
     else if( xstep < 0 && ystep > 0 ) //azimuth in 4th quadrant
         azimuth = 360.0 + atan( xstep*dx / ystep*dy ) * C_180_OVER_PI;
     return azimuth;
+}
+
+double Util::dB(double value, double refLevel, double epsilon)
+{
+    double absValue = std::abs<double>( value );
+    double valueToUse = value;
+    if( absValue < epsilon ){
+        if( value < 0.0 )
+            valueToUse = -epsilon;
+        else
+            valueToUse = epsilon;
+    }
+    return 20.0d * std::log10<double>( valueToUse / refLevel ).real();
+}
+
+QString Util::humanReadable(double value)
+{
+    //buffer string for formatting the output (QString's sptrintf doesn't honor field size)
+    char buffer[50];
+    //define base unit to change suffix (could be 1024 for ISO bytes (iB), for instance)
+    double unit = 1000.0d;
+    //return the plain value if it doesn't require a multiplier suffix (small values)
+    if (value <= unit){
+        std::sprintf(buffer, "%.1f", value);
+        return QString( buffer );
+    }
+    //compute the order of magnitude (approx. power of 1000) of the value
+    int exp = (int) (std::log10<double>(value).real() / std::log10<double>(unit).real());
+    //string that is a list of available multiplier suffixes
+    QString suffixes = "pnum kMGTPE";
+    //select the suffix
+    char suffix = suffixes.at( 5+exp-1 ).toLatin1(); //-5 because pico would result in a -5 index.
+    //format output, dividing the value by the power of 1000 found
+    std::sprintf(buffer, "%.1f%c", value / std::pow<double, int>(unit, exp), suffix);
+    return QString( buffer );
+}
+
+void Util::mirror2D(QList<QPointF> &points, const SpatialLocation &point)
+{
+    QList<QPointF>::iterator it = points.begin();
+    for( ; it != points.end(); ++it){
+        double dx = (*it).x() - point._x;
+        double dy = (*it).y() - point._y;
+        (*it).setX( point._x - dx );
+        (*it).setY( point._y - dy );
+    }
+}
+
+bool Util::isWithinBBox(double x, double y, double minX, double minY, double maxX, double maxY)
+{
+    if( x < minX ) return false;
+    if( x > maxX ) return false;
+    if( y < minY ) return false;
+    if( y > maxY ) return false;
+    return true;
 }

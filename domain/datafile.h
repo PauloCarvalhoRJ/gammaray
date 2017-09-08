@@ -5,6 +5,7 @@
 #include <vector>
 #include <QMap>
 #include <QDateTime>
+#include <complex>
 
 class Attribute;
 class UnivariateCategoryClassification;
@@ -41,10 +42,22 @@ public:
     double max( uint column );
 
     /**
+     * Returns the maximum absolute value in the given column.
+     * First column is 0.
+     */
+    double maxAbs( uint column );
+
+    /**
      * Returns the minimum value in the given column.
      * First column is 0.
      */
     double min( uint column );
+
+    /**
+     * Returns the minimum absolute value in the given column.
+     * First column is 0.
+     */
+    double minAbs( uint column );
 
     /**
      * Returns the arithmetic mean of the values in the given column.
@@ -165,6 +178,7 @@ public:
      * @param categorical If true, the attribute is handled as a categorical variable.
      * @param cd The pointer to the CategoryDefinition object used to create the categorical attribute, normally
      *           set when the categorical paramater is true.
+     * @note This is a file-to-file operation.  To add in-memory data columns, try addDataColumn().
      */
     void addGEOEASColumn(Attribute *at,
                          const QString new_name = "",
@@ -206,9 +220,12 @@ public:
     void freeLoadedData();
 
     /** Sets the data page (first and last data line to load).
-     * Setting a page, causes a reload in next calls to data() or loadData().
+     * Setting a page, causes a reload in next calls to data() or loadData().  The interval is inclusive,
+     * for example, 0 and 2 causes the first three lines of the data file to be loaded, so pay attention when computing
+     * data line numbers from grid indexes and realization numbers.
      * To read all data lines in the file, set any interval that will surely include
      * all data lines such as 0 and std::numeric_limits<long>::max().
+     * Setting a data page also helps in selecting a realization or range of realizations in Cartesian grids.
      */
     void setDataPage( long firstDataLine, long lastDataLine );
 
@@ -216,6 +233,16 @@ public:
      * @note WARNING! Makes the entire file to be loaded into memory!
      */
     void setDataPageToAll();
+
+    /**
+     * Adds the given values in a vector of complex numbers as new or the first two columns of the in-memory data
+     * array (_data member variable). New Attribute objects are created to match the newly added data columns.  So,
+     * if the data file is saved, the GEO-EAS file will have names for the GEO-EAS data columns.
+     * ATTENTION: It is necessary to call File::writeToFS() to commit changes to the filesystem.
+     */
+    void addDataColumns( std::vector< std::complex<double> >& columns,
+                         const QString nameForNewAttributeOfRealPart,
+                         const QString nameForNewAttributeOfImaginaryPart);
 
 //File interface
     void deleteFromFS();
@@ -225,6 +252,8 @@ protected:
 
     /**
      * The data table.  A matrix of doubles.
+     * Outer vector are rows of data.
+     * Inner vector are values in a row of data.
      */
     std::vector< std::vector<double> > _data;
 

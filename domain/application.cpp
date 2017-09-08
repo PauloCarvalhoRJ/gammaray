@@ -243,7 +243,8 @@ QString Application::getGhostscriptPathSetting()
 }
 
 Application::Application() :
-    _logWarnings( true )
+    _logWarnings( true ),
+    _logErrors( true )
 {
     this->_open_project = nullptr;
 }

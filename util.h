@@ -18,6 +18,7 @@ class CartesianGrid;
 class Attribute;
 class CategoryDefinition;
 class VariogramModel;
+class SpatialLocation;
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -28,8 +29,8 @@ enum class DisplayResolution : uint {
 
 /*! FFT computation mode for fft1d() and fft2d(). */
 enum class FFTComputationMode : int {
-    DIRECT = 0, /*!< Functions fft1d() and fft2d() takes an input in real space and result is in frequency space. */
-    REVERSE     /*!< Functions fft1d() and fft2d() takes an input in frequency space and result is in real space. */
+    DIRECT = 0, /*!< Functions fft*() take an input in real space and result is in frequency space. */
+    REVERSE     /*!< Functions fft*() take an input in frequency space and result is in real space. */
 };
 
 /*! Computation direction for fft1d() when taking a 3D array. */
@@ -37,6 +38,16 @@ enum class FFT1DDirection : int {
     DIR_I = 0, /*!< Computes along I (inlines). */
     DIR_J,     /*!< Computes along J (crosslines). */
     DIR_K      /*!< Computes along K (traces). */
+};
+
+enum class ColorScaling : uint {
+    ARITHMETIC = 0,
+    LOG
+};
+
+enum class ValueScaling : uint {
+    DIRECT = 0,
+    ABS
 };
 
 /**
@@ -426,7 +437,7 @@ public:
      *  @note The array should be created by making a[nI*nJ*nK] and not a[nI][nJ][nK] to preserve memory locality (maximize cache hits)
      *  @param nI Number of elements in X/I direction.
      *  @param nJ Number of elements in Y/J direction.
-     *  @param nJ Number of elements in Y/J direction.
+     *  @param nK Number of elements in Z/K direction.
      *  @param values Input/output array of values (complex numbers).
      *  @param isig 0 or 1 to transform or back-transform respectively.
      */
@@ -443,6 +454,29 @@ public:
      * The returned angle is in degrees and follow the GSLib convention.
      */
     static double getAzimuth(double dx, double dy, int xstep, int ystep );
+
+    /** Returns decibels of an input value with respect to a reference value.
+     * Examples.: dBm is defined as the decibel level of value in milliwatts with respect to 1mW.
+     *            dBi is defined as the gain in decibels of an antenna with respect to the ideal isotropic antenna.
+     * refLevel cannot be zero or a divison by zero error ensues.
+     * epsilon The smallest allowed absolute value as to avoid large negative results or even -inf (value = 0.0).
+     */
+    static double dB( double value, double refLevel, double epsilon);
+
+    /** Returns a text containing a better human readable value.
+     * E.g.: 25000000 results in "25M".  Client code can then append a basic unit: "25M" + "Hz" to make "25MHz".
+     * This function supports multiplier suffixes from pico (p) to Exa (E).  More can be added with small changes
+     * to its code.
+     */
+    static QString humanReadable( double value );
+
+    /** Mirrors a geometry (given as a set of QPointF) with respect a given point in space. */
+    static void mirror2D(QList<QPointF>& points, const SpatialLocation& point );
+
+    /** Tests whether the diven 2D location lies within the given 2D bounding box. */
+    static bool isWithinBBox( double x, double y,
+                                double minX, double minY,
+                                double maxX, double maxY );
 };
 
 #endif // UTIL_H

@@ -1,5 +1,7 @@
 #include "v3dcfgwidforattributeinmapcartesiangrid.h"
 #include "ui_v3dcfgwidforattributeinmapcartesiangrid.h"
+#include "util.h"
+#include <vtkLogLookupTable.h>
 
 V3DCfgWidForAttributeInMapCartesianGrid::V3DCfgWidForAttributeInMapCartesianGrid(
         CartesianGrid */*cartesianGrid*/,
@@ -33,6 +35,12 @@ V3DCfgWidForAttributeInMapCartesianGrid::V3DCfgWidForAttributeInMapCartesianGrid
     ui->spinColorMin->blockSignals(false);
     ui->spinColorMax->blockSignals(false);
 
+    //setup the dropdown menu with the color scaling options.
+    ui->cmbScaling->blockSignals(true);
+    ui->cmbScaling->addItem("Arithmetic", QVariant( (uint)ColorScaling::ARITHMETIC ));
+    ui->cmbScaling->addItem("Logarithmic", QVariant( (uint)ColorScaling::LOG ));
+    ui->cmbScaling->blockSignals(false);
+
 }
 
 V3DCfgWidForAttributeInMapCartesianGrid::~V3DCfgWidForAttributeInMapCartesianGrid()
@@ -58,6 +66,13 @@ void V3DCfgWidForAttributeInMapCartesianGrid::onUserMadeChanges()
     //change color map min and max
     mapper->SetScalarRange( ui->spinColorMin->value(),
                             ui->spinColorMax->value());
+
+    //change the color scaling
+    //downcasting to vtkLookupTable (assuming the color table was built in one of the View3dColorTables functions)
+    if( ui->cmbScaling->currentData().toUInt() == (uint)ColorScaling::ARITHMETIC )
+        ((vtkLookupTable*)mapper->GetLookupTable())->SetScaleToLinear();
+    if( ui->cmbScaling->currentData().toUInt() == (uint)ColorScaling::LOG )
+        ((vtkLookupTable*)mapper->GetLookupTable())->SetScaleToLog10();
 
     emit changed();
 }

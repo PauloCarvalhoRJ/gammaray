@@ -159,7 +159,16 @@ SOURCES += main.cpp\
     geostats/ijkdeltascache.cpp \
     dialogs/realizationselectiondialog.cpp \
     dialogs/gridresampledialog.cpp \
-    dialogs/multivariogramdialog.cpp
+    dialogs/multivariogramdialog.cpp \
+    imagejockey/imagejockeydialog.cpp \
+    imagejockey/imagejockeygridplot.cpp \
+    widgets/grcompass.cpp \
+    geostats/experimentalvariogramparameters.cpp \
+    imagejockey/spectrogram1dparameters.cpp \
+    imagejockey/spectrogram1dplot.cpp \
+    imagejockey/spectrogram1dplotpicker.cpp \
+    imagejockey/equalizer/equalizerwidget.cpp \
+    imagejockey/equalizer/equalizerslider.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -298,7 +307,16 @@ HEADERS  += mainwindow.h \
     geostats/ijkdeltascache.h \
     dialogs/realizationselectiondialog.h \
     dialogs/gridresampledialog.h \
-    dialogs/multivariogramdialog.h
+    dialogs/multivariogramdialog.h \
+    imagejockey/imagejockeydialog.h \
+    imagejockey/imagejockeygridplot.h \
+    widgets/grcompass.h \
+    geostats/experimentalvariogramparameters.h \
+    imagejockey/spectrogram1dparameters.h \
+    imagejockey/spectrogram1dplot.h \
+    imagejockey/spectrogram1dplotpicker.h \
+    imagejockey/equalizer/equalizerwidget.h \
+    imagejockey/equalizer/equalizerslider.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -356,7 +374,10 @@ FORMS    += mainwindow.ui \
     dialogs/ndvestimationdialog.ui \
     dialogs/realizationselectiondialog.ui \
     dialogs/gridresampledialog.ui \
-    dialogs/multivariogramdialog.ui
+    dialogs/multivariogramdialog.ui \
+    imagejockey/imagejockeydialog.ui \
+    imagejockey/equalizer/equalizerwidget.ui \
+    imagejockey/equalizer/equalizerslider.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -412,14 +433,16 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkImagingCore$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingFourier$$_VTK_VERSION_SUFFIX
+               -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
+               -lvtkImagingMath$$_VTK_VERSION_SUFFIX
+
 #=============================================================================
 
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 2.5.1
+VERSION = 2.7
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

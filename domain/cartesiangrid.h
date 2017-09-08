@@ -2,7 +2,7 @@
 #define CARTESIANGRID_H
 
 #include "datafile.h"
-#include <complex>
+#include "geostats/spatiallocation.h"
 #include <set>
 
 class GSLibParGrid;
@@ -31,12 +31,6 @@ public:
      *        turning them into common attributes, interpreted as continuous values.
      */
     void setInfoFromOtherCG( CartesianGrid* other_cg, bool copyCategoricalAttributesList = true );
-
-    /**
-     * @brief setGeometryFromOtherCG
-     * @param other_cg
-     */
-    void setGeometryFromOtherCG( CartesianGrid* other_cg );
 
     /**
      * Sets the cartesian grid metadata from the values in a grid paraemeter object.
@@ -91,6 +85,50 @@ public:
     std::vector< std::vector<double> > getResampledValues(int rateI, int rateJ, int rateK ,
                                                           int &finalNI, int &finalNJ, int &finalNK);
 
+    /** Returns the value of the variable (given by its zero-based index) at the given spatial location.
+     *  The function returns the value of grid cell that contains the given location.  The z coordinate is ignored
+     * if the grid is 2D.
+     * Make sure you load the desired realization with DataFile::setDataPage(), otherwise the value of the first
+     * realization will be returned.
+     * @param logOnError Enables error logging.  Enabling this might cause overflow error if called frequently
+     *        with invalid coordinates, which is common when called from framework callbacks (e.g. grid rendering)
+     */
+    double valueAt(uint dataColumn, double x, double y, double z, bool logOnError = false);
+
+    /**
+     * Make a call to DataFile::setDataPage() such that only the given realization number is loaded into memory.
+     * First realization is number 0 (zero).  To restore the default behavior (load entire data), call
+     * DataFile::setDataPageToAll().
+     */
+    void setDataPageToRealization( uint nreal );
+
+    /** Returns the length of the grid's box diagonal. */
+    double getDiagonalLength();
+
+    /** Returns the grid's center. */
+    SpatialLocation getCenter();
+
+    /** Amplifies (dB > 0) or attenuates (dB < 0) the values in the given data column (zero == first data column)
+     * Amplification means that positive values increase and negative values decrease.
+     * Attenuation means that values get closer to zero, so positive values decrease and negative
+     * values increase.
+     * @param area A set of points delimiting the area of the grid whithin the equalization will take place.
+     * @param delta_dB The mplification or attenuation factor.
+     * @param dataColumn The zero-based index of the data column containing the values to be equalized.
+     * @param dB_reference The value corresponding to 0dB.
+     * @param secondArea Another area used as spatial criterion.  If empty, this is not used.  If this area does
+     *        not intersect the first area (area parameter) no cell will be selected.
+     */
+    void equalizeValues(QList<QPointF>& area, double delta_dB, uint dataColumn, double dB_reference,
+                        const QList<QPointF>& secondArea = QList<QPointF>());
+
+    /**
+     * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
+     * Returns false if the spatial coordinate lies outside the grid.
+     */
+    bool XYZtoIJK( double x, double y, double z,
+                   uint& i,   uint& j,   uint& k );
+
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
@@ -114,6 +152,14 @@ public:
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;
     uint _nx, _ny, _nz, _nreal;
+
+    /**
+     * Sets a value in the data column (0 = 1st column) given a grid topological coordinate (IJK).
+     * @param i must be between 0 and NX-1.
+     * @param j must be between 0 and NY-1.
+     * @param k must be between 0 and NZ-1.
+     */
+    void setDataIJK( uint column, uint i, uint j, uint k, double value );
 };
 
 #endif // CARTESIANGRID_H
