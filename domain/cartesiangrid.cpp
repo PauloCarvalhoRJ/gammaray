@@ -341,7 +341,8 @@ SpatialLocation CartesianGrid::getCenter()
     return result;
 }
 
-void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint dataColumn, double dB_reference )
+void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint dataColumn, double dB_reference,
+                                   const QList<QPointF> &secondArea)
 {
     //some typedefs to shorten code
     typedef boost::geometry::model::d2::point_xy<double> boostPoint2D;
@@ -354,6 +355,16 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
         points[i] = boostPoint2D( area[i].x(), area[i].y() );
     boostPolygon poly;
     boost::geometry::assign_points( poly, std::make_pair(&points[0], &points[0] + n));
+
+    //define a Boost polygon from the second area (if not empty)
+    boostPolygon secondPoly;
+    if( ! secondArea.empty() ){
+        const std::size_t n = secondArea.size();
+        boost::scoped_array<boostPoint2D> secondPoints(new boostPoint2D[n]); //scoped_array frees memory when its scope ends.
+        for(std::size_t i = 0; i < n; ++i)
+            secondPoints[i] = boostPoint2D( secondArea[i].x(), secondArea[i].y() );
+        boost::geometry::assign_points( secondPoly, std::make_pair(&secondPoints[0], &secondPoints[0] + n));
+    }
 
     //get the 2D bounding box of the polygon
     double minX = std::numeric_limits<double>::max();
@@ -381,7 +392,9 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
                 // The bounding box test is a faster test to promplty discard cells obviously outside.
                 if(     Util::isWithinBBox( cellCenterX, cellCenterY, minX, minY, maxX, maxY )
                         &&
-                        boost::geometry::within(p, poly) ){
+                        boost::geometry::within(p, poly)
+                        &&
+                        ( secondArea.isEmpty() || boost::geometry::within(p, secondPoly) )   ){
                     // get the grid value as is
                     double value = dataIJK( dataColumn, i, j, k );
                     // determine whether the value is negative
@@ -424,7 +437,7 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
         k = (z - zBottom) / _dz;
 
     //check whether the location is outside the grid
-    if( /*i < 0 ||*/ i >= (int)_nx || /*j < 0 ||*/ j >= (int)_ny || /*k < 0 ||*/ k >= (int)_nz ){
+    if( /*i < 0 ||*/ i >= _nx || /*j < 0 ||*/ j >= _ny || /*k < 0 ||*/ k >= _nz ){
         return false;
     }
     return true;

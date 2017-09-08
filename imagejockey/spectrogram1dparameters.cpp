@@ -89,6 +89,17 @@ QList<QPointF> Spectrogram1DParameters::getAreaOfInfluence(double centerFrequenc
     return result;
 }
 
+QList<QPointF> Spectrogram1DParameters::getHalfBandGeometry()
+{
+    QList<QPointF> result;
+    const std::size_t n = getNPointsPerBandIn2DGeometry();
+    result.reserve( n );
+    for(std::size_t i = 0; i < n; ++i){
+        result.push_back( QPointF( _2DBand1x[i], _2DBand1y[i] ) );
+    }
+    return result;
+}
+
 void Spectrogram1DParameters::setEndRadius(double endRadius)
 {
     _endRadius = endRadius;

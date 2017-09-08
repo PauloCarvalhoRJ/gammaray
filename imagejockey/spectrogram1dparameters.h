@@ -39,6 +39,10 @@ public:
      */
     QList<QPointF> getAreaOfInfluence( double centerFrequency, double frequencySpan );
 
+    /** Returns the polygon of a half band.  The band is used to select cells along an azimuth in the 2D spectrogram to
+     *  plot a 1D spectrogram.  The other half can be obtained by symmetry/mirroring. */
+    QList<QPointF> getHalfBandGeometry();
+
 public Q_SLOTS:
     void setRadius(double radius);
     void setEndRadius(double endRadius);

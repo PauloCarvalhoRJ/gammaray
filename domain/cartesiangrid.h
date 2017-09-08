@@ -116,8 +116,11 @@ public:
      * @param delta_dB The mplification or attenuation factor.
      * @param dataColumn The zero-based index of the data column containing the values to be equalized.
      * @param dB_reference The value corresponding to 0dB.
+     * @param secondArea Another area used as spatial criterion.  If empty, this is not used.  If this area does
+     *        not intersect the first area (area parameter) no cell will be selected.
      */
-    void equalizeValues(QList<QPointF>& area, double delta_dB, uint dataColumn , double dB_reference);
+    void equalizeValues(QList<QPointF>& area, double delta_dB, uint dataColumn, double dB_reference,
+                        const QList<QPointF>& secondArea = QList<QPointF>());
 
     /**
      * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.

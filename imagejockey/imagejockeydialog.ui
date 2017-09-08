@@ -423,6 +423,9 @@
                 </property>
                 <item>
                  <widget class="QPushButton" name="btnPreview">
+                  <property name="toolTip">
+                   <string>View result in real space (reverse FFT)</string>
+                  </property>
                   <property name="text">
                    <string>Preview</string>
                   </property>
@@ -430,6 +433,9 @@
                 </item>
                 <item>
                  <widget class="QPushButton" name="btnRestoreOriginal">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Reload Fourier image data from filesystem (discard changes)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
                   <property name="text">
                    <string>Reload</string>
                   </property>
@@ -437,6 +443,9 @@
                 </item>
                 <item>
                  <widget class="QPushButton" name="btnSave">
+                  <property name="toolTip">
+                   <string>Save Fourier image grid to filesystem</string>
+                  </property>
                   <property name="text">
                    <string>Save</string>
                   </property>

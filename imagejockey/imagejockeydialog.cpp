@@ -240,14 +240,21 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double delta_
     //   in the Spectrogram1DParamaters object.
     QList<QPointF> aoi = m_spectrogram1Dparams->getAreaOfInfluence( centralFrequency, m_equalizerWidget->getFrequencyStep() );
 
+    //get the half-band geometry, as the azimuth tolerance setting may cause the final selection
+    //to clip the area-of-influence
+    QList<QPointF> halfBand = m_spectrogram1Dparams->getHalfBandGeometry();
+
     //perform the equalization of values
-    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value() );
+    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value(), halfBand );
 
     //mirror the area of influence about the center of the 2D spectrogram
     Util::mirror2D( aoi, cg->getCenter() );
 
+    //mirror the half-band geometry about the center of the 2D spectrogram
+    Util::mirror2D( halfBand, cg->getCenter() );
+
     //perform the equalization in the opposite area to preserve the 2D spectrogram's symmetry
-    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value() );
+    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value(), halfBand );
 
     //update the 2D spectrogram plot
     spectrogramGridReplot();
@@ -259,7 +266,15 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double delta_
 
 void ImageJockeyDialog::save()
 {
+    //assuming the selected file is a Cartesian grid
+    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! cg )
+        return;
 
+    //save edited Fourier image to filesystem
+    cg->writeToFS();
+
+    Application::instance()->logInfo("ImageJockeyDialog::save(): file saved.");
 }
 
 void ImageJockeyDialog::preview()
