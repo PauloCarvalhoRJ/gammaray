@@ -489,8 +489,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _right_clicked_attribute2 = static_cast<Attribute*>( index2.internalPointer() );
             if( _right_clicked_attribute->getContainingFile()->getFileType() == "CARTESIANGRID" ){
                 QString menu_caption_rfft = "rev. FFT: ";
-                menu_caption_rfft += "real = " + _right_clicked_attribute->getName();
-                menu_caption_rfft += "; imag = " + _right_clicked_attribute2->getName();
+                menu_caption_rfft += "mag. = " + _right_clicked_attribute->getName();
+                menu_caption_rfft += "; phase = " + _right_clicked_attribute2->getName();
                 _projectContextMenu->addAction(menu_caption_rfft, this, SLOT(onRFFT()));
             }
         }
@@ -1373,7 +1373,8 @@ void MainWindow::onFFT()
                  cg->getNY(),
                  cg->getNZ(),
                  array,
-                 FFTComputationMode::DIRECT);
+                 FFTComputationMode::DIRECT,
+                 FFTImageType::POLAR_FORM );
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
@@ -1385,7 +1386,7 @@ void MainWindow::onFFT()
     new_cg->setInfoFromOtherCG( cg, false );
 
     //save the results in the project's tmp directory
-    Util::createGEOEASGrid( "Real part", "Imaginary part", array, tmp_file_path);
+    Util::createGEOEASGrid( "Magnitude", "Angle", array, tmp_file_path);
 
     //import the saved file to the project
     Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
@@ -1609,8 +1610,8 @@ void MainWindow::onRFFT()
     //the parent file is surely a CartesianGrid.
     CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
 
-    //get the array containing the data (first variable is real part (amplitude spectrum) and
-    //the second is the imaginary part (phase spectrum)
+    //get the array containing the data (first variable is magnitude part (amplitude spectrum) and
+    //the second is the angle part (phase spectrum)
     std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1,
                                                               _right_clicked_attribute2->getAttributeGEOEASgivenIndex()-1);
 
@@ -1619,7 +1620,8 @@ void MainWindow::onRFFT()
                  cg->getNY(),
                  cg->getNZ(),
                  array,
-                 FFTComputationMode::REVERSE);
+                 FFTComputationMode::REVERSE,
+                 FFTImageType::POLAR_FORM);
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");

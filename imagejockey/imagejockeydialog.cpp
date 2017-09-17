@@ -302,7 +302,8 @@ void ImageJockeyDialog::preview()
                      );
 
     //reverse FFT the edited data (result is written back to the input data array).
-    Util::fft3D( cg->getNX(), cg->getNY(), cg->getNZ(), data, FFTComputationMode::REVERSE );
+    Util::fft3D( cg->getNX(), cg->getNY(), cg->getNZ(), data,
+                 FFTComputationMode::REVERSE, FFTImageType::POLAR_FORM );
 
     //add the in-memory data (now in real space) to the new Cartesian grid object
     cgFFTtmp->addDataColumns( data, "real part of rFFT", "imaginary part of rFFT" );

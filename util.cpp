@@ -1448,9 +1448,11 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     return result;
 }
 
-void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig)
+void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values,
+                 FFTComputationMode isig,
+                 FFTImageType itype )
 {
-    //create a vtk image from the value array
+    //create a vtk image from the input value array
     ////// index_shift = ( index + nINDEX/2) % nINDEX), if in reverse FFT mode,
     ////// shifts the lower frequencies components to the corners of the image for compatibility with RFFT algorithm/////
     vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
@@ -1467,6 +1469,8 @@ void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &val
                 if( isig == FFTComputationMode::DIRECT ) i_shift = i;
                 std::complex<double> value = values[i_shift + j_shift*nI + k_shift*nJ*nI];
                 double* cell = static_cast<double*>(image->GetScalarPointer(i,j,k));
+                if( isig == FFTComputationMode::REVERSE && itype == FFTImageType::POLAR_FORM )
+                    value = std::polar( value.real(), value.imag() );
                 cell[0] = value.real();
                 cell[1] = value.imag();
             }
@@ -1485,7 +1489,7 @@ void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &val
     fftFilter->SetInputData( image );
     fftFilter->Update();
 
-    //get the image in frequency/real domain
+    //return the result image in frequency/real domain (polar/rectangular form)
     ////// index_shift = ( index + nINDEX/2) % nINDEX), if in forward FFT mode,
     ////// shifts the lower frequencies components to the center of the image for ease of interpretation/////
     vtkSmartPointer<vtkImageData> imageOutput = fftFilter->GetOutput();
@@ -1500,8 +1504,14 @@ void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &val
                 if( isig == FFTComputationMode::REVERSE ) i_shift = i;
                 std::complex<double> value;
                 double* cell = static_cast<double*>(imageOutput->GetScalarPointer(i,j,k));
-                value.real( cell[0] );
-                value.imag( cell[1] );
+                if( isig == FFTComputationMode::DIRECT && itype == FFTImageType::POLAR_FORM ){
+                    std::complex<double> tmp( cell[0], cell[1] );
+                    value.real( std::abs( tmp ) );
+                    value.imag( std::arg( tmp ) );
+                } else {
+                    value.real( cell[0] );
+                    value.imag( cell[1] );
+                }
                 values[i_shift + j_shift*nI + k_shift*nJ*nI] = value;
             }
         }
