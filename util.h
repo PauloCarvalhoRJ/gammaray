@@ -33,6 +33,12 @@ enum class FFTComputationMode : int {
     REVERSE     /*!< Functions fft*() take an input in frequency space and result is in real space. */
 };
 
+/*! FFT image type for functions fft*(). */
+enum class FFTImageType : int {
+    RECTANGULAR_FORM = 0, /*!< Functions fft*() complex numbers are directly their real and imaginary components. */
+    POLAR_FORM     /*!< Functions fft*() complex numbers are in their polar form (magnitude == real part, angle == imaginary part). */
+};
+
 /*! Computation direction for fft1d() when taking a 3D array. */
 enum class FFT1DDirection : int {
     DIR_I = 0, /*!< Computes along I (inlines). */
@@ -440,8 +446,12 @@ public:
      *  @param nK Number of elements in Z/K direction.
      *  @param values Input/output array of values (complex numbers).
      *  @param isig 0 or 1 to transform or back-transform respectively.
+     *  @param itype Image type.  Either direct real and imaginary components or the complex numbers are in polar form (magnitude and angle).
      */
-    static void fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values, FFTComputationMode isig );
+    static void fft3D(int nI, int nJ, int nK,
+                      std::vector<std::complex<double> > &values,
+                      FFTComputationMode isig,
+                      FFTImageType itype = FFTImageType::RECTANGULAR_FORM );
 
     /** Compute the dip angle corresponding to grid steps.
      * the d* parameters are the grid cell sizes.
