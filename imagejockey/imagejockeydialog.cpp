@@ -28,7 +28,9 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     //maximizes the dialog
-    this->setWindowFlag( Qt::WindowMaximizeButtonHint );
+    Qt::WindowFlags flags = this->windowFlags();
+    flags |= Qt::WindowMaximizeButtonHint;
+    this->setWindowFlags( flags );
 
     //the grid plot widget (displayed in the left pane)
     m_gridPlot = new ImageJockeyGridPlot();
