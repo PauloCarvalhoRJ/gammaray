@@ -77,7 +77,7 @@ void Spectrogram1DPlotPicker::draw( const QPoint &pos )
 
     //get the current geometry points
     QVector<QPointF> drawnPointsSoFar;
-    for( int i = 0; i < m_drawingCurve->data()->size(); ++i){
+    for( uint i = 0; i < m_drawingCurve->data()->size(); ++i){
         drawnPointsSoFar.push_back( m_drawingCurve->data()->sample( i ) );
     }
 
