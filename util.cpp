@@ -584,9 +584,11 @@ bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, Catego
 
     //min, max, resolution for color scale
     GSLibParMultiValuedFixed* par12 = gpf.getParameter<GSLibParMultiValuedFixed*>(12);
-    par12->getParameter<GSLibParDouble*>(0)->_value = data_min;
-    par12->getParameter<GSLibParDouble*>(1)->_value = data_max;
-    par12->getParameter<GSLibParDouble*>(2)->_value = (data_max-data_min)/10.0;
+    Util::assureNonZeroWindow( par12->getParameter<GSLibParDouble*>(0)->_value,
+                               par12->getParameter<GSLibParDouble*>(1)->_value,
+                               data_min, data_max);
+    par12->getParameter<GSLibParDouble*>(2)->_value = (par12->getParameter<GSLibParDouble*>(1)->_value -
+                                                       par12->getParameter<GSLibParDouble*>(0)->_value)/10.0;
 
     //enable categorical display, if a category definition is passed
     if( cd ){
@@ -686,19 +688,25 @@ bool Util::viewPointSet(Attribute *variable, QWidget *parent, bool modal)
 
     //X limits
     GSLibParMultiValuedFixed* par4 = gpf.getParameter<GSLibParMultiValuedFixed*>(4);
-    par4->getParameter<GSLibParDouble*>(0)->_value = input_data_file->min( input_data_file->getXindex()-1 );
-    par4->getParameter<GSLibParDouble*>(1)->_value = input_data_file->max( input_data_file->getXindex()-1 );
+    Util::assureNonZeroWindow( par4->getParameter<GSLibParDouble*>(0)->_value,
+                               par4->getParameter<GSLibParDouble*>(1)->_value,
+                               input_data_file->min( input_data_file->getXindex()-1 ),
+                               input_data_file->max( input_data_file->getXindex()-1 ));
 
     //Y limits
     GSLibParMultiValuedFixed* par5 = gpf.getParameter<GSLibParMultiValuedFixed*>(5);
-    par5->getParameter<GSLibParDouble*>(0)->_value = input_data_file->min( input_data_file->getYindex()-1 );
-    par5->getParameter<GSLibParDouble*>(1)->_value = input_data_file->max( input_data_file->getYindex()-1 );
+    Util::assureNonZeroWindow( par5->getParameter<GSLibParDouble*>(0)->_value,
+                               par5->getParameter<GSLibParDouble*>(1)->_value,
+                               input_data_file->min( input_data_file->getYindex()-1 ),
+                               input_data_file->max( input_data_file->getYindex()-1 ));
 
     //color scale details
     GSLibParMultiValuedFixed* par10 = gpf.getParameter<GSLibParMultiValuedFixed*>(10);
-    par10->getParameter<GSLibParDouble*>(0)->_value = data_min;
-    par10->getParameter<GSLibParDouble*>(1)->_value = data_max;
-    par10->getParameter<GSLibParDouble*>(2)->_value = (data_max-data_min)/10.0; //color scale ticks in 10 steps
+    Util::assureNonZeroWindow( par10->getParameter<GSLibParDouble*>(0)->_value,
+                               par10->getParameter<GSLibParDouble*>(1)->_value,
+                               data_min, data_max);
+    par10->getParameter<GSLibParDouble*>(2)->_value = (par10->getParameter<GSLibParDouble*>(1)->_value -
+                                                       par10->getParameter<GSLibParDouble*>(0)->_value)/10.0; //color scale ticks in 10 steps
 
     //plot title
     gpf.getParameter<GSLibParString*>(12)->_value = title;
@@ -1611,4 +1619,19 @@ bool Util::isWithinBBox(double x, double y, double minX, double minY, double max
     if( y < minY ) return false;
     if( y > maxY ) return false;
     return true;
+}
+
+void Util::assureNonZeroWindow(double &outMin,
+                               double &outMax,
+                               double inMin,
+                               double inMax,
+                               double minWindowPercent)
+{
+    if( Util::almostEqual2sComplement( inMin, inMax, 1 ) ){
+        outMin = inMin - fabs( inMin * minWindowPercent );
+        outMax = inMax + fabs( inMax * minWindowPercent );
+    } else {
+        outMin = inMin;
+        outMax = inMax;
+    }
 }

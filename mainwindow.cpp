@@ -691,6 +691,17 @@ void MainWindow::onHistogram()
     //postscript file
     gpf.getParameter<GSLibParFile*>(1)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
 
+    //if min == max, then the default (0,-1) to get min/max from data causes the plot to fail
+    if( Util::almostEqual2sComplement( data_min, data_max, 1 ) ){
+        //set actual limits
+        GSLibParMultiValuedFixed* par2;
+        par2 = gpf.getParameter<GSLibParMultiValuedFixed*>(2);
+        Util::assureNonZeroWindow( par2->getParameter<GSLibParDouble*>(0)->_value,
+                                   par2->getParameter<GSLibParDouble*>(1)->_value,
+                                   data_min,
+                                   data_max);
+    }
+
     //plot title
     gpf.getParameter<GSLibParString*>(9)->_value = title;
 
