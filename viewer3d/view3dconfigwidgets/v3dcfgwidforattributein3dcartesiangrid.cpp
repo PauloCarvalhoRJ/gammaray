@@ -89,15 +89,48 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
     vtkObject::GlobalWarningDisplayOff();
     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-    subgrider->SetVOI(ui->sldILowClip->value(),
+    //get the object that triggered the call to this slot
+    QObject* obj = sender();
+    //check which slider was changed by the user
+    QSlider* slider = qobject_cast<QSlider*>( obj );
+    //validity direction
+    bool highPushesLow = true;
+    if( slider == ui->sldILowClip || slider == ui->sldJLowClip || slider == ui->sldKLowClip )
+        highPushesLow = false;
+
+    //assure validity (e.g. low clip > high clip)
+    //adjust slides dynamically depending on which direction the user is adjusting (high pushes low or low pushes high)
+    if( ui->sldILowClip->value() > ui->sldIHighClip->value() ){
+        if( highPushesLow )
+            ui->sldILowClip->setValue( ui->sldIHighClip->value() );
+        else
+            ui->sldIHighClip->setValue( ui->sldILowClip->value() );
+    }
+    if( ui->sldJLowClip->value() > ui->sldJHighClip->value() ){
+        if( highPushesLow )
+            ui->sldJLowClip->setValue( ui->sldJHighClip->value() );
+        else
+            ui->sldJHighClip->setValue( ui->sldJLowClip->value() );
+    }
+    if( ui->sldKLowClip->value() > ui->sldKHighClip->value() ){
+        if( highPushesLow )
+            ui->sldKLowClip->setValue( ui->sldKHighClip->value() );
+        else
+            ui->sldKHighClip->setValue( ui->sldKLowClip->value() );
+    }
+
+    //set the cliping planes
+    subgrider->SetVOI( ui->sldILowClip->value(),
                        ui->sldIHighClip->value(),
                        ui->sldJLowClip->value(),
                        ui->sldJHighClip->value(),
                        ui->sldKLowClip->value(),
                        ui->sldKHighClip->value());
 
+    //updates VTK
     mapper->SetInputConnection( subgrider->GetOutputPort());
 
+    //update the GUI label readout.
     updateLabels();
 
 //    subgrider->UpdateWholeExtent();
@@ -110,6 +143,7 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 //    subgrider->Update();
 //    subgrider->Set
 
+    //notify any listeners of changes
     emit changed();
 }
 

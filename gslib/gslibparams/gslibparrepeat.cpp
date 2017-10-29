@@ -20,7 +20,9 @@ void GSLibParRepeat::setCount(uint count)
         if( count == 0)
             Application::instance()->logError( "Cannot set repeat count to zero." );
         else if( count == 1 ){ //count == 1 means only the objects in _original_parameters collection
-            //TODO: deallocate elements first?
+            //de-allocate all the parameter objects first.
+            qDeleteAll( _repeated_parameters.begin(), _repeated_parameters.end() );
+            //clear the list.
             _repeated_parameters.clear();
         // if the count is decreasing
         } else if ( (int)(count-1) < number_of_repeated_parameters ) {

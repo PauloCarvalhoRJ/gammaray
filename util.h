@@ -487,6 +487,16 @@ public:
     static bool isWithinBBox( double x, double y,
                                 double minX, double minY,
                                 double maxX, double maxY );
+
+    /** Sets the given min/max values, unless the input values are equal.
+     * In this case, a small window is set around the values.
+     */
+    static void assureNonZeroWindow( double &outMin,
+                                     double &outMax,
+                                     double inMin,
+                                     double inMax,
+                                     double minWindowPercent = 0.01); //0.01 == 1%
+
 };
 
 #endif // UTIL_H
