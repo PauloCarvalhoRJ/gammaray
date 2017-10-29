@@ -82,17 +82,17 @@ public:
     /**
      * @brief Treats the text as an information text.
      */
-    void logInfo(const QString text );
+    void logInfo(const QString text, bool showMessageBox = false );
 
     /**
      * @brief Treats the text as an warning text.
      */
-    void logWarn(const QString text );
+    void logWarn(const QString text, bool showMessageBox = false );
 
     /**
      * @brief Treats the text as an error text.
      */
-    void logError(const QString text );
+    void logError(const QString text, bool showMessageBox = false );
 
     /** Updates the currently opened project display. */
     void refreshProjectTree();

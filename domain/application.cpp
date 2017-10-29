@@ -2,6 +2,7 @@
 #include "project.h"
 #include <QDir>
 #include <QSettings>
+#include <QMessageBox>
 
 //global instance pointer in the heap.
 Application* Application::_instance = nullptr;
@@ -76,28 +77,34 @@ void Application::setMaxGridCellCountFor3DVisualizationSetting(int value)
     qs.setValue("maxcellgrid3dview", value);
 }
 
-void Application::logInfo(const QString text)
+void Application::logInfo(const QString text, bool showMessageBox)
 {
     Q_ASSERT(_mw != 0);
     _mw->log_message( text, "information" );
+    if( showMessageBox )
+        QMessageBox::information( nullptr, "Information", text );
 }
 
-void Application::logWarn(const QString text)
+void Application::logWarn(const QString text, bool showMessageBox)
 {
     Q_ASSERT(_mw != 0);
     if( _logWarnings )
         _mw->log_message( text, "warning" );
     else
         _warningBuffer.push_back( text );
+    if( showMessageBox )
+        QMessageBox::warning( nullptr, "Warning", text );
 }
 
-void Application::logError(const QString text)
+void Application::logError(const QString text, bool showMessageBox)
 {
     Q_ASSERT(_mw != 0);
     if( _logErrors )
         _mw->log_message( text, "error" );
     else
         _errorBuffer.push_back( text );
+    if( showMessageBox )
+        QMessageBox::critical( nullptr, "Error", text );
 }
 
 void Application::refreshProjectTree()

@@ -90,11 +90,12 @@ void DataFile::loadData()
     if( this->getFileType() == "CARTESIANGRID"){
         CartesianGrid* cg = (CartesianGrid*)this;
         uint expected_total_lines = cg->getNX() * cg->getNY() * cg->getNZ() * cg->getNReal();
-        if( data_line_count != expected_total_lines )
+        if( data_line_count != expected_total_lines ){
             Application::instance()->logWarn( QString("DataFile::loadData(): number of parsed data lines (" +
                                                       QString::number( data_line_count ) +
-                                                      + ") differs from the expected lines computed from the cartesian grid parameters (" +
-                                                      QString::number( expected_total_lines )+ ")."));
+                                                      + ") differs from the expected lines computed from the Cartesian grid parameters (" +
+                                                      QString::number( expected_total_lines )+ ").  Truncated files may cause crashes and result in incorrect data analysis."), true);
+        }
     }
 
     Application::instance()->logInfo("Finished loading data.");
