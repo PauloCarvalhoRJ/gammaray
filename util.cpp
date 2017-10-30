@@ -1576,7 +1576,7 @@ double Util::dB(double value, double refLevel, double epsilon)
         else
             valueToUse = epsilon;
     }
-    return 20.0d * std::log10<double>( valueToUse / refLevel ).real();
+    return DECIBEL_SCALE_FACTOR * std::log10<double>( valueToUse / refLevel ).real();
 }
 
 QString Util::humanReadable(double value)
