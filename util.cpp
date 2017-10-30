@@ -1075,6 +1075,11 @@ bool Util::isLMC(VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel 
 {
     bool result = true;
 
+    if( !vmVar1 || !vmVar2 || !crossVariogram ){
+        Application::instance()->logError("Util::isLMC(): one of the variogram models is null.  Returning false.");
+        return false;
+    }
+
     VariogramModel* vmodels[] = { vmVar1, vmVar2, crossVariogram };
 
     //Do not allow power model.
