@@ -230,7 +230,7 @@ void MultiVariogramDialog::onVargplt( std::vector<QString> &expVarFilePaths )
         for(uint iVariable = 0; iVariable < nVariables; ++iVariable){
             for(uint iVar = 0; iVar < nVariograms; ++iVar){
                 for(uint iDir = 0; iDir < nDirections; ++iDir){
-                    int i = iVar + iDir*nVariograms + iVariable*nDirections*nVariograms;
+                    int i = iDir + iVar*nDirections + iVariable*nDirections*nVariograms;
                     par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[iVariable];
                     GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
                     par6_0_1->getParameter<GSLibParUInt*>(0)->_value = iDir+iVar*nDirections + 1;

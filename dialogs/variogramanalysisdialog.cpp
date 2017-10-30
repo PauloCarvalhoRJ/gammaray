@@ -1253,11 +1253,12 @@ void VariogramAnalysisDialog::onVargpltNReals( std::vector<QString> &expVarFileP
         for(uint iReal = 0; iReal < nreals; ++iReal){
             for(uint iVar = 0; iVar < nvarios; ++iVar){
                 for(uint iDir = 0; iDir < ndirections; ++iDir){
-                    int i = iVar + iDir*nvarios + iReal*ndirections*nvarios;
+                    Application::instance()->logError( QString::number(ndirections) );
+                    int i = iDir + iVar*ndirections + iReal*ndirections*nvarios;
                     par6->getParameter<GSLibParFile*>(i, 0)->_path = expVarFilePaths[iReal];
                     GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(i, 1);
                     par6_0_1->getParameter<GSLibParUInt*>(0)->_value = iDir+iVar*ndirections + 1;
-                    par6_0_1->getParameter<GSLibParUInt*>(1)->_value = iDir; //BUG1234: line style should alternat between directions
+                    par6_0_1->getParameter<GSLibParUInt*>(1)->_value = iDir;
                     par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 0;
                     par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
                     par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = (iReal % 15) + 1; //cycle through the available colors (except the gray tones)
