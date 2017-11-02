@@ -58,6 +58,7 @@
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
 #include "dialogs/multivariogramdialog.h"
+#include "dialogs/sgsimdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 
@@ -2046,4 +2047,10 @@ void MainWindow::openImageJockey()
     ImageJockeyDialog *ijd = new ImageJockeyDialog( this );
     //ijd->show();
     ijd->showMaximized();
+}
+
+void MainWindow::openSGSIM()
+{
+    SGSIMDialog *sgsd = new SGSIMDialog( this );
+    sgsd->show();
 }

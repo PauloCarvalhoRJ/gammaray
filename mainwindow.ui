@@ -279,8 +279,15 @@
     </property>
     <addaction name="actionImage_Jockey"/>
    </widget>
+   <widget class="QMenu" name="menuSimulation">
+    <property name="title">
+     <string>Simulation</string>
+    </property>
+    <addaction name="actionSGSIM"/>
+   </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEstimation"/>
+   <addaction name="menuSimulation"/>
    <addaction name="menuTools"/>
    <addaction name="menuHelp"/>
   </widget>
@@ -352,6 +359,11 @@
   <action name="actionImage_Jockey">
    <property name="text">
     <string>Image Jockey</string>
+   </property>
+  </action>
+  <action name="actionSGSIM">
+   <property name="text">
+    <string>SGSIM</string>
    </property>
   </action>
  </widget>
@@ -543,6 +555,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionSGSIM</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openSGSIM()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -555,5 +583,6 @@
   <slot>openIKPostProcessing()</slot>
   <slot>openCokriging()</slot>
   <slot>openImageJockey()</slot>
+  <slot>openSGSIM()</slot>
  </slots>
 </ui>

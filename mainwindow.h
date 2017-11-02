@@ -58,6 +58,7 @@ public slots:
     void openIKPostProcessing();
     void openCokriging();
     void openImageJockey();
+    void openSGSIM();
 
 private:
     Ui::MainWindow *ui;
