@@ -38,7 +38,7 @@ QString DistributionFieldSelector::getSelectedVariableName()
     return ui->cmbField->currentText();
 }
 
-void DistributionFieldSelector::onListVariables(Distribution *dist)
+void DistributionFieldSelector::onListFields(Distribution *dist)
 {
     m_dist = dist;
     ui->cmbField->clear();

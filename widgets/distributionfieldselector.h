@@ -24,9 +24,11 @@ public:
 signals:
     void fieldSelected( DistributionColumn* field );
 
+public slots:
+    void onListFields(Distribution *dist);
+
 private slots:
     void onSelection( int index );
-    void onListVariables(Distribution *dist);
 
 private:
     Ui::DistributionFieldSelector *ui;

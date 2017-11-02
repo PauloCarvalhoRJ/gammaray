@@ -5,15 +5,20 @@
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
 
-UnivariateDistributionSelector::UnivariateDistributionSelector(QWidget *parent) :
+UnivariateDistributionSelector::UnivariateDistributionSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::UnivariateDistributionSelector)
+    ui(new Ui::UnivariateDistributionSelector),
+    m_hasNotSetItem( show_not_set ),
+    m_dist( nullptr )
 {
     ui->setupUi(this);
 
     Project* project = Application::instance()->getProject();
 
     ObjectGroup* og = project->getDistributionsGroup();
+
+    if( m_hasNotSetItem )
+        ui->cmbUnivariateDistributions->addItem( "NOT SET" );
 
     for( int i = 0; i < og->getChildCount(); ++i){
         File* varFile = (File*)og->getChildByIndex( i );
@@ -43,4 +48,23 @@ UnivariateDistribution *UnivariateDistributionSelector::getSelectedDistribution(
         }
     }
     return nullptr;
+}
+
+void UnivariateDistributionSelector::onSelection(int /*index*/)
+{
+    m_dist = nullptr;
+    Project* project = Application::instance()->getProject();
+    ObjectGroup* og = project->getDistributionsGroup();
+    for( int i = 0; i < og->getChildCount(); ++i){
+        File* varFile = (File*)og->getChildByIndex( i );
+        if( varFile->getFileType() == "UNIDIST" ){
+            if( varFile->getName() == ui->cmbUnivariateDistributions->currentText() ){
+                m_dist = (Distribution*)varFile;
+                emit distributionSelected( m_dist );
+                return;
+            }
+        }
+    }
+    //the user may select "NOT SET", so emit signal with null pointer.
+    emit distributionSelected( nullptr );
 }

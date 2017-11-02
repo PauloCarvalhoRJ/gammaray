@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>406</width>
+    <width>255</width>
     <height>22</height>
    </rect>
   </property>
@@ -49,5 +49,25 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>cmbUnivariateDistributions</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>UnivariateDistributionSelector</receiver>
+   <slot>onSelection(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>134</x>
+     <y>20</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>213</x>
+     <y>21</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onSelection(int)</slot>
+ </slots>
 </ui>

@@ -9,6 +9,7 @@
 #include "widgets/variableselector.h"
 #include "widgets/univariatedistributionselector.h"
 #include "widgets/variogrammodelselector.h"
+#include "widgets/distributionfieldselector.h"
 
 SGSIMDialog::SGSIMDialog(QWidget *parent) :
     QDialog(parent),
@@ -37,35 +38,46 @@ SGSIMDialog::SGSIMDialog(QWidget *parent) :
     m_gridParameters->fillFields( m_par );
 
     //Point set widgets
-    PointSetSelector *m_primVarPSetSelector = new PointSetSelector();
+    m_primVarPSetSelector = new PointSetSelector();
     ui->frmPointSetPlaceholder->layout()->addWidget( m_primVarPSetSelector );
-    VariableSelector *m_primVarSelector = new VariableSelector();
+    m_primVarSelector = new VariableSelector();
     ui->frmPrimVarPlaceholder->layout()->addWidget( m_primVarSelector );
-    VariableSelector *m_primVarWgtSelector = new VariableSelector( true );
+    m_primVarWgtSelector = new VariableSelector( true );
     ui->frmPrimVarWgtPlaceholder->layout()->addWidget( m_primVarWgtSelector );
-    VariableSelector *m_primVarSecVarSelector = new VariableSelector( true );
+    m_primVarSecVarSelector = new VariableSelector( true );
     ui->frmSecVarPlaceholder->layout()->addWidget( m_primVarSecVarSelector );
+    connect( m_primVarPSetSelector, SIGNAL(pointSetSelected(DataFile*)),
+             m_primVarSelector, SLOT(onListVariables(DataFile*)) );
+    connect( m_primVarPSetSelector, SIGNAL(pointSetSelected(DataFile*)),
+             m_primVarWgtSelector, SLOT(onListVariables(DataFile*)) );
+    connect( m_primVarPSetSelector, SIGNAL(pointSetSelected(DataFile*)),
+             m_primVarSecVarSelector, SLOT(onListVariables(DataFile*)) );
+    m_primVarPSetSelector->onSelection( 0 );
 
     //Data transform widgets
-    UnivariateDistributionSelector *m_refDistFileSelector = new UnivariateDistributionSelector();
+    m_refDistFileSelector = new UnivariateDistributionSelector( true );
     ui->frmRefDistFilePlaceholder->layout()->addWidget( m_refDistFileSelector );
-    // .... *m_refDistValuesSelector = new ......()
-    //ui->frmDistValuesPlaceholder->layout()->addWidget( m_refDistValuesSelector );
-    // .... *m_refDistFreqSelector = new ......()
-    //ui->frmDistFreqPlaceholder->layout()->addWidget( m_refDistFreqSelector );
+    m_refDistValuesSelector = new DistributionFieldSelector();
+    ui->frmDistValuesPlaceholder->layout()->addWidget( m_refDistValuesSelector );
+    m_refDistFreqSelector = new DistributionFieldSelector();
+    ui->frmDistFreqPlaceholder->layout()->addWidget( m_refDistFreqSelector );
+    connect( m_refDistFileSelector, SIGNAL(distributionSelected(Distribution*)),
+             m_refDistValuesSelector, SLOT(onListFields(Distribution*)) );
+    connect( m_refDistFileSelector, SIGNAL(distributionSelected(Distribution*)),
+             m_refDistFreqSelector, SLOT(onListFields(Distribution*)) );
 
     //Grid geometry widgets
-    CartesianGridSelector *m_gridCopySpecsSelector = new CartesianGridSelector( true );
+    m_gridCopySpecsSelector = new CartesianGridSelector( true );
     ui->frmCopyGridSpecsPlaceholder->layout()->addWidget( m_gridCopySpecsSelector );
 
     //Secondary data widgets
-    CartesianGridSelector *m_secVarGridSelector = new CartesianGridSelector( true );
+    m_secVarGridSelector = new CartesianGridSelector( true );
     ui->frmSecDataGridPlaceholder->layout()->addWidget( m_secVarGridSelector );
-    VariableSelector *m_secVarVariableSelector = new VariableSelector( true );
+    m_secVarVariableSelector = new VariableSelector( true );
     ui->frmSecVarSelectorPlaceholder->layout()->addWidget( m_secVarVariableSelector );
 
     //Variogram model widgets
-    VariogramModelSelector *m_vModelSelector = new VariogramModelSelector();
+    m_vModelSelector = new VariogramModelSelector();
     ui->frmVariogramModelPlaceholder->layout()->addWidget( m_vModelSelector );
 
 }
