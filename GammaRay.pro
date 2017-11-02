@@ -169,7 +169,8 @@ SOURCES += main.cpp\
     imagejockey/spectrogram1dplotpicker.cpp \
     imagejockey/equalizer/equalizerwidget.cpp \
     imagejockey/equalizer/equalizerslider.cpp \
-    dialogs/sgsimdialog.cpp
+    dialogs/sgsimdialog.cpp \
+    widgets/distributionfieldselector.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -318,7 +319,8 @@ HEADERS  += mainwindow.h \
     imagejockey/spectrogram1dplotpicker.h \
     imagejockey/equalizer/equalizerwidget.h \
     imagejockey/equalizer/equalizerslider.h \
-    dialogs/sgsimdialog.h
+    dialogs/sgsimdialog.h \
+    widgets/distributionfieldselector.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -380,7 +382,8 @@ FORMS    += mainwindow.ui \
     imagejockey/imagejockeydialog.ui \
     imagejockey/equalizer/equalizerwidget.ui \
     imagejockey/equalizer/equalizerslider.ui \
-    dialogs/sgsimdialog.ui
+    dialogs/sgsimdialog.ui \
+    widgets/distributionfieldselector.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
