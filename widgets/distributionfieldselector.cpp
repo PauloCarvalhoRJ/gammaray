@@ -5,10 +5,11 @@
 #include "domain/distributioncolumn.h"
 #include "domain/application.h"
 
-DistributionFieldSelector::DistributionFieldSelector(QWidget *parent) :
+DistributionFieldSelector::DistributionFieldSelector(Roles::DistributionColumnRole purpose, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::DistributionFieldSelector),
-    m_dist( nullptr )
+    m_dist( nullptr ),
+    m_purpose( purpose )
 {
     ui->setupUi(this);
 }
@@ -50,7 +51,16 @@ void DistributionFieldSelector::onListFields(Distribution *dist)
     for(; it != all_contained_objects.end(); ++it){
         ProjectComponent* pc = (ProjectComponent*)(*it);
         if( pc->isAttribute() ){
+            Attribute *at_aspec = (Attribute*)pc;
+            int givenGEOEASindex = at_aspec->getAttributeGEOEASgivenIndex();
             ui->cmbField->addItem( pc->getIcon(), pc->getName() );
+            if( m_purpose == Roles::DistributionColumnRole::PVALUE &&
+                    givenGEOEASindex == dist->getTheColumnWithProbabilityRole() )
+                ui->cmbField->setCurrentIndex( ui->cmbField->count()-1 );
+            if( (m_purpose == Roles::DistributionColumnRole::VALUE ||
+                 m_purpose == Roles::DistributionColumnRole::LOGVALUE) &&
+                    givenGEOEASindex == dist->getTheColumnWithValueRole() )
+                ui->cmbField->setCurrentIndex( ui->cmbField->count()-1 );
         }
     }
 }

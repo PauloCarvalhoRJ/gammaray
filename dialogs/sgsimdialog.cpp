@@ -11,7 +11,7 @@
 #include "widgets/variogrammodelselector.h"
 #include "widgets/distributionfieldselector.h"
 
-SGSIMDialog::SGSIMDialog(QWidget *parent) :
+SGSIMDialog::SGSIMDialog( QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SGSIMDialog)
 {
@@ -57,9 +57,9 @@ SGSIMDialog::SGSIMDialog(QWidget *parent) :
     //Data transform widgets
     m_refDistFileSelector = new UnivariateDistributionSelector( true );
     ui->frmRefDistFilePlaceholder->layout()->addWidget( m_refDistFileSelector );
-    m_refDistValuesSelector = new DistributionFieldSelector();
+    m_refDistValuesSelector = new DistributionFieldSelector( Roles::DistributionColumnRole::VALUE );
     ui->frmDistValuesPlaceholder->layout()->addWidget( m_refDistValuesSelector );
-    m_refDistFreqSelector = new DistributionFieldSelector();
+    m_refDistFreqSelector = new DistributionFieldSelector( Roles::DistributionColumnRole::PVALUE );
     ui->frmDistFreqPlaceholder->layout()->addWidget( m_refDistFreqSelector );
     connect( m_refDistFileSelector, SIGNAL(distributionSelected(Distribution*)),
              m_refDistValuesSelector, SLOT(onListFields(Distribution*)) );
@@ -69,12 +69,16 @@ SGSIMDialog::SGSIMDialog(QWidget *parent) :
     //Grid geometry widgets
     m_gridCopySpecsSelector = new CartesianGridSelector( true );
     ui->frmCopyGridSpecsPlaceholder->layout()->addWidget( m_gridCopySpecsSelector );
+    connect( m_gridCopySpecsSelector, SIGNAL(cartesianGridSelected(DataFile*)),
+             this, SLOT(onGridCopySpectsSelected(DataFile*)));
 
     //Secondary data widgets
     m_secVarGridSelector = new CartesianGridSelector( true );
     ui->frmSecDataGridPlaceholder->layout()->addWidget( m_secVarGridSelector );
     m_secVarVariableSelector = new VariableSelector( true );
     ui->frmSecVarSelectorPlaceholder->layout()->addWidget( m_secVarVariableSelector );
+    connect( m_secVarGridSelector, SIGNAL(cartesianGridSelected(DataFile*)),
+             m_secVarVariableSelector, SLOT(onListVariables(DataFile*)));
 
     //Variogram model widgets
     m_vModelSelector = new VariogramModelSelector();
@@ -86,4 +90,17 @@ SGSIMDialog::~SGSIMDialog()
 {
     delete ui;
     Application::instance()->logInfo("SGSIMDialog destroyed.");
+}
+
+void SGSIMDialog::onGridCopySpectsSelected(DataFile *grid)
+{
+    if( ! grid )
+        return;
+    m_par->setFromCG((CartesianGrid*)grid);
+    m_gridParameters->fillFields( m_par );
+}
+
+void SGSIMDialog::onConfigAndRun()
+{
+
 }

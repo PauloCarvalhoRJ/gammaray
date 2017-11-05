@@ -1752,6 +1752,11 @@ void GSLibParameterFile::setDefaultValuesForHistpltsim()
     this->getParameter<GSLibParDouble*>(20)->_value = 0.0;
 }
 
+void GSLibParameterFile::setDefaultValuesForSgsim()
+{
+
+}
+
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
 {
     GSLibParMultiValuedVariable *mvv = new GSLibParMultiValuedVariable( parameter );
