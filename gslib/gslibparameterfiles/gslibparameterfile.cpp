@@ -1754,7 +1754,106 @@ void GSLibParameterFile::setDefaultValuesForHistpltsim()
 
 void GSLibParameterFile::setDefaultValuesForSgsim()
 {
-
+    //file with data
+    this->getParameter<GSLibParFile*>(0)->_path = "samples.dat";
+    //   columns for X,Y,Z,vr,wt,sec.var.
+    GSLibParMultiValuedFixed* par1 = this->getParameter<GSLibParMultiValuedFixed*>(1);
+    par1->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par1->getParameter<GSLibParUInt*>(1)->_value = 2;
+    par1->getParameter<GSLibParUInt*>(2)->_value = 0;
+    par1->getParameter<GSLibParUInt*>(3)->_value = 3;
+    par1->getParameter<GSLibParUInt*>(4)->_value = 0;
+    par1->getParameter<GSLibParUInt*>(5)->_value = 0;
+    //  trimming limits
+    GSLibParMultiValuedFixed* par2 = this->getParameter<GSLibParMultiValuedFixed*>(2);
+    par2->getParameter<GSLibParDouble*>(0)->_value = -1e20;
+    par2->getParameter<GSLibParDouble*>(1)->_value = 1e20;
+    //transform the data (0=no, 1=yes)
+    this->getParameter<GSLibParOption*>(3)->_selected_value = 1;
+    //   file for output trans table
+    this->getParameter<GSLibParFile*>(4)->_path = "transform.trn";
+    //   consider ref. dist (0=no, 1=yes)
+    this->getParameter<GSLibParOption*>(5)->_selected_value = 0;
+    //   file with ref. dist distribution
+    this->getParameter<GSLibParFile*>(6)->_path = "histsmth.dat";
+    //    columns for vr and wt
+    GSLibParMultiValuedFixed* par7 = this->getParameter<GSLibParMultiValuedFixed*>(7);
+    par7->getParameter<GSLibParUInt*>(0)->_value = 0;
+    par7->getParameter<GSLibParUInt*>(1)->_value = 0;
+    //   zmin,zmax(tail extrapolation)
+    GSLibParMultiValuedFixed* par8 = this->getParameter<GSLibParMultiValuedFixed*>(8);
+    par8->getParameter<GSLibParDouble*>(0)->_value = 0.0;
+    par8->getParameter<GSLibParDouble*>(1)->_value = 15.0;
+    //   lower tail option, parameter
+    GSLibParMultiValuedFixed* par9 = this->getParameter<GSLibParMultiValuedFixed*>(9);
+    par9->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par9->getParameter<GSLibParDouble*>(1)->_value = 0;
+    //   upper tail option, parameter
+    GSLibParMultiValuedFixed* par10 = this->getParameter<GSLibParMultiValuedFixed*>(10);
+    par10->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par10->getParameter<GSLibParDouble*>(1)->_value = 0;
+    //debugging level: 0,1,2,3
+    this->getParameter<GSLibParOption*>(11)->_selected_value = 0;
+    //file for debugging output
+    this->getParameter<GSLibParFile*>(12)->_path = "debug.dat";
+    //file for simulation output
+    this->getParameter<GSLibParFile*>(13)->_path = "sgsim.dat";
+    //number of realizations to generate
+    this->getParameter<GSLibParUInt*>(14)->_value = 1;
+    //nx,xmn,xsiz; ny,ymn,ysiz; nz,zmn,zsiz
+    GSLibParGrid* par15 = getParameter<GSLibParGrid*>(15);
+    par15->_specs_x->getParameter<GSLibParUInt*>(0)->_value = 10; //nx
+    par15->_specs_x->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min x
+    par15->_specs_x->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size x
+    par15->_specs_y->getParameter<GSLibParUInt*>(0)->_value = 10; //ny
+    par15->_specs_y->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min y
+    par15->_specs_y->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size y
+    par15->_specs_z->getParameter<GSLibParUInt*>(0)->_value = 1; //nz
+    par15->_specs_z->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min z
+    par15->_specs_z->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size z
+    //random number seed
+    this->getParameter<GSLibParUInt*>(16)->_value = 69069;
+    //min and max original data for sim
+    GSLibParMultiValuedFixed* par17 = this->getParameter<GSLibParMultiValuedFixed*>(17);
+    par17->getParameter<GSLibParUInt*>(0)->_value = 4;
+    par17->getParameter<GSLibParUInt*>(1)->_value = 8;
+    //number of simulated nodes to use
+    this->getParameter<GSLibParUInt*>(18)->_value = 12;
+    //assign data to nodes (0=no, 1=yes)
+    this->getParameter<GSLibParOption*>(19)->_selected_value = 0;
+    //multiple grid search (0=no, 1=yes),num
+    GSLibParMultiValuedFixed* par20 = this->getParameter<GSLibParMultiValuedFixed*>(20);
+    par20->getParameter<GSLibParOption*>(0)->_selected_value = 0;
+    par20->getParameter<GSLibParUInt*>(1)->_value = 0;
+    //maximum data per octant (0=not used)
+    this->getParameter<GSLibParUInt*>(21)->_value = 0;
+    //maximum search radii (hmax,hmin,vert)
+    GSLibParMultiValuedFixed* par22 = this->getParameter<GSLibParMultiValuedFixed*>(22);
+    par22->getParameter<GSLibParDouble*>(0)->_value = 10.0;
+    par22->getParameter<GSLibParDouble*>(1)->_value = 10.0;
+    par22->getParameter<GSLibParDouble*>(2)->_value = 10.0;
+    //angles for search ellipsoid
+    GSLibParMultiValuedFixed* par23 = this->getParameter<GSLibParMultiValuedFixed*>(23);
+    par23->getParameter<GSLibParDouble*>(0)->_value = 0.0;
+    par23->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+    par23->getParameter<GSLibParDouble*>(2)->_value = 0.0;
+    //size of covariance lookup table
+    GSLibParMultiValuedFixed* par24 = this->getParameter<GSLibParMultiValuedFixed*>(24);
+    par24->getParameter<GSLibParUInt*>(0)->_value = 25;
+    par24->getParameter<GSLibParUInt*>(1)->_value = 25;
+    par24->getParameter<GSLibParUInt*>(2)->_value = 5;
+    //ktype: 0=SK,1=OK,2=LVM,3=EXDR,4=COLC
+    GSLibParMultiValuedFixed* par25 = this->getParameter<GSLibParMultiValuedFixed*>(25);
+    par25->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par25->getParameter<GSLibParDouble*>(1)->_value = 0.6;
+    par25->getParameter<GSLibParDouble*>(2)->_value = 1.0;
+    //   file with LVM, EXDR, or COLC variable
+    this->getParameter<GSLibParFile*>(26)->_path = "seismic.dat";
+    //   column for secondary variable
+    this->getParameter<GSLibParUInt*>(27)->_value = 0;
+    //variogram model
+    GSLibParVModel *par28 = this->getParameter<GSLibParVModel*>(28);
+    par28->makeDefault();
 }
 
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
@@ -2444,6 +2543,47 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<string>                                            -title\n";
         out << "<range [-1:L] [1:R]>                                -positioning of stats (L to R: -1 to 1)\n";
         out << "<double>                                            -reference value for box plot\n";
+    }
+    par_file.close();
+
+    par_file_path = dir.absoluteFilePath("sgsim.par.tpl");
+    par_file.setFileName( par_file_path );
+    if( !par_file.exists() ){
+        par_file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&par_file);
+        out << "                  Parameters for SGSIM\n";
+        out << "                  ********************\n";
+        out << '\n';
+        out << "START OF PARAMETERS:\n";
+        out << "<file>                                                -file with data\n";
+        out << "<uint><uint><uint><uint><uint><uint>                  -  columns for X,Y,Z,vr,wt,sec.var.\n";
+        out << "<double><double>                                      -  trimming limits\n";
+        out << "<option [0:no] [1:yes]>                               -transform the data (0=no, 1=yes)\n";
+        out << "<file>                                                -  file for output trans table\n";
+        out << "<option [0:no] [1:yes]>                               -  consider ref. dist (0=no, 1=yes)\n";
+        out << "<file>                                                -  file with ref. dist distribution\n";
+        out << "<uint><uint>                                          -  columns for vr and wt\n";
+        out << "<double><double>                                      -  zmin,zmax(tail extrapolation)\n";
+        out << "<option [1:linear] [2:power]><double>                 -  lower tail option, parameter\n";
+        out << "<option [1:linear] [2:power] [4:hyperbolic]><double>  -  upper tail option, parameter\n";
+        out << "<option [0:0][1:1][2:2][3:3]>                         -debugging level: 0,1,2,3\n";
+        out << "<file>                                                -file for debugging output\n";
+        out << "<file>                                                -file for simulation output\n";
+        out << "<uint>                                                -number of realizations to generate\n";
+        out << "<grid>                                                -nx,xmn,xsiz; ny,ymn,ysiz; nz,zmn,zsiz\n";
+        out << "<uint>                                                -random number seed\n";
+        out << "<uint><uint>                                          -min and max original data for sim\n";
+        out << "<uint>                                                -number of simulated nodes to use\n";
+        out << "<option [0:no] [1:yes]>                               -assign data to nodes (0=no, 1=yes)\n";
+        out << "<option [0:no] [1:yes]><uint>                         -multiple grid search (0=no, 1=yes),num\n";
+        out << "<uint>                                                -maximum data per octant (0=not used)\n";
+        out << "<double><double><double>                              -maximum search radii (hmax,hmin,vert)\n";
+        out << "<double><double><double>                              -angles for search ellipsoid\n";
+        out << "<uint><uint><uint>                                    -size of covariance lookup table\n";
+        out << "<option [0:SK] [1:OK] [2:LVM] [3:EXDR] [4:COLC]><double><double>    -ktype: 0=SK,1=OK,2=LVM,3=EXDR,4=COLC\n";
+        out << "<file>                                                -  file with LVM, EXDR, or COLC variable\n";
+        out << "<uint>                                                -  column for secondary variable\n";
+        out << "<vmodel>                                              -variogram model\n";
     }
     par_file.close();
 }
