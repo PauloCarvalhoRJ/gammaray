@@ -429,7 +429,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_5">
      <property name="title">
-      <string>5) Set variogram model:</string>
+      <string>5) Set variogram model (sgsim parameters will be re-scaled to sill==1.0):</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_5">
       <item row="0" column="0">

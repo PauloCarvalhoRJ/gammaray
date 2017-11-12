@@ -652,75 +652,7 @@ void MainWindow::onSeeMetadata()
 
 void MainWindow::onHistogram()
 {
-
-    //get input data file
-    //the parent component of an attribute is a file
-    DataFile* input_data_file = (DataFile*)_right_clicked_attribute->getContainingFile();
-
-    //load file data.
-    input_data_file->loadData();
-
-    //get the variable index in parent data file
-    uint var_index = input_data_file->getFieldGEOEASIndex( _right_clicked_attribute->getName() );
-
-    //make plot/window title
-    QString title = _right_clicked_attribute->getContainingFile()->getName();
-    title.append("/");
-    title.append(_right_clicked_attribute->getName());
-    title.append(" histogram");
-
-    //Construct an object composition based on the parameter file template for the hisplt program.
-    GSLibParameterFile gpf( "histplt" );
-
-    //Set default values so we need to change less parameters and let
-    //the user change the others as one may see fit.
-    gpf.setDefaultValues();
-
-    //get the maximum and minimun of selected variable, excluding no-data value
-    double data_min = input_data_file->min( var_index-1 );
-    double data_max = input_data_file->max( var_index-1 );
-
-    //----------------set the minimum required histplt paramaters-----------------------
-    //input parameters (input file, variable and trimming limits)
-    GSLibParInputData* par0;
-    par0 = gpf.getParameter<GSLibParInputData*>(0);
-    par0->_file_with_data._path = input_data_file->getPath();
-    par0->_var_wgt_pairs.first()->_var_index = var_index;
-    par0->_trimming_limits._min = data_min - fabs( data_min/100.0 );
-    par0->_trimming_limits._max = data_max + fabs( data_max/100.0 );
-
-    //postscript file
-    gpf.getParameter<GSLibParFile*>(1)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
-
-    //if min == max, then the default (0,-1) to get min/max from data causes the plot to fail
-    if( Util::almostEqual2sComplement( data_min, data_max, 1 ) ){
-        //set actual limits
-        GSLibParMultiValuedFixed* par2;
-        par2 = gpf.getParameter<GSLibParMultiValuedFixed*>(2);
-        Util::assureNonZeroWindow( par2->getParameter<GSLibParDouble*>(0)->_value,
-                                   par2->getParameter<GSLibParDouble*>(1)->_value,
-                                   data_min,
-                                   data_max);
-    }
-
-    //plot title
-    gpf.getParameter<GSLibParString*>(9)->_value = title;
-
-    //reference value for the box plot
-    gpf.getParameter<GSLibParDouble*>(11)->_value = input_data_file->mean( var_index-1 );
-    //----------------------------------------------------------------------------------
-
-    //Generate the parameter file
-    QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
-    gpf.save( par_file_path );
-
-    //run histplt program
-    Application::instance()->logInfo("Starting histplt program...");
-    GSLib::instance()->runProgram( "histplt", par_file_path );
-
-    //display the plot output
-    DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(1)->_path, title, gpf, this);
-    dpd->show(); //show() makes dialog modalless
+    Util::viewHistogram( _right_clicked_attribute, this );
 }
 
 void MainWindow::onLocMap()

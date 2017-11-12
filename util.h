@@ -497,6 +497,15 @@ public:
                                      double inMax,
                                      double minWindowPercent = 0.01); //0.01 == 1%
 
+    /**
+     * Runs the GSLib program histplt and opens the plot dialog to view the histogram of
+     * variable.
+     * @param parent Parent QWidget for the plot dialog.
+     * @param modal If true, the method returns only when the user closes the Plot Dialog.
+     * @return True if modal == true and if the user did not cancel the Plot Dialog; false otherwise.
+     */
+    static bool viewHistogram( Attribute *at, QWidget *parent = nullptr, bool modal = false );
+
 };
 
 #endif // UTIL_H
