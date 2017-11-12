@@ -6,6 +6,7 @@
 #include "domain/pointset.h"
 #include "domain/univariatedistribution.h"
 #include "domain/cartesiangrid.h"
+#include "domain/attribute.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparams/widgets/widgetgslibpargrid.h"
@@ -17,6 +18,7 @@
 #include "widgets/univariatedistributionselector.h"
 #include "widgets/variogrammodelselector.h"
 #include "widgets/distributionfieldselector.h"
+#include "dialogs/displayplotdialog.h"
 #include "util.h"
 
 #include <QInputDialog>
@@ -402,6 +404,103 @@ void SGSIMDialog::onRealizationHistogram()
 
 void SGSIMDialog::onEnsembleHistogram()
 {
+    //get simulation data
+    CartesianGrid* gridRealizations = m_cg_simulation;
+    Attribute* realizationsAttribute = m_cg_simulation->getAttributeFromGEOEASIndex(1);
+
+    //load the data in grid
+    gridRealizations->loadData();
+
+    //get the maximum and minimun of selected variable, excluding no-data value
+    double data_min = gridRealizations->min( realizationsAttribute->getAttributeGEOEASgivenIndex()-1 );
+    double data_max = gridRealizations->max( realizationsAttribute->getAttributeGEOEASgivenIndex()-1 );
+    data_min -= std::fabs( data_min / 100.0 );
+    data_max += std::fabs( data_max / 100.0 );
+
+    //------------------------------parameters setting--------------------------------------
+
+    GSLibParameterFile gpf( "histpltsim" );
+
+    //Set default values so we need to change less parameters and let
+    //the user change the others as one may see fit.
+    gpf.setDefaultValues();
+
+    GSLibParMultiValuedFixed* par3 = gpf.getParameter<GSLibParMultiValuedFixed*>(3);
+    if( ! m_refDistFileSelector->getSelectedDistribution() ){
+        //Use the input data to provide a reference distribution
+        GSLibParMultiValuedFixed* sgsim_par1 = m_gpf_sgsim->getParameter<GSLibParMultiValuedFixed*>(1);
+        gpf.getParameter<GSLibParFile*>(2)->_path = m_gpf_sgsim->getParameter<GSLibParFile*>(0)->_path;
+        //   columns for reference variable and weight
+        par3->getParameter<GSLibParUInt*>(0)->_value = sgsim_par1->getParameter<GSLibParUInt*>(3)->_value;
+        par3->getParameter<GSLibParUInt*>(1)->_value = sgsim_par1->getParameter<GSLibParUInt*>(4)->_value;
+    } else {
+        //Use the selected reference distribution
+        GSLibParMultiValuedFixed* sgsim_par7 = m_gpf_sgsim->getParameter<GSLibParMultiValuedFixed*>(7);
+        gpf.getParameter<GSLibParFile*>(2)->_path = m_gpf_sgsim->getParameter<GSLibParFile*>(6)->_path;
+        //   columns for reference variable and weight
+        par3->getParameter<GSLibParUInt*>(0)->_value = sgsim_par7->getParameter<GSLibParUInt*>(0)->_value;
+        par3->getParameter<GSLibParUInt*>(1)->_value = sgsim_par7->getParameter<GSLibParUInt*>(1)->_value;
+    }
+
+    //file with distributions to check
+    gpf.getParameter<GSLibParFile*>(4)->_path = m_gpf_sgsim->getParameter<GSLibParFile*>(13)->_path;
+
+    //   columns for variable and weight
+    GSLibParMultiValuedFixed* par5 = gpf.getParameter<GSLibParMultiValuedFixed*>(5);
+    par5->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par5->getParameter<GSLibParUInt*>(1)->_value = 0;
+
+    //   start and finish histograms (usually 1 and nreal)
+    GSLibParMultiValuedFixed* par7 = gpf.getParameter<GSLibParMultiValuedFixed*>(7);
+    par7->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par7->getParameter<GSLibParUInt*>(1)->_value = m_gpf_sgsim->getParameter<GSLibParUInt*>(14)->_value;
+
+    //   nx, ny, nz
+    GSLibParMultiValuedFixed* par8 = gpf.getParameter<GSLibParMultiValuedFixed*>(8);
+    par8->getParameter<GSLibParUInt*>(0)->_value = gridRealizations->getNX();
+    par8->getParameter<GSLibParUInt*>(1)->_value = gridRealizations->getNY();
+    par8->getParameter<GSLibParUInt*>(2)->_value = gridRealizations->getNZ();
+
+    //   trimming limits
+    GSLibParMultiValuedFixed* par9 = gpf.getParameter<GSLibParMultiValuedFixed*>(9);
+    par9->getParameter<GSLibParDouble*>(0)->_value = data_min;
+    par9->getParameter<GSLibParDouble*>(1)->_value = data_max;
+
+    //file for PostScript output
+    gpf.getParameter<GSLibParFile*>(10)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+    //file for summary output (always used)
+    gpf.getParameter<GSLibParFile*>(11)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("txt");
+
+    //file for numeric output (used if flag set above)
+    gpf.getParameter<GSLibParFile*>(12)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");;
+
+    //attribute minimum and maximum
+    GSLibParMultiValuedFixed* par13 = gpf.getParameter<GSLibParMultiValuedFixed*>(13);
+    par13->getParameter<GSLibParDouble*>(0)->_value = data_min;
+    par13->getParameter<GSLibParDouble*>(1)->_value = data_max;
+
+    //title
+    QString title = m_primVarPSetSelector->getSelectedDataFile()->getName() + "/" +
+            m_primVarSelector->getSelectedVariableName() + ": SGSIM";
+    gpf.getParameter<GSLibParString*>(18)->_value = title;
+
+    //reference value for box plot
+    gpf.getParameter<GSLibParDouble*>(20)->_value = gridRealizations->mean( realizationsAttribute->getAttributeGEOEASgivenIndex()-1 );
+
+    //----------------------------------------------------------------------------------
+
+    //Generate the parameter file
+    QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    gpf.save( par_file_path );
+
+    //run histpltsim program
+    Application::instance()->logInfo("Starting histpltsim program...");
+    GSLib::instance()->runProgram( "histpltsim", par_file_path );
+
+    //display the plot output
+    DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(10)->_path, title, gpf, this);
+    dpd->show(); //show() makes dialog modalless
 
 }
 
