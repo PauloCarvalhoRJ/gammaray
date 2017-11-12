@@ -113,6 +113,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForCokb3d();
     } else if ( this->_program_name == "histpltsim" ){
         this->setDefaultValuesForHistpltsim();
+    } else if ( this->_program_name == "sgsim" ){
+        this->setDefaultValuesForSgsim();
     } else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
@@ -1845,8 +1847,8 @@ void GSLibParameterFile::setDefaultValuesForSgsim()
     //ktype: 0=SK,1=OK,2=LVM,3=EXDR,4=COLC
     GSLibParMultiValuedFixed* par25 = this->getParameter<GSLibParMultiValuedFixed*>(25);
     par25->getParameter<GSLibParOption*>(0)->_selected_value = 1;
-    par25->getParameter<GSLibParDouble*>(1)->_value = 0.6;
-    par25->getParameter<GSLibParDouble*>(2)->_value = 1.0;
+    par25->getParameter<GSLibParDouble*>(1)->_value = 0.6; //correlation coefficient for collocated CoK
+    par25->getParameter<GSLibParDouble*>(2)->_value = 1.0; //variance reduction factor for collocated CoK
     //   file with LVM, EXDR, or COLC variable
     this->getParameter<GSLibParFile*>(26)->_path = "seismic.dat";
     //   column for secondary variable
@@ -2580,7 +2582,7 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<double><double><double>                              -maximum search radii (hmax,hmin,vert)\n";
         out << "<double><double><double>                              -angles for search ellipsoid\n";
         out << "<uint><uint><uint>                                    -size of covariance lookup table\n";
-        out << "<option [0:SK] [1:OK] [2:LVM] [3:EXDR] [4:COLC]><double><double>    -ktype: 0=SK,1=OK,2=LVM,3=EXDR,4=COLC\n";
+        out << "<option [0:SK] [1:OK] [2:LVM] [3:KED] [4:ColCoK]><double><double>    -ktype: 0=SK,1=OK,2=LVM,3=EXDR,4=COLC;corr.coef and var. red. factor for COLC;\n";
         out << "<file>                                                -  file with LVM, EXDR, or COLC variable\n";
         out << "<uint>                                                -  column for secondary variable\n";
         out << "<vmodel>                                              -variogram model\n";

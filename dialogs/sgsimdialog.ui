@@ -349,7 +349,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_4">
      <property name="title">
-      <string>4) Set extensive secondary data (optional):</string>
+      <string>4) Set extensive secondary data for multivariate kriging (optional):</string>
      </property>
      <layout class="QGridLayout" name="gridLayout_4">
       <item row="0" column="0">
@@ -549,12 +549,28 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>289</x>
-     <y>293</y>
+     <x>358</x>
+     <y>418</y>
     </hint>
     <hint type="destinationlabel">
      <x>357</x>
      <y>292</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnConfigAndRun</sender>
+   <signal>clicked()</signal>
+   <receiver>SGSIMDialog</receiver>
+   <slot>onConfigAndRun()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>96</x>
+     <y>365</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>123</x>
+     <y>400</y>
     </hint>
    </hints>
   </connection>

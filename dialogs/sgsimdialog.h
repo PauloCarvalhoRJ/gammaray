@@ -16,6 +16,9 @@ class DistributionFieldSelector;
 class CartesianGridSelector;
 class VariogramModelSelector;
 class DataFile;
+class GSLibParameterFile;
+class VariogramModel;
+class CartesianGrid;
 
 
 class SGSIMDialog : public QDialog
@@ -41,10 +44,18 @@ private:
     CartesianGridSelector *m_secVarGridSelector;
     VariableSelector *m_secVarVariableSelector;
     VariogramModelSelector *m_vModelSelector;
+    GSLibParameterFile* m_gpf_sgsim;
+    CartesianGrid* m_cg_simulation;
+    /** Called when the user changes the variogram model, so the variogram parameters
+     * in m_gpf_kt3d are read from the newly selected variogram model.*/
+    void updateVariogramParameters(VariogramModel *vm );
+    void preview();
 
 private slots:
     void onGridCopySpectsSelected( DataFile* grid );
     void onConfigAndRun();
- };
+    void onVariogramChanged();
+    void onSgsimCompletes();
+};
 
 #endif // SGSIMDIALOG_H

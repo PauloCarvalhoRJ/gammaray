@@ -39,6 +39,25 @@ QString DistributionFieldSelector::getSelectedVariableName()
     return ui->cmbField->currentText();
 }
 
+uint DistributionFieldSelector::getSelectedFieldGEOEASIndex()
+{
+    if( ! m_dist )
+        return 0;
+//    if( m_hasNotSetItem )
+//        if( ui->cmbVariable->currentIndex() == 0 )
+//            return 0;
+    QString field_name = ui->cmbField->currentText();
+    ProjectComponent *pc = m_dist->getChildByName( field_name );
+    if( ! pc ){
+        Application::instance()->logError("DistributionFieldSelector::getSelectedFieldGEOEASIndex(): field not found for name: " + field_name + ".");
+        return 0;
+    }
+    uint index =((DistributionColumn*)pc)->getAttributeGEOEASgivenIndex();
+    if( index < 1 )
+        Application::instance()->logError("DistributionFieldSelector::getSelectedFieldGEOEASIndex(): invalid GEO-EAS index returned for field: " + field_name + ".");
+    return index;
+}
+
 void DistributionFieldSelector::onListFields(Distribution *dist)
 {
     m_dist = dist;

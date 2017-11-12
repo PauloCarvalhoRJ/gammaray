@@ -22,6 +22,11 @@ public:
     /** Returns the name of the selected variable. */
     QString getSelectedVariableName();
 
+    /** Returns the GEO-EAS column index of the selected distribution field.
+      * @return Zero if no variable is selected or m_dist is null.
+      */
+    uint getSelectedFieldGEOEASIndex();
+
 signals:
     void fieldSelected( DistributionColumn* field );
 

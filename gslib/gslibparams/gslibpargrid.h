@@ -23,6 +23,17 @@ public:
     //Cartesian grid passed as parameter.
     void setFromCG( CartesianGrid* cg );
 
+    /** Shortcut getter methods. */
+    uint getNX();
+    double getDX();
+    double getX0();
+    uint getNY();
+    double getDY();
+    double getY0();
+    uint getNZ();
+    double getDZ();
+    double getZ0();
+
     // GSLibParType interface
 public:
     void save(QTextStream *out);
