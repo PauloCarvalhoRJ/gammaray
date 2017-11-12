@@ -144,8 +144,8 @@ void SGSIMDialog::preview()
     //set the grid geometry info.
     m_cg_simulation->setInfoFromGridParameter( m_gpf_sgsim->getParameter<GSLibParGrid*>(15) );
 
-    //sgsim usually uses -999 as no-data-value.
-    m_cg_simulation->setNoDataValue( "-999" );
+    //sgsim usually uses -99 as no-data-value.
+    m_cg_simulation->setNoDataValue( "-99" );
 
     //get the variable with the simulated values (normally the first)
     Attribute* est_var = (Attribute*)m_cg_simulation->getChildByIndex( 0 );
