@@ -108,5 +108,6 @@
         <file alias="v3Dyz32">art/iconsHD/v3Dyz32.png</file>
         <file alias="varnreals32">art/iconsHD/varnreals32.png</file>
         <file alias="removecurve32">art/iconsHD/removecurve32.png</file>
+        <file alias="histonreals32">art/iconsHD/histonreals32.png</file>
     </qresource>
 </RCC>

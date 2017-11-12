@@ -443,6 +443,11 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
     return true;
 }
 
+void CartesianGrid::setNReal(uint n)
+{
+    _nreal = n;
+}
+
 bool CartesianGrid::canHaveMetaData()
 {
     return true;

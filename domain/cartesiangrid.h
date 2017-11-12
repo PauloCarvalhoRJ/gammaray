@@ -129,6 +129,12 @@ public:
     bool XYZtoIJK( double x, double y, double z,
                    uint& i,   uint& j,   uint& k );
 
+    /** Sets the number of realizations.
+     * This is declarative only.  No check is performed whether there are actually the number of
+     * realizations informed.
+     */
+    void setNReal( uint n );
+
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */

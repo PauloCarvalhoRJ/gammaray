@@ -23,7 +23,9 @@
 
 SGSIMDialog::SGSIMDialog( QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::SGSIMDialog)
+    ui(new Ui::SGSIMDialog),
+    m_gpf_sgsim( nullptr ),
+    m_cg_simulation( nullptr )
 {
     ui->setupUi(this);
 
@@ -147,11 +149,20 @@ void SGSIMDialog::preview()
     //sgsim usually uses -99 as no-data-value.
     m_cg_simulation->setNoDataValue( "-99" );
 
+    //the number of realizations.
+    m_cg_simulation->setNReal( m_gpf_sgsim->getParameter<GSLibParUInt*>(14)->_value );
+
     //get the variable with the simulated values (normally the first)
     Attribute* est_var = (Attribute*)m_cg_simulation->getChildByIndex( 0 );
 
     //open the plot dialog
     Util::viewGrid( est_var, this );
+
+    //enable the action buttons that depend on completion of sgsim.
+    ui->btnRealizationHistogram->setEnabled( true );
+    ui->btnEnsembleHistogram->setEnabled( true );
+    ui->btnEnsembleVariogram->setEnabled( true );
+    ui->btnSaveRealizations->setEnabled( true );
 }
 
 void SGSIMDialog::onGridCopySpectsSelected(DataFile *grid)
@@ -287,7 +298,6 @@ void SGSIMDialog::onConfigAndRun()
     m_gpf_sgsim->getParameter<GSLibParUInt*>(27)->_value = m_secVarVariableSelector->getSelectedVariableGEOEASIndex();
 
     //----------------------------prepare and execute sgsim--------------------------------
-
     //show the sgsim parameters
     GSLibParametersDialog gsd( m_gpf_sgsim, this );
     int result = gsd.exec();
@@ -328,4 +338,24 @@ void SGSIMDialog::onSgsimCompletes()
     GSLib::instance()->disconnect();
 
     preview();
+}
+
+void SGSIMDialog::onRealizationHistogram()
+{
+
+}
+
+void SGSIMDialog::onEnsembleHistogram()
+{
+
+}
+
+void SGSIMDialog::onEnsembleVariogram()
+{
+
+}
+
+void SGSIMDialog::onSaveEnsemble()
+{
+
 }

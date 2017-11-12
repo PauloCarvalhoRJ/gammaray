@@ -56,6 +56,10 @@ private slots:
     void onConfigAndRun();
     void onVariogramChanged();
     void onSgsimCompletes();
+    void onRealizationHistogram();
+    void onEnsembleHistogram();
+    void onEnsembleVariogram();
+    void onSaveEnsemble();
 };
 
 #endif // SGSIMDIALOG_H
