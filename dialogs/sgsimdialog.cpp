@@ -746,5 +746,20 @@ void SGSIMDialog::onEnsembleVariogram()
 
 void SGSIMDialog::onSaveEnsemble()
 {
+    bool ok;
+    //propose a name based on the point set name.
+    QString proposed_name( m_primVarSelector->getSelectedVariableName() + "_SGSIM" );
+    proposed_name.append( ".grid" );
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid file",
+                                             "New grid file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_cg_name.isEmpty()){
+        //import the newly created grid file as a project item
+        Application::instance()->getProject()->importCartesianGrid( m_cg_simulation, new_cg_name );
+
+        //close dialog
+        emit this->accept();
+    }
 
 }
