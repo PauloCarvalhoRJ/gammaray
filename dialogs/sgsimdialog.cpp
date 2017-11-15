@@ -204,9 +204,6 @@ void SGSIMDialog::onConfigAndRun()
         return;
     }
 
-    //get the selected grid with secondary data (if any)
-    CartesianGrid* sec_data_grid = (CartesianGrid*)m_secVarGridSelector->getSelectedDataFile();
-
     //-----------------------------set sgsim parameters---------------------------
 
     if( ! m_gpf_sgsim ){
@@ -512,7 +509,7 @@ void SGSIMDialog::onEnsembleVariogram()
     uint nReals = m_cg_simulation->getNReal();
 
     //-------------------------------------------------------------------------------------------
-    //-----------First we run gam on each realization-----------------------------------------------------
+    //-----------1) Run gam on each realization--------------------------------------------------
     //-------------------------------------------------------------------------------------------
 
     //if the parameter file object was not constructed
@@ -600,8 +597,86 @@ void SGSIMDialog::onEnsembleVariogram()
         m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = oldNReal;
     }
 
+    //---------------------------------------------------------------------------------------------------------------
+    //-------------------------- 2) Run vmodel to generate the variogram model (reference)---------------------------
+    //---------------------------------------------------------------------------------------------------------------
+
+    //these are useful to compute lag, azimuth and dip from gam regular grid parameters
+    double xsize = 1.0;
+    double ysize = 1.0;
+    double zsize = 1.0;
+    if( m_gpf_gam )
+    {
+        GSLibParGrid* par5 = m_gpf_gam->getParameter<GSLibParGrid*>(5);
+        xsize = par5->_specs_x->getParameter<GSLibParDouble*>(2)->_value; //cell size x
+        ysize = par5->_specs_y->getParameter<GSLibParDouble*>(2)->_value; //cell size y
+        zsize = par5->_specs_z->getParameter<GSLibParDouble*>(2)->_value; //cell size z
+    }
+
+    //get the selected variogram model
+    VariogramModel* vm = m_vModelSelector->getSelectedVModel();
+
+    //Construct an object composition based on the parameter file template for the vmodel program.
+    GSLibParameterFile gpf_vmodel = GSLibParameterFile( "vmodel" );
+    //Set default values so we need to change less parameters and let
+    //the user change the others as one may see fit.
+    gpf_vmodel.setDefaultValues();
+
+    //fills the variogram model paramaters.
+    gpf_vmodel.setValuesFromParFile( vm->getPath() );
+
+    //output variography data for vargplt
+    gpf_vmodel.getParameter<GSLibParFile*>(0)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("var");
+
+    //match the number of lags and azimuths with that set for the gam on the realizations
+    GSLibParMultiValuedFixed *gam_par6 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(6);
+    GSLibParMultiValuedFixed *par1 = gpf_vmodel.getParameter<GSLibParMultiValuedFixed*>(1);
+    par1->getParameter<GSLibParUInt*>(0)->_value = gam_par6->getParameter<GSLibParUInt*>(0)->_value; //ndir
+    par1->getParameter<GSLibParUInt*>(1)->_value = gam_par6->getParameter<GSLibParUInt*>(1)->_value;
+
+    //get the number of directions
+    uint ndir = gam_par6->getParameter<GSLibParUInt*>(0)->_value;
+
+    //compute azimuth and dip from the grid cell dimensions and steps set in gam
+    GSLibParRepeat *gam_par7 = m_gpf_gam->getParameter<GSLibParRepeat*>(7); //repeat ndir-times
+    QList<double> azimuths;
+    QList<double> dips;
+    QList<double> lags;
+    for(uint i = 0; i < ndir; ++i)
+    {
+        GSLibParMultiValuedFixed *par7_0 = gam_par7->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        int xstep = par7_0->getParameter<GSLibParInt*>(0)->_value;
+        int ystep = par7_0->getParameter<GSLibParInt*>(1)->_value;
+        int zstep = par7_0->getParameter<GSLibParInt*>(2)->_value;
+        azimuths.append( Util::getAzimuth( xsize, ysize, xstep, ystep ) );
+        dips.append( Util::getDip(xsize, ysize, zsize, xstep, ystep, zstep) );
+        double xlag = xstep * xsize;
+        double ylag = ystep * ysize;
+        double zlag = zstep * zsize;
+        double lag = std::sqrt( xlag*xlag + ylag*ylag + zlag*zlag );
+        lags.append( lag );
+    }
+
+    //match the azimuths, dips and lags with those of the gam
+    GSLibParRepeat *par2 = gpf_vmodel.getParameter<GSLibParRepeat*>(2); //repeat ndir-times
+    par2->setCount( ndir );
+    for( uint i = 0; i < ndir; ++i)
+    {
+        GSLibParMultiValuedFixed *par2_0 = par2->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        par2_0->getParameter<GSLibParDouble*>(0)->_value = azimuths[i];
+        par2_0->getParameter<GSLibParDouble*>(1)->_value = dips[i];
+        par2_0->getParameter<GSLibParDouble*>(2)->_value = lags[i];
+    }
+
+    //Generate the vmodel parameter file
+    QString vmodel_par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    gpf_vmodel.save( vmodel_par_file_path );
+    //run vmodel program )
+    Application::instance()->logInfo("Starting vmodel program...");
+    GSLib::instance()->runProgram( "vmodel", vmodel_par_file_path );
+
     //-------------------------------------------------------------------------------------------
-    //-------------------------- Then we run vargplt--------------------------------------------
+    //-------------------------- 3) Run vargplt to show the variograms---------------------------
     //-------------------------------------------------------------------------------------------
 
     //make a GLSib parameter object if it wasn't done yet.
@@ -622,15 +697,15 @@ void SGSIMDialog::onEnsembleVariogram()
             Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
 
     //number of curves
-    gpf.getParameter<GSLibParUInt*>(1)->_value = nReals /*+ 1*/; // nvarios
+    gpf.getParameter<GSLibParUInt*>(1)->_value = nReals + 1; // nvarios (realizations + variogram model)
 
     //plot title
     gpf.getParameter<GSLibParString*>(5)->_value = title;
 
     //suggest display settings for each variogram curve
     GSLibParRepeat *par6 = gpf.getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
-    par6->setCount( nReals /*+ 1*/ ); //the realizations plus the variogram model (reference)
-    //the experimental curves
+    par6->setCount( nReals + 1 ); //the realizations plus the variogram model (reference)
+    //the realization curves
     for(uint iReal = 0; iReal < nReals; ++iReal){
         par6->getParameter<GSLibParFile*>(iReal, 0)->_path = expVarFilePaths[iReal];
         GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(iReal, 1);
@@ -640,6 +715,15 @@ void SGSIMDialog::onEnsembleVariogram()
         par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
         par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = 1;
     }
+    par6->getParameter<GSLibParFile*>(nReals, 0)->_path = gpf_vmodel.getParameter<GSLibParFile*>(0)->_path;
+    GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(nReals, 1);
+    par6_0_1->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par6_0_1->getParameter<GSLibParUInt*>(1)->_value = 0;
+    par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 1;
+    par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 0;
+    par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = 10;
+    //the variogram model curve
+
 
     //----------------------display plot------------------------------------------------------------
 
