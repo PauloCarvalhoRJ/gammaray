@@ -475,7 +475,14 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="5">
+      <item row="0" column="1">
+       <widget class="QLabel" name="label_12">
+        <property name="text">
+         <string>Real. histogram:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="6">
        <spacer name="horizontalSpacer_3">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -488,6 +495,13 @@
         </property>
        </spacer>
       </item>
+      <item row="0" column="3">
+       <widget class="QLabel" name="label_14">
+        <property name="text">
+         <string>Ensemble vario.:</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="0">
        <widget class="QPushButton" name="btnConfigAndRun">
         <property name="text">
@@ -499,24 +513,17 @@
         </property>
        </widget>
       </item>
-      <item row="0" column="3">
-       <widget class="QLabel" name="label_14">
-        <property name="text">
-         <string>Ensemble vario.:</string>
+      <item row="1" column="4">
+       <widget class="QPushButton" name="btnSaveRealizations">
+        <property name="enabled">
+         <bool>false</bool>
         </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QLabel" name="label_12">
         <property name="text">
-         <string>Real. histogram:</string>
+         <string/>
         </property>
-       </widget>
-      </item>
-      <item row="0" column="2">
-       <widget class="QLabel" name="label_13">
-        <property name="text">
-         <string>Ensemble histo.:</string>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
         </property>
        </widget>
       </item>
@@ -531,6 +538,13 @@
         <property name="icon">
          <iconset resource="../resources.qrc">
           <normaloff>:/icons32/varnreals32</normaloff>:/icons32/varnreals32</iconset>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QLabel" name="label_13">
+        <property name="text">
+         <string>Ensemble histo.:</string>
         </property>
        </widget>
       </item>
@@ -562,8 +576,15 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="4">
-       <widget class="QPushButton" name="btnSaveRealizations">
+      <item row="0" column="4">
+       <widget class="QLabel" name="label_15">
+        <property name="text">
+         <string>Save ensemble:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="5">
+       <widget class="QPushButton" name="btnPostsim">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -572,14 +593,14 @@
         </property>
         <property name="icon">
          <iconset resource="../resources.qrc">
-          <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
+          <normaloff>:/icons32/setting32</normaloff>:/icons32/setting32</iconset>
         </property>
        </widget>
       </item>
-      <item row="0" column="4">
-       <widget class="QLabel" name="label_15">
+      <item row="0" column="5">
+       <widget class="QLabel" name="label_16">
         <property name="text">
-         <string>Save ensemble:</string>
+         <string>Post-process:</string>
         </property>
        </widget>
       </item>
@@ -725,6 +746,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnPostsim</sender>
+   <signal>clicked()</signal>
+   <receiver>SGSIMDialog</receiver>
+   <slot>onPostsim()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>490</x>
+     <y>361</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>531</x>
+     <y>400</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onConfigAndRun()</slot>
@@ -732,5 +769,6 @@
   <slot>onEnsembleHistogram()</slot>
   <slot>onEnsembleVariogram()</slot>
   <slot>onSaveEnsemble()</slot>
+  <slot>onPostsim()</slot>
  </slots>
 </ui>

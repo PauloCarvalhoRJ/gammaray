@@ -255,6 +255,11 @@ private:
       */
     void setDefaultValuesForSgsim();
     /**
+      * Called by setDefaultValues if _program_name is "postsim".
+      */
+    void setDefaultValuesForPostsim();
+
+    /**
      * Wraps the given GSLib parameter type in a GSLibParMultivaluedVariable container object,
      * instead of directly adding it to the given parameter list.
      */

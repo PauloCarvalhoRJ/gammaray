@@ -47,10 +47,13 @@ private:
     GSLibParameterFile* m_gpf_sgsim;
     CartesianGrid* m_cg_simulation;
     GSLibParameterFile* m_gpf_gam;
+    GSLibParameterFile* m_gpf_postsim;
+    CartesianGrid* m_cg_postsim;
     /** Called when the user changes the variogram model, so the variogram parameters
      * in m_gpf_kt3d are read from the newly selected variogram model.*/
     void updateVariogramParameters(VariogramModel *vm );
     void preview();
+    void previewPostsim();
 
 private slots:
     void onGridCopySpectsSelected( DataFile* grid );
@@ -61,6 +64,7 @@ private slots:
     void onEnsembleHistogram();
     void onEnsembleVariogram();
     void onSaveEnsemble();
+    void onPostsim();
 };
 
 #endif // SGSIMDIALOG_H

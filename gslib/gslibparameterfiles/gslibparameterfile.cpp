@@ -115,6 +115,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForHistpltsim();
     } else if ( this->_program_name == "sgsim" ){
         this->setDefaultValuesForSgsim();
+    } else if ( this->_program_name == "postsim" ){
+        this->setDefaultValuesForPostsim();
     } else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
@@ -1858,6 +1860,29 @@ void GSLibParameterFile::setDefaultValuesForSgsim()
     par28->makeDefault();
 }
 
+void GSLibParameterFile::setDefaultValuesForPostsim()
+{
+    //file with simulated realizations
+    this->getParameter<GSLibParFile*>(0)->_path = "sgsim.dat";
+    //   number of realizations
+    this->getParameter<GSLibParUInt*>(1)->_value = 1;
+    //   trimming limits
+    GSLibParMultiValuedFixed* par2 = this->getParameter<GSLibParMultiValuedFixed*>(2);
+    par2->getParameter<GSLibParDouble*>(0)->_value = -1e20;
+    par2->getParameter<GSLibParDouble*>(1)->_value = 1e20;
+    //nx, ny, nz
+    GSLibParMultiValuedFixed* par3 = this->getParameter<GSLibParMultiValuedFixed*>(3);
+    par3->getParameter<GSLibParUInt*>(0)->_value = 10;
+    par3->getParameter<GSLibParUInt*>(1)->_value = 10;
+    par3->getParameter<GSLibParUInt*>(2)->_value = 1;
+    //file for output array(s)
+    this->getParameter<GSLibParFile*>(4)->_path = "sgsim.dat";
+    //output option, output parameter
+    GSLibParMultiValuedFixed* par5 = this->getParameter<GSLibParMultiValuedFixed*>(5);
+    par5->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par5->getParameter<GSLibParDouble*>(1)->_value = 0;
+}
+
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
 {
     GSLibParMultiValuedVariable *mvv = new GSLibParMultiValuedVariable( parameter );
@@ -2586,6 +2611,24 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<file>                                                -  file with LVM, EXDR, or COLC variable\n";
         out << "<uint>                                                -  column for secondary variable\n";
         out << "<vmodel>                                              -variogram model\n";
+    }
+    par_file.close();
+
+    par_file_path = dir.absoluteFilePath("postsim.par.tpl");
+    par_file.setFileName( par_file_path );
+    if( !par_file.exists() ){
+        par_file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&par_file);
+        out << "                  Parameters for POSTSIM\n";
+        out << "                  **********************\n";
+        out << '\n';
+        out << "START OF PARAMETERS\n";
+        out << "<file>                           -file with simulated realizations\n";
+        out << "<uint>                           -   number of realizations\n";
+        out << "<double><double>                 -   trimming limits\n";
+        out << "<uint><uint><uint>               -nx, ny, nz\n";
+        out << "<file>                           -file for output array(s)\n";
+        out << "<option [1:E-type and variance.][2:Prob. and mean above threshold][3:Percentile][4:Symmetric prob. interval]> <double>   -output option, output parameter\n";
     }
     par_file.close();
 }
