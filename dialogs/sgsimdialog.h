@@ -46,6 +46,7 @@ private:
     VariogramModelSelector *m_vModelSelector;
     GSLibParameterFile* m_gpf_sgsim;
     CartesianGrid* m_cg_simulation;
+    GSLibParameterFile* m_gpf_gam;
     /** Called when the user changes the variogram model, so the variogram parameters
      * in m_gpf_kt3d are read from the newly selected variogram model.*/
     void updateVariogramParameters(VariogramModel *vm );

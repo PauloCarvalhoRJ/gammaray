@@ -28,7 +28,8 @@ SGSIMDialog::SGSIMDialog( QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SGSIMDialog),
     m_gpf_sgsim( nullptr ),
-    m_cg_simulation( nullptr )
+    m_cg_simulation( nullptr ),
+    m_gpf_gam( nullptr )
 {
     ui->setupUi(this);
 
@@ -506,6 +507,156 @@ void SGSIMDialog::onEnsembleHistogram()
 
 void SGSIMDialog::onEnsembleVariogram()
 {
+
+    //get the number of realizations
+    uint nReals = m_cg_simulation->getNReal();
+
+    //-------------------------------------------------------------------------------------------
+    //-----------First we run gam on each realization-----------------------------------------------------
+    //-------------------------------------------------------------------------------------------
+
+    //if the parameter file object was not constructed
+    if( ! m_gpf_gam ){
+
+        //Construct an object composition based on the parameter file template for the gamv program.
+        m_gpf_gam = new GSLibParameterFile( "gam" );
+
+        //get input data file
+        //the parent component of an attribute is a file
+        //assumes the file is a Point Set, since the user is calling gamv
+        CartesianGrid* input_data_file = m_cg_simulation;
+
+        //loads data in file.
+        input_data_file->loadData();
+
+        //get the variable index in parent data file (always 1 in the case of simulations)
+        uint var_index = 1;
+
+        //Set default values so we need to change less parameters and let
+        //the user change the others as one may see fit.
+        m_gpf_gam->setDefaultValues();
+
+        //get the max and min of the selected variable(s)
+        double data_min = input_data_file->min( var_index-1 );
+        double data_max = input_data_file->max( var_index-1 );
+
+        //----------------set the minimum required gam paramaters-----------------------
+        //input file
+        m_gpf_gam->getParameter<GSLibParFile*>(0)->_path = input_data_file->getPath();
+
+        //variable to compute variogram for
+        GSLibParMultiValuedFixed *par1 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(1);
+        par1->getParameter<GSLibParUInt*>(0)->_value = 1; //number of variables
+        GSLibParMultiValuedVariable *par1_1 = par1->getParameter<GSLibParMultiValuedVariable*>(1);
+        par1_1->getParameter<GSLibParUInt*>(0)->_value = var_index;
+
+        //trimming limits
+        GSLibParMultiValuedFixed *par2 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(2);
+        par2->getParameter<GSLibParDouble*>(0)->_value = data_min;
+        par2->getParameter<GSLibParDouble*>(1)->_value = data_max;
+
+        //output file with experimental variogram values
+        m_gpf_gam->getParameter<GSLibParFile*>(3)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+
+        //grid definition parameters
+        GSLibParGrid* par5 = m_gpf_gam->getParameter<GSLibParGrid*>(5);
+        par5->_specs_x->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getNX(); //nx
+        par5->_specs_x->getParameter<GSLibParDouble*>(1)->_value = input_data_file->getX0(); //min x
+        par5->_specs_x->getParameter<GSLibParDouble*>(2)->_value = input_data_file->getDX(); //cell size x
+        par5->_specs_y->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getNY(); //ny
+        par5->_specs_y->getParameter<GSLibParDouble*>(1)->_value = input_data_file->getY0(); //min y
+        par5->_specs_y->getParameter<GSLibParDouble*>(2)->_value = input_data_file->getDY(); //cell size y
+        par5->_specs_z->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getNZ(); //nz
+        par5->_specs_z->getParameter<GSLibParDouble*>(1)->_value = input_data_file->getZ0(); //min z
+        par5->_specs_z->getParameter<GSLibParDouble*>(2)->_value = input_data_file->getDZ(); //cell size z
+
+    }
+    //--------------------------------------------------------------------------------
+
+    //show the parameter dialog so the user can adjust other settings before running gam
+    GSLibParametersDialog gslibpardiag( m_gpf_gam );
+    int result = gslibpardiag.exec();
+    std::vector<QString> expVarFilePaths;
+    if( result == QDialog::Accepted ){
+        //save the realization number setting for the variogram modeling workflow
+        int oldNReal = m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value;
+        //for each realization number...
+        for( int iRealNum = 0 ; iRealNum < nReals; ++iRealNum ){
+            //...change the realization number parameter for gam
+            m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = iRealNum + 1;
+            //...set an output file with experimental variogram values
+            m_gpf_gam->getParameter<GSLibParFile*>(3)->_path =
+                    Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+            expVarFilePaths.push_back( m_gpf_gam->getParameter<GSLibParFile*>(3)->_path );
+            //...Generate the parameter file
+            QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+            m_gpf_gam->save( par_file_path );
+            //...run gam program
+            Application::instance()->logInfo("Starting gam program for realization " +
+                                             QString::number(iRealNum + 1) + "...");
+            GSLib::instance()->runProgram( "gam", par_file_path );
+        }
+        //restore the realization number setting for the variogram modeling workflow
+        m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = oldNReal;
+    }
+
+    //-------------------------------------------------------------------------------------------
+    //-------------------------- Then we run vargplt--------------------------------------------
+    //-------------------------------------------------------------------------------------------
+
+    //make a GLSib parameter object if it wasn't done yet.
+    GSLibParameterFile gpf = GSLibParameterFile( "vargplt" );
+
+    //Set default values so we need to change less parameters and let
+    //the user change the others as one may see fit.
+    gpf.setDefaultValues();
+
+    //make plot/window title
+    QString title = m_primVarPSetSelector->getSelectedDataFile()->getName() + "/" +
+            m_primVarSelector->getSelectedVariableName() + ": SGSIM";
+
+    //--------------------set some parameter values-----------------------
+
+    //postscript file
+    gpf.getParameter<GSLibParFile*>(0)->_path =
+            Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+    //number of curves
+    gpf.getParameter<GSLibParUInt*>(1)->_value = nReals /*+ 1*/; // nvarios
+
+    //plot title
+    gpf.getParameter<GSLibParString*>(5)->_value = title;
+
+    //suggest display settings for each variogram curve
+    GSLibParRepeat *par6 = gpf.getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
+    par6->setCount( nReals /*+ 1*/ ); //the realizations plus the variogram model (reference)
+    //the experimental curves
+    for(uint iReal = 0; iReal < nReals; ++iReal){
+        par6->getParameter<GSLibParFile*>(iReal, 0)->_path = expVarFilePaths[iReal];
+        GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(iReal, 1);
+        par6_0_1->getParameter<GSLibParUInt*>(0)->_value = 1;
+        par6_0_1->getParameter<GSLibParUInt*>(1)->_value = 0;
+        par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 0;
+        par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
+        par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = 1;
+    }
+
+    //----------------------display plot------------------------------------------------------------
+
+    //Generate the parameter file
+    QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    gpf.save( par_file_path );
+
+    //run vargplt program
+    Application::instance()->logInfo("Starting vargplt program...");
+    GSLib::instance()->runProgram( "vargplt", par_file_path );
+
+    //display the plot output
+    DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(0)->_path,
+                                                   gpf.getParameter<GSLibParString*>(5)->_value,
+                                                   gpf,
+                                                   this);
+    dpd->show();
 
 }
 
