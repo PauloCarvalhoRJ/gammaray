@@ -198,9 +198,8 @@ void SGSIMDialog::previewPostsim()
         Util::viewGrid( est_var, this );
     }
 
-
     //enable the save postsim results button.
-    //ui->btnSavePostsim->setEnabled( true );
+    ui->btnSavePostsim->setEnabled( true );
 }
 
 void SGSIMDialog::onGridCopySpectsSelected(DataFile *grid)
@@ -788,11 +787,7 @@ void SGSIMDialog::onSaveEnsemble()
     if (ok && !new_cg_name.isEmpty()){
         //import the newly created grid file as a project item
         Application::instance()->getProject()->importCartesianGrid( m_cg_simulation, new_cg_name );
-
-        //close dialog
-        emit this->accept();
     }
-
 }
 
 void SGSIMDialog::onPostsim()
@@ -842,5 +837,32 @@ void SGSIMDialog::onPostsim()
         GSLib::instance()->runProgram( "postsim", par_file_path );
 
         previewPostsim();
+    }
+}
+
+void SGSIMDialog::onSavePostsim()
+{
+    bool ok;
+
+    //part of the suggested name for the grid depends on the post-processed product type
+    GSLibParMultiValuedFixed* postsim_par5 = m_gpf_postsim->getParameter<GSLibParMultiValuedFixed*>(5);
+    QString postsimType;
+    switch( postsim_par5->getParameter<GSLibParOption*>(0)->_selected_value ){
+    case 1: postsimType = "EType"; break;
+    case 2: postsimType = "ProbMeanAb" + QString::number(postsim_par5->getParameter<GSLibParDouble*>(1)->_value); break;
+    case 3: postsimType = "P" + QString::number(postsim_par5->getParameter<GSLibParDouble*>(1)->_value * 100); break;
+    case 4: postsimType = "SymmProbIntervFor" + QString::number(postsim_par5->getParameter<GSLibParDouble*>(1)->_value);
+    }
+
+    //propose a name based the postsim product selected by the user.
+    QString proposed_name( m_primVarSelector->getSelectedVariableName() + "_SGSIM_" + postsimType );
+    proposed_name.append( ".grid" );
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid file",
+                                             "New grid file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_cg_name.isEmpty()){
+        //import the newly created grid file as a project item
+        Application::instance()->getProject()->importCartesianGrid( m_cg_postsim, new_cg_name );
     }
 }

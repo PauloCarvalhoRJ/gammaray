@@ -65,6 +65,7 @@ private slots:
     void onEnsembleVariogram();
     void onSaveEnsemble();
     void onPostsim();
+    void onSavePostsim();
 };
 
 #endif // SGSIMDIALOG_H
