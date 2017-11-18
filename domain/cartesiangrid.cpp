@@ -406,7 +406,7 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
                     // apply adjustment in dB
                     value_dB += delta_dB;
                     // attenuate/amplify the absolute value
-                    value = std::pow( 10.0d, value_dB / 20.0d ) * dB_reference;
+                    value = std::pow( 10.0d, value_dB / DECIBEL_SCALE_FACTOR ) * dB_reference;
                     // add negative sign if the original value was negative
                     if( isNegative )
                         value = -value;

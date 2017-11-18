@@ -1075,6 +1075,11 @@ bool Util::isLMC(VariogramModel *vmVar1, VariogramModel *vmVar2, VariogramModel 
 {
     bool result = true;
 
+    if( !vmVar1 || !vmVar2 || !crossVariogram ){
+        Application::instance()->logError("Util::isLMC(): one of the variogram models is null.  Returning false.");
+        return false;
+    }
+
     VariogramModel* vmodels[] = { vmVar1, vmVar2, crossVariogram };
 
     //Do not allow power model.
@@ -1576,7 +1581,7 @@ double Util::dB(double value, double refLevel, double epsilon)
         else
             valueToUse = epsilon;
     }
-    return 20.0d * std::log10<double>( valueToUse / refLevel ).real();
+    return DECIBEL_SCALE_FACTOR * std::log10<double>( valueToUse / refLevel ).real();
 }
 
 QString Util::humanReadable(double value)
