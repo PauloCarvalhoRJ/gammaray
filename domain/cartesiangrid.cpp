@@ -491,16 +491,24 @@ void CartesianGrid::updateMetaDataFile()
 
 QIcon CartesianGrid::getIcon()
 {
-    if(_nz == 1){
-        if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
-            return QIcon(":icons/cartesiangrid16");
-        else
-            return QIcon(":icons32/cartesiangrid32");
-    }else{
-        if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
-            return QIcon(":icons/cg3D16");
-        else
-            return QIcon(":icons32/cg3D32");
+    if( _nreal == 1){
+        if(_nz == 1){
+            if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+                return QIcon(":icons/cartesiangrid16");
+            else
+                return QIcon(":icons32/cartesiangrid32");
+        }else{
+            if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+                return QIcon(":icons/cg3D16");
+            else
+                return QIcon(":icons32/cg3D32");
+        }
+    } else {
+        if(_nz == 1){
+            return QIcon(":icons32/cartesiangridN32");
+        }else{
+            return QIcon(":icons32/cartesiangrid_3DN_32");
+        }
     }
 }
 

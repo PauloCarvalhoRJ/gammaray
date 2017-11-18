@@ -109,5 +109,7 @@
         <file alias="varnreals32">art/iconsHD/varnreals32.png</file>
         <file alias="removecurve32">art/iconsHD/removecurve32.png</file>
         <file alias="histonreals32">art/iconsHD/histonreals32.png</file>
+        <file alias="cartesiangrid_3DN_32">art/iconsHD/cartesiangrid_3DN_32.png</file>
+        <file alias="cartesiangridN32">art/iconsHD/cartesiangridN32.png</file>
     </qresource>
 </RCC>
