@@ -168,7 +168,9 @@ SOURCES += main.cpp\
     imagejockey/spectrogram1dplot.cpp \
     imagejockey/spectrogram1dplotpicker.cpp \
     imagejockey/equalizer/equalizerwidget.cpp \
-    imagejockey/equalizer/equalizerslider.cpp
+    imagejockey/equalizer/equalizerslider.cpp \
+    dialogs/sgsimdialog.cpp \
+    widgets/distributionfieldselector.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -316,7 +318,9 @@ HEADERS  += mainwindow.h \
     imagejockey/spectrogram1dplot.h \
     imagejockey/spectrogram1dplotpicker.h \
     imagejockey/equalizer/equalizerwidget.h \
-    imagejockey/equalizer/equalizerslider.h
+    imagejockey/equalizer/equalizerslider.h \
+    dialogs/sgsimdialog.h \
+    widgets/distributionfieldselector.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -377,7 +381,9 @@ FORMS    += mainwindow.ui \
     dialogs/multivariogramdialog.ui \
     imagejockey/imagejockeydialog.ui \
     imagejockey/equalizer/equalizerwidget.ui \
-    imagejockey/equalizer/equalizerslider.ui
+    imagejockey/equalizer/equalizerslider.ui \
+    dialogs/sgsimdialog.ui \
+    widgets/distributionfieldselector.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -442,7 +448,7 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 2.7.2
+VERSION = 3.0
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

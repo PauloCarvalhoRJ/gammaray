@@ -45,6 +45,51 @@ void GSLibParGrid::setFromCG(CartesianGrid *cg)
     _specs_z->getParameter<GSLibParDouble*>( 2 )->_value = cg->getDZ();
 }
 
+uint GSLibParGrid::getNX()
+{
+    return _specs_x->getParameter<GSLibParUInt*>( 0 )->_value;
+}
+
+double GSLibParGrid::getDX()
+{
+    return _specs_x->getParameter<GSLibParDouble*>( 2 )->_value;
+}
+
+double GSLibParGrid::getX0()
+{
+    return _specs_x->getParameter<GSLibParDouble*>( 1 )->_value;
+}
+
+uint GSLibParGrid::getNY()
+{
+    return _specs_y->getParameter<GSLibParUInt*>( 0 )->_value;
+}
+
+double GSLibParGrid::getDY()
+{
+    return _specs_y->getParameter<GSLibParDouble*>( 2 )->_value;
+}
+
+double GSLibParGrid::getY0()
+{
+    return _specs_y->getParameter<GSLibParDouble*>( 1 )->_value;
+}
+
+uint GSLibParGrid::getNZ()
+{
+    return _specs_z->getParameter<GSLibParUInt*>( 0 )->_value;
+}
+
+double GSLibParGrid::getDZ()
+{
+    return _specs_z->getParameter<GSLibParDouble*>( 2 )->_value;
+}
+
+double GSLibParGrid::getZ0()
+{
+    return _specs_z->getParameter<GSLibParDouble*>( 1 )->_value;
+}
+
 void GSLibParGrid::save(QTextStream *out)
 {
     _specs_x->save( out );

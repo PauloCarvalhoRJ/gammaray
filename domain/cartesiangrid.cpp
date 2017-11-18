@@ -406,7 +406,7 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
                     // apply adjustment in dB
                     value_dB += delta_dB;
                     // attenuate/amplify the absolute value
-                    value = std::pow( 10.0d, value_dB / 20.0d ) * dB_reference;
+                    value = std::pow( 10.0d, value_dB / DECIBEL_SCALE_FACTOR ) * dB_reference;
                     // add negative sign if the original value was negative
                     if( isNegative )
                         value = -value;
@@ -441,6 +441,11 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
         return false;
     }
     return true;
+}
+
+void CartesianGrid::setNReal(uint n)
+{
+    _nreal = n;
 }
 
 bool CartesianGrid::canHaveMetaData()
@@ -486,16 +491,24 @@ void CartesianGrid::updateMetaDataFile()
 
 QIcon CartesianGrid::getIcon()
 {
-    if(_nz == 1){
-        if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
-            return QIcon(":icons/cartesiangrid16");
-        else
-            return QIcon(":icons32/cartesiangrid32");
-    }else{
-        if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
-            return QIcon(":icons/cg3D16");
-        else
-            return QIcon(":icons32/cg3D32");
+    if( _nreal == 1){
+        if(_nz == 1){
+            if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+                return QIcon(":icons/cartesiangrid16");
+            else
+                return QIcon(":icons32/cartesiangrid32");
+        }else{
+            if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+                return QIcon(":icons/cg3D16");
+            else
+                return QIcon(":icons32/cg3D32");
+        }
+    } else {
+        if(_nz == 1){
+            return QIcon(":icons32/cartesiangridN32");
+        }else{
+            return QIcon(":icons32/cartesiangrid_3DN_32");
+        }
     }
 }
 
