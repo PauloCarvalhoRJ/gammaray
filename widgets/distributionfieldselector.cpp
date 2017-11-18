@@ -71,7 +71,7 @@ void DistributionFieldSelector::onListFields(Distribution *dist)
         ProjectComponent* pc = (ProjectComponent*)(*it);
         if( pc->isAttribute() ){
             Attribute *at_aspec = (Attribute*)pc;
-            int givenGEOEASindex = at_aspec->getAttributeGEOEASgivenIndex();
+            uint givenGEOEASindex = at_aspec->getAttributeGEOEASgivenIndex();
             ui->cmbField->addItem( pc->getIcon(), pc->getName() );
             if( m_purpose == Roles::DistributionColumnRole::PVALUE &&
                     givenGEOEASindex == dist->getTheColumnWithProbabilityRole() )

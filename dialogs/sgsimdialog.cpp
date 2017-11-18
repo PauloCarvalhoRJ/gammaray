@@ -608,7 +608,7 @@ void SGSIMDialog::onEnsembleVariogram()
         //save the realization number setting for the variogram modeling workflow
         int oldNReal = m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value;
         //for each realization number...
-        for( int iRealNum = 0 ; iRealNum < nReals; ++iRealNum ){
+        for( uint iRealNum = 0 ; iRealNum < nReals; ++iRealNum ){
             //...change the realization number parameter for gam
             m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = iRealNum + 1;
             //...set an output file with experimental variogram values
