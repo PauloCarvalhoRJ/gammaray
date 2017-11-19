@@ -435,6 +435,7 @@ void CokrigingDialog::onParameters()
 
 void CokrigingDialog::onLMCcheck()
 {
+    Application::instance()->logWarningOff();
     bool result = true;
     //get the number of variables (primary + secondaries)
     uint nvars = 1 + ui->spinNSecVars->value();
@@ -448,6 +449,7 @@ void CokrigingDialog::onLMCcheck()
     if( ! result ){
         QMessageBox::critical( this, "Error", "The variograms do not form a LMC.  Please, check the message panel for error messages with the details.");
     }
+    Application::instance()->logWarningOn();
 }
 
 void CokrigingDialog::onCokb3dCompletes()
