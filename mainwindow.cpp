@@ -112,9 +112,12 @@ MainWindow::MainWindow(QWidget *parent) :
     Application::instance()->setMainWindow( this );
     //open the lastly opened project if the user
     //closed GammaRay without closing the project
-    QString lops = Application::instance()->getLastlyOpenedProjectSetting();
-    if( ! lops.isEmpty() ){
-        this->openProject( lops );
+    if( ! Util::programWasCalledWithCommandLineArgument("-nolops") ){
+        QString lops = Application::instance()->getLastlyOpenedProjectSetting();
+        if( ! lops.isEmpty() )
+            this->openProject( lops );
+    }else{
+        Application::instance()->logWarn("ATTENTION: Automatic project loading was disabled. (-nolops argument was passed via command line)");
     }
     //set project tree style
     this->refreshTreeStyle();
