@@ -7,7 +7,7 @@ GSLibParOption::GSLibParOption(const QString name, const QString label, const QS
 {
 }
 
-void GSLibParOption::addOption(const uint value, const QString description)
+void GSLibParOption::addOption(const int value, const QString description)
 {
     _options.insert(value, description);
 }
@@ -36,6 +36,6 @@ GSLibParOption *GSLibParOption::clone()
 {
     GSLibParOption *result = new GSLibParOption("","","");
     result->_selected_value = this->_selected_value;
-    result->_options = QMap<uint, QString>( this->_options );
+    result->_options = QMap<int, QString>( this->_options );
     return result;
 }

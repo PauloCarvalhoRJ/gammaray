@@ -21,7 +21,7 @@ void WidgetGSLibParOption::fillFields(GSLibParOption *param)
     //set label
     ui->lblDesc->setText( param->getDescription() );
     //populate combo box with the available options
-    for( QMap<uint, QString>::iterator it = param->_options.begin(); it != param->_options.end(); ++it){
+    for( QMap<int, QString>::iterator it = param->_options.begin(); it != param->_options.end(); ++it){
         ui->cmbValue->addItem( it.value(), QVariant( it.key() ) );
         //sets the option corresponding to the current parameter value
         if( it.key() == param->_selected_value )
