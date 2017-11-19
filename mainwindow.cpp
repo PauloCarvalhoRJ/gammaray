@@ -141,8 +141,11 @@ MainWindow::MainWindow(QWidget *parent) :
     //enable drop from drag-n-drop gestures
     setAcceptDrops( true );
 
-    //show the 3D view widget
-    ui->frmContent->layout()->addWidget( new View3DWidget( this ) );
+    //show the 3D view widget (if user allowed it)
+    if( ! Util::programWasCalledWithCommandLineArgument("-no3d") )
+        ui->frmContent->layout()->addWidget( new View3DWidget( this ) );
+    else
+        Application::instance()->logWarn("ATTENTION: The 3D viewer was disabled! (-no3d argument was passed via command line)");
 }
 
 MainWindow::~MainWindow()

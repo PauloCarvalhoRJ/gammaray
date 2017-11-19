@@ -1718,3 +1718,9 @@ bool Util::viewHistogram(Attribute *at, QWidget *parent, bool modal)
     dpd->show();
     return false;
 }
+
+bool Util::programWasCalledWithCommandLineArgument(QString argument)
+{
+    QStringList arguments = QCoreApplication::arguments();
+    return arguments.contains(argument);
+}

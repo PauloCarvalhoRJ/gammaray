@@ -510,6 +510,9 @@ public:
      */
     static bool viewHistogram( Attribute *at, QWidget *parent = nullptr, bool modal = false );
 
+    /** Returns whether the program was launched with the given argument. */
+    static bool programWasCalledWithCommandLineArgument( QString argument );
+
 };
 
 #endif // UTIL_H
