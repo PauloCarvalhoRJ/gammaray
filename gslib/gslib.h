@@ -25,17 +25,11 @@ public:
      * the command line argument and still wait for the user to input the path to the parameter file.
      * gammabar is known to have this unexpected behavior.
      */
-    void runProgram( const QString program_name, const QString par_file_path, bool parFromStdIn );
-
-    /**
-     * Calls runProgram() passing false as the third argument.  I did this because I couldn't get
-     * default arguments working with MinGW.
-     */
-    void runProgram( const QString program_name, const QString par_file_path );
+    void runProgram( const QString program_name, const QString par_file_path, bool parFromStdIn = false );
 
     /**
      * Does the same as runProgram(), but does not block the client code.
-     * Client code can connect to the programFinished() signal to have control over
+     * Client code can connect to the programFinished() static signal to have control over
      * program termination.
      */
     void runProgramAsync( const QString program_name, const QString par_file_path );
@@ -61,6 +55,7 @@ private:
      static GSLib* s_instance;
      bool m_thread_running;
      QString m_last_output;
+     uint m_stderr_assync_count;
 
 signals:
      void programFinished();
