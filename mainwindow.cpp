@@ -43,6 +43,7 @@
 #include <QLineEdit>
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include <QTimer>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
@@ -149,6 +150,11 @@ MainWindow::MainWindow(QWidget *parent) :
         ui->frmContent->layout()->addWidget( new View3DWidget( this ) );
     else
         Application::instance()->logWarn("ATTENTION: The 3D viewer was disabled! (-no3d argument was passed via command line)");
+
+    //setup a timer to update the status bar message every 2 seconds.
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(onUpdateStatusBar()));
+    timer->start(2000); //time specified in ms
 }
 
 MainWindow::~MainWindow()
@@ -1589,6 +1595,11 @@ void MainWindow::onRFFT()
     Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
 
     Application::instance()->logInfo("Reverse FFT completed.");
+}
+
+void MainWindow::onUpdateStatusBar()
+{
+    statusBar()->showMessage( "memory usage = " + Util::humanReadable( Util::getPhysicalRAMusage() ) + "B" );
 }
 
 void MainWindow::onCreateCategoryDefinition()

@@ -444,6 +444,10 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 
 #=============================================================================
 
+#Library used in Util::getPhysicalRAMusage()
+win32 {
+    LIBS += -lPsapi
+}
 
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to

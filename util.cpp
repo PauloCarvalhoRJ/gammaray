@@ -36,6 +36,20 @@
 #include <vtkImageFFT.h>
 #include <vtkImageRFFT.h>
 
+//includes for getPhysicalRAMusage()
+#ifdef Q_OS_WIN
+  #include <windows.h>
+  #include <psapi.h>
+#elif Q_OS_LINUX
+  #include <stdlib.h>
+  #include <stdio.h>
+  #include <string.h>
+#elif Q_OS_MAC
+  #include <mach/mach.h>
+#endif
+
+//TODO: define constants for other GSLib program NDVs and checke whether this is being
+//      actually used.
 /*static*/const QString Util::VARMAP_NDV("-999.00000");
 
 /*static*/const long double Util::PI( 3.141592653589793238L );
@@ -1723,4 +1737,54 @@ bool Util::programWasCalledWithCommandLineArgument(QString argument)
 {
     QStringList arguments = QCoreApplication::arguments();
     return arguments.contains(argument);
+}
+
+//This .cpp internal function is used by Util::getRAMusage()
+int parseLine(char* line){
+    // This assumes that a digit will be found and the line ends in " Kb".
+    int i = strlen(line);
+    const char* p = line;
+    while (*p <'0' || *p > '9') p++;
+    line[i-3] = '\0';
+    i = atoi(p);
+    return i;
+}
+
+std::int64_t Util::getPhysicalRAMusage()
+{
+#ifdef Q_OS_WIN
+    PROCESS_MEMORY_COUNTERS_EX pmc;
+    GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*)&pmc, sizeof(pmc));
+    //SIZE_T virtualMemUsedByMe = pmc.PrivateUsage;
+    SIZE_T physMemUsedByMe = pmc.WorkingSetSize;
+    return (std::int64_t)physMemUsedByMe;
+#elif Q_OS_LINUX
+    //TODO: untested code.
+    FILE* file = fopen("/proc/self/status", "r");
+    int result = -1;
+    char line[128];
+    while (fgets(line, 128, file) != NULL){
+        if (strncmp(line, "VmRSS:", 6) == 0){
+            result = parseLine(line);
+            break;
+        }
+    }
+    fclose(file);
+    return (std::int64_t)result * 1024; //value in kB
+#elif Q_OS_MAC
+    //TODO: untested code.
+    struct task_basic_info t_info;
+    mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+
+    if (KERN_SUCCESS != task_info(mach_task_self(),
+                                  TASK_BASIC_INFO, (task_info_t)&t_info,
+                                  &t_info_count))
+    {
+        return (std::int64_t)-1;
+    } else {
+        return (std::int64_t)t_info.resident_size;
+    }
+#else
+    return (std::int64_t)-1;
+#endif
 }
