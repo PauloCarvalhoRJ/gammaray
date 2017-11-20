@@ -37,6 +37,7 @@
 #include <vtkRenderer.h>
 #include <vtkCallbackCommand.h>
 #include <vtkRenderWindow.h>
+#include <vtkThreshold.h>
 #include <QMessageBox>
 
 void RefreshCallback( vtkObject* vtkNotUsed(caller),
@@ -516,12 +517,24 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
     values->SetName("values");
 
-    //read sample values
+    //create a visibility array. Cells with visibility >= 1 will be
+    //visible, and < 1 will be invisible.
+    vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+    visibility->SetNumberOfComponents(1);
+    visibility->SetName("Visibility");
+
+    //read sample values and cell visibility flags
     values->Allocate( nX*nY );
+    visibility->Allocate( nX*nY );
     for( int i = 0; i < nX*nY; ++i){
         // sample value
         double value = cartesianGrid->data( i, var_index - 1 );
         values->InsertNextValue( value );
+        // visibility flag
+        if( cartesianGrid->isNDV( value ) )
+            visibility->InsertNextValue( 0 );
+        else
+            visibility->InsertNextValue( 1 );
     }
 
     //we don't need file's data anymore
@@ -549,6 +562,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     structuredGrid->SetPoints(points);
     //assign the grid values to the grid cells
     structuredGrid->GetCellData()->SetScalars( values );
+    structuredGrid->GetCellData()->AddArray( visibility );
 
     //apply the transform (rotation) to the grid
     vtkSmartPointer<vtkTransformFilter> transformFilter =
@@ -576,13 +590,21 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     vtkSmartPointer<vtkExtractGrid> sg = vtkSmartPointer<vtkExtractGrid>::New();
     sg->SetInputConnection( transformFilter->GetOutputPort()  );
     sg->SetSampleRate(srate, srate, srate);
+    sg->Update();
+
+    // threshold to make unvalued cells invisible
+    vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
+    threshold->SetInputData(sg->GetOutput());
+    threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
+    threshold->Update();
 
     //assign a color table
     vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
 
     // Create mappers (visualization parameters) for each level-of-detail
     vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputConnection( sg->GetOutputPort() );
+    mapper->SetInputConnection( threshold->GetOutputPort() );
     mapper->SetLookupTable(lut);
     mapper->SetScalarRange(min, max);
     mapper->Update();
