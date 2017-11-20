@@ -7,6 +7,7 @@ View3DViewData::View3DViewData() :
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
     mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    threshold( vtkSmartPointer<vtkThreshold>::New() ),
     samplingRate( 1 )
 {}
 
@@ -15,6 +16,7 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor) :
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
     mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    threshold( vtkSmartPointer<vtkThreshold>::New() ),
     samplingRate( 1 )
 {}
 
@@ -24,6 +26,7 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
     clipper( pClipper ),
     subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
     mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    threshold( vtkSmartPointer<vtkThreshold>::New() ),
     samplingRate( 1 )
 {}
 
@@ -32,16 +35,19 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor, vtkSmartPointer<
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( pSubgrider ),
     mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    threshold( vtkSmartPointer<vtkThreshold>::New() ),
     samplingRate( 1 )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkExtractGrid> pSubgrider,
                                vtkSmartPointer<vtkDataSetMapper> pMapper,
+                               vtkSmartPointer<vtkThreshold> pThreshold,
                                int sRate):
     actor( pActor ),
     clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( pSubgrider ),
     mapper( pMapper ),
+    threshold( pThreshold ),
     samplingRate( sRate )
 {}

@@ -6,6 +6,7 @@
 #include <vtkStructuredGridClip.h>
 #include <vtkExtractGrid.h>
 #include <vtkDataSetMapper.h>
+#include <vtkThreshold.h>
 
 /** This class is just a data structure to hold objects and info related to 3D visualization of a domain object.
  * E.g.: the vtkActor built for it.
@@ -26,6 +27,7 @@ public:
     View3DViewData(vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkExtractGrid> pSubgrider,
                    vtkSmartPointer<vtkDataSetMapper> pMapper,
+                   vtkSmartPointer<vtkThreshold> pThreshold,
                    int sRate = 1);
 
 
@@ -40,6 +42,9 @@ public:
 
     /** Some objects may have a configurable data set mapper. */
     vtkSmartPointer<vtkDataSetMapper> mapper;
+
+    /** The thresolhder may be needed to hide unvalued data locations. */
+    vtkSmartPointer<vtkThreshold> threshold;
 
     /** Sampling rate. Default is 1: 1 cell per 1 sample in each topological direction (I, J, K). */
     int samplingRate;

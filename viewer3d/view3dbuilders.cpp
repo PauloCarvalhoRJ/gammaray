@@ -615,7 +615,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
 
     // Finally, return the actor along with other visual objects
     // so the user can make adjustments to rendering.
-    return View3DViewData(actor, sg, mapper);
+    return View3DViewData(actor, sg, mapper, threshold);
 }
 
 View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianGrid, View3DWidget */*widget3D*/)
@@ -709,6 +709,12 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
     values->SetName("values");
 
+    //create a visibility array. Cells with visibility >= 1 will be
+    //visible, and < 1 will be invisible.
+    vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+    visibility->SetNumberOfComponents(1);
+    visibility->SetName("Visibility");
+
     //try a sampling rate to keep the number of elements below the threshold
     int srate = 1;
     int maxcells = Application::instance()->getMaxGridCellCountFor3DVisualizationSetting();
@@ -731,6 +737,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
 
     //read sample values
     values->Allocate( nXsub*nYsub*nZsub );
+    visibility->Allocate( nXsub*nYsub*nZsub );
     for( int k = 0; k < nZsub; ++k){
         for( int j = 0; j < nYsub; ++j){
             for( int i = 0; i < nXsub; ++i){
@@ -740,6 +747,11 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
                                                        std::min(j*srate, nY-1),
                                                        std::min(k*srate, nZ-1) );
                 values->InsertNextValue( value );
+                // visibility flag
+                if( cartesianGrid->isNDV( value ) )
+                    visibility->InsertNextValue( 0 );
+                else
+                    visibility->InsertNextValue( 1 );
             }
         }
     }
@@ -770,6 +782,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
 
     //assign the grid values to the grid cells
     structuredGrid->GetCellData()->SetScalars( values );
+    structuredGrid->GetCellData()->AddArray( visibility );
 
     //apply the transform (rotation) to the grid
     vtkSmartPointer<vtkTransformFilter> transformFilter =
@@ -784,6 +797,14 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     subGrid->SetInputConnection( transformFilter->GetOutputPort()  );
     subGrid->SetVOI( 0, nXsub, 0, nYsub, 0, nZsub );
     subGrid->SetSampleRate(srate, srate, srate);
+    subGrid->Update();
+
+    // threshold to make unvalued cells invisible
+    vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
+    threshold->SetInputData(subGrid->GetOutput());
+    threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
+    threshold->Update();
 
     //assign a color table
     vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
@@ -791,7 +812,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     // Create mapper (visualization parameters)
     vtkSmartPointer<vtkDataSetMapper> mapper =
             vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputConnection( subGrid->GetOutputPort());
+    mapper->SetInputConnection( threshold->GetOutputPort() );
     mapper->SetLookupTable(lut);
     mapper->SetScalarRange(min, max);
     mapper->Update();
@@ -801,7 +822,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     actor->GetProperty()->EdgeVisibilityOn();
-    return View3DViewData(actor, subGrid, mapper, srate);
+    return View3DViewData(actor, subGrid, mapper, threshold, srate);
 }
 
 View3DViewData View3DBuilders::buildForStratGrid(ProjectComponent */*toBeSpecified*/, View3DWidget */*widget3D*/)

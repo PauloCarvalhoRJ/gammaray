@@ -57,11 +57,12 @@ void V3DCfgWidForAttributeInMapCartesianGrid::onUserMadeChanges()
     //      to avoid yet.  So I suppress the warning window, which is not good, but so far
     //      I haven't got a way to work the grid resampling without this error.
     //      I also couldn't find a more complete example.  I'll keep trial-and-error in the future.
-    vtkObject::GlobalWarningDisplayOff();
+    //vtkObject::GlobalWarningDisplayOff();
     ///////////////////////////////////////////////////////////////////////////////////////////////////
     subgrider->SetSampleRate( ui->spinSamplingRate->value(),
                               ui->spinSamplingRate->value(),
                               ui->spinSamplingRate->value() );
+    subgrider->Update();
 
     //change color map min and max
     mapper->SetScalarRange( ui->spinColorMin->value(),
