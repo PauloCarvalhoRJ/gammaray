@@ -170,7 +170,9 @@ SOURCES += main.cpp\
     imagejockey/equalizer/equalizerwidget.cpp \
     imagejockey/equalizer/equalizerslider.cpp \
     dialogs/sgsimdialog.cpp \
-    widgets/distributionfieldselector.cpp
+    widgets/distributionfieldselector.cpp \
+    viewer3d/view3dverticalexaggerationwidget.cpp \
+    widgets/focuswatcher.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -320,7 +322,9 @@ HEADERS  += mainwindow.h \
     imagejockey/equalizer/equalizerwidget.h \
     imagejockey/equalizer/equalizerslider.h \
     dialogs/sgsimdialog.h \
-    widgets/distributionfieldselector.h
+    widgets/distributionfieldselector.h \
+    viewer3d/view3dverticalexaggerationwidget.h \
+    widgets/focuswatcher.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -383,7 +387,8 @@ FORMS    += mainwindow.ui \
     imagejockey/equalizer/equalizerwidget.ui \
     imagejockey/equalizer/equalizerslider.ui \
     dialogs/sgsimdialog.ui \
-    widgets/distributionfieldselector.ui
+    widgets/distributionfieldselector.ui \
+    viewer3d/view3dverticalexaggerationwidget.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -452,7 +457,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 3.0
+VERSION = 3.2
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

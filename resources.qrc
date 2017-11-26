@@ -111,5 +111,6 @@
         <file alias="histonreals32">art/iconsHD/histonreals32.png</file>
         <file alias="cartesiangrid_3DN_32">art/iconsHD/cartesiangrid_3DN_32.png</file>
         <file alias="cartesiangridN32">art/iconsHD/cartesiangridN32.png</file>
+        <file alias="vertexag32">art/iconsHD/vertexag32.png</file>
     </qresource>
 </RCC>
