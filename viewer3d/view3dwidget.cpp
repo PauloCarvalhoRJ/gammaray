@@ -19,6 +19,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkRenderer.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkCamera.h>
+#include <vtkTransform.h>
 #include <QSettings>
 
 #include "domain/application.h"
@@ -26,11 +27,13 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "domain/projectcomponent.h"
 #include "view3dbuilders.h"
 #include "view3dconfigwidget.h"
+#include "view3dverticalexaggerationwidget.h"
 
 View3DWidget::View3DWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::View3DWidget),
-    _currentCfgWidget( nullptr )
+    _currentCfgWidget( nullptr ),
+    _verticalExaggWiget( nullptr )
 {
     ui->setupUi(this);
 
@@ -101,6 +104,13 @@ View3DWidget::View3DWidget(QWidget *parent) :
 
     connect( ui->listWidget, SIGNAL(newObject(View3DListRecord)), this, SLOT(onNewObject(View3DListRecord)) );
     connect( ui->listWidget, SIGNAL(removeObject(View3DListRecord)), this, SLOT(onRemoveObject(View3DListRecord)) );
+
+    _verticalExaggWiget = new View3DVerticalExaggerationWidget(this);
+    _verticalExaggWiget->hide();
+    //_verticalExaggWiget->setWindowFlags( Qt::CustomizeWindowHint );
+    //_verticalExaggWiget->setWindowFlags( Qt::FramelessWindowHint );
+    connect( _verticalExaggWiget, SIGNAL(valueChanged(double)),
+             this, SLOT(onVerticalExaggerationChanged(double)));
 }
 
 View3DWidget::~View3DWidget()
@@ -259,4 +269,52 @@ void View3DWidget::onConfigWidgetChanged()
     Application::instance()->logInfo("View3DWidget::onConfigWidgetChanged()");
     _renderer->Render();
     _vtkwidget->update();
+}
+
+void View3DWidget::onVerticalExaggeration()
+{
+    _verticalExaggWiget->show();
+    QPoint mousePos = mapFromGlobal(QCursor::pos());
+    mousePos.setX( mousePos.x() - _verticalExaggWiget->width() );
+    _verticalExaggWiget->move( mousePos );
+    _verticalExaggWiget->setFocus();
+}
+
+void View3DWidget::onVerticalExaggerationChanged(double value)
+{
+    //Get the current model (objects) transform matrix.
+    vtkSmartPointer<vtkMatrix4x4> xform = _renderer->GetActiveCamera()->GetModelTransformMatrix();
+
+    //Get the camera's focal point (where it is looking at).
+    double *fp = _renderer->GetActiveCamera()->GetFocalPoint();
+
+    //Get where the focal point would have to go so the scene stays focused.
+    double offset = fp[2] * value;
+
+    //Scale the whole scene along the Z axis.
+    xform->SetElement(2,2,value);
+
+    //Translate back the whole scene so the scene stays in the same place when viewed.
+    xform->SetElement(2,3,fp[2]-offset);
+
+    //Apply transform to the whole scene.
+    _renderer->GetActiveCamera()->SetModelTransformMatrix( xform );
+
+    //redraw the scene (none of these works :( )
+//    _renderer->Render();
+//    _vtkwidget->GetRenderWindow()->GetInteractor()->Render();
+//    _vtkwidget->update();
+//    _vtkwidget->repaint();
+
+    //Perturb the splitter to force a redraw.
+    //TODO: find out a more elegant way to make the VTK widget redraw
+    {
+        QList<int> oldSizes = ui->splitter->sizes();
+        QList<int> tmpSizes = oldSizes;
+        tmpSizes[0] = oldSizes[0] + 1;
+        tmpSizes[1] = oldSizes[1] - 1;
+        ui->splitter->setSizes( tmpSizes );
+        qApp->processEvents();
+        ui->splitter->setSizes( oldSizes );
+    }
 }

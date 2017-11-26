@@ -2,13 +2,15 @@
 
 #include <QDir>
 #include "../domain/application.h"
+#include <QMessageBox>
 #include <QThread>
 #include "workerthread.h"
 
 /*static*/ GSLib* GSLib::s_instance = nullptr;
 
 GSLib::GSLib() : QObject(),
-    m_process( nullptr )
+    m_process( nullptr ),
+    m_stderr_assync_count( 0 )
 {
 }
 
@@ -64,17 +66,16 @@ void GSLib::runProgram(const QString program_name, const QString par_file_path, 
     }
 
     m_last_output = process.readAllStandardOutput();
-    Application::instance()->logError( QString( process.readAllStandardError()) );
+    QString stdErrMessages( process.readAllStandardError() );
+    Application::instance()->logError( stdErrMessages );
     Application::instance()->logInfo( QString( m_last_output ) );
-}
-
-void GSLib::runProgram(const QString program_name, const QString par_file_path)
-{
-    runProgram( program_name, par_file_path, false );
+    if( ! stdErrMessages.trimmed().isEmpty() )
+        QMessageBox::critical( nullptr, "Errors to stderr", program_name + " program output error messages. Please, check the Output Message panel for recent messages in red.");
 }
 
 void GSLib::runProgramAsync(const QString program_name, const QString par_file_path)
 {
+    m_stderr_assync_count = 0;
     m_process = new QProcess();
     QDir gslib_home = QDir(Application::instance()->getGSLibPathSetting());
     QString gslib_program = gslib_home.filePath( program_name );
@@ -116,8 +117,10 @@ void GSLib::onProgramOutput()
     m_last_output += std_out_text;
     QString stderr_text(m_process->readAllStandardError());
     QString stdout_text( std_out_text );
-    if( ! stderr_text.trimmed().isEmpty() )
+    if( ! stderr_text.trimmed().isEmpty() ){
         Application::instance()->logError( stderr_text );
+        ++m_stderr_assync_count;
+    }
     if( ! stdout_text.trimmed().isEmpty() )
         Application::instance()->logInfo( stdout_text );
 }
@@ -125,6 +128,8 @@ void GSLib::onProgramOutput()
 void GSLib::onProgramFinished(int exit_code, QProcess::ExitStatus /*exit_status*/)
 {
     Application::instance()->logInfo( QString("GSLib::onProgramFinished(): Program terminated with exit code = ").append( QString::number(exit_code) ) );
+    if( m_stderr_assync_count > 0 )
+        QMessageBox::critical( nullptr, "Errors to stderr", "GSLib program output error messages. Please, check the Output Message panel for recent messages in red.");
     emit programFinished();
 }
 

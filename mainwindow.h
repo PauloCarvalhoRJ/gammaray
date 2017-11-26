@@ -151,6 +151,7 @@ private slots:
     void onMultiVariogram();
     void onHistpltsim();
     void onRFFT();
+    void onUpdateStatusBar();
 
 private:
     /**

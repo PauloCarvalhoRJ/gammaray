@@ -43,6 +43,7 @@
 #include <QLineEdit>
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include <QTimer>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
@@ -112,9 +113,12 @@ MainWindow::MainWindow(QWidget *parent) :
     Application::instance()->setMainWindow( this );
     //open the lastly opened project if the user
     //closed GammaRay without closing the project
-    QString lops = Application::instance()->getLastlyOpenedProjectSetting();
-    if( ! lops.isEmpty() ){
-        this->openProject( lops );
+    if( ! Util::programWasCalledWithCommandLineArgument("-nolops") ){
+        QString lops = Application::instance()->getLastlyOpenedProjectSetting();
+        if( ! lops.isEmpty() )
+            this->openProject( lops );
+    }else{
+        Application::instance()->logWarn("ATTENTION: Automatic project loading was disabled. (-nolops argument was passed via command line)");
     }
     //set project tree style
     this->refreshTreeStyle();
@@ -141,8 +145,16 @@ MainWindow::MainWindow(QWidget *parent) :
     //enable drop from drag-n-drop gestures
     setAcceptDrops( true );
 
-    //show the 3D view widget
-    ui->frmContent->layout()->addWidget( new View3DWidget( this ) );
+    //show the 3D view widget (if user allowed it)
+    if( ! Util::programWasCalledWithCommandLineArgument("-no3d") )
+        ui->frmContent->layout()->addWidget( new View3DWidget( this ) );
+    else
+        Application::instance()->logWarn("ATTENTION: The 3D viewer was disabled! (-no3d argument was passed via command line)");
+
+    //setup a timer to update the status bar message every 2 seconds.
+    QTimer *timer = new QTimer(this);
+    connect(timer, SIGNAL(timeout()), this, SLOT(onUpdateStatusBar()));
+    timer->start(2000); //time specified in ms
 }
 
 MainWindow::~MainWindow()
@@ -1583,6 +1595,11 @@ void MainWindow::onRFFT()
     Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
 
     Application::instance()->logInfo("Reverse FFT completed.");
+}
+
+void MainWindow::onUpdateStatusBar()
+{
+    statusBar()->showMessage( "memory usage = " + Util::humanReadable( Util::getPhysicalRAMusage() ) + "B" );
 }
 
 void MainWindow::onCreateCategoryDefinition()

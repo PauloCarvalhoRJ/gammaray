@@ -20,6 +20,7 @@ class View3DStyle;
 class QVTKWidget;
 class QListWidgetItem;
 class View3DConfigWidget;
+class View3DVerticalExaggerationWidget;
 
 class View3DWidget : public QWidget
 {
@@ -53,6 +54,9 @@ private:
     //the currently displayed 3D viewing config widget.
     View3DConfigWidget* _currentCfgWidget;
 
+    //the floating widget for configuring the vertical scale.
+    View3DVerticalExaggerationWidget* _verticalExaggWiget;
+
     //removes the current 3D viewing config widget.
     void removeCurrentConfigWidget();
 
@@ -65,6 +69,8 @@ private slots:
     void onLookAtYZ();
     void onObjectsListItemActivated(QListWidgetItem *item);
     void onConfigWidgetChanged();
+    void onVerticalExaggeration();
+    void onVerticalExaggerationChanged( double value );
 };
 
 #endif // VIEW3DWIDGET_H

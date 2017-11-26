@@ -510,6 +510,15 @@ public:
      */
     static bool viewHistogram( Attribute *at, QWidget *parent = nullptr, bool modal = false );
 
+    /** Returns whether the program was launched with the given argument. */
+    static bool programWasCalledWithCommandLineArgument( QString argument );
+
+    /** Returns the ammount of physical RAM used by the program in bytes.
+     * Returns a negative value if is not possible to get the value or if the current code
+     * does not support the OS (see util.cpp).
+     */
+    static std::int64_t getPhysicalRAMusage();
+
 };
 
 #endif // UTIL_H

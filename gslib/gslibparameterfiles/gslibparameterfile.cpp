@@ -409,7 +409,7 @@ bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GS
                     GSLibParOption* popt = (GSLibParOption*)param_types[i];
                     for(std::vector< std::pair<QString, QString> >::iterator it = tagOptions.begin(); it != tagOptions.end(); ++it) {
                         std::pair<QString, QString> option = *it;
-                        popt->addOption( option.first.toUInt(), option.second );
+                        popt->addOption( option.first.toInt(), option.second );
                     }
                 }else if( type_name == "range" ){
                     GSLibParRange* prng = (GSLibParRange*)param_types[i];
@@ -668,7 +668,7 @@ void GSLibParameterFile::setDefaultValuesForLocmap()
     getParameter<GSLibParOption*>(6)->_selected_value = 0;
     getParameter<GSLibParOption*>(7)->_selected_value = 0;
     getParameter<GSLibParOption*>(8)->_selected_value = 1;
-    getParameter<GSLibParOption*>(9)->_selected_value = 0;
+    getParameter<GSLibParOption*>(9)->_selected_value = -1;
 
     GSLibParMultiValuedFixed* par10;
     par10 = getParameter<GSLibParMultiValuedFixed*>(10);
@@ -1946,7 +1946,17 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
 
     par_file_path = dir.absoluteFilePath("locmap.par.tpl");
     par_file.setFileName( par_file_path );
-    if( !par_file.exists() ){
+    //================Old locmap templates need to be replaced========
+    bool needToUpdate = false;
+    if( par_file.exists() ){
+        QFileInfo par_fileinfo( par_file_path );
+        QDateTime lastModified = par_fileinfo.lastModified();
+        QDateTime targetDate( QDate(2017,11,20) );
+        if( lastModified < targetDate )
+            needToUpdate = true;
+    }
+    //================================================================
+    if( !par_file.exists() || needToUpdate ){
         par_file.open( QFile::WriteOnly | QFile::Text );
         QTextStream out(&par_file);
         out << "                  Parameters for LOCMAP\n";
@@ -1962,7 +1972,7 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<option [0:data values][1:cross validation]>      -0=data values, 1=cross validation\n";
         out << "<option [0:arithmetic][1:log scaling]>            -0=arithmetic,  1=log scaling\n";
         out << "<option [1:color scale][0:gray scale]>            -0=gray scale,  1=color scale\n";
-        out << "<option [0:no labels][1:labels each location]>    -0=no labels,   1=label each location\n";
+        out << "<option [-1:no outlines][0:no labels][1:labels each location]>    --1=no outlines, 0=no labels,   1=label each location\n";
         out << "<double> <double> <double>                        -gray/color scale: min, max, increm\n";
         out << "<range [0.1:small][10:big]>                       -label size: 0.1(sml)-1(reg)-10(big)\n";
         out << "<string>                                          -Title\n";

@@ -16,9 +16,9 @@ class GSLibParOption : public GSLibParType
 {
 public:
     GSLibParOption(const QString name, const QString label, const QString description);
-    void addOption(const uint value, const QString description);
-    QMap<uint, QString> _options; //the possible values and their descriptions
-    uint _selected_value; //must be one of the vaues in _options
+    void addOption(const int value, const QString description);
+    QMap<int, QString> _options; //the possible values and their descriptions
+    int _selected_value; //must be one of the vaues in _options
 
     // GSLibParType interface
 public:

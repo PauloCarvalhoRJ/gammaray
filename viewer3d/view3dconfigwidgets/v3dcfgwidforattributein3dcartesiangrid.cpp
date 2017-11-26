@@ -78,16 +78,6 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
     //Since we are in a V3DCfgWidForAttributeIn3DCartesianGrid (data cube with clipping)
     //assumes a vtkStructuredGridClip and a vtkDataSetMapper exist in the View3DViewData object
     vtkSmartPointer<vtkExtractGrid> subgrider = _viewObjects.subgrider;
-    vtkSmartPointer<vtkDataSetMapper> mapper = _viewObjects.mapper;
-
-    //TODO: setting SetOutputWholeExtent alone rises a VTK error, which I didn't find a way
-    //      to avoid yet.  So I suppress the warning window, which is not good, but so far
-    //      I haven't got a way to work the grid clipping without this error.
-    //      I've tried the code further down, for no avail.  I've also tried to clip with some other
-    //      function, but none results in clipping.  Documentation of these functions/classes is insufficient.
-    //      I also couldn't find an example.  I'll keep trial-and-error in the future.
-    vtkObject::GlobalWarningDisplayOff();
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     //get the object that triggered the call to this slot
     QObject* obj = sender();
@@ -126,22 +116,10 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
                        ui->sldJHighClip->value(),
                        ui->sldKLowClip->value(),
                        ui->sldKHighClip->value());
-
-    //updates VTK
-    mapper->SetInputConnection( subgrider->GetOutputPort());
+    subgrider->Update();
 
     //update the GUI label readout.
     updateLabels();
-
-//    subgrider->UpdateWholeExtent();
-//    subgrider->SetUpdateExtentToWholeExtent();
-//    int ext[]={0,5,0,5,0,5};
-//    subgrider->SetUpdateExtent(ext);
-//    subgrider->PropagateUpdateExtent();
-//    subgrider->UpdateInformation();
-//    subgrider->UpdateDataObject();
-//    subgrider->Update();
-//    subgrider->Set
 
     //notify any listeners of changes
     emit changed();

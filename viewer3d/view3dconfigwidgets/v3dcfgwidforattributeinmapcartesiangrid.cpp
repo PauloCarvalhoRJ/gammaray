@@ -53,15 +53,10 @@ void V3DCfgWidForAttributeInMapCartesianGrid::onUserMadeChanges()
     vtkSmartPointer<vtkExtractGrid> subgrider = _viewObjects.subgrider;
     vtkSmartPointer<vtkMapper> mapper = _viewObjects.mapper;
 
-    //TODO: setting SetSampleRate alone rises a VTK error, which I didn't find a way
-    //      to avoid yet.  So I suppress the warning window, which is not good, but so far
-    //      I haven't got a way to work the grid resampling without this error.
-    //      I also couldn't find a more complete example.  I'll keep trial-and-error in the future.
-    vtkObject::GlobalWarningDisplayOff();
-    ///////////////////////////////////////////////////////////////////////////////////////////////////
     subgrider->SetSampleRate( ui->spinSamplingRate->value(),
                               ui->spinSamplingRate->value(),
                               ui->spinSamplingRate->value() );
+    subgrider->Update();
 
     //change color map min and max
     mapper->SetScalarRange( ui->spinColorMin->value(),
