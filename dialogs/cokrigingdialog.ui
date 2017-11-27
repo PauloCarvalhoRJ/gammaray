@@ -206,7 +206,7 @@
          <item>
           <widget class="QLabel" name="label_6">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="font">
             <font>
@@ -222,6 +222,9 @@
          </item>
          <item>
           <widget class="QFrame" name="frmSecondaryData">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="frameShape">
             <enum>QFrame::StyledPanel</enum>
            </property>
@@ -247,7 +250,7 @@
             <item>
              <widget class="QLabel" name="label_4">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">

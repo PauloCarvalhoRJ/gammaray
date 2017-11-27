@@ -272,14 +272,21 @@
     <addaction name="actionIndicatorKrigingCategorical"/>
     <addaction name="actionIK_Post_processing"/>
     <addaction name="actionCokriging"/>
+    <addaction name="actionCokriging_newcokb3d"/>
    </widget>
    <widget class="QMenu" name="menuTools">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="title">
      <string>Tools</string>
     </property>
     <addaction name="actionImage_Jockey"/>
    </widget>
    <widget class="QMenu" name="menuSimulation">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="title">
      <string>Simulation</string>
     </property>
@@ -326,6 +333,9 @@
    </property>
   </action>
   <action name="actionKriging">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Kriging</string>
    </property>
@@ -364,6 +374,11 @@
   <action name="actionSGSIM">
    <property name="text">
     <string>SGSIM</string>
+   </property>
+  </action>
+  <action name="actionCokriging_newcokb3d">
+   <property name="text">
+    <string>Cokriging (newcokb3d)</string>
    </property>
   </action>
  </widget>
@@ -571,6 +586,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionCokriging_newcokb3d</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openCokrigingNewcokb3d()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -584,5 +615,6 @@
   <slot>openCokriging()</slot>
   <slot>openImageJockey()</slot>
   <slot>openSGSIM()</slot>
+  <slot>openCokrigingNewcokb3d()</slot>
  </slots>
 </ui>

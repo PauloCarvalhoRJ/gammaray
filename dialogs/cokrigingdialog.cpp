@@ -22,16 +22,24 @@
 #include <limits>
 #include <tuple>
 
-CokrigingDialog::CokrigingDialog(QWidget *parent) :
+CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     QDialog(parent),
     ui(new Ui::CokrigingDialog),
     m_gpf_cokb3d( nullptr ),
-    m_cg_estimation( nullptr )
+    m_cg_estimation( nullptr ),
+    m_cokProg( cokProg )
 {
 
     ui->setupUi(this);
 
-    this->setWindowTitle("Cokriging (with cokb3d)");
+    if( cokProg == CokrigingProgram::COKB3D )
+    {
+        this->setWindowTitle("Cokriging (with cokb3d)");
+        ui->frmOuterSecondaryData->setVisible( false );
+    }else{
+        this->setWindowTitle("Cokriging (with newcokb3d)");
+        ui->frmOuterSecondaryData->setVisible( true );
+    }
 
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
@@ -65,7 +73,6 @@ CokrigingDialog::CokrigingDialog(QWidget *parent) :
     font = m_cgSecondaryGridSelector->font();
     font.setBold( false );
     m_cgSecondaryGridSelector->setFont( font );
-    m_cgSecondaryGridSelector->setEnabled( false );
 
     //Call this slot to create the widgets that are function of the number of secondary variables
     onNumberOfSecondaryVariablesChanged( 1 );
@@ -116,7 +123,6 @@ void CokrigingDialog::onNumberOfSecondaryVariablesChanged(int n)
     for( int i = 0; i < 1/*n*/; ++i){
         VariableSelector* selector = makeVariableSelector();
         ui->frmSecondaryData->layout()->addWidget( selector );
-        selector->setEnabled( false );
         connect( m_cgSecondaryGridSelector, SIGNAL(cartesianGridSelected(DataFile*)),
                  selector, SLOT(onListVariables(DataFile*)) );
         m_inputGridSecVarsSelectors.push_back( selector );

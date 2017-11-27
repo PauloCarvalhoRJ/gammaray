@@ -17,12 +17,18 @@ class GSLibParameterFile;
 class VariogramModel;
 class CartesianGrid;
 
+enum class CokrigingProgram : uint{
+    COKB3D,
+    NEWCOKB3D
+};
+
 class CokrigingDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit CokrigingDialog(QWidget *parent = 0);
+    explicit CokrigingDialog( QWidget *parent = 0,
+                              CokrigingProgram cokProg = CokrigingProgram::COKB3D );
     ~CokrigingDialog();
 
 private:
@@ -39,6 +45,7 @@ private:
     //first int = head variable order (1=primary, 2=1st secondary, ...), second int = tail variable order
     QVector< std::tuple<uint,uint,VariogramModelSelector*> > m_variograms;
     CartesianGrid* m_cg_estimation;
+    CokrigingProgram m_cokProg;
 
 private slots:
     void onNumberOfSecondaryVariablesChanged( int n );
