@@ -117,6 +117,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForSgsim();
     } else if ( this->_program_name == "postsim" ){
         this->setDefaultValuesForPostsim();
+    } else if ( this->_program_name == "newcokb3d" ){
+        this->setDefaultValuesForNewcokb3d();
     } else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
@@ -1883,6 +1885,143 @@ void GSLibParameterFile::setDefaultValuesForPostsim()
     par5->getParameter<GSLibParDouble*>(1)->_value = 0;
 }
 
+void GSLibParameterFile::setDefaultValuesForNewcokb3d()
+{
+    //file with data
+    getParameter<GSLibParFile*>(0)->_path = "nofile.dat";
+
+    //number of variables (primary + secondaries)
+    getParameter<GSLibParUInt*>(1)->_value = 2;
+
+    //columns for X,Y,Z,primary and secondaries
+    GSLibParMultiValuedVariable *par2 = getParameter<GSLibParMultiValuedVariable*>(2);
+    par2->assure( 3 + 2 );
+    par2->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par2->getParameter<GSLibParUInt*>(1)->_value = 2;
+    par2->getParameter<GSLibParUInt*>(2)->_value = 3;
+    par2->getParameter<GSLibParUInt*>(3)->_value = 4;
+    par2->getParameter<GSLibParUInt*>(4)->_value = 5;
+
+    //trimming limits
+    GSLibParMultiValuedFixed *par3 = this->getParameter<GSLibParMultiValuedFixed*>(3);
+    par3->getParameter<GSLibParDouble*>(0)->_value = -1e21;
+    par3->getParameter<GSLibParDouble*>(1)->_value = 1e21;
+
+    //co-located cokriging?  (0=no, 1=yes)
+    getParameter<GSLibParOption*>(4)->_selected_value = 1;
+
+    //file with single gridded covariate
+    getParameter<GSLibParFile*>(5)->_path = "nofile.dat";
+
+    //column for covariate
+    getParameter<GSLibParUInt*>(6)->_value = 1;
+
+    //local varying mean (0=no, 1=yes)
+    getParameter<GSLibParOption*>(7)->_selected_value = 0;
+
+    //file with local varying mean
+    getParameter<GSLibParFile*>(8)->_path = "nofile.dat";
+
+    //column for local varying mean
+    getParameter<GSLibParUInt*>(9)->_value = 1;
+
+    //debugging level: 0,1,2,3
+    getParameter<GSLibParOption*>(10)->_selected_value = 0;
+
+    //file for debugging output
+    getParameter<GSLibParFile*>(11)->_path = "nofile.dat";
+
+    //file for output
+    getParameter<GSLibParFile*>(12)->_path = "nofile.dat";
+
+    //grid parameters
+    GSLibParGrid* par13 = getParameter<GSLibParGrid*>(13);
+    par13->_specs_x->getParameter<GSLibParUInt*>(0)->_value = 10; //nx
+    par13->_specs_x->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min x
+    par13->_specs_x->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size x
+    par13->_specs_y->getParameter<GSLibParUInt*>(0)->_value = 10; //ny
+    par13->_specs_y->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min y
+    par13->_specs_y->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size y
+    par13->_specs_z->getParameter<GSLibParUInt*>(0)->_value = 1; //nz
+    par13->_specs_z->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min z
+    par13->_specs_z->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size z
+
+    //x, y, and z block discretization
+    GSLibParMultiValuedFixed *par14 = this->getParameter<GSLibParMultiValuedFixed*>(14);
+    par14->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par14->getParameter<GSLibParUInt*>(1)->_value = 1;
+    par14->getParameter<GSLibParUInt*>(2)->_value = 1;
+
+    //min primary,max primary,max all sec
+    GSLibParMultiValuedFixed *par15 = this->getParameter<GSLibParMultiValuedFixed*>(15);
+    par15->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par15->getParameter<GSLibParUInt*>(1)->_value = 12;
+    par15->getParameter<GSLibParUInt*>(2)->_value = 12;
+
+    //maximum search radii: primary
+    GSLibParMultiValuedFixed *par16 = this->getParameter<GSLibParMultiValuedFixed*>(16);
+    par16->getParameter<GSLibParDouble*>(0)->_value = 100.0;
+    par16->getParameter<GSLibParDouble*>(1)->_value = 100.0;
+    par16->getParameter<GSLibParDouble*>(2)->_value = 100.0;
+
+    //maximum search radii: all secondary
+    GSLibParMultiValuedFixed *par17 = this->getParameter<GSLibParMultiValuedFixed*>(17);
+    par17->getParameter<GSLibParDouble*>(0)->_value = 20.0;
+    par17->getParameter<GSLibParDouble*>(1)->_value = 20.0;
+    par17->getParameter<GSLibParDouble*>(2)->_value = 20.0;
+
+    //angles for search ellipsoid
+    GSLibParMultiValuedFixed *par18 = this->getParameter<GSLibParMultiValuedFixed*>(18);
+    par18->getParameter<GSLibParDouble*>(0)->_value = 0.0;
+    par18->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+    par18->getParameter<GSLibParDouble*>(2)->_value = 0.0;
+
+    //kriging type (0=SK, 1=OK, 2=OK-trad)
+    getParameter<GSLibParOption*>(19)->_selected_value = 1;
+
+    //means (primary and secondaries)
+    GSLibParMultiValuedVariable *par20 = getParameter<GSLibParMultiValuedVariable*>(20);
+    par20->assure( 2 );
+    par20->getParameter<GSLibParDouble*>(0)->_value = 0.0;
+    par20->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+
+    //model type (1=MM1, 2=MM2,3=LMC)
+    getParameter<GSLibParOption*>(21)->_selected_value = 2;
+
+    //correlation coefficient for MM1 or MM2
+    getParameter<GSLibParDouble*>(22)->_value = 0.76;
+
+    //variance of secondary variable for MM1
+    getParameter<GSLibParDouble*>(23)->_value = 1.0;
+
+    //variance of primary variable for MM2
+    getParameter<GSLibParDouble*>(24)->_value = 5.0;
+
+    //--------auto and cross variograms-------------------------//
+    GSLibParRepeat *par25 = getParameter<GSLibParRepeat*>(25);
+    par25->setCount( 3 );
+    uint i1 = 1;
+    uint i2 = 1;
+    uint nvars = 2;
+    for(uint i = 0; i < 3; ++i ){
+        //variable indexes
+        GSLibParMultiValuedFixed *par25_ii = par25->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        par25_ii->getParameter<GSLibParUInt*>(0)->_value = i1;
+        par25_ii->getParameter<GSLibParUInt*>(1)->_value = i2;
+        //variogram model
+        GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(i, 1);
+        par25_i->makeDefault();
+        //compute the variable indexes
+        ++i2;
+        if( i2 > nvars ){
+            ++i1;
+            i2 = i1;
+            if( i1 > nvars )
+                break;
+        }
+    }
+}
+
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
 {
     GSLibParMultiValuedVariable *mvv = new GSLibParMultiValuedVariable( parameter );
@@ -2639,6 +2778,45 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<uint><uint><uint>               -nx, ny, nz\n";
         out << "<file>                           -file for output array(s)\n";
         out << "<option [1:E-type and variance.][2:Prob. and mean above threshold][3:Percentile][4:Symmetric prob. interval]> <double>   -output option, output parameter\n";
+    }
+    par_file.close();
+
+    par_file_path = dir.absoluteFilePath("newcokb3d.par.tpl");
+    par_file.setFileName( par_file_path );
+    if( !par_file.exists() ){
+        par_file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&par_file);
+        out << "                  Parameters for NEWCOKB3D\n";
+        out << "                  ************************\n";
+        out << '\n';
+        out << "<file>                                                -file with data\n";
+        out << "<uint (nvar)>                                         -   number of variables primary+other only primary if colocated cokriging\n";
+        out << "<uint+>                                               -   columns for X,Y,Z and variables\n";
+        out << "<double> <double>                                     -   trimming limits\n";
+        out << "<option [1:co-located][0:full]>                       -co-located cokriging? (0=no, 1=yes)\n";
+        out << "<file>                                                -   file with single gridded covariate\n";
+        out << "<uint>                                                -   column for covariate\n";
+        out << "<option [0:no][1:yes]>                                - local varying mean (0=no, 1=yes)\n";
+        out << "<file>                                                -  file with local varying mean\n";
+        out << "<uint>                                                - column for local varying mean\n";
+        out << "<option [0:0][1:1][2:2][3:3]>                         -debugging level: 0,1,2,3\n";
+        out << "<file>                                                -file for debugging output\n";
+        out << "<file>                                                -file for output\n";
+        out << "<grid>                                                -nx,xmn,xsiz; ny,ymn,ysiz; nz,zmn,zsiz\n";
+        out << "<uint> <uint> <uint>                                  -x, y, and z block discretization\n";
+        out << "<uint> <uint> <uint>                                  -min primary,max primary,max all sec\n";
+        out << "<double> <double> <double>                            -maximum search radii: primary\n";
+        out << "<double> <double> <double>                            -maximum search radii: all secondary\n";
+        out << "<double> <double> <double>                            -angles for search ellipsoid\n";
+        out << "<option [0:SK][1:OK-standardized][2:OK-traditional]>  -kriging type (0=SK, 1=OK, 2=OK-trad)\n";
+        out << "<double+>                                             -means (primary and secondaries)\n";
+        out << "<option [2:MM2][1:MM1][3:LMC]>                        -model type (1=MM1, 2=MM2,3=LMC)\n";
+        out << "<double>                                              -  correlation coefficient for MM1 or MM2\n";
+        out << "<double>                                              -  variance of secondary variable for MM1\n";
+        out << "<double>                                              -  variance of primary variable for MM2\n";
+        out << "<repeat [nvar]>\n";
+        out << "   <uint> <uint>                                      -variable indexes (e.g. 1 ).\n";
+        out << "   <vmodel>                                           -variogram model.\n";
     }
     par_file.close();
 }
