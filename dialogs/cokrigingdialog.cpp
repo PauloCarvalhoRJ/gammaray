@@ -27,7 +27,9 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     ui(new Ui::CokrigingDialog),
     m_gpf_cokb3d( nullptr ),
     m_cg_estimation( nullptr ),
-    m_cokProg( cokProg )
+    m_cokProg( cokProg ),
+    m_newcokb3dModelType( CokrigingModelType::MM2 ),
+    m_secVarForMM2Selector( nullptr )
 {
 
     ui->setupUi(this);
@@ -36,9 +38,13 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     {
         this->setWindowTitle("Cokriging (with cokb3d)");
         ui->frmOuterSecondaryData->setVisible( false );
+        ui->frmOuterLVMData->setVisible( false );
+        ui->frmModelType->setVisible( false );
     }else{
         this->setWindowTitle("Cokriging (with newcokb3d)");
         ui->frmOuterSecondaryData->setVisible( true );
+        ui->frmOuterLVMData->setVisible( true );
+        ui->frmModelType->setVisible( true );
     }
 
     //deletes dialog from memory upon user closing it
@@ -74,6 +80,17 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     font.setBold( false );
     m_cgSecondaryGridSelector->setFont( font );
 
+    //The list with existing Cartesian grids in the project for the locally varying mean.
+    m_cgLVMGridSelector = new CartesianGridSelector( true );
+    ui->frmLVMData->layout()->addWidget( m_cgLVMGridSelector );
+    font = m_cgLVMGridSelector->font();
+    font.setBold( false );
+    m_cgLVMGridSelector->setFont( font );
+
+    //The combo box of secondary variables available for the MM2 model (newcokb3d)
+    m_secVarForMM2Selector = makeVariableSelector();
+    ui->frmModelType->layout()->addWidget( m_secVarForMM2Selector );
+
     //Call this slot to create the widgets that are function of the number of secondary variables
     onNumberOfSecondaryVariablesChanged( 1 );
 
@@ -82,6 +99,8 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     //if the desired sample file happens to be the first one in the list.
     m_psInputSelector->onSelection( 0 );
     m_cgSecondaryGridSelector->onSelection( 0 );
+
+    onModelTypeChanged();
 }
 
 CokrigingDialog::~CokrigingDialog()
@@ -119,7 +138,7 @@ void CokrigingDialog::onNumberOfSecondaryVariablesChanged(int n)
     m_inputGridSecVarsSelectors.clear();
 
     //installs the target number of secondary grid variable selectors
-    // TODO: forcing to be one.  In the future, check whether newcokb3d accepts more than one.
+    // forcing to be one.  In the future, cokriging programs may accept more than one.
     for( int i = 0; i < 1/*n*/; ++i){
         VariableSelector* selector = makeVariableSelector();
         ui->frmSecondaryData->layout()->addWidget( selector );
@@ -128,6 +147,25 @@ void CokrigingDialog::onNumberOfSecondaryVariablesChanged(int n)
         m_inputGridSecVarsSelectors.push_back( selector );
     }
     //---------------------------------------------------------------------
+
+    //clears the current set of grid LVM variable selectors
+    it = m_inputLVMVarsSelectors.begin();
+    for(; it != m_inputLVMVarsSelectors.end(); ++it){
+        delete (*it);
+    }
+    m_inputLVMVarsSelectors.clear();
+
+    //installs the target number of LVM grid variable selectors
+    // forcing to be one.  In the future, cokriging programs may accept more than one.
+    for( int i = 0; i < 1/*n*/; ++i){
+        VariableSelector* selector = makeVariableSelector();
+        ui->frmLVMData->layout()->addWidget( selector );
+        connect( m_cgLVMGridSelector, SIGNAL(cartesianGridSelected(DataFile*)),
+                 selector, SLOT(onListVariables(DataFile*)) );
+        m_inputLVMVarsSelectors.push_back( selector );
+    }
+    //---------------------------------------------------------------------
+
 
     //clears the current set of lebels in the variography matrix top bar
     QVector<QLabel*>::iterator itLabels = m_labelsVarMatrixTopHeader.begin();
@@ -153,6 +191,8 @@ void CokrigingDialog::onNumberOfSecondaryVariablesChanged(int n)
 
     //update the table of variogram widgets
     onUpdateVariogramMatrix( n );
+
+    onModelTypeChanged();
 }
 
 void CokrigingDialog::onUpdateVariogramMatrix( int numberOfSecondaryVariables )
@@ -474,6 +514,49 @@ void CokrigingDialog::onSave()
 void CokrigingDialog::onSaveKrigingVariances()
 {
     save( false );
+}
+
+void CokrigingDialog::onModelTypeChanged()
+{
+    //do nothing the the cokriging program is not newcokb3d
+    if( m_cokProg != CokrigingProgram::NEWCOKB3D )
+        return;
+    //determine variography model type
+    int index = ui->cmbModelType->currentIndex();
+    switch( index ){
+        case 0: m_newcokb3dModelType = CokrigingModelType::MM1; break;
+        case 1: m_newcokb3dModelType = CokrigingModelType::MM2; break;
+        case 2: m_newcokb3dModelType = CokrigingModelType::LMC; break;
+    }
+    //for all current variogram selectors
+    QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator it = m_variograms.begin();
+    for(; it != m_variograms.end(); ++it){
+        std::tuple<uint,uint,VariogramModelSelector*> tuple = *it;
+        uint head = std::get<0>( tuple );
+        uint tail = std::get<1>( tuple );
+        VariogramModelSelector* vModelSelector = std::get<2>( tuple );
+        //diable all variogram selectors a priori
+        vModelSelector->setEnabled( false );
+        //if MM1, then enable the autovariogram for primary
+        if( m_newcokb3dModelType == CokrigingModelType::MM1 && head == 1 && tail == 1 )
+            vModelSelector->setEnabled( true );
+        //if MM2, then enable the autovariograms for the secondaries
+        if( m_newcokb3dModelType == CokrigingModelType::MM2 && head == tail && head > 1 )
+            vModelSelector->setEnabled( true );
+        //if LMC, then enable all variograms (auto- and cross-)
+        if( m_newcokb3dModelType == CokrigingModelType::LMC )
+            vModelSelector->setEnabled( true );
+    }
+    //enable the secondary variable selector for MM2
+    if( m_newcokb3dModelType == CokrigingModelType::MM2 ){
+        ui->lblSecVarForMM2->setEnabled( true );
+        if( m_secVarForMM2Selector )
+            m_secVarForMM2Selector->setEnabled( true );
+    } else {
+        ui->lblSecVarForMM2->setEnabled( false );
+        if( m_secVarForMM2Selector )
+            m_secVarForMM2Selector->setEnabled( false );
+    }
 }
 
 void CokrigingDialog::preview()

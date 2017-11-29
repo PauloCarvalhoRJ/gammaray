@@ -22,6 +22,12 @@ enum class CokrigingProgram : uint{
     NEWCOKB3D
 };
 
+enum class CokrigingModelType : uint{
+    MM1,
+    MM2,
+    LMC
+};
+
 class CokrigingDialog : public QDialog
 {
     Q_OBJECT
@@ -46,6 +52,10 @@ private:
     QVector< std::tuple<uint,uint,VariogramModelSelector*> > m_variograms;
     CartesianGrid* m_cg_estimation;
     CokrigingProgram m_cokProg;
+    CartesianGridSelector* m_cgLVMGridSelector;
+    QVector<VariableSelector*> m_inputLVMVarsSelectors;
+    CokrigingModelType m_newcokb3dModelType;
+    VariableSelector* m_secVarForMM2Selector;
 
 private slots:
     void onNumberOfSecondaryVariablesChanged( int n );
@@ -56,6 +66,7 @@ private slots:
     void onCokb3dCompletes();
     void onSave();
     void onSaveKrigingVariances();
+    void onModelTypeChanged();
 
 private:
     QLabel* makeLabel( const QString caption );
