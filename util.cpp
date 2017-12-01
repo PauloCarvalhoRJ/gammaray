@@ -40,11 +40,13 @@
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
-#elif Q_OS_LINUX
+#endif
+#ifdef Q_OS_LINUX
   #include <stdlib.h>
   #include <stdio.h>
   #include <string.h>
-#elif Q_OS_MAC
+#endif
+#ifdef Q_OS_MAC
   #include <mach/mach.h>
 #endif
 
@@ -1758,7 +1760,8 @@ std::int64_t Util::getPhysicalRAMusage()
     //SIZE_T virtualMemUsedByMe = pmc.PrivateUsage;
     SIZE_T physMemUsedByMe = pmc.WorkingSetSize;
     return (std::int64_t)physMemUsedByMe;
-#elif Q_OS_LINUX
+#endif
+#ifdef Q_OS_LINUX
     //TODO: untested code.
     FILE* file = fopen("/proc/self/status", "r");
     int result = -1;
@@ -1771,7 +1774,8 @@ std::int64_t Util::getPhysicalRAMusage()
     }
     fclose(file);
     return (std::int64_t)result * 1024; //value in kB
-#elif Q_OS_MAC
+#endif
+#ifdef Q_OS_MAC
     //TODO: untested code.
     struct task_basic_info t_info;
     mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
