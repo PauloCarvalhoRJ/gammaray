@@ -90,6 +90,8 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     //The combo box of secondary variables available for the MM2 model (newcokb3d)
     m_secVarForMM2Selector = makeVariableSelector();
     ui->frmModelType->layout()->addWidget( m_secVarForMM2Selector );
+    connect( m_secVarForMM2Selector, SIGNAL(currentIndexChanged(int)),
+             this, SLOT(onSecVarForMM2Selected(int)));
 
     //Call this slot to create the widgets that are function of the number of secondary variables
     onNumberOfSecondaryVariablesChanged( 1 );
@@ -192,6 +194,8 @@ void CokrigingDialog::onNumberOfSecondaryVariablesChanged(int n)
     //update the table of variogram widgets
     onUpdateVariogramMatrix( n );
 
+    onUpdateVarMatrixLabels();
+
     onModelTypeChanged();
 }
 
@@ -282,9 +286,12 @@ void CokrigingDialog::onUpdateVarMatrixLabels()
 
     //update the labels for the secondary variables
     QVector<VariableSelector*>::iterator itSelectors = m_inputSecVarsSelectors.begin();
+    m_secVarForMM2Selector->clear();
     for(; itSelectors != m_inputSecVarsSelectors.end(); ++itLabels, ++itLeftLabels, ++itSelectors){
         (*itLabels)->setText( (*itSelectors)->getSelectedVariableName() );
         (*itLeftLabels)->setText( (*itSelectors)->getSelectedVariableName() );
+        //Take the opportunity to fill the combobox of secondaries for MM2 (newcokb3d)
+        m_secVarForMM2Selector->addVariable( (*itSelectors)->getSelectedVariable() );
     }
 }
 
@@ -535,7 +542,7 @@ void CokrigingDialog::onModelTypeChanged()
         uint head = std::get<0>( tuple );
         uint tail = std::get<1>( tuple );
         VariogramModelSelector* vModelSelector = std::get<2>( tuple );
-        //diable all variogram selectors a priori
+        //disable all variogram selectors a priori
         vModelSelector->setEnabled( false );
         //if MM1, then enable the autovariogram for primary
         if( m_newcokb3dModelType == CokrigingModelType::MM1 && head == 1 && tail == 1 )
@@ -552,10 +559,33 @@ void CokrigingDialog::onModelTypeChanged()
         ui->lblSecVarForMM2->setEnabled( true );
         if( m_secVarForMM2Selector )
             m_secVarForMM2Selector->setEnabled( true );
+        onSecVarForMM2Selected( 0 );
     } else {
         ui->lblSecVarForMM2->setEnabled( false );
         if( m_secVarForMM2Selector )
             m_secVarForMM2Selector->setEnabled( false );
+    }
+}
+
+void CokrigingDialog::onSecVarForMM2Selected(int index)
+{
+    if( index < 0 )
+        return;
+    //get the secondary variable index
+    uint secVarIndex = index + 2; //first secondary (index 2) is at index 0 of the combobox.
+    //for all current variogram selectors
+    QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator it = m_variograms.begin();
+    for(; it != m_variograms.end(); ++it){
+        std::tuple<uint,uint,VariogramModelSelector*> tuple = *it;
+        uint head = std::get<0>( tuple );
+        uint tail = std::get<1>( tuple );
+        VariogramModelSelector* vModelSelector = std::get<2>( tuple );
+        //disable all secondary autovariogam selectors a priori
+        if( head == tail && head > 1 )
+            vModelSelector->setEnabled( false );
+        //enable the secondary autovariogram corresponding to the index.
+        if( head == tail && head == secVarIndex )
+            vModelSelector->setEnabled( true );
     }
 }
 

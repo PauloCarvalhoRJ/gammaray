@@ -2,6 +2,7 @@
 #include "ui_variableselector.h"
 #include "../domain/application.h"
 #include "../domain/datafile.h"
+#include "domain/attribute.h"
 
 VariableSelector::VariableSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
@@ -10,6 +11,10 @@ VariableSelector::VariableSelector(bool show_not_set, QWidget *parent) :
     m_dataFile( nullptr )
 {
     ui->setupUi(this);
+
+    //Forwarding the currentIndexChanged signal.
+    connect( ui->cmbVariable, SIGNAL(currentIndexChanged(int)),
+             this, SIGNAL(currentIndexChanged(int)));
 }
 
 VariableSelector::~VariableSelector()
@@ -31,6 +36,36 @@ uint VariableSelector::getSelectedVariableGEOEASIndex()
 QString VariableSelector::getSelectedVariableName()
 {
     return ui->cmbVariable->currentText();
+}
+
+void VariableSelector::addVariable(Attribute *at)
+{
+    ui->cmbVariable->addItem( at->getIcon(), at->getName() );
+}
+
+void VariableSelector::clear()
+{
+    ui->cmbVariable->clear();
+}
+
+Attribute *VariableSelector::getSelectedVariable()
+{
+    if( ! m_dataFile ){
+        Application::instance()->logWarn("VariableSelector::getVariable(): m_dataFile == nullptr. Returning nullptr.");
+        return nullptr;
+    }
+    //by selecting a variable name, surely the object is an Attribute
+    Attribute* at = (Attribute*)m_dataFile->getChildByName( ui->cmbVariable->currentText() );
+    if( ! at ){
+        Application::instance()->logWarn("VariableSelector::getVariable(): Selection resulted in null attribute. Returning nullptr.");
+        return nullptr;
+    }
+    return at;
+}
+
+int VariableSelector::getCurrentComboIndex()
+{
+    return ui->cmbVariable->currentIndex();
 }
 
 void VariableSelector::onListVariables(DataFile *file)

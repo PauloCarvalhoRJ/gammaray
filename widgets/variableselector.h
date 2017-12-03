@@ -27,8 +27,21 @@ public:
     /** Returns the name of the selected variable. */
     QString getSelectedVariableName();
 
+    /** Manually add a variable to the list. */
+    void addVariable( Attribute* at );
+
+    /** Clears the list of variables. */
+    void clear();
+
+    /** Returns the selected variable. */
+    Attribute* getSelectedVariable();
+
+    /** Returns the index of the currently selected item in the combobox. */
+    int getCurrentComboIndex();
+
 signals:
     void variableSelected( Attribute* at );
+    void currentIndexChanged( int index );
 
 public slots:
     /** Updates the list of variables from the passed data file.*/

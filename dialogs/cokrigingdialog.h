@@ -67,6 +67,7 @@ private slots:
     void onSave();
     void onSaveKrigingVariances();
     void onModelTypeChanged();
+    void onSecVarForMM2Selected( int index );
 
 private:
     QLabel* makeLabel( const QString caption );
