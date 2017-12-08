@@ -644,6 +644,7 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
                               const QString nameForNewAttributeOfRealPart,
                               const QString nameForNewAttributeOfImaginaryPart)
 {
+    //TODO: refatorar reutilizando addEmptyDataColumn e um futuro addDataColumn
     if( _data.empty() ){ //no data, column will be first column
         _data.reserve( columns.size() );
         std::vector< std::complex<double> >::iterator it = columns.begin();
@@ -676,4 +677,40 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
     //sets this as parent of the new Attributes
     newAttributeReal->setParent( this );
     newAttributeImag->setParent( this );
+}
+
+
+long DataFile::addEmptyDataColumn(const QString columnName, long numberOfDataElements)
+{
+    std::vector< double > newColumn( numberOfDataElements, 0.0 );
+
+    if( _data.empty() ){ //no data, column will be first column
+        _data.reserve( newColumn.size() );
+        std::vector< double >::iterator it = newColumn.begin();
+        for( ; it != newColumn.end(); ++it)
+            _data.push_back( { *it } );
+    } else { //there are data already, column will be appended to the current ones
+        std::vector< double >::iterator itColumn = newColumn.begin();
+        std::vector< std::vector<double> >::iterator itData = _data.begin();
+        //hopefully both iterators end at the same time
+        for( ; itColumn != newColumn.end(), itData != _data.end(); ++itColumn, ++itData ){
+            (*itData).push_back( *itColumn );
+        }
+        if( itData != _data.end() || itColumn != newColumn.end() )
+            Application::instance()->logError("DataFile::addEmptyDataColumn(): number of values to add mismatched number of data rows.");
+    }
+
+    //get the GEO-EAS index for new attribute
+    uint indexGEOEAS = _data[0].size(); //assumes the first row has the correct number of data column
+
+    //Create new Attribute objects that correspond to the new data column in memory
+    Attribute *newAttribute = new Attribute( columnName, indexGEOEAS );
+
+    //Add the new Attributes as child project component of this one
+    addChild( newAttribute );
+
+    //sets this as parent of the new Attributes
+    newAttribute->setParent( this );
+
+    return indexGEOEAS - 1;
 }

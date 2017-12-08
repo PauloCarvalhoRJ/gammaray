@@ -244,6 +244,8 @@ public:
                          const QString nameForNewAttributeOfRealPart,
                          const QString nameForNewAttributeOfImaginaryPart);
 
+    long addEmptyDataColumn( const QString columnName, long numberOfDataElements );
+
 //File interface
     void deleteFromFS();
     void writeToFS();

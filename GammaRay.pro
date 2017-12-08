@@ -175,7 +175,8 @@ SOURCES += main.cpp\
     widgets/focuswatcher.cpp \
     spectral/svd.cpp \
     spectral/pca.cpp \
-    spectral/spectral.cpp
+    spectral/spectral.cpp \
+    imagejockey/imagejockeysvdutils.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -330,7 +331,8 @@ HEADERS  += mainwindow.h \
     widgets/focuswatcher.h \
     spectral/svd.h \
     spectral/pca.h \
-    spectral/spectral.h
+    spectral/spectral.h \
+    imagejockey/imagejockeysvdutils.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

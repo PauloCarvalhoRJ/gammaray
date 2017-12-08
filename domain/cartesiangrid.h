@@ -136,13 +136,9 @@ public:
      */
     void setNReal( uint n );
 
-    spectral::complex_array getComplexArray( uint nDataColumn );
-
-    spectral::complex_array getComplexArray( uint nDataColumnRealPart,
-                                             uint nDataColumnImaginaryPart );
-
     spectral::array getArray( uint nDataColumn );
 
+    long append( const QString columnName, const spectral::array& array );
 
     //DataFile interface
 public:
