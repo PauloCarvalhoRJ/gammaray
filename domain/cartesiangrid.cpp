@@ -523,3 +523,61 @@ View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
 {
     return View3DBuilders::build( this, widget3D );
 }
+
+
+spectral::complex_array CartesianGrid::getComplexArray(uint nDataColumn)
+{
+    spectral::complex_array data;
+    data.ndim_ = 3;
+    data.M_ = _nx;
+    data.N_ = _ny;
+    data.K_ = _ny;
+    data.size_ = data.M_ * data.N_ * data.K_;
+    data.d_ = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * data.size_);
+    long idx = 0;
+    for (long i = 0; i < _nx; ++i) {
+        for (long j = 0; j < _ny; ++j) {
+            for (long k = 0; k < _nz; ++k) {
+                data.d_[idx][0] = dataIJK(nDataColumn, i, j, k);
+                data.d_[idx][1] = 0;
+                ++idx;
+            }
+        }
+    }
+}
+
+spectral::complex_array CartesianGrid::getComplexArray(uint nDataColumnRealPart, uint nDataColumnImaginaryPart)
+{
+    spectral::complex_array data;
+    data.ndim_ = 3;
+    data.M_ = _nx;
+    data.N_ = _ny;
+    data.K_ = _ny;
+    data.size_ = data.M_ * data.N_ * data.K_;
+    data.d_ = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * data.size_);
+    long idx = 0;
+    for (long i = 0; i < _nx; ++i) {
+        for (long j = 0; j < _ny; ++j) {
+            for (long k = 0; k < _nz; ++k) {
+                data.d_[idx][0] = dataIJK(nDataColumnRealPart, i, j, k);
+                data.d_[idx][1] = dataIJK(nDataColumnImaginaryPart, i, j, k);
+                ++idx;
+            }
+        }
+    }
+}
+
+
+spectral::array CartesianGrid::getArray(uint nDataColumn)
+{
+    spectral::array data( _nx, _ny, _nz, 0.0 );
+    long idx = 0;
+    for (long i = 0; i < _nx; ++i) {
+        for (long j = 0; j < _ny; ++j) {
+            for (long k = 0; k < _nz; ++k) {
+                data.d_[idx] = dataIJK(nDataColumn, i, j, k);
+                ++idx;
+            }
+        }
+    }
+}

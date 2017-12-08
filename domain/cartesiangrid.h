@@ -3,6 +3,7 @@
 
 #include "datafile.h"
 #include "geostats/spatiallocation.h"
+#include "spectral/spectral.h"
 #include <set>
 
 class GSLibParGrid;
@@ -134,6 +135,14 @@ public:
      * realizations informed.
      */
     void setNReal( uint n );
+
+    spectral::complex_array getComplexArray( uint nDataColumn );
+
+    spectral::complex_array getComplexArray( uint nDataColumnRealPart,
+                                             uint nDataColumnImaginaryPart );
+
+    spectral::array getArray( uint nDataColumn );
+
 
     //DataFile interface
 public:
