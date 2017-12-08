@@ -172,7 +172,10 @@ SOURCES += main.cpp\
     dialogs/sgsimdialog.cpp \
     widgets/distributionfieldselector.cpp \
     viewer3d/view3dverticalexaggerationwidget.cpp \
-    widgets/focuswatcher.cpp
+    widgets/focuswatcher.cpp \
+    spectral/svd.cpp \
+    spectral/pca.cpp \
+    spectral/spectral.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -324,7 +327,10 @@ HEADERS  += mainwindow.h \
     dialogs/sgsimdialog.h \
     widgets/distributionfieldselector.h \
     viewer3d/view3dverticalexaggerationwidget.h \
-    widgets/focuswatcher.h
+    widgets/focuswatcher.h \
+    spectral/svd.h \
+    spectral/pca.h \
+    spectral/spectral.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -447,6 +453,25 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
                -lvtkImagingMath$$_VTK_VERSION_SUFFIX
 
+#=============================================================================
+
+#========= The FFTW3 include and lib path and libraries.=========
+_FFTW3_INCLUDE = $$(FFTW3_INCLUDE)
+isEmpty(_FFTW3_INCLUDE){
+    error(FFTW3_INCLUDE environment variable not defined.)
+}
+_FFTW3_LIB = $$(FFTW3_LIB)
+isEmpty(_FFTW3_LIB){
+    error(FFTW3_LIB environment variable not defined.)
+}
+INCLUDEPATH += $$_FFTW3_INCLUDE
+LIBPATH     += $$_FFTW3_LIB
+LIBS        += -lfftw3
+LIBS        += -lfftw3f
+#==============================================================
+
+#=====================Embedded thirdparty libraries===========================
+INCLUDEPATH += thirdparty
 #=============================================================================
 
 #Library used in Util::getPhysicalRAMusage()
