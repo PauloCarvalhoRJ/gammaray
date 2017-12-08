@@ -87,6 +87,7 @@ private Q_SLOTS:
     void save();
     void preview();
     void restore();
+    void onSVD();
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

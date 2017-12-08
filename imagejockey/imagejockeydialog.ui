@@ -597,6 +597,44 @@
              <enum>QFrame::Raised</enum>
             </property>
             <layout class="QGridLayout" name="gridLayout_2">
+             <item row="3" column="0">
+              <widget class="QFrame" name="frame_2">
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QHBoxLayout" name="horizontalLayout_8">
+                <item>
+                 <widget class="QPushButton" name="btnRemoveCurve">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="toolTip">
+                   <string>reset reference curve</string>
+                  </property>
+                  <property name="text">
+                   <string/>
+                  </property>
+                  <property name="icon">
+                   <iconset resource="../resources.qrc">
+                    <normaloff>:/icons32/removecurve32</normaloff>:/icons32/removecurve32</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>32</width>
+                    <height>32</height>
+                   </size>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
              <item row="2" column="0">
               <widget class="QFrame" name="frmBandwidthControl">
                <property name="frameShape">
@@ -616,34 +654,6 @@
                   </property>
                   <property name="text">
                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Bandw.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="alignment">
-                   <set>Qt::AlignCenter</set>
-                  </property>
-                 </widget>
-                </item>
-               </layout>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QFrame" name="frmAzimuthTolControl">
-               <property name="frameShape">
-                <enum>QFrame::StyledPanel</enum>
-               </property>
-               <property name="frameShadow">
-                <enum>QFrame::Raised</enum>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout_11">
-                <item>
-                 <widget class="QLabel" name="label_3">
-                  <property name="sizePolicy">
-                   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
-                    <horstretch>0</horstretch>
-                    <verstretch>0</verstretch>
-                   </sizepolicy>
-                  </property>
-                  <property name="text">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Az. Tol.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="alignment">
                    <set>Qt::AlignCenter</set>
@@ -692,38 +702,63 @@
                </layout>
               </widget>
              </item>
-             <item row="3" column="0">
-              <widget class="QFrame" name="frame_2">
+             <item row="1" column="1">
+              <widget class="QFrame" name="frmAzimuthTolControl">
                <property name="frameShape">
                 <enum>QFrame::StyledPanel</enum>
                </property>
                <property name="frameShadow">
                 <enum>QFrame::Raised</enum>
                </property>
-               <layout class="QHBoxLayout" name="horizontalLayout_8">
+               <layout class="QVBoxLayout" name="verticalLayout_11">
                 <item>
-                 <widget class="QPushButton" name="btnRemoveCurve">
+                 <widget class="QLabel" name="label_3">
+                  <property name="sizePolicy">
+                   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+                    <horstretch>0</horstretch>
+                    <verstretch>0</verstretch>
+                   </sizepolicy>
+                  </property>
+                  <property name="text">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:600;&quot;&gt;Az. Tol.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="alignment">
+                   <set>Qt::AlignCenter</set>
+                  </property>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <widget class="QFrame" name="frame_3">
+               <property name="frameShape">
+                <enum>QFrame::StyledPanel</enum>
+               </property>
+               <property name="frameShadow">
+                <enum>QFrame::Raised</enum>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_15">
+                <property name="leftMargin">
+                 <number>11</number>
+                </property>
+                <property name="topMargin">
+                 <number>11</number>
+                </property>
+                <item>
+                 <widget class="QPushButton" name="btnSVD">
                   <property name="sizePolicy">
                    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                     <horstretch>0</horstretch>
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
-                  <property name="toolTip">
-                   <string>reset reference curve</string>
-                  </property>
                   <property name="text">
                    <string/>
                   </property>
                   <property name="icon">
                    <iconset resource="../resources.qrc">
-                    <normaloff>:/icons32/removecurve32</normaloff>:/icons32/removecurve32</iconset>
-                  </property>
-                  <property name="iconSize">
-                   <size>
-                    <width>32</width>
-                    <height>32</height>
-                   </size>
+                    <normaloff>:/icons/bclosed</normaloff>:/icons/bclosed</iconset>
                   </property>
                  </widget>
                 </item>
@@ -796,8 +831,8 @@
    <slot>resetReferenceCurve()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1031</x>
-     <y>268</y>
+     <x>1003</x>
+     <y>267</y>
     </hint>
     <hint type="destinationlabel">
      <x>1158</x>
@@ -828,8 +863,8 @@
    <slot>restore()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>255</x>
-     <y>597</y>
+     <x>365</x>
+     <y>608</y>
     </hint>
     <hint type="destinationlabel">
      <x>-6</x>
@@ -844,12 +879,28 @@
    <slot>save()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>333</x>
-     <y>598</y>
+     <x>459</x>
+     <y>608</y>
     </hint>
     <hint type="destinationlabel">
      <x>-3</x>
      <y>556</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSVD</sender>
+   <signal>clicked()</signal>
+   <receiver>ImageJockeyDialog</receiver>
+   <slot>onSVD()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>1072</x>
+     <y>255</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1156</x>
+     <y>256</y>
     </hint>
    </hints>
   </connection>
@@ -859,5 +910,6 @@
   <slot>save()</slot>
   <slot>restore()</slot>
   <slot>preview()</slot>
+  <slot>onSVD()</slot>
  </slots>
 </ui>

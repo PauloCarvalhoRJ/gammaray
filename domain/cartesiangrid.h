@@ -136,7 +136,7 @@ public:
      */
     void setNReal( uint n );
 
-    spectral::array getArray( uint nDataColumn );
+    spectral::array getSpectralArray( uint nDataColumn );
 
     long append( const QString columnName, const spectral::array& array );
 

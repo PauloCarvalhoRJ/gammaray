@@ -12,6 +12,8 @@
 #include "spectrogram1dplot.h"
 #include "equalizer/equalizerwidget.h"
 #include "util.h"
+#include "svdparametersdialog.h"
+#include "spectral/svd.h"
 
 #include <qwt_wheel.h>
 
@@ -337,3 +339,29 @@ void ImageJockeyDialog::restore()
 }
 
 
+
+
+void ImageJockeyDialog::onSVD()
+{
+    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! cg )
+        return;
+
+    long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
+    SVDParametersDialog dlg( this );
+    dlg.exec();
+    spectral::array a = cg->getSpectralArray( selectedAttributeIndex );
+    spectral::SVD svd = spectral::svd( a );
+
+    long numberOfFactors = dlg.getNumberOfFactors();
+
+    QString baseFactorName = m_atSelector->getSelectedVariableName();
+    for (long i = 0; i < numberOfFactors; ++i) {
+        spectral::array factor = svd.factor(i);
+        QString factorName = baseFactorName + "/SVD_" + QString::number( i + 1 );
+        cg->append( factorName, factor );
+    }
+
+    //    auto weights = svd.factor_weights();
+    //    renderDecayingCurve(weights);
+}

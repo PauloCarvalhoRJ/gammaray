@@ -524,7 +524,7 @@ View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
     return View3DBuilders::build( this, widget3D );
 }
 
-spectral::array CartesianGrid::getArray(uint nDataColumn)
+spectral::array CartesianGrid::getSpectralArray(uint nDataColumn)
 {
     spectral::array data( _nx, _ny, _nz, 0.0 );
     long idx = 0;
@@ -536,6 +536,7 @@ spectral::array CartesianGrid::getArray(uint nDataColumn)
             }
         }
     }
+    return data;
 }
 
 long CartesianGrid::append(const QString columnName, const spectral::array &array)
