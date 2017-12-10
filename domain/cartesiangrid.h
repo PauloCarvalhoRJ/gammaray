@@ -136,8 +136,10 @@ public:
      */
     void setNReal( uint n );
 
+    /** Creates a spectral::array object from a column of this Cartesian grid. */
     spectral::array getSpectralArray( uint nDataColumn );
 
+    /** Adds de contents of the given data array as new column to this Cartesian grid. */
     long append( const QString columnName, const spectral::array& array );
 
     //DataFile interface

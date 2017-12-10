@@ -244,6 +244,9 @@ public:
                          const QString nameForNewAttributeOfRealPart,
                          const QString nameForNewAttributeOfImaginaryPart);
 
+    /**
+     * Adds a new data column to this DataFile filled with zeroes.
+     */
     long addEmptyDataColumn( const QString columnName, long numberOfDataElements );
 
 //File interface

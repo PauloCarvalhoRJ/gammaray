@@ -15,6 +15,7 @@
 #include "svdparametersdialog.h"
 #include "spectral/svd.h"
 
+#include <QInputDialog>
 #include <qwt_wheel.h>
 
 ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
@@ -347,6 +348,12 @@ void ImageJockeyDialog::onSVD()
     if( ! cg )
         return;
 
+    bool ok;
+    QString var_suffix = QInputDialog::getText(this, "User input requested.", "Suffixes for the SVD factors:", QLineEdit::Normal,
+                                             "/SVD_", &ok);
+    if( ! ok )
+        return;
+
     long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
     SVDParametersDialog dlg( this );
     dlg.exec();
@@ -358,7 +365,7 @@ void ImageJockeyDialog::onSVD()
     QString baseFactorName = m_atSelector->getSelectedVariableName();
     for (long i = 0; i < numberOfFactors; ++i) {
         spectral::array factor = svd.factor(i);
-        QString factorName = baseFactorName + "/SVD_" + QString::number( i + 1 );
+        QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
         cg->append( factorName, factor );
     }
 

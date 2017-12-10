@@ -554,5 +554,13 @@ long CartesianGrid::append(const QString columnName, const spectral::array &arra
         }
     }
 
+    if( idx != _nx * _ny * _nz )
+        Application::instance()->logError("CartesianGrid::append(): mismatch between number of data values added and Cartesian grid cell count.");
+
+    writeToFS();
+
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
+
     return index;
 }
