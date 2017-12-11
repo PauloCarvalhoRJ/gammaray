@@ -1759,7 +1759,6 @@ std::int64_t Util::getPhysicalRAMusage()
     SIZE_T physMemUsedByMe = pmc.WorkingSetSize;
     return (std::int64_t)physMemUsedByMe;
 #elif Q_OS_LINUX
-    //TODO: untested code.
     FILE* file = fopen("/proc/self/status", "r");
     int result = -1;
     char line[128];
