@@ -4,22 +4,22 @@ IAlgorithmDataSource::IAlgorithmDataSource()
 {
 }
 
-void IAlgorithmDataSource::initZeroes(long sampleCount, int variableCount)
+void IAlgorithmDataSource::initZeroes(long rowCount, int columnCount)
 {
     clear();
-    reserve( sampleCount, variableCount );
-    for( long iSample = 0; iSample < sampleCount; ++iSample )
-        for( int iVar = 0; iVar < variableCount; ++iVar)
-            setData( iVar, iSample, 0.0d);
+    reserve( rowCount, columnCount );
+    for( long iRow = 0; iRow < rowCount; ++iRow )
+        for( int iCol = 0; iCol < columnCount; ++iCol)
+            setData( iCol, iRow, 0.0d);
 }
 
-void IAlgorithmDataSource::setDataFrom(int sampleIndexInThisDataSource,
+void IAlgorithmDataSource::setDataFrom(int rowIndexInThisDataSource,
                                        const IAlgorithmDataSource &anotherDataSource,
-                                       int sampleIndexInAnotherDataSource)
+                                       int rowIndexInAnotherDataSource)
 {
-    int numberOfVariables = anotherDataSource.getVariableCount();
-    for( int iVar = 0; iVar < numberOfVariables; ++iVar ){
-        double value = anotherDataSource.getData( iVar, sampleIndexInAnotherDataSource );
-        setData( iVar, sampleIndexInThisDataSource, value );
+    int numberOfColumns = anotherDataSource.getColumnCount();
+    for( int iColumn = 0; iColumn < numberOfColumns; ++iColumn ){
+        double value = anotherDataSource.getData( iColumn, rowIndexInAnotherDataSource );
+        setData( iColumn, rowIndexInThisDataSource, value );
     }
 }

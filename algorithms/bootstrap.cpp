@@ -19,10 +19,10 @@ Bootstrap::Bootstrap(const IAlgorithmDataSource &input, ResamplingType resType, 
 void Bootstrap::resample( IAlgorithmDataSource &result, long numberOfSamples )
 {
     //intialize the output.
-    result.initZeroes( numberOfSamples, m_input.getVariableCount() );
+    result.initZeroes( numberOfSamples, m_input.getColumnCount() );
 
     //get the number of samples in the input
-    long sampleCountOfInput = m_input.getSampleCount();
+    long sampleCountOfInput = m_input.getRowCount();
 
     //baggs the input.
     if( m_resType == ResamplingType::CASE ){
