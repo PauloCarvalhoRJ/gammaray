@@ -16,18 +16,20 @@ Bootstrap::Bootstrap(const IAlgorithmDataSource &input, ResamplingType resType, 
     m_randomNumberGenerator.seed( randomNumberGeneratorSeed );
 }
 
-void Bootstrap::resample(IAlgorithmDataSource &result)
+void Bootstrap::resample( IAlgorithmDataSource &result, long numberOfSamples )
 {
-    long sampleCount = m_input.getSampleCount();
-
     //intialize the output.
-    result.initZeroes( m_input.getSampleCount(), m_input.getVariableCount() );
+    result.initZeroes( numberOfSamples, m_input.getVariableCount() );
 
+    //get the number of samples in the input
+    long sampleCountOfInput = m_input.getSampleCount();
+
+    //baggs the input.
     if( m_resType == ResamplingType::CASE ){
         //the output must have the same number of samples of the input
-        for( long sampleNumberOfOutput = 0; sampleNumberOfOutput < sampleCount; ++sampleNumberOfOutput){
+        for( long sampleNumberOfOutput = 0; sampleNumberOfOutput < numberOfSamples; ++sampleNumberOfOutput){
             //get a random input sample number
-            long sampleNumberOfInput = useRand( m_randomNumberGenerator, 0, sampleCount-1);
+            long sampleNumberOfInput = useRand( m_randomNumberGenerator, 0, sampleCountOfInput-1);
             //assign its values to the output
             result.setDataFrom( sampleNumberOfOutput, m_input, sampleNumberOfInput );
         }

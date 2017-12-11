@@ -10,10 +10,10 @@ public:
     IAlgorithmDataSource();
 
     //============ Pure virtual methods (interface contract)===================
-    /** Returs the sample count. */
+    /** Returns the sample count. */
     virtual long getSampleCount() const = 0;
 
-    /** Get the number of variables in the data set. */
+    /** Returns the number of variables in the data set. */
     virtual int getVariableCount() const = 0;
 
     /** Empties the data set. */

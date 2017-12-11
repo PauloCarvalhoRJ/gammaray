@@ -20,8 +20,8 @@ enum class ResamplingType : unsigned int{
  * based on the input samples.  The new sample set may have statistics (e.g. mean) different from the
  * original samples, thus distributions of the statistics measures can be taken, which allows
  * inference of the unaccessible population.  The resulting sample set often is very different from the
- * original data, but has similar distribution and variability.  The output has the same number of samples
- * of the input.  Other characteristics of the input (e.g. correlations) can be preserved depending on the
+ * original data, but has similar distribution and variability.  The output can have any number of samples.
+ * Other characteristics of the input (e.g. correlations) can be preserved depending on the
  * type of resampling of choice.
  */
 class Bootstrap
@@ -31,7 +31,11 @@ public:
                ResamplingType resType,
                long randomNumberGeneratorSeed );
 
-    void resample( IAlgorithmDataSource& result );
+    /** Produces the output by bagging.
+     * @param result The container to hold the bagged samples.  Attention: The previous contents are cleared.
+     * @param numberOfSamples  The number of samples in the output.
+     */
+    void resample( IAlgorithmDataSource& result, long numberOfSamples );
 
 protected:
     const IAlgorithmDataSource& m_input;

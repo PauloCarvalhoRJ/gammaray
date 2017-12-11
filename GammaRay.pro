@@ -173,9 +173,9 @@ SOURCES += main.cpp\
     widgets/distributionfieldselector.cpp \
     viewer3d/view3dverticalexaggerationwidget.cpp \
     widgets/focuswatcher.cpp \
-    algorithms/randomforest.cpp \
     algorithms/ialgorithmdatasource.cpp \
-    algorithms/bootstrap.cpp
+    algorithms/bootstrap.cpp \
+    algorithms/randomforestclassification.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -328,9 +328,9 @@ HEADERS  += mainwindow.h \
     widgets/distributionfieldselector.h \
     viewer3d/view3dverticalexaggerationwidget.h \
     widgets/focuswatcher.h \
-    algorithms/randomforest.h \
     algorithms/ialgorithmdatasource.h \
-    algorithms/bootstrap.h
+    algorithms/bootstrap.h \
+    algorithms/randomforestclassification.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
