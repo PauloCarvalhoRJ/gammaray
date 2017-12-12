@@ -51,7 +51,7 @@ protected:
      * @param rowIDs A list of row numbers from wich to take the counts.
      * @param columnIndex The index of a column holding categorical values.  See isContinuous().
      */
-    void getCategoriesCounts(std::list< std::pair< DataValue, long > >& result,
+    void getCategoriesCounts( std::list< std::pair< DataValue, long > >& result,
                               const std::list<long> &rowIDs,
                               int columnIndex) const;
 
@@ -60,7 +60,8 @@ protected:
      * This factor is a likelyhood of being incorrect in picking a category.  A factor of zero means you will
      * always pick the correct class (all class values in the column are the same).
      */
-    double giniImpurity( const std::list<int>& rowIDs );
+    double getGiniImpurity(const std::list<long> &rowIDs,
+                           int columnIndex ) const ;
 };
 
 #endif // CART_H

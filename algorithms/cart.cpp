@@ -63,7 +63,20 @@ void CART::getCategoriesCounts(std::list<std::pair<DataValue, long> > &result,
     }
 }
 
-double CART::giniImpurity(const std::list<int> &rowIDs)
+double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) const
 {
-
+    //get the counts for each category found in the column (variable)
+    std::list<std::pair<DataValue, long> > categoriesCounts;
+    getCategoriesCounts( categoriesCounts, rowIDs, columnIndex );
+    //get the number of rows
+    long numberOfRows = rowIDs.size();
+    //assumes total impurity
+    double factor = 1.0d;
+    //for each pair DataValue/count
+    std::list<std::pair<DataValue, long> >::iterator it = categoriesCounts.begin();
+    for(; it != categoriesCounts.end(); ++it){
+        double categoryProportion = (*it).second / (double)numberOfRows;
+        factor -= ( categoryProportion * categoryProportion );
+    }
+    return factor;
 }
