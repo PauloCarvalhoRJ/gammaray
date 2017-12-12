@@ -178,7 +178,8 @@ SOURCES += main.cpp\
     algorithms/randomforestclassification.cpp \
     algorithms/cart.cpp \
     algorithms/cartnode.cpp \
-    algorithms/cartsplitcriterion.cpp
+    algorithms/cartsplitcriterion.cpp \
+    dialogs/machinelearningdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -336,7 +337,8 @@ HEADERS  += mainwindow.h \
     algorithms/randomforestclassification.h \
     algorithms/cart.h \
     algorithms/cartnode.h \
-    algorithms/cartsplitcriterion.h
+    algorithms/cartsplitcriterion.h \
+    dialogs/machinelearningdialog.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -400,7 +402,8 @@ FORMS    += mainwindow.ui \
     imagejockey/equalizer/equalizerslider.ui \
     dialogs/sgsimdialog.ui \
     widgets/distributionfieldselector.ui \
-    viewer3d/view3dverticalexaggerationwidget.ui
+    viewer3d/view3dverticalexaggerationwidget.ui \
+    dialogs/machinelearningdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

@@ -69,6 +69,11 @@ File *FileSelectorWidget::getSelectedFile()
     return nullptr;
 }
 
+void FileSelectorWidget::setCaption(QString caption)
+{
+    ui->lblCaption->setText( caption );
+}
+
 void FileSelectorWidget::onSelection(int /*index*/)
 {
     m_File = nullptr;

@@ -60,6 +60,7 @@
 #include "dialogs/cokrigingdialog.h"
 #include "dialogs/multivariogramdialog.h"
 #include "dialogs/sgsimdialog.h"
+#include "dialogs/machinelearningdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 
@@ -1600,6 +1601,12 @@ void MainWindow::onRFFT()
 void MainWindow::onUpdateStatusBar()
 {
     statusBar()->showMessage( "memory usage = " + Util::humanReadable( Util::getPhysicalRAMusage() ) + "B" );
+}
+
+void MainWindow::onMachineLearning()
+{
+    MachineLearningDialog* mld = new MachineLearningDialog( this );
+    mld->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()

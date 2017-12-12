@@ -36,6 +36,9 @@ public:
     /** Returns null pointer if no file is selected. */
     File* getSelectedFile();
 
+    /** Sets an option caption text. */
+    void setCaption( QString caption );
+
 signals:
     void fileSelected( File* file );
 
