@@ -175,7 +175,9 @@ SOURCES += main.cpp\
     widgets/focuswatcher.cpp \
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
-    algorithms/randomforestclassification.cpp
+    algorithms/randomforestclassification.cpp \
+    algorithms/cart.cpp \
+    algorithms/cartnode.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -330,7 +332,9 @@ HEADERS  += mainwindow.h \
     widgets/focuswatcher.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
-    algorithms/randomforestclassification.h
+    algorithms/randomforestclassification.h \
+    algorithms/cart.h \
+    algorithms/cartnode.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
