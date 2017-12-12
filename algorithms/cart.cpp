@@ -11,13 +11,14 @@ CART::CART(const IAlgorithmDataSource &data) :
         m_root.addRowIndex( iRow );
 }
 
-void CART::split(const std::list<int> &rowIDs,
+void CART::split(const std::list<long> &rowIDs,
                  const CARTSplitCriterion &criterion,
-                 std::list<int> &trueSideRowIDs,
-                 std::list<int> &falseSideRowIDs)
+                 std::list<long> &trueSideRowIDs,
+                 std::list<long> &falseSideRowIDs)
 {
-
-    std::list<int>::const_iterator it = rowIDs.cbegin();
+    trueSideRowIDs.clear();
+    falseSideRowIDs.clear();
+    std::list<long>::const_iterator it = rowIDs.cbegin();
     for(; it != rowIDs.cend(); ++it ){
         if( criterion.matches( *it ))
             trueSideRowIDs.push_back( *it );
@@ -26,8 +27,9 @@ void CART::split(const std::list<int> &rowIDs,
     }
 }
 
-void CART::getUniqueDataValues(std::list<DataValue> &result, const std::list<long> &rowIDs,
-                                               int columnIndex) const
+void CART::getUniqueDataValues(std::list<DataValue> &result,
+                               const std::list<long> &rowIDs,
+                               int columnIndex) const
 {
     result.clear();
     std::list<long>::const_iterator it = rowIDs.begin();
@@ -79,4 +81,34 @@ double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) con
         factor -= ( categoryProportion * categoryProportion );
     }
     return factor;
+}
+
+CARTSplitCriterion CART::getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
+                                                                     const std::list<int> &featureIDs)
+{
+    //Starts off with no information gain.
+    double highestInformationGain = 0.0;
+    //Create a list to hold unique data values.
+    std::list<DataValue> uniqueValues;
+    //Create a list to hold row ids with data that match the split criterion.
+    std::list<long> trueSideRowIDs;
+    //Create a list to hold row ids with data that don't match the split criterion.
+    std::list<long> falseSideRowIDs;
+    //for each feature column.
+    std::list<int>::const_iterator columnIt = featureIDs.cbegin();
+    for(; columnIt != featureIDs.cend(); ++columnIt){
+        //compute the impurity (uncertainty) for the current feature in the current row set.
+        double impurity = getGiniImpurity( rowIDs, *columnIt );
+        //get the unique feature values found in the row set
+        getUniqueDataValues( uniqueValues, rowIDs, *columnIt );
+        //for each unique feature values.
+        std::list<DataValue>::iterator uniqueValuesIt = uniqueValues.begin();
+        for(; uniqueValuesIt != uniqueValues.end(); ++uniqueValuesIt){
+            //Create a split criterion object
+            CARTSplitCriterion splitCriterion( m_data, *columnIt, *uniqueValuesIt );
+            //Split the row set using the criterion above
+            split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
+        }
+    }
+
 }

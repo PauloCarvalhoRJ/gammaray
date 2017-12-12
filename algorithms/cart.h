@@ -27,16 +27,16 @@ protected:
     const IAlgorithmDataSource& m_data;
 
     /**
-     * Performs data split for the CART algorithm.
+     * Performs data split for the CART algorithm.  The output lists are cleared before splitting.
      * @param rowIDs The set of row id's to be split.
      * @param criterion The split criterion.
      * @param trueSideRowIDs The set of ids of rows that match the criterion.
      * @param falseSideRowIDs The set of ids of rows that don't match the criterion.
      */
-    void split( const std::list<int>& rowIDs,
-                const CARTSplitCriterion& criterion,
-                std::list<int>& trueSideRowIDs,
-                std::list<int>& falseSideRowIDs );
+    void split(const std::list<long> &rowIDs,
+               const CARTSplitCriterion &criterion,
+               std::list<long> &trueSideRowIDs,
+               std::list<long> &falseSideRowIDs );
 
     /** Returns a collection of the unique values found in the given column of a set of
      * rows (given by a list of row numbers).  The passed list is reset. */
@@ -62,6 +62,16 @@ protected:
      */
     double getGiniImpurity(const std::list<long> &rowIDs,
                            int columnIndex ) const ;
+
+    /**
+     * Returns the CART tree partition criterion with the highest information gain among the possible ones
+     * that can be made with the data given by row numbers (IDs).  Information gain is defined by reduction
+     * of uncertainty (sum or impurity) in the tree nodes below.  The goal is to get large data subsets with
+     * low uncertainty until we get leaf nodes with pure (0% chance of incorrect picking) or at least with
+     * low impurity.
+     */
+    CARTSplitCriterion getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
+                                                                   const std::list<int> &featureIDs);
 };
 
 #endif // CART_H
