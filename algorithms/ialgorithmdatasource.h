@@ -78,17 +78,6 @@ public:
                               const IAlgorithmDataSource& anotherDataSource,
                               int rowIndexInAnotherDataSource );
 
-    /** Returns a collection of the unique values found in the given column. */
-    virtual std::list< DataValue > getUniqueDataValues( int columnIndex ) const;
-
-    /** Counts the categorical values found in the given column.  Unspecified behavior ensues if you count
-     *  classes in calumns holding continuous values.  This method does NOT reset the counts to zero.
-     * @param result A list of pairs: the first value is a categorical value to be counted.  The second
-     *               value will hold the count.
-     * @param columnIndex The index of a column holding categorical values.  See isContinuous().
-     */
-    virtual void getCategoriesCounts( std::list< std::pair< DataValue, long > >& result,
-                                      int columnIndex) const;
 };
 
 #endif // IALGORITHMDATASOURCE_H
