@@ -177,7 +177,8 @@ SOURCES += main.cpp\
     algorithms/bootstrap.cpp \
     algorithms/randomforestclassification.cpp \
     algorithms/cart.cpp \
-    algorithms/cartnode.cpp
+    algorithms/cartnode.cpp \
+    algorithms/cartsplitcriterion.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -334,7 +335,8 @@ HEADERS  += mainwindow.h \
     algorithms/bootstrap.h \
     algorithms/randomforestclassification.h \
     algorithms/cart.h \
-    algorithms/cartnode.h
+    algorithms/cartnode.h \
+    algorithms/cartsplitcriterion.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

@@ -3,14 +3,32 @@
 
 #include <list>
 
-union DataValue{
-    double continuous;
-    int categorical;
+
+/** DataValue is a "tagged union". */
+class DataValue{
+public:
+    explicit DataValue( double initContinuousValue ){ value = initContinuousValue; usedMember = 1; }
+    explicit DataValue( int initCategoricalValue ){ value = initCategoricalValue; usedMember = 2; }
+    bool isCategorical(){ return usedMember == 2; }
+    int usedMember;
+    union valueUnion {
+        double continuous;
+        int categorical;
+        bool operator==( valueUnion other ){
+            return *this == other;  //TODO: not safe with doubles.
+        }
+        bool operator<( valueUnion other ){
+            return *this < other;
+        }
+        valueUnion operator=( double doubleValue ){
+            return *this = doubleValue;
+        }
+    } value;
     bool operator==( DataValue other ){
-        return *this == other;  //TODO: not safe with doubles.
+        return value == other.value;
     }
     bool operator<( DataValue other ){
-        return *this < other;
+        return value < other.value;
     }
 };
 

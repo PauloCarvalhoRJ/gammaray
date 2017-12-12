@@ -1,5 +1,5 @@
-#ifndef RANDOMFOREST_H
-#define RANDOMFOREST_H
+#ifndef RANDOMFORESTCLASSIFICATION_H
+#define RANDOMFORESTCLASSIFICATION_H
 
 class IAlgorithmDataSource;
 
@@ -23,4 +23,4 @@ public:
 
 };
 
-#endif // RANDOMFOREST_H
+#endif // RANDOMFORESTCLASSIFICATION_H

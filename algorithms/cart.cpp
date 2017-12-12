@@ -1,6 +1,5 @@
 #include "cart.h"
 #include "ialgorithmdatasource.h"
-#include "cartnode.h"
 
 CART::CART(const IAlgorithmDataSource &data) :
     m_data( data )

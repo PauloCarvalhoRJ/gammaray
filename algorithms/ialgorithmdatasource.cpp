@@ -10,7 +10,7 @@ void IAlgorithmDataSource::initZeroes(long rowCount, int columnCount)
     reserve( rowCount, columnCount );
     for( long iRow = 0; iRow < rowCount; ++iRow )
         for( int iCol = 0; iCol < columnCount; ++iCol)
-            setDataValue( iCol, iRow, {0.0d});
+            setDataValue( iCol, iRow, DataValue(0.0d));
 }
 
 void IAlgorithmDataSource::setDataFrom(int rowIndexInThisDataSource,
