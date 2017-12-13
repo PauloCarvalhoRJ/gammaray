@@ -5,6 +5,7 @@
 #include "cartsplitcriterion.h"
 
 #include <list>
+#include <memory>
 
 class CARTLeafNode;
 class IAlgorithmDataSource;
@@ -16,12 +17,17 @@ class CART
 {
 public:
 
-    CART( const IAlgorithmDataSource& data );
+    /** Builds a CART tree using the given data set and passing a list of column IDs
+     * corresponding to the features/variables to use as training data.  The root of
+     * the resulting CART tree is pointed by the m_root member.
+     */
+    CART( const IAlgorithmDataSource& data,
+          const std::list<int> &featureIDs );
 
 protected:
 
     /** The root of the CART tree. */
-    CARTLeafNode m_root;
+    std::unique_ptr<CARTNode> m_root;
 
     /** The data from which the CART tree is built. */
     const IAlgorithmDataSource& m_data;
@@ -88,12 +94,11 @@ protected:
     std::pair<CARTSplitCriterion, double> getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
                                                                                       const std::list<int> &featureIDs);
 
-    /** Builds the CART tree from the given set of data rows (referenced by a list of row numbers).
-     *  The resulting tree is attached to the root node: the m_root member.
+    /** Builds a CART tree hierarchy from the given set of data rows (referenced by a list of row numbers).
      * @param rowIDs Row IDs of the row set.
      * @param featureIDs Column IDs of the variables/features participating in the training data.
      */
-    void makeCART(const std::list<long> &rowIDs , const std::list<int> &featureIDs);
+    CARTNode* makeCART( const std::list<long> &rowIDs , const std::list<int> &featureIDs );
 };
 
 #endif // CART_H

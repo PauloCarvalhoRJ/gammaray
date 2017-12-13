@@ -1,15 +1,18 @@
 #include "cart.h"
 #include "ialgorithmdatasource.h"
+#include "cartdecisionnode.h"
 #include <tuple>
 
-CART::CART(const IAlgorithmDataSource &data) :
+CART::CART(const IAlgorithmDataSource &data, const std::list<int> &featureIDs ) :
     m_data( data )
 {
-    long rowCount = m_data.getRowCount();
-
-    //The root node refers to all data rows.
+    //Create the list with all row IDs.
+    std::list<long> rowIDs;
+    long rowCount = data.getRowCount();
     for( long iRow = 0; iRow < rowCount; ++iRow )
-        m_root.addRowIndex( iRow );
+        rowIDs.push_back( iRow );
+    //Built the CART tree, getting the pointer to the root node.
+    m_root.reset( makeCART( rowIDs, featureIDs ) );
 }
 
 void CART::split(const std::list<long> &rowIDs,
@@ -145,7 +148,7 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
     return {finalSplitCriterion, highestInformationGain};
 }
 
-void CART::makeCART(const std::list<long> &rowIDs,
+CARTNode *CART::makeCART(const std::list<long> &rowIDs,
                     const std::list<int> &featureIDs)
 {
     CARTSplitCriterion splitCriterion( m_data, 0, DataValue(0.0) );
@@ -153,4 +156,21 @@ void CART::makeCART(const std::list<long> &rowIDs,
 
     //get the split criterion with maximum information gain for the row set.
     std::tie( splitCriterion, informationGain ) = getSplitCriterionWithMaximumInformationGain( rowIDs, featureIDs );
+
+    //if there were no information gain, return a leaf node.
+    if( informationGain <= 0.0 )
+        return new CARTLeafNode( rowIDs );
+
+    //split the row set using the split criterion found with the highest information gain.
+    std::list<long> trueSideRowIDs;
+    std::list<long> falseSideRowIDs;
+    split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
+
+    //make child nodes by recursing this function.
+    CARTNode* trueSideChildNode = makeCART( trueSideRowIDs, featureIDs );
+    CARTNode* falseSideChildNode = makeCART( falseSideRowIDs, featureIDs );
+
+    //return a non-leaf node.
+    return new CARTDecisionNode( splitCriterion, trueSideChildNode, falseSideChildNode );
+
 }

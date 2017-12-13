@@ -179,7 +179,9 @@ SOURCES += main.cpp\
     algorithms/cart.cpp \
     algorithms/cartsplitcriterion.cpp \
     dialogs/machinelearningdialog.cpp \
-    algorithms/cartleafnode.cpp
+    algorithms/cartleafnode.cpp \
+    algorithms/cartnode.cpp \
+    algorithms/cartdecisionnode.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -338,7 +340,9 @@ HEADERS  += mainwindow.h \
     algorithms/cart.h \
     algorithms/cartsplitcriterion.h \
     dialogs/machinelearningdialog.h \
-    algorithms/cartleafnode.h
+    algorithms/cartleafnode.h \
+    algorithms/cartnode.h \
+    algorithms/cartdecisionnode.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
