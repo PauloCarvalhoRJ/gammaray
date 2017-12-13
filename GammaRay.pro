@@ -177,9 +177,9 @@ SOURCES += main.cpp\
     algorithms/bootstrap.cpp \
     algorithms/randomforestclassification.cpp \
     algorithms/cart.cpp \
-    algorithms/cartnode.cpp \
     algorithms/cartsplitcriterion.cpp \
-    dialogs/machinelearningdialog.cpp
+    dialogs/machinelearningdialog.cpp \
+    algorithms/cartleafnode.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -336,9 +336,9 @@ HEADERS  += mainwindow.h \
     algorithms/bootstrap.h \
     algorithms/randomforestclassification.h \
     algorithms/cart.h \
-    algorithms/cartnode.h \
     algorithms/cartsplitcriterion.h \
-    dialogs/machinelearningdialog.h
+    dialogs/machinelearningdialog.h \
+    algorithms/cartleafnode.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

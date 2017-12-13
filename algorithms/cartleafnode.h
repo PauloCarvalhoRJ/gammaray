@@ -1,13 +1,13 @@
-#ifndef CARTNODE_H
-#define CARTNODE_H
+#ifndef CARTLEAFNODE_H
+#define CARTLEAFNODE_H
 
 #include <list>
 
-/** The CARTNode is a node of a CART (classification and regression decision tree). */
-class CARTNode
+/** The CARTLeafNode is a leaf node of a CART (classification and regression decision tree). */
+class CARTLeafNode
 {
 public:
-    CARTNode();
+    CARTLeafNode();
 
     void addRowIndex( long rowIndex );
 
@@ -16,4 +16,4 @@ protected:
     std::list<long> m_rowIndexes;
 };
 
-#endif // CARTNODE_H
+#endif // CARTLEAFNODE_H

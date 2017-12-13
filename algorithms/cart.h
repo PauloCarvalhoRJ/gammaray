@@ -1,12 +1,12 @@
 #ifndef CART_H
 #define CART_H
 
-#include "cartnode.h"
+#include "cartleafnode.h"
 #include "cartsplitcriterion.h"
 
 #include <list>
 
-class CARTNode;
+class CARTLeafNode;
 class IAlgorithmDataSource;
 
 /** The CART class represents the CART algorithm, which serves to build decision trees from data to classify or
@@ -21,7 +21,7 @@ public:
 protected:
 
     /** The root of the CART tree. */
-    CARTNode m_root;
+    CARTLeafNode m_root;
 
     /** The data from which the CART tree is built. */
     const IAlgorithmDataSource& m_data;
@@ -82,9 +82,18 @@ protected:
      * of uncertainty (sum or impurity) in the tree nodes below.  The goal is to get large data subsets with
      * low uncertainty until we get leaf nodes with pure (0% chance of incorrect picking) or at least with
      * low impurity.
+     * @param rowIDs Row IDs of the row set.
+     * @param featureIDs Column IDs of the variables/features participating in the training data.
      */
     std::pair<CARTSplitCriterion, double> getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
                                                                                       const std::list<int> &featureIDs);
+
+    /** Builds the CART tree from the given set of data rows (referenced by a list of row numbers).
+     *  The resulting tree is attached to the root node: the m_root member.
+     * @param rowIDs Row IDs of the row set.
+     * @param featureIDs Column IDs of the variables/features participating in the training data.
+     */
+    void makeCART(const std::list<long> &rowIDs , const std::list<int> &featureIDs);
 };
 
 #endif // CART_H

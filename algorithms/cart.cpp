@@ -1,5 +1,6 @@
 #include "cart.h"
 #include "ialgorithmdatasource.h"
+#include <tuple>
 
 CART::CART(const IAlgorithmDataSource &data) :
     m_data( data )
@@ -67,9 +68,9 @@ void CART::getCategoriesCounts(std::list<std::pair<DataValue, long> > &result,
 
 double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) const
 {
-    //get the counts for each category found in the column (variable)
+    //get the counts for each category/value found in the column (variable)
     std::list<std::pair<DataValue, long> > categoriesCounts;
-    getCategoriesCounts( categoriesCounts, rowIDs, columnIndex );
+    getCategoriesCounts( categoriesCounts, rowIDs, columnIndex ); //using the CategoriesCounts to count unique valuse in continuous variables
     //get the number of rows
     long numberOfRows = rowIDs.size();
     //assumes total impurity
@@ -142,4 +143,14 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
         }
     }
     return {finalSplitCriterion, highestInformationGain};
+}
+
+void CART::makeCART(const std::list<long> &rowIDs,
+                    const std::list<int> &featureIDs)
+{
+    CARTSplitCriterion splitCriterion( m_data, 0, DataValue(0.0) );
+    double informationGain;
+
+    //get the split criterion with maximum information gain for the row set.
+    std::tie( splitCriterion, informationGain ) = getSplitCriterionWithMaximumInformationGain( rowIDs, featureIDs );
 }
