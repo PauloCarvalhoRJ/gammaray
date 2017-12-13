@@ -42,13 +42,13 @@ void CART::getUniqueDataValues(std::list<DataValue> &result,
 
 void CART::getCategoriesCounts(std::list<std::pair<DataValue, long> > &result,
                                const std::list<long> &rowIDs,
-                               int columnIndex) const
+                               int columnIndexWithCategoricalValues) const
 {
     //clears the output list object.
     result.clear();
     //get the categories to be counted.
     std::list<DataValue> categories;
-    getUniqueDataValues( categories, rowIDs, columnIndex );
+    getUniqueDataValues( categories, rowIDs, columnIndexWithCategoricalValues );
     //mount the output with zero counts.
     for(std::list<DataValue>::iterator it = categories.begin(); it != categories.end(); ++it){
         result.emplace_back( *it, 0 );
@@ -58,7 +58,7 @@ void CART::getCategoriesCounts(std::list<std::pair<DataValue, long> > &result,
         std::pair<DataValue, long>& pair = *it;
         //for each row
         for( std::list<long>::const_iterator rowIt = rowIDs.cbegin(); rowIt != rowIDs.cend(); ++rowIt ){
-            if( m_data.getDataValue( *rowIt, columnIndex ) == pair.first ){
+            if( m_data.getDataValue( *rowIt, columnIndexWithCategoricalValues ) == pair.first ){
                 pair.second++;
             }
         }
@@ -83,11 +83,32 @@ double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) con
     return factor;
 }
 
-CARTSplitCriterion CART::getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
-                                                                     const std::list<int> &featureIDs)
+double CART::getSplitInformationGain(const std::list<long> &rowIDsTrueSide,
+                                     const std::list<long> &rowIDsFalseSide,
+                                     int columnIndex,
+                                     double impurityFactorBeforeTheSplit)
 {
-    //Starts off with no information gain.
+    //Get the total number of rows in both sides of the split.
+    long totalSizeBothSides = rowIDsTrueSide.size() + rowIDsFalseSide.size();
+    //Get the proportion of criterion hits.
+    double proportionOfTrue = rowIDsTrueSide.size() / (double)totalSizeBothSides;
+    //Get the uncertainties of both sides of the split
+    double impurityTrueSide = getGiniImpurity( rowIDsTrueSide, columnIndex );
+    double impurityFalseSide = getGiniImpurity( rowIDsFalseSide, columnIndex );
+    //Compute the impurity after split by averaging both sides impurity factors, weighted by their proportions.
+    double impurityFactorAfterTheSplit =     proportionOfTrue     * impurityTrueSide +
+                                         (1.0 - proportionOfTrue) * impurityFalseSide;
+    //The information gain is the impurity delta before and after the split.  Hopefully a positive delta.
+    return impurityFactorBeforeTheSplit - impurityFactorAfterTheSplit;
+}
+
+std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
+                                                                                        const std::list<int> &featureIDs)
+{
+    //Starts off with no information gain found.
     double highestInformationGain = 0.0;
+    //The split criterion to be returned.
+    CARTSplitCriterion finalSplitCriterion( m_data, 0, DataValue(0.0) );
     //Create a list to hold unique data values.
     std::list<DataValue> uniqueValues;
     //Create a list to hold row ids with data that match the split criterion.
@@ -108,7 +129,17 @@ CARTSplitCriterion CART::getSplitCriterionWithMaximumInformationGain(const std::
             CARTSplitCriterion splitCriterion( m_data, *columnIt, *uniqueValuesIt );
             //Split the row set using the criterion above
             split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
+            //if there is uncertainty (both true and false row id lists have data)
+            if( trueSideRowIDs.size() != 0 && falseSideRowIDs.size() != 0 ){
+                //get the information gain with the split.
+                double informationGain = getSplitInformationGain( trueSideRowIDs, falseSideRowIDs, *columnIt, impurity );
+                //if the information gain is greater than found so far, save it, along with the criterion, for the next iteration
+                if( informationGain > highestInformationGain ){
+                    highestInformationGain = informationGain;
+                    finalSplitCriterion = splitCriterion;
+                }
+            }
         }
     }
-
+    return {finalSplitCriterion, highestInformationGain};
 }

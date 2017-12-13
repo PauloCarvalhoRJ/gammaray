@@ -15,6 +15,9 @@ public:
      */
     CARTSplitCriterion( const IAlgorithmDataSource& data, int columnNumber, DataValue dataValue );
 
+    /** The attribution operator. */
+    CARTSplitCriterion operator =( const CARTSplitCriterion& original );
+
     /** Tests whether the data row given its index matches the split criterion.
      *  If true, the CART algorith will split the data set at the given row, assigning
      *  each partition to two new CARTNode objects to be added to a CART tree.

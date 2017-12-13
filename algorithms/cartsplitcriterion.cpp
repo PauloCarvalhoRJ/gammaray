@@ -7,6 +7,11 @@ CARTSplitCriterion::CARTSplitCriterion(const IAlgorithmDataSource &data, int col
 {
 }
 
+CARTSplitCriterion CARTSplitCriterion::operator =(const CARTSplitCriterion &original)
+{
+    return CARTSplitCriterion( original.m_data, original.m_columnNumber, original.m_criterionValue );
+}
+
 bool CARTSplitCriterion::matches( long rowIndex ) const
 {
     //get the value for the split criterion.

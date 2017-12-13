@@ -45,7 +45,7 @@ protected:
                               int columnIndex ) const;
 
     /** Counts the categorical values found in the given column.  Unspecified behavior ensues if you count
-     *  classes in calumns holding continuous values.  This method resets the passed list.
+     *  classes in columns holding continuous values.  This method resets the passed list.
      * @param result A list of pairs: the first value is a categorical value that was counted.  The second
      *               value will hold the count.
      * @param rowIDs A list of row numbers from wich to take the counts.
@@ -53,7 +53,7 @@ protected:
      */
     void getCategoriesCounts( std::list< std::pair< DataValue, long > >& result,
                               const std::list<long> &rowIDs,
-                              int columnIndex) const;
+                              int columnIndexWithCategoricalValues) const;
 
     /**
      * Computes the Gini impurity factor for a given variable in a set of rows.
@@ -64,14 +64,27 @@ protected:
                            int columnIndex ) const ;
 
     /**
+     * Calculates the information gain given a data split and the ammout of uncertainty before the split.
+     * If the returned value is positive, than the proposed split will decrease uncertainty.
+     * @param rowIDsTrueSide Row IDs of data that matched the split criterion.
+     * @param rowIDsFalseSide Rod IDs of data that did not match the split criterion.
+     * @param columnIndex The column ID of the variable used in the split criterion.
+     * @param impurityFactorBeforeTheSplit The uncertainty measure between 0.0 and 1.0 before the split.
+     */
+    double getSplitInformationGain( const std::list<long> &rowIDsTrueSide,
+                                    const std::list<long> &rowIDsFalseSide,
+                                    int columnIndex,
+                                    double impurityFactorBeforeTheSplit );
+
+    /**
      * Returns the CART tree partition criterion with the highest information gain among the possible ones
      * that can be made with the data given by row numbers (IDs).  Information gain is defined by reduction
      * of uncertainty (sum or impurity) in the tree nodes below.  The goal is to get large data subsets with
      * low uncertainty until we get leaf nodes with pure (0% chance of incorrect picking) or at least with
      * low impurity.
      */
-    CARTSplitCriterion getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
-                                                                   const std::list<int> &featureIDs);
+    std::pair<CARTSplitCriterion, double> getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
+                                                                                      const std::list<int> &featureIDs);
 };
 
 #endif // CART_H
