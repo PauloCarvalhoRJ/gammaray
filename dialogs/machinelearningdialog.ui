@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>552</width>
-    <height>446</height>
+    <width>614</width>
+    <height>541</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,7 +30,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QLabel" name="label_2">
+      <widget class="QLabel" name="lblApplicationType">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -474,8 +474,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>290</x>
-     <y>425</y>
+     <x>353</x>
+     <y>528</y>
     </hint>
     <hint type="destinationlabel">
      <x>346</x>
@@ -483,5 +483,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnRun</sender>
+   <signal>clicked()</signal>
+   <receiver>MachineLearningDialog</receiver>
+   <slot>runAlgorithm()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>34</x>
+     <y>476</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>108</x>
+     <y>510</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>runAlgorithm()</slot>
+ </slots>
 </ui>
