@@ -176,12 +176,12 @@ SOURCES += main.cpp\
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
     algorithms/randomforestclassification.cpp \
-    algorithms/cart.cpp \
-    algorithms/cartsplitcriterion.cpp \
     dialogs/machinelearningdialog.cpp \
-    algorithms/cartleafnode.cpp \
-    algorithms/cartnode.cpp \
-    algorithms/cartdecisionnode.cpp
+    algorithms/CART/cart.cpp \
+    algorithms/CART/cartdecisionnode.cpp \
+    algorithms/CART/cartleafnode.cpp \
+    algorithms/CART/cartnode.cpp \
+    algorithms/CART/cartsplitcriterion.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -337,12 +337,12 @@ HEADERS  += mainwindow.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
     algorithms/randomforestclassification.h \
-    algorithms/cart.h \
-    algorithms/cartsplitcriterion.h \
     dialogs/machinelearningdialog.h \
-    algorithms/cartleafnode.h \
-    algorithms/cartnode.h \
-    algorithms/cartdecisionnode.h
+    algorithms/CART/cart.h \
+    algorithms/CART/cartdecisionnode.h \
+    algorithms/CART/cartleafnode.h \
+    algorithms/CART/cartnode.h \
+    algorithms/CART/cartsplitcriterion.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

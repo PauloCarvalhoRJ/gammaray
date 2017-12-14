@@ -1,7 +1,7 @@
 #ifndef CARTSPLITCRITERION_H
 #define CARTSPLITCRITERION_H
 
-#include "ialgorithmdatasource.h"
+#include "../ialgorithmdatasource.h"
 
 /** The CART split criterion is used to define CART (a decision tree) branching durin CART algorithm run. */
 class CARTSplitCriterion
