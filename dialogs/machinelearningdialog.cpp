@@ -4,6 +4,7 @@
 #include "widgets/variableselector.h"
 #include "domain/attribute.h"
 #include "domain/datafile.h"
+#include "domain/application.h"
 
 MachineLearningDialog::MachineLearningDialog(QWidget *parent) :
     QDialog(parent),
@@ -107,7 +108,11 @@ void MachineLearningDialog::updateApplicationLabel()
 
 void MachineLearningDialog::runAlgorithm()
 {
+    if( ui->cmbAlgorithmType->currentText() == "CART" ){
 
+    } else {
+        Application::instance()->logError("MachineLearningDialog::runAlgorithm(): unsupported algorithm: " + ui->cmbAlgorithmType->currentText());
+    }
 }
 
 VariableSelector *MachineLearningDialog::makeVariableSelector()

@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QDateTime>
 #include <complex>
+#include "algorithms/ialgorithmdatasource.h"
 
 class Attribute;
 class UnivariateCategoryClassification;
@@ -244,6 +245,11 @@ public:
                          const QString nameForNewAttributeOfRealPart,
                          const QString nameForNewAttributeOfImaginaryPart);
 
+    /**
+     * Returns a pointer to the internal algorithm interface data source (see classes in /algorthms subdirectory).
+     */
+    IAlgorithmDataSource* algorithmDataSource(){ return _algorithmDataSourceInterface.get(); }
+
 //File interface
     void deleteFromFS();
     void writeToFS();
@@ -288,6 +294,9 @@ protected:
 
     /** The last line of file to load.  Default is infinity (read all data). */
     long _dataPageLastLine;
+
+    /** The pointer to the internal interface to the algorithms' data source (see classes in /algorithms subdirectory). */
+    std::unique_ptr<IAlgorithmDataSource> _algorithmDataSourceInterface;
 };
 
 #endif // DATAFILE_H

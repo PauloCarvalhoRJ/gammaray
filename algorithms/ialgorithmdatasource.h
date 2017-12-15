@@ -60,13 +60,6 @@ public:
     /** Get a data value. */
     virtual DataValue getDataValue( long rowIndex, int columnIndex  ) const = 0;
 
-    /** Informs whether the variable corresponding to the given column is continuous,
-     * Otherwise it is categorical. */
-    virtual bool isContinuous( int columnIndex ) const = 0;
-
-    /** Informs whether the value given its row and column number is a no-data value. */
-    virtual bool isNDV( long rowIndex, int columnIndex ) const = 0;
-
     //============ Concrete methods =============================================
     /** Allocates and initializes the data set with zeroes (doubles). */
     virtual void initZeroes( long rowCount, int columnCount );

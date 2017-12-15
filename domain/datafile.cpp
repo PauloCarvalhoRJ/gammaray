@@ -22,12 +22,40 @@
 #include "project.h"
 #include "objectgroup.h"
 #include "auxiliary/dataloader.h"
+#include "algorithms/ialgorithmdatasource.h"
+
+class AlgorithmDataSource : public IAlgorithmDataSource{
+public:
+    AlgorithmDataSource( DataFile& dataFile ) : IAlgorithmDataSource(),
+        m_dataFile( dataFile ){}
+    // IAlgorithmDataSource interface
+public:
+    virtual long getRowCount() const {
+        return m_dataFile.getDataLineCount();
+    }
+    virtual int getColumnCount() const {
+        return m_dataFile.getDataColumnCount();
+    }
+    virtual void clear() {
+    }
+    virtual void reserve(long rowCount, int columnCount) {
+    }
+    virtual void setDataValue(long rowIndex, int columnIndex, DataValue value) {
+    }
+    virtual DataValue getDataValue(long rowIndex, int columnIndex) const {
+        //return m_dataFile.data( rowIndex, columnIndex );
+        //m_dataFile.isCategorical()  STOPPED HERE;
+    }
+protected:
+    DataFile& m_dataFile;
+};
 
 DataFile::DataFile(QString path) : File( path ),
     _lastModifiedDateTimeLastLoad( ),
     _dataPageFirstLine( 0 ),
     _dataPageLastLine( std::numeric_limits<long>::max() )
 {
+    _algorithmDataSourceInterface.reset( new AlgorithmDataSource(*this) );
 }
 
 void DataFile::loadData()
