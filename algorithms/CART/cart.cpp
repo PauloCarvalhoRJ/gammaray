@@ -3,28 +3,35 @@
 #include "cartdecisionnode.h"
 #include <tuple>
 
-CART::CART(const IAlgorithmDataSource &data, const std::list<int> &featureIDs ) :
-    m_data( data )
+CART::CART(const IAlgorithmDataSource &trainingData, IAlgorithmDataSource &outputData,
+           const std::list<int> &featureIDs ) :
+    m_trainingData( trainingData ),
+    m_outputData( outputData )
 {
     //Create the list with all row IDs.
     std::list<long> rowIDs;
-    long rowCount = data.getRowCount();
+    long rowCount = trainingData.getRowCount();
     for( long iRow = 0; iRow < rowCount; ++iRow )
         rowIDs.push_back( iRow );
     //Built the CART tree, getting the pointer to the root node.
     m_root.reset( makeCART( rowIDs, featureIDs ) );
 }
 
+void CART::classify(long rowIdOutput, int dependentVariableColumnID, std::list<std::pair<DataValue, long> > &result) const
+{
+    classify( rowIdOutput, dependentVariableColumnID, nullptr, result );
+}
+
 void CART::split(const std::list<long> &rowIDs,
                  const CARTSplitCriterion &criterion,
                  std::list<long> &trueSideRowIDs,
-                 std::list<long> &falseSideRowIDs)
+                 std::list<long> &falseSideRowIDs) const
 {
     trueSideRowIDs.clear();
     falseSideRowIDs.clear();
     std::list<long>::const_iterator it = rowIDs.cbegin();
     for(; it != rowIDs.cend(); ++it ){
-        if( criterion.matches( *it ))
+        if( criterion.trainingMatches( *it ))
             trueSideRowIDs.push_back( *it );
         else
             falseSideRowIDs.push_back( *it );
@@ -38,7 +45,7 @@ void CART::getUniqueDataValues(std::list<DataValue> &result,
     result.clear();
     std::list<long>::const_iterator it = rowIDs.begin();
     for( ; it != rowIDs.cend(); ++it )
-        result.push_back( m_data.getDataValue( *it, columnIndex ) );
+        result.push_back( m_trainingData.getDataValue( *it, columnIndex ) );
     result.sort();
     result.unique();
 }
@@ -62,7 +69,7 @@ void CART::getCategoriesCounts(std::list<std::pair<DataValue, long> > &result,
         std::pair<DataValue, long>& pair = *it;
         //for each row
         for( std::list<long>::const_iterator rowIt = rowIDs.cbegin(); rowIt != rowIDs.cend(); ++rowIt ){
-            if( m_data.getDataValue( *rowIt, columnIndexWithCategoricalValues ) == pair.first ){
+            if( m_trainingData.getDataValue( *rowIt, columnIndexWithCategoricalValues ) == pair.first ){
                 pair.second++;
             }
         }
@@ -90,7 +97,7 @@ double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) con
 double CART::getSplitInformationGain(const std::list<long> &rowIDsTrueSide,
                                      const std::list<long> &rowIDsFalseSide,
                                      int columnIndex,
-                                     double impurityFactorBeforeTheSplit)
+                                     double impurityFactorBeforeTheSplit) const
 {
     //Get the total number of rows in both sides of the split.
     long totalSizeBothSides = rowIDsTrueSide.size() + rowIDsFalseSide.size();
@@ -107,12 +114,12 @@ double CART::getSplitInformationGain(const std::list<long> &rowIDsTrueSide,
 }
 
 std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
-                                                                                        const std::list<int> &featureIDs)
+                                                                                        const std::list<int> &featureIDs) const
 {
     //Starts off with no information gain found.
     double highestInformationGain = 0.0;
     //The split criterion to be returned.
-    CARTSplitCriterion finalSplitCriterion( m_data, 0, DataValue(0.0) );
+    CARTSplitCriterion finalSplitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0) );
     //Create a list to hold unique data values.
     std::list<DataValue> uniqueValues;
     //Create a list to hold row ids with data that match the split criterion.
@@ -130,7 +137,7 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
         std::list<DataValue>::iterator uniqueValuesIt = uniqueValues.begin();
         for(; uniqueValuesIt != uniqueValues.end(); ++uniqueValuesIt){
             //Create a split criterion object
-            CARTSplitCriterion splitCriterion( m_data, *columnIt, *uniqueValuesIt );
+            CARTSplitCriterion splitCriterion( m_trainingData, m_outputData, *columnIt, *uniqueValuesIt );
             //Split the row set using the criterion above
             split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
             //if there is uncertainty (both true and false row id lists have data)
@@ -149,9 +156,9 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
 }
 
 CARTNode *CART::makeCART(const std::list<long> &rowIDs,
-                    const std::list<int> &featureIDs)
+                         const std::list<int> &featureIDs) const
 {
-    CARTSplitCriterion splitCriterion( m_data, 0, DataValue(0.0) );
+    CARTSplitCriterion splitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0) );
     double informationGain;
 
     //get the split criterion with maximum information gain for the row set.
@@ -159,7 +166,7 @@ CARTNode *CART::makeCART(const std::list<long> &rowIDs,
 
     //if there were no information gain, return a leaf node.
     if( informationGain <= 0.0 )
-        return new CARTLeafNode( rowIDs );
+        return new CARTLeafNode( m_trainingData, rowIDs );
 
     //split the row set using the split criterion found with the highest information gain.
     std::list<long> trueSideRowIDs;
@@ -171,6 +178,34 @@ CARTNode *CART::makeCART(const std::list<long> &rowIDs,
     CARTNode* falseSideChildNode = makeCART( falseSideRowIDs, featureIDs );
 
     //return a non-leaf node.
-    return new CARTDecisionNode( splitCriterion, trueSideChildNode, falseSideChildNode );
+    return new CARTDecisionNode( splitCriterion, trueSideChildNode, falseSideChildNode, m_outputData );
+}
 
+void CART::classify(long rowIdOutput,
+                    int dependentVariableColumnID,
+                    const CARTNode *decisionTreeNode,
+                    std::list<std::pair<DataValue, long> > &result) const
+{
+
+    //if the passed node pointer is null, then use the tree's root node.
+    if( !decisionTreeNode )
+        decisionTreeNode = m_root.get();
+
+    //upon reacing a leaf node, no decision to make: simply return the values of the predicted variable from
+    //the training data rows stored in the node
+    if( decisionTreeNode->isLeaf() ){
+        CARTLeafNode* leafNode = (CARTLeafNode*)decisionTreeNode;
+        leafNode->getUniqueTrainingValuesWithCounts( dependentVariableColumnID, result );
+        return;
+    }
+
+    //If execution reaches this point, the node is a decision one.
+    CARTDecisionNode* decisionNode = (CARTDecisionNode*)decisionTreeNode;
+
+    //Test the output data row against the node's split criterion.
+    //Recursion goes to a child node depending whether the row satisfies the decision criterion.
+    if( decisionNode->criterionMatches( rowIdOutput ) )
+        return classify( rowIdOutput, dependentVariableColumnID, decisionTreeNode->getTrueSideChildNode(), result );
+    else
+        return classify( rowIdOutput, dependentVariableColumnID, decisionTreeNode->getFalseSideChildNode(), result );
 }

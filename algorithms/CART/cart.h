@@ -21,8 +21,19 @@ public:
      * corresponding to the features/variables to use as training data.  The root of
      * the resulting CART tree is pointed by the m_root member.
      */
-    CART( const IAlgorithmDataSource& data,
+    CART( const IAlgorithmDataSource& trainingData,
+          IAlgorithmDataSource& outputData,
           const std::list<int> &featureIDs );
+
+    /** Uses the underlying CART decision tree as a classifier to a given output data row, referenced by its row number.
+     * This is just a front-end for the actual recursive classification function (see the protected section).
+     * @param rowIdOutput Row number of output data to classify.
+     * @param dependentVariableColumnID  The column id in the training data of the variable to be predicted.
+     * @param result A list with pair(s): the predicted value; how many times the value was found in training data.
+     */
+    void classify( long rowIdOutput,
+                   int dependentVariableColumnID,
+                   std::list< std::pair<DataValue, long> >& result) const;
 
 protected:
 
@@ -30,7 +41,10 @@ protected:
     std::unique_ptr<CARTNode> m_root;
 
     /** The data from which the CART tree is built. */
-    const IAlgorithmDataSource& m_data;
+    const IAlgorithmDataSource& m_trainingData;
+
+    /** The data to receive predictions. */
+    IAlgorithmDataSource& m_outputData;
 
     /**
      * Performs data split for the CART algorithm.  The output lists are cleared before splitting.
@@ -42,7 +56,7 @@ protected:
     void split(const std::list<long> &rowIDs,
                const CARTSplitCriterion &criterion,
                std::list<long> &trueSideRowIDs,
-               std::list<long> &falseSideRowIDs );
+               std::list<long> &falseSideRowIDs ) const;
 
     /** Returns a collection of the unique values found in the given column of a set of
      * rows (given by a list of row numbers).  The passed list is reset. */
@@ -80,7 +94,7 @@ protected:
     double getSplitInformationGain( const std::list<long> &rowIDsTrueSide,
                                     const std::list<long> &rowIDsFalseSide,
                                     int columnIndex,
-                                    double impurityFactorBeforeTheSplit );
+                                    double impurityFactorBeforeTheSplit ) const;
 
     /**
      * Returns the CART tree partition criterion with the highest information gain among the possible ones
@@ -92,13 +106,21 @@ protected:
      * @param featureIDs Column IDs of the variables/features participating in the training data.
      */
     std::pair<CARTSplitCriterion, double> getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
-                                                                                      const std::list<int> &featureIDs);
+                                                                                      const std::list<int> &featureIDs) const;
 
     /** Builds a CART tree hierarchy from the given set of data rows (referenced by a list of row numbers).
      * @param rowIDs Row IDs of the row set.
      * @param featureIDs Column IDs of the variables/features participating in the training data.
      */
-    CARTNode* makeCART( const std::list<long> &rowIDs , const std::list<int> &featureIDs );
+    CARTNode* makeCART( const std::list<long> &rowIDs , const std::list<int> &featureIDs ) const;
+
+    /** The actual recursive implementation of classify().
+     * @param decisionTreeNode the node of the tree holding the decision hierarchy to classify.  If nullptr, the root node is used.
+     */
+    void classify( long rowIdOutput,
+                   int dependentVariableColumnID,
+                   const CARTNode* decisionTreeNode,
+                   std::list< std::pair<DataValue, long> >& result) const;
 };
 
 #endif // CART_H
