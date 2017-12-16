@@ -37,14 +37,19 @@ public:
         return m_dataFile.getDataColumnCount();
     }
     virtual void clear() {
+        throw InvalidMethodException();
     }
-    virtual void reserve(long rowCount, int columnCount) {
+    virtual void reserve(long /*rowCount*/, int /*columnCount*/) {
+        throw InvalidMethodException();
     }
-    virtual void setDataValue(long rowIndex, int columnIndex, DataValue value) {
+    virtual void setDataValue(long /*rowIndex*/, int /*columnIndex*/, DataValue /*value*/) {
+        throw InvalidMethodException();
     }
     virtual DataValue getDataValue(long rowIndex, int columnIndex) const {
-        //return m_dataFile.data( rowIndex, columnIndex );
-        //m_dataFile.isCategorical()  STOPPED HERE;
+        if( m_dataFile.isCategorical( m_dataFile.getAttributeFromGEOEASIndex( columnIndex+1 ) ) )
+            return DataValue(   (int)    m_dataFile.data( rowIndex, columnIndex ) );
+        else
+            return DataValue( /*double*/ m_dataFile.data( rowIndex, columnIndex ) );
     }
 protected:
     DataFile& m_dataFile;
