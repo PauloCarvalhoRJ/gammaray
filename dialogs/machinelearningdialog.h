@@ -28,6 +28,11 @@ private:
 
     VariableSelector *makeVariableSelector();
 
+    void runCART();
+
+    std::list<int> getTrainingFeaturesIDList();
+    std::list<int> getOutputFeaturesIDList();
+
 private slots:
     void runAlgorithm();
     void setupVariableSelectionWidgets( int numberOfVariables );

@@ -2,7 +2,7 @@
 #define IALGORITHMDATASOURCE_H
 
 #include <list>
-
+#include <string>
 
 /** DataValue is a "tagged union". */
 class DataValue{
@@ -14,23 +14,60 @@ public:
     union valueUnion {
         double continuous;
         int categorical;
-        bool operator==( valueUnion other ){
-            return *this == other;  //TODO: not safe with doubles.
-        }
-        bool operator<( valueUnion other ){
-            return *this < other;
-        }
         valueUnion operator=( double doubleValue ){
-            return *this = doubleValue;
+            continuous = doubleValue;
+            return *this;
         }
     } value;
     bool operator==( DataValue other ){
-        return value == other.value;
+        switch( usedMember ){
+        case 1: return value.continuous == other.value.continuous; //TODO: not safe with doubles (use epsilon?).
+        case 2: return value.categorical == other.value.categorical;
+        default: return false;
+        }
     }
     bool operator<( DataValue other ){
-        return value < other.value;
+        switch( usedMember ){
+        case 1: return value.continuous < other.value.continuous;
+        case 2: return value.categorical < other.value.categorical;
+        default: return false;
+        }
     }
 };
+
+/**
+ * Set of convert() functions to convert types to QString.  Add more as needed.
+ */
+namespace converter2string {
+    std::string convert( int value );
+    std::string convert( long value );
+    std::string convert( double value );
+    std::string convert( DataValue value );
+}
+
+/**
+ * Returns a std::string with the list's values in a single text line separated by the given separator character.
+ */
+template<typename T>
+static std::string printStdListContents( const std::list<T>& list, char separator ){
+    std::string result;
+    typename std::list<T>::const_iterator it = list.cbegin();
+    for(; it != list.cend(); ++it){
+        result.append( converter2string::convert( *it ) );
+        result.push_back( separator );
+    }
+    return result;
+}
+
+/**
+  * This macro is to assist in debugging the contents of std::list objects, since those objects don't have an easy way
+  * to access individual elements in those containers.
+  * The macro creates a std::string variable called prefix+stdlist, where stdlist is the name of a std::list object in the
+  * scope where the macro is being called. type is the elements' type (e.g. double) and separator is a char used to
+  * separate the values in the text line to be inspected in the debugger.
+  */
+#define GDBSTDLIST(prefix,stdlist,type,separator) std::string prefix##stdlist = printStdListContents<type>( stdlist, separator );
+
 
 /** The IAlgorithmDataSource interface must be implemented by any data sources that need to be
  * used in the algorithms framework.  The data source is a table with each variable corresponding to column

@@ -59,7 +59,6 @@
 //TODO: move this to geostatsutils.h, or transfer its PI_OVER_180 constant here
 #define C_180_OVER_PI (180.0 / 3.14159265)
 
-
 Util::Util()
 {
 }

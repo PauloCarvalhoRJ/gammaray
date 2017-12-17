@@ -5,6 +5,7 @@
 #include "domain/attribute.h"
 #include "domain/datafile.h"
 #include "domain/application.h"
+#include "algorithms/CART/cart.h"
 
 MachineLearningDialog::MachineLearningDialog(QWidget *parent) :
     QDialog(parent),
@@ -109,7 +110,7 @@ void MachineLearningDialog::updateApplicationLabel()
 void MachineLearningDialog::runAlgorithm()
 {
     if( ui->cmbAlgorithmType->currentText() == "CART" ){
-
+        runCART();
     } else {
         Application::instance()->logError("MachineLearningDialog::runAlgorithm(): unsupported algorithm: " + ui->cmbAlgorithmType->currentText());
     }
@@ -120,4 +121,43 @@ VariableSelector *MachineLearningDialog::makeVariableSelector()
     VariableSelector* vs = new VariableSelector( );
     vs->setStyleSheet("font-weight: normal;");
     return vs;
+}
+
+void MachineLearningDialog::runCART()
+{
+    //Get the selected data files.
+    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
+    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+
+    //load the data from filesystem.
+    trainingDataFile->loadData();
+    outputDataFile->loadData();
+
+    //get the data source interface for the algorithms.
+    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
+
+    //Build the CART tree
+    CART CARTalgorithm( *trainingDataFile->algorithmDataSource(),
+                        *outputDataFile->algorithmDataSource(),
+                        trainingFeaturesIDList,
+                        outputFeaturesIDList);
+}
+
+std::list<int> MachineLearningDialog::getTrainingFeaturesIDList()
+{
+    std::list<int> result;
+    QVector<VariableSelector*>::iterator it = m_trainingVariableSelectors.begin();
+    for( ; it != m_trainingVariableSelectors.end(); ++it )
+        result.push_back( (*it)->getSelectedVariableGEOEASIndex()-1 );
+    return result;
+}
+
+std::list<int> MachineLearningDialog::getOutputFeaturesIDList()
+{
+    std::list<int> result;
+    QVector<VariableSelector*>::iterator it = m_outputVariableSelectors.begin();
+    for( ; it != m_outputVariableSelectors.end(); ++it )
+        result.push_back( (*it)->getSelectedVariableGEOEASIndex()-1 );
+    return result;
 }

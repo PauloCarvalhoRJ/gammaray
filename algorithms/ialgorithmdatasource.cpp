@@ -1,5 +1,18 @@
 #include "ialgorithmdatasource.h"
 
+namespace converter2string {
+std::string convert( int value ){ return std::to_string( value ); }
+std::string convert( double value ){ return std::to_string( value ); }
+std::string convert( long value ){ return std::to_string( value ); }
+std::string convert( DataValue value ){
+    if( value.isCategorical() )
+        return std::to_string( value.value.categorical );
+    else
+        return std::to_string( value.value.continuous );
+}
+
+}
+
 IAlgorithmDataSource::IAlgorithmDataSource()
 {
 }

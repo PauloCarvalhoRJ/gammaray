@@ -3,8 +3,10 @@
 #include "cartdecisionnode.h"
 #include <tuple>
 
-CART::CART(const IAlgorithmDataSource &trainingData, IAlgorithmDataSource &outputData,
-           const std::list<int> &featureIDs ) :
+CART::CART(const IAlgorithmDataSource &trainingData,
+           IAlgorithmDataSource &outputData,
+           const std::list<int> &trainingFeatureIDs,
+           const std::list<int> &outputFeatureIDs) :
     m_trainingData( trainingData ),
     m_outputData( outputData )
 {
@@ -13,11 +15,14 @@ CART::CART(const IAlgorithmDataSource &trainingData, IAlgorithmDataSource &outpu
     long rowCount = trainingData.getRowCount();
     for( long iRow = 0; iRow < rowCount; ++iRow )
         rowIDs.push_back( iRow );
+
     //Built the CART tree, getting the pointer to the root node.
-    m_root.reset( makeCART( rowIDs, featureIDs ) );
+    m_root.reset( makeCART( rowIDs, trainingFeatureIDs ) );
 }
 
-void CART::classify(long rowIdOutput, int dependentVariableColumnID, std::list<std::pair<DataValue, long> > &result) const
+void CART::classify(long rowIdOutput,
+                    int dependentVariableColumnID,
+                    std::list<std::pair<DataValue, long> > &result) const
 {
     classify( rowIdOutput, dependentVariableColumnID, nullptr, result );
 }
@@ -48,18 +53,21 @@ void CART::getUniqueDataValues(std::list<DataValue> &result,
         result.push_back( m_trainingData.getDataValue( *it, columnIndex ) );
     result.sort();
     result.unique();
+#ifndef NDEBUG
+    GDBSTDLIST( STRING, result, DataValue, ';');
+#endif
 }
 
 
-void CART::getCategoriesCounts(std::list<std::pair<DataValue, long> > &result,
+void CART::getUniqueValuesCounts(std::list<std::pair<DataValue, long> > &result,
                                const std::list<long> &rowIDs,
-                               int columnIndexWithCategoricalValues) const
+                               int columnIndex ) const
 {
     //clears the output list object.
     result.clear();
     //get the categories to be counted.
     std::list<DataValue> categories;
-    getUniqueDataValues( categories, rowIDs, columnIndexWithCategoricalValues );
+    getUniqueDataValues( categories, rowIDs, columnIndex );
     //mount the output with zero counts.
     for(std::list<DataValue>::iterator it = categories.begin(); it != categories.end(); ++it){
         result.emplace_back( *it, 0 );
@@ -69,7 +77,7 @@ void CART::getCategoriesCounts(std::list<std::pair<DataValue, long> > &result,
         std::pair<DataValue, long>& pair = *it;
         //for each row
         for( std::list<long>::const_iterator rowIt = rowIDs.cbegin(); rowIt != rowIDs.cend(); ++rowIt ){
-            if( m_trainingData.getDataValue( *rowIt, columnIndexWithCategoricalValues ) == pair.first ){
+            if( m_trainingData.getDataValue( *rowIt, columnIndex ) == pair.first ){
                 pair.second++;
             }
         }
@@ -80,7 +88,7 @@ double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) con
 {
     //get the counts for each category/value found in the column (variable)
     std::list<std::pair<DataValue, long> > categoriesCounts;
-    getCategoriesCounts( categoriesCounts, rowIDs, columnIndex ); //using the CategoriesCounts to count unique valuse in continuous variables
+    getUniqueValuesCounts( categoriesCounts, rowIDs, columnIndex ); //using the CategoriesCounts to count unique valuse in continuous variables
     //get the number of rows
     long numberOfRows = rowIDs.size();
     //assumes total impurity
@@ -116,6 +124,10 @@ double CART::getSplitInformationGain(const std::list<long> &rowIDsTrueSide,
 std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
                                                                                         const std::list<int> &featureIDs) const
 {
+#ifndef NDEBUG
+    GDBSTDLIST( STRING, rowIDs, long, ';');
+    GDBSTDLIST( STRING, featureIDs, int, ';');
+#endif
     //Starts off with no information gain found.
     double highestInformationGain = 0.0;
     //The split criterion to be returned.

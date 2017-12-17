@@ -20,10 +20,15 @@ public:
     /** Builds a CART tree using the given data set and passing a list of column IDs
      * corresponding to the features/variables to use as training data.  The root of
      * the resulting CART tree is pointed by the m_root member.
+     * @param trainingData Reference to the training data set object.
+     * @param outputData Reference to the data set to be classified or estimated.
+     * @param trainingFeatureIDs List of column numbers corresponding to the selected predictive
+     *                           variables (features) in the training set.
      */
     CART( const IAlgorithmDataSource& trainingData,
           IAlgorithmDataSource& outputData,
-          const std::list<int> &featureIDs );
+          const std::list<int> &trainingFeatureIDs,
+          const std::list<int> &outputFeatureIDs);
 
     /** Uses the underlying CART decision tree as a classifier to a given output data row, referenced by its row number.
      * This is just a front-end for the actual recursive classification function (see the protected section).
@@ -64,16 +69,16 @@ protected:
                               const std::list<long> &rowIDs,
                               int columnIndex ) const;
 
-    /** Counts the categorical values found in the given column.  Unspecified behavior ensues if you count
-     *  classes in columns holding continuous values.  This method resets the passed list.
+    /** Counts the unique values found in the given column.  Normally used for categorical values.
+     * This method resets the passed list.
      * @param result A list of pairs: the first value is a categorical value that was counted.  The second
      *               value will hold the count.
      * @param rowIDs A list of row numbers from wich to take the counts.
-     * @param columnIndex The index of a column holding categorical values.  See isContinuous().
+     * @param columnIndex The index of a column with the values.  See isContinuous().
      */
-    void getCategoriesCounts( std::list< std::pair< DataValue, long > >& result,
+    void getUniqueValuesCounts( std::list< std::pair< DataValue, long > >& result,
                               const std::list<long> &rowIDs,
-                              int columnIndexWithCategoricalValues) const;
+                              int columnIndex ) const;
 
     /**
      * Computes the Gini impurity factor for a given variable in a set of rows.
@@ -115,7 +120,8 @@ protected:
     CARTNode* makeCART( const std::list<long> &rowIDs , const std::list<int> &featureIDs ) const;
 
     /** The actual recursive implementation of classify().
-     * @param decisionTreeNode the node of the tree holding the decision hierarchy to classify.  If nullptr, the root node is used.
+     * @param decisionTreeNode the node of the tree holding the decision hierarchy to classify.
+     *                         If nullptr, the root node is used.
      */
     void classify( long rowIdOutput,
                    int dependentVariableColumnID,
