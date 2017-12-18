@@ -51,20 +51,13 @@ protected:
     /** The data to receive predictions. */
     IAlgorithmDataSource& m_outputData;
 
-    /**
-     * Performs data split for the CART algorithm.  The output lists are cleared before splitting.
-     * @param rowIDs The set of row id's to be split.
-     * @param criterion The split criterion.
-     * @param trueSideRowIDs The set of ids of rows that match the criterion.
-     * @param falseSideRowIDs The set of ids of rows that don't match the criterion.
-     */
-    void split(const std::list<long> &rowIDs,
-               const CARTSplitCriterion &criterion,
-               std::list<long> &trueSideRowIDs,
-               std::list<long> &falseSideRowIDs ) const;
+    /* The functions below are arranged in dependency order. Of course the recursive functions depend
+       on themselves. */
 
     /** Returns a collection of the unique values found in the given column of a set of
-     * rows (given by a list of row numbers).  The passed list is reset. */
+     * rows (given by a list of row numbers).  The passed list is reset.
+     * VERIFIED.
+     */
     void getUniqueDataValues( std::list<DataValue>& result,
                               const std::list<long> &rowIDs,
                               int columnIndex ) const;
@@ -100,6 +93,18 @@ protected:
                                     const std::list<long> &rowIDsFalseSide,
                                     int columnIndex,
                                     double impurityFactorBeforeTheSplit ) const;
+
+    /**
+     * Performs data split for the CART algorithm.  The output lists are cleared before splitting.
+     * @param rowIDs The set of row id's to be split.
+     * @param criterion The split criterion.
+     * @param trueSideRowIDs The set of ids of rows that match the criterion.
+     * @param falseSideRowIDs The set of ids of rows that don't match the criterion.
+     */
+    void split(const std::list<long> &rowIDs,
+               const CARTSplitCriterion &criterion,
+               std::list<long> &trueSideRowIDs,
+               std::list<long> &falseSideRowIDs ) const;
 
     /**
      * Returns the CART tree partition criterion with the highest information gain among the possible ones

@@ -3,22 +3,16 @@
 
 #include <list>
 #include <string>
+#include <iostream>
 
 /** DataValue is a "tagged union". */
 class DataValue{
 public:
-    explicit DataValue( double initContinuousValue ){ value = initContinuousValue; usedMember = 1; }
-    explicit DataValue( int initCategoricalValue ){ value = initCategoricalValue; usedMember = 2; }
+    explicit DataValue( double initContinuousValue ){ value.continuous = initContinuousValue; usedMember = 1; }
+    explicit DataValue( int initCategoricalValue ){ value.categorical = initCategoricalValue; usedMember = 2; }
     bool isCategorical(){ return usedMember == 2; }
-    int usedMember;
-    union valueUnion {
-        double continuous;
-        int categorical;
-        valueUnion operator=( double doubleValue ){
-            continuous = doubleValue;
-            return *this;
-        }
-    } value;
+    int getCategorical(){ return value.categorical; }
+    double getContinuous(){ return value.continuous; }
     bool operator==( DataValue other ){
         switch( usedMember ){
         case 1: return value.continuous == other.value.continuous; //TODO: not safe with doubles (use epsilon?).
@@ -33,6 +27,12 @@ public:
         default: return false;
         }
     }
+protected:
+    char usedMember;
+    union {
+        double continuous;
+        int categorical;
+    } value;
 };
 
 /**
@@ -43,6 +43,7 @@ namespace converter2string {
     std::string convert( long value );
     std::string convert( double value );
     std::string convert( DataValue value );
+    std::string convert( const std::pair<DataValue, long>& value );
 }
 
 /**
@@ -67,6 +68,7 @@ static std::string printStdListContents( const std::list<T>& list, char separato
   * separate the values in the text line to be inspected in the debugger.
   */
 #define GDBSTDLIST(prefix,stdlist,type,separator) std::string prefix##stdlist = printStdListContents<type>( stdlist, separator );
+#define PRINTSTDLIST(stdlist,type,separator) std::cout << "LIST:====>" << printStdListContents<type>( stdlist, separator ) << std::endl;
 
 
 /** The IAlgorithmDataSource interface must be implemented by any data sources that need to be

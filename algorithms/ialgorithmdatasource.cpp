@@ -6,11 +6,10 @@ std::string convert( double value ){ return std::to_string( value ); }
 std::string convert( long value ){ return std::to_string( value ); }
 std::string convert( DataValue value ){
     if( value.isCategorical() )
-        return std::to_string( value.value.categorical );
+        return std::to_string( value.getCategorical() );
     else
-        return std::to_string( value.value.continuous );
+        return std::to_string( value.getContinuous() );
 }
-
 }
 
 IAlgorithmDataSource::IAlgorithmDataSource()

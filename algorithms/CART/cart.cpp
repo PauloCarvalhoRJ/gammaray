@@ -53,9 +53,6 @@ void CART::getUniqueDataValues(std::list<DataValue> &result,
         result.push_back( m_trainingData.getDataValue( *it, columnIndex ) );
     result.sort();
     result.unique();
-#ifndef NDEBUG
-    GDBSTDLIST( STRING, result, DataValue, ';');
-#endif
 }
 
 
@@ -82,6 +79,10 @@ void CART::getUniqueValuesCounts(std::list<std::pair<DataValue, long> > &result,
             }
         }
     }
+#ifndef NDEBUG
+    GDBSTDLIST( STRING, result, DataValue, ';');
+    int x = 2;
+#endif
 }
 
 double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) const
