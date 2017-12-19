@@ -103,6 +103,7 @@ protected:
      * @param criterion The split criterion.
      * @param trueSideRowIDs The set of ids of rows that match the criterion.
      * @param falseSideRowIDs The set of ids of rows that don't match the criterion.
+     * VERIFIED.
      */
     void split(const std::list<long> &rowIDs,
                const CARTSplitCriterion &criterion,

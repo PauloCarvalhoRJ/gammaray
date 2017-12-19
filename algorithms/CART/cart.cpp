@@ -27,22 +27,6 @@ void CART::classify(long rowIdOutput,
     classify( rowIdOutput, dependentVariableColumnID, nullptr, result );
 }
 
-void CART::split(const std::list<long> &rowIDs,
-                 const CARTSplitCriterion &criterion,
-                 std::list<long> &trueSideRowIDs,
-                 std::list<long> &falseSideRowIDs) const
-{
-    trueSideRowIDs.clear();
-    falseSideRowIDs.clear();
-    std::list<long>::const_iterator it = rowIDs.cbegin();
-    for(; it != rowIDs.cend(); ++it ){
-        if( criterion.trainingMatches( *it ))
-            trueSideRowIDs.push_back( *it );
-        else
-            falseSideRowIDs.push_back( *it );
-    }
-}
-
 void CART::getUniqueDataValues(std::list<DataValue> &result,
                                const std::list<long> &rowIDs,
                                int columnIndex) const
@@ -118,13 +102,25 @@ double CART::getSplitInformationGain(const std::list<long> &rowIDsTrueSide,
     return impurityFactorBeforeTheSplit - impurityFactorAfterTheSplit;
 }
 
+void CART::split(const std::list<long> &rowIDs,
+                 const CARTSplitCriterion &criterion,
+                 std::list<long> &trueSideRowIDs,
+                 std::list<long> &falseSideRowIDs) const
+{
+    trueSideRowIDs.clear();
+    falseSideRowIDs.clear();
+    std::list<long>::const_iterator it = rowIDs.cbegin();
+    for(; it != rowIDs.cend(); ++it ){
+        if( criterion.trainingMatches( *it ))
+            trueSideRowIDs.push_back( *it );
+        else
+            falseSideRowIDs.push_back( *it );
+    }
+}
+
 std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
                                                                                         const std::list<int> &featureIDs) const
 {
-#ifndef NDEBUG
-    GDBSTDLIST( STRING, rowIDs, long, ';');
-    GDBSTDLIST( STRING, featureIDs, int, ';');
-#endif
     //Starts off with no information gain found.
     double highestInformationGain = 0.0;
     //The split criterion to be returned.
@@ -142,7 +138,7 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
         double impurity = getGiniImpurity( rowIDs, *columnIt );
         //get the unique feature values found in the row set
         getUniqueDataValues( uniqueValues, rowIDs, *columnIt );
-        //for each unique feature values.
+        //for each unique feature value.
         std::list<DataValue>::iterator uniqueValuesIt = uniqueValues.begin();
         for(; uniqueValuesIt != uniqueValues.end(); ++uniqueValuesIt){
             //Create a split criterion object

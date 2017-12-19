@@ -11,12 +11,16 @@ CARTSplitCriterion::CARTSplitCriterion(const IAlgorithmDataSource &trainingData,
 {
 }
 
-CARTSplitCriterion CARTSplitCriterion::operator =(const CARTSplitCriterion &original)
+CARTSplitCriterion& CARTSplitCriterion::operator =(const CARTSplitCriterion &original)
 {
-    return CARTSplitCriterion( original.m_trainingData,
-                               original.m_outputData,
-                               original.m_columnNumber,
-                               original.m_criterionValue );
+    //these are const, assumes the training and output data is the same for all criteria, so, be careful to
+    //not mix criteria used in different classification/regression runs.
+    //m_trainingData = original.m_trainingData;
+    //m_outputData =  original.m_outputData;
+    //  TODO: add some kind of assert to enforce equality of the data sources in the assignment operator.
+    m_columnNumber = original.m_columnNumber;
+    m_criterionValue = original.m_criterionValue;
+    return *this;
 }
 
 bool CARTSplitCriterion::trainingMatches(long rowIndexTraining ) const

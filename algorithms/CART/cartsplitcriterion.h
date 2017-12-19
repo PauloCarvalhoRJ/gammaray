@@ -19,8 +19,11 @@ public:
                         int columnNumber,
                         DataValue dataValue );
 
-    /** The attribution operator. */
-    CARTSplitCriterion operator =( const CARTSplitCriterion& original );
+    /** The attribution operator.
+     *  @note Since the references to the data sources are const, only columnNumber criterion value are assigned.
+     *        So, be careful to not mix criteria used in different classification/regression runs with different data sets.
+     */
+    CARTSplitCriterion &operator =( const CARTSplitCriterion& original );
 
     /** Tests whether the training data row given its index matches the split criterion.
      *  If true, the CART algorith will split the data set at the given row, assigning

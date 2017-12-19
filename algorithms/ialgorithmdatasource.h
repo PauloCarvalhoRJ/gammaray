@@ -43,7 +43,6 @@ namespace converter2string {
     std::string convert( long value );
     std::string convert( double value );
     std::string convert( DataValue value );
-    std::string convert( const std::pair<DataValue, long>& value );
 }
 
 /**
