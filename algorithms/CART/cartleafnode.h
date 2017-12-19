@@ -2,9 +2,11 @@
 #define CARTLEAFNODE_H
 
 #include "cartnode.h"
-#include "../ialgorithmdatasource.h"
 
 #include <list>
+
+class IAlgorithmDataSource;
+class DataValue;
 
 /** The CARTLeafNode is a leaf node of a CART (classification and regression decision tree). */
 class CARTLeafNode : public CARTNode

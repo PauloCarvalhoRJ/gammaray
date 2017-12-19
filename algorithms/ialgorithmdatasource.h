@@ -5,6 +5,9 @@
 #include <string>
 #include <iostream>
 
+/** A safe way to test two doubles for equality. */
+bool almostEqual2sComplement(double A, double B, int maxUlps);
+
 /** DataValue is a "tagged union". */
 class DataValue{
 public:
@@ -15,7 +18,7 @@ public:
     double getContinuous(){ return value.continuous; }
     bool operator==( DataValue other ){
         switch( usedMember ){
-        case 1: return value.continuous == other.value.continuous; //TODO: not safe with doubles (use epsilon?).
+        case 1: return almostEqual2sComplement( value.continuous, other.value.continuous, 1);
         case 2: return value.categorical == other.value.categorical;
         default: return false;
         }

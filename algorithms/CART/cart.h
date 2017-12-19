@@ -1,14 +1,13 @@
 #ifndef CART_H
 #define CART_H
 
-#include "cartleafnode.h"
-#include "cartsplitcriterion.h"
-
 #include <list>
 #include <memory>
 
-class CARTLeafNode;
+class CARTNode;
 class IAlgorithmDataSource;
+class CARTSplitCriterion;
+class DataValue;
 
 /** The CART class represents the CART algorithm, which serves to build decision trees from data to classify or
  * to perform regressions.  CART stands for Classification and Regression Tree.
@@ -43,7 +42,7 @@ public:
 protected:
 
     /** The root of the CART tree. */
-    std::unique_ptr<CARTNode> m_root;
+    std::shared_ptr<CARTNode> m_root;
 
     /** The data from which the CART tree is built. */
     const IAlgorithmDataSource& m_trainingData;

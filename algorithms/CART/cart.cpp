@@ -1,6 +1,7 @@
 #include "cart.h"
 #include "../ialgorithmdatasource.h"
 #include "cartdecisionnode.h"
+#include "cartleafnode.h"
 #include <tuple>
 
 CART::CART(const IAlgorithmDataSource &trainingData,

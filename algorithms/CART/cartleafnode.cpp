@@ -1,4 +1,5 @@
 #include "cartleafnode.h"
+#include "../ialgorithmdatasource.h"
 
 CARTLeafNode::CARTLeafNode(const IAlgorithmDataSource &trainingDataSource,
                            const std::list<long> &rowIDs) : CARTNode(),

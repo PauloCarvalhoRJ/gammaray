@@ -142,6 +142,8 @@ void MachineLearningDialog::runCART()
                         *outputDataFile->algorithmDataSource(),
                         trainingFeaturesIDList,
                         outputFeaturesIDList);
+    Application::instance()->logInfo("MachineLearningDialog::runCART(): CART tree built.");
+
 }
 
 std::list<int> MachineLearningDialog::getTrainingFeaturesIDList()

@@ -6,11 +6,12 @@
 #include <QMap>
 #include <QDateTime>
 #include <complex>
-#include "algorithms/ialgorithmdatasource.h"
+#include <memory>
 
 class Attribute;
 class UnivariateCategoryClassification;
 class CategoryDefinition;
+class IAlgorithmDataSource;
 
 /**
  * @brief The DataFile class is the base class of all project components that are
@@ -296,7 +297,7 @@ protected:
     long _dataPageLastLine;
 
     /** The pointer to the internal interface to the algorithms' data source (see classes in /algorithms subdirectory). */
-    std::unique_ptr<IAlgorithmDataSource> _algorithmDataSourceInterface;
+    std::shared_ptr<IAlgorithmDataSource> _algorithmDataSourceInterface;
 };
 
 #endif // DATAFILE_H
