@@ -68,6 +68,7 @@ protected:
      *               value will hold the count.
      * @param rowIDs A list of row numbers from wich to take the counts.
      * @param columnIndex The index of a column with the values.  See isContinuous().
+     * VERIFIED.
      */
     void getUniqueValuesCounts( std::list< std::pair< DataValue, long > >& result,
                               const std::list<long> &rowIDs,
@@ -77,6 +78,7 @@ protected:
      * Computes the Gini impurity factor for a given variable in a set of rows.
      * This factor is a likelyhood of being incorrect in picking a category.  A factor of zero means you will
      * always pick the correct class (all class values in the column are the same).
+     * VERIFIED.
      */
     double getGiniImpurity(const std::list<long> &rowIDs,
                            int columnIndex ) const ;
@@ -88,6 +90,7 @@ protected:
      * @param rowIDsFalseSide Rod IDs of data that did not match the split criterion.
      * @param columnIndex The column ID of the variable used in the split criterion.
      * @param impurityFactorBeforeTheSplit The uncertainty measure between 0.0 and 1.0 before the split.
+     * VERIFIED.
      */
     double getSplitInformationGain( const std::list<long> &rowIDsTrueSide,
                                     const std::list<long> &rowIDsFalseSide,

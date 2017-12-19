@@ -69,7 +69,7 @@ void CART::getUniqueValuesCounts(std::list<std::pair<DataValue, long> > &result,
     for(std::list<DataValue>::iterator it = categories.begin(); it != categories.end(); ++it){
         result.emplace_back( *it, 0 );
     }
-    //for each of the categories found.
+    //for each of the values found.
     for( std::list<std::pair<DataValue, long> >::iterator it = result.begin(); it != result.end(); ++it){
         std::pair<DataValue, long>& pair = *it;
         //for each row
@@ -79,24 +79,20 @@ void CART::getUniqueValuesCounts(std::list<std::pair<DataValue, long> > &result,
             }
         }
     }
-#ifndef NDEBUG
-    GDBSTDLIST( STRING, result, DataValue, ';');
-    int x = 2;
-#endif
 }
 
 double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) const
 {
     //get the counts for each category/value found in the column (variable)
-    std::list<std::pair<DataValue, long> > categoriesCounts;
-    getUniqueValuesCounts( categoriesCounts, rowIDs, columnIndex ); //using the CategoriesCounts to count unique valuse in continuous variables
+    std::list<std::pair<DataValue, long> > valuesCounts;
+    getUniqueValuesCounts( valuesCounts, rowIDs, columnIndex );
     //get the number of rows
     long numberOfRows = rowIDs.size();
     //assumes total impurity
     double factor = 1.0d;
     //for each pair DataValue/count
-    std::list<std::pair<DataValue, long> >::iterator it = categoriesCounts.begin();
-    for(; it != categoriesCounts.end(); ++it){
+    std::list<std::pair<DataValue, long> >::iterator it = valuesCounts.begin();
+    for(; it != valuesCounts.end(); ++it){
         double categoryProportion = (*it).second / (double)numberOfRows;
         factor -= ( categoryProportion * categoryProportion );
     }
