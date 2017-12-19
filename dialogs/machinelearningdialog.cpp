@@ -6,6 +6,7 @@
 #include "domain/datafile.h"
 #include "domain/application.h"
 #include "algorithms/CART/cart.h"
+#include "algorithms/ialgorithmdatasource.h"
 
 MachineLearningDialog::MachineLearningDialog(QWidget *parent) :
     QDialog(parent),
@@ -144,6 +145,15 @@ void MachineLearningDialog::runCART()
                         outputFeaturesIDList);
     Application::instance()->logInfo("MachineLearningDialog::runCART(): CART tree built.");
 
+    //for each output data
+    long outputRowCount = outputDataFile->getDataLineCount();
+    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
+        //classify the data
+        std::list< std::pair< DataValue, long> > result;
+        CARTalgorithm.classify( outputRow,
+                                m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
+                                result);
+    }
 }
 
 std::list<int> MachineLearningDialog::getTrainingFeaturesIDList()
