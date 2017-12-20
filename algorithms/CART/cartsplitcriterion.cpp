@@ -2,12 +2,14 @@
 
 CARTSplitCriterion::CARTSplitCriterion(const IAlgorithmDataSource &trainingData,
                                        const IAlgorithmDataSource &outputData,
-                                       int columnNumber,
-                                       DataValue dataValue) :
+                                       int columnNumberTrainingData,
+                                       DataValue dataValue,
+                                       const std::map<int, int> &training2outputFeatureIndexesMap) :
     m_trainingData( trainingData ),
     m_outputData( outputData ),
-    m_columnNumber( columnNumber ),
-    m_criterionValue( dataValue )
+    m_columnNumberTrainingData( columnNumberTrainingData ),
+    m_criterionValue( dataValue ),
+    m_training2outputFeatureIndexesMap( training2outputFeatureIndexesMap )
 {
 }
 
@@ -18,7 +20,7 @@ CARTSplitCriterion& CARTSplitCriterion::operator =(const CARTSplitCriterion &ori
     //m_trainingData = original.m_trainingData;
     //m_outputData =  original.m_outputData;
     //  TODO: add some kind of assert to enforce equality of the data sources in the assignment operator.
-    m_columnNumber = original.m_columnNumber;
+    m_columnNumberTrainingData = original.m_columnNumberTrainingData;
     m_criterionValue = original.m_criterionValue;
     return *this;
 }
@@ -26,7 +28,7 @@ CARTSplitCriterion& CARTSplitCriterion::operator =(const CARTSplitCriterion &ori
 bool CARTSplitCriterion::trainingMatches(long rowIndexTraining ) const
 {
     //get the value for the split criterion.
-    DataValue criterionValue = m_trainingData.getDataValue( rowIndexTraining, m_columnNumber );
+    DataValue criterionValue = m_trainingData.getDataValue( rowIndexTraining, m_columnNumberTrainingData );
 
     //if the data value is categorical, then the criterion is being equal to the criterion value.
     if( criterionValue.isCategorical() )
@@ -39,7 +41,8 @@ bool CARTSplitCriterion::trainingMatches(long rowIndexTraining ) const
 bool CARTSplitCriterion::outputMatches(long rowIndexOutput) const
 {
     //get the value for the split criterion.
-    DataValue criterionValue = m_outputData.getDataValue( rowIndexOutput, m_columnNumber );
+    DataValue criterionValue = m_outputData.getDataValue(
+                               rowIndexOutput, m_training2outputFeatureIndexesMap.at( m_columnNumberTrainingData ) );
 
     //if the data value is categorical, then the criterion is being equal to the criterion value.
     if( criterionValue.isCategorical() )

@@ -3,6 +3,7 @@
 
 #include <list>
 #include <memory>
+#include <map>
 
 class CARTNode;
 class IAlgorithmDataSource;
@@ -24,7 +25,7 @@ public:
      * @param trainingFeatureIDs List of column numbers corresponding to the selected predictive
      *                           variables (features) in the training set.
      */
-    CART( const IAlgorithmDataSource& trainingData,
+    CART(const IAlgorithmDataSource& trainingData,
           IAlgorithmDataSource& outputData,
           const std::list<int> &trainingFeatureIDs,
           const std::list<int> &outputFeatureIDs);
@@ -49,6 +50,12 @@ protected:
 
     /** The data to receive predictions. */
     IAlgorithmDataSource& m_outputData;
+
+    /** This map object maps feature column indexes in the training data set to feature column indexes in the output data set.
+     * This is necessary because rarely a given feature has exactly the same column index in both data sets.
+     * This list is built in the constructor.
+     */
+    std::map<int,int> m_training2outputFeatureIndexesMap;
 
     /* The functions below are arranged in dependency order. Of course the recursive functions depend
        on themselves. */

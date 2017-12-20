@@ -7,7 +7,7 @@
 CART::CART(const IAlgorithmDataSource &trainingData,
            IAlgorithmDataSource &outputData,
            const std::list<int> &trainingFeatureIDs,
-           const std::list<int> &outputFeatureIDs) :
+           const std::list<int> &outputFeatureIDs ) :
     m_trainingData( trainingData ),
     m_outputData( outputData )
 {
@@ -16,6 +16,14 @@ CART::CART(const IAlgorithmDataSource &trainingData,
     long rowCount = trainingData.getRowCount();
     for( long iRow = 0; iRow < rowCount; ++iRow )
         rowIDs.push_back( iRow );
+
+    //creates the training-to-output data sets feature column IDs.
+    std::list<int>::const_iterator itTrainingIDs = trainingFeatureIDs.cbegin();
+    std::list<int>::const_iterator itOutputIDs = outputFeatureIDs.cbegin();
+    for( ; itTrainingIDs != trainingFeatureIDs.cend(); ++itTrainingIDs, //hopefully both lists have the same size
+                                                       ++itOutputIDs ){
+        m_training2outputFeatureIndexesMap[ *itTrainingIDs ] = *itOutputIDs;
+    }
 
     //Built the CART tree, getting the pointer to the root node.
     m_root.reset( makeCART( rowIDs, trainingFeatureIDs ) );
@@ -125,7 +133,7 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
     //Starts off with no information gain found.
     double highestInformationGain = 0.0;
     //The split criterion to be returned.
-    CARTSplitCriterion finalSplitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0) );
+    CARTSplitCriterion finalSplitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0), m_training2outputFeatureIndexesMap );
     //Create a list to hold unique data values.
     std::list<DataValue> uniqueValues;
     //Create a list to hold row ids with data that match the split criterion.
@@ -143,7 +151,8 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
         std::list<DataValue>::iterator uniqueValuesIt = uniqueValues.begin();
         for(; uniqueValuesIt != uniqueValues.end(); ++uniqueValuesIt){
             //Create a split criterion object
-            CARTSplitCriterion splitCriterion( m_trainingData, m_outputData, *columnIt, *uniqueValuesIt );
+            CARTSplitCriterion splitCriterion( m_trainingData, m_outputData,
+                                               *columnIt, *uniqueValuesIt, m_training2outputFeatureIndexesMap );
             //Split the row set using the criterion above
             split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
             //if there is uncertainty (both true and false row id lists have data)
@@ -164,7 +173,7 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
 CARTNode *CART::makeCART(const std::list<long> &rowIDs,
                          const std::list<int> &featureIDs) const
 {
-    CARTSplitCriterion splitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0) );
+    CARTSplitCriterion splitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0), m_training2outputFeatureIndexesMap );
     double informationGain;
 
     //get the split criterion with maximum information gain for the row set.

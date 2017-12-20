@@ -147,12 +147,18 @@ void MachineLearningDialog::runCART()
 
     //for each output data
     long outputRowCount = outputDataFile->getDataLineCount();
-    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
+    for( long outputRow = 0; outputRow < 5 /*outputRowCount*/; ++outputRow){
         //classify the data
         std::list< std::pair< DataValue, long> > result;
         CARTalgorithm.classify( outputRow,
                                 m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
                                 result);
+        std::list< std::pair< DataValue, long> >::iterator it = result.begin();
+        for( ; it != result.end(); ++it ){
+            Application::instance()->logInfo(" Classification for row " + QString::number(outputRow) + ": " +
+                                             QString::number((*it).first.getCategorical()) + " (count=" +
+                                             QString::number((*it).second) + ")" );
+        }
     }
 }
 
