@@ -710,3 +710,44 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
     newAttributeReal->setParent( this );
     newAttributeImag->setParent( this );
 }
+
+int DataFile::addNewDataColumn(const QString columnName, const std::vector<double> &values )
+{
+    //loads data from disk
+    loadData();
+
+    //get the number of rows
+    long numberOfDataElements = getDataLineCount();
+
+    double defaultValue = 0.0;
+    if( hasNoDataValue() )
+        defaultValue = getNoDataValueAsDouble();
+
+    //create a vector of values for the new column
+    std::vector< double > newColumn( numberOfDataElements, defaultValue );
+
+    //append the values to the existing data array
+    std::vector< double >::iterator itColumn = newColumn.begin();
+    std::vector< std::vector<double> >::iterator itData = _data.begin();
+    //hopefully both iterators end at the same time
+    for( ; itColumn != newColumn.end(), itData != _data.end(); ++itColumn, ++itData ){
+        (*itData).push_back( *itColumn );
+    }
+    if( itData != _data.end() || itColumn != newColumn.end() )
+        Application::instance()->logError("DataFile::addNewDataColumn(): number of values added mismatched the number of data rows.");
+
+    //get the GEO-EAS index for new attribute
+    uint indexGEOEAS = _data[0].size(); //assumes the first row has the correct number of data column
+
+    //Create new Attribute objects that correspond to the new data column in memory
+    Attribute *newAttribute = new Attribute( columnName, indexGEOEAS );
+
+    //Add the new Attributes as child project component of this one
+    addChild( newAttribute );
+
+    //sets this as parent of the new Attributes
+    newAttribute->setParent( this );
+
+    //returns the index of the new column
+    return indexGEOEAS - 1;
+}
