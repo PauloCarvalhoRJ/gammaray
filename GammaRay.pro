@@ -175,13 +175,13 @@ SOURCES += main.cpp\
     widgets/focuswatcher.cpp \
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
-    algorithms/randomforestclassification.cpp \
     dialogs/machinelearningdialog.cpp \
     algorithms/CART/cart.cpp \
     algorithms/CART/cartdecisionnode.cpp \
     algorithms/CART/cartleafnode.cpp \
     algorithms/CART/cartnode.cpp \
-    algorithms/CART/cartsplitcriterion.cpp
+    algorithms/CART/cartsplitcriterion.cpp \
+    algorithms/randomforest.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -336,13 +336,13 @@ HEADERS  += mainwindow.h \
     widgets/focuswatcher.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
-    algorithms/randomforestclassification.h \
     dialogs/machinelearningdialog.h \
     algorithms/CART/cart.h \
     algorithms/CART/cartdecisionnode.h \
     algorithms/CART/cartleafnode.h \
     algorithms/CART/cartnode.h \
-    algorithms/CART/cartsplitcriterion.h
+    algorithms/CART/cartsplitcriterion.h \
+    algorithms/randomforest.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

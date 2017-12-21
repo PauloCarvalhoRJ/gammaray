@@ -57,3 +57,8 @@ void IAlgorithmDataSource::setDataFrom(int rowIndexInThisDataSource,
     }
 }
 
+bool IAlgorithmDataSource::isEmpty() const
+{
+    return getRowCount() < 1;
+}
+

@@ -112,6 +112,11 @@ public:
                               const IAlgorithmDataSource& anotherDataSource,
                               int rowIndexInAnotherDataSource );
 
+    /**
+     * Returns whether the data source is empty.
+     */
+    virtual bool isEmpty() const;
+
 };
 
 #endif // IALGORITHMDATASOURCE_H

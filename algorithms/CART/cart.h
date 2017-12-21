@@ -30,8 +30,7 @@ public:
     CART( const IAlgorithmDataSource& trainingData,
           IAlgorithmDataSource& outputData,
           const std::list<int> &trainingFeatureIDs,
-          const std::list<int> &outputFeatureIDs,
-          const std::list<long> &trainingRowIDs = std::list<long>() );
+          const std::list<int> &outputFeatureIDs );
 
     /** Uses the underlying CART decision tree as a classifier to a given output data row, referenced by its row number.
      * This is just a front-end for the actual recursive classification function (see the protected section).
