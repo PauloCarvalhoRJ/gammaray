@@ -256,10 +256,11 @@ public:
       * The new column will have the same number of data elements of the current columns.  So if the passed array is too short,
       * the remaining data elements will be filled with a default value (zero or NDV).  If the passed array is too long, the
       * exceeding data elements will be ignored. The function returns the column index of the newly added data column.
+      * If a CategoryDefinion is passed, then the newly added values will be treated as categorical throughout the system.
       * @note This function cannot be used on DataFile objects created in-code only, that is, without an
       *       associated filesystem file (see File class).  For such cases, see addEmptyDataColumn() [SVD branch].
       */
-    int addNewDataColumn( const QString columnName, const std::vector<double> &values );
+    int addNewDataColumn( const QString columnName, const std::vector<double> &values, CategoryDefinition *cd = nullptr );
 
 //File interface
     void deleteFromFS();

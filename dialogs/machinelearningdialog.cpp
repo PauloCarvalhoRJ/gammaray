@@ -176,8 +176,12 @@ void MachineLearningDialog::runCARTClassify()
         }
     }
 
+    //Get the Attribute object corresponding to the dependent variable (categorical)
+    Attribute* at = trainingDataFile->getAttributeFromGEOEASIndex(
+                    m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
+
     //add the results as a categorical attribute
-    outputDataFile->addNewDataColumn( new_var_name, classValues );
+    outputDataFile->addNewDataColumn( new_var_name, classValues, trainingDataFile->getCategoryDefinition(at) );
 }
 
 bool MachineLearningDialog::isClassification()

@@ -711,7 +711,7 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
     newAttributeImag->setParent( this );
 }
 
-int DataFile::addNewDataColumn(const QString columnName, const std::vector<double> &values )
+int DataFile::addNewDataColumn(const QString columnName, const std::vector<double> &values , CategoryDefinition *cd)
 {
     //loads data from disk
     loadData();
@@ -735,8 +735,19 @@ int DataFile::addNewDataColumn(const QString columnName, const std::vector<doubl
     //get the GEO-EAS index for new attribute
     uint indexGEOEAS = _data[0].size(); //assumes the first row has the correct number of data column
 
+    //if the added column was deemed categorical, adds its GEO-EAS index and name of the category definition
+    //to the list of pairs for metadata keeping.
+    if( cd ){
+        _categorical_attributes.append( QPair<uint,QString>( indexGEOEAS, cd->getName() ) );
+        //update the metadata file
+        this->updateMetaDataFile();
+    }
+
     //Create a new Attribute object that correspond to the new data column in memory
     Attribute *newAttribute = new Attribute( columnName, indexGEOEAS );
+
+    //Set the new Attribute as categorical
+    newAttribute->setCategorical( true );
 
     //Add the new Attributes as child project component of this one
     addChild( newAttribute );
