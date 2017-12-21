@@ -28,7 +28,9 @@ private:
 
     VariableSelector *makeVariableSelector();
 
-    void runCART();
+    void runCARTClassify();
+
+    bool isClassification();
 
     std::list<int> getTrainingFeaturesIDList();
     std::list<int> getOutputFeaturesIDList();

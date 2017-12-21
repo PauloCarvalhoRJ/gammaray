@@ -8,6 +8,8 @@
 #include "algorithms/CART/cart.h"
 #include "algorithms/ialgorithmdatasource.h"
 
+#include <QInputDialog>
+
 MachineLearningDialog::MachineLearningDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MachineLearningDialog)
@@ -93,25 +95,21 @@ void MachineLearningDialog::setupVariableSelectionWidgets(int numberOfVariables)
 
 void MachineLearningDialog::updateApplicationLabel()
 {
-    DataFile* trainingFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
-    if( trainingFile ){
-        Attribute* at = trainingFile->getAttributeFromGEOEASIndex(
-                    m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
-        if( at ){
-            QString prefix = "<html><head/><body><p><span style=\" font-weight:600; color:#0000ff;\">";
-            QString suffix = "</span></p></body></html>";
-            if( at->isCategorical() )
-                ui->lblApplicationType->setText( prefix + "Classification" + suffix);
-            else
-                ui->lblApplicationType->setText( prefix + "Regression" + suffix);
-        }
-    }
+    QString prefix = "<html><head/><body><p><span style=\" font-weight:600; color:#0000ff;\">";
+    QString suffix = "</span></p></body></html>";
+    if( isClassification() )
+        ui->lblApplicationType->setText( prefix + "Classification" + suffix);
+    else
+        ui->lblApplicationType->setText( prefix + "Regression" + suffix);
 }
 
 void MachineLearningDialog::runAlgorithm()
 {
     if( ui->cmbAlgorithmType->currentText() == "CART" ){
-        runCART();
+        if( isClassification() )
+            runCARTClassify();
+        else
+            Application::instance()->logError("MachineLearningDialog::runAlgorithm(): regression not supported yet.");
     } else {
         Application::instance()->logError("MachineLearningDialog::runAlgorithm(): unsupported algorithm: " + ui->cmbAlgorithmType->currentText());
     }
@@ -124,8 +122,22 @@ VariableSelector *MachineLearningDialog::makeVariableSelector()
     return vs;
 }
 
-void MachineLearningDialog::runCART()
+void MachineLearningDialog::runCARTClassify()
 {
+    //suggest a new attribute name to the user
+    QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
+    proposed_name = proposed_name.append( "_CLASSIFIED_WITH_CART" );
+
+    //presents a dialog so the user can change the suggested name for the new categorical variable.
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Name the class variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    //if the user cancelled the input box, do nothing.
+    if (! ok )
+        return;
+
     //Get the selected data files.
     DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
     DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
@@ -147,19 +159,40 @@ void MachineLearningDialog::runCART()
 
     //for each output data
     long outputRowCount = outputDataFile->getDataLineCount();
-    for( long outputRow = 0; outputRow < 5 /*outputRowCount*/; ++outputRow){
+    std::vector<double> classValues;  //vector to hold the results (must be double for the final GEO-EAS file)
+    classValues.reserve( outputRowCount );
+    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
         //classify the data
         std::list< std::pair< DataValue, long> > result;
         CARTalgorithm.classify( outputRow,
                                 m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
                                 result);
+        //get the results
         std::list< std::pair< DataValue, long> >::iterator it = result.begin();
         for( ; it != result.end(); ++it ){
-            Application::instance()->logInfo(" Classification for row " + QString::number(outputRow) + ": " +
-                                             QString::number((*it).first.getCategorical()) + " (count=" +
-                                             QString::number((*it).second) + ")" );
+            classValues.push_back( (*it).first.getCategorical() );
+            break; //TODO: this causes only the first class value to be considerd
+                   //      other values may come with different counts (assign uncertainty)
+//            Application::instance()->logInfo(" Classification for row " + QString::number(outputRow) + ": " +
+//                                             QString::number((*it).first.getCategorical()) + " (count=" +
+//                                             QString::number((*it).second) + ")" );
         }
     }
+
+    //add the results as a categorical attribute
+    outputDataFile->addNewDataColumn( new_var_name, classValues );
+}
+
+bool MachineLearningDialog::isClassification()
+{
+    DataFile* trainingFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
+    if( trainingFile ){
+        Attribute* at = trainingFile->getAttributeFromGEOEASIndex(
+                    m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
+        if( at )
+            return at->isCategorical();
+    }
+    return false; //default case is continuous (regression application).
 }
 
 std::list<int> MachineLearningDialog::getTrainingFeaturesIDList()
