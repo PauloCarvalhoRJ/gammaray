@@ -173,9 +173,6 @@ void MachineLearningDialog::runCARTClassify()
             classValues.push_back( (*it).first.getCategorical() );
             break; //TODO: this causes only the first class value to be considerd
                    //      other values may come with different counts (assign uncertainty)
-//            Application::instance()->logInfo(" Classification for row " + QString::number(outputRow) + ": " +
-//                                             QString::number((*it).first.getCategorical()) + " (count=" +
-//                                             QString::number((*it).second) + ")" );
         }
     }
 

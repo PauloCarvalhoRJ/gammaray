@@ -24,11 +24,14 @@ public:
      * @param outputData Reference to the data set to be classified or estimated.
      * @param trainingFeatureIDs List of column numbers corresponding to the selected predictive
      *                           variables (features) in the training set.
+     * @param trainingRowIDs An optional list of training data row numbers to be used.  It can be in any order or count.
+     *                       If omitted, all the rows in their direct order (0 to n-1) will be used.
      */
-    CART(const IAlgorithmDataSource& trainingData,
+    CART( const IAlgorithmDataSource& trainingData,
           IAlgorithmDataSource& outputData,
           const std::list<int> &trainingFeatureIDs,
-          const std::list<int> &outputFeatureIDs);
+          const std::list<int> &outputFeatureIDs,
+          const std::list<long> &trainingRowIDs = std::list<long>() );
 
     /** Uses the underlying CART decision tree as a classifier to a given output data row, referenced by its row number.
      * This is just a front-end for the actual recursive classification function (see the protected section).

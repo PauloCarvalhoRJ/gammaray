@@ -7,15 +7,22 @@
 CART::CART(const IAlgorithmDataSource &trainingData,
            IAlgorithmDataSource &outputData,
            const std::list<int> &trainingFeatureIDs,
-           const std::list<int> &outputFeatureIDs ) :
+           const std::list<int> &outputFeatureIDs ,
+           const std::list<long> &trainingRowIDs) :
     m_trainingData( trainingData ),
     m_outputData( outputData )
 {
     //Create the list with all row IDs.
     std::list<long> rowIDs;
-    long rowCount = trainingData.getRowCount();
-    for( long iRow = 0; iRow < rowCount; ++iRow )
-        rowIDs.push_back( iRow );
+
+    //If the training data row ID list was omitted or is empty, then
+    //use all rows in their direct order (0 to n-1)
+    if( trainingRowIDs.empty() ){
+        long rowCount = trainingData.getRowCount();
+        for( long iRow = 0; iRow < rowCount; ++iRow )
+            rowIDs.push_back( iRow );
+    } else
+        rowIDs = trainingRowIDs;
 
     //creates the training-to-output data sets feature column IDs.
     std::list<int>::const_iterator itTrainingIDs = trainingFeatureIDs.cbegin();
