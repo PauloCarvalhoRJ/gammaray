@@ -30,6 +30,8 @@ private:
 
     void runCARTClassify();
 
+    void runRandomForestClassify();
+
     bool isClassification();
 
     std::list<int> getTrainingFeaturesIDList();

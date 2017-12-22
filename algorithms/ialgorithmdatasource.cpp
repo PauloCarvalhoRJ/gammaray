@@ -52,7 +52,7 @@ void IAlgorithmDataSource::setDataFrom(int rowIndexInThisDataSource,
 {
     int numberOfColumns = anotherDataSource.getColumnCount();
     for( int iColumn = 0; iColumn < numberOfColumns; ++iColumn ){
-        DataValue value = anotherDataSource.getDataValue( iColumn, rowIndexInAnotherDataSource );
+        DataValue value = anotherDataSource.getDataValue( rowIndexInAnotherDataSource, iColumn );
         setDataValue( iColumn, rowIndexInThisDataSource, value );
     }
 }

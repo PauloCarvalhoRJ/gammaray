@@ -7,6 +7,7 @@
 #include "domain/application.h"
 #include "algorithms/CART/cart.h"
 #include "algorithms/ialgorithmdatasource.h"
+#include "algorithms/randomforest.h"
 
 #include <QInputDialog>
 
@@ -109,7 +110,12 @@ void MachineLearningDialog::runAlgorithm()
         if( isClassification() )
             runCARTClassify();
         else
-            Application::instance()->logError("MachineLearningDialog::runAlgorithm(): regression not supported yet.");
+            Application::instance()->logError("MachineLearningDialog::runAlgorithm(): regression not supported yet with CART.");
+    }else if( ui->cmbAlgorithmType->currentText() == "Random Forest" ){
+        if( isClassification() )
+            runRandomForestClassify();
+        else
+            Application::instance()->logError("MachineLearningDialog::runAlgorithm(): regression not supported yet with Random Forest.");
     } else {
         Application::instance()->logError("MachineLearningDialog::runAlgorithm(): unsupported algorithm: " + ui->cmbAlgorithmType->currentText());
     }
@@ -182,6 +188,70 @@ void MachineLearningDialog::runCARTClassify()
 
     //add the results as a categorical attribute
     outputDataFile->addNewDataColumn( new_var_name, classValues, trainingDataFile->getCategoryDefinition(at) );
+}
+
+void MachineLearningDialog::runRandomForestClassify()
+{
+    //suggest a new attribute name to the user
+    QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
+    proposed_name = proposed_name.append( "_CLASSIFIED_WITH_RF" );
+
+    //presents a dialog so the user can change the suggested name for the new categorical variable.
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Name the class variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    //if the user cancelled the input box, do nothing.
+    if (! ok )
+        return;
+
+    //Get the selected data files.
+    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
+    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+
+    //load the data from filesystem.
+    trainingDataFile->loadData();
+    outputDataFile->loadData();
+
+    //get the data source interface for the algorithms.
+    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
+
+    //Build the RandomForest object, containing the Random Forest algorithm.
+    RandomForest RF( *trainingDataFile->algorithmDataSource(),
+                     *outputDataFile->algorithmDataSource(),
+                     trainingFeaturesIDList,
+                     outputFeaturesIDList,
+                     1, //number of trees
+                     69069 ); //seed for the random number generator
+    Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): RandomForest object built.");
+
+//    //for each output data
+//    long outputRowCount = outputDataFile->getDataLineCount();
+//    std::vector<double> classValues;  //vector to hold the results (must be double for the final GEO-EAS file)
+//    classValues.reserve( outputRowCount );
+//    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
+//        //classify the data
+//        std::list< std::pair< DataValue, long> > result;
+//        CARTalgorithm.classify( outputRow,
+//                                m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
+//                                result);
+//        //get the results
+//        std::list< std::pair< DataValue, long> >::iterator it = result.begin();
+//        for( ; it != result.end(); ++it ){
+//            classValues.push_back( (*it).first.getCategorical() );
+//            break; //TODO: this causes only the first class value to be considerd
+//                   //      other values may come with different counts (assign uncertainty)
+//        }
+//    }
+
+//    //Get the Attribute object corresponding to the dependent variable (categorical)
+//    Attribute* at = trainingDataFile->getAttributeFromGEOEASIndex(
+//                    m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
+
+//    //add the results as a categorical attribute
+//    outputDataFile->addNewDataColumn( new_var_name, classValues, trainingDataFile->getCategoryDefinition(at) );
 }
 
 bool MachineLearningDialog::isClassification()

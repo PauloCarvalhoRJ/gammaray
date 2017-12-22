@@ -8,6 +8,11 @@
 class TmpDataSource : public IAlgorithmDataSource{
     // IAlgorithmDataSource interface
 public:
+
+    TmpDataSource() : IAlgorithmDataSource(),
+        m_data()
+    {}
+
     virtual long getRowCount() const {
         return m_data.size();
     }
@@ -43,13 +48,14 @@ RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
     m_outputData( outputData ),
     m_B( B )
 {
+    Bootstrap bagger( trainingData, ResamplingType::CASE, seed );
+
+    TmpDataSource baggedData;
+
     //For the wanted number of trees.
     for( unsigned int iTree = 0; iTree < m_B; ++iTree ){
 
-        TmpDataSource baggedData;
-
         //bagg the training set
-        Bootstrap bagger( trainingData, ResamplingType::CASE, seed );
         bagger.resample( baggedData, trainingData.getRowCount() );
 
         //Create a CART decision tree for it
