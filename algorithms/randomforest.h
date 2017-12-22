@@ -6,6 +6,7 @@
 
 class IAlgorithmDataSource;
 class CART;
+class DataValue;
 
 /**
  * The RandomForest class represents a random forest algorithm for classification or regression purposes, that is, the
@@ -27,12 +28,23 @@ public:
      * @param seed The seed for the random number generator.
      */
     RandomForest(const IAlgorithmDataSource& trainingData,
-                               IAlgorithmDataSource &outputData,
-                               const std::list<int> &trainingFeatureIDs,
-                               const std::list<int> &outputFeatureIDs,
-                               unsigned int B ,
-                               long seed);
+                 IAlgorithmDataSource &outputData,
+                 const std::list<int> &trainingFeatureIDs,
+                 const std::list<int> &outputFeatureIDs,
+                 unsigned int B,
+                 long seed);
 
+    virtual ~RandomForest();
+
+    /** Uses the underlying CART decision trees as classifiers to a given output data row, referenced by its row number.
+     * @param rowIdOutput Row number of output data to classify.
+     * @param dependentVariableColumnID  The column id in the training data of the variable to be predicted.
+     * @param result A pair: the predicted value (by majority vote); 1.0 - the ratio between the number of the most voted class
+     *                       and the total number of votes, which is a mesure of uncertainty.
+     */
+    void classify(long rowIdOutput,
+                  int dependentVariableColumnID,
+                  std::pair<DataValue, double> &result) const;
 protected:
 
     /** The data to be bagged and used to build the decision trees. */
@@ -42,10 +54,13 @@ protected:
     IAlgorithmDataSource& m_outputData;
 
     /** The decision trees. */
-    std::vector< CART > m_trees;
+    std::vector< CART* > m_trees;
 
     /** The number of trees. */
     unsigned int m_B;
+
+    /** Repository of the data sources created internally so they are garbage collected in the destructor. */
+    std::vector<IAlgorithmDataSource*> m_tmpDataSources;
 
 };
 

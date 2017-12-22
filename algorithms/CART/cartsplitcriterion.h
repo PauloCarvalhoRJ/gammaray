@@ -14,8 +14,8 @@ public:
      * @param outputData Reference to a set of data rows that will be classified or estimated.
      * @param columnNumber The column index (in the training data set) corresponding to the variable of this split criterion.
      * @param dataValue The data value that defines this split criterion.
-     * @param a map object mapping feature column numbers in the training data set to feature column numbers
-     *        in the output data set.  This is necessary because rarely a same feature has the same column number
+     * @param training2outputFeatureIndexesMap a map object mapping feature column numbers in the training data set to feature
+     *        column numbers in the output data set.  This is necessary because rarely a same feature has the same column number
      *        in both datasets.
      */
     CARTSplitCriterion( const IAlgorithmDataSource& trainingData,

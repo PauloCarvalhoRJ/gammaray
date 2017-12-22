@@ -82,6 +82,8 @@ class IAlgorithmDataSource
 public:
     IAlgorithmDataSource();
 
+    virtual ~IAlgorithmDataSource();
+
     //============ Pure virtual methods (interface contract)===================
     /** Returns the sample count. */
     virtual long getRowCount() const = 0;

@@ -11,6 +11,8 @@
 
 #include <QInputDialog>
 
+#include <limits>
+
 MachineLearningDialog::MachineLearningDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MachineLearningDialog)
@@ -192,12 +194,24 @@ void MachineLearningDialog::runCARTClassify()
 
 void MachineLearningDialog::runRandomForestClassify()
 {
+    bool ok;
+
+    //ask the user to enter the number of trees
+    int B = QInputDialog::getInt( this, "User input", "Number of trees: ", 1, 1, 5000, 1, &ok);
+    if( ! ok )
+        return;
+
+    //ask the user to enter the seed for the random number generator
+    int seed = QInputDialog::getInt( this, "User input", "Seed for the random number generator: ",
+                                     69069, 1, std::numeric_limits<int>::max(), 1, &ok);
+    if( ! ok )
+        return;
+
     //suggest a new attribute name to the user
     QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
     proposed_name = proposed_name.append( "_CLASSIFIED_WITH_RF" );
 
     //presents a dialog so the user can change the suggested name for the new categorical variable.
-    bool ok;
     QString new_var_name = QInputDialog::getText(this, "Name the class variable",
                                              "New variable name:", QLineEdit::Normal,
                                              proposed_name, &ok);
@@ -223,35 +237,44 @@ void MachineLearningDialog::runRandomForestClassify()
                      *outputDataFile->algorithmDataSource(),
                      trainingFeaturesIDList,
                      outputFeaturesIDList,
-                     1, //number of trees
-                     69069 ); //seed for the random number generator
+                     B, //number of trees
+                     seed ); //seed for the random number generator
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): RandomForest object built.");
 
-//    //for each output data
-//    long outputRowCount = outputDataFile->getDataLineCount();
-//    std::vector<double> classValues;  //vector to hold the results (must be double for the final GEO-EAS file)
-//    classValues.reserve( outputRowCount );
-//    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
-//        //classify the data
-//        std::list< std::pair< DataValue, long> > result;
-//        CARTalgorithm.classify( outputRow,
-//                                m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
-//                                result);
-//        //get the results
-//        std::list< std::pair< DataValue, long> >::iterator it = result.begin();
-//        for( ; it != result.end(); ++it ){
-//            classValues.push_back( (*it).first.getCategorical() );
-//            break; //TODO: this causes only the first class value to be considerd
-//                   //      other values may come with different counts (assign uncertainty)
-//        }
-//    }
+    //get the number of data rows in the output to be classified
+    long outputRowCount = outputDataFile->getDataLineCount();
 
-//    //Get the Attribute object corresponding to the dependent variable (categorical)
-//    Attribute* at = trainingDataFile->getAttributeFromGEOEASIndex(
-//                    m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
+    //create an array to hold the results for each decision tree
+    //double -> GEO-EAS data are stored as doubles
+    std::vector<double> classes( outputRowCount, std::numeric_limits<double>::quiet_NaN() );
+    std::vector<double> counts( outputRowCount, std::numeric_limits<double>::quiet_NaN() );
 
-//    //add the results as a categorical attribute
-//    outputDataFile->addNewDataColumn( new_var_name, classValues, trainingDataFile->getCategoryDefinition(at) );
+    //for each output data
+    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
+        //classify the data
+        //First value is the class and the second is uncertainty
+        std::pair< DataValue, double> result( DataValue((int)0), 1.0 );
+        RF.classify( outputRow,
+                     m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
+                     result );
+        //get the result
+        classes[outputRow] = result.first.getCategorical();
+        counts[outputRow] = result.second;
+    }
+
+    Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): classification completed.");
+
+    //Get the Attribute object corresponding to the dependent variable (categorical)
+    Attribute* at = trainingDataFile->getAttributeFromGEOEASIndex(
+                    m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
+
+    //add the classification as a categorical attribute
+    outputDataFile->addNewDataColumn( new_var_name, classes, trainingDataFile->getCategoryDefinition(at) );
+
+    //add the counts as a common variable
+    outputDataFile->addNewDataColumn( new_var_name + "_uncert", counts );
+
+    Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): finished.");
 }
 
 bool MachineLearningDialog::isClassification()

@@ -9,10 +9,6 @@ class TmpDataSource : public IAlgorithmDataSource{
     // IAlgorithmDataSource interface
 public:
 
-    TmpDataSource() : IAlgorithmDataSource(),
-        m_data()
-    {}
-
     virtual long getRowCount() const {
         return m_data.size();
     }
@@ -48,17 +44,90 @@ RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
     m_outputData( outputData ),
     m_B( B )
 {
+    //Create an object to create training subsamples
     Bootstrap bagger( trainingData, ResamplingType::CASE, seed );
-
-    TmpDataSource baggedData;
 
     //For the wanted number of trees.
     for( unsigned int iTree = 0; iTree < m_B; ++iTree ){
 
-        //bagg the training set
-        bagger.resample( baggedData, trainingData.getRowCount() );
+        //Create a temporary data storage for the bagged training data
+        TmpDataSource* baggedTrainingData = new TmpDataSource();
+        m_tmpDataSources.push_back( baggedTrainingData );
 
-        //Create a CART decision tree for it
-        m_trees.push_back( CART( trainingData, outputData, trainingFeatureIDs, outputFeatureIDs  ) );
+        //bagg the training set
+        bagger.resample( *baggedTrainingData, trainingData.getRowCount() );
+
+        //Create a CART decision tree for the bagged training data
+        m_trees.push_back( new CART( *baggedTrainingData, outputData, trainingFeatureIDs, outputFeatureIDs  ) );
     }
+}
+
+RandomForest::~RandomForest()
+{
+    //GC the objects created in the constructor.
+    while( ! m_trees.empty() ){
+        delete m_trees.back();
+        m_trees.pop_back();
+    }
+    while( ! m_tmpDataSources.empty() ){
+        delete m_tmpDataSources.back();
+        m_tmpDataSources.pop_back();
+    }
+}
+
+void RandomForest::classify(long rowIdOutput,
+                            int dependentVariableColumnID,
+                            std::pair<DataValue, double> &result) const
+{
+    //a list with the possibly different classes found
+    std::list<int> classesFound;
+
+    //for each decision tree.
+    std::vector< CART* >::const_iterator itTree = m_trees.cbegin();
+    for(; itTree != m_trees.cend(); ++itTree ){
+
+        //get the decision tree
+        CART *CARTtree = *itTree;
+
+        //classify the data using one decision tree
+        std::list< std::pair< DataValue, long> > localResult;
+        CARTtree->classify( rowIdOutput, dependentVariableColumnID, localResult );
+
+        //get the classification result (one vote) from the decision tree
+        std::list< std::pair< DataValue, long> >::iterator it = localResult.begin();
+        for( ; it != localResult.end(); ++it ){
+            classesFound.push_back( (*it).first.getCategorical() );
+            break; //TODO: this causes only the first class value to be considerd
+                   //      other values may come with different counts (assign uncertainty)
+        }
+    }
+
+    //sort the votes
+    classesFound.sort();
+
+    //determine which class was most voted
+    //TODO: ties are currently ignored, it simply sticks with the first most voted
+    int mostVotedClass = -999999999;
+    long mostVotedClassCount = 0;
+    long currentCount = 0;
+    int previousClass = -999999999; //init with some unlikely class id
+    std::list<int>::iterator itClasses = classesFound.begin();
+    for( ; itClasses != classesFound.end(); ++itClasses ){
+        int currentClass = *itClasses;
+        if( currentClass != previousClass )
+            currentCount = 0;
+        ++currentCount;
+        if( currentCount > mostVotedClassCount ){
+            mostVotedClassCount = currentCount;
+            mostVotedClass = currentClass;
+        }
+        previousClass = currentClass;
+    }
+
+    //compute the voting uncertainty
+    double uncertainty = 1.0 - mostVotedClassCount / (double)classesFound.size();
+
+    //"return" the result
+    result.first = DataValue( mostVotedClass );
+    result.second = uncertainty;
 }
