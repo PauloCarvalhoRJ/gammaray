@@ -35,12 +35,26 @@ public:
     /** Uses the underlying CART decision tree as a classifier to a given output data row, referenced by its row number.
      * This is just a front-end for the actual recursive classification function (see the protected section).
      * @param rowIdOutput Row number of output data to classify.
-     * @param dependentVariableColumnID  The column id in the training data of the variable to be predicted.
+     * @param dependentVariableColumnID  The column id in the training data of the variable (supposedly categorical)
+     *                                   to be predicted.
      * @param result A list with pair(s): the predicted value; how many times the value was found in training data.
      */
     void classify( long rowIdOutput,
                    int dependentVariableColumnID,
                    std::list< std::pair<DataValue, long> >& result) const;
+
+    /** Uses the underlying CART decision tree as a regression to a given output data row, referenced by its row number.
+     * This is just a front-end for the actual recursive regression function (see the protected section).
+     * @param rowIdOutput Row number of output data to produce an estimation.
+     * @param dependentVariableColumnID  The column id in the training data of the variable (supposedly continuous)
+     *                                   to be predicted.
+     * @param mean The estimated result.
+     * @param percent The percentage of the training data rows that was used in the regression decision.
+     */
+    void regress( long rowIdOutput,
+                  int dependentVariableColumnID,
+                  DataValue &mean,
+                  double &percent ) const;
 
 protected:
 
@@ -144,6 +158,16 @@ protected:
                    int dependentVariableColumnID,
                    const CARTNode* decisionTreeNode,
                    std::list< std::pair<DataValue, long> >& result) const;
+
+    /** The actual recursive implementation of regress().
+     * @param decisionTreeNode the node of the tree holding the decision hierarchy to classify.
+     *                         If nullptr, the root node is used.
+     */
+    void regress(long rowIdOutput,
+                  int dependentVariableColumnID,
+                  const CARTNode* decisionTreeNode,
+                  DataValue &mean,
+                  double &percent ) const;
 };
 
 #endif // CART_H

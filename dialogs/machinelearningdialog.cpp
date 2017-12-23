@@ -112,7 +112,7 @@ void MachineLearningDialog::runAlgorithm()
         if( isClassification() )
             runCARTClassify();
         else
-            Application::instance()->logError("MachineLearningDialog::runAlgorithm(): regression not supported yet with CART.");
+            runCARTRegression();
     }else if( ui->cmbAlgorithmType->currentText() == "Random Forest" ){
         if( isClassification() )
             runRandomForestClassify();
@@ -163,7 +163,7 @@ void MachineLearningDialog::runCARTClassify()
                         *outputDataFile->algorithmDataSource(),
                         trainingFeaturesIDList,
                         outputFeaturesIDList);
-    Application::instance()->logInfo("MachineLearningDialog::runCART(): CART tree built.");
+    Application::instance()->logInfo("MachineLearningDialog::runCARTClassify(): CART tree built.");
 
     //for each output data
     long outputRowCount = outputDataFile->getDataLineCount();
@@ -190,6 +190,65 @@ void MachineLearningDialog::runCARTClassify()
 
     //add the results as a categorical attribute
     outputDataFile->addNewDataColumn( new_var_name, classValues, trainingDataFile->getCategoryDefinition(at) );
+}
+
+void MachineLearningDialog::runCARTRegression()
+{
+    //suggest a new attribute name to the user
+    QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
+    proposed_name = proposed_name.append( "_ESTIMATED_WITH_CART" );
+
+    //presents a dialog so the user can change the suggested name for the new continuous variable.
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Name the variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    //if the user cancelled the input box, do nothing.
+    if (! ok )
+        return;
+
+    //Get the selected data files.
+    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
+    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+
+    //load the data from filesystem.
+    trainingDataFile->loadData();
+    outputDataFile->loadData();
+
+    //get the data source interface for the algorithms.
+    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
+
+    //Build the CART tree
+    CART CARTalgorithm( *trainingDataFile->algorithmDataSource(),
+                        *outputDataFile->algorithmDataSource(),
+                        trainingFeaturesIDList,
+                        outputFeaturesIDList);
+    Application::instance()->logInfo("MachineLearningDialog::runCARTRegression(): CART tree built.");
+
+    //for each output data
+    long outputRowCount = outputDataFile->getDataLineCount();
+    std::vector<double> estimatedValues;  //vector to hold the estimations
+    std::vector<double> percentages;  //vector to hold the percentages
+    estimatedValues.reserve( outputRowCount );
+    percentages.reserve( outputRowCount );
+    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
+        //regress the data
+        DataValue mean( 0.0d );
+        double percent;
+        CARTalgorithm.regress(  outputRow,
+                                m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
+                                mean,
+                                percent);
+        //get the results
+        estimatedValues.push_back( mean.getContinuous() );
+        percentages.push_back( percent );
+    }
+
+    //add the results as continuous attributes
+    outputDataFile->addNewDataColumn( new_var_name, estimatedValues );
+    outputDataFile->addNewDataColumn( new_var_name + "_percent", percentages );
 }
 
 void MachineLearningDialog::runRandomForestClassify()

@@ -29,7 +29,7 @@ private:
     VariableSelector *makeVariableSelector();
 
     void runCARTClassify();
-
+    void runCARTRegression();
     void runRandomForestClassify();
 
     bool isClassification();

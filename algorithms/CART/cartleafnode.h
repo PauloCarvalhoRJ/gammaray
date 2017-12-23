@@ -21,6 +21,13 @@ public:
     void getUniqueTrainingValuesWithCounts( int columnID,
                                             std::list<std::pair<DataValue, long> > &result );
 
+    /** Returns the mean and proportion of rows in the training set used in the mean of values refered by this node.
+     *  Only the rows refered to in m_rowIndexes are considered in the mean.
+     */
+    void getMeanOfTrainingValuesWithPercentage( int columnID,
+                                                DataValue &mean,
+                                                double& percentage );
+
     //CARTNode interface
     virtual bool isLeaf() const { return true; }
 protected:

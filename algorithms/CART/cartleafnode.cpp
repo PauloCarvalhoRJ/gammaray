@@ -1,5 +1,7 @@
 #include "cartleafnode.h"
 #include "../ialgorithmdatasource.h"
+#include <vector>
+#include <numeric>
 
 CARTLeafNode::CARTLeafNode(const IAlgorithmDataSource &trainingDataSource,
                            const std::list<long> &rowIDs) : CARTNode(),
@@ -36,5 +38,24 @@ void CARTLeafNode::getUniqueTrainingValuesWithCounts(int columnID,
             }
         }
     }
+}
+
+double operator+( double v1, DataValue v2 ){
+    return v2 + v1;
+}
+
+void CARTLeafNode::getMeanOfTrainingValuesWithPercentage( int columnID, DataValue &mean, double &percentage )
+{
+    //creates a vector with the values referenced by this node.
+    std::vector<DataValue> values;
+    std::list<long>::const_iterator it = m_rowIndexes.begin();
+    for( ; it != m_rowIndexes.cend(); ++it )
+        values.push_back( m_trainingDataSource.getDataValue( *it, columnID ) );
+
+    //return the percentage of training data rows referred by this leaf node with respect to the whole training set.
+    percentage = values.size() / (double)m_trainingDataSource.getRowCount();
+
+    //return the mean of values referred by this leaf nodes.
+    mean = std::accumulate( values.begin(), values.end(), 0.0 ) / values.size();
 }
 

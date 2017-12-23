@@ -36,6 +36,11 @@ void CART::classify(long rowIdOutput,
     classify( rowIdOutput, dependentVariableColumnID, nullptr, result );
 }
 
+void CART::regress(long rowIdOutput, int dependentVariableColumnID, DataValue &mean, double &percent) const
+{
+    regress( rowIdOutput, dependentVariableColumnID, nullptr, mean, percent );
+}
+
 void CART::getUniqueDataValues(std::list<DataValue> &result,
                                const std::list<long> &rowIDs,
                                int columnIndex) const
@@ -206,7 +211,7 @@ void CART::classify(long rowIdOutput,
     if( !decisionTreeNode )
         decisionTreeNode = m_root.get();
 
-    //upon reacing a leaf node, no decision to make: simply return the values of the predicted variable from
+    //upon reaching a leaf node, no decision to make: simply return the values of the predicted variable from
     //the training data rows stored in the node
     if( decisionTreeNode->isLeaf() ){
         CARTLeafNode* leafNode = (CARTLeafNode*)decisionTreeNode;
@@ -223,4 +228,30 @@ void CART::classify(long rowIdOutput,
         return classify( rowIdOutput, dependentVariableColumnID, decisionTreeNode->getTrueSideChildNode(), result );
     else
         return classify( rowIdOutput, dependentVariableColumnID, decisionTreeNode->getFalseSideChildNode(), result );
+}
+
+void CART::regress(long rowIdOutput, int dependentVariableColumnID, const CARTNode *decisionTreeNode,
+                   DataValue &mean, double &percent) const
+{
+    //if the passed node pointer is null, then use the tree's root node.
+    if( !decisionTreeNode )
+        decisionTreeNode = m_root.get();
+
+    //upon reaching a leaf node, no decision to make: simply return the values of the predicted variable from
+    //the training data rows stored in the node
+    if( decisionTreeNode->isLeaf() ){
+        CARTLeafNode* leafNode = (CARTLeafNode*)decisionTreeNode;
+        leafNode->getMeanOfTrainingValuesWithPercentage( dependentVariableColumnID, mean, percent );
+        return;
+    }
+
+    //If execution reaches this point, the node is a decision one.
+    CARTDecisionNode* decisionNode = (CARTDecisionNode*)decisionTreeNode;
+
+    //Test the output data row against the node's split criterion.
+    //Recursion goes to a child node depending whether the row satisfies the decision criterion.
+    if( decisionNode->criterionMatches( rowIdOutput ) )
+        regress( rowIdOutput, dependentVariableColumnID, decisionTreeNode->getTrueSideChildNode(), mean, percent );
+    else
+        regress( rowIdOutput, dependentVariableColumnID, decisionTreeNode->getFalseSideChildNode(), mean, percent );
 }

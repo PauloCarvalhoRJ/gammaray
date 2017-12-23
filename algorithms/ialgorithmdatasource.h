@@ -30,6 +30,18 @@ public:
         default: return false;
         }
     }
+    DataValue& operator=( double pValue ){
+        usedMember = 1;
+        value.continuous = pValue;
+        return *this;
+    }
+    double operator+( double other ){
+        switch( usedMember ){
+        case 1: return value.continuous + other;
+        case 2: return value.categorical + other;
+        default: return 0.0; //neutral element of sum
+        }
+    }
 protected:
     char usedMember;
     union {
