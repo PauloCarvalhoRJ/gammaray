@@ -13,6 +13,7 @@ class DataValue{
 public:
     explicit DataValue( double initContinuousValue ){ value.continuous = initContinuousValue; usedMember = 1; }
     explicit DataValue( int initCategoricalValue ){ value.categorical = initCategoricalValue; usedMember = 2; }
+    explicit DataValue(){ value.continuous = 0.0; usedMember = 1; } //default DataValue is a continuous value inited with 0.0
     bool isCategorical(){ return usedMember == 2; }
     int getCategorical(){ return value.categorical; }
     double getContinuous(){ return value.continuous; }
@@ -40,6 +41,34 @@ public:
         case 1: return value.continuous + other;
         case 2: return value.categorical + other;
         default: return 0.0; //neutral element of sum
+        }
+    }
+    double operator*( double other ){
+        switch( usedMember ){
+        case 1: return value.continuous * other;
+        case 2: return value.categorical * other;
+        default: return 1.0; //neutral element of product
+        }
+    }
+    double operator-( DataValue other ){
+        switch( usedMember ){
+        case 1: return value.continuous - other.getContinuous();
+        case 2: return value.categorical - other.getCategorical();
+        default: return 0.0; //neutral element of sum
+        }
+    }
+    double operator/( double other ){
+        switch( usedMember ){
+        case 1: return value.continuous / other;
+        case 2: return value.categorical / other;
+        default: return 1.0; //neutral element of product
+        }
+    }
+    double operator*( DataValue other ){
+        switch( usedMember ){
+        case 1: return value.continuous * other.getContinuous();
+        case 2: return value.categorical * other.getCategorical();
+        default: return 1.0; //neutral element of product
         }
     }
 protected:

@@ -45,6 +45,18 @@ public:
     void classify(long rowIdOutput,
                   int dependentVariableColumnID,
                   std::pair<DataValue, double> &result) const;
+
+    /** Uses the underlying CART decision trees as regressions to a given output data row, referenced by its row number.
+     * @param rowIdOutput Row number of output data to estimate.
+     * @param dependentVariableColumnID  The column id in the training data of the variable to be predicted.
+     * @param mean The regression value.
+     * @param variance The variance between the individual estimates given by each decision tree.
+     */
+    void regress( long rowIdOutput,
+                  int dependentVariableColumnID,
+                  DataValue& mean,
+                  DataValue& variance ) const;
+
 protected:
 
     /** The data to be bagged and used to build the decision trees. */

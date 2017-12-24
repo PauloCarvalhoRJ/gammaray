@@ -117,7 +117,7 @@ void MachineLearningDialog::runAlgorithm()
         if( isClassification() )
             runRandomForestClassify();
         else
-            Application::instance()->logError("MachineLearningDialog::runAlgorithm(): regression not supported yet with Random Forest.");
+            runRandomForestRegression();
     } else {
         Application::instance()->logError("MachineLearningDialog::runAlgorithm(): unsupported algorithm: " + ui->cmbAlgorithmType->currentText());
     }
@@ -334,6 +334,87 @@ void MachineLearningDialog::runRandomForestClassify()
     outputDataFile->addNewDataColumn( new_var_name + "_uncert", counts );
 
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): finished.");
+}
+
+void MachineLearningDialog::runRandomForestRegression()
+{
+    bool ok;
+
+    //ask the user to enter the number of trees
+    int B = QInputDialog::getInt( this, "User input", "Number of trees: ", 1, 1, 5000, 1, &ok);
+    if( ! ok )
+        return;
+
+    //ask the user to enter the seed for the random number generator
+    int seed = QInputDialog::getInt( this, "User input", "Seed for the random number generator: ",
+                                     69069, 1, std::numeric_limits<int>::max(), 1, &ok);
+    if( ! ok )
+        return;
+
+    //suggest a new attribute name to the user
+    QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
+    proposed_name = proposed_name.append( "_REGRESSION_WITH_RF" );
+
+    //presents a dialog so the user can change the suggested name for the new continuous variable.
+    QString new_var_name = QInputDialog::getText(this, "Name the variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    //if the user cancelled the input box, do nothing.
+    if (! ok )
+        return;
+
+    //Get the selected data files.
+    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
+    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+
+    //load the data from filesystem.
+    trainingDataFile->loadData();
+    outputDataFile->loadData();
+
+    //get the data source interface for the algorithms.
+    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
+
+    //Build the RandomForest object, containing the Random Forest algorithm.
+    RandomForest RF( *trainingDataFile->algorithmDataSource(),
+                     *outputDataFile->algorithmDataSource(),
+                     trainingFeaturesIDList,
+                     outputFeaturesIDList,
+                     B, //number of trees
+                     seed ); //seed for the random number generator
+    Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): RandomForest object built.");
+
+    //get the number of data rows in the output to be estimated
+    long outputRowCount = outputDataFile->getDataLineCount();
+
+    //create vectors to hold the results for each decision tree
+    //double -> GEO-EAS data are stored as doubles
+    std::vector<double> means( outputRowCount, std::numeric_limits<double>::quiet_NaN() );
+    std::vector<double> variances( outputRowCount, std::numeric_limits<double>::quiet_NaN() );
+
+    //for each output data
+    for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
+        //estimate the data
+        //First value is the class and the second is uncertainty
+        DataValue mean( 0.0d );
+        DataValue variance( 0.0d );
+        RF.regress( outputRow,
+                    m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
+                    mean,
+                    variance );
+        //get the result
+        means[outputRow] = mean.getContinuous();
+        variances[outputRow] = variance.getContinuous();
+    }
+
+    Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): classification completed.");
+
+    //add the regression and its variance as continuous attributes
+    outputDataFile->addNewDataColumn( new_var_name, means );
+    outputDataFile->addNewDataColumn( new_var_name + "_variance", variances );
+
+    Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): finished.");
 }
 
 bool MachineLearningDialog::isClassification()

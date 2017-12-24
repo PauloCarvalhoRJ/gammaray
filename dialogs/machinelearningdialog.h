@@ -31,6 +31,7 @@ private:
     void runCARTClassify();
     void runCARTRegression();
     void runRandomForestClassify();
+    void runRandomForestRegression();
 
     bool isClassification();
 

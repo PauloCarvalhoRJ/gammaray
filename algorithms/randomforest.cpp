@@ -3,6 +3,8 @@
 #include "bootstrap.h"
 #include "ialgorithmdatasource.h"
 #include <limits>
+#include <numeric>
+#include <algorithm>
 
 /** A temporary data source for Random Forest run. */
 class TmpDataSource : public IAlgorithmDataSource{
@@ -130,4 +132,46 @@ void RandomForest::classify(long rowIdOutput,
     //"return" the result
     result.first = DataValue( mostVotedClass );
     result.second = uncertainty;
+}
+
+void RandomForest::regress(long rowIdOutput, int dependentVariableColumnID, DataValue &mean, DataValue &variance) const
+{
+    //vectors with the possibly different estimates and percents (of total training data rows) found
+    std::vector<DataValue> estimatesFound;
+    std::vector<double> percentsFound;
+
+    //for each decision tree.
+    std::vector< CART* >::const_iterator itTree = m_trees.cbegin();
+    for(; itTree != m_trees.cend(); ++itTree ){
+
+        //get the decision tree
+        CART *CARTtree = *itTree;
+
+        //regress the data using one decision tree
+        DataValue mean(0.0d);
+        double percent;
+        CARTtree->regress( rowIdOutput, dependentVariableColumnID, mean, percent );
+
+        //get the regression result and its representativeness (percent of the total training data rows)
+        //from the decision tree
+        estimatesFound.push_back( mean );
+        percentsFound.push_back( percent );
+    }
+
+    //compute the weighted mean
+    long count = estimatesFound.size();
+    DataValue total( 0.0d );
+    for( long iEstimate = 0; iEstimate < count; ++iEstimate ){
+        total = total + estimatesFound[iEstimate] * percentsFound[iEstimate];
+    }
+
+    //"return" the mean
+    mean = total.getContinuous() / std::accumulate( percentsFound.begin(), percentsFound.end(), 0.0 );
+
+    //compute and "return" the variance
+    std::vector<DataValue> diff(estimatesFound.size());
+    std::transform(estimatesFound.begin(), estimatesFound.end(), diff.begin(), [mean](DataValue x) { return x - mean; });
+    DataValue squaredSum ( std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0) );
+    DataValue stdev ( std::sqrt(squaredSum / (double)estimatesFound.size()) );
+    variance = stdev * stdev;
 }

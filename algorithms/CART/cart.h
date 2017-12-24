@@ -49,7 +49,8 @@ public:
      * @param dependentVariableColumnID  The column id in the training data of the variable (supposedly continuous)
      *                                   to be predicted.
      * @param mean The estimated result.
-     * @param percent The percentage of the training data rows that was used in the regression decision.
+     * @param percent The percentage of the training data rows that was used in the regression decision.  This value is
+     *                a measure of representativeness of the returned mean.
      */
     void regress( long rowIdOutput,
                   int dependentVariableColumnID,
