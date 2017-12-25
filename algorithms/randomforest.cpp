@@ -1,6 +1,5 @@
 #include "randomforest.h"
 #include "CART/cart.h"
-#include "bootstrap.h"
 #include "ialgorithmdatasource.h"
 #include <limits>
 #include <numeric>
@@ -37,17 +36,19 @@ protected:
 
 
 RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
-                                                       IAlgorithmDataSource &outputData,
-                                                       const std::list<int> &trainingFeatureIDs,
-                                                       const std::list<int> &outputFeatureIDs,
-                                                       unsigned int B,
-                                                       long seed ) :
+                                 IAlgorithmDataSource &outputData,
+                           const std::list<int> &trainingFeatureIDs,
+                           const std::list<int> &outputFeatureIDs,
+                                 unsigned int B,
+                                 long seed,
+                                 ResamplingType bootstrap ,
+                                 TreeType treeType) :
     m_trainingData( trainingData ),
     m_outputData( outputData ),
     m_B( B )
 {
     //Create an object to create training subsamples
-    Bootstrap bagger( trainingData, ResamplingType::CASE, seed );
+    Bootstrap bagger( trainingData, bootstrap, seed );
 
     //For the wanted number of trees.
     for( unsigned int iTree = 0; iTree < m_B; ++iTree ){
@@ -59,8 +60,9 @@ RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
         //bagg the training set
         bagger.resample( *baggedTrainingData, trainingData.getRowCount() );
 
-        //Create a CART decision tree for the bagged training data
-        m_trees.push_back( new CART( *baggedTrainingData, outputData, trainingFeatureIDs, outputFeatureIDs  ) );
+        //Create a decision tree for the bagged training data
+        if( treeType == TreeType::CART )
+            m_trees.push_back( new CART( *baggedTrainingData, outputData, trainingFeatureIDs, outputFeatureIDs  ) );
     }
 }
 
@@ -85,15 +87,15 @@ void RandomForest::classify(long rowIdOutput,
     std::list<int> classesFound;
 
     //for each decision tree.
-    std::vector< CART* >::const_iterator itTree = m_trees.cbegin();
+    std::vector< DecisionTree* >::const_iterator itTree = m_trees.cbegin();
     for(; itTree != m_trees.cend(); ++itTree ){
 
         //get the decision tree
-        CART *CARTtree = *itTree;
+        DecisionTree *tree = *itTree;
 
         //classify the data using one decision tree
         std::list< std::pair< DataValue, long> > localResult;
-        CARTtree->classify( rowIdOutput, dependentVariableColumnID, localResult );
+        tree->classify( rowIdOutput, dependentVariableColumnID, localResult );
 
         //get the classification result (one vote) from the decision tree
         std::list< std::pair< DataValue, long> >::iterator it = localResult.begin();
@@ -141,16 +143,16 @@ void RandomForest::regress(long rowIdOutput, int dependentVariableColumnID, Data
     std::vector<double> percentsFound;
 
     //for each decision tree.
-    std::vector< CART* >::const_iterator itTree = m_trees.cbegin();
+    std::vector< DecisionTree* >::const_iterator itTree = m_trees.cbegin();
     for(; itTree != m_trees.cend(); ++itTree ){
 
         //get the decision tree
-        CART *CARTtree = *itTree;
+        DecisionTree *tree = *itTree;
 
         //regress the data using one decision tree
         DataValue mean(0.0d);
         double percent;
-        CARTtree->regress( rowIdOutput, dependentVariableColumnID, mean, percent );
+        tree->regress( rowIdOutput, dependentVariableColumnID, mean, percent );
 
         //get the regression result and its representativeness (percent of the total training data rows)
         //from the decision tree

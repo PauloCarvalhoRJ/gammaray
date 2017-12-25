@@ -9,6 +9,7 @@ class MachineLearningDialog;
 
 class FileSelectorWidget;
 class VariableSelector;
+class GSLibParameterFile;
 
 class MachineLearningDialog : public QDialog
 {
@@ -30,6 +31,7 @@ private:
 
     void runCARTClassify();
     void runCARTRegression();
+    bool getRandomForestParameters( GSLibParameterFile& gpf );
     void runRandomForestClassify();
     void runRandomForestRegression();
 

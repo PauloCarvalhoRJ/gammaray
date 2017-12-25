@@ -181,7 +181,8 @@ SOURCES += main.cpp\
     algorithms/CART/cartleafnode.cpp \
     algorithms/CART/cartnode.cpp \
     algorithms/CART/cartsplitcriterion.cpp \
-    algorithms/randomforest.cpp
+    algorithms/randomforest.cpp \
+    algorithms/decisiontree.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -342,7 +343,8 @@ HEADERS  += mainwindow.h \
     algorithms/CART/cartleafnode.h \
     algorithms/CART/cartnode.h \
     algorithms/CART/cartsplitcriterion.h \
-    algorithms/randomforest.h
+    algorithms/randomforest.h \
+    algorithms/decisiontree.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

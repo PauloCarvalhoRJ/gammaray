@@ -7,7 +7,7 @@
 CART::CART(const IAlgorithmDataSource &trainingData,
            IAlgorithmDataSource &outputData,
            const std::list<int> &trainingFeatureIDs,
-           const std::list<int> &outputFeatureIDs ) :
+           const std::list<int> &outputFeatureIDs ) : DecisionTree(),
     m_trainingData( trainingData ),
     m_outputData( outputData )
 {
@@ -27,6 +27,10 @@ CART::CART(const IAlgorithmDataSource &trainingData,
 
     //Built the CART tree, getting the pointer to the root node.
     m_root.reset( makeCART( rowIDs, trainingFeatureIDs ) );
+}
+
+CART::~CART()
+{
 }
 
 void CART::classify(long rowIdOutput,

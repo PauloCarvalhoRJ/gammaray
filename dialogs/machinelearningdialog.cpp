@@ -8,6 +8,9 @@
 #include "algorithms/CART/cart.h"
 #include "algorithms/ialgorithmdatasource.h"
 #include "algorithms/randomforest.h"
+#include "gslib/gslibparameterfiles/gslibparameterfile.h"
+#include "gslib/gslibparametersdialog.h"
+#include "gslib/gslibparameterfiles/gslibparamtypes.h"
 
 #include <QInputDialog>
 
@@ -251,33 +254,73 @@ void MachineLearningDialog::runCARTRegression()
     outputDataFile->addNewDataColumn( new_var_name + "_percent", percentages );
 }
 
-void MachineLearningDialog::runRandomForestClassify()
+bool MachineLearningDialog::getRandomForestParameters(GSLibParameterFile &gpf )
 {
-    bool ok;
-
-    //ask the user to enter the number of trees
-    int B = QInputDialog::getInt( this, "User input", "Number of trees: ", 1, 1, 5000, 1, &ok);
-    if( ! ok )
-        return;
-
-    //ask the user to enter the seed for the random number generator
-    int seed = QInputDialog::getInt( this, "User input", "Seed for the random number generator: ",
-                                     69069, 1, std::numeric_limits<int>::max(), 1, &ok);
-    if( ! ok )
-        return;
-
+    GSLibParInt* par0 = new GSLibParInt( "Seed", "", "Seed for the random number generator:" );
+    par0->_value = 69069;
+    gpf.addParameter( par0 );
+    GSLibParOption* par1 = new GSLibParOption("Bootstrap", "", "Bootstrap:");
+    par1->addOption(1, "Case");
+    gpf.addParameter( par1 );
+    GSLibParInt *par2 = new GSLibParInt( "B", "", "Number of trees:" );
+    par2->_value = 1;
+    gpf.addParameter( par2 );
+    GSLibParOption* par3 = new GSLibParOption("TreeType", "", "Tree type:");
+    par3->addOption(1, "CART");
+    gpf.addParameter( par3 );
     //suggest a new attribute name to the user
     QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
-    proposed_name = proposed_name.append( "_CLASSIFIED_WITH_RF" );
+    if( isClassification() )
+        proposed_name = proposed_name.append( "_CLASSIFIED_WITH_RF" );
+    else
+        proposed_name = proposed_name.append( "_ESTIMATED_WITH_RF" );
+    GSLibParString* par4 = new GSLibParString("VariableName", "", "New variable name: ");
+    par4->_value = proposed_name;
+    gpf.addParameter( par4 );
 
-    //presents a dialog so the user can change the suggested name for the new categorical variable.
-    QString new_var_name = QInputDialog::getText(this, "Name the class variable",
-                                             "New variable name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
+    //Use the GSLib parameter dialog to allow the user to edit the Random Forest parameters
+    GSLibParametersDialog diag( &gpf, this );
+    diag.setWindowTitle("Parameters for the Random Forest algorithm");
+    int userResponse = diag.exec();
+    return userResponse == QDialog::Accepted;
+}
 
-    //if the user cancelled the input box, do nothing.
-    if (! ok )
+void MachineLearningDialog::runRandomForestClassify()
+{
+    //use a GSLib parameter file object to hold a collection of parameters for the Random Forest algorithm
+    GSLibParameterFile gpf;
+
+    //if the user canceled the parameter dialog, aborts.
+    if( ! getRandomForestParameters(gpf) )
         return;
+
+    //get the number of trees
+    int B = gpf.getParameterByName<GSLibParInt*>("B")->_value;
+
+    //get the seed for the random number generator
+    int seed = gpf.getParameterByName<GSLibParInt*>("Seed")->_value;
+
+    //get the bootstrap option
+    int bootstrapOption = gpf.getParameterByName<GSLibParOption*>("Bootstrap")->_selected_value;
+    ResamplingType bootstrap;
+    switch( bootstrapOption ){
+    case 1: bootstrap = ResamplingType::CASE; break;
+    default:
+        Application::instance()->logError("MachineLearningDialog::runRandomForestClassify(): unrecognized bootstrap option: "
+                                          + QString::number( bootstrapOption ) + ". Aborted.");
+        return;
+    }
+
+    //get the tree type option
+    int treeTypeOption = gpf.getParameterByName<GSLibParOption*>("TreeType")->_selected_value;
+    TreeType treeType;
+    switch( treeTypeOption ){
+    case 1: treeType = TreeType::CART; break;
+    default:
+        Application::instance()->logError("MachineLearningDialog::runRandomForestClassify(): unrecognized tree type option: "
+                                          + QString::number( treeTypeOption ) + ". Aborted.");
+        return;
+    }
 
     //Get the selected data files.
     DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
@@ -297,7 +340,9 @@ void MachineLearningDialog::runRandomForestClassify()
                      trainingFeaturesIDList,
                      outputFeaturesIDList,
                      B, //number of trees
-                     seed ); //seed for the random number generator
+                     seed, //seed for the random number generator
+                     bootstrap, //how the training data is re-sampled in each RF iteration
+                     treeType); //the type of trees used to build the forest
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): RandomForest object built.");
 
     //get the number of data rows in the output to be classified
@@ -328,41 +373,51 @@ void MachineLearningDialog::runRandomForestClassify()
                     m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
 
     //add the classification as a categorical attribute
-    outputDataFile->addNewDataColumn( new_var_name, classes, trainingDataFile->getCategoryDefinition(at) );
+    outputDataFile->addNewDataColumn( gpf.getParameterByName<GSLibParString*>("VariableName")->_value,
+                                      classes, trainingDataFile->getCategoryDefinition(at) );
 
     //add the counts as a common variable
-    outputDataFile->addNewDataColumn( new_var_name + "_uncert", counts );
+    outputDataFile->addNewDataColumn( gpf.getParameterByName<GSLibParString*>("VariableName")->_value + "_uncert", counts );
 
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): finished.");
 }
 
 void MachineLearningDialog::runRandomForestRegression()
 {
-    bool ok;
+    //use a GSLib parameter file object to hold a collection of parameters for the Random Forest algorithm
+    GSLibParameterFile gpf;
 
-    //ask the user to enter the number of trees
-    int B = QInputDialog::getInt( this, "User input", "Number of trees: ", 1, 1, 5000, 1, &ok);
-    if( ! ok )
+    //if the user canceled the parameter dialog, aborts.
+    if( ! getRandomForestParameters(gpf) )
         return;
 
-    //ask the user to enter the seed for the random number generator
-    int seed = QInputDialog::getInt( this, "User input", "Seed for the random number generator: ",
-                                     69069, 1, std::numeric_limits<int>::max(), 1, &ok);
-    if( ! ok )
+    //get the number of trees
+    int B = gpf.getParameterByName<GSLibParInt*>("B")->_value;
+
+    //get the seed for the random number generator
+    int seed = gpf.getParameterByName<GSLibParInt*>("Seed")->_value;
+
+    //get the bootstrap option
+    int bootstrapOption = gpf.getParameterByName<GSLibParOption*>("Bootstrap")->_selected_value;
+    ResamplingType bootstrap;
+    switch( bootstrapOption ){
+    case 1: bootstrap = ResamplingType::CASE; break;
+    default:
+        Application::instance()->logError("MachineLearningDialog::runRandomForestRegression(): unrecognized bootstrap option: "
+                                          + QString::number( bootstrapOption ) + ". Aborted.");
         return;
+    }
 
-    //suggest a new attribute name to the user
-    QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
-    proposed_name = proposed_name.append( "_REGRESSION_WITH_RF" );
-
-    //presents a dialog so the user can change the suggested name for the new continuous variable.
-    QString new_var_name = QInputDialog::getText(this, "Name the variable",
-                                             "New variable name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
-
-    //if the user cancelled the input box, do nothing.
-    if (! ok )
+    //get the tree type option
+    int treeTypeOption = gpf.getParameterByName<GSLibParOption*>("TreeType")->_selected_value;
+    TreeType treeType;
+    switch( treeTypeOption ){
+    case 1: treeType = TreeType::CART; break;
+    default:
+        Application::instance()->logError("MachineLearningDialog::runRandomForestRegression(): unrecognized tree type option: "
+                                          + QString::number( treeTypeOption ) + ". Aborted.");
         return;
+    }
 
     //Get the selected data files.
     DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
@@ -382,7 +437,9 @@ void MachineLearningDialog::runRandomForestRegression()
                      trainingFeaturesIDList,
                      outputFeaturesIDList,
                      B, //number of trees
-                     seed ); //seed for the random number generator
+                     seed, //seed for the random number generator
+                     bootstrap, //how the training data is re-sampled in each RF iteration
+                     treeType); //the type of trees used to build the forest
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): RandomForest object built.");
 
     //get the number of data rows in the output to be estimated
@@ -408,11 +465,11 @@ void MachineLearningDialog::runRandomForestRegression()
         variances[outputRow] = variance.getContinuous();
     }
 
-    Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): classification completed.");
+    Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): regression completed.");
 
     //add the regression and its variance as continuous attributes
-    outputDataFile->addNewDataColumn( new_var_name, means );
-    outputDataFile->addNewDataColumn( new_var_name + "_variance", variances );
+    outputDataFile->addNewDataColumn( gpf.getParameterByName<GSLibParString*>("VariableName")->_value, means );
+    outputDataFile->addNewDataColumn( gpf.getParameterByName<GSLibParString*>("VariableName")->_value + "_variance", variances );
 
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): finished.");
 }

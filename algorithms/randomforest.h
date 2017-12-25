@@ -3,10 +3,22 @@
 
 #include <vector>
 #include <list>
+#include "bootstrap.h"
 
 class IAlgorithmDataSource;
-class CART;
+class DecisionTree;
 class DataValue;
+
+/*! The tree type used to build the forest.  It also refers to the algorithm used to build the trees from training data. */
+enum class TreeType : unsigned int{
+    CART /*! CART (Classification and Regression Tree) trees are used. */
+    //ID3 /*! ID3 (Iterative Dichotomiser 3) trees are used.  ID3 is used in classification. */
+    //C4_5 /*! C4.5 trees are used. C4.5 is a development of ID3 and is used in classification. */
+    //C5_0 /*! C5.0 trees are used. C5.0 is a faster and low memory development of C4.5. */
+    //CHAID /*! CHAID (Chi-squared Automatic Interaction Detector) trees are used. */
+    //MARS /*! MARS trees are used.  MARS trees are designed to be optimal with numeric data. */
+    //CIT /*! Conditional Inference Trees are used.  */
+};
 
 /**
  * The RandomForest class represents a random forest algorithm for classification or regression purposes, that is, the
@@ -21,7 +33,7 @@ class RandomForest
 public:
 
     /**
-     * The constructor creates CART decision trees from radomly generated sample sets from the original set (bagging).
+     * The constructor creates decision trees from radomly generated sample sets from the original set (bagging).
      *
      * @param B The number of trees.  Low values mean faster computation but more overfitting.  Higher values mean
      *          a smoother classification/regression but more misses.
@@ -32,11 +44,13 @@ public:
                  const std::list<int> &trainingFeatureIDs,
                  const std::list<int> &outputFeatureIDs,
                  unsigned int B,
-                 long seed);
+                 long seed,
+                 ResamplingType bootstrap,
+                 TreeType treeType);
 
     virtual ~RandomForest();
 
-    /** Uses the underlying CART decision trees as classifiers to a given output data row, referenced by its row number.
+    /** Uses the underlying decision trees as classifiers to a given output data row, referenced by its row number.
      * @param rowIdOutput Row number of output data to classify.
      * @param dependentVariableColumnID  The column id in the training data of the variable to be predicted.
      * @param result A pair: the predicted value (by majority vote); 1.0 - the ratio between the number of the most voted class
@@ -46,7 +60,7 @@ public:
                   int dependentVariableColumnID,
                   std::pair<DataValue, double> &result) const;
 
-    /** Uses the underlying CART decision trees as regressions to a given output data row, referenced by its row number.
+    /** Uses the underlying decision trees as regressions to a given output data row, referenced by its row number.
      * @param rowIdOutput Row number of output data to estimate.
      * @param dependentVariableColumnID  The column id in the training data of the variable to be predicted.
      * @param mean The regression value.
@@ -66,7 +80,7 @@ protected:
     IAlgorithmDataSource& m_outputData;
 
     /** The decision trees. */
-    std::vector< CART* > m_trees;
+    std::vector< DecisionTree* > m_trees;
 
     /** The number of trees. */
     unsigned int m_B;

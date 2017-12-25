@@ -1,19 +1,18 @@
 #ifndef CART_H
 #define CART_H
 
-#include <list>
 #include <memory>
 #include <map>
+#include "../decisiontree.h"
 
 class CARTNode;
 class IAlgorithmDataSource;
 class CARTSplitCriterion;
-class DataValue;
 
 /** The CART class represents the CART algorithm, which serves to build decision trees from data to classify or
  * to perform regressions.  CART stands for Classification and Regression Tree.
  */
-class CART
+class CART : public DecisionTree
 {
 public:
 
@@ -31,6 +30,7 @@ public:
           IAlgorithmDataSource& outputData,
           const std::list<int> &trainingFeatureIDs,
           const std::list<int> &outputFeatureIDs );
+    virtual ~CART();
 
     /** Uses the underlying CART decision tree as a classifier to a given output data row, referenced by its row number.
      * This is just a front-end for the actual recursive classification function (see the protected section).
@@ -39,9 +39,9 @@ public:
      *                                   to be predicted.
      * @param result A list with pair(s): the predicted value; how many times the value was found in training data.
      */
-    void classify( long rowIdOutput,
-                   int dependentVariableColumnID,
-                   std::list< std::pair<DataValue, long> >& result) const;
+    virtual void classify( long rowIdOutput,
+                           int dependentVariableColumnID,
+                           std::list< std::pair<DataValue, long> >& result) const override;
 
     /** Uses the underlying CART decision tree as a regression to a given output data row, referenced by its row number.
      * This is just a front-end for the actual recursive regression function (see the protected section).
@@ -52,10 +52,10 @@ public:
      * @param percent The percentage of the training data rows that was used in the regression decision.  This value is
      *                a measure of representativeness of the returned mean.
      */
-    void regress( long rowIdOutput,
-                  int dependentVariableColumnID,
-                  DataValue &mean,
-                  double &percent ) const;
+    virtual void regress( long rowIdOutput,
+                          int dependentVariableColumnID,
+                          DataValue &mean,
+                          double &percent ) const override;
 
 protected:
 
