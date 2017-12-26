@@ -5,7 +5,7 @@
 #include <tuple>
 
 CART::CART(const IAlgorithmDataSource &trainingData,
-           IAlgorithmDataSource &outputData,
+           const IAlgorithmDataSource &outputData,
            const std::list<int> &trainingFeatureIDs,
            const std::list<int> &outputFeatureIDs ) : DecisionTree(),
     m_trainingData( trainingData ),

@@ -34,13 +34,16 @@ public:
 
     /**
      * The constructor creates decision trees from radomly generated sample sets from the original set (bagging).
-     *
+     * Since the output data source is read-only, it is up to the calling code to make updates to the output data
+     * after calling classify() or regress().
      * @param B The number of trees.  Low values mean faster computation but more overfitting.  Higher values mean
      *          a smoother classification/regression but more misses.
      * @param seed The seed for the random number generator.
+     * @param bootstrap Sets how the training data is randomly resampled to create the many trees.
+     * @param treeType Sets the type of the trees in the forest.
      */
     RandomForest(const IAlgorithmDataSource& trainingData,
-                 IAlgorithmDataSource &outputData,
+                 const IAlgorithmDataSource &outputData,
                  const std::list<int> &trainingFeatureIDs,
                  const std::list<int> &outputFeatureIDs,
                  unsigned int B,
@@ -77,7 +80,7 @@ protected:
     const IAlgorithmDataSource& m_trainingData;
 
     /** The data to be classified. */
-    IAlgorithmDataSource& m_outputData;
+    const IAlgorithmDataSource& m_outputData;
 
     /** The decision trees. */
     std::vector< DecisionTree* > m_trees;

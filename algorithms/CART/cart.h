@@ -20,14 +20,15 @@ public:
      * corresponding to the features/variables to use as training data.  The root of
      * the resulting CART tree is pointed by the m_root member.
      * @param trainingData Reference to the training data set object.
-     * @param outputData Reference to the data set to be classified or estimated.
+     * @param outputData Reference to the data set to be classified or estimated.  Since it is read-only, it is up to the
+     *                   calling code to make updates to the output data source after calling classify() or regress().
      * @param trainingFeatureIDs List of column numbers corresponding to the selected predictive
      *                           variables (features) in the training set.
      * @param trainingRowIDs An optional list of training data row numbers to be used.  It can be in any order or count.
      *                       If omitted, all the rows in their direct order (0 to n-1) will be used.
      */
     CART( const IAlgorithmDataSource& trainingData,
-          IAlgorithmDataSource& outputData,
+          const IAlgorithmDataSource& outputData,
           const std::list<int> &trainingFeatureIDs,
           const std::list<int> &outputFeatureIDs );
     virtual ~CART();
@@ -66,7 +67,7 @@ protected:
     const IAlgorithmDataSource& m_trainingData;
 
     /** The data to receive predictions. */
-    IAlgorithmDataSource& m_outputData;
+    const IAlgorithmDataSource& m_outputData;
 
     /** This map object maps feature column indexes in the training data set to feature column indexes in the output data set.
      * This is necessary because rarely a given feature has exactly the same column index in both data sets.

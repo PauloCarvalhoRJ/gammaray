@@ -36,7 +36,7 @@ protected:
 
 
 RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
-                                 IAlgorithmDataSource &outputData,
+                           const IAlgorithmDataSource &outputData,
                            const std::list<int> &trainingFeatureIDs,
                            const std::list<int> &outputFeatureIDs,
                                  unsigned int B,
