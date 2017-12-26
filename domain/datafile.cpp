@@ -27,7 +27,8 @@
 class AlgorithmDataSource : public IAlgorithmDataSource{
 public:
     AlgorithmDataSource( DataFile& dataFile ) : IAlgorithmDataSource(),
-        m_dataFile( dataFile ){}
+        m_dataFile( dataFile ){
+    }
     // IAlgorithmDataSource interface
 public:
     virtual long getRowCount() const {
@@ -46,13 +47,24 @@ public:
         throw InvalidMethodException();
     }
     virtual DataValue getDataValue(long rowIndex, int columnIndex) const {
-        if( m_dataFile.isCategorical( m_dataFile.getAttributeFromGEOEASIndex( columnIndex+1 ) ) )
-            return DataValue(   (int)    m_dataFile.data( rowIndex, columnIndex ) );
+        if( m_isCategoricalCache[ columnIndex ] )
+            return std::move( DataValue(   (int)    m_dataFile.data( rowIndex, columnIndex ) ) ); //init DataValue as categorical
         else
-            return DataValue( /*double*/ m_dataFile.data( rowIndex, columnIndex ) );
+            return std::move( DataValue( /*double*/ m_dataFile.data( rowIndex, columnIndex ) ) ); //init DataValue as continuous
     }
+    void setIsCategoricalCache(){
+        if( ! m_isCategoricalCache.empty() )
+            return;
+        //Build the cache of isCategorical flags to avoid calling costly methods in getDataValue().
+        //DataFile::isCategorical() and DataFile::getAtrributeFromGEOEASIndex() are very costly
+        m_dataFile.loadData();
+        for( uint iColumn = 0; iColumn < m_dataFile.getDataColumnCount(); ++iColumn)
+            m_isCategoricalCache.push_back( m_dataFile.isCategorical( m_dataFile.getAttributeFromGEOEASIndex( iColumn+1 ) ) );
+    }
+
 protected:
     DataFile& m_dataFile;
+    std::vector<bool> m_isCategoricalCache;
 };
 
 DataFile::DataFile(QString path) : File( path ),
@@ -709,6 +721,13 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
     //sets this as parent of the new Attributes
     newAttributeReal->setParent( this );
     newAttributeImag->setParent( this );
+}
+
+IAlgorithmDataSource *DataFile::algorithmDataSource()
+{
+    AlgorithmDataSource* concreteAspect = (AlgorithmDataSource*)_algorithmDataSourceInterface.get();
+    concreteAspect->setIsCategoricalCache();
+    return _algorithmDataSourceInterface.get();
 }
 
 int DataFile::addNewDataColumn(const QString columnName, const std::vector<double> &values , CategoryDefinition *cd)

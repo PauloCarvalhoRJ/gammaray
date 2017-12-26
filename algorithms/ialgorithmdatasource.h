@@ -141,7 +141,9 @@ public:
     /** Set a data value. */
     virtual void setDataValue( long rowIndex, int columnIndex, DataValue value ) = 0;
 
-    /** Get a data value. */
+    /** Get a data value.
+     * @note This method is called very often, this consider performance when overriding this.
+     */
     virtual DataValue getDataValue( long rowIndex, int columnIndex  ) const = 0;
 
     //============ Concrete methods =============================================

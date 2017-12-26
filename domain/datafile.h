@@ -249,7 +249,7 @@ public:
     /**
      * Returns a pointer to the internal algorithm interface data source (see classes in /algorthms subdirectory).
      */
-    IAlgorithmDataSource* algorithmDataSource(){ return _algorithmDataSourceInterface.get(); }
+    IAlgorithmDataSource* algorithmDataSource();
 
     /**
       * Adds a new data column to the data set filled with the given array of values.
