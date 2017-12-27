@@ -3,23 +3,25 @@
 #include "cartdecisionnode.h"
 #include "cartleafnode.h"
 #include <tuple>
+#include <algorithm>
 
 CART::CART(const IAlgorithmDataSource &trainingData,
            const IAlgorithmDataSource &outputData,
-           const std::list<int> &trainingFeatureIDs,
-           const std::list<int> &outputFeatureIDs ) : DecisionTree(),
+           const std::vector<int> &trainingFeatureIDs,
+           const std::vector<int> &outputFeatureIDs ) : DecisionTree(),
     m_trainingData( trainingData ),
     m_outputData( outputData )
 {
     //Create the list with all row IDs.
-    std::list<long> rowIDs;
     long rowCount = trainingData.getRowCount();
+    std::vector<long> rowIDs;
+    rowIDs.reserve( rowCount );
     for( long iRow = 0; iRow < rowCount; ++iRow )
         rowIDs.push_back( iRow );
 
     //creates the training-to-output data sets feature column IDs.
-    std::list<int>::const_iterator itTrainingIDs = trainingFeatureIDs.cbegin();
-    std::list<int>::const_iterator itOutputIDs = outputFeatureIDs.cbegin();
+    std::vector<int>::const_iterator itTrainingIDs = trainingFeatureIDs.cbegin();
+    std::vector<int>::const_iterator itOutputIDs = outputFeatureIDs.cbegin();
     for( ; itTrainingIDs != trainingFeatureIDs.cend(); ++itTrainingIDs, //hopefully both lists have the same size
                                                        ++itOutputIDs ){
         m_training2outputFeatureIndexesMap[ *itTrainingIDs ] = *itOutputIDs;
@@ -35,7 +37,7 @@ CART::~CART()
 
 void CART::classify(long rowIdOutput,
                     int dependentVariableColumnID,
-                    std::list<std::pair<DataValue, long> > &result) const
+                    std::vector< std::pair<DataValue, long> > &result) const
 {
     classify( rowIdOutput, dependentVariableColumnID, nullptr, result );
 }
@@ -45,37 +47,41 @@ void CART::regress(long rowIdOutput, int dependentVariableColumnID, DataValue &m
     regress( rowIdOutput, dependentVariableColumnID, nullptr, mean, percent );
 }
 
-void CART::getUniqueDataValues(std::list<DataValue> &result,
-                               const std::list<long> &rowIDs,
+void CART::getUniqueDataValues(std::vector<DataValue> &result,
+                               const std::vector<long> &rowIDs,
                                int columnIndex) const
 {
     result.clear();
-    std::list<long>::const_iterator it = rowIDs.begin();
+    result.reserve( rowIDs.size() );
+    std::vector<long>::const_iterator it = rowIDs.begin();
     for( ; it != rowIDs.cend(); ++it )
         result.push_back( m_trainingData.getDataValue( *it, columnIndex ) );
-    result.sort();
-    result.unique();
+    std::sort( result.begin(), result.end() );
+    std::vector<DataValue>::iterator itUniquesEnd = std::unique( result.begin(), result.end() );
+    result.resize( std::distance( result.begin(), itUniquesEnd ) );
 }
 
 
-void CART::getUniqueValuesCounts(std::list<std::pair<DataValue, long> > &result,
-                               const std::list<long> &rowIDs,
-                               int columnIndex ) const
+void CART::getUniqueValuesCounts(      std::vector< std::pair<DataValue, long> > &result,
+                                 const std::vector<long> &rowIDs,
+                                       int columnIndex ) const
 {
     //clears the output list object.
     result.clear();
-    //get the categories to be counted.
-    std::list<DataValue> categories;
-    getUniqueDataValues( categories, rowIDs, columnIndex );
+    //get the values to be counted.
+    std::vector<DataValue> values;
+    getUniqueDataValues( values, rowIDs, columnIndex );
     //mount the output with zero counts.
-    for(std::list<DataValue>::iterator it = categories.begin(); it != categories.end(); ++it){
+    result.reserve( values.size() );
+    for(std::vector<DataValue>::iterator it = values.begin(); it != values.end(); ++it){
         result.emplace_back( *it, 0 );
     }
+    //TODO: !!!PERFORMANCE BOTTLENECK!!! the search below needs to be optimized (naive search)
     //for each of the values found.
-    for( std::list<std::pair<DataValue, long> >::iterator it = result.begin(); it != result.end(); ++it){
+    for( std::vector<std::pair<DataValue, long> >::iterator it = result.begin(); it != result.end(); ++it){
         std::pair<DataValue, long>& pair = *it;
         //for each row
-        for( std::list<long>::const_iterator rowIt = rowIDs.cbegin(); rowIt != rowIDs.cend(); ++rowIt ){
+        for( std::vector<long>::const_iterator rowIt = rowIDs.cbegin(); rowIt != rowIDs.cend(); ++rowIt ){
             if( m_trainingData.getDataValue( *rowIt, columnIndex ) == pair.first ){
                 pair.second++;
             }
@@ -83,17 +89,17 @@ void CART::getUniqueValuesCounts(std::list<std::pair<DataValue, long> > &result,
     }
 }
 
-double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) const
+double CART::getGiniImpurity(const std::vector<long> &rowIDs, int columnIndex) const
 {
     //get the counts for each category/value found in the column (variable)
-    std::list<std::pair<DataValue, long> > valuesCounts;
+    std::vector<std::pair<DataValue, long> > valuesCounts;
     getUniqueValuesCounts( valuesCounts, rowIDs, columnIndex );
     //get the number of rows
     long numberOfRows = rowIDs.size();
     //assumes total impurity
     double factor = 1.0d;
     //for each pair DataValue/count
-    std::list<std::pair<DataValue, long> >::iterator it = valuesCounts.begin();
+    std::vector<std::pair<DataValue, long> >::iterator it = valuesCounts.begin();
     for(; it != valuesCounts.end(); ++it){
         double categoryProportion = (*it).second / (double)numberOfRows;
         factor -= ( categoryProportion * categoryProportion );
@@ -101,8 +107,8 @@ double CART::getGiniImpurity(const std::list<long> &rowIDs, int columnIndex) con
     return factor;
 }
 
-double CART::getSplitInformationGain(const std::list<long> &rowIDsTrueSide,
-                                     const std::list<long> &rowIDsFalseSide,
+double CART::getSplitInformationGain(const std::vector<long> &rowIDsTrueSide,
+                                     const std::vector<long> &rowIDsFalseSide,
                                      int columnIndex,
                                      double impurityFactorBeforeTheSplit) const
 {
@@ -120,14 +126,16 @@ double CART::getSplitInformationGain(const std::list<long> &rowIDsTrueSide,
     return impurityFactorBeforeTheSplit - impurityFactorAfterTheSplit;
 }
 
-void CART::split(const std::list<long> &rowIDs,
+void CART::split(const std::vector<long> &rowIDs,
                  const CARTSplitCriterion &criterion,
-                 std::list<long> &trueSideRowIDs,
-                 std::list<long> &falseSideRowIDs) const
+                 std::vector<long> &trueSideRowIDs,
+                 std::vector<long> &falseSideRowIDs) const
 {
     trueSideRowIDs.clear();
     falseSideRowIDs.clear();
-    std::list<long>::const_iterator it = rowIDs.cbegin();
+    std::vector<long>::const_iterator it = rowIDs.cbegin();
+    trueSideRowIDs.reserve( rowIDs.size() / 2 ); //half size is an estimation
+    falseSideRowIDs.reserve( rowIDs.size() / 2 );
     for(; it != rowIDs.cend(); ++it ){
         if( criterion.trainingMatches( *it ))
             trueSideRowIDs.push_back( *it );
@@ -136,28 +144,28 @@ void CART::split(const std::list<long> &rowIDs,
     }
 }
 
-std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformationGain(const std::list<long> &rowIDs,
-                                                                                        const std::list<int> &featureIDs) const
+std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformationGain(const std::vector<long> &rowIDs,
+                                                                                        const std::vector<int> &featureIDs) const
 {
     //Starts off with no information gain found.
     double highestInformationGain = 0.0;
     //The split criterion to be returned.
     CARTSplitCriterion finalSplitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0), m_training2outputFeatureIndexesMap );
     //Create a list to hold unique data values.
-    std::list<DataValue> uniqueValues;
+    std::vector<DataValue> uniqueValues;
     //Create a list to hold row ids with data that match the split criterion.
-    std::list<long> trueSideRowIDs;
+    std::vector<long> trueSideRowIDs;
     //Create a list to hold row ids with data that don't match the split criterion.
-    std::list<long> falseSideRowIDs;
+    std::vector<long> falseSideRowIDs;
     //for each feature column.
-    std::list<int>::const_iterator columnIt = featureIDs.cbegin();
+    std::vector<int>::const_iterator columnIt = featureIDs.cbegin();
     for(; columnIt != featureIDs.cend(); ++columnIt){
         //compute the impurity (uncertainty) for the current feature in the current row set.
         double impurity = getGiniImpurity( rowIDs, *columnIt );
         //get the unique feature values found in the row set
         getUniqueDataValues( uniqueValues, rowIDs, *columnIt );
         //for each unique feature value.
-        std::list<DataValue>::iterator uniqueValuesIt = uniqueValues.begin();
+        std::vector<DataValue>::iterator uniqueValuesIt = uniqueValues.begin();
         for(; uniqueValuesIt != uniqueValues.end(); ++uniqueValuesIt){
             //Create a split criterion object
             CARTSplitCriterion splitCriterion( m_trainingData, m_outputData,
@@ -179,8 +187,8 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
     return {finalSplitCriterion, highestInformationGain};
 }
 
-CARTNode *CART::makeCART(const std::list<long> &rowIDs,
-                         const std::list<int> &featureIDs) const
+CARTNode *CART::makeCART(const std::vector<long> &rowIDs,
+                         const std::vector<int> &featureIDs) const
 {
     CARTSplitCriterion splitCriterion( m_trainingData, m_outputData, 0, DataValue(0.0), m_training2outputFeatureIndexesMap );
     double informationGain;
@@ -193,8 +201,8 @@ CARTNode *CART::makeCART(const std::list<long> &rowIDs,
         return new CARTLeafNode( m_trainingData, rowIDs );
 
     //split the row set using the split criterion found with the highest information gain.
-    std::list<long> trueSideRowIDs;
-    std::list<long> falseSideRowIDs;
+    std::vector<long> trueSideRowIDs;
+    std::vector<long> falseSideRowIDs;
     split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
 
     //make child nodes by recursing this function.
@@ -208,7 +216,7 @@ CARTNode *CART::makeCART(const std::list<long> &rowIDs,
 void CART::classify(long rowIdOutput,
                     int dependentVariableColumnID,
                     const CARTNode *decisionTreeNode,
-                    std::list<std::pair<DataValue, long> > &result) const
+                    std::vector<std::pair<DataValue, long> > &result) const
 {
 
     //if the passed node pointer is null, then use the tree's root node.

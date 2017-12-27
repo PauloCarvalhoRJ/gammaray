@@ -158,19 +158,18 @@ void MachineLearningDialog::runCARTClassify()
     outputDataFile->loadData();
 
     //get the data source interface for the algorithms.
-    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
-    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
-
-    Application::instance()->logErrorOff();
-    Application::instance()->logWarningOff();
-    Application::instance()->logInfoOff();
+    std::vector<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::vector<int> outputFeaturesIDList = getOutputFeaturesIDList();
 
     //Build the CART tree
     CART CARTalgorithm( *trainingDataFile->algorithmDataSource(),
                         *outputDataFile->algorithmDataSource(),
                         trainingFeaturesIDList,
                         outputFeaturesIDList);
+
     Application::instance()->logInfo("MachineLearningDialog::runCARTClassify(): CART tree built.");
+
+    return;
 
     //for each output data
     long outputRowCount = outputDataFile->getDataLineCount();
@@ -178,12 +177,12 @@ void MachineLearningDialog::runCARTClassify()
     classValues.reserve( outputRowCount );
     for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
         //classify the data
-        std::list< std::pair< DataValue, long> > result;
+        std::vector< std::pair< DataValue, long> > result;
         CARTalgorithm.classify( outputRow,
                                 m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
                                 result);
         //get the results
-        std::list< std::pair< DataValue, long> >::iterator it = result.begin();
+        std::vector< std::pair< DataValue, long> >::iterator it = result.begin();
         for( ; it != result.end(); ++it ){
             classValues.push_back( (*it).first.getCategorical() );
             break; //TODO: this causes only the first class value to be considerd
@@ -224,8 +223,8 @@ void MachineLearningDialog::runCARTRegression()
     outputDataFile->loadData();
 
     //get the data source interface for the algorithms.
-    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
-    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
+    std::vector<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::vector<int> outputFeaturesIDList = getOutputFeaturesIDList();
 
     //Build the CART tree
     CART CARTalgorithm( *trainingDataFile->algorithmDataSource(),
@@ -335,8 +334,8 @@ void MachineLearningDialog::runRandomForestClassify()
     outputDataFile->loadData();
 
     //get the data source interface for the algorithms.
-    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
-    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
+    std::vector<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::vector<int> outputFeaturesIDList = getOutputFeaturesIDList();
 
     //Build the RandomForest object, containing the Random Forest algorithm.
     RandomForest RF( *trainingDataFile->algorithmDataSource(),
@@ -432,8 +431,8 @@ void MachineLearningDialog::runRandomForestRegression()
     outputDataFile->loadData();
 
     //get the data source interface for the algorithms.
-    std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
-    std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
+    std::vector<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
+    std::vector<int> outputFeaturesIDList = getOutputFeaturesIDList();
 
     //Build the RandomForest object, containing the Random Forest algorithm.
     RandomForest RF( *trainingDataFile->algorithmDataSource(),
@@ -490,18 +489,18 @@ bool MachineLearningDialog::isClassification()
     return false; //default case is continuous (regression application).
 }
 
-std::list<int> MachineLearningDialog::getTrainingFeaturesIDList()
+std::vector<int> MachineLearningDialog::getTrainingFeaturesIDList()
 {
-    std::list<int> result;
+    std::vector<int> result;
     QVector<VariableSelector*>::iterator it = m_trainingVariableSelectors.begin();
     for( ; it != m_trainingVariableSelectors.end(); ++it )
         result.push_back( (*it)->getSelectedVariableGEOEASIndex()-1 );
     return result;
 }
 
-std::list<int> MachineLearningDialog::getOutputFeaturesIDList()
+std::vector<int> MachineLearningDialog::getOutputFeaturesIDList()
 {
-    std::list<int> result;
+    std::vector<int> result;
     QVector<VariableSelector*>::iterator it = m_outputVariableSelectors.begin();
     for( ; it != m_outputVariableSelectors.end(); ++it )
         result.push_back( (*it)->getSelectedVariableGEOEASIndex()-1 );

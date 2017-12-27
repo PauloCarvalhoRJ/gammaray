@@ -24,21 +24,28 @@
 #include "auxiliary/dataloader.h"
 #include "algorithms/ialgorithmdatasource.h"
 
+/****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES ****************************/
+/***************************** WARNING: This class contains sensitive operations. ***************************/
 class AlgorithmDataSource : public IAlgorithmDataSource{
 public:
     AlgorithmDataSource( DataFile& dataFile ) : IAlgorithmDataSource(),
-        m_dataFile( dataFile ){
+        m_dataFile( dataFile ),
+        m_dataCache( nullptr ),
+        m_rowCount( 0 ),
+        m_colCount( 0 )
+    {
     }
     ~AlgorithmDataSource(){
-        delete [] m_dataCache;
+        if( m_dataCache )
+            delete [] m_dataCache;
     }
     // IAlgorithmDataSource interface
 public:
     virtual long getRowCount() const {
-        return m_dataFile.getDataLineCount();
+        return m_rowCount;
     }
     virtual int getColumnCount() const {
-        return m_dataFile.getDataColumnCount();
+        return m_colCount;
     }
     virtual void clear() {
         throw InvalidMethodException();
@@ -55,27 +62,35 @@ public:
         else
             return std::move( DataValue( /*double*/ m_dataCache[ rowIndex * m_isCategoricalCache.size() + columnIndex] )); //init DataValue as continuous
     }
-    void initCaches(){
+    void init(){
         if( ! m_isCategoricalCache.empty() )
             return;
         //Build the cache of isCategorical flags to avoid calling costly methods in getDataValue().
         //DataFile::isCategorical() and DataFile::getAtrributeFromGEOEASIndex() are very costly
         m_dataFile.loadData();
-        for( uint iColumn = 0; iColumn < m_dataFile.getDataColumnCount(); ++iColumn)
+        uint dataColumnCount = m_dataFile.getDataColumnCount();
+        long dataRowCount = m_dataFile.getDataLineCount();
+        for( uint iColumn = 0; iColumn < dataColumnCount; ++iColumn)
             m_isCategoricalCache.push_back( m_dataFile.isCategorical( m_dataFile.getAttributeFromGEOEASIndex( iColumn+1 ) ) );
         //init the data cache to avoid calls to DataFile::data(), as it contains a std::vector of std::vector, which causes
         //cache misses.  The data cache is a continuous array of doubles to optimize cache hits.
-        m_dataCache = new double[ m_dataFile.getDataLineCount() * m_dataFile.getDataColumnCount() ];
-        for( uint iRow = 0; iRow < m_dataFile.getDataLineCount(); ++iRow )
-            for( uint iColumn = 0; iColumn < m_dataFile.getDataColumnCount(); ++iColumn)
-                m_dataCache[ iRow * m_dataFile.getDataColumnCount() + iColumn ] = m_dataFile.data( iRow, iColumn );
+        m_dataCache = new double[ dataRowCount * dataColumnCount ];
+        for( long iRow = 0; iRow < dataRowCount; ++iRow )
+            for( uint iColumn = 0; iColumn < dataColumnCount; ++iColumn)
+                m_dataCache[ iRow * dataColumnCount + iColumn ] = m_dataFile.data( iRow, iColumn );
+        //store the data source sizes as the DataFile methods generate too many messages (performance bottleneck)
+        //and/or use the filesystem often.
+        m_rowCount = dataRowCount;
+        m_colCount = dataColumnCount;
     }
 protected:
     DataFile& m_dataFile;
     std::vector<bool> m_isCategoricalCache;
     double *m_dataCache;
+    long m_rowCount;
+    int m_colCount;
 };
-
+/**********************************************************************************************************************************/
 
 
 DataFile::DataFile(QString path) : File( path ),
@@ -737,7 +752,7 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
 IAlgorithmDataSource *DataFile::algorithmDataSource()
 {
     AlgorithmDataSource* concreteAspect = (AlgorithmDataSource*)_algorithmDataSourceInterface.get();
-    concreteAspect->initCaches();
+    concreteAspect->init(); //initialize the algorithm data source object on demand.
     return _algorithmDataSourceInterface.get();
 }
 

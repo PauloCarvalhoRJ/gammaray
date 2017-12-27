@@ -44,8 +44,8 @@ public:
      */
     RandomForest(const IAlgorithmDataSource& trainingData,
                  const IAlgorithmDataSource &outputData,
-                 const std::list<int> &trainingFeatureIDs,
-                 const std::list<int> &outputFeatureIDs,
+                 const std::vector<int> &trainingFeatureIDs,
+                 const std::vector<int> &outputFeatureIDs,
                  unsigned int B,
                  long seed,
                  ResamplingType bootstrap,

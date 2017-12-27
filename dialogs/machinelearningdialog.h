@@ -37,8 +37,8 @@ private:
 
     bool isClassification();
 
-    std::list<int> getTrainingFeaturesIDList();
-    std::list<int> getOutputFeaturesIDList();
+    std::vector<int> getTrainingFeaturesIDList();
+    std::vector<int> getOutputFeaturesIDList();
 
 private slots:
     void runAlgorithm();

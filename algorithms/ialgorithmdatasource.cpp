@@ -21,18 +21,6 @@ bool almostEqual2sComplement(double A, double B, int maxUlps) {
         return false;
 }
 
-namespace converter2string {
-std::string convert( int value ){ return std::to_string( value ); }
-std::string convert( double value ){ return std::to_string( value ); }
-std::string convert( long value ){ return std::to_string( value ); }
-std::string convert( DataValue value ){
-    if( value.isCategorical() )
-        return std::to_string( value.getCategorical() );
-    else
-        return std::to_string( value.getContinuous() );
-}
-}
-
 IAlgorithmDataSource::IAlgorithmDataSource()
 {
 }

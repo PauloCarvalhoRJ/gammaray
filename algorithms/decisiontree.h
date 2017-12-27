@@ -1,7 +1,7 @@
 #ifndef DECISIONTREE_H
 #define DECISIONTREE_H
 
-#include <list>
+#include <vector>
 
 class DataValue;
 
@@ -21,7 +21,7 @@ public:
      */
     virtual void classify( long rowIdOutput,
                            int dependentVariableColumnID,
-                           std::list< std::pair<DataValue, long> >& result) const = 0;
+                           std::vector< std::pair<DataValue, long> >& result) const = 0;
 
     /** Uses the underlying decision tree as a regression to a given output data row, referenced by its row number.
      * This is just a front-end for the actual recursive regression function (see the protected section).

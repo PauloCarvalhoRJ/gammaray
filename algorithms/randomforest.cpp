@@ -37,8 +37,8 @@ protected:
 
 RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
                            const IAlgorithmDataSource &outputData,
-                           const std::list<int> &trainingFeatureIDs,
-                           const std::list<int> &outputFeatureIDs,
+                           const std::vector<int> &trainingFeatureIDs,
+                           const std::vector<int> &outputFeatureIDs,
                                  unsigned int B,
                                  long seed,
                                  ResamplingType bootstrap ,
@@ -84,7 +84,7 @@ void RandomForest::classify(long rowIdOutput,
                             std::pair<DataValue, double> &result) const
 {
     //a list with the possibly different classes found
-    std::list<int> classesFound;
+    std::vector<int> classesFound;
 
     //for each decision tree.
     std::vector< DecisionTree* >::const_iterator itTree = m_trees.cbegin();
@@ -94,11 +94,12 @@ void RandomForest::classify(long rowIdOutput,
         DecisionTree *tree = *itTree;
 
         //classify the data using one decision tree
-        std::list< std::pair< DataValue, long> > localResult;
+        std::vector< std::pair< DataValue, long> > localResult;
         tree->classify( rowIdOutput, dependentVariableColumnID, localResult );
 
         //get the classification result (one vote) from the decision tree
-        std::list< std::pair< DataValue, long> >::iterator it = localResult.begin();
+        std::vector< std::pair< DataValue, long> >::iterator it = localResult.begin();
+        classesFound.reserve( localResult.size() );
         for( ; it != localResult.end(); ++it ){
             classesFound.push_back( (*it).first.getCategorical() );
             break; //TODO: this causes only the first class value to be considerd
@@ -107,7 +108,7 @@ void RandomForest::classify(long rowIdOutput,
     }
 
     //sort the votes
-    classesFound.sort();
+    std::sort( classesFound.begin(), classesFound.end() );
 
     //determine which class was most voted
     //TODO: ties are currently ignored, it simply sticks with the first most voted
@@ -115,7 +116,7 @@ void RandomForest::classify(long rowIdOutput,
     long mostVotedClassCount = 0;
     long currentCount = 0;
     int previousClass = -999999999; //init with some unlikely class id
-    std::list<int>::iterator itClasses = classesFound.begin();
+    std::vector<int>::iterator itClasses = classesFound.begin();
     for( ; itClasses != classesFound.end(); ++itClasses ){
         int currentClass = *itClasses;
         if( currentClass != previousClass )

@@ -1,7 +1,7 @@
 #ifndef IALGORITHMDATASOURCE_H
 #define IALGORITHMDATASOURCE_H
 
-#include <list>
+#include <vector>
 #include <string>
 #include <iostream>
 
@@ -79,40 +79,6 @@ protected:
     } value;
 };
 
-/**
- * Set of convert() functions to convert types to QString.  Add more as needed.
- */
-namespace converter2string {
-    std::string convert( int value );
-    std::string convert( long value );
-    std::string convert( double value );
-    std::string convert( DataValue value );
-}
-
-/**
- * Returns a std::string with the list's values in a single text line separated by the given separator character.
- */
-template<typename T>
-static std::string printStdListContents( const std::list<T>& list, char separator ){
-    std::string result;
-    typename std::list<T>::const_iterator it = list.cbegin();
-    for(; it != list.cend(); ++it){
-        result.append( converter2string::convert( *it ) );
-        result.push_back( separator );
-    }
-    return result;
-}
-
-/**
-  * This macro is to assist in debugging the contents of std::list objects, since those objects don't have an easy way
-  * to access individual elements in those containers.
-  * The macro creates a std::string variable called prefix+stdlist, where stdlist is the name of a std::list object in the
-  * scope where the macro is being called. type is the elements' type (e.g. double) and separator is a char used to
-  * separate the values in the text line to be inspected in the debugger.
-  */
-#define GDBSTDLIST(prefix,stdlist,type,separator) std::string prefix##stdlist = printStdListContents<type>( stdlist, separator );
-#define PRINTSTDLIST(stdlist,type,separator) std::cout << "LIST:====>" << printStdListContents<type>( stdlist, separator ) << std::endl;
-
 
 /** The IAlgorithmDataSource interface must be implemented by any data sources that need to be
  * used in the algorithms framework.  The data source is a table with each variable corresponding to column
@@ -126,10 +92,14 @@ public:
     virtual ~IAlgorithmDataSource();
 
     //============ Pure virtual methods (interface contract)===================
-    /** Returns the sample count. */
+    /** Returns the sample count.
+     * @note This method is called very often, consider performance when overriding this.
+     */
     virtual long getRowCount() const = 0;
 
-    /** Returns the number of variables in the data set. */
+    /** Returns the number of variables in the data set.
+    * @note This method is called very often, consider performance when overriding this.
+    */
     virtual int getColumnCount() const = 0;
 
     /** Empties the data set. */
@@ -142,7 +112,7 @@ public:
     virtual void setDataValue( long rowIndex, int columnIndex, DataValue value ) = 0;
 
     /** Get a data value.
-     * @note This method is called very often, this consider performance when overriding this.
+     * @note This method is called very often, consider performance when overriding this.
      */
     virtual DataValue getDataValue( long rowIndex, int columnIndex  ) const = 0;
 

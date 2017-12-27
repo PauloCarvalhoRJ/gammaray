@@ -2,37 +2,42 @@
 #include "../ialgorithmdatasource.h"
 #include <vector>
 #include <numeric>
+#include <algorithm>
 
 CARTLeafNode::CARTLeafNode(const IAlgorithmDataSource &trainingDataSource,
-                           const std::list<long> &rowIDs) : CARTNode(),
+                           const std::vector<long> &rowIDs) : CARTNode(),
     m_trainingDataSource( trainingDataSource )
 {
-    // The = operator of std::list copies elements from a container to the other.
+    // The = operator of std::vector copies elements from a container to the other.
     m_rowIndexes = rowIDs;
 }
 
 void CARTLeafNode::getUniqueTrainingValuesWithCounts(int columnID,
-                                                     std::list<std::pair<DataValue, long> > &result)
+                                                     std::vector<std::pair<DataValue, long> > &result)
 {
     //creates a list with the unique values referenced by this node.
-    std::list<DataValue> uniqueValues;
-    std::list<long>::const_iterator it = m_rowIndexes.begin();
+    std::vector<DataValue> uniqueValues;
+    std::vector<long>::const_iterator it = m_rowIndexes.begin();
+    uniqueValues.reserve( m_rowIndexes.size() );
     for( ; it != m_rowIndexes.cend(); ++it )
         uniqueValues.push_back( m_trainingDataSource.getDataValue( *it, columnID ) );
-    uniqueValues.sort();
-    uniqueValues.unique();
+    std::sort( uniqueValues.begin(), uniqueValues.end() );
+    std::vector<DataValue>::iterator itUniquesEnd = std::unique( uniqueValues.begin(), uniqueValues.end() );
+    uniqueValues.resize( std::distance( uniqueValues.begin(), itUniquesEnd ) );
 
     //mount the output with zero counts.
     result.clear();
-    for(std::list<DataValue>::iterator it = uniqueValues.begin(); it != uniqueValues.end(); ++it){
+    result.reserve( uniqueValues.size() );
+    for(std::vector<DataValue>::iterator it = uniqueValues.begin(); it != uniqueValues.end(); ++it){
         result.emplace_back( *it, 0 );
     }
 
+    //TODO: !!!PERFORMANCE BOTTLENECK!!!  This search is naive.
     //for each of the unique values found.
-    for( std::list<std::pair<DataValue, long> >::iterator it = result.begin(); it != result.end(); ++it){
+    for( std::vector<std::pair<DataValue, long> >::iterator it = result.begin(); it != result.end(); ++it){
         std::pair<DataValue, long>& pair = *it;
         //for each row
-        for( std::list<long>::const_iterator rowIt = m_rowIndexes.cbegin(); rowIt != m_rowIndexes.cend(); ++rowIt ){
+        for( std::vector<long>::const_iterator rowIt = m_rowIndexes.cbegin(); rowIt != m_rowIndexes.cend(); ++rowIt ){
             if( m_trainingDataSource.getDataValue( *rowIt, columnID ) == pair.first ){
                 pair.second++;
             }
@@ -48,7 +53,8 @@ void CARTLeafNode::getMeanOfTrainingValuesWithPercentage( int columnID, DataValu
 {
     //creates a vector with the values referenced by this node.
     std::vector<DataValue> values;
-    std::list<long>::const_iterator it = m_rowIndexes.begin();
+    std::vector<long>::const_iterator it = m_rowIndexes.begin();
+    values.reserve( m_rowIndexes.size() );
     for( ; it != m_rowIndexes.cend(); ++it )
         values.push_back( m_trainingDataSource.getDataValue( *it, columnID ) );
 
