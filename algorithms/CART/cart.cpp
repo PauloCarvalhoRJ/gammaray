@@ -27,7 +27,7 @@ CART::CART(const IAlgorithmDataSource &trainingData,
         m_training2outputFeatureIndexesMap[ *itTrainingIDs ] = *itOutputIDs;
     }
 
-    //Built the CART tree, getting the pointer to the root node.
+    //Build the CART tree, getting the pointer to the root node.
     m_root.reset( makeCART( rowIDs, trainingFeatureIDs ) );
 }
 
@@ -70,22 +70,21 @@ void CART::getUniqueValuesCounts(      std::vector< std::pair<DataValue, long> >
     result.clear();
     //get the values to be counted.
     std::vector<DataValue> values;
-    getUniqueDataValues( values, rowIDs, columnIndex );
-    //mount the output with zero counts.
+
+    //fetch and sort the values
+    values.reserve( rowIDs.size() );
+    std::vector<long>::const_iterator it = rowIDs.begin();
+    for( ; it != rowIDs.cend(); ++it )
+        values.push_back( m_trainingData.getDataValue( *it, columnIndex ) );
+    std::sort( values.begin(), values.end() );
+
+    //mount the output with counts.
     result.reserve( values.size() );
     for(std::vector<DataValue>::iterator it = values.begin(); it != values.end(); ++it){
-        result.emplace_back( *it, 0 );
-    }
-    //TODO: !!!PERFORMANCE BOTTLENECK!!! the search below needs to be optimized (naive search)
-    //for each of the values found.
-    for( std::vector<std::pair<DataValue, long> >::iterator it = result.begin(); it != result.end(); ++it){
-        std::pair<DataValue, long>& pair = *it;
-        //for each row
-        for( std::vector<long>::const_iterator rowIt = rowIDs.cbegin(); rowIt != rowIDs.cend(); ++rowIt ){
-            if( m_trainingData.getDataValue( *rowIt, columnIndex ) == pair.first ){
-                pair.second++;
-            }
-        }
+        if( result.empty() || !(result.back().first == *it) ) //reuse the == operator of DataValue
+            result.emplace_back( *it, 1 );
+        else
+            result.back().second++;
     }
 }
 
@@ -134,8 +133,6 @@ void CART::split(const std::vector<long> &rowIDs,
     trueSideRowIDs.clear();
     falseSideRowIDs.clear();
     std::vector<long>::const_iterator it = rowIDs.cbegin();
-    trueSideRowIDs.reserve( rowIDs.size() / 2 ); //half size is an estimation
-    falseSideRowIDs.reserve( rowIDs.size() / 2 );
     for(; it != rowIDs.cend(); ++it ){
         if( criterion.trainingMatches( *it ))
             trueSideRowIDs.push_back( *it );
@@ -155,8 +152,10 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
     std::vector<DataValue> uniqueValues;
     //Create a list to hold row ids with data that match the split criterion.
     std::vector<long> trueSideRowIDs;
+    trueSideRowIDs.reserve( rowIDs.size() );
     //Create a list to hold row ids with data that don't match the split criterion.
     std::vector<long> falseSideRowIDs;
+    falseSideRowIDs.reserve( rowIDs.size() );
     //for each feature column.
     std::vector<int>::const_iterator columnIt = featureIDs.cbegin();
     for(; columnIt != featureIDs.cend(); ++columnIt){
@@ -171,6 +170,7 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
             CARTSplitCriterion splitCriterion( m_trainingData, m_outputData,
                                                *columnIt, *uniqueValuesIt, m_training2outputFeatureIndexesMap );
             //Split the row set using the criterion above
+            //  !!!BOTTLENECK!!! split needs to be fast.
             split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
             //if there is uncertainty (both true and false row id lists have data)
             if( trueSideRowIDs.size() != 0 && falseSideRowIDs.size() != 0 ){

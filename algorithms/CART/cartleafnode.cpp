@@ -15,33 +15,21 @@ CARTLeafNode::CARTLeafNode(const IAlgorithmDataSource &trainingDataSource,
 void CARTLeafNode::getUniqueTrainingValuesWithCounts(int columnID,
                                                      std::vector<std::pair<DataValue, long> > &result)
 {
-    //creates a list with the unique values referenced by this node.
-    std::vector<DataValue> uniqueValues;
+    //fetch and sort the values
+    std::vector<DataValue> values;
+    values.reserve( m_rowIndexes.size() );
     std::vector<long>::const_iterator it = m_rowIndexes.begin();
-    uniqueValues.reserve( m_rowIndexes.size() );
     for( ; it != m_rowIndexes.cend(); ++it )
-        uniqueValues.push_back( m_trainingDataSource.getDataValue( *it, columnID ) );
-    std::sort( uniqueValues.begin(), uniqueValues.end() );
-    std::vector<DataValue>::iterator itUniquesEnd = std::unique( uniqueValues.begin(), uniqueValues.end() );
-    uniqueValues.resize( std::distance( uniqueValues.begin(), itUniquesEnd ) );
+        values.push_back( m_trainingDataSource.getDataValue( *it, columnID ) );
+    std::sort( values.begin(), values.end() );
 
-    //mount the output with zero counts.
-    result.clear();
-    result.reserve( uniqueValues.size() );
-    for(std::vector<DataValue>::iterator it = uniqueValues.begin(); it != uniqueValues.end(); ++it){
-        result.emplace_back( *it, 0 );
-    }
-
-    //TODO: !!!PERFORMANCE BOTTLENECK!!!  This search is naive.
-    //for each of the unique values found.
-    for( std::vector<std::pair<DataValue, long> >::iterator it = result.begin(); it != result.end(); ++it){
-        std::pair<DataValue, long>& pair = *it;
-        //for each row
-        for( std::vector<long>::const_iterator rowIt = m_rowIndexes.cbegin(); rowIt != m_rowIndexes.cend(); ++rowIt ){
-            if( m_trainingDataSource.getDataValue( *rowIt, columnID ) == pair.first ){
-                pair.second++;
-            }
-        }
+    //mount the output with counts.
+    result.reserve( values.size() );
+    for(std::vector<DataValue>::iterator it = values.begin(); it != values.end(); ++it){
+        if( result.empty() || !(result.back().first == *it) ) //reuse the == operator of DataValue
+            result.emplace_back( *it, 1 );
+        else
+            result.back().second++;
     }
 }
 

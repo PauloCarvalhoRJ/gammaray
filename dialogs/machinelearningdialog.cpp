@@ -169,8 +169,6 @@ void MachineLearningDialog::runCARTClassify()
 
     Application::instance()->logInfo("MachineLearningDialog::runCARTClassify(): CART tree built.");
 
-    return;
-
     //for each output data
     long outputRowCount = outputDataFile->getDataLineCount();
     std::vector<double> classValues;  //vector to hold the results (must be double for the final GEO-EAS file)
