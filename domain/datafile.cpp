@@ -29,6 +29,9 @@ public:
     AlgorithmDataSource( DataFile& dataFile ) : IAlgorithmDataSource(),
         m_dataFile( dataFile ){
     }
+    ~AlgorithmDataSource(){
+        delete [] m_dataCache;
+    }
     // IAlgorithmDataSource interface
 public:
     virtual long getRowCount() const {
@@ -47,12 +50,12 @@ public:
         throw InvalidMethodException();
     }
     virtual DataValue getDataValue(long rowIndex, int columnIndex) const {
-        if( m_isCategoricalCache[ columnIndex ] )
-            return std::move( DataValue(   (int)    m_dataFile.data( rowIndex, columnIndex ) ) ); //init DataValue as categorical
+        if( m_isCategoricalCache[ columnIndex ] ) //m_isCategoricalCache.size() is the number of columns
+            return std::move( DataValue(   (int)    m_dataCache[ rowIndex * m_isCategoricalCache.size() + columnIndex] )); //init DataValue as categorical
         else
-            return std::move( DataValue( /*double*/ m_dataFile.data( rowIndex, columnIndex ) ) ); //init DataValue as continuous
+            return std::move( DataValue( /*double*/ m_dataCache[ rowIndex * m_isCategoricalCache.size() + columnIndex] )); //init DataValue as continuous
     }
-    void setIsCategoricalCache(){
+    void initCaches(){
         if( ! m_isCategoricalCache.empty() )
             return;
         //Build the cache of isCategorical flags to avoid calling costly methods in getDataValue().
@@ -60,12 +63,20 @@ public:
         m_dataFile.loadData();
         for( uint iColumn = 0; iColumn < m_dataFile.getDataColumnCount(); ++iColumn)
             m_isCategoricalCache.push_back( m_dataFile.isCategorical( m_dataFile.getAttributeFromGEOEASIndex( iColumn+1 ) ) );
+        //init the data cache to avoid calls to DataFile::data(), as it contains a std::vector of std::vector, which causes
+        //cache misses.  The data cache is a continuous array of doubles to optimize cache hits.
+        m_dataCache = new double[ m_dataFile.getDataLineCount() * m_dataFile.getDataColumnCount() ];
+        for( uint iRow = 0; iRow < m_dataFile.getDataLineCount(); ++iRow )
+            for( uint iColumn = 0; iColumn < m_dataFile.getDataColumnCount(); ++iColumn)
+                m_dataCache[ iRow * m_dataFile.getDataColumnCount() + iColumn ] = m_dataFile.data( iRow, iColumn );
     }
-
 protected:
     DataFile& m_dataFile;
     std::vector<bool> m_isCategoricalCache;
+    double *m_dataCache;
 };
+
+
 
 DataFile::DataFile(QString path) : File( path ),
     _lastModifiedDateTimeLastLoad( ),
@@ -726,7 +737,7 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
 IAlgorithmDataSource *DataFile::algorithmDataSource()
 {
     AlgorithmDataSource* concreteAspect = (AlgorithmDataSource*)_algorithmDataSourceInterface.get();
-    concreteAspect->setIsCategoricalCache();
+    concreteAspect->initCaches();
     return _algorithmDataSourceInterface.get();
 }
 

@@ -161,6 +161,10 @@ void MachineLearningDialog::runCARTClassify()
     std::list<int> trainingFeaturesIDList = getTrainingFeaturesIDList();
     std::list<int> outputFeaturesIDList = getOutputFeaturesIDList();
 
+    Application::instance()->logErrorOff();
+    Application::instance()->logWarningOff();
+    Application::instance()->logInfoOff();
+
     //Build the CART tree
     CART CARTalgorithm( *trainingDataFile->algorithmDataSource(),
                         *outputDataFile->algorithmDataSource(),
