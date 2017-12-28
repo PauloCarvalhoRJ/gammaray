@@ -41,6 +41,8 @@ public:
      * @param seed The seed for the random number generator.
      * @param bootstrap Sets how the training data is randomly resampled to create the many trees.
      * @param treeType Sets the type of the trees in the forest.
+     * @param continuousFeaturesMaxSplits Limits the number of splits in the decision trees for continuous features.
+     *        A good number is 20.
      */
     RandomForest(const IAlgorithmDataSource& trainingData,
                  const IAlgorithmDataSource &outputData,
@@ -49,7 +51,8 @@ public:
                  unsigned int B,
                  long seed,
                  ResamplingType bootstrap,
-                 TreeType treeType);
+                 TreeType treeType,
+                 int continuousFeaturesMaxSplits );
 
     virtual ~RandomForest();
 
@@ -91,6 +94,8 @@ protected:
     /** Repository of the data sources created internally so they are garbage collected in the destructor. */
     std::vector<IAlgorithmDataSource*> m_tmpDataSources;
 
+    /** This value limits the number of splits in the decision trees for continuous features/variables. */
+    int m_continuousFeaturesMaxSplits;
 };
 
 #endif // RANDOMFOREST_H

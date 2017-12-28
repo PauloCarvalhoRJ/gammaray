@@ -29,6 +29,7 @@ private:
 
     VariableSelector *makeVariableSelector();
 
+    bool getCARTParameters( GSLibParameterFile& gpf );
     void runCARTClassify();
     void runCARTRegression();
     bool getRandomForestParameters( GSLibParameterFile& gpf );

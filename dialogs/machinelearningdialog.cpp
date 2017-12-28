@@ -133,21 +133,39 @@ VariableSelector *MachineLearningDialog::makeVariableSelector()
     return vs;
 }
 
-void MachineLearningDialog::runCARTClassify()
+bool MachineLearningDialog::getCARTParameters(GSLibParameterFile &gpf)
 {
+    GSLibParInt* par0 = new GSLibParInt( "MaxSplitsContinuous", "", "Max splits for continuous features:" );
+    par0->_value = 20;
+    gpf.addParameter( par0 );
     //suggest a new attribute name to the user
     QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
-    proposed_name = proposed_name.append( "_CLASSIFIED_WITH_CART" );
+    if( isClassification() )
+        proposed_name = proposed_name.append( "_CLASSIFIED_WITH_CART" );
+    else
+        proposed_name = proposed_name.append( "_ESTIMATED_WITH_CART" );
+    GSLibParString* par4 = new GSLibParString("VariableName", "", "New variable name: ");
+    par4->_value = proposed_name;
+    gpf.addParameter( par4 );
 
-    //presents a dialog so the user can change the suggested name for the new categorical variable.
-    bool ok;
-    QString new_var_name = QInputDialog::getText(this, "Name the class variable",
-                                             "New variable name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
+    //Use the GSLib parameter dialog to allow the user to edit the Random Forest parameters
+    GSLibParametersDialog diag( &gpf, this );
+    diag.setWindowTitle("Parameters for the CART algorithm");
+    int userResponse = diag.exec();
+    return userResponse == QDialog::Accepted;
+}
 
-    //if the user cancelled the input box, do nothing.
-    if (! ok )
+void MachineLearningDialog::runCARTClassify()
+{
+    //use a GSLib parameter file object to hold a collection of parameters for the CART algorithm
+    GSLibParameterFile gpf;
+
+    //if the user canceled the parameter dialog, aborts.
+    if( ! getCARTParameters(gpf) )
         return;
+
+    //get the seed for the random number generator
+    int maxSplitsContinuous = gpf.getParameterByName<GSLibParInt*>("MaxSplitsContinuous")->_value;
 
     //Get the selected data files.
     DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
@@ -165,11 +183,10 @@ void MachineLearningDialog::runCARTClassify()
     CART CARTalgorithm( *trainingDataFile->algorithmDataSource(),
                         *outputDataFile->algorithmDataSource(),
                         trainingFeaturesIDList,
-                        outputFeaturesIDList);
+                        outputFeaturesIDList,
+                        maxSplitsContinuous );
 
     Application::instance()->logInfo("MachineLearningDialog::runCARTClassify(): CART tree built.");
-
-    return;
 
     //for each output data
     long outputRowCount = outputDataFile->getDataLineCount();
@@ -195,24 +212,22 @@ void MachineLearningDialog::runCARTClassify()
                     m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
 
     //add the results as a categorical attribute
-    outputDataFile->addNewDataColumn( new_var_name, classValues, trainingDataFile->getCategoryDefinition(at) );
+    outputDataFile->addNewDataColumn( gpf.getParameterByName<GSLibParString*>("VariableName")->_value,
+                                      classValues,
+                                      trainingDataFile->getCategoryDefinition(at) );
 }
 
 void MachineLearningDialog::runCARTRegression()
 {
-    //suggest a new attribute name to the user
-    QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
-    proposed_name = proposed_name.append( "_ESTIMATED_WITH_CART" );
+    //use a GSLib parameter file object to hold a collection of parameters for the CART algorithm
+    GSLibParameterFile gpf;
 
-    //presents a dialog so the user can change the suggested name for the new continuous variable.
-    bool ok;
-    QString new_var_name = QInputDialog::getText(this, "Name the variable",
-                                             "New variable name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
-
-    //if the user cancelled the input box, do nothing.
-    if (! ok )
+    //if the user canceled the parameter dialog, aborts.
+    if( ! getCARTParameters(gpf) )
         return;
+
+    //get the seed for the random number generator
+    int maxSplitsContinuous = gpf.getParameterByName<GSLibParInt*>("MaxSplitsContinuous")->_value;
 
     //Get the selected data files.
     DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
@@ -230,7 +245,9 @@ void MachineLearningDialog::runCARTRegression()
     CART CARTalgorithm( *trainingDataFile->algorithmDataSource(),
                         *outputDataFile->algorithmDataSource(),
                         trainingFeaturesIDList,
-                        outputFeaturesIDList);
+                        outputFeaturesIDList,
+                        maxSplitsContinuous );
+
     Application::instance()->logInfo("MachineLearningDialog::runCARTRegression(): CART tree built.");
 
     //for each output data
@@ -253,8 +270,8 @@ void MachineLearningDialog::runCARTRegression()
     }
 
     //add the results as continuous attributes
-    outputDataFile->addNewDataColumn( new_var_name, estimatedValues );
-    outputDataFile->addNewDataColumn( new_var_name + "_percent", percentages );
+    outputDataFile->addNewDataColumn( gpf.getParameterByName<GSLibParString*>("VariableName")->_value, estimatedValues );
+    outputDataFile->addNewDataColumn( gpf.getParameterByName<GSLibParString*>("VariableName")->_value + "_percent", percentages );
 }
 
 bool MachineLearningDialog::getRandomForestParameters(GSLibParameterFile &gpf )
@@ -271,6 +288,9 @@ bool MachineLearningDialog::getRandomForestParameters(GSLibParameterFile &gpf )
     GSLibParOption* par3 = new GSLibParOption("TreeType", "", "Tree type:");
     par3->addOption(1, "CART");
     gpf.addParameter( par3 );
+    GSLibParInt* par5 = new GSLibParInt( "MaxSplitsContinuous", "", "Max decision tree splits for continuous features:" );
+    par5->_value = 20;
+    gpf.addParameter( par5 );
     //suggest a new attribute name to the user
     QString proposed_name( m_trainingDependentVariableSelector->getSelectedVariableName() );
     if( isClassification() )
@@ -345,7 +365,8 @@ void MachineLearningDialog::runRandomForestClassify()
                      B, //number of trees
                      seed, //seed for the random number generator
                      bootstrap, //how the training data is re-sampled in each RF iteration
-                     treeType); //the type of trees used to build the forest
+                     treeType, //the type of trees used to build the forest
+                     gpf.getParameterByName<GSLibParInt*>("MaxSplitsContinuous")->_value);
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestClassify(): RandomForest object built.");
 
     //get the number of data rows in the output to be classified
@@ -442,7 +463,8 @@ void MachineLearningDialog::runRandomForestRegression()
                      B, //number of trees
                      seed, //seed for the random number generator
                      bootstrap, //how the training data is re-sampled in each RF iteration
-                     treeType); //the type of trees used to build the forest
+                     treeType, //the type of trees used to build the forest
+                     gpf.getParameterByName<GSLibParInt*>("MaxSplitsContinuous")->_value);
     Application::instance()->logInfo("MachineLearningDialog::runRandomForestRegression(): RandomForest object built.");
 
     //get the number of data rows in the output to be estimated

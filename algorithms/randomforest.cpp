@@ -42,10 +42,12 @@ RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
                                  unsigned int B,
                                  long seed,
                                  ResamplingType bootstrap ,
-                                 TreeType treeType) :
+                                 TreeType treeType,
+                                 int continuousFeaturesMaxSplits) :
     m_trainingData( trainingData ),
     m_outputData( outputData ),
-    m_B( B )
+    m_B( B ),
+    m_continuousFeaturesMaxSplits( continuousFeaturesMaxSplits )
 {
     //Create an object to create training subsamples
     Bootstrap bagger( trainingData, bootstrap, seed );
@@ -62,7 +64,9 @@ RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
 
         //Create a decision tree for the bagged training data
         if( treeType == TreeType::CART )
-            m_trees.push_back( new CART( *baggedTrainingData, outputData, trainingFeatureIDs, outputFeatureIDs  ) );
+            m_trees.push_back( new CART( *baggedTrainingData, outputData,
+                                         trainingFeatureIDs, outputFeatureIDs,
+                                         m_continuousFeaturesMaxSplits ) );
     }
 }
 

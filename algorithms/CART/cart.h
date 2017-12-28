@@ -25,13 +25,16 @@ public:
      *                   calling code to make updates to the output data source after calling classify() or regress().
      * @param trainingFeatureIDs List of column numbers corresponding to the selected predictive
      *                           variables (features) in the training set.
-     * @param trainingRowIDs An optional list of training data row numbers to be used.  It can be in any order or count.
-     *                       If omitted, all the rows in their direct order (0 to n-1) will be used.
+     * @param outputFeatureIDs List of column numbers corresponding to the selected predictive
+     *                           variables (features) in the output set.
+     * @param continuousFeatureMaxSplits Limits the number of split values for continuous variables.
      */
-    CART(const IAlgorithmDataSource& trainingData,
-         const IAlgorithmDataSource& outputData,
-         const std::vector<int> &trainingFeatureIDs,
-         const std::vector<int> &outputFeatureIDs );
+    CART( const IAlgorithmDataSource& trainingData,
+          const IAlgorithmDataSource& outputData,
+          const std::vector<int> &trainingFeatureIDs,
+          const std::vector<int> &outputFeatureIDs,
+          int continuousFeaturesMaxSplits );
+
     virtual ~CART();
 
     /** Uses the underlying CART decision tree as a classifier to a given output data row, referenced by its row number.
@@ -75,6 +78,9 @@ protected:
      * This list is built in the constructor.
      */
     std::map<int,int> m_training2outputFeatureIndexesMap;
+
+    /** Limit to the number of split values for continuous features. */
+    int m_continuousFeaturesMaxSplits;
 
     /* The functions below are arranged in dependency order. Of course the recursive functions depend
        on themselves. */
@@ -139,7 +145,7 @@ protected:
      * Reduces the given vector of data values by skipping elements at fixed steps.
      * If the vector is smaller than the target maximum size, no change takes place.
      */
-    void decimate( std::vector<DataValue>& values, long maxSize ) const;
+    void decimate(std::vector<DataValue>& values, unsigned long maxSize ) const;
 
     /**
      * Returns the CART tree partition criterion with the highest information gain among the possible ones

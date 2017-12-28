@@ -8,9 +8,11 @@
 CART::CART(const IAlgorithmDataSource &trainingData,
            const IAlgorithmDataSource &outputData,
            const std::vector<int> &trainingFeatureIDs,
-           const std::vector<int> &outputFeatureIDs ) : DecisionTree(),
+           const std::vector<int> &outputFeatureIDs,
+           int continuousFeaturesMaxSplits) : DecisionTree(),
     m_trainingData( trainingData ),
-    m_outputData( outputData )
+    m_outputData( outputData ),
+    m_continuousFeaturesMaxSplits( continuousFeaturesMaxSplits )
 {
     //Create the list with all row IDs.
     long rowCount = trainingData.getRowCount();
@@ -141,14 +143,14 @@ void CART::split(const std::vector<long> &rowIDs,
     }
 }
 
-void CART::decimate(std::vector<DataValue> &values, long maxSize) const
+void CART::decimate(std::vector<DataValue> &values, unsigned long maxSize) const
 {
     if( values.size() <= maxSize )
         return;
     std::vector<DataValue> temp;
     temp.reserve( maxSize );
     int decimationStep = 1 + values.size() / maxSize;
-    for( long i = 0; i < values.size(); i += decimationStep  )
+    for( unsigned long i = 0; i < values.size(); i += decimationStep  )
         temp.push_back( values[i] );
     values = temp;
 }
@@ -175,16 +177,17 @@ std::pair<CARTSplitCriterion, double> CART::getSplitCriterionWithMaximumInformat
         double impurity = getGiniImpurity( rowIDs, *columnIt );
         //get the unique feature values found in the row set
         getUniqueDataValues( uniqueValues, rowIDs, *columnIt );
-        //limit the number of split values to reduce the number of split criterion tests.
-        decimate( uniqueValues, 100 );
-        //for each unique feature value.
+        //If the feature is continuous, limit the number of split values to reduce the number of split criterion tests.
+        if( ! uniqueValues[0].isCategorical() )
+            decimate( uniqueValues, m_continuousFeaturesMaxSplits );
+        //for each feature split value (must be different from each other to ensure unique split criteria).
         std::vector<DataValue>::iterator uniqueValuesIt = uniqueValues.begin();
         for(; uniqueValuesIt != uniqueValues.end(); ++uniqueValuesIt){
             //Create a split criterion object
             CARTSplitCriterion splitCriterion( m_trainingData, m_outputData,
                                                *columnIt, *uniqueValuesIt, m_training2outputFeatureIndexesMap );
             //Split the row set using the criterion above
-            //  !!!BOTTLENECK!!! split needs to be fast or be called less often.
+            //  !!!BOTTLENECK!!! split needs to be fast or be called less often (see the call to decimate() above).
             split( rowIDs, splitCriterion, trueSideRowIDs, falseSideRowIDs );
             //if there is uncertainty (both true and false row id lists have data)
             if( trueSideRowIDs.size() != 0 && falseSideRowIDs.size() != 0 ){
