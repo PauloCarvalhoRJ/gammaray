@@ -4,8 +4,9 @@
 #include <limits>
 #include <numeric>
 #include <algorithm>
+#include <thread>
 
-/** A temporary data source for Random Forest run. */
+/** A temporary data source to hold bootsrapped training data. */////////////////////////////////////////////
 class TmpDataSource : public IAlgorithmDataSource{
     // IAlgorithmDataSource interface
 public:
@@ -34,7 +35,26 @@ protected:
     std::vector< std::vector< DataValue > > m_data;
 };
 
+/** The code for multithreaded decision tree creation *////////////////////////
+void task( const std::vector<IAlgorithmDataSource*>& vBaggedTrainingDS,
+           const IAlgorithmDataSource *outputData,
+           const std::vector<int> &trainingFeatureIDs,
+           const std::vector<int> &outputFeatureIDs,
+           int continuousFeaturesMaxSplits,
+           TreeType treeType,
+           std::vector< DecisionTree* >* decisionTreesOutput
+           ){
+    if( treeType == TreeType::CART ){
+        std::vector<IAlgorithmDataSource*>::const_iterator it = vBaggedTrainingDS.cbegin();
+        for(; it != vBaggedTrainingDS.cend(); ++it )
+            decisionTreesOutput->push_back( new CART( **it, *outputData,
+                                                     trainingFeatureIDs, outputFeatureIDs,
+                                                     continuousFeaturesMaxSplits ) );
+    }
+}
+///////////////////////////////////////////////////////////////////////////////
 
+/////////////////////////////The Random Forest class itself/////////////////////////////////////
 RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
                            const IAlgorithmDataSource &outputData,
                            const std::vector<int> &trainingFeatureIDs,
@@ -61,13 +81,46 @@ RandomForest::RandomForest(const IAlgorithmDataSource &trainingData,
 
         //bagg the training set
         bagger.resample( *baggedTrainingData, trainingData.getRowCount() );
-
-        //Create a decision tree for the bagged training data
-        if( treeType == TreeType::CART )
-            m_trees.push_back( new CART( *baggedTrainingData, outputData,
-                                         trainingFeatureIDs, outputFeatureIDs,
-                                         m_continuousFeaturesMaxSplits ) );
     }
+
+    //get the number of threads from logical CPUs or number of trees (whichever is the lowest)
+    unsigned int nThreads = std::min( std::thread::hardware_concurrency(), m_B );
+
+    //distribute the bagged training data sources among the n-threads
+    std::vector<IAlgorithmDataSource*> baggedTrainingDataSources[nThreads];
+    std::vector<IAlgorithmDataSource*>::iterator it = m_tmpDataSources.begin();
+    for( unsigned int iThread = 0; it != m_tmpDataSources.end(); ++it, ++iThread)
+        baggedTrainingDataSources[ iThread % nThreads ].push_back( *it );
+
+    //create decision tree vectors for each thread, so they deposit their trees in them.
+    std::vector< DecisionTree* > decisionTreesDepots[nThreads];
+
+    //create and run the decicion tree-creating threads
+    std::thread threads[nThreads];
+    for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
+        std::vector< DecisionTree* >& decisionTreesDepot = decisionTreesDepots[iThread];
+        threads[iThread] = std::thread( task,
+                                        baggedTrainingDataSources[iThread],
+                                        &outputData, //can't pass reference to abstract type because std::thread() creates a tuple internally
+                                        trainingFeatureIDs,
+                                        outputFeatureIDs,
+                                        continuousFeaturesMaxSplits,
+                                        treeType,
+                                        &decisionTreesDepot
+                                        );
+    }
+
+    //wait for the threads to finish.
+    for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+        threads[iThread].join();
+
+    //collect the decision trees created by the threads:
+    for( unsigned int iThread = 0; iThread < nThreads; ++iThread ){
+        std::vector< DecisionTree* >::iterator it = decisionTreesDepots[ iThread ].begin();
+        for(; it != decisionTreesDepots[ iThread ].end(); ++it)
+            m_trees.push_back( *it );
+    }
+
 }
 
 RandomForest::~RandomForest()
