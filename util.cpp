@@ -59,7 +59,6 @@
 //TODO: move this to geostatsutils.h, or transfer its PI_OVER_180 constant here
 #define C_180_OVER_PI (180.0 / 3.14159265)
 
-
 Util::Util()
 {
 }
@@ -967,9 +966,9 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0"
-                     << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0"
-                     << "1.0.1" << "1.0";
+    previousVersions << "3.2" << "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2"
+                     << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1"
+                     << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){

@@ -6,10 +6,12 @@
 #include <QMap>
 #include <QDateTime>
 #include <complex>
+#include <memory>
 
 class Attribute;
 class UnivariateCategoryClassification;
 class CategoryDefinition;
+class IAlgorithmDataSource;
 
 /**
  * @brief The DataFile class is the base class of all project components that are
@@ -244,6 +246,22 @@ public:
                          const QString nameForNewAttributeOfRealPart,
                          const QString nameForNewAttributeOfImaginaryPart);
 
+    /**
+     * Returns a pointer to the internal algorithm interface data source (see classes in /algorthms subdirectory).
+     */
+    IAlgorithmDataSource* algorithmDataSource();
+
+    /**
+      * Adds a new data column to the data set filled with the given array of values.
+      * The new column will have the same number of data elements of the current columns.  So if the passed array is too short,
+      * the remaining data elements will be filled with a default value (zero or NDV).  If the passed array is too long, the
+      * exceeding data elements will be ignored. The function returns the column index of the newly added data column.
+      * If a CategoryDefinion is passed, then the newly added values will be treated as categorical throughout the system.
+      * @note This function cannot be used on DataFile objects created in-code only, that is, without an
+      *       associated filesystem file (see File class).  For such cases, see addEmptyDataColumn() [SVD branch].
+      */
+    int addNewDataColumn( const QString columnName, const std::vector<double> &values, CategoryDefinition *cd = nullptr );
+
 //File interface
     void deleteFromFS();
     void writeToFS();
@@ -288,6 +306,9 @@ protected:
 
     /** The last line of file to load.  Default is infinity (read all data). */
     long _dataPageLastLine;
+
+    /** The pointer to the internal interface to the algorithms' data source (see classes in /algorithms subdirectory). */
+    std::shared_ptr<IAlgorithmDataSource> _algorithmDataSourceInterface;
 };
 
 #endif // DATAFILE_H

@@ -60,6 +60,7 @@ enum class ValueScaling : uint {
     ABS
 };
 
+
 /**
  * @brief The Util class organizes system-wide utilitary functions.
  */
@@ -518,7 +519,6 @@ public:
      * does not support the OS (see util.cpp).
      */
     static std::int64_t getPhysicalRAMusage();
-
 };
 
 #endif // UTIL_H
