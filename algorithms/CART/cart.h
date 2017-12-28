@@ -136,6 +136,12 @@ protected:
                std::vector<long> &falseSideRowIDs ) const;
 
     /**
+     * Reduces the given vector of data values by skipping elements at fixed steps.
+     * If the vector is smaller than the target maximum size, no change takes place.
+     */
+    void decimate( std::vector<DataValue>& values, long maxSize ) const;
+
+    /**
      * Returns the CART tree partition criterion with the highest information gain among the possible ones
      * that can be made with the data given by row numbers (IDs).  Information gain is defined by reduction
      * of uncertainty (sum or impurity) in the tree nodes below.  The goal is to get large data subsets with

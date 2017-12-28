@@ -24,7 +24,7 @@ public:
         default: return false;
         }
     }
-    bool operator<( DataValue other ){
+    bool operator<( const DataValue& other ){
         switch( usedMember ){
         case 1: return value.continuous < other.value.continuous;
         case 2: return value.categorical < other.value.categorical;
