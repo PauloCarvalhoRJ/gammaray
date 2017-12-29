@@ -113,6 +113,11 @@ public:
     /** Enables error logging. */
     void logErrorOn();
 
+    /** Disables information messages logging. */
+    void logInfoOff(){ logWarn("WARNING! Information messages disabled! "); _logInfo = false; }
+    /** Enables information messages logging. */
+    void logInfoOn();
+
 private:
     Application();
     ~Application();
@@ -132,11 +137,17 @@ private:
     /** Flag that enables/disables error logging/printing. */
     bool _logErrors;
 
+    /** Flag that enables/disables information logging/printing. */
+    bool _logInfo;
+
     /** Warning messages are stored here while their display is disabled. */
     std::vector<QString> _warningBuffer;
 
     /** Error messages are stored here while their display is disabled. */
     std::vector<QString> _errorBuffer;
+
+    /** Information messages are stored here while their display is disabled. */
+    std::vector<QString> _infoBuffer;
 };
 
 #endif // APPLICATION_H

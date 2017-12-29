@@ -22,12 +22,83 @@
 #include "project.h"
 #include "objectgroup.h"
 #include "auxiliary/dataloader.h"
+#include "algorithms/ialgorithmdatasource.h"
+
+/****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES ****************************/
+/***************************** WARNING: This class contains sensitive operations. ***************************/
+class AlgorithmDataSource : public IAlgorithmDataSource{
+public:
+    AlgorithmDataSource( DataFile& dataFile ) : IAlgorithmDataSource(),
+        m_dataFile( dataFile ),
+        m_dataCache( nullptr ),
+        m_rowCount( 0 ),
+        m_colCount( 0 )
+    {
+    }
+    ~AlgorithmDataSource(){
+        if( m_dataCache )
+            delete [] m_dataCache;
+    }
+    // IAlgorithmDataSource interface
+public:
+    virtual long getRowCount() const {
+        return m_rowCount;
+    }
+    virtual int getColumnCount() const {
+        return m_colCount;
+    }
+    virtual void clear() {
+        throw InvalidMethodException();
+    }
+    virtual void reserve(long /*rowCount*/, int /*columnCount*/) {
+        throw InvalidMethodException();
+    }
+    virtual void setDataValue(long /*rowIndex*/, int /*columnIndex*/, DataValue /*value*/) {
+        throw InvalidMethodException();
+    }
+    virtual DataValue getDataValue(long rowIndex, int columnIndex) const {
+        if( m_isCategoricalCache[ columnIndex ] ) //m_isCategoricalCache.size() is the number of columns
+            return std::move( DataValue(   (int)    m_dataCache[ rowIndex * m_isCategoricalCache.size() + columnIndex] )); //init DataValue as categorical
+        else
+            return std::move( DataValue( /*double*/ m_dataCache[ rowIndex * m_isCategoricalCache.size() + columnIndex] )); //init DataValue as continuous
+    }
+    void init(){
+        if( ! m_isCategoricalCache.empty() )
+            return;
+        //Build the cache of isCategorical flags to avoid calling costly methods in getDataValue().
+        //DataFile::isCategorical() and DataFile::getAtrributeFromGEOEASIndex() are very costly
+        m_dataFile.loadData();
+        uint dataColumnCount = m_dataFile.getDataColumnCount();
+        long dataRowCount = m_dataFile.getDataLineCount();
+        for( uint iColumn = 0; iColumn < dataColumnCount; ++iColumn)
+            m_isCategoricalCache.push_back( m_dataFile.isCategorical( m_dataFile.getAttributeFromGEOEASIndex( iColumn+1 ) ) );
+        //init the data cache to avoid calls to DataFile::data(), as it contains a std::vector of std::vector, which causes
+        //cache misses.  The data cache is a continuous array of doubles to optimize cache hits.
+        m_dataCache = new double[ dataRowCount * dataColumnCount ];
+        for( long iRow = 0; iRow < dataRowCount; ++iRow )
+            for( uint iColumn = 0; iColumn < dataColumnCount; ++iColumn)
+                m_dataCache[ iRow * dataColumnCount + iColumn ] = m_dataFile.data( iRow, iColumn );
+        //store the data source sizes as the DataFile methods generate too many messages (performance bottleneck)
+        //and/or use the filesystem often.
+        m_rowCount = dataRowCount;
+        m_colCount = dataColumnCount;
+    }
+protected:
+    DataFile& m_dataFile;
+    std::vector<bool> m_isCategoricalCache;
+    double *m_dataCache;
+    long m_rowCount;
+    int m_colCount;
+};
+/**********************************************************************************************************************************/
+
 
 DataFile::DataFile(QString path) : File( path ),
     _lastModifiedDateTimeLastLoad( ),
     _dataPageFirstLine( 0 ),
     _dataPageLastLine( std::numeric_limits<long>::max() )
 {
+    _algorithmDataSourceInterface.reset( new AlgorithmDataSource(*this) );
 }
 
 void DataFile::loadData()
@@ -676,4 +747,62 @@ void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
     //sets this as parent of the new Attributes
     newAttributeReal->setParent( this );
     newAttributeImag->setParent( this );
+}
+
+IAlgorithmDataSource *DataFile::algorithmDataSource()
+{
+    AlgorithmDataSource* concreteAspect = (AlgorithmDataSource*)_algorithmDataSourceInterface.get();
+    concreteAspect->init(); //initialize the algorithm data source object on demand.
+    return _algorithmDataSourceInterface.get();
+}
+
+int DataFile::addNewDataColumn(const QString columnName, const std::vector<double> &values , CategoryDefinition *cd)
+{
+    //loads data from disk
+    loadData();
+
+    //get a default value in case the values vector is shorter than the data set.
+    double defaultValue = 0.0;
+    if( hasNoDataValue() )
+        defaultValue = getNoDataValueAsDouble();
+
+    //append the values to the existing data array
+    std::vector< double >::const_iterator itColumn = values.cbegin();
+    std::vector< std::vector<double> >::iterator itData = _data.begin();
+    //hopefully both iterators end at the same time
+    for( ; itColumn != values.cend(), itData != _data.end(); ++itColumn, ++itData )
+        (*itData).push_back( *itColumn );
+
+    //If the transfer was not completed (the input vector is too short), fill the remainder with the default value
+    for( ; itData != _data.end(); ++itData )
+        (*itData).push_back( defaultValue );
+
+    //get the GEO-EAS index for new attribute
+    uint indexGEOEAS = _data[0].size(); //assumes the first row has the correct number of data column
+
+    //if the added column was deemed categorical, adds its GEO-EAS index and name of the category definition
+    //to the list of pairs for metadata keeping.
+    if( cd ){
+        _categorical_attributes.append( QPair<uint,QString>( indexGEOEAS, cd->getName() ) );
+        //update the metadata file
+        this->updateMetaDataFile();
+    }
+
+    //Create a new Attribute object that correspond to the new data column in memory
+    Attribute *newAttribute = new Attribute( columnName, indexGEOEAS );
+
+    //Set the new Attribute as categorical
+    newAttribute->setCategorical( true );
+
+    //Add the new Attributes as child project component of this one
+    addChild( newAttribute );
+
+    //sets this as parent of the new Attributes
+    newAttribute->setParent( this );
+
+    //update the file
+    writeToFS();
+
+    //returns the index of the new column
+    return indexGEOEAS - 1;
 }
