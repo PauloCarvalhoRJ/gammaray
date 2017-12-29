@@ -8,7 +8,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 
 #include "view3dwidget.h"
 #include "ui_view3dwidget.h"
-#include <QVTKWidget.h>
+#include <QVTKWidget2.h>
 
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
@@ -20,6 +20,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkCamera.h>
 #include <vtkTransform.h>
+#include <vtkGenericOpenGLRenderWindow.h>
 #include <QSettings>
 
 #include "domain/application.h"
@@ -54,7 +55,7 @@ View3DWidget::View3DWidget(QWidget *parent) :
         ui->splitter_2->restoreState( state );
     }
 
-    _vtkwidget = new QVTKWidget();
+    _vtkwidget = new QVTKWidget2();
 
     //===========VTK TEST CODE==========================================
 //    vtkSmartPointer<vtkSphereSource> sphereSource =
@@ -76,7 +77,11 @@ View3DWidget::View3DWidget(QWidget *parent) :
     _renderer->SetBackground2(0.5,0.5,1);
 
 //    renderer->AddActor( sphereActor );  // VTK TEST CODE
+//    vtkRenderWindow* renwin = vtkRenderWindow::New();
+//	vtkGenericOpenGLRenderWindow* glrw = vtkGenericOpenGLRenderWindow::SafeDownCast(renwin);
+//	_vtkwidget->SetRenderWindow( glrw );
     _vtkwidget->GetRenderWindow()->AddRenderer( _renderer );
+	_vtkwidget->setFocusPolicy( Qt::StrongFocus );
 
     //----------------------adding the orientation axes-------------------------
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();

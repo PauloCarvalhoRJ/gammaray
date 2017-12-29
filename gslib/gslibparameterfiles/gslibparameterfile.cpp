@@ -374,6 +374,11 @@ void GSLibParameterFile::setGridParameters(CartesianGrid *cg)
     }
 }
 
+void GSLibParameterFile::addParameter(GSLibParType *param)
+{
+    _params.append( param );
+}
+
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){
 
     QString type_name = Util::getNameFromTag( tag );

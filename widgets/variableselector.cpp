@@ -68,6 +68,11 @@ int VariableSelector::getCurrentComboIndex()
     return ui->cmbVariable->currentIndex();
 }
 
+void VariableSelector::setCaption(QString caption)
+{
+    ui->lblCaption->setText( caption );
+}
+
 void VariableSelector::onListVariables(DataFile *file)
 {
     m_dataFile = file;

@@ -153,6 +153,7 @@ private slots:
     void onHistpltsim();
     void onRFFT();
     void onUpdateStatusBar();
+    void onMachineLearning();
 
 private:
     /**

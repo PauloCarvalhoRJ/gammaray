@@ -39,6 +39,9 @@ public:
     /** Returns the index of the currently selected item in the combobox. */
     int getCurrentComboIndex();
 
+    /** Sets an option caption text. */
+    void setCaption( QString caption );
+
 signals:
     void variableSelected( Attribute* at );
     void currentIndexChanged( int index );
