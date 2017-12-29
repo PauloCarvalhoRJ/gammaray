@@ -466,7 +466,8 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
                -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingMath$$_VTK_VERSION_SUFFIX
+               -lvtkImagingMath$$_VTK_VERSION_SUFFIX \
+               -lvtkGUISupportQtOpenGL$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
