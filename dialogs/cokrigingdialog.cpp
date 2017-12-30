@@ -602,26 +602,23 @@ void CokrigingDialog::onParametersNewcokb3d()
             par20->getParameter<GSLibParDouble*>( i )->_value = psInputData->mean( *it );
         }
 
-        //model type (1=MM1, 2=MM2,3=LMC)
-        m_gpf_newcokb3d->getParameter<GSLibParOption*>(21)->_selected_value = ui->cmbModelType->currentIndex();
-
         //correlation coefficient for MM1 or MM2
-        if( m_newcokb3dModelType == CokrigingModelType::MM1 || m_newcokb3dModelType == CokrigingModelType::MM2 )
-            m_gpf_newcokb3d->getParameter<GSLibParDouble*>(22)->_value =
-                    psInputData->correlation( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1,
-                                              m_secVarForMM2Selector->getSelectedVariableGEOEASIndex()-1 );
+        m_gpf_newcokb3d->getParameter<GSLibParDouble*>(22)->_value =
+                psInputData->correlation( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1,
+                                          psInputData->getFieldGEOEASIndex( m_secVarForMM2Selector->getSelectedVariableName() ) - 1 );
 
         //variance of secondary variable for MM1
-        if( m_newcokb3dModelType == CokrigingModelType::MM1 )
-            m_gpf_newcokb3d->getParameter<GSLibParDouble*>(23)->_value =
-                    psInputData->variance( m_secVarForMM2Selector->getSelectedVariableGEOEASIndex()-1 );
-                                                //^^^variance of the selected secondary^^^
+        m_gpf_newcokb3d->getParameter<GSLibParDouble*>(23)->_value =
+                psInputData->variance( psInputData->getFieldGEOEASIndex( m_secVarForMM2Selector->getSelectedVariableName() ) - 1 );
+                                            //^^^variance of the selected secondary^^^
 
         //variance of primary variable for MM2
-        if( m_newcokb3dModelType == CokrigingModelType::MM2 )
-            m_gpf_newcokb3d->getParameter<GSLibParDouble*>(24)->_value =
-                    psInputData->variance( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1 );
+        m_gpf_newcokb3d->getParameter<GSLibParDouble*>(24)->_value =
+                psInputData->variance( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1 );
     }
+
+    //model type (1=MM1, 2=MM2,3=LMC)
+    m_gpf_newcokb3d->getParameter<GSLibParOption*>(21)->_selected_value = ui->cmbModelType->currentIndex()+1;
 
     //input data file
     m_gpf_newcokb3d->getParameter<GSLibParFile*>(0)->_path = psInputData->getPath();
@@ -686,23 +683,57 @@ void CokrigingDialog::onParametersNewcokb3d()
     par13->_specs_z->getParameter<GSLibParDouble*>(1)->_value = estimation_grid->getZ0(); //min z
     par13->_specs_z->getParameter<GSLibParDouble*>(2)->_value = estimation_grid->getDZ(); //cell size z
 
-    //-------------------------------------------------auto and cross variograms-------------------------//
-    GSLibParRepeat *par25 = m_gpf_newcokb3d->getParameter<GSLibParRepeat*>(25);
-    par25->setCount( m_variograms.count() );
-    QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator itVariogram = m_variograms.begin();
-    for(uint i = 0; itVariogram != m_variograms.end(); ++itVariogram, ++i){
-        std::tuple<uint,uint,VariogramModelSelector*> tuple = *itVariogram;
-        uint head = std::get<0>( tuple );
-        uint tail = std::get<1>( tuple );
+    //---------------------------------variogram for MM1 variography-------------------------//
+    if( m_newcokb3dModelType == CokrigingModelType::MM1 ){
+        GSLibParRepeat *par25 = m_gpf_newcokb3d->getParameter<GSLibParRepeat*>(25);
+        par25->setCount( 1 );
         //variable indexes
-        GSLibParMultiValuedFixed *par25_ii = par25->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        GSLibParMultiValuedFixed *par25_ii = par25->getParameter<GSLibParMultiValuedFixed*>(0, 0);
+        par25_ii->getParameter<GSLibParUInt*>(0)->_value = 1;
+        par25_ii->getParameter<GSLibParUInt*>(1)->_value = 1;
+        //variogram model
+        VariogramModel *vm = getVariogramModel(1, 1);
+        GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(0, 1);
+        par25_i->setFromVariogramModel( vm );
+    }
+    //-------------------------------------------------------------------------------------------------------
+
+    //---------------------------------variogram for MM2 variography-------------------------//
+    if( m_newcokb3dModelType == CokrigingModelType::MM2 ){
+        GSLibParRepeat *par25 = m_gpf_newcokb3d->getParameter<GSLibParRepeat*>(25);
+        par25->setCount( 1 );
+        uint head = 2 + m_secVarForMM2Selector->getCurrentComboIndex();
+        uint tail = 2 + m_secVarForMM2Selector->getCurrentComboIndex();
+        //variable indexes
+        GSLibParMultiValuedFixed *par25_ii = par25->getParameter<GSLibParMultiValuedFixed*>(0, 0);
         par25_ii->getParameter<GSLibParUInt*>(0)->_value = head;
         par25_ii->getParameter<GSLibParUInt*>(1)->_value = tail;
         //variogram model
-        VariogramModelSelector *vms = std::get<2>( tuple );
-        VariogramModel *vm = vms->getSelectedVModel();
-        GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(i, 1);
+        VariogramModel *vm = getVariogramModel(head, tail);
+        GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(0, 1);
         par25_i->setFromVariogramModel( vm );
+    }
+    //-------------------------------------------------------------------------------------------------------
+
+    //---------------------------------auto and cross variograms for LMC variography-------------------------//
+    if( m_newcokb3dModelType == CokrigingModelType::LMC ){
+        GSLibParRepeat *par25 = m_gpf_newcokb3d->getParameter<GSLibParRepeat*>(25);
+        par25->setCount( m_variograms.count() );
+        QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator itVariogram = m_variograms.begin();
+        for(uint i = 0; itVariogram != m_variograms.end(); ++itVariogram, ++i){
+            std::tuple<uint,uint,VariogramModelSelector*> tuple = *itVariogram;
+            uint head = std::get<0>( tuple );
+            uint tail = std::get<1>( tuple );
+            //variable indexes
+            GSLibParMultiValuedFixed *par25_ii = par25->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+            par25_ii->getParameter<GSLibParUInt*>(0)->_value = head;
+            par25_ii->getParameter<GSLibParUInt*>(1)->_value = tail;
+            //variogram model
+            VariogramModelSelector *vms = std::get<2>( tuple );
+            VariogramModel *vm = vms->getSelectedVModel();
+            GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(i, 1);
+            par25_i->setFromVariogramModel( vm );
+        }
     }
     //-------------------------------------------------------------------------------------------------------
 

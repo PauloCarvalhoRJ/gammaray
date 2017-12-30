@@ -2794,6 +2794,7 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "                  Parameters for NEWCOKB3D\n";
         out << "                  ************************\n";
         out << '\n';
+        out << "START OF PARAMETERS\n";
         out << "<file>                                                -file with data\n";
         out << "<uint (nvar)>                                         -   number of variables primary+other only primary if colocated cokriging\n";
         out << "<uint+>                                               -   columns for X,Y,Z and variables\n";

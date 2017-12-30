@@ -40,6 +40,14 @@ QString VariableSelector::getSelectedVariableName()
 
 void VariableSelector::addVariable(Attribute *at)
 {
+    if( ! m_dataFile )
+        m_dataFile = (DataFile*)at->getContainingFile();
+    else{
+        if( m_dataFile != (DataFile*)at->getContainingFile() ){
+            Application::instance()->logError("VariableSelector::addVariable(): attempt to add variables from different files.");
+            return;
+        }
+    }
     ui->cmbVariable->addItem( at->getIcon(), at->getName() );
 }
 
