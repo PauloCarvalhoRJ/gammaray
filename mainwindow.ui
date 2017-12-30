@@ -637,10 +637,7 @@
   <slot>openCokriging()</slot>
   <slot>openImageJockey()</slot>
   <slot>openSGSIM()</slot>
-<<<<<<< HEAD
   <slot>openCokrigingNewcokb3d()</slot>
-=======
   <slot>onMachineLearning()</slot>
->>>>>>> master
  </slots>
 </ui>

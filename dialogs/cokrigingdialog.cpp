@@ -29,7 +29,8 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     m_cg_estimation( nullptr ),
     m_cokProg( cokProg ),
     m_newcokb3dModelType( CokrigingModelType::MM2 ),
-    m_secVarForMM2Selector( nullptr )
+    m_secVarForMM2Selector( nullptr ),
+    m_gpf_newcokb3d( nullptr )
 {
 
     ui->setupUi(this);
@@ -297,6 +298,14 @@ void CokrigingDialog::onUpdateVarMatrixLabels()
 
 void CokrigingDialog::onParameters()
 {
+    if( m_cokProg == CokrigingProgram::COKB3D )
+        onParametersCokb3d();
+    else
+        onParametersNewcokb3d();
+}
+
+void CokrigingDialog::onParametersCokb3d()
+{
     //surely the selected data is a PointSet
     PointSet* psInputData = (PointSet*)m_psInputSelector->getSelectedDataFile();
 
@@ -476,6 +485,238 @@ void CokrigingDialog::onParameters()
         //Generate the parameter file
         QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
         m_gpf_cokb3d->save( par_file_path );
+
+        //to be notified when cokb3d completes.
+        connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onCokb3dCompletes()) );
+
+        //run cokb3d program asynchronously
+        Application::instance()->logInfo("Starting cokb3d program...");
+        GSLib::instance()->runProgramAsync( "cokb3d", par_file_path );
+    }
+}
+
+void CokrigingDialog::onParametersNewcokb3d()
+{
+    //surely the selected data is a PointSet
+    PointSet* psInputData = (PointSet*)m_psInputSelector->getSelectedDataFile();
+
+    if( ! psInputData ){
+        QMessageBox::critical( this, "Error", "Please, select a point set data file.");
+        return;
+    }
+
+    //get the selected estimation grid
+    CartesianGrid* estimation_grid = (CartesianGrid*)m_cgEstimationGridSelector->getSelectedDataFile();
+    if( ! estimation_grid ){
+        QMessageBox::critical( this, "Error", "Please, select an estimation grid.");
+        return;
+    }
+
+    //get the grid with the locally varying mean
+    CartesianGrid* cgLVM = (CartesianGrid*)m_cgLVMGridSelector->getSelectedDataFile();
+
+    //surely the co-located secondary is in a CartesianGrid
+    CartesianGrid* cgColocSec = (CartesianGrid*)m_cgSecondaryGridSelector->getSelectedDataFile();
+
+    //-----------determine the absolute maximum and minimum of input data in all the selected variables-----------
+    //load the data
+    psInputData->loadData();
+    //init max with min and min with max ;-)
+    double minAll = std::numeric_limits<double>::max();
+    double maxAll = std::numeric_limits<double>::min();
+    //gather the indexes of the selected variables
+    QVector<int> selectedColumns;
+    selectedColumns.append( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex() - 1 );
+    for( uint i = 0; i < (uint)m_inputSecVarsSelectors.size(); ++i){
+        selectedColumns.append( m_inputSecVarsSelectors[i]->getSelectedVariableGEOEASIndex() - 1 );
+    }
+    //compute the absolute max and min from the MINs and MAXes of each variables
+    QVector<int>::iterator it = selectedColumns.begin();
+    for(; it != selectedColumns.end(); ++it ){
+        double min = psInputData->min( *it );
+        double max = psInputData->max( *it );
+        if( min < minAll )
+            minAll = min;
+        if( max > maxAll )
+            maxAll = max;
+    }
+    //--------------------------------------------------------------------------------------------------------------
+
+    //get the number of variables (primary + secondaries)
+    uint nvars = 1 + ui->spinNSecVars->value();
+
+    //-----------------------------set newcokb3d parameters---------------------------
+    if( ! m_gpf_newcokb3d ){
+        //create the parameters object
+        m_gpf_newcokb3d = new GSLibParameterFile("newcokb3d");
+
+        //set the default values, so we need to set fewer parameters here
+        m_gpf_newcokb3d->setDefaultValues();
+
+        //trimming limits
+        GSLibParMultiValuedFixed *par3 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedFixed*>(3);
+        par3->getParameter<GSLibParDouble*>(0)->_value = minAll;
+        par3->getParameter<GSLibParDouble*>(1)->_value = maxAll;
+
+        //file with estimates output
+        m_gpf_newcokb3d->getParameter<GSLibParFile*>(12)->_path =
+                Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+
+        // maximum search radii for primary (init from variogram ranges)
+        VariogramModel* primVariogram = getVariogramModel(1, 1);
+        GSLibParMultiValuedFixed *par16 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedFixed*>(16);
+        par16->getParameter<GSLibParDouble*>(0)->_value = primVariogram->get_max_hMax();
+        par16->getParameter<GSLibParDouble*>(1)->_value = primVariogram->get_max_hMin();
+        par16->getParameter<GSLibParDouble*>(2)->_value = primVariogram->get_max_vert();
+
+        //maximum search radii for secondaries (init from variogram ranges)
+        double max_a_hMax = -1.0;
+        double max_a_hMin = -1.0;
+        double max_a_vert = -1.0;
+        for( uint tail = 1; tail <= nvars; ++tail)
+            for( uint head = 2; head <= nvars; ++head){
+                VariogramModel *vm = getVariogramModel( head, tail );
+                if( max_a_hMax < vm->get_max_hMax() )
+                    max_a_hMax = vm->get_max_hMax();
+                if( max_a_hMin < vm->get_max_hMin() )
+                    max_a_hMin = vm->get_max_hMin();
+                if( max_a_vert < vm->get_max_vert() )
+                    max_a_vert = vm->get_max_vert();
+            }
+        GSLibParMultiValuedFixed *par17 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedFixed*>(17);
+        par17->getParameter<GSLibParDouble*>(0)->_value = max_a_hMax;
+        par17->getParameter<GSLibParDouble*>(1)->_value = max_a_hMin;
+        par17->getParameter<GSLibParDouble*>(2)->_value = max_a_vert;
+
+        //angles for search ellipsoid (init from the last nested structure of the primary variogram)
+        GSLibParMultiValuedFixed *par18 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedFixed*>(18);
+        par18->getParameter<GSLibParDouble*>(0)->_value = primVariogram->getAzimuth( primVariogram->getNst()-1 );
+        par18->getParameter<GSLibParDouble*>(1)->_value = primVariogram->getDip( primVariogram->getNst()-1 );
+        par18->getParameter<GSLibParDouble*>(2)->_value = primVariogram->getRoll( primVariogram->getNst()-1 );
+
+        //means (primary and secondaries)
+        GSLibParMultiValuedVariable *par20 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedVariable*>(20);
+        par20->assure( nvars );
+        QVector<int>::iterator it = selectedColumns.begin();
+        for(uint i = 0; it != selectedColumns.end(); ++it, ++i ){
+            par20->getParameter<GSLibParDouble*>( i )->_value = psInputData->mean( *it );
+        }
+
+        //model type (1=MM1, 2=MM2,3=LMC)
+        m_gpf_newcokb3d->getParameter<GSLibParOption*>(21)->_selected_value = ui->cmbModelType->currentIndex();
+
+        //correlation coefficient for MM1 or MM2
+        if( m_newcokb3dModelType == CokrigingModelType::MM1 || m_newcokb3dModelType == CokrigingModelType::MM2 )
+            m_gpf_newcokb3d->getParameter<GSLibParDouble*>(22)->_value =
+                    psInputData->correlation( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1,
+                                              m_secVarForMM2Selector->getSelectedVariableGEOEASIndex()-1 );
+
+        //variance of secondary variable for MM1
+        if( m_newcokb3dModelType == CokrigingModelType::MM1 )
+            m_gpf_newcokb3d->getParameter<GSLibParDouble*>(23)->_value =
+                    psInputData->variance( m_secVarForMM2Selector->getSelectedVariableGEOEASIndex()-1 );
+                                                //^^^variance of the selected secondary^^^
+
+        //variance of primary variable for MM2
+        if( m_newcokb3dModelType == CokrigingModelType::MM2 )
+            m_gpf_newcokb3d->getParameter<GSLibParDouble*>(24)->_value =
+                    psInputData->variance( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1 );
+    }
+
+    //input data file
+    m_gpf_newcokb3d->getParameter<GSLibParFile*>(0)->_path = psInputData->getPath();
+
+    //number of variables (primary + secondaries)
+    m_gpf_newcokb3d->getParameter<GSLibParUInt*>(1)->_value = nvars;
+
+    //columns for X,Y,Z,primary and secondaries
+    GSLibParMultiValuedVariable *par2 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedVariable*>(2);
+    par2->assure( 3 + nvars );
+    par2->getParameter<GSLibParUInt*>(0)->_value = psInputData->getXindex();
+    par2->getParameter<GSLibParUInt*>(1)->_value = psInputData->getYindex();
+    par2->getParameter<GSLibParUInt*>(2)->_value = psInputData->getZindex();
+    par2->getParameter<GSLibParUInt*>(3)->_value = m_inputPrimVarSelector->getSelectedVariableGEOEASIndex();
+    for( uint i = 0; i < (uint)m_inputSecVarsSelectors.size(); ++i){
+        par2->getParameter<GSLibParUInt*>(4 + i)->_value = m_inputSecVarsSelectors[i]->getSelectedVariableGEOEASIndex();
+    }
+
+    //set cokriging options (if user set a grid with a colocated secondary variable)
+    if( cgColocSec ){
+        //cokriging type (co-located)
+        m_gpf_newcokb3d->getParameter<GSLibParOption*>(4)->_selected_value = 1;
+        //file with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParFile*>(5)->_path = cgColocSec->getPath();
+        //column with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParUInt*>(6)->_value = m_inputGridSecVarsSelectors[0]->getSelectedVariableGEOEASIndex();
+    }else{
+        //cokriging type (full)
+        m_gpf_newcokb3d->getParameter<GSLibParOption*>(4)->_selected_value = 0;
+        //file with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParFile*>(5)->_path = "";
+        //column with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParUInt*>(6)->_value = 0;
+    }
+
+    //set LVM options (if user set a grid with a locally varying mean)
+    if( cgLVM ){
+        //LVM yes?
+        m_gpf_newcokb3d->getParameter<GSLibParOption*>(7)->_selected_value = 1;
+        //file with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParFile*>(8)->_path = cgLVM->getPath();
+        //column with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParUInt*>(9)->_value = m_inputLVMVarsSelectors[0]->getSelectedVariableGEOEASIndex();
+    }else{
+        //cokriging type (full)
+        m_gpf_newcokb3d->getParameter<GSLibParOption*>(7)->_selected_value = 0;
+        //file with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParFile*>(8)->_path = "";
+        //column with co-located secondary data
+        m_gpf_newcokb3d->getParameter<GSLibParUInt*>(9)->_value = 0;
+    }
+
+    //grid parameters
+    GSLibParGrid* par13 = m_gpf_newcokb3d->getParameter<GSLibParGrid*>(13);
+    par13->_specs_x->getParameter<GSLibParUInt*>(0)->_value = estimation_grid->getNX(); //nx
+    par13->_specs_x->getParameter<GSLibParDouble*>(1)->_value = estimation_grid->getX0(); //min x
+    par13->_specs_x->getParameter<GSLibParDouble*>(2)->_value = estimation_grid->getDX(); //cell size x
+    par13->_specs_y->getParameter<GSLibParUInt*>(0)->_value = estimation_grid->getNY(); //ny
+    par13->_specs_y->getParameter<GSLibParDouble*>(1)->_value = estimation_grid->getY0(); //min y
+    par13->_specs_y->getParameter<GSLibParDouble*>(2)->_value = estimation_grid->getDY(); //cell size y
+    par13->_specs_z->getParameter<GSLibParUInt*>(0)->_value = estimation_grid->getNZ(); //nz
+    par13->_specs_z->getParameter<GSLibParDouble*>(1)->_value = estimation_grid->getZ0(); //min z
+    par13->_specs_z->getParameter<GSLibParDouble*>(2)->_value = estimation_grid->getDZ(); //cell size z
+
+    //-------------------------------------------------auto and cross variograms-------------------------//
+    GSLibParRepeat *par25 = m_gpf_newcokb3d->getParameter<GSLibParRepeat*>(25);
+    par25->setCount( m_variograms.count() );
+    QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator itVariogram = m_variograms.begin();
+    for(uint i = 0; itVariogram != m_variograms.end(); ++itVariogram, ++i){
+        std::tuple<uint,uint,VariogramModelSelector*> tuple = *itVariogram;
+        uint head = std::get<0>( tuple );
+        uint tail = std::get<1>( tuple );
+        //variable indexes
+        GSLibParMultiValuedFixed *par25_ii = par25->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        par25_ii->getParameter<GSLibParUInt*>(0)->_value = head;
+        par25_ii->getParameter<GSLibParUInt*>(1)->_value = tail;
+        //variogram model
+        VariogramModelSelector *vms = std::get<2>( tuple );
+        VariogramModel *vm = vms->getSelectedVModel();
+        GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(i, 1);
+        par25_i->setFromVariogramModel( vm );
+    }
+    //-------------------------------------------------------------------------------------------------------
+
+    //----------------------------prepare and execute cokb3d--------------------------------
+
+    //show the cokb3d parameters
+    GSLibParametersDialog gsd( m_gpf_newcokb3d, this );
+    int result = gsd.exec();
+
+    //if user didn't cancel the dialog
+    if( result == QDialog::Accepted ){
+        //Generate the parameter file
+        QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
+        m_gpf_newcokb3d->save( par_file_path );
 
         //to be notified when cokb3d completes.
         connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onCokb3dCompletes()) );

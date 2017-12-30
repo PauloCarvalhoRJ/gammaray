@@ -56,12 +56,15 @@ private:
     QVector<VariableSelector*> m_inputLVMVarsSelectors;
     CokrigingModelType m_newcokb3dModelType;
     VariableSelector* m_secVarForMM2Selector;
+    GSLibParameterFile* m_gpf_newcokb3d;
 
 private slots:
     void onNumberOfSecondaryVariablesChanged( int n );
     void onUpdateVariogramMatrix( int numberOfSecondaryVariables );
     void onUpdateVarMatrixLabels();
     void onParameters();
+    void onParametersCokb3d();
+    void onParametersNewcokb3d();
     void onLMCcheck();
     void onCokb3dCompletes();
     void onSave();
