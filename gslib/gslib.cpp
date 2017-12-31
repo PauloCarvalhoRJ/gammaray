@@ -27,7 +27,6 @@ void GSLib::runProgram(const QString program_name, const QString par_file_path, 
     QDir gslib_home = QDir(Application::instance()->getGSLibPathSetting());
     QString gslib_program = gslib_home.filePath( program_name );
 
-    //TODO: test whether running a program with quotation marks works in Unix
     gslib_program = QString("\"").append(gslib_program).append("\"");
 
     QString command = gslib_program;
@@ -73,7 +72,7 @@ void GSLib::runProgram(const QString program_name, const QString par_file_path, 
         QMessageBox::critical( nullptr, "Errors to stderr", program_name + " program output error messages. Please, check the Output Message panel for recent messages in red.");
 }
 
-void GSLib::runProgramAsync(const QString program_name, const QString par_file_path)
+void GSLib::runProgramAsync(const QString program_name, const QString par_file_path, bool parFromStdIn)
 {
     m_stderr_assync_count = 0;
     m_process = new QProcess();
@@ -82,7 +81,9 @@ void GSLib::runProgramAsync(const QString program_name, const QString par_file_p
 
     gslib_program = QString("\"").append(gslib_program).append("\"");
 
-    QString command = gslib_program.append(" \"").append( par_file_path ).append("\"");
+    QString command = gslib_program;
+    if( !parFromStdIn )
+        command.append(" \"").append( par_file_path ).append("\"");
 
     m_last_output = "";
 
@@ -91,6 +92,9 @@ void GSLib::runProgramAsync(const QString program_name, const QString par_file_p
     connect (m_process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(onProgramFinished(int,QProcess::ExitStatus)));
 
     m_process->start( command );
+    if( parFromStdIn ){
+        m_process->write( QString(par_file_path).append('\n').toStdString().c_str() );
+    }
 }
 
 void GSLib::runProgramThread(const QString program_name, const QString par_file_path)

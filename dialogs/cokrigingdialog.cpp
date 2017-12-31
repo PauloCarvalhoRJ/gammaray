@@ -497,6 +497,13 @@ void CokrigingDialog::onParametersCokb3d()
 
 void CokrigingDialog::onParametersNewcokb3d()
 {
+
+    /////////TODO///////////
+    //  Force SK with Collocated (OK leads to zeroing-out secondary)
+    //  Copy all input data to GSLib directory
+    //  Copy parameter file to GSLib directory
+    //  MM2 works with two variogram entries (study theory).
+
     //surely the selected data is a PointSet
     PointSet* psInputData = (PointSet*)m_psInputSelector->getSelectedDataFile();
 
@@ -737,9 +744,9 @@ void CokrigingDialog::onParametersNewcokb3d()
     }
     //-------------------------------------------------------------------------------------------------------
 
-    //----------------------------prepare and execute cokb3d--------------------------------
+    //----------------------------prepare and execute newcokb3d--------------------------------
 
-    //show the cokb3d parameters
+    //show the newcokb3d parameters
     GSLibParametersDialog gsd( m_gpf_newcokb3d, this );
     int result = gsd.exec();
 
@@ -749,12 +756,12 @@ void CokrigingDialog::onParametersNewcokb3d()
         QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
         m_gpf_newcokb3d->save( par_file_path );
 
-        //to be notified when cokb3d completes.
-        connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onCokb3dCompletes()) );
+        //to be notified when newcokb3d completes.
+        connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onNewcokb3dCompletes()) );
 
-        //run cokb3d program asynchronously
-        Application::instance()->logInfo("Starting cokb3d program...");
-        GSLib::instance()->runProgramAsync( "cokb3d", par_file_path );
+        //run newcokb3d program asynchronously
+        Application::instance()->logInfo("Starting newcokb3d program...");
+        GSLib::instance()->runProgramAsync( "newcokb3d", par_file_path, true );
     }
 }
 
@@ -778,6 +785,14 @@ void CokrigingDialog::onLMCcheck()
 }
 
 void CokrigingDialog::onCokb3dCompletes()
+{
+    //frees all signal connections to the GSLib singleton.
+    GSLib::instance()->disconnect();
+
+    preview();
+}
+
+void CokrigingDialog::onNewcokb3dCompletes()
 {
     //frees all signal connections to the GSLib singleton.
     GSLib::instance()->disconnect();
@@ -867,22 +882,29 @@ void CokrigingDialog::preview()
         delete m_cg_estimation;
 
     //get the tmp file path created by cokb3d with the estimates and kriging variances
-    QString grid_file_path = m_gpf_cokb3d->getParameter<GSLibParFile*>(9)->_path;
+    QString grid_file_path;
+    if( m_cokProg == CokrigingProgram::COKB3D )
+        grid_file_path = m_gpf_cokb3d->getParameter<GSLibParFile*>(9)->_path;
+    else
+        grid_file_path = m_gpf_newcokb3d->getParameter<GSLibParFile*>(12)->_path;
 
-    //cokb3d may fail to estimate, most of times due to non-LMC variography
+    //the cokriging programs may fail to estimate, most of times due to non-LMC variography
     QFile file( grid_file_path );
     if( ! file.exists() ){
-        Application::instance()->logError( "File with estimates not found. Check cokb3d messages." );
+        Application::instance()->logError( "File with estimates not found. Check cokriging program messages." );
         return;
     }
 
-    //create a new grid object corresponding to the file created by cokb3d
+    //create a new grid object corresponding to the file created by the cokriging program (cokb3d or newcokb3d)
     m_cg_estimation = new CartesianGrid( grid_file_path );
 
     //set the grid geometry info.
-    m_cg_estimation->setInfoFromGridParameter( m_gpf_cokb3d->getParameter<GSLibParGrid*>(10) );
+    if( m_cokProg == CokrigingProgram::COKB3D )
+        m_cg_estimation->setInfoFromGridParameter( m_gpf_cokb3d->getParameter<GSLibParGrid*>(10) );
+    else
+        m_cg_estimation->setInfoFromGridParameter( m_gpf_newcokb3d->getParameter<GSLibParGrid*>(13) );
 
-    //cokb3d usually uses -999 as no-data-value
+    //the cokriging programs usually uses -999 as no-data-value
     m_cg_estimation->setNoDataValue( "-999" );
 
     //get the variable with the estimation values (normally the first)

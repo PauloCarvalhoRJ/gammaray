@@ -22,8 +22,8 @@ public:
      * It runs synchronously, meaning that the client code will block until
      * the called program finishes or crashes.
      * @param parFromStdIn If true, the paramater file path is passed via standard input. Some GSLib programs ignore
-     * the command line argument and still wait for the user to input the path to the parameter file.
-     * gammabar is known to have this unexpected behavior.
+     *                     the command line argument and still wait for the user to input the path to the parameter file.
+     *                     gammabar and newcokb3d are known to have this unexpected behavior.
      */
     void runProgram( const QString program_name, const QString par_file_path, bool parFromStdIn = false );
 
@@ -31,8 +31,11 @@ public:
      * Does the same as runProgram(), but does not block the client code.
      * Client code can connect to the programFinished() static signal to have control over
      * program termination.
+     * @param parFromStdIn If true, the paramater file path is passed via standard input. Some GSLib programs ignore
+     *                     the command line argument and still wait for the user to input the path to the parameter file.
+     *                     gammabar and newcokb3d are known to have this unexpected behavior.
      */
-    void runProgramAsync( const QString program_name, const QString par_file_path );
+    void runProgramAsync( const QString program_name, const QString par_file_path, bool parFromStdIn = false );
 
     /**
      * Does the same as runProgram(), but instead of blocking, the client code waits for

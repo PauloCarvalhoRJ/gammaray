@@ -67,6 +67,7 @@ private slots:
     void onParametersNewcokb3d();
     void onLMCcheck();
     void onCokb3dCompletes();
+    void onNewcokb3dCompletes();
     void onSave();
     void onSaveKrigingVariances();
     void onModelTypeChanged();
