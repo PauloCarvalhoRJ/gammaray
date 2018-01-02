@@ -55,7 +55,8 @@ private:
     CartesianGridSelector* m_cgLVMGridSelector;
     QVector<VariableSelector*> m_inputLVMVarsSelectors;
     CokrigingModelType m_newcokb3dModelType;
-    VariableSelector* m_secVarForMM2Selector;
+    VariogramModelSelector* m_collocVariogram;
+    VariogramModelSelector* m_collocVariogramForMM2ResidualComponent;
     GSLibParameterFile* m_gpf_newcokb3d;
 
 private slots:
@@ -71,7 +72,6 @@ private slots:
     void onSave();
     void onSaveKrigingVariances();
     void onModelTypeChanged();
-    void onSecVarForMM2Selected( int index );
 
 private:
     QLabel* makeLabel( const QString caption );

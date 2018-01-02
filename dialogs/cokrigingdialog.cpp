@@ -29,13 +29,12 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     m_cg_estimation( nullptr ),
     m_cokProg( cokProg ),
     m_newcokb3dModelType( CokrigingModelType::MM2 ),
-    m_secVarForMM2Selector( nullptr ),
+    m_collocVariogram( nullptr ),
+    m_collocVariogramForMM2ResidualComponent( nullptr ),
     m_gpf_newcokb3d( nullptr )
 {
 
     ui->setupUi(this);
-
-    ui->lblMM2Remark->setVisible( false );
 
     if( cokProg == CokrigingProgram::COKB3D )
     {
@@ -77,7 +76,7 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     m_cgEstimationGridSelector->setFont( font );
 
     //The list with existing cartesian grids in the project for the secondary data.
-    m_cgSecondaryGridSelector = new CartesianGridSelector( true );
+    m_cgSecondaryGridSelector = new CartesianGridSelector( );
     ui->frmSecondaryData->layout()->addWidget( m_cgSecondaryGridSelector );
     font = m_cgSecondaryGridSelector->font();
     font.setBold( false );
@@ -90,11 +89,11 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
     font.setBold( false );
     m_cgLVMGridSelector->setFont( font );
 
-    //The combo box of secondary variables available for the MM2 model (newcokb3d)
-    m_secVarForMM2Selector = makeVariableSelector();
-    ui->frmModelType->layout()->addWidget( m_secVarForMM2Selector );
-    connect( m_secVarForMM2Selector, SIGNAL(currentIndexChanged(int)),
-             this, SLOT(onSecVarForMM2Selected(int)));
+    //The variogram selectors for the MM1/MM2 models (newcokb3d mode)
+    m_collocVariogram = new VariogramModelSelector();
+    m_collocVariogramForMM2ResidualComponent = new VariogramModelSelector( true );
+    ui->frmModelType->layout()->addWidget( m_collocVariogram );
+    ui->frmModelType->layout()->addWidget( m_collocVariogramForMM2ResidualComponent );
 
     //Call this slot to create the widgets that are function of the number of secondary variables
     onNumberOfSecondaryVariablesChanged( 1 );
@@ -289,12 +288,9 @@ void CokrigingDialog::onUpdateVarMatrixLabels()
 
     //update the labels for the secondary variables
     QVector<VariableSelector*>::iterator itSelectors = m_inputSecVarsSelectors.begin();
-    m_secVarForMM2Selector->clear();
     for(; itSelectors != m_inputSecVarsSelectors.end(); ++itLabels, ++itLeftLabels, ++itSelectors){
         (*itLabels)->setText( (*itSelectors)->getSelectedVariableName() );
         (*itLeftLabels)->setText( (*itSelectors)->getSelectedVariableName() );
-        //Take the opportunity to fill the combobox of secondaries for MM2 (newcokb3d)
-        m_secVarForMM2Selector->addVariable( (*itSelectors)->getSelectedVariable() );
     }
 }
 
@@ -611,14 +607,16 @@ void CokrigingDialog::onParametersNewcokb3d()
         }
 
         //correlation coefficient for MM1 or MM2
-        m_gpf_newcokb3d->getParameter<GSLibParDouble*>(22)->_value =
-                psInputData->correlation( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1,
-                                          psInputData->getFieldGEOEASIndex( m_secVarForMM2Selector->getSelectedVariableName() ) - 1 );
+        //TODO: implement a way to compute correlation for variables in different files
+        m_gpf_newcokb3d->getParameter<GSLibParDouble*>(22)->_value = 0.7;
 
         //variance of secondary variable for MM1
-        m_gpf_newcokb3d->getParameter<GSLibParDouble*>(23)->_value =
-                psInputData->variance( psInputData->getFieldGEOEASIndex( m_secVarForMM2Selector->getSelectedVariableName() ) - 1 );
-                                            //^^^variance of the selected secondary^^^
+        if( cgColocSec ){
+            cgColocSec->loadData(); //load data to compute variance, otherwise zero is returned.
+            m_gpf_newcokb3d->getParameter<GSLibParDouble*>(23)->_value =
+                    cgColocSec->variance( m_inputGridSecVarsSelectors[0]->getSelectedVariableGEOEASIndex()-1 );
+                                //^^^variance of the selected secondary in the collocated grid^^^
+        }
 
         //variance of primary variable for MM2
         m_gpf_newcokb3d->getParameter<GSLibParDouble*>(24)->_value =
@@ -638,9 +636,9 @@ void CokrigingDialog::onParametersNewcokb3d()
     GSLibParMultiValuedVariable *par2 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedVariable*>(2);
     if( m_newcokb3dModelType == CokrigingModelType::MM1 ||
         m_newcokb3dModelType == CokrigingModelType::MM2 )
-        par2->assure( 4 );
+        par2->setSize( 4 );
     else
-        par2->assure( 3 + nvars );
+        par2->setSize( 3 + nvars );
     par2->getParameter<GSLibParUInt*>(0)->_value = psInputData->getXindex();
     par2->getParameter<GSLibParUInt*>(1)->_value = psInputData->getYindex();
     par2->getParameter<GSLibParUInt*>(2)->_value = psInputData->getZindex();
@@ -651,7 +649,7 @@ void CokrigingDialog::onParametersNewcokb3d()
         }
 
     //set cokriging options (if user set a grid with a colocated secondary variable)
-    if( cgColocSec ){
+    if( cgColocSec && m_newcokb3dModelType != CokrigingModelType::LMC ){
         //cokriging type (co-located)
         m_gpf_newcokb3d->getParameter<GSLibParOption*>(4)->_selected_value = 1;
         //file with co-located secondary data
@@ -714,7 +712,7 @@ void CokrigingDialog::onParametersNewcokb3d()
         par25_ii->getParameter<GSLibParUInt*>(0)->_value = 1;
         par25_ii->getParameter<GSLibParUInt*>(1)->_value = 1;
         //variogram model
-        VariogramModel *vm = getVariogramModel(1, 1);
+        VariogramModel *vm = m_collocVariogram->getSelectedVModel();
         GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(0, 1);
         par25_i->setFromVariogramModel( vm );
     }
@@ -725,26 +723,28 @@ void CokrigingDialog::onParametersNewcokb3d()
         GSLibParRepeat *par25 = m_gpf_newcokb3d->getParameter<GSLibParRepeat*>(25);
         par25->setCount( 2 );
         //------------the independent variogram of the secondary-------------
-        uint head = 2 + m_secVarForMM2Selector->getCurrentComboIndex();
-        uint tail = 2 + m_secVarForMM2Selector->getCurrentComboIndex();
         //variable indexes
         GSLibParMultiValuedFixed *par25_ii = par25->getParameter<GSLibParMultiValuedFixed*>(0, 0);
-        par25_ii->getParameter<GSLibParUInt*>(0)->_value = head;
-        par25_ii->getParameter<GSLibParUInt*>(1)->_value = tail;
+        par25_ii->getParameter<GSLibParUInt*>(0)->_value = 2;
+        par25_ii->getParameter<GSLibParUInt*>(1)->_value = 2;
         //variogram model
-        VariogramModel *vm = getVariogramModel(head, tail);
+        VariogramModel *vm = m_collocVariogram->getSelectedVModel();
         GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(0, 1);
         par25_i->setFromVariogramModel( vm );
-        //------------the variogram of the primary is used as residual variography---------------//
-        //------------see MM2 theory as http://www.academia.edu/26318937/Markov_Models_for_Cross-Covariances----//
+        //------------MM2 requires an additional variogram for a residual component---------------//
+        //------------see MM2 theory at http://www.academia.edu/26318937/Markov_Models_for_Cross-Covariances----//
         //variable indexes
         GSLibParMultiValuedFixed *par25_1i = par25->getParameter<GSLibParMultiValuedFixed*>(1, 0);
         par25_1i->getParameter<GSLibParUInt*>(0)->_value = 1;
         par25_1i->getParameter<GSLibParUInt*>(1)->_value = 1;
-        //variogram model
-        vm = getVariogramModel(1, 1);
+        //variogram model for the hypothetical residual component
+        vm = m_collocVariogramForMM2ResidualComponent->getSelectedVModel();
         GSLibParVModel *par25_1 = par25->getParameter<GSLibParVModel*>(1, 1);
-        par25_1->setFromVariogramModel( vm );
+        if( vm ) //if the user provided a variogram
+            par25_1->setFromVariogramModel( vm );
+        else
+            par25_1->makeNull();
+
     }
     //-------------------------------------------------------------------------------------------------------
 
@@ -838,10 +838,10 @@ void CokrigingDialog::onSaveKrigingVariances()
 
 void CokrigingDialog::onModelTypeChanged()
 {
-    ui->lblMM2Remark->setVisible( false );
     //do nothing the the cokriging program is not newcokb3d
     if( m_cokProg != CokrigingProgram::NEWCOKB3D )
         return;
+
     //determine variography model type
     int index = ui->cmbModelType->currentIndex();
     switch( index ){
@@ -849,6 +849,7 @@ void CokrigingDialog::onModelTypeChanged()
         case 1: m_newcokb3dModelType = CokrigingModelType::MM2; break;
         case 2: m_newcokb3dModelType = CokrigingModelType::LMC; break;
     }
+
     //for all current variogram selectors
     QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator it = m_variograms.begin();
     for(; it != m_variograms.end(); ++it){
@@ -866,57 +867,44 @@ void CokrigingDialog::onModelTypeChanged()
         //  a residual variogram is required, then we use the variogram selector for the primary for it.
         if( m_newcokb3dModelType == CokrigingModelType::MM2 && head == tail && head >= 1 ){
             vModelSelector->setEnabled( true );
-            ui->lblMM2Remark->setVisible( true );
         }
         //if LMC, then enable all variograms (auto- and cross-)
         if( m_newcokb3dModelType == CokrigingModelType::LMC )
             vModelSelector->setEnabled( true );
     }
-    //enable the secondary variable selector for MM2
-    if( m_newcokb3dModelType == CokrigingModelType::MM2 ){
-        ui->lblSecVarForMM2->setEnabled( true );
-        if( m_secVarForMM2Selector )
-            m_secVarForMM2Selector->setEnabled( true );
-        onSecVarForMM2Selected( 0 );
-    } else {
-        ui->lblSecVarForMM2->setEnabled( false );
-        if( m_secVarForMM2Selector )
-            m_secVarForMM2Selector->setEnabled( false );
-    }
 
-    //change the labels for the primary variable in the variography panel to "residual" if model is MM2
-    if( m_labelsVarMatrixTopHeader.size() > 0 && m_cokProg == CokrigingProgram::NEWCOKB3D ){
-        QVector<QLabel*>::iterator itLabels = m_labelsVarMatrixTopHeader.begin();
-        QVector<QLabel*>::iterator itLeftLabels = m_labelsVarMatrixLeftHeader.begin();
-        if( m_newcokb3dModelType == CokrigingModelType::MM2 ){
-            (*itLabels)->setText( "residual component" );
-            (*itLeftLabels)->setText( "residual component" );
-        } else {
-            (*itLabels)->setText( m_inputPrimVarSelector->getSelectedVariableName() );
-            (*itLeftLabels)->setText( m_inputPrimVarSelector->getSelectedVariableName() );
-        }
-    }
-}
-
-void CokrigingDialog::onSecVarForMM2Selected(int index)
-{
-    if( index < 0 )
+    //configure variography UI according to the model type
+    if( ! m_collocVariogram )
         return;
-    //get the secondary variable index
-    uint secVarIndex = index + 2; //first secondary (index 2) is at index 0 of the combobox.
-    //for all current variogram selectors
-    QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator it = m_variograms.begin();
-    for(; it != m_variograms.end(); ++it){
-        std::tuple<uint,uint,VariogramModelSelector*> tuple = *it;
-        uint head = std::get<0>( tuple );
-        uint tail = std::get<1>( tuple );
-        VariogramModelSelector* vModelSelector = std::get<2>( tuple );
-        //disable all secondary autovariogam selectors a priori
-        if( head == tail && head > 1 )
-            vModelSelector->setEnabled( false );
-        //enable the secondary autovariogram corresponding to the index.
-        if( head == tail && head == secVarIndex )
-            vModelSelector->setEnabled( true );
+    if( m_newcokb3dModelType == CokrigingModelType::MM2 ){
+        ui->lblCollocVariogram->setVisible( true );
+        m_collocVariogram->setVisible( true );
+        ui->lblCollocVariogram->setText("  variograms for secondary and residual:");
+        m_collocVariogramForMM2ResidualComponent->setVisible( true );
+        ui->frmVariogramArray->setVisible( false );
+        for( uint i = 0; i < (uint)m_inputSecVarsSelectors.size(); ++i)
+            m_inputSecVarsSelectors[i]->setVisible( false );
+        ui->frmOuterSecondaryData->setVisible( true );
+        ui->frmLMCCheck->setVisible( false );
+    } else if( m_newcokb3dModelType == CokrigingModelType::MM1 ) {
+        ui->lblCollocVariogram->setVisible( true );
+        m_collocVariogram->setVisible( true );
+        ui->lblCollocVariogram->setText("  variogram for primary:");
+        m_collocVariogramForMM2ResidualComponent->setVisible( false );
+        ui->frmVariogramArray->setVisible( false );
+        for( uint i = 0; i < (uint)m_inputSecVarsSelectors.size(); ++i)
+            m_inputSecVarsSelectors[i]->setVisible( false );
+        ui->frmOuterSecondaryData->setVisible( true );
+        ui->frmLMCCheck->setVisible( false );
+    } else { //full cokriging with LMC
+        ui->lblCollocVariogram->setVisible( false );
+        m_collocVariogram->setVisible( false );
+        m_collocVariogramForMM2ResidualComponent->setVisible( false );
+        ui->frmVariogramArray->setVisible( true );
+        for( uint i = 0; i < (uint)m_inputSecVarsSelectors.size(); ++i)
+            m_inputSecVarsSelectors[i]->setVisible( true );
+        ui->frmOuterSecondaryData->setVisible( false );
+        ui->frmLMCCheck->setVisible( true );
     }
 }
 

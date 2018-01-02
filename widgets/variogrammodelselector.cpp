@@ -5,8 +5,9 @@
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
 
-VariogramModelSelector::VariogramModelSelector(QWidget *parent) :
+VariogramModelSelector::VariogramModelSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
+    m_HasNotSetItem( show_not_set ),
     ui(new Ui::VariogramModelSelector)
 {
     ui->setupUi(this);
@@ -20,6 +21,8 @@ VariogramModelSelector::~VariogramModelSelector()
 
 VariogramModel *VariogramModelSelector::getSelectedVModel()
 {
+    if( m_HasNotSetItem && ui->cmbVariogramModels->currentIndex() == 0)
+        return nullptr;
     Project* project = Application::instance()->getProject();
     ObjectGroup* og = project->getVariogramsGroup();
     for( int i = 0; i < og->getChildCount(); ++i){
@@ -37,6 +40,9 @@ void VariogramModelSelector::updateList()
     ui->cmbVariogramModels->clear();
 
     ////////TODO: consider refactoring this code with the similar one in VariogramModelList's constructor.//////////
+    if( m_HasNotSetItem )
+        ui->cmbVariogramModels->addItem( "NOT SET" );
+
     Project* project = Application::instance()->getProject();
 
     ObjectGroup* og = project->getVariogramsGroup();
