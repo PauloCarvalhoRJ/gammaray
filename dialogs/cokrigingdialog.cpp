@@ -35,6 +35,8 @@ CokrigingDialog::CokrigingDialog(QWidget *parent, CokrigingProgram cokProg) :
 
     ui->setupUi(this);
 
+    ui->lblMM2Remark->setVisible( false );
+
     if( cokProg == CokrigingProgram::COKB3D )
     {
         this->setWindowTitle("Cokriging (with cokb3d)");
@@ -499,10 +501,9 @@ void CokrigingDialog::onParametersNewcokb3d()
 {
 
     /////////TODO///////////
-    //  Force SK with Collocated (OK leads to zeroing-out secondary)
     //  Copy all input data to GSLib directory
     //  Copy parameter file to GSLib directory
-    //  MM2 works with two variogram entries (study theory).
+    // Make all paths with only file name
 
     //surely the selected data is a PointSet
     PointSet* psInputData = (PointSet*)m_psInputSelector->getSelectedDataFile();
@@ -624,25 +625,30 @@ void CokrigingDialog::onParametersNewcokb3d()
                 psInputData->variance( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1 );
     }
 
-    //model type (1=MM1, 2=MM2,3=LMC)
-    m_gpf_newcokb3d->getParameter<GSLibParOption*>(21)->_selected_value = ui->cmbModelType->currentIndex()+1;
-
     //input data file
     m_gpf_newcokb3d->getParameter<GSLibParFile*>(0)->_path = psInputData->getPath();
 
     //number of variables (primary + secondaries)
     m_gpf_newcokb3d->getParameter<GSLibParUInt*>(1)->_value = nvars;
+    if( m_newcokb3dModelType == CokrigingModelType::MM1 ||
+        m_newcokb3dModelType == CokrigingModelType::MM2 )
+        m_gpf_newcokb3d->getParameter<GSLibParUInt*>(1)->_value = 1;
 
     //columns for X,Y,Z,primary and secondaries
     GSLibParMultiValuedVariable *par2 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedVariable*>(2);
-    par2->assure( 3 + nvars );
+    if( m_newcokb3dModelType == CokrigingModelType::MM1 ||
+        m_newcokb3dModelType == CokrigingModelType::MM2 )
+        par2->assure( 4 );
+    else
+        par2->assure( 3 + nvars );
     par2->getParameter<GSLibParUInt*>(0)->_value = psInputData->getXindex();
     par2->getParameter<GSLibParUInt*>(1)->_value = psInputData->getYindex();
     par2->getParameter<GSLibParUInt*>(2)->_value = psInputData->getZindex();
     par2->getParameter<GSLibParUInt*>(3)->_value = m_inputPrimVarSelector->getSelectedVariableGEOEASIndex();
-    for( uint i = 0; i < (uint)m_inputSecVarsSelectors.size(); ++i){
-        par2->getParameter<GSLibParUInt*>(4 + i)->_value = m_inputSecVarsSelectors[i]->getSelectedVariableGEOEASIndex();
-    }
+    if( m_newcokb3dModelType == CokrigingModelType::LMC )
+        for( uint i = 0; i < (uint)m_inputSecVarsSelectors.size(); ++i){
+            par2->getParameter<GSLibParUInt*>(4 + i)->_value = m_inputSecVarsSelectors[i]->getSelectedVariableGEOEASIndex();
+        }
 
     //set cokriging options (if user set a grid with a colocated secondary variable)
     if( cgColocSec ){
@@ -670,11 +676,11 @@ void CokrigingDialog::onParametersNewcokb3d()
         //column with co-located secondary data
         m_gpf_newcokb3d->getParameter<GSLibParUInt*>(9)->_value = m_inputLVMVarsSelectors[0]->getSelectedVariableGEOEASIndex();
     }else{
-        //cokriging type (full)
+        //LVM yes?
         m_gpf_newcokb3d->getParameter<GSLibParOption*>(7)->_selected_value = 0;
-        //file with co-located secondary data
+        //file with co-located LVM
         m_gpf_newcokb3d->getParameter<GSLibParFile*>(8)->_path = "";
-        //column with co-located secondary data
+        //file with co-located LVM
         m_gpf_newcokb3d->getParameter<GSLibParUInt*>(9)->_value = 0;
     }
 
@@ -689,6 +695,15 @@ void CokrigingDialog::onParametersNewcokb3d()
     par13->_specs_z->getParameter<GSLibParUInt*>(0)->_value = estimation_grid->getNZ(); //nz
     par13->_specs_z->getParameter<GSLibParDouble*>(1)->_value = estimation_grid->getZ0(); //min z
     par13->_specs_z->getParameter<GSLibParDouble*>(2)->_value = estimation_grid->getDZ(); //cell size z
+
+    //kriging type (0=SK, 1=OK, 2=OK-trad) is forced to SK if Collocated (ordinary kriging zero-outs
+    //the single secondary value because the sum of kriging weights must be zero).
+    if( m_newcokb3dModelType == CokrigingModelType::MM1 ||
+        m_newcokb3dModelType == CokrigingModelType::MM2 )
+        m_gpf_newcokb3d->getParameter<GSLibParOption*>(19)->_selected_value = 0;
+
+    //model type (1=MM1, 2=MM2,3=LMC)
+    m_gpf_newcokb3d->getParameter<GSLibParOption*>(21)->_selected_value = ui->cmbModelType->currentIndex()+1;
 
     //---------------------------------variogram for MM1 variography-------------------------//
     if( m_newcokb3dModelType == CokrigingModelType::MM1 ){
@@ -708,7 +723,8 @@ void CokrigingDialog::onParametersNewcokb3d()
     //---------------------------------variogram for MM2 variography-------------------------//
     if( m_newcokb3dModelType == CokrigingModelType::MM2 ){
         GSLibParRepeat *par25 = m_gpf_newcokb3d->getParameter<GSLibParRepeat*>(25);
-        par25->setCount( 1 );
+        par25->setCount( 2 );
+        //------------the independent variogram of the secondary-------------
         uint head = 2 + m_secVarForMM2Selector->getCurrentComboIndex();
         uint tail = 2 + m_secVarForMM2Selector->getCurrentComboIndex();
         //variable indexes
@@ -719,6 +735,16 @@ void CokrigingDialog::onParametersNewcokb3d()
         VariogramModel *vm = getVariogramModel(head, tail);
         GSLibParVModel *par25_i = par25->getParameter<GSLibParVModel*>(0, 1);
         par25_i->setFromVariogramModel( vm );
+        //------------the variogram of the primary is used as residual variography---------------//
+        //------------see MM2 theory as http://www.academia.edu/26318937/Markov_Models_for_Cross-Covariances----//
+        //variable indexes
+        GSLibParMultiValuedFixed *par25_1i = par25->getParameter<GSLibParMultiValuedFixed*>(1, 0);
+        par25_1i->getParameter<GSLibParUInt*>(0)->_value = 1;
+        par25_1i->getParameter<GSLibParUInt*>(1)->_value = 1;
+        //variogram model
+        vm = getVariogramModel(1, 1);
+        GSLibParVModel *par25_1 = par25->getParameter<GSLibParVModel*>(1, 1);
+        par25_1->setFromVariogramModel( vm );
     }
     //-------------------------------------------------------------------------------------------------------
 
@@ -812,6 +838,7 @@ void CokrigingDialog::onSaveKrigingVariances()
 
 void CokrigingDialog::onModelTypeChanged()
 {
+    ui->lblMM2Remark->setVisible( false );
     //do nothing the the cokriging program is not newcokb3d
     if( m_cokProg != CokrigingProgram::NEWCOKB3D )
         return;
@@ -835,8 +862,12 @@ void CokrigingDialog::onModelTypeChanged()
         if( m_newcokb3dModelType == CokrigingModelType::MM1 && head == 1 && tail == 1 )
             vModelSelector->setEnabled( true );
         //if MM2, then enable the autovariograms for the secondaries
-        if( m_newcokb3dModelType == CokrigingModelType::MM2 && head == tail && head > 1 )
+        //  per theory (http://www.academia.edu/26318937/Markov_Models_for_Cross-Covariances)
+        //  a residual variogram is required, then we use the variogram selector for the primary for it.
+        if( m_newcokb3dModelType == CokrigingModelType::MM2 && head == tail && head >= 1 ){
             vModelSelector->setEnabled( true );
+            ui->lblMM2Remark->setVisible( true );
+        }
         //if LMC, then enable all variograms (auto- and cross-)
         if( m_newcokb3dModelType == CokrigingModelType::LMC )
             vModelSelector->setEnabled( true );
@@ -851,6 +882,19 @@ void CokrigingDialog::onModelTypeChanged()
         ui->lblSecVarForMM2->setEnabled( false );
         if( m_secVarForMM2Selector )
             m_secVarForMM2Selector->setEnabled( false );
+    }
+
+    //change the labels for the primary variable in the variography panel to "residual" if model is MM2
+    if( m_labelsVarMatrixTopHeader.size() > 0 && m_cokProg == CokrigingProgram::NEWCOKB3D ){
+        QVector<QLabel*>::iterator itLabels = m_labelsVarMatrixTopHeader.begin();
+        QVector<QLabel*>::iterator itLeftLabels = m_labelsVarMatrixLeftHeader.begin();
+        if( m_newcokb3dModelType == CokrigingModelType::MM2 ){
+            (*itLabels)->setText( "residual component" );
+            (*itLeftLabels)->setText( "residual component" );
+        } else {
+            (*itLabels)->setText( m_inputPrimVarSelector->getSelectedVariableName() );
+            (*itLeftLabels)->setText( m_inputPrimVarSelector->getSelectedVariableName() );
+        }
     }
 }
 
