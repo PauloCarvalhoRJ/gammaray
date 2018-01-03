@@ -948,17 +948,19 @@ void CokrigingDialog::preview()
     if( m_cg_estimation )
         delete m_cg_estimation;
 
-    //get the tmp file path created by cokb3d with the estimates and kriging variances
+    //get the tmp file path created by cokriging program with the estimates and kriging variances
     QString grid_file_path;
     if( m_cokProg == CokrigingProgram::COKB3D )
         grid_file_path = m_gpf_cokb3d->getParameter<GSLibParFile*>(9)->_path;
     else
-        grid_file_path = m_gpf_newcokb3d->getParameter<GSLibParFile*>(12)->_path;
+        grid_file_path = Application::instance()->getProject()->getTmpPath() + "/" +
+                m_gpf_newcokb3d->getParameter<GSLibParFile*>(12)->_path; //output file for newcokb3d is not (cannot be) a complete path
 
     //the cokriging programs may fail to estimate, most of times due to non-LMC variography
     QFile file( grid_file_path );
     if( ! file.exists() ){
-        Application::instance()->logError( "File with estimates not found. Check cokriging program messages." );
+        Application::instance()->
+                logError( "CokrigingDialog::preview(): File with estimates not found. Check cokriging program messages." );
         return;
     }
 
