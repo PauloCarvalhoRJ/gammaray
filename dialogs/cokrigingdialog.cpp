@@ -988,7 +988,7 @@ void CokrigingDialog::preview()
 
 void CokrigingDialog::save(bool estimates)
 {
-    if( ! m_gpf_cokb3d || ! m_cg_estimation ){
+    if( ! ( m_gpf_cokb3d || m_gpf_newcokb3d ) || ! m_cg_estimation ){
         QMessageBox::critical( this, "Error", "Please, run the estimation at least once.");
         return;
     }
@@ -1000,9 +1000,21 @@ void CokrigingDialog::save(bool estimates)
         return;
     }
 
+    QString estimatesSuffix = "_CK_ESTIMATES";
+    QString variancesSuffix = "_CK_KVARIANCES";
+    if( m_cokProg == CokrigingProgram::NEWCOKB3D) {
+        if(m_newcokb3dModelType == CokrigingModelType::MM1 ){
+            estimatesSuffix = "_MM1_ESTIMATES";
+            variancesSuffix = "_MM1_KVARIANCES";
+        }else if(m_newcokb3dModelType == CokrigingModelType::MM2 ){
+            estimatesSuffix = "_MM2_ESTIMATES";
+            variancesSuffix = "_MM2_KVARIANCES";
+        }
+    }
+
     //suggest a name to the user
     QString proposed_name( m_inputPrimVarSelector->getSelectedVariableName() );
-    proposed_name = proposed_name.append( ( estimates ? "_CK_ESTIMATES" : "_CK_KVARIANCES" ) );
+    proposed_name = proposed_name.append( ( estimates ? estimatesSuffix : variancesSuffix ) );
 
     //presents a dialog so the user can change the suggested name.
     bool ok;

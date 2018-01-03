@@ -116,6 +116,7 @@ void GSLib::runProgramAsync(const QString program_name,
     m_process->start( command );
     if( parFromStdIn ){
         m_process->write( QString(par_file_path).append('\n').append('y').append('\n').toStdString().c_str() );
+    //Sometimes the newcokb3d program asks a "are you sure" question.^^^
     }
 }
 
