@@ -501,6 +501,10 @@ void CokrigingDialog::onParametersNewcokb3d()
     //  Copy parameter file to GSLib directory
     // Make all paths with only file name
 
+    //ATTENTION FILE PATHS: due to newcokb3d bad file access code, all involved files
+    // are copied or generated in the project temp directory along the program executable so they
+    // are located in the same directory.  newcokb3d does not work with files located elsewere.
+
     //surely the selected data is a PointSet
     PointSet* psInputData = (PointSet*)m_psInputSelector->getSelectedDataFile();
 
@@ -521,6 +525,7 @@ void CokrigingDialog::onParametersNewcokb3d()
 
     //surely the co-located secondary is in a CartesianGrid
     CartesianGrid* cgColocSec = (CartesianGrid*)m_cgSecondaryGridSelector->getSelectedDataFile();
+    cgColocSec->loadData();
 
     //-----------determine the absolute maximum and minimum of input data in all the selected variables-----------
     //load the data
@@ -535,14 +540,23 @@ void CokrigingDialog::onParametersNewcokb3d()
         selectedColumns.append( m_inputSecVarsSelectors[i]->getSelectedVariableGEOEASIndex() - 1 );
     }
     //compute the absolute max and min from the MINs and MAXes of each variables
-    QVector<int>::iterator it = selectedColumns.begin();
-    for(; it != selectedColumns.end(); ++it ){
-        double min = psInputData->min( *it );
-        double max = psInputData->max( *it );
-        if( min < minAll )
-            minAll = min;
-        if( max > maxAll )
-            maxAll = max;
+    if( m_newcokb3dModelType == CokrigingModelType::LMC ){
+        QVector<int>::iterator it = selectedColumns.begin();
+        for(; it != selectedColumns.end(); ++it ){
+            double min = psInputData->min( *it );
+            double max = psInputData->max( *it );
+            if( min < minAll )
+                minAll = min;
+            if( max > maxAll )
+                maxAll = max;
+        }
+    } else { //min and max for MM1 and MM2 (primary in the point set, secondary in a grid
+        minAll = psInputData->min( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1 );
+        maxAll = psInputData->max( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1 );
+        double min = cgColocSec->min( m_inputGridSecVarsSelectors[0]->getSelectedVariableGEOEASIndex()-1 );
+        double max = cgColocSec->max( m_inputGridSecVarsSelectors[0]->getSelectedVariableGEOEASIndex()-1 );
+        if( min < minAll ) minAll = min;
+        if( max > maxAll ) maxAll = max;
     }
     //--------------------------------------------------------------------------------------------------------------
 
@@ -564,7 +578,7 @@ void CokrigingDialog::onParametersNewcokb3d()
 
         //file with estimates output
         m_gpf_newcokb3d->getParameter<GSLibParFile*>(12)->_path =
-                Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+                Util::getFileName( Application::instance()->getProject()->generateUniqueTmpFilePath("out") );
 
         // maximum search radii for primary (init from variogram ranges)
         VariogramModel* primVariogram = getVariogramModel(1, 1);
@@ -601,9 +615,16 @@ void CokrigingDialog::onParametersNewcokb3d()
         //means (primary and secondaries)
         GSLibParMultiValuedVariable *par20 = m_gpf_newcokb3d->getParameter<GSLibParMultiValuedVariable*>(20);
         par20->assure( nvars );
-        QVector<int>::iterator it = selectedColumns.begin();
-        for(uint i = 0; it != selectedColumns.end(); ++it, ++i ){
-            par20->getParameter<GSLibParDouble*>( i )->_value = psInputData->mean( *it );
+        if( m_newcokb3dModelType == CokrigingModelType::LMC ){
+            QVector<int>::iterator it = selectedColumns.begin();
+            for(uint i = 0; it != selectedColumns.end(); ++it, ++i ){
+                par20->getParameter<GSLibParDouble*>( i )->_value = psInputData->mean( *it );
+            }
+        } else { //MM1 and MM2
+            par20->getParameter<GSLibParDouble*>( 0 )->_value =
+                    psInputData->mean( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex()-1 ); //mean of primary in point set
+            par20->getParameter<GSLibParDouble*>( 1 )->_value =
+                    cgColocSec->mean( m_inputGridSecVarsSelectors[0]->getSelectedVariableGEOEASIndex()-1 ); //mean of colocated secondary (grid)
         }
 
         //correlation coefficient for MM1 or MM2
@@ -612,7 +633,6 @@ void CokrigingDialog::onParametersNewcokb3d()
 
         //variance of secondary variable for MM1
         if( cgColocSec ){
-            cgColocSec->loadData(); //load data to compute variance, otherwise zero is returned.
             m_gpf_newcokb3d->getParameter<GSLibParDouble*>(23)->_value =
                     cgColocSec->variance( m_inputGridSecVarsSelectors[0]->getSelectedVariableGEOEASIndex()-1 );
                                 //^^^variance of the selected secondary in the collocated grid^^^
@@ -624,7 +644,9 @@ void CokrigingDialog::onParametersNewcokb3d()
     }
 
     //input data file
-    m_gpf_newcokb3d->getParameter<GSLibParFile*>(0)->_path = psInputData->getPath();
+    QString pointSetFileInTmpPath = Util::copyFileToDir( psInputData->getPath(),
+                                                         Application::instance()->getProject()->getTmpPath() );
+    m_gpf_newcokb3d->getParameter<GSLibParFile*>(0)->_path = Util::getFileName( pointSetFileInTmpPath );
 
     //number of variables (primary + secondaries)
     m_gpf_newcokb3d->getParameter<GSLibParUInt*>(1)->_value = nvars;
@@ -653,7 +675,9 @@ void CokrigingDialog::onParametersNewcokb3d()
         //cokriging type (co-located)
         m_gpf_newcokb3d->getParameter<GSLibParOption*>(4)->_selected_value = 1;
         //file with co-located secondary data
-        m_gpf_newcokb3d->getParameter<GSLibParFile*>(5)->_path = cgColocSec->getPath();
+        QString cgColocSecFileInTmpPath = Util::copyFileToDir( cgColocSec->getPath(),
+                                                               Application::instance()->getProject()->getTmpPath() );
+        m_gpf_newcokb3d->getParameter<GSLibParFile*>(5)->_path = Util::getFileName( cgColocSecFileInTmpPath );
         //column with co-located secondary data
         m_gpf_newcokb3d->getParameter<GSLibParUInt*>(6)->_value = m_inputGridSecVarsSelectors[0]->getSelectedVariableGEOEASIndex();
     }else{
@@ -670,7 +694,9 @@ void CokrigingDialog::onParametersNewcokb3d()
         //LVM yes?
         m_gpf_newcokb3d->getParameter<GSLibParOption*>(7)->_selected_value = 1;
         //file with co-located secondary data
-        m_gpf_newcokb3d->getParameter<GSLibParFile*>(8)->_path = cgLVM->getPath();
+        QString cgLVMFileInTmpPath = Util::copyFileToDir( cgLVM->getPath(),
+                                                          Application::instance()->getProject()->getTmpPath() );
+        m_gpf_newcokb3d->getParameter<GSLibParFile*>(8)->_path = Util::getFileName( cgLVMFileInTmpPath );
         //column with co-located secondary data
         m_gpf_newcokb3d->getParameter<GSLibParUInt*>(9)->_value = m_inputLVMVarsSelectors[0]->getSelectedVariableGEOEASIndex();
     }else{
@@ -785,9 +811,18 @@ void CokrigingDialog::onParametersNewcokb3d()
         //to be notified when newcokb3d completes.
         connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onNewcokb3dCompletes()) );
 
+        //copy the program executable to temp directory... (buggy necokb3d file access code)
+        QString progExecutableName = "newcokb3d";
+#ifdef Q_OS_WIN
+        progExecutableName += ".exe";
+#endif
+        QString fullNewcokb3dPath = Util::copyFileToDir( Application::instance()->getGSLibPathSetting() + "/" +
+                                                         progExecutableName,
+                                                         Application::instance()->getProject()->getTmpPath());
+
         //run newcokb3d program asynchronously
-        Application::instance()->logInfo("Starting newcokb3d program...");
-        GSLib::instance()->runProgramAsync( "newcokb3d", par_file_path, true );
+        Application::instance()->logInfo("Starting newcokb3d program in temp directory...");
+        GSLib::instance()->runProgramAsync( fullNewcokb3dPath, Util::getFileName( par_file_path ), true );
     }
 }
 

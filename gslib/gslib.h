@@ -31,6 +31,8 @@ public:
      * Does the same as runProgram(), but does not block the client code.
      * Client code can connect to the programFinished() static signal to have control over
      * program termination.
+     * @param program_name The name of an executable (without extension even under Windows) or a complete path to an executable.
+     *                     In the first case (most common applications), the GSLib directory as configured in GammaRay is assumed.
      * @param parFromStdIn If true, the paramater file path is passed via standard input. Some GSLib programs ignore
      *                     the command line argument and still wait for the user to input the path to the parameter file.
      *                     gammabar and newcokb3d are known to have this unexpected behavior.

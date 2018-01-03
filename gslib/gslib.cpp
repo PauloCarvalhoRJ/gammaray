@@ -81,7 +81,13 @@ void GSLib::runProgramAsync(const QString program_name, const QString par_file_p
 
     gslib_program = QString("\"").append(gslib_program).append("\"");
 
-    QString command = gslib_program;
+    bool programNameHasPath = program_name.contains('/') || program_name.contains('\\') ;
+
+    QString command;
+    if( ! programNameHasPath )
+        command = gslib_program;
+    else
+        command = program_name;
     if( !parFromStdIn )
         command.append(" \"").append( par_file_path ).append("\"");
 

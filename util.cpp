@@ -1790,3 +1790,9 @@ std::int64_t Util::getPhysicalRAMusage()
     return (std::int64_t)-1;
 #endif
 }
+
+QString Util::getFileName(QString path)
+{
+    QFileInfo fileinfo( path );
+    return fileinfo.fileName();
+}
