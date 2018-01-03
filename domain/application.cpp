@@ -80,7 +80,10 @@ void Application::setMaxGridCellCountFor3DVisualizationSetting(int value)
 void Application::logInfo(const QString text, bool showMessageBox)
 {
     Q_ASSERT(_mw != 0);
-    _mw->log_message( text, "information" );
+    if( _logInfo )
+        _mw->log_message( text, "information" );
+    else
+        _infoBuffer.push_back( text );
     if( showMessageBox )
         QMessageBox::information( nullptr, "Information", text );
 }
@@ -185,6 +188,33 @@ void Application::logErrorOn()
     }
 }
 
+void Application::logInfoOn()
+{
+    logInfo("Information messages back on. ");
+    _logInfo = true;
+    if( ! _infoBuffer.empty() ){
+        logInfo("Buffered error messages dump:");
+        std::vector<QString>::iterator it = _infoBuffer.begin();
+        QString lastMessage;
+        int repeatedMessagesCount = 0;
+        for(; it != _infoBuffer.end(); ++it){
+            QString currentMessage = (*it);
+            if( currentMessage != lastMessage ){
+                if( repeatedMessagesCount > 0 )
+                    logError("   Followed by more " + QString::number(repeatedMessagesCount) + " message(s) like that." );
+                logError( currentMessage );
+                repeatedMessagesCount = 0;
+            } else {
+                ++repeatedMessagesCount;
+            }
+            lastMessage = currentMessage;
+        }
+        _infoBuffer.clear();
+        if( repeatedMessagesCount > 0 )
+            logError("   Followed by more " + QString::number(repeatedMessagesCount) + " message(s) like that." );
+    }
+}
+
 QByteArray Application::getMainWindowSplitterSetting()
 {
     QSettings qs;
@@ -251,7 +281,8 @@ QString Application::getGhostscriptPathSetting()
 
 Application::Application() :
     _logWarnings( true ),
-    _logErrors( true )
+    _logErrors( true ),
+    _logInfo( true )
 {
     this->_open_project = nullptr;
 }

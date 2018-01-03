@@ -17,7 +17,7 @@ class View3DWidget;
 
 class View3DStyle;
 
-class QVTKWidget;
+class QVTKWidget2;
 class QListWidgetItem;
 class View3DConfigWidget;
 class View3DVerticalExaggerationWidget;
@@ -43,7 +43,7 @@ private:
     vtkSmartPointer<vtkRenderer> _renderer;
 
     //the Qt widget containing a VTK viewport
-    QVTKWidget* _vtkwidget;
+    QVTKWidget2* _vtkwidget;
 
     //the list of current VTK actors/visual objects indexed by their associated domain object info.
     QMap< View3DListRecord, View3DViewData > _currentObjects;

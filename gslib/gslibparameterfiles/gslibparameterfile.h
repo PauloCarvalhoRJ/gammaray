@@ -69,6 +69,14 @@ public:
     T getParameter(int i);
 
     /**
+     * Returns a parameter object cast to the desired parameter class.
+     * @param name Name given to the parameters (works only on named parameters).  Returns nullptr if no parameter
+     *             with the given name is not found.
+     */
+    template<typename T>
+    T getParameterByName(QString name);
+
+    /**
      * Performs a deep search in the main parameter collection as well as collections within it to find the
      * parameter with the given name.  It is useful to find named parameters that are not directly children
      * of the _params collection, a limitation of the getParameterIndexByName() method.  Returns a null pointer
@@ -108,6 +116,12 @@ public:
      * NOTE: all parameters of type GSLibParGrid found will be set.
      */
     void setGridParameters( CartesianGrid* cg );
+
+    /** Adds a GSLib parameter object (any subclass of GSLibParType) to the collection of parameters.
+     * This functions is useful in applications that require an ad-hoc parameter setting instead of
+     * reading them from a parameter template file.
+     */
+    void addParameter( GSLibParType* param );
 
 public: //-------static functions---------------
     /**
@@ -272,6 +286,18 @@ T GSLibParameterFile::getParameter(int i)
 {
     //TODO: this code needs more robustness.  It assumes it returns a valid pointer.
     return (T)(this->_params.at( i ));
+}
+
+template<typename T>
+T GSLibParameterFile::getParameterByName(QString name)
+{
+    //TODO: this code needs more robustness.  It assumes it returns a valid pointer.
+    QList<GSLibParType*>::iterator it = _params.begin();
+    for(; it != _params.end(); ++it){
+        if( (*it)->getName() == name )
+            return (T)*it;
+    }
+    return nullptr;
 }
 
 #endif // GSLIBPARAMETERFILE_H

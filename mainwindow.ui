@@ -240,7 +240,7 @@
      <x>0</x>
      <y>0</y>
      <width>463</width>
-     <height>21</height>
+     <height>26</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -278,6 +278,7 @@
      <string>Tools</string>
     </property>
     <addaction name="actionImage_Jockey"/>
+    <addaction name="actionMachine_Learning"/>
    </widget>
    <widget class="QMenu" name="menuSimulation">
     <property name="title">
@@ -364,6 +365,11 @@
   <action name="actionSGSIM">
    <property name="text">
     <string>SGSIM</string>
+   </property>
+  </action>
+  <action name="actionMachine_Learning">
+   <property name="text">
+    <string>Machine Learning</string>
    </property>
   </action>
  </widget>
@@ -571,6 +577,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionMachine_Learning</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onMachineLearning()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -584,5 +606,6 @@
   <slot>openCokriging()</slot>
   <slot>openImageJockey()</slot>
   <slot>openSGSIM()</slot>
+  <slot>onMachineLearning()</slot>
  </slots>
 </ui>

@@ -33,6 +33,11 @@ QString VariableSelector::getSelectedVariableName()
     return ui->cmbVariable->currentText();
 }
 
+void VariableSelector::setCaption(QString caption)
+{
+    ui->lblCaption->setText( caption );
+}
+
 void VariableSelector::onListVariables(DataFile *file)
 {
     m_dataFile = file;

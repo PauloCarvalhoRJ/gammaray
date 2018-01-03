@@ -27,6 +27,9 @@ public:
     /** Returns the name of the selected variable. */
     QString getSelectedVariableName();
 
+    /** Sets an option caption text. */
+    void setCaption( QString caption );
+
 signals:
     void variableSelected( Attribute* at );
 

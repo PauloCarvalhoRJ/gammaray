@@ -26,6 +26,7 @@
 #include <QModelIndexList>
 #include <typeinfo>
 #include <cmath>
+#include <thread>
 #include "domain/projectcomponent.h"
 #include "domain/file.h"
 #include "dialogs/filecontentsdialog.h"
@@ -60,6 +61,7 @@
 #include "dialogs/cokrigingdialog.h"
 #include "dialogs/multivariogramdialog.h"
 #include "dialogs/sgsimdialog.h"
+#include "dialogs/machinelearningdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 
@@ -137,6 +139,13 @@ MainWindow::MainWindow(QWidget *parent) :
     QScreen *screen0 = QApplication::screens().at(0);
     qreal rDPI = (qreal)screen0->logicalDotsPerInch();
     Application::instance()->logInfo(QString("----screen DPI (display 0): ").append(QString::number( rDPI )).append("."));
+
+    //show detected number of processors
+    unsigned int numOfCPUs = std::thread::hardware_concurrency();
+    if( numOfCPUs >= 1)
+        Application::instance()->logInfo( QString("Number of logical processors: ").append( QString::number( numOfCPUs ) ) );
+    else
+        Application::instance()->logInfo( QString("Number of logical processors: unable to detect.") );
 
     //add a custom menu item to the QTextEdit's standard context menu.
     ui->txtedMessages->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -1600,6 +1609,12 @@ void MainWindow::onRFFT()
 void MainWindow::onUpdateStatusBar()
 {
     statusBar()->showMessage( "memory usage = " + Util::humanReadable( Util::getPhysicalRAMusage() ) + "B" );
+}
+
+void MainWindow::onMachineLearning()
+{
+    MachineLearningDialog* mld = new MachineLearningDialog( this );
+    mld->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()

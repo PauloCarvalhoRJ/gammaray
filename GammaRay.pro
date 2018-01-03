@@ -177,7 +177,17 @@ SOURCES += main.cpp\
     spectral/pca.cpp \
     spectral/spectral.cpp \
     imagejockey/imagejockeysvdutils.cpp \
-    imagejockey/svdparametersdialog.cpp
+    imagejockey/svdparametersdialog.cpp \
+    algorithms/ialgorithmdatasource.cpp \
+    algorithms/bootstrap.cpp \
+    dialogs/machinelearningdialog.cpp \
+    algorithms/CART/cart.cpp \
+    algorithms/CART/cartdecisionnode.cpp \
+    algorithms/CART/cartleafnode.cpp \
+    algorithms/CART/cartnode.cpp \
+    algorithms/CART/cartsplitcriterion.cpp \
+    algorithms/randomforest.cpp \
+    algorithms/decisiontree.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -334,7 +344,17 @@ HEADERS  += mainwindow.h \
     spectral/pca.h \
     spectral/spectral.h \
     imagejockey/imagejockeysvdutils.h \
-    imagejockey/svdparametersdialog.h
+    imagejockey/svdparametersdialog.h \
+    algorithms/ialgorithmdatasource.h \
+    algorithms/bootstrap.h \
+    dialogs/machinelearningdialog.h \
+    algorithms/CART/cart.h \
+    algorithms/CART/cartdecisionnode.h \
+    algorithms/CART/cartleafnode.h \
+    algorithms/CART/cartnode.h \
+    algorithms/CART/cartsplitcriterion.h \
+    algorithms/randomforest.h \
+    algorithms/decisiontree.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -399,7 +419,8 @@ FORMS    += mainwindow.ui \
     dialogs/sgsimdialog.ui \
     widgets/distributionfieldselector.ui \
     viewer3d/view3dverticalexaggerationwidget.ui \
-    imagejockey/svdparametersdialog.ui
+    imagejockey/svdparametersdialog.ui \
+    dialogs/machinelearningdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -456,7 +477,8 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
                -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingMath$$_VTK_VERSION_SUFFIX
+               -lvtkImagingMath$$_VTK_VERSION_SUFFIX \
+               -lvtkGUISupportQtOpenGL$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
@@ -487,7 +509,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 3.2
+VERSION = 3.5
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
