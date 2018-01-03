@@ -36,8 +36,13 @@ public:
      * @param parFromStdIn If true, the paramater file path is passed via standard input. Some GSLib programs ignore
      *                     the command line argument and still wait for the user to input the path to the parameter file.
      *                     gammabar and newcokb3d are known to have this unexpected behavior.
+     * @param working_directory A path to a directory to start the program in.  Some programs (newcokb3d) do not work when started
+     *                          from GammaRay's directory.
      */
-    void runProgramAsync( const QString program_name, const QString par_file_path, bool parFromStdIn = false );
+    void runProgramAsync(const QString program_name,
+                         const QString par_file_path,
+                         bool parFromStdIn = false ,
+                         const QString working_directory = QString());
 
     /**
      * Does the same as runProgram(), but instead of blocking, the client code waits for

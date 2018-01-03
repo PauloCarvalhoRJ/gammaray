@@ -769,7 +769,7 @@ void CokrigingDialog::onParametersNewcokb3d()
         if( vm ) //if the user provided a variogram
             par25_1->setFromVariogramModel( vm );
         else
-            par25_1->makeNull();
+            par25_1->makeDefault();
 
     }
     //-------------------------------------------------------------------------------------------------------
@@ -822,7 +822,10 @@ void CokrigingDialog::onParametersNewcokb3d()
 
         //run newcokb3d program asynchronously
         Application::instance()->logInfo("Starting newcokb3d program in temp directory...");
-        GSLib::instance()->runProgramAsync( fullNewcokb3dPath, Util::getFileName( par_file_path ), true );
+        GSLib::instance()->runProgramAsync( fullNewcokb3dPath,
+                                            Util::getFileName( par_file_path ),
+                                            true,
+                                            Application::instance()->getProject()->getTmpPath() );
     }
 }
 
@@ -1041,16 +1044,21 @@ VariogramModelSelector *CokrigingDialog::makeVariogramModelSelector()
 VariogramModel *CokrigingDialog::getVariogramModel(uint head, uint tail)
 {
     VariogramModel* result = nullptr;
-    QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator it = m_variograms.begin();
-    for(; it != m_variograms.end(); ++it){
-        std::tuple<uint,uint,VariogramModelSelector*> tuple = *it;
-        uint myHead = std::get<0>( tuple );
-        uint myTail = std::get<1>( tuple );
-        if( ( myHead == head && myTail == tail ) ||
-            ( myHead == tail && myTail == head ) ){
-            VariogramModelSelector* vModelSelector = std::get<2>( tuple );
-            return vModelSelector->getSelectedVModel();
+    if( m_cokProg == CokrigingProgram::COKB3D || m_newcokb3dModelType == CokrigingModelType::LMC ){
+        //for cokb3d and newcokb3d in LMC (full cokriging) mode use the matrix of variograms
+        QVector< std::tuple<uint,uint,VariogramModelSelector*> >::iterator it = m_variograms.begin();
+        for(; it != m_variograms.end(); ++it){
+            std::tuple<uint,uint,VariogramModelSelector*> tuple = *it;
+            uint myHead = std::get<0>( tuple );
+            uint myTail = std::get<1>( tuple );
+            if( ( myHead == head && myTail == tail ) ||
+                ( myHead == tail && myTail == head ) ){
+                VariogramModelSelector* vModelSelector = std::get<2>( tuple );
+                return vModelSelector->getSelectedVModel();
+            }
         }
+    } else { //for newcokb3d MM1 and MM2 return the single variogram selected independently of head/tail indexes passed
+        result = m_collocVariogram->getSelectedVModel();
     }
     return result;
 }
