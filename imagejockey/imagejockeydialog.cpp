@@ -356,7 +356,11 @@ void ImageJockeyDialog::onSVD()
 
     long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
     SVDParametersDialog dlg( this );
-    dlg.exec();
+    int userResponse = dlg.exec();
+
+    if( userResponse != QDialog::Accepted )
+        return;
+
     spectral::array a = cg->getSpectralArray( selectedAttributeIndex );
     spectral::SVD svd = spectral::svd( a );
 
