@@ -262,6 +262,13 @@ public:
       */
     int addNewDataColumn( const QString columnName, const std::vector<double> &values, CategoryDefinition *cd = nullptr );
 
+    /**
+     * Removes a variable (data column in file) given its index in the data array. Subclasses with specific variable-dependent info
+     * should override this AND call this implementation (DataFile::deleteVariable()), unless they handle data removal
+     * themselves.  Any data loaded into memory is erased prior to data removal from file.
+     */
+    virtual void deleteVariable( uint column );
+
 //File interface
     void deleteFromFS();
     void writeToFS();
@@ -278,7 +285,7 @@ protected:
     /** The no-data value specified by the user. */
     QString _no_data_value;
 
-    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical point set file. */
+    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical file. */
     void updatePropertyCollection();
 
     /**
@@ -296,7 +303,7 @@ protected:
 
     /**
      * Stores the file timestamp in the last call to loadData().
-     * This time is used to detect whether there as a change in the file, to prevent
+     * This time is used to detect whether there is a change in the file, to prevent
      * unnecessary data reloads.
      */
     QDateTime _lastModifiedDateTimeLastLoad;

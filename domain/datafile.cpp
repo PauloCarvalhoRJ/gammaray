@@ -806,3 +806,59 @@ int DataFile::addNewDataColumn(const QString columnName, const std::vector<doubl
     //returns the index of the new column
     return indexGEOEAS - 1;
 }
+
+void DataFile::deleteVariable( uint column )
+{
+    if( getDataColumnCount() < 2 ){
+        Application::instance()->logError("DataFile::deleteVariable(): Cannot delete the single variable of a file.  Remove the file instead.");
+        return;
+    }
+
+    //delete any data loaded to memory.
+    freeLoadedData();
+
+    //remove any references to the variable in the list of nscore-variable relation
+    QMap<uint, QPair<uint, QString> >::iterator it = _nsvar_var_trn.begin();
+    for(; it != _nsvar_var_trn.end();){
+        if( it.key() == column || it->first == column )
+            it = _nsvar_var_trn.erase( it ); //QMap::erase() does the increment to the next element (do not add ++ here)
+        else
+            ++it;
+    }
+
+    //Decrement all indexes greater than the deleted variable index in the list of nscore-variable relation
+    QMap<uint, QPair<uint, QString> > temp;
+    it = _nsvar_var_trn.begin();
+    for(; it != _nsvar_var_trn.end(); ++it){
+        if( it.key() > column )
+            temp.insert( it.key()-1, *it );
+        else if( it->first > column )
+            temp.insert( it.key(), QPair<uint,QString>(it->first-1, it->second) );
+        else
+            temp.insert( it.key(), *it );
+    }
+    _nsvar_var_trn.swap(temp);
+
+    //remove any references to the variable in the list of categorical attributes
+    //also decrements the indexes greater than the deleted variable index (can do this wat with QList)
+    QList< QPair<uint, QString> >::iterator it2 = _categorical_attributes.begin();
+    for(; it2 != _categorical_attributes.end();){
+        if( it2->first == column )
+            it2 = _categorical_attributes.erase( it2 ); //QList::erase() does the increment to the next element (do not add ++ here)
+        else{
+            if( it2->first > column )
+                it2->first = it2->first - 1;
+            ++it2;
+        }
+    }
+
+    //remove the data column from the physical file
+
+
+    //update the child Attribute objects
+    updatePropertyCollection();
+
+    //reset the algorithm data source object
+    _algorithmDataSourceInterface.reset( new AlgorithmDataSource(*this) );
+
+}
