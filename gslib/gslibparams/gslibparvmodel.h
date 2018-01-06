@@ -22,6 +22,9 @@ public:
     /** Sets the variogram parameters according to the given VariogramModel object. */
     void setFromVariogramModel(VariogramModel *vmodel );
 
+    /** Sets parameters of a variogram with zero sill. */
+    void makeNull();
+
     // GSLibParType interface
 public:
     void save(QTextStream *out);

@@ -27,7 +27,6 @@ void GSLib::runProgram(const QString program_name, const QString par_file_path, 
     QDir gslib_home = QDir(Application::instance()->getGSLibPathSetting());
     QString gslib_program = gslib_home.filePath( program_name );
 
-    //TODO: test whether running a program with quotation marks works in Unix
     gslib_program = QString("\"").append(gslib_program).append("\"");
 
     QString command = gslib_program;
@@ -73,24 +72,52 @@ void GSLib::runProgram(const QString program_name, const QString par_file_path, 
         QMessageBox::critical( nullptr, "Errors to stderr", program_name + " program output error messages. Please, check the Output Message panel for recent messages in red.");
 }
 
-void GSLib::runProgramAsync(const QString program_name, const QString par_file_path)
+void GSLib::runProgramAsync(const QString program_name,
+                            const QString par_file_path,
+                            bool parFromStdIn,
+                            const QString working_directory )
 {
     m_stderr_assync_count = 0;
     m_process = new QProcess();
+
+    //get the GSLib home dir
     QDir gslib_home = QDir(Application::instance()->getGSLibPathSetting());
+
+    //build the entire path to the program executable
     QString gslib_program = gslib_home.filePath( program_name );
 
+    //surround the complete path with double quotes (path may contain whitespaces)
     gslib_program = QString("\"").append(gslib_program).append("\"");
 
-    QString command = gslib_program.append(" \"").append( par_file_path ).append("\"");
+    //tell whether the program name already has a path
+    bool programNameHasPath = program_name.contains('/') || program_name.contains('\\') ;
+
+    //construct the final command to start the external process
+    QString command;
+    if( ! programNameHasPath )
+        command = gslib_program;
+    else
+        command = program_name;
+    if( !parFromStdIn )
+        command.append(" \"").append( par_file_path ).append("\"");
 
     m_last_output = "";
 
+    //connect the signals to the slots to keep track of the assynchronous process
     connect (m_process, SIGNAL(readyReadStandardOutput()), this, SLOT(onProgramOutput()));
     connect (m_process, SIGNAL(readyReadStandardError()), this, SLOT(onProgramOutput()));
     connect (m_process, SIGNAL(finished(int,QProcess::ExitStatus)), this, SLOT(onProgramFinished(int,QProcess::ExitStatus)));
 
+    //set the process' working directory (if applicable)
+    if( ! working_directory.isEmpty() )
+        m_process->setWorkingDirectory( working_directory );
+
+    //start the program, passing the path to parameter file if the program only accepts it via std in.
     m_process->start( command );
+    if( parFromStdIn ){
+        m_process->write( QString(par_file_path).append('\n').append('y').append('\n').toStdString().c_str() );
+    //Sometimes the newcokb3d program asks a "are you sure" question.^^^
+    }
 }
 
 void GSLib::runProgramThread(const QString program_name, const QString par_file_path)

@@ -14,7 +14,8 @@ class VariogramModelSelector : public QWidget
     Q_OBJECT
 
 public:
-    explicit VariogramModelSelector(QWidget *parent = 0);
+    /** @param show_not_set If true, adds a "NOT SET" item as the first item. */
+    explicit VariogramModelSelector(bool show_not_set = false, QWidget *parent = 0);
     ~VariogramModelSelector();
 
     /** Returns the pointer to the selected variogram model or nullptr if none was selected. */
@@ -32,6 +33,7 @@ signals:
 
 private:
     Ui::VariogramModelSelector *ui;
+    bool m_HasNotSetItem;
 
 private slots:
     void onVariogramSelected( int index );

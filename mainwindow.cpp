@@ -222,8 +222,11 @@ void MainWindow::openProject(const QString path)
     Application::instance()->openProject( path );
     this->setCurrentMRU( path );
     displayApplicationInfo();
-    if( Application::instance()->hasOpenProject() )
+    if( Application::instance()->hasOpenProject() ){
         ui->menuEstimation->setEnabled( true );
+        ui->menuSimulation->setEnabled( true );
+        ui->menuTools->setEnabled( true );
+    }
 }
 
 void MainWindow::setCurrentMRU(const QString path)
@@ -1948,8 +1951,11 @@ void MainWindow::newProject()
     if( ! dir.isEmpty() ){
         Application::instance()->openProject( dir );
         this->setCurrentMRU( dir );
-        if( Application::instance()->hasOpenProject() )
+        if( Application::instance()->hasOpenProject() ){
             ui->menuEstimation->setEnabled( true );
+            ui->menuSimulation->setEnabled( true );
+            ui->menuTools->setEnabled( true );
+        }
     }
     displayApplicationInfo();
 }
@@ -1959,6 +1965,8 @@ void MainWindow::closeProject()
     Application::instance()->closeProject();
     displayApplicationInfo();
     ui->menuEstimation->setEnabled( false );
+    ui->menuSimulation->setEnabled( false );
+    ui->menuTools->setEnabled( false );
 }
 
 void MainWindow::openRecentProject()
@@ -2017,4 +2025,10 @@ void MainWindow::openSGSIM()
 {
     SGSIMDialog *sgsd = new SGSIMDialog( this );
     sgsd->show();
+}
+
+void MainWindow::openCokrigingNewcokb3d()
+{
+    CokrigingDialog* cokd = new CokrigingDialog( this, CokrigingProgram::NEWCOKB3D );
+    cokd->show();
 }
