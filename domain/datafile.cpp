@@ -860,5 +860,72 @@ void DataFile::deleteVariable( uint column )
 
     //reset the algorithm data source object
     _algorithmDataSourceInterface.reset( new AlgorithmDataSource(*this) );
+}
 
+double DataFile::variance(uint column)
+{
+    if( _data.size() == 0 ){
+        Application::instance()->logError("DataFile::variance(): Data not loaded. Zero was returned.");
+        return 0.0;
+    }
+    //collect the valid values
+    double ndv = this->getNoDataValue().toDouble();
+    bool has_ndv = this->hasNoDataValue();
+    std::vector<double> values;
+    values.reserve( getDataLineCount() );
+    for( uint i = 0; i < _data.size(); ++i ){
+        double value = data(i, column);
+        if( !has_ndv || !Util::almostEqual2sComplement( ndv, value, 1 ) ){
+            values.push_back( value );
+        }
+    }
+    //compute the variance
+    double mean = this->mean( column );
+    std::vector<double> diff(values.size());
+    std::transform(values.begin(), values.end(), diff.begin(), [mean](double x) { return x - mean; });
+    double squaredSum ( std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0) );
+    double stdev ( std::sqrt(squaredSum / (double)values.size()) );
+    return stdev * stdev;
+}
+
+double DataFile::correlation( uint columnX, uint columnY )
+{
+    double sum_X = 0.0, sum_Y = 0.0, sum_XY = 0.0;
+    double squareSum_X = 0.0, squareSum_Y = 0.0;
+    int n = getDataLineCount();
+    int nValidValues = 0;
+    double ndv = this->getNoDataValue().toDouble();
+    bool has_ndv = this->hasNoDataValue();
+
+    for (int i = 0; i < n; i++)
+    {
+        double X = data( i, columnX );
+        double Y = data( i, columnY );
+
+        //if one of the values is invalid, ignore the record
+        if( has_ndv && ( Util::almostEqual2sComplement( ndv, X, 1 ) ||
+                         Util::almostEqual2sComplement( ndv, Y, 1 ) ) ){
+            continue;
+        }
+
+        // sum of elements of array X.
+        sum_X += X;
+
+        // sum of elements of array Y.
+        sum_Y += Y;
+
+        // sum of X[i] * Y[i].
+        sum_XY += ( X * Y );
+
+        // sum of square of array elements.
+        squareSum_X += (X * X);
+        squareSum_Y += (Y * Y);
+
+        ++nValidValues;
+    }
+
+    // use formula for calculating correlation coefficient.
+    return (nValidValues * sum_XY - sum_X * sum_Y)
+                  / std::sqrt((nValidValues * squareSum_X - sum_X * sum_X)
+                            * (nValidValues * squareSum_Y - sum_Y * sum_Y));
 }

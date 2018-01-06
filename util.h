@@ -519,6 +519,9 @@ public:
      * does not support the OS (see util.cpp).
      */
     static std::int64_t getPhysicalRAMusage();
+
+    /** Returns the filename (e.g. drillholes.txt) from a path. */
+    static QString getFileName( QString path );
 };
 
 #endif // UTIL_H
