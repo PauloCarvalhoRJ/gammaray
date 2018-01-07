@@ -85,10 +85,18 @@ Attribute *PointSet::getVariableOfWeight(Attribute *weight)
 
 void PointSet::deleteVariable(uint columnToDelete)
 {
+    if( isCoordinate( columnToDelete )){
+        Application::instance()->logError("PointSet::deleteVariable(): cannot remove spatial coordinates.");
+        return;
+    }
+
+    uint columnToDeleteGEOEAS = columnToDelete+1; //first GEO-EAS index is 1, not zero.
+
     //remove any references to the variable in the list of weight-variable relation
+    //The indexes in this list are in GEO-EAS convention (1 == first)
     QMap< uint, uint >::iterator it = _wgt_var_pairs.begin();
     for(; it != _wgt_var_pairs.end();){
-        if( it.key() == columnToDelete || *it == columnToDelete )
+        if( it.key() == columnToDeleteGEOEAS || *it == columnToDeleteGEOEAS )
             it = _wgt_var_pairs.erase( it ); //QMap::erase() does the increment to the next element (do not add ++ here)
         else
             ++it;
@@ -98,12 +106,13 @@ void PointSet::deleteVariable(uint columnToDelete)
     QMap< uint, uint > temp;
     it = _wgt_var_pairs.begin();
     for(; it != _wgt_var_pairs.end(); ++it){
-        if( it.key() > columnToDelete )
-            temp.insert( it.key()-1, *it );
-        else if( *it > columnToDelete )
-            temp.insert( it.key(), *it - 1 );
-        else
-            temp.insert( it.key(), *it );
+        uint key = it.key();
+        uint index = *it;
+        if( key > columnToDeleteGEOEAS )
+            --key;
+        if( index > columnToDeleteGEOEAS )
+            --index;
+        temp.insert( key, index );
     }
     _wgt_var_pairs.swap(temp);
 
@@ -191,6 +200,14 @@ void PointSet::addVariableWeightRelationship(uint variableGEOEASindex, uint weig
     this->_wgt_var_pairs[weightGEOEASindex] = variableGEOEASindex;
     //save the updated metadata to disk.
     this->updateMetaDataFile();
+}
+
+bool PointSet::isCoordinate(uint column)
+{
+    uint columnGEOEAS = column + 1;
+    return ( _x_field_index == columnGEOEAS ) ||
+           ( _y_field_index == columnGEOEAS ) ||
+           ( _z_field_index == columnGEOEAS ) ;
 }
 
 bool PointSet::canHaveMetaData()

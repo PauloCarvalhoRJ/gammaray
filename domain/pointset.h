@@ -46,6 +46,12 @@ public:
      */
     void addVariableWeightRelationship( uint variableGEOEASindex, uint weightGEOEASindex );
 
+    /**
+     * Returns wheter the given column index corresponds to one of the coordinates (x, y or z).
+     * First index is 0.
+     */
+    bool isCoordinate( uint column );
+
     //DataFile interface
 public:
     /** Returns whether the passed Attribute is a weight according to the file's metadata. */

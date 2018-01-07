@@ -817,10 +817,12 @@ void DataFile::deleteVariable( uint columnToDelete )
     //delete any data loaded to memory.
     freeLoadedData();
 
+    uint columnToDeleteGEOEAS = columnToDelete + 1;
+
     //remove any references to the variable in the list of nscore-variable relation
     QMap<uint, QPair<uint, QString> >::iterator it = _nsvar_var_trn.begin();
     for(; it != _nsvar_var_trn.end();){
-        if( it.key() == columnToDelete || it->first == columnToDelete )
+        if( it.key() == columnToDeleteGEOEAS || it->first == columnToDeleteGEOEAS )
             it = _nsvar_var_trn.erase( it ); //QMap::erase() does the increment to the next element (do not add ++ here)
         else
             ++it;
@@ -830,12 +832,13 @@ void DataFile::deleteVariable( uint columnToDelete )
     QMap<uint, QPair<uint, QString> > temp;
     it = _nsvar_var_trn.begin();
     for(; it != _nsvar_var_trn.end(); ++it){
-        if( it.key() > columnToDelete )
-            temp.insert( it.key()-1, *it );
-        else if( it->first > columnToDelete )
-            temp.insert( it.key(), QPair<uint,QString>(it->first-1, it->second) );
-        else
-            temp.insert( it.key(), *it );
+        uint key = it.key();
+        uint index = it->first;
+        if( key > columnToDeleteGEOEAS )
+            --key;
+        if( index > columnToDeleteGEOEAS )
+            --index;
+        temp.insert( key, QPair<uint, QString>( index, it->second ) );
     }
     _nsvar_var_trn.swap(temp);
 
@@ -843,10 +846,10 @@ void DataFile::deleteVariable( uint columnToDelete )
     //also decrements the indexes greater than the deleted variable index (can do this wat with QList)
     QList< QPair<uint, QString> >::iterator it2 = _categorical_attributes.begin();
     for(; it2 != _categorical_attributes.end();){
-        if( it2->first == columnToDelete )
+        if( it2->first == columnToDeleteGEOEAS )
             it2 = _categorical_attributes.erase( it2 ); //QList::erase() does the increment to the next element (do not add ++ here)
         else{
-            if( it2->first > columnToDelete )
+            if( it2->first > columnToDeleteGEOEAS )
                 it2->first = it2->first - 1;
             ++it2;
         }
