@@ -22,6 +22,7 @@
 #include "project.h"
 #include "objectgroup.h"
 #include "auxiliary/dataloader.h"
+#include "auxiliary/variableremover.h"
 #include "algorithms/ialgorithmdatasource.h"
 
 /****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES ****************************/
@@ -860,60 +861,29 @@ void DataFile::deleteVariable( uint columnToDelete )
 
     //remove the data column from the physical file
     {
-        //get the current file path (this file)
-        QString file_path = this->getPath();
+       //file manipulation takes place in another thread, so we can show and update a progress bar
+       //////////////////////////////////
+       QProgressDialog progressDialog;
+       progressDialog.show();
+       progressDialog.setLabelText("Removing variable data from file " + _path + "...");
+       progressDialog.setMinimum( 0 );
+       progressDialog.setValue( 0 );
+       progressDialog.setMaximum( getFileSize() / 100 ); //see VariableRemover::doRemove(). Dividing by 100 allows a max value of ~400GB when converting from long to int
+       QThread* thread = new QThread();  //does it need to set parent (a QObject)?
+       VariableRemover* vr = new VariableRemover( *this, columnToDelete ); // Do not set a parent. The object cannot be moved if it has a parent.
+       vr->moveToThread(thread);
+       vr->connect(thread, SIGNAL(finished()), vr, SLOT(deleteLater()));
+       vr->connect(thread, SIGNAL(started()), vr, SLOT(doRemove()));
+       vr->connect(vr, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
+       thread->start();
+       /////////////////////////////////
 
-        //create a new file for output
-        QFile outputFile( QString(file_path).append(".new") );
-        outputFile.open( QFile::WriteOnly | QFile::Text );
-        QTextStream out(&outputFile);
-
-        //open the current file for reading
-        QFile inputFile( file_path );
-        if ( inputFile.open(QIODevice::ReadOnly | QFile::Text ) ) {
-           QTextStream in(&inputFile);
-           uint line_index = 0;
-           uint n_vars = 0;
-           uint var_count = 0;
-           //for each line in the current file...
-           while ( !in.atEnd() ){
-               //...read its line
-              QString line = in.readLine();
-              //simply copy the first line (title)
-              if( line_index == 0 ){
-                  out << line << '\n';
-              //first number of second line holds the variable count
-              //writes an decreased number of variables.
-              //TODO: try to keep the rest of the second line (not critical, but desirable)
-              } else if( line_index == 1 ) {
-                  n_vars = Util::getFirstNumber( line );
-                  out << ( n_vars-1 ) << '\n';
-              //simply copy the current variable names, except the one targeted for deletion
-              } else if ( var_count < n_vars ) {
-                  if( var_count != columnToDelete )
-                    out << line << '\n';
-                  ++var_count;
-              //treat the data lines until EOF
-              } else {
-                  //tokenize the data record
-                  QStringList values = Util::fastSplit( line );
-                  //remove the value corresponding to the column to be removed
-                  values.removeAt( columnToDelete );
-                  //output the remaining values
-                  out << values.join("\t") << '\n';
-              } //if's and else's for each file line case (header, var. count, var. name and data line)
-              //keep count of the source file lines
-              ++line_index;
-           } // for each line in destination file (this)
-           //close the current file
-           inputFile.close();
-           //close the newly created file without the target column
-           outputFile.close();
-           //deletes the current file
-           inputFile.remove();
-           //renames the new file, effectively replacing the destination file.
-           outputFile.rename( QFile( file_path ).fileName() );
-        }
+       //wait for the removal operation to finish
+       //not very beautiful, but simple and effective
+       while( ! vr->isFinished() ){
+           thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
+           QCoreApplication::processEvents(); //let Qt repaint widgets
+       }
     }
 
     //update the child Attribute objects
