@@ -45,6 +45,7 @@
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QTimer>
+#include <QProgressDialog>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
@@ -1339,13 +1340,21 @@ void MainWindow::onFFT()
     //get the array containing the data
     std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
-    //run FFT
-    Util::fft3D( cg->getNX(),
-                 cg->getNY(),
-                 cg->getNZ(),
-                 array,
-                 FFTComputationMode::DIRECT,
-                 FFTImageType::POLAR_FORM );
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Computing FFT...");
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+
+        //run FFT
+        Util::fft3D( cg->getNX(),
+                     cg->getNY(),
+                     cg->getNZ(),
+                     array,
+                     FFTComputationMode::DIRECT,
+                     FFTImageType::POLAR_FORM );
+    }
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
