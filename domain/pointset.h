@@ -53,6 +53,7 @@ public:
     /** Returns the Attribute the given weight Attribute referes to according to the file's metadata.
      Returns a null pointer no such Attribute is found.*/
     Attribute* getVariableOfWeight( Attribute* weight );
+    virtual void deleteVariable( uint columnToDelete );
 
     // File interface
 public:

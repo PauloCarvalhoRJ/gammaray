@@ -807,9 +807,9 @@ int DataFile::addNewDataColumn(const QString columnName, const std::vector<doubl
     return indexGEOEAS - 1;
 }
 
-void DataFile::deleteVariable( uint column )
+void DataFile::deleteVariable( uint columnToDelete )
 {
-    if( getDataColumnCount() < 2 ){
+    if( Util::getFieldNames( getPath() ).size() < 2 ){ //getDataColumnCount() triggers a loadData().
         Application::instance()->logError("DataFile::deleteVariable(): Cannot delete the single variable of a file.  Remove the file instead.");
         return;
     }
@@ -820,7 +820,7 @@ void DataFile::deleteVariable( uint column )
     //remove any references to the variable in the list of nscore-variable relation
     QMap<uint, QPair<uint, QString> >::iterator it = _nsvar_var_trn.begin();
     for(; it != _nsvar_var_trn.end();){
-        if( it.key() == column || it->first == column )
+        if( it.key() == columnToDelete || it->first == columnToDelete )
             it = _nsvar_var_trn.erase( it ); //QMap::erase() does the increment to the next element (do not add ++ here)
         else
             ++it;
@@ -830,9 +830,9 @@ void DataFile::deleteVariable( uint column )
     QMap<uint, QPair<uint, QString> > temp;
     it = _nsvar_var_trn.begin();
     for(; it != _nsvar_var_trn.end(); ++it){
-        if( it.key() > column )
+        if( it.key() > columnToDelete )
             temp.insert( it.key()-1, *it );
-        else if( it->first > column )
+        else if( it->first > columnToDelete )
             temp.insert( it.key(), QPair<uint,QString>(it->first-1, it->second) );
         else
             temp.insert( it.key(), *it );
@@ -843,20 +843,81 @@ void DataFile::deleteVariable( uint column )
     //also decrements the indexes greater than the deleted variable index (can do this wat with QList)
     QList< QPair<uint, QString> >::iterator it2 = _categorical_attributes.begin();
     for(; it2 != _categorical_attributes.end();){
-        if( it2->first == column )
+        if( it2->first == columnToDelete )
             it2 = _categorical_attributes.erase( it2 ); //QList::erase() does the increment to the next element (do not add ++ here)
         else{
-            if( it2->first > column )
+            if( it2->first > columnToDelete )
                 it2->first = it2->first - 1;
             ++it2;
         }
     }
 
-    //remove the data column from the physical file
+    //updates the metadata file in the project
+    updateMetaDataFile();
 
+    //remove the data column from the physical file
+    {
+        //get the current file path (this file)
+        QString file_path = this->getPath();
+
+        //create a new file for output
+        QFile outputFile( QString(file_path).append(".new") );
+        outputFile.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&outputFile);
+
+        //open the current file for reading
+        QFile inputFile( file_path );
+        if ( inputFile.open(QIODevice::ReadOnly | QFile::Text ) ) {
+           QTextStream in(&inputFile);
+           uint line_index = 0;
+           uint n_vars = 0;
+           uint var_count = 0;
+           //for each line in the current file...
+           while ( !in.atEnd() ){
+               //...read its line
+              QString line = in.readLine();
+              //simply copy the first line (title)
+              if( line_index == 0 ){
+                  out << line << '\n';
+              //first number of second line holds the variable count
+              //writes an decreased number of variables.
+              //TODO: try to keep the rest of the second line (not critical, but desirable)
+              } else if( line_index == 1 ) {
+                  n_vars = Util::getFirstNumber( line );
+                  out << ( n_vars-1 ) << '\n';
+              //simply copy the current variable names, except the one targeted for deletion
+              } else if ( var_count < n_vars ) {
+                  if( var_count != columnToDelete )
+                    out << line << '\n';
+                  ++var_count;
+              //treat the data lines until EOF
+              } else {
+                  //tokenize the data record
+                  QStringList values = Util::fastSplit( line );
+                  //remove the value corresponding to the column to be removed
+                  values.removeAt( columnToDelete );
+                  //output the remaining values
+                  out << values.join("\t") << '\n';
+              } //if's and else's for each file line case (header, var. count, var. name and data line)
+              //keep count of the source file lines
+              ++line_index;
+           } // for each line in destination file (this)
+           //close the current file
+           inputFile.close();
+           //close the newly created file without the target column
+           outputFile.close();
+           //deletes the current file
+           inputFile.remove();
+           //renames the new file, effectively replacing the destination file.
+           outputFile.rename( QFile( file_path ).fileName() );
+        }
+    }
 
     //update the child Attribute objects
     updatePropertyCollection();
+
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
 
     //reset the algorithm data source object
     _algorithmDataSourceInterface.reset( new AlgorithmDataSource(*this) );

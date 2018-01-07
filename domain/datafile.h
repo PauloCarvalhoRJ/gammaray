@@ -266,8 +266,10 @@ public:
      * Removes a variable (data column in file) given its index in the data array. Subclasses with specific variable-dependent info
      * should override this AND call this implementation (DataFile::deleteVariable()), unless they handle data removal
      * themselves.  Any data loaded into memory is erased prior to data removal from file.
+     * Removal is done in a temporary file and only in the end, if successful, the current physical file is swapped
+     * with the changed one.
      */
-    virtual void deleteVariable( uint column );
+    virtual void deleteVariable(uint columnToDelete );
 
     /** Returns the variance of the values in the given column. */
     double variance( uint column );

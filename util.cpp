@@ -78,7 +78,6 @@ QStringList Util::getFieldNames(const QString gslib_data_file_path)
        //read file line by line
        QString line = in.readLine();
        //second line is the number of variables
-       //TODO: second line may contain other information in grid files, so it will fail for such cases
        if( i == 1 ){
            n_vars = Util::getFirstNumber( line );
        } else if ( i > 1 && var_count < n_vars ){

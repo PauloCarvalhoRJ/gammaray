@@ -83,6 +83,34 @@ Attribute *PointSet::getVariableOfWeight(Attribute *weight)
     return variable;
 }
 
+void PointSet::deleteVariable(uint columnToDelete)
+{
+    //remove any references to the variable in the list of weight-variable relation
+    QMap< uint, uint >::iterator it = _wgt_var_pairs.begin();
+    for(; it != _wgt_var_pairs.end();){
+        if( it.key() == columnToDelete || *it == columnToDelete )
+            it = _wgt_var_pairs.erase( it ); //QMap::erase() does the increment to the next element (do not add ++ here)
+        else
+            ++it;
+    }
+
+    //Decrement all indexes greater than the deleted variable index in the list of weight-variable relation
+    QMap< uint, uint > temp;
+    it = _wgt_var_pairs.begin();
+    for(; it != _wgt_var_pairs.end(); ++it){
+        if( it.key() > columnToDelete )
+            temp.insert( it.key()-1, *it );
+        else if( *it > columnToDelete )
+            temp.insert( it.key(), *it - 1 );
+        else
+            temp.insert( it.key(), *it );
+    }
+    _wgt_var_pairs.swap(temp);
+
+    //call superclass' deleteVariable() to do the rest of the job
+    DataFile::deleteVariable( columnToDelete );
+}
+
 void PointSet::setInfoFromMetadataFile()
 {
     QString md_file_path( this->_path );
