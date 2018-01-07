@@ -236,6 +236,11 @@ public:
      */
     void setDataPageToAll();
 
+    /** Returns whether only part of the file data is set to be loaded to memory.
+     *  That is _dataPageFirstLine is not zero and _dataPageLastLine is not infinity.
+     */
+    bool isSetToBePaged();
+
     /**
      * Adds the given values in a vector of complex numbers as new or the first two columns of the in-memory data
      * array (_data member variable). New Attribute objects are created to match the newly added data columns.  So,

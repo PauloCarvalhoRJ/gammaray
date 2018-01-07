@@ -183,7 +183,8 @@ SOURCES += main.cpp\
     algorithms/CART/cartsplitcriterion.cpp \
     algorithms/randomforest.cpp \
     algorithms/decisiontree.cpp \
-    domain/auxiliary/variableremover.cpp
+    domain/auxiliary/variableremover.cpp \
+    domain/auxiliary/datasaver.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -346,7 +347,8 @@ HEADERS  += mainwindow.h \
     algorithms/CART/cartsplitcriterion.h \
     algorithms/randomforest.h \
     algorithms/decisiontree.h \
-    domain/auxiliary/variableremover.h
+    domain/auxiliary/variableremover.h \
+    domain/auxiliary/datasaver.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

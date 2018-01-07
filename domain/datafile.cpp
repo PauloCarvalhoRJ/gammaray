@@ -23,6 +23,7 @@
 #include "objectgroup.h"
 #include "auxiliary/dataloader.h"
 #include "auxiliary/variableremover.h"
+#include "auxiliary/datasaver.h"
 #include "algorithms/ialgorithmdatasource.h"
 
 /****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES ****************************/
@@ -374,6 +375,17 @@ void DataFile::deleteFromFS()
 
 void DataFile::writeToFS()
 {
+
+    if( _data.size() <= 0 ){
+        Application::instance()->logError("DataFile::writeToFS(): No data. Save failed.");
+        return;
+    }
+
+    if( isSetToBePaged() ){
+        Application::instance()->logError("DataFile::writeToFS(): Paged data files not currently supported in saving operation. Save failed.");
+        return;
+    }
+
     //create a new file for output
     QFile outputFile( QString( this->getPath() ).append(".new") );
     outputFile.open( QFile::WriteOnly | QFile::Text );
@@ -422,21 +434,28 @@ void DataFile::writeToFS()
         }
     }
 
-    //for each data line
-    std::vector< std::vector<double> >::iterator itDataLine = _data.begin();
-    for(; itDataLine != _data.end(); ++itDataLine){
-        //for each data column
-        std::vector<double>::iterator itDataColumn = (*itDataLine).begin();
-        out << *itDataColumn;
-        ++itDataColumn;
-        for(; itDataColumn != (*itDataLine).end(); ++itDataColumn){
-            //making sure the values are written in GSLib-like precision
-            std::stringstream ss;
-            ss << std::setprecision( 12 /*std::numeric_limits<double>::max_digits10*/ );
-            ss << *itDataColumn;
-            out << '\t' << ss.str().c_str();
-        }
-        out << endl;
+    //data save takes place in another thread, so we can show and update a progress bar
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Saving data to filesystem...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setValue( 0 );
+    progressDialog.setMaximum( getDataLineCount() );
+    QThread* thread = new QThread();  //does it need to set parent (a QObject)?
+    DataSaver* ds = new DataSaver( _data, out );  // Do not set a parent. The object cannot be moved if it has a parent.
+    ds->moveToThread(thread);
+    ds->connect(thread, SIGNAL(finished()), ds, SLOT(deleteLater()));
+    ds->connect(thread, SIGNAL(started()), ds, SLOT(doSave()));
+    ds->connect(ds, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
+    thread->start();
+    /////////////////////////////////
+
+    //wait for the data save to finish
+    //not very beautiful, but simple and effective
+    while( ! ds->isFinished() ){
+        thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
+        QCoreApplication::processEvents(); //let Qt repaint widgets
     }
 
     //close output file
@@ -710,6 +729,11 @@ void DataFile::setDataPage(long firstDataLine, long lastDataLine)
 void DataFile::setDataPageToAll()
 {
     setDataPage(0, std::numeric_limits<long>::max() );
+}
+
+bool DataFile::isSetToBePaged()
+{
+    return _dataPageFirstLine > 0 || _dataPageLastLine < std::numeric_limits<long>::max();
 }
 
 void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
