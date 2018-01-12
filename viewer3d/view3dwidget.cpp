@@ -80,6 +80,8 @@ View3DWidget::View3DWidget(QWidget *parent)
     //	vtkGenericOpenGLRenderWindow* glrw =
     // vtkGenericOpenGLRenderWindow::SafeDownCast(renwin);
     //	_vtkwidget->SetRenderWindow( glrw );
+
+    _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
     _vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
 
