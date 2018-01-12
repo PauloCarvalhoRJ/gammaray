@@ -17,12 +17,24 @@ class GSLibParameterFile;
 class VariogramModel;
 class CartesianGrid;
 
+enum class CokrigingProgram : uint{
+    COKB3D,
+    NEWCOKB3D
+};
+
+enum class CokrigingModelType : uint{
+    MM1,
+    MM2,
+    LMC
+};
+
 class CokrigingDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit CokrigingDialog(QWidget *parent = 0);
+    explicit CokrigingDialog( QWidget *parent = 0,
+                              CokrigingProgram cokProg = CokrigingProgram::COKB3D );
     ~CokrigingDialog();
 
 private:
@@ -39,16 +51,27 @@ private:
     //first int = head variable order (1=primary, 2=1st secondary, ...), second int = tail variable order
     QVector< std::tuple<uint,uint,VariogramModelSelector*> > m_variograms;
     CartesianGrid* m_cg_estimation;
+    CokrigingProgram m_cokProg;
+    CartesianGridSelector* m_cgLVMGridSelector;
+    QVector<VariableSelector*> m_inputLVMVarsSelectors;
+    CokrigingModelType m_newcokb3dModelType;
+    VariogramModelSelector* m_collocVariogram;
+    VariogramModelSelector* m_collocVariogramForMM2ResidualComponent;
+    GSLibParameterFile* m_gpf_newcokb3d;
 
 private slots:
     void onNumberOfSecondaryVariablesChanged( int n );
     void onUpdateVariogramMatrix( int numberOfSecondaryVariables );
     void onUpdateVarMatrixLabels();
     void onParameters();
+    void onParametersCokb3d();
+    void onParametersNewcokb3d();
     void onLMCcheck();
     void onCokb3dCompletes();
+    void onNewcokb3dCompletes();
     void onSave();
     void onSaveKrigingVariances();
+    void onModelTypeChanged();
 
 private:
     QLabel* makeLabel( const QString caption );

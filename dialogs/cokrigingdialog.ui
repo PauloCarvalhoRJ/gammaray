@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>583</width>
-    <height>356</height>
+    <width>578</width>
+    <height>509</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -206,7 +206,7 @@
          <item>
           <widget class="QLabel" name="label_6">
            <property name="enabled">
-            <bool>false</bool>
+            <bool>true</bool>
            </property>
            <property name="font">
             <font>
@@ -216,12 +216,15 @@
             </font>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Secondary data. If you inform this, cokriging will be performed in co-located mode (avaliable only for newcokb3d).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Co-located secondary data.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
           </widget>
          </item>
          <item>
           <widget class="QFrame" name="frmSecondaryData">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
            <property name="frameShape">
             <enum>QFrame::StyledPanel</enum>
            </property>
@@ -247,7 +250,7 @@
             <item>
              <widget class="QLabel" name="label_4">
               <property name="enabled">
-               <bool>false</bool>
+               <bool>true</bool>
               </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -262,7 +265,93 @@
                </font>
               </property>
               <property name="text">
-               <string>     File, sec. vars:</string>
+               <string>     File, sec. var:</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QFrame" name="frmOuterLVMData">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <property name="spacing">
+          <number>1</number>
+         </property>
+         <property name="leftMargin">
+          <number>1</number>
+         </property>
+         <property name="topMargin">
+          <number>1</number>
+         </property>
+         <property name="rightMargin">
+          <number>1</number>
+         </property>
+         <property name="bottomMargin">
+          <number>1</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_11">
+           <property name="font">
+            <font>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Data for locally varying mean.  If you inform this, locally varying mean will be enabled.</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QFrame" name="frmLVMData">
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <property name="spacing">
+             <number>1</number>
+            </property>
+            <property name="leftMargin">
+             <number>1</number>
+            </property>
+            <property name="topMargin">
+             <number>1</number>
+            </property>
+            <property name="rightMargin">
+             <number>1</number>
+            </property>
+            <property name="bottomMargin">
+             <number>1</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_12">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="font">
+               <font>
+                <weight>50</weight>
+                <bold>false</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>     File, lvm var:</string>
               </property>
              </widget>
             </item>
@@ -378,6 +467,78 @@
           </widget>
          </item>
          <item>
+          <widget class="QFrame" name="frmModelType">
+           <property name="font">
+            <font>
+             <weight>50</weight>
+             <bold>false</bold>
+            </font>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_9">
+            <property name="spacing">
+             <number>1</number>
+            </property>
+            <property name="leftMargin">
+             <number>1</number>
+            </property>
+            <property name="topMargin">
+             <number>1</number>
+            </property>
+            <property name="rightMargin">
+             <number>1</number>
+            </property>
+            <property name="bottomMargin">
+             <number>1</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_13">
+              <property name="text">
+               <string>Model type:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="cmbModelType">
+              <property name="currentIndex">
+               <number>1</number>
+              </property>
+              <item>
+               <property name="text">
+                <string>Markov Model 1</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Markov Model 2</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>Linear Model of Corregionalization</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="lblCollocVariogram">
+              <property name="text">
+               <string>variogram:</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QFrame" name="frmVariogramArray">
            <property name="frameShape">
             <enum>QFrame::StyledPanel</enum>
@@ -385,7 +546,7 @@
            <property name="frameShadow">
             <enum>QFrame::Raised</enum>
            </property>
-           <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0,0" columnstretch="0,0,0" columnminimumwidth="0,0,0">
+           <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,0,0,0" columnstretch="0,0,0">
             <property name="leftMargin">
              <number>1</number>
             </property>
@@ -476,7 +637,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QFrame" name="frame_2">
+          <widget class="QFrame" name="frmLMCCheck">
            <property name="font">
             <font>
              <weight>50</weight>
@@ -671,8 +832,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>328</x>
-     <y>353</y>
+     <x>332</x>
+     <y>425</y>
     </hint>
     <hint type="destinationlabel">
      <x>409</x>
@@ -703,8 +864,8 @@
    <slot>onParameters()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>571</x>
-     <y>258</y>
+     <x>579</x>
+     <y>321</y>
     </hint>
     <hint type="destinationlabel">
      <x>582</x>
@@ -719,8 +880,8 @@
    <slot>onLMCcheck()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>524</x>
-     <y>195</y>
+     <x>583</x>
+     <y>265</y>
     </hint>
     <hint type="destinationlabel">
      <x>582</x>
@@ -735,8 +896,8 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>560</x>
-     <y>280</y>
+     <x>579</x>
+     <y>353</y>
     </hint>
     <hint type="destinationlabel">
      <x>583</x>
@@ -751,12 +912,28 @@
    <slot>onSaveKrigingVariances()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>557</x>
-     <y>312</y>
+     <x>579</x>
+     <y>385</y>
     </hint>
     <hint type="destinationlabel">
      <x>584</x>
      <y>331</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbModelType</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>CokrigingDialog</receiver>
+   <slot>onModelTypeChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>398</x>
+     <y>184</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>593</x>
+     <y>191</y>
     </hint>
    </hints>
   </connection>
@@ -767,5 +944,6 @@
   <slot>onLMCcheck()</slot>
   <slot>onSave()</slot>
   <slot>onSaveKrigingVariances()</slot>
+  <slot>onModelTypeChanged()</slot>
  </slots>
 </ui>

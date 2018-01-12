@@ -25,7 +25,7 @@ debug:UI_DIR = ../GammaRay_debug/ui
 
 CONFIG += c++11
 
-QMAKE_CXXFLAGS += -m64
+#QMAKE_CXXFLAGS += -m64
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -509,12 +509,12 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 3.5
+VERSION = 3.6
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
-# Define application name macro
+# Define application nam    QMAKE_DEFAULT_INCDIRS =e macro
 DEFINES += APP_NAME=\\\"$$TARGET\\\"
 
 # Define application name and version macro

@@ -78,6 +78,23 @@ void GSLibParVModel::setFromVariogramModel(VariogramModel *vmodel)
     }
 }
 
+void GSLibParVModel::makeNull()
+{
+    _nst_and_nugget->getParameter<GSLibParUInt*>(0)->_value = 1; //number of structures
+    _nst_and_nugget->getParameter<GSLibParDouble*>(1)->_value = 0.0; //nugget effect
+    _variogram_structures->setCount( 1 ); //number of structures
+    GSLibParMultiValuedFixed* par0 = (GSLibParMultiValuedFixed*)_variogram_structures->_original_parameters[0];
+    par0->getParameter<GSLibParOption*>(0)->_selected_value = 1; //structure type
+    par0->getParameter<GSLibParDouble*>(1)->_value = 0.0; //covariance contribution
+    par0->getParameter<GSLibParDouble*>(2)->_value = 0.0; //azimuth
+    par0->getParameter<GSLibParDouble*>(3)->_value = 0.0; //dip
+    par0->getParameter<GSLibParDouble*>(4)->_value = 0.0; //roll
+    GSLibParMultiValuedFixed* par1 = (GSLibParMultiValuedFixed*)_variogram_structures->_original_parameters[1];
+    par1->getParameter<GSLibParDouble*>(0)->_value = 1.0; //range along azimuth
+    par1->getParameter<GSLibParDouble*>(1)->_value = 1.0; //range orthogonal to azimuth
+    par1->getParameter<GSLibParDouble*>(2)->_value = 1.0; //range along vertical
+}
+
 void GSLibParVModel::save(QTextStream *out)
 {
     _nst_and_nugget->save( out );

@@ -59,6 +59,7 @@ public slots:
     void openCokriging();
     void openImageJockey();
     void openSGSIM();
+    void openCokrigingNewcokb3d();
 
 private:
     Ui::MainWindow *ui;

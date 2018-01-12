@@ -267,6 +267,12 @@ public:
       */
     int addNewDataColumn( const QString columnName, const std::vector<double> &values, CategoryDefinition *cd = nullptr );
 
+    /** Returns the variance of the values in the given column. */
+    double variance( uint column );
+
+    /** Returns the Pearson correlation coefficient of the values in the given columns. */
+    double correlation(uint columnX, uint columnY );
+
 //File interface
     void deleteFromFS();
     void writeToFS();
