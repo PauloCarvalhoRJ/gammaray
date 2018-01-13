@@ -182,7 +182,9 @@ SOURCES += main.cpp\
     algorithms/CART/cartnode.cpp \
     algorithms/CART/cartsplitcriterion.cpp \
     algorithms/randomforest.cpp \
-    algorithms/decisiontree.cpp
+    algorithms/decisiontree.cpp \
+    domain/auxiliary/variableremover.cpp \
+    domain/auxiliary/datasaver.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -344,7 +346,9 @@ HEADERS  += mainwindow.h \
     algorithms/CART/cartnode.h \
     algorithms/CART/cartsplitcriterion.h \
     algorithms/randomforest.h \
-    algorithms/decisiontree.h
+    algorithms/decisiontree.h \
+    domain/auxiliary/variableremover.h \
+    domain/auxiliary/datasaver.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -479,7 +483,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 3.6
+VERSION = 3.6.1
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

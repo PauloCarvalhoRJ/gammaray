@@ -22,6 +22,8 @@
 #include "project.h"
 #include "objectgroup.h"
 #include "auxiliary/dataloader.h"
+#include "auxiliary/variableremover.h"
+#include "auxiliary/datasaver.h"
 #include "algorithms/ialgorithmdatasource.h"
 
 /****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES ****************************/
@@ -373,6 +375,17 @@ void DataFile::deleteFromFS()
 
 void DataFile::writeToFS()
 {
+
+    if( _data.size() <= 0 ){
+        Application::instance()->logError("DataFile::writeToFS(): No data. Save failed.");
+        return;
+    }
+
+    if( isSetToBePaged() ){
+        Application::instance()->logError("DataFile::writeToFS(): Paged data files not currently supported in saving operation. Save failed.");
+        return;
+    }
+
     //create a new file for output
     QFile outputFile( QString( this->getPath() ).append(".new") );
     outputFile.open( QFile::WriteOnly | QFile::Text );
@@ -421,21 +434,28 @@ void DataFile::writeToFS()
         }
     }
 
-    //for each data line
-    std::vector< std::vector<double> >::iterator itDataLine = _data.begin();
-    for(; itDataLine != _data.end(); ++itDataLine){
-        //for each data column
-        std::vector<double>::iterator itDataColumn = (*itDataLine).begin();
-        out << *itDataColumn;
-        ++itDataColumn;
-        for(; itDataColumn != (*itDataLine).end(); ++itDataColumn){
-            //making sure the values are written in GSLib-like precision
-            std::stringstream ss;
-            ss << std::setprecision( 12 /*std::numeric_limits<double>::max_digits10*/ );
-            ss << *itDataColumn;
-            out << '\t' << ss.str().c_str();
-        }
-        out << endl;
+    //data save takes place in another thread, so we can show and update a progress bar
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Saving data to filesystem...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setValue( 0 );
+    progressDialog.setMaximum( getDataLineCount() );
+    QThread* thread = new QThread();  //does it need to set parent (a QObject)?
+    DataSaver* ds = new DataSaver( _data, out );  // Do not set a parent. The object cannot be moved if it has a parent.
+    ds->moveToThread(thread);
+    ds->connect(thread, SIGNAL(finished()), ds, SLOT(deleteLater()));
+    ds->connect(thread, SIGNAL(started()), ds, SLOT(doSave()));
+    ds->connect(ds, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
+    thread->start();
+    /////////////////////////////////
+
+    //wait for the data save to finish
+    //not very beautiful, but simple and effective
+    while( ! ds->isFinished() ){
+        thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
+        QCoreApplication::processEvents(); //let Qt repaint widgets
     }
 
     //close output file
@@ -711,6 +731,11 @@ void DataFile::setDataPageToAll()
     setDataPage(0, std::numeric_limits<long>::max() );
 }
 
+bool DataFile::isSetToBePaged()
+{
+    return _dataPageFirstLine > 0 || _dataPageLastLine < std::numeric_limits<long>::max();
+}
+
 void DataFile::addDataColumns(std::vector< std::complex<double> > &columns,
                               const QString nameForNewAttributeOfRealPart,
                               const QString nameForNewAttributeOfImaginaryPart)
@@ -805,6 +830,94 @@ int DataFile::addNewDataColumn(const QString columnName, const std::vector<doubl
 
     //returns the index of the new column
     return indexGEOEAS - 1;
+}
+
+void DataFile::deleteVariable( uint columnToDelete )
+{
+    if( Util::getFieldNames( getPath() ).size() < 2 ){ //getDataColumnCount() triggers a loadData().
+        Application::instance()->logError("DataFile::deleteVariable(): Cannot delete the single variable of a file.  Remove the file instead.");
+        return;
+    }
+
+    //delete any data loaded to memory.
+    freeLoadedData();
+
+    uint columnToDeleteGEOEAS = columnToDelete + 1;
+
+    //remove any references to the variable in the list of nscore-variable relation
+    QMap<uint, QPair<uint, QString> >::iterator it = _nsvar_var_trn.begin();
+    for(; it != _nsvar_var_trn.end();){
+        if( it.key() == columnToDeleteGEOEAS || it->first == columnToDeleteGEOEAS )
+            it = _nsvar_var_trn.erase( it ); //QMap::erase() does the increment to the next element (do not add ++ here)
+        else
+            ++it;
+    }
+
+    //Decrement all indexes greater than the deleted variable index in the list of nscore-variable relation
+    QMap<uint, QPair<uint, QString> > temp;
+    it = _nsvar_var_trn.begin();
+    for(; it != _nsvar_var_trn.end(); ++it){
+        uint key = it.key();
+        uint index = it->first;
+        if( key > columnToDeleteGEOEAS )
+            --key;
+        if( index > columnToDeleteGEOEAS )
+            --index;
+        temp.insert( key, QPair<uint, QString>( index, it->second ) );
+    }
+    _nsvar_var_trn.swap(temp);
+
+    //remove any references to the variable in the list of categorical attributes
+    //also decrements the indexes greater than the deleted variable index (can do this wat with QList)
+    QList< QPair<uint, QString> >::iterator it2 = _categorical_attributes.begin();
+    for(; it2 != _categorical_attributes.end();){
+        if( it2->first == columnToDeleteGEOEAS )
+            it2 = _categorical_attributes.erase( it2 ); //QList::erase() does the increment to the next element (do not add ++ here)
+        else{
+            if( it2->first > columnToDeleteGEOEAS )
+                it2->first = it2->first - 1;
+            ++it2;
+        }
+    }
+
+    //updates the metadata file in the project
+    updateMetaDataFile();
+
+    //remove the data column from the physical file
+    {
+       //file manipulation takes place in another thread, so we can show and update a progress bar
+       //////////////////////////////////
+       QProgressDialog progressDialog;
+       progressDialog.show();
+       progressDialog.setLabelText("Removing variable data from file " + _path + "...");
+       progressDialog.setMinimum( 0 );
+       progressDialog.setValue( 0 );
+       progressDialog.setMaximum( getFileSize() / 100 ); //see VariableRemover::doRemove(). Dividing by 100 allows a max value of ~400GB when converting from long to int
+       QThread* thread = new QThread();  //does it need to set parent (a QObject)?
+       VariableRemover* vr = new VariableRemover( *this, columnToDelete ); // Do not set a parent. The object cannot be moved if it has a parent.
+       vr->moveToThread(thread);
+       vr->connect(thread, SIGNAL(finished()), vr, SLOT(deleteLater()));
+       vr->connect(thread, SIGNAL(started()), vr, SLOT(doRemove()));
+       vr->connect(vr, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
+       thread->start();
+       /////////////////////////////////
+
+       //wait for the removal operation to finish
+       //not very beautiful, but simple and effective
+       while( ! vr->isFinished() ){
+           thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
+           QCoreApplication::processEvents(); //let Qt repaint widgets
+       }
+    }
+
+    //update the child Attribute objects
+    updatePropertyCollection();
+
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
+
+    //reset the algorithm data source object
+    _algorithmDataSourceInterface.reset( new AlgorithmDataSource(*this) );
 }
 
 double DataFile::variance(uint column)

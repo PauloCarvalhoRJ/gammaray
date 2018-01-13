@@ -236,6 +236,11 @@ public:
      */
     void setDataPageToAll();
 
+    /** Returns whether only part of the file data is set to be loaded to memory.
+     *  That is _dataPageFirstLine is not zero and _dataPageLastLine is not infinity.
+     */
+    bool isSetToBePaged();
+
     /**
      * Adds the given values in a vector of complex numbers as new or the first two columns of the in-memory data
      * array (_data member variable). New Attribute objects are created to match the newly added data columns.  So,
@@ -262,6 +267,15 @@ public:
       */
     int addNewDataColumn( const QString columnName, const std::vector<double> &values, CategoryDefinition *cd = nullptr );
 
+    /**
+     * Removes a variable (data column in file) given its index in the data array. Subclasses with specific variable-dependent info
+     * should override this AND call this implementation (DataFile::deleteVariable()), unless they handle data removal
+     * themselves.  Any data loaded into memory is erased prior to data removal from file.
+     * Removal is done in a temporary file and only in the end, if successful, the current physical file is swapped
+     * with the changed one.
+     */
+    virtual void deleteVariable(uint columnToDelete );
+
     /** Returns the variance of the values in the given column. */
     double variance( uint column );
 
@@ -284,7 +298,7 @@ protected:
     /** The no-data value specified by the user. */
     QString _no_data_value;
 
-    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical point set file. */
+    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical file. */
     void updatePropertyCollection();
 
     /**
@@ -302,7 +316,7 @@ protected:
 
     /**
      * Stores the file timestamp in the last call to loadData().
-     * This time is used to detect whether there as a change in the file, to prevent
+     * This time is used to detect whether there is a change in the file, to prevent
      * unnecessary data reloads.
      */
     QDateTime _lastModifiedDateTimeLastLoad;

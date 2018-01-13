@@ -154,6 +154,7 @@ private slots:
     void onRFFT();
     void onUpdateStatusBar();
     void onMachineLearning();
+    void onDeleteVariable();
 
 private:
     /**

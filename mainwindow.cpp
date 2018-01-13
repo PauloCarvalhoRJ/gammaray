@@ -45,6 +45,7 @@
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QTimer>
+#include <QProgressDialog>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
@@ -488,6 +489,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
                 }
             }
+            if( parent_file->getFileType() == "POINTSET" ||
+                parent_file->getFileType() == "CARTESIANGRID"  )
+                _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
         }
     //two items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 2 ) {
@@ -1336,13 +1340,21 @@ void MainWindow::onFFT()
     //get the array containing the data
     std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
-    //run FFT
-    Util::fft3D( cg->getNX(),
-                 cg->getNY(),
-                 cg->getNZ(),
-                 array,
-                 FFTComputationMode::DIRECT,
-                 FFTImageType::POLAR_FORM );
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Computing FFT...");
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+
+        //run FFT
+        Util::fft3D( cg->getNX(),
+                     cg->getNY(),
+                     cg->getNZ(),
+                     array,
+                     FFTComputationMode::DIRECT,
+                     FFTImageType::POLAR_FORM );
+    }
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
@@ -1618,6 +1630,21 @@ void MainWindow::onMachineLearning()
 {
     MachineLearningDialog* mld = new MachineLearningDialog( this );
     mld->show();
+}
+
+void MainWindow::onDeleteVariable()
+{
+    DataFile* dataFile = (DataFile*)_right_clicked_attribute->getContainingFile();
+
+    QMessageBox msgBox;
+    msgBox.setText("Delete " + _right_clicked_attribute->getName() + " from file " + dataFile->getName() + "?");
+    msgBox.setInformativeText("This action cannot be undone.");
+    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::Cancel);
+    msgBox.setDefaultButton(QMessageBox::Cancel);
+    int ret = msgBox.exec();
+    if( ret == QMessageBox::Yes ){
+        dataFile->deleteVariable( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+    }
 }
 
 void MainWindow::onCreateCategoryDefinition()
