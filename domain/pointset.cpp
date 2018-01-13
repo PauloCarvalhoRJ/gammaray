@@ -204,7 +204,7 @@ void PointSet::addVariableWeightRelationship(uint variableGEOEASindex, uint weig
 
 bool PointSet::isCoordinate(uint column)
 {
-    uint columnGEOEAS = column + 1;
+    int columnGEOEAS = column + 1;
     return ( _x_field_index == columnGEOEAS ) ||
            ( _y_field_index == columnGEOEAS ) ||
            ( _z_field_index == columnGEOEAS ) ;
