@@ -40,6 +40,7 @@
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
+#include <QProgressDialog>
 #endif
 #ifdef Q_OS_LINUX
   #include <stdlib.h>
@@ -78,7 +79,6 @@ QStringList Util::getFieldNames(const QString gslib_data_file_path)
        //read file line by line
        QString line = in.readLine();
        //second line is the number of variables
-       //TODO: second line may contain other information in grid files, so it will fail for such cases
        if( i == 1 ){
            n_vars = Util::getFirstNumber( line );
        } else if ( i > 1 && var_count < n_vars ){
@@ -415,15 +415,23 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     bool isNXeven = ( cg->getNX() % 2 ) == 0;
     bool isNYeven = ( cg->getNY() % 2 ) == 0;
 
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Creating grid...");
+
     //loop to output the binary values
     ulong count = 0;
+    int counter = 0;
     for( uint ir = 0; ir < cg->getNReal(); ++ir)
         for( uint iz = 0; iz < cg->getNZ(); ++iz){
-            for( uint iy = 0; iy < cg->getNY(); ++iy){
+            for( uint iy = 0; iy < cg->getNY(); ++iy, ++counter){
                 for( uint ix = 0; ix < cg->getNX(); ++ix, ++count)
                     out << (count % 2) << '\n';
                 if( isNXeven )
                     ++count;
+                if( ! ( counter % 1000) )
+                    QCoreApplication::processEvents(); //let Qt repaint widgets
             }
             if( isNYeven )
                 ++count;
@@ -459,9 +467,15 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
     if( ! columnNameForImaginaryPart.isEmpty() )
         out << columnNameForImaginaryPart << '\n';
 
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Creating grid...");
+
     //loop to output the values
     std::vector< std::complex<double> >::iterator it = array.begin();
-    for( ; it != array.end(); ++it ){
+    int counter = 0;
+    for( ; it != array.end(); ++it, ++counter ){
         if( ! columnNameForRealPart.isEmpty() ){
             out << (*it).real() ;
             if( ! columnNameForImaginaryPart.isEmpty() )
@@ -470,6 +484,8 @@ void Util::createGEOEASGrid(const QString columnNameForRealPart,
         if( ! columnNameForImaginaryPart.isEmpty() )
             out << (*it).imag() ;
         out << '\n';
+        if( ! ( counter % 1000) )
+            QCoreApplication::processEvents(); //let Qt repaint widgets
     }
 
     //close file
@@ -488,10 +504,18 @@ void Util::createGEOEASGrid(const QString columnName, std::vector<double> &value
     out << "1\n";
     out << columnName << '\n';
 
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Creating grid...");
+
     //loop to output the values
     std::vector< double >::iterator it = values.begin();
-    for( ; it != values.end(); ++it ){
+    int counter = 0;
+    for( ; it != values.end(); ++it, ++counter ){
         out << (*it) << '\n';
+        if( ! ( counter % 1000) )
+            QCoreApplication::processEvents(); //let Qt repaint widgets
     }
 
     //close file
@@ -519,15 +543,23 @@ void Util::createGEOEASGridFile(const QString gridDescription,
         out << *itColNames << '\n';
     }
 
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Creating grid...");
+
     //loop to output the values
     std::vector< std::vector<double> >::iterator it = array.begin();
-    for( ; it != array.end(); ++it ){
+    int counter = 0;
+    for( ; it != array.end(); ++it, ++counter ){
         std::vector<double> dataLine = *it;
         std::vector<double>::iterator itData = dataLine.begin();
         for(; itData != dataLine.end(); ++itData){
             out << *itData << '\t';  //TODO: it would be nice to not leave a useless trailing tab char
         }
         out << '\n';
+        if( ! ( counter % 1000) )
+            QCoreApplication::processEvents(); //let Qt repaint widgets
     }
 
     //close file
@@ -968,7 +1000,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2"
+    previousVersions << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2"
                      << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1"
                      << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
