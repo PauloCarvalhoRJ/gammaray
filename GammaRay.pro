@@ -518,7 +518,7 @@ VERSION = 3.6.1
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
-# Define application nam    QMAKE_DEFAULT_INCDIRS =e macro
+# Define application name macro
 DEFINES += APP_NAME=\\\"$$TARGET\\\"
 
 # Define application name and version macro

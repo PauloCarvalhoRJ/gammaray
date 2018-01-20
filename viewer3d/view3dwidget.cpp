@@ -75,6 +75,9 @@ View3DWidget::View3DWidget(QWidget *parent)
     _renderer->SetBackground(0.9, 0.9, 1);
     _renderer->SetBackground2(0.5, 0.5, 1);
 
+    // enable antialiasing
+    _renderer->SetUseFXAA( true );
+
     //    renderer->AddActor( sphereActor );  // VTK TEST CODE
     //    vtkRenderWindow* renwin = vtkRenderWindow::New();
     //	vtkGenericOpenGLRenderWindow* glrw =
@@ -161,7 +164,7 @@ void View3DWidget::onNewObject(const View3DListRecord object_info)
     _renderer->AddActor(actor);
 
     // redraw the scene
-    _vtkwidget->update();
+    _vtkwidget->GetRenderWindow()->Render();
 
     // keeps a list of locator-actor pairs to allow management
     _currentObjects.insert(object_info, viewData);
@@ -176,7 +179,7 @@ void View3DWidget::onRemoveObject(const View3DListRecord object_info)
     _renderer->RemoveActor(actor);
 
     // redraw the scene
-    _vtkwidget->update();
+    _vtkwidget->GetRenderWindow()->Render();
 
     removeCurrentConfigWidget();
 
@@ -196,7 +199,7 @@ void View3DWidget::onViewAll()
     // adjusts view so everything fits in the screen
     _renderer->ResetCamera();
     // redraw the scene
-    _vtkwidget->update();
+    _vtkwidget->GetRenderWindow()->Render();
 }
 
 void View3DWidget::onLookAtXY()
@@ -210,7 +213,7 @@ void View3DWidget::onLookAtXY()
     _renderer->GetActiveCamera()->SetPosition(fp[0], fp[1], fp[2] + dist);
     _renderer->GetActiveCamera()->SetViewUp(0.0, 1.0, 0.0);
     // redraw the scene
-    _vtkwidget->update();
+    _vtkwidget->GetRenderWindow()->Render();
 }
 
 void View3DWidget::onLookAtXZ()
@@ -223,7 +226,7 @@ void View3DWidget::onLookAtXZ()
     _renderer->GetActiveCamera()->SetPosition(fp[0], fp[1] - dist, fp[2]);
     _renderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
     // redraw the scene
-    _vtkwidget->update();
+    _vtkwidget->GetRenderWindow()->Render();
 }
 
 void View3DWidget::onLookAtYZ()
@@ -236,7 +239,7 @@ void View3DWidget::onLookAtYZ()
     _renderer->GetActiveCamera()->SetPosition(fp[0] + dist, fp[1], fp[2]);
     _renderer->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
     // redraw the scene
-    _vtkwidget->update();
+    _vtkwidget->GetRenderWindow()->Render();
 }
 
 void View3DWidget::onObjectsListItemActivated(QListWidgetItem *item)
@@ -290,7 +293,7 @@ void View3DWidget::onConfigWidgetChanged()
 {
     Application::instance()->logInfo("View3DWidget::onConfigWidgetChanged()");
     _renderer->Render();
-    _vtkwidget->update();
+    _vtkwidget->GetRenderWindow()->Render();
 }
 
 void View3DWidget::onVerticalExaggeration()
@@ -326,7 +329,7 @@ void View3DWidget::onVerticalExaggerationChanged(double value)
     // redraw the scene (none of these works :( )
     //    _renderer->Render();
     //    _vtkwidget->GetRenderWindow()->GetInteractor()->Render();
-    //    _vtkwidget->update();
+    //    _vtkwidget->GetRenderWindow()->Render();
     //    _vtkwidget->repaint();
 
     // Perturb the splitter to force a redraw.

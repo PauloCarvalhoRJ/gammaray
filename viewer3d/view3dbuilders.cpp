@@ -821,7 +821,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     vtkSmartPointer<vtkActor> actor =
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
-    actor->GetProperty()->EdgeVisibilityOn();
+    //actor->GetProperty()->EdgeVisibilityOn();
     return View3DViewData(actor, subGrid, mapper, threshold, srate);
 }
 
