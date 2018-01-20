@@ -25,7 +25,7 @@ debug:UI_DIR = ../GammaRay_debug/ui
 
 CONFIG += c++11
 
-QMAKE_CXXFLAGS += -m64
+#QMAKE_CXXFLAGS += -m64
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -173,6 +173,11 @@ SOURCES += main.cpp\
     widgets/distributionfieldselector.cpp \
     viewer3d/view3dverticalexaggerationwidget.cpp \
     widgets/focuswatcher.cpp \
+    spectral/svd.cpp \
+    spectral/pca.cpp \
+    spectral/spectral.cpp \
+    imagejockey/imagejockeysvdutils.cpp \
+    imagejockey/svdparametersdialog.cpp \
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
     dialogs/machinelearningdialog.cpp \
@@ -337,6 +342,11 @@ HEADERS  += mainwindow.h \
     widgets/distributionfieldselector.h \
     viewer3d/view3dverticalexaggerationwidget.h \
     widgets/focuswatcher.h \
+    spectral/svd.h \
+    spectral/pca.h \
+    spectral/spectral.h \
+    imagejockey/imagejockeysvdutils.h \
+    imagejockey/svdparametersdialog.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
     dialogs/machinelearningdialog.h \
@@ -413,6 +423,7 @@ FORMS    += mainwindow.ui \
     dialogs/sgsimdialog.ui \
     widgets/distributionfieldselector.ui \
     viewer3d/view3dverticalexaggerationwidget.ui \
+    imagejockey/svdparametersdialog.ui \
     dialogs/machinelearningdialog.ui
 
 #==================== The Boost include path.==================
@@ -470,9 +481,28 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
                -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
                -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingMath$$_VTK_VERSION_SUFFIX \
-               -lvtkGUISupportQtOpenGL$$_VTK_VERSION_SUFFIX
+               -lvtkImagingMath$$_VTK_VERSION_SUFFIX
+               #-lvtkGUISupportQtOpenGL2$$_VTK_VERSION_SUFFIX
 
+#=============================================================================
+
+#========= The FFTW3 include and lib path and libraries.=========
+_FFTW3_INCLUDE = $$(FFTW3_INCLUDE)
+isEmpty(_FFTW3_INCLUDE){
+    error(FFTW3_INCLUDE environment variable not defined.)
+}
+_FFTW3_LIB = $$(FFTW3_LIB)
+isEmpty(_FFTW3_LIB){
+    error(FFTW3_LIB environment variable not defined.)
+}
+INCLUDEPATH += $$_FFTW3_INCLUDE
+LIBPATH     += $$_FFTW3_LIB
+LIBS        += -lfftw3
+LIBS        += -lfftw3f
+#==============================================================
+
+#=====================Embedded thirdparty libraries===========================
+INCLUDEPATH += thirdparty
 #=============================================================================
 
 #Library used in Util::getPhysicalRAMusage()

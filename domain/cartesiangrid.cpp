@@ -523,3 +523,44 @@ View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
 {
     return View3DBuilders::build( this, widget3D );
 }
+
+spectral::array CartesianGrid::getSpectralArray(uint nDataColumn)
+{
+    spectral::array data( _nx, _ny, _nz, 0.0 );
+    long idx = 0;
+    for (long i = 0; i < _nx; ++i) {
+        for (long j = 0; j < _ny; ++j) {
+            for (long k = 0; k < _nz; ++k) {
+                data.d_[idx] = dataIJK(nDataColumn, i, j, k);
+                ++idx;
+            }
+        }
+    }
+    return data;
+}
+
+long CartesianGrid::append(const QString columnName, const spectral::array &array)
+{
+    long index = addEmptyDataColumn( columnName, _nx * _ny * _nz );
+
+    long idx = 0;
+    for (long i = 0; i < _nx; ++i) {
+        for (long j = 0; j < _ny; ++j) {
+            for (long k = 0; k < _nz; ++k) {
+                double value = array.d_[idx];
+                setDataIJK( index, i, j, k, value );
+                ++idx;
+            }
+        }
+    }
+
+    if( idx != _nx * _ny * _nz )
+        Application::instance()->logError("CartesianGrid::append(): mismatch between number of data values added and Cartesian grid cell count.");
+
+    writeToFS();
+
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
+
+    return index;
+}

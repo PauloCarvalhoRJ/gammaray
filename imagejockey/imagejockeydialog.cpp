@@ -12,7 +12,10 @@
 #include "spectrogram1dplot.h"
 #include "equalizer/equalizerwidget.h"
 #include "util.h"
+#include "svdparametersdialog.h"
+#include "spectral/svd.h"
 
+#include <QInputDialog>
 #include <qwt_wheel.h>
 
 ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
@@ -337,3 +340,39 @@ void ImageJockeyDialog::restore()
 }
 
 
+
+
+void ImageJockeyDialog::onSVD()
+{
+    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    if( ! cg )
+        return;
+
+    bool ok;
+    QString var_suffix = QInputDialog::getText(this, "User input requested.", "Suffixes for the SVD factors:", QLineEdit::Normal,
+                                             "/SVD_", &ok);
+    if( ! ok )
+        return;
+
+    long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
+    SVDParametersDialog dlg( this );
+    int userResponse = dlg.exec();
+
+    if( userResponse != QDialog::Accepted )
+        return;
+
+    spectral::array a = cg->getSpectralArray( selectedAttributeIndex );
+    spectral::SVD svd = spectral::svd( a );
+
+    long numberOfFactors = dlg.getNumberOfFactors();
+
+    QString baseFactorName = m_atSelector->getSelectedVariableName();
+    for (long i = 0; i < numberOfFactors; ++i) {
+        spectral::array factor = svd.factor(i);
+        QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
+        cg->append( factorName, factor );
+    }
+
+    //    auto weights = svd.factor_weights();
+    //    renderDecayingCurve(weights);
+}

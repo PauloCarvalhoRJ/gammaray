@@ -1,10 +1,11 @@
 GammaRay is licensed under the Creative Commons license of type Attribution/Share-alike (CC-BY-SA) version 3.0 (https://creativecommons.org/licenses/by-sa/3.0/deed.en).  
 
-Briefly, it means that you can freely use, redistribute, modify or create derivative work from it, even for commercial purposes.  On the other hand, you must always give credit to the authors (the original author and the code contributors) and derivative work cannot have more restrictive licensing (e.g. CC-BY-ND or Copyright).
+Briefly, it means that you can freely use, redistribute, modify or create derivative work from it, even for commercial purposes.  On the other hand, you must always give credit to the authors and the code contributors. In addition, derivative work cannot have more restrictive licensing (e.g. CC-BY-ND or Copyright).
 A derivative work is any work that uses GammaRay code or executable: a new code branch of GammaRay; software or printed work with part or the whole of its code; a software bundle that includes unmodified GammaRay code or executable are examples.  The following are NOT derivative works for licensing purposes: graphics, variograms, models, figures, data files, reports, research papers, theses, maps, estimates, simulations, or any work produced by merely USING GammaRay.
 
 Authors:
-Original: Paulo R. M. de Carvalho (paulo.r.m.carvalho@gmail.com)
+GUI, infrastructure and interface to GSLib: Paulo R. M. de Carvalho (paulo.r.m.carvalho@gmail.com)
+Single Value Decomposition (SVD) and interface to Eigen library: Pericles Lopes Machado (periclesraskolnikoff@gmail.com)
 Code contributors:
 
 =========================================Complete transcription of the License====================================================

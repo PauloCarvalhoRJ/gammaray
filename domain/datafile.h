@@ -252,6 +252,11 @@ public:
                          const QString nameForNewAttributeOfImaginaryPart);
 
     /**
+     * Adds a new data column to this DataFile filled with zeroes.
+     */
+    long addEmptyDataColumn( const QString columnName, long numberOfDataElements );
+
+    /**
      * Returns a pointer to the internal algorithm interface data source (see classes in /algorthms subdirectory).
      */
     IAlgorithmDataSource* algorithmDataSource();
