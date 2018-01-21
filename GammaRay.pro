@@ -177,7 +177,6 @@ SOURCES += main.cpp\
     spectral/pca.cpp \
     spectral/spectral.cpp \
     imagejockey/imagejockeysvdutils.cpp \
-    imagejockey/svdparametersdialog.cpp \
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
     dialogs/machinelearningdialog.cpp \
@@ -189,7 +188,8 @@ SOURCES += main.cpp\
     algorithms/randomforest.cpp \
     algorithms/decisiontree.cpp \
     domain/auxiliary/variableremover.cpp \
-    domain/auxiliary/datasaver.cpp
+    domain/auxiliary/datasaver.cpp \
+    imagejockey/svd/svdparametersdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -345,7 +345,6 @@ HEADERS  += mainwindow.h \
     spectral/pca.h \
     spectral/spectral.h \
     imagejockey/imagejockeysvdutils.h \
-    imagejockey/svdparametersdialog.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
     dialogs/machinelearningdialog.h \
@@ -357,7 +356,8 @@ HEADERS  += mainwindow.h \
     algorithms/randomforest.h \
     algorithms/decisiontree.h \
     domain/auxiliary/variableremover.h \
-    domain/auxiliary/datasaver.h
+    domain/auxiliary/datasaver.h \
+    imagejockey/svd/svdparametersdialog.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -422,8 +422,8 @@ FORMS    += mainwindow.ui \
     dialogs/sgsimdialog.ui \
     widgets/distributionfieldselector.ui \
     viewer3d/view3dverticalexaggerationwidget.ui \
-    imagejockey/svdparametersdialog.ui \
-    dialogs/machinelearningdialog.ui
+    dialogs/machinelearningdialog.ui \
+    imagejockey/svd/svdparametersdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

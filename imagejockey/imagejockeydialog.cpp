@@ -12,8 +12,9 @@
 #include "spectrogram1dplot.h"
 #include "equalizer/equalizerwidget.h"
 #include "util.h"
-#include "svdparametersdialog.h"
-#include "spectral/svd.h"
+#include "svd/svdparametersdialog.h"
+
+#include "spectral/svd.h" //third-party Eigen
 
 #include <QInputDialog>
 #include <QMessageBox>
