@@ -16,6 +16,7 @@
 #include "spectral/svd.h"
 
 #include <QInputDialog>
+#include <QMessageBox>
 #include <qwt_wheel.h>
 
 ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
@@ -345,8 +346,10 @@ void ImageJockeyDialog::restore()
 void ImageJockeyDialog::onSVD()
 {
     CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
-    if( ! cg )
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
         return;
+    }
 
     bool ok;
     QString var_suffix = QInputDialog::getText(this, "User input requested.", "Suffixes for the SVD factors:", QLineEdit::Normal,
