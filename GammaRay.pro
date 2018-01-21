@@ -268,7 +268,6 @@ HEADERS  += mainwindow.h \
     widgets/valuepairvertical.h \
     widgets/fileselectorwidget.h \
     scripting.h \
-    exprtk.hpp \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
     domain/triads.h \
