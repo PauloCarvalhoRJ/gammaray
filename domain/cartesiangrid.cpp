@@ -6,6 +6,8 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "geostats/gridcell.h"
 
+#include "spectral/spectral.h" //eigen third party library
+
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -524,14 +526,14 @@ View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
     return View3DBuilders::build( this, widget3D );
 }
 
-spectral::array CartesianGrid::getSpectralArray(uint nDataColumn)
+spectral::array *CartesianGrid::createSpectralArray(uint nDataColumn)
 {
-    spectral::array data( _nx, _ny, _nz, 0.0 );
+    spectral::array* data = new spectral::array( _nx, _ny, _nz, 0.0 );
     long idx = 0;
-    for (long i = 0; i < _nx; ++i) {
-        for (long j = 0; j < _ny; ++j) {
-            for (long k = 0; k < _nz; ++k) {
-                data.d_[idx] = dataIJK(nDataColumn, i, j, k);
+    for (ulong i = 0; i < _nx; ++i) {
+        for (ulong j = 0; j < _ny; ++j) {
+            for (ulong k = 0; k < _nz; ++k) {
+                data->d_[idx] = dataIJK(nDataColumn, i, j, k);
                 ++idx;
             }
         }
@@ -543,10 +545,10 @@ long CartesianGrid::append(const QString columnName, const spectral::array &arra
 {
     long index = addEmptyDataColumn( columnName, _nx * _ny * _nz );
 
-    long idx = 0;
-    for (long i = 0; i < _nx; ++i) {
-        for (long j = 0; j < _ny; ++j) {
-            for (long k = 0; k < _nz; ++k) {
+    ulong idx = 0;
+    for (ulong i = 0; i < _nx; ++i) {
+        for (ulong j = 0; j < _ny; ++j) {
+            for (ulong k = 0; k < _nz; ++k) {
                 double value = array.d_[idx];
                 setDataIJK( index, i, j, k, value );
                 ++idx;

@@ -361,8 +361,8 @@ void ImageJockeyDialog::onSVD()
     if( userResponse != QDialog::Accepted )
         return;
 
-    spectral::array a = cg->getSpectralArray( selectedAttributeIndex );
-    spectral::SVD svd = spectral::svd( a );
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+    spectral::SVD svd = spectral::svd( *a );
 
     long numberOfFactors = dlg.getNumberOfFactors();
 
@@ -372,6 +372,8 @@ void ImageJockeyDialog::onSVD()
         QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
         cg->append( factorName, factor );
     }
+
+    delete a;
 
     //    auto weights = svd.factor_weights();
     //    renderDecayingCurve(weights);
