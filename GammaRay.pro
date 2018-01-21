@@ -189,7 +189,11 @@ SOURCES += main.cpp\
     algorithms/decisiontree.cpp \
     domain/auxiliary/variableremover.cpp \
     domain/auxiliary/datasaver.cpp \
-    imagejockey/svd/svdparametersdialog.cpp
+    imagejockey/svd/svdparametersdialog.cpp \
+    imagejockey/svd/svdfactor.cpp \
+    imagejockey/svd/svdfactortree.cpp \
+    imagejockey/svd/svdanalysisdialog.cpp \
+    imagejockey/svd/svdfactortreeview.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -357,7 +361,11 @@ HEADERS  += mainwindow.h \
     algorithms/decisiontree.h \
     domain/auxiliary/variableremover.h \
     domain/auxiliary/datasaver.h \
-    imagejockey/svd/svdparametersdialog.h
+    imagejockey/svd/svdparametersdialog.h \
+    imagejockey/svd/svdfactor.h \
+    imagejockey/svd/svdfactortree.h \
+    imagejockey/svd/svdanalysisdialog.h \
+    imagejockey/svd/svdfactortreeview.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -423,7 +431,8 @@ FORMS    += mainwindow.ui \
     widgets/distributionfieldselector.ui \
     viewer3d/view3dverticalexaggerationwidget.ui \
     dialogs/machinelearningdialog.ui \
-    imagejockey/svd/svdparametersdialog.ui
+    imagejockey/svd/svdparametersdialog.ui \
+    imagejockey/svd/svdanalysisdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

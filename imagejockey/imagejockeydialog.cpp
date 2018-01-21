@@ -13,11 +13,16 @@
 #include "equalizer/equalizerwidget.h"
 #include "util.h"
 #include "svd/svdparametersdialog.h"
+#include "svd/svdfactor.h"
+#include "svd/svdfactortree.h"
+#include "svd/svdanalysisdialog.h"
 
 #include "spectral/svd.h" //third-party Eigen
 
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QProgressDialog>
+#include <QThread>
 #include <qwt_wheel.h>
 
 ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
@@ -341,43 +346,63 @@ void ImageJockeyDialog::restore()
     m_spectrogram1Dparams->setAzimuth( m_spectrogram1Dparams->azimuth() );
 }
 
-
-
-
 void ImageJockeyDialog::onSVD()
 {
+    //Get the selected Cartesian grid containing a Fourier image or experimental variogram (e.g. for Factorial kriging)
     CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
     if( ! cg ){
         QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
         return;
     }
 
+    //Ask the user for the new variable names pattern.
     bool ok;
     QString var_suffix = QInputDialog::getText(this, "User input requested.", "Suffixes for the SVD factors:", QLineEdit::Normal,
                                              "/SVD_", &ok);
     if( ! ok )
         return;
 
+    //User enters SVD parameters
     long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
     SVDParametersDialog dlg( this );
     int userResponse = dlg.exec();
-
     if( userResponse != QDialog::Accepted )
         return;
 
+    //Create SVD objects
     spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
     spectral::SVD svd = spectral::svd( *a );
 
+    //Get the desired number of factors
     long numberOfFactors = dlg.getNumberOfFactors();
 
-    QString baseFactorName = m_atSelector->getSelectedVariableName();
-    for (long i = 0; i < numberOfFactors; ++i) {
-        spectral::array factor = svd.factor(i);
-        QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
-        cg->append( factorName, factor );
+    //Create the structure to store the SVD factors
+    SVDFactorTree factorTree;
+
+    //Compute the SVD factors
+    {
+        QString baseFactorName = m_atSelector->getSelectedVariableName();
+        for (long i = 0; i < numberOfFactors; ++i) {
+            QProgressDialog progressDialog;
+            progressDialog.setRange(0,0);
+            progressDialog.setLabelText("Computing SVD factor " + QString::number(i+1) + " of " + QString::number( numberOfFactors ) + ".");
+            progressDialog.show();
+            QCoreApplication::processEvents();
+            spectral::array factor = svd.factor(i);
+            QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
+            SVDFactor svdFactor( std::move( factor[0] ) );
+            factorTree.addFactor( std::move( svdFactor ) );
+            //cg->append( factorName, factor );
+        }
     }
 
+    //delete the data array, since it's not necessary anymore
     delete a;
+
+    //show the SDV analysis dialog
+    SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+    svdad->setTree( std::move( factorTree ) );
+    svdad->show();
 
     //    auto weights = svd.factor_weights();
     //    renderDecayingCurve(weights);
