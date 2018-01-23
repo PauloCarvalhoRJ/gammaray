@@ -46,6 +46,7 @@
   #include <stdlib.h>
   #include <stdio.h>
   #include <string.h>
+#include <QProgressDialog>
 #endif
 #ifdef Q_OS_MAC
   #include <mach/mach.h>
