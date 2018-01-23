@@ -486,22 +486,36 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkCommonTransforms$$_VTK_VERSION_SUFFIX \
                -lvtkImagingSources$$_VTK_VERSION_SUFFIX \
                -lvtkImagingCore$$_VTK_VERSION_SUFFIX \
-               -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
-               -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingMath$$_VTK_VERSION_SUFFIX
-               #-lvtkGUISupportQtOpenGL2$$_VTK_VERSION_SUFFIX
+			   -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
+			   -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonMisc$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonComputationalGeometry$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonMath$$_VTK_VERSION_SUFFIX \
+			   -lvtksys$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersGeometry$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonColor$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonSystem$$_VTK_VERSION_SUFFIX \
+			   -lvtkglew$$_VTK_VERSION_SUFFIX \
+			   -lvtkfreetype$$_VTK_VERSION_SUFFIX \
+			   -lvtkzlib$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersHybrid$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersModeling$$_VTK_VERSION_SUFFIX \
+			   -lvtkImagingGeneral$$_VTK_VERSION_SUFFIX \
+			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
+			   -lvtkalglib$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
 #========= The FFTW3 include and lib path and libraries.=========
 _FFTW3_INCLUDE = $$(FFTW3_INCLUDE)
 isEmpty(_FFTW3_INCLUDE){
-    error(FFTW3_INCLUDE environment variable not defined.)
+	error(FFTW3_INCLUDE environment variable not defined.)
 }
 _FFTW3_LIB = $$(FFTW3_LIB)
 isEmpty(_FFTW3_LIB){
-    error(FFTW3_LIB environment variable not defined.)
+	error(FFTW3_LIB environment variable not defined.)
 }
 INCLUDEPATH += $$_FFTW3_INCLUDE
 LIBPATH     += $$_FFTW3_LIB
