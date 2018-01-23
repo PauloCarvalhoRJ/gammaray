@@ -17,11 +17,15 @@ public:
     explicit SVDAnalysisDialog(QWidget *parent = 0);
     ~SVDAnalysisDialog();
 
-    void setTree( SVDFactorTree&& tree );
+	void setTree( SVDFactorTree* tree );
+
+	/** Sets whether the tree pointed to by m_tree will be deleted upon closing this dialog. Default is false.*/
+	void setDeleteTreeOnClose( bool flag ){ m_deleteTree = flag; }
 
 private:
     Ui::SVDAnalysisDialog *ui;
-    SVDFactorTree m_tree;
+	SVDFactorTree *m_tree;
+	bool m_deleteTree;
 };
 
 #endif // SVDANALYSISDIALOG_H

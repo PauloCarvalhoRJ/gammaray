@@ -377,7 +377,8 @@ void ImageJockeyDialog::onSVD()
     long numberOfFactors = dlg.getNumberOfFactors();
 
     //Create the structure to store the SVD factors
-    SVDFactorTree factorTree;
+	//TODO: this is not being deleted
+	SVDFactorTree * factorTree = new SVDFactorTree();
 
     //Compute the SVD factors
     {
@@ -390,8 +391,8 @@ void ImageJockeyDialog::onSVD()
             QCoreApplication::processEvents();
             spectral::array factor = svd.factor(i);
             QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
-            SVDFactor svdFactor( std::move( factor[0] ) );
-            factorTree.addFactor( std::move( svdFactor ) );
+			SVDFactor svdFactor( std::move( factor[0] ), i + 1 );
+			factorTree->addFactor( std::move( svdFactor ) );
             //cg->append( factorName, factor );
         }
     }
@@ -401,7 +402,8 @@ void ImageJockeyDialog::onSVD()
 
     //show the SDV analysis dialog
     SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
-    svdad->setTree( std::move( factorTree ) );
+	svdad->setTree( factorTree );
+	svdad->setDeleteTreeOnClose( true );
     svdad->show();
 
     //    auto weights = svd.factor_weights();

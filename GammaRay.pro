@@ -11,18 +11,19 @@ greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 TARGET = GammaRay
 TEMPLATE = app
 
-release:DESTDIR = ../GammaRay_release/dist
-release:OBJECTS_DIR = ../GammaRay_release/obj
-release:MOC_DIR = ../GammaRay_release/moc
-release:RCC_DIR = ../GammaRay_release/rcc
-release:UI_DIR = ../GammaRay_release/ui
-
-debug:DESTDIR = ../GammaRay_debug/dist
-debug:OBJECTS_DIR = ../GammaRay_debug/obj
-debug:MOC_DIR = ../GammaRay_debug/moc
-debug:RCC_DIR = ../GammaRay_debug/rcc
-debug:UI_DIR = ../GammaRay_debug/ui
-
+CONFIG( release, debug|release ) {
+	DESTDIR = ../GammaRay_release/dist
+	OBJECTS_DIR = ../GammaRay_release/obj
+	MOC_DIR = ../GammaRay_release/moc
+	RCC_DIR = ../GammaRay_release/rcc
+	UI_DIR = ../GammaRay_release/ui
+} else {
+	DESTDIR = ../GammaRay_debug/dist
+	OBJECTS_DIR = ../GammaRay_debug/obj
+	MOC_DIR = ../GammaRay_debug/moc
+	RCC_DIR = ../GammaRay_debug/rcc
+	UI_DIR = ../GammaRay_debug/ui
+}
 CONFIG += c++11
 
 #QMAKE_CXXFLAGS += -m64
