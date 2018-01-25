@@ -4,7 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -194,7 +194,9 @@ SOURCES += main.cpp\
     imagejockey/svd/svdfactor.cpp \
     imagejockey/svd/svdfactortree.cpp \
     imagejockey/svd/svdanalysisdialog.cpp \
-    imagejockey/svd/svdfactortreeview.cpp
+	imagejockey/svd/svdfactortreeview.cpp \
+	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.cpp \
+    imagejockey/svd/svdfactorsel/svdfactorsselectionchartview.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -366,7 +368,9 @@ HEADERS  += mainwindow.h \
     imagejockey/svd/svdfactor.h \
     imagejockey/svd/svdfactortree.h \
     imagejockey/svd/svdanalysisdialog.h \
-    imagejockey/svd/svdfactortreeview.h
+	imagejockey/svd/svdfactortreeview.h \
+	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.h \
+    imagejockey/svd/svdfactorsel/svdfactorsselectionchartview.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -433,7 +437,8 @@ FORMS    += mainwindow.ui \
     viewer3d/view3dverticalexaggerationwidget.ui \
     dialogs/machinelearningdialog.ui \
     imagejockey/svd/svdparametersdialog.ui \
-    imagejockey/svd/svdanalysisdialog.ui
+	imagejockey/svd/svdanalysisdialog.ui \
+	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
