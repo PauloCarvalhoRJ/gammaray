@@ -20,6 +20,12 @@ public:
 	/** Adds a SVD Factor under the root node of this tree. All factors are deleted upon destruction of this object. */
 	void addFirstLevelFactor( SVDFactor* factor );
 
+	/** Assigns weights to the top level factors of the tree. The default weight is 1.0 for all factors.
+	 * The number of weights must match the number of top level factors.
+	 * @return Whether assignment was successful.
+	 */
+	bool assignWeights( const std::vector<double>& weights );
+
 private:
 	SVDFactor *m_rootFactor;
 
@@ -33,6 +39,7 @@ public:
 	Qt::ItemFlags flags(const QModelIndex &index) const;
 	QVariant headerData(int section, Qt::Orientation orientation,
 						int role = Qt::DisplayRole) const;
+	bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole);
 };
 
 #endif // SVDFACTORTREE_H

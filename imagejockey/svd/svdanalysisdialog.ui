@@ -6,23 +6,49 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>505</width>
-    <height>320</height>
+    <width>576</width>
+    <height>493</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="SVDFactorTreeView" name="svdFactorTreeView">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>181</width>
-     <height>301</height>
-    </rect>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <property name="margin">
+    <number>0</number>
    </property>
-  </widget>
+   <item>
+    <widget class="QSplitter" name="splitterMain">
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+     <widget class="QFrame" name="frmMainLeft">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <property name="margin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="SVDFactorTreeView" name="svdFactorTreeView"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QFrame" name="frmMainRight">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+     </widget>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <customwidgets>
   <customwidget>

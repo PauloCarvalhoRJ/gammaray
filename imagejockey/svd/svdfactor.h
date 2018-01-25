@@ -23,6 +23,7 @@ public:
      */
 	SVDFactor( spectral::array&& factorData,
 			   uint number,
+			   double weight,
 			   SVDFactor* parentFactor = nullptr );
 
 	/** Default constructor used for the root "factor" in SVDFactorTree. */
@@ -32,14 +33,26 @@ public:
 
 	void addChildFactor( SVDFactor* child );
 
+	bool isSelected(){ return m_selected; }
+	void setSelected( bool value ){ m_selected = value; }
+
+	/** Assigns weights to the child factors. The default weight is 1.0 for all factors.
+	 * The number of weights must be greater than or equal to the number of child factors.
+	 * @return Whether assignment was successful.
+	 */
+	bool assignWeights( const std::vector<double>& weights );
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array m_factorData;
 	uint m_number;
 	std::vector< SVDFactor* > m_childFactors;
+	bool m_selected;
+	double m_weight;
 	uint getIndexOfChild( SVDFactor* child );
 	bool isRoot();
 	void setParentFactor( SVDFactor* parent );
+	void setWeight( double weight ){ m_weight = weight; }
 
 	// Methods to support the QAbstractItemModel interface
 public:

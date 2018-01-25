@@ -13,7 +13,11 @@ SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     setWindowTitle( "SVD Analysis" );
 
     //deletes dialog from memory upon user closing it
-    this->setAttribute(Qt::WA_DeleteOnClose);}
+	this->setAttribute(Qt::WA_DeleteOnClose);
+
+	//positioning the splitter
+	ui->splitterMain->setSizes( QList<int>() << 300 << width()-300 );
+}
 
 SVDAnalysisDialog::~SVDAnalysisDialog()
 {

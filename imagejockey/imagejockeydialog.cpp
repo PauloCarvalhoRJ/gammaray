@@ -369,29 +369,38 @@ void ImageJockeyDialog::onSVD()
     if( userResponse != QDialog::Accepted )
         return;
 
-    //Create SVD objects
+	//Get the data
     spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
-    spectral::SVD svd = spectral::svd( *a );
 
-    //Get the desired number of factors
+	//Compute SVD
+	QProgressDialog progressDialog;
+	progressDialog.setRange(0,0);
+	progressDialog.setLabelText("Computing SVD factors...");
+	progressDialog.show();
+	QCoreApplication::processEvents();
+	spectral::SVD svd = spectral::svd( *a );
+	progressDialog.hide();
+
+	//TODO: let user select desired factors from a decay graph with the factor weights here.
+
+	//Get the desired number of factors
     long numberOfFactors = dlg.getNumberOfFactors();
 
     //Create the structure to store the SVD factors
-	//TODO: this is not being deleted
 	SVDFactorTree * factorTree = new SVDFactorTree();
 
-    //Compute the SVD factors
+	//Get the desired SVD factors
     {
-        QString baseFactorName = m_atSelector->getSelectedVariableName();
+		QProgressDialog progressDialog;
+		progressDialog.setRange(0,0);
+		progressDialog.show();
+		QString baseFactorName = m_atSelector->getSelectedVariableName();
         for (long i = 0; i < numberOfFactors; ++i) {
-            QProgressDialog progressDialog;
-            progressDialog.setRange(0,0);
-            progressDialog.setLabelText("Computing SVD factor " + QString::number(i+1) + " of " + QString::number( numberOfFactors ) + ".");
-            progressDialog.show();
-            QCoreApplication::processEvents();
-            spectral::array factor = svd.factor(i);
+			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
+			QCoreApplication::processEvents();
+			spectral::array factor = svd.factor(i);
             QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
-			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1 );
+			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, 1.0 );
 			factorTree->addFirstLevelFactor( svdFactor );
             //cg->append( factorName, factor );
         }
@@ -400,12 +409,15 @@ void ImageJockeyDialog::onSVD()
     //delete the data array, since it's not necessary anymore
     delete a;
 
+	//assign the weights to each factor
+	spectral::array weights = svd.factor_weights();
+	Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
+	if( ! factorTree->assignWeights( weights.data() ) )
+		Application::instance()->logWarn("ImageJockeyDialog::onSVD(): weight assignment failed.");
+
     //show the SDV analysis dialog
     SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
 	svdad->setTree( factorTree );
 	svdad->setDeleteTreeOnClose( true );
     svdad->show();
-
-    //    auto weights = svd.factor_weights();
-    //    renderDecayingCurve(weights);
 }

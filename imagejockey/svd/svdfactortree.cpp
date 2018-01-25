@@ -15,6 +15,11 @@ void SVDFactorTree::addFirstLevelFactor(SVDFactor * factor)
 	m_rootFactor->addChildFactor( factor );
 }
 
+bool SVDFactorTree::assignWeights(const std::vector<double> & weights)
+{
+	return m_rootFactor->assignWeights( weights );
+}
+
 //-------------- QAbstractItemModel interface------------
 QModelIndex SVDFactorTree::index(int row, int column, const QModelIndex &parent) const
 {
@@ -68,18 +73,32 @@ QVariant SVDFactorTree::data(const QModelIndex &index, int role) const
 		return QVariant( item->getPresentationName() );
 	 if( role == Qt::DecorationRole )
 		return QVariant( item->getIcon() );
+	 if( role == Qt::CheckStateRole )
+		 return static_cast<int>( item->isSelected() ? Qt::Checked : Qt::Unchecked );
 	 return QVariant();
 }
 Qt::ItemFlags SVDFactorTree::flags(const QModelIndex &index) const
 {
 	if (!index.isValid())
 		return 0;
-	return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+	return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsUserCheckable ;
 }
 QVariant SVDFactorTree::headerData(int /*section*/, Qt::Orientation /*orientation*/, int /*role*/) const
 {
 	//if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
 	//    return rootItem->data(section);
 	return QVariant();
+}
+bool SVDFactorTree::setData(const QModelIndex & index, const QVariant & value, int role)
+{
+	if( role == Qt::EditRole )
+		return false;
+	if( role == Qt::CheckStateRole ){
+		SVDFactor *item = static_cast<SVDFactor*>(index.internalPointer());
+		item->setSelected( value.toBool() );
+		emit dataChanged(index, index);
+		return true;
+	}
+	return QAbstractItemModel::setData(index, value, role);
 }
 //-------------------------end of QAbstractItemModel interface------------------------------------

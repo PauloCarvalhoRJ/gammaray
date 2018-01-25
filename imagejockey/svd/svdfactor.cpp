@@ -1,16 +1,20 @@
 #include "svdfactor.h"
 
-SVDFactor::SVDFactor(spectral::array &&factorData, uint number, SVDFactor *parentFactor) :
+SVDFactor::SVDFactor(spectral::array &&factorData, uint number, double weight, SVDFactor *parentFactor) :
     m_parentFactor( parentFactor ),
 	m_factorData( std::move( factorData) ),
-	m_number( number )
+	m_number( number ),
+	m_selected( true ),
+	m_weight( weight )
 {
 }
 
 SVDFactor::SVDFactor() :
 	m_parentFactor( nullptr ),
 	//m_factorData( ), //initialized by default constructor
-	m_number( 0 )
+	m_number( 0 ),
+	m_selected( false ),
+	m_weight( 0.0 )
 {
 }
 
@@ -27,6 +31,16 @@ void SVDFactor::addChildFactor(SVDFactor * child)
 {
 	m_childFactors.push_back( child );
 	child->setParentFactor( this );
+}
+
+bool SVDFactor::assignWeights(const std::vector<double> & weights)
+{
+	if( weights.size() < m_childFactors.size() )
+		return false;
+	std::vector<double>::const_iterator it = weights.cbegin();
+	for(int i = 0; i < m_childFactors.size(); ++it, ++i)
+		m_childFactors[i]->setWeight( *it );
+	return true;
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
@@ -75,10 +89,8 @@ QString SVDFactor::getPresentationName()
 {
 	if( ! m_parentFactor ) //root factor
 		return "ROOT";
-	else if( m_parentFactor->isRoot() ) //1st-level factors
-		return "Factor " + QString::number( m_number );
 	else
-		return m_parentFactor->getPresentationName() + "." + QString::number( m_number );
+		return "Factor " + QString::number( m_number ) + " (" + QString::number( m_weight ) + ")";
 }
 
 QIcon SVDFactor::getIcon()
