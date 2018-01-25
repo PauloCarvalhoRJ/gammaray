@@ -391,8 +391,8 @@ void ImageJockeyDialog::onSVD()
             QCoreApplication::processEvents();
             spectral::array factor = svd.factor(i);
             QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
-			SVDFactor svdFactor( std::move( factor[0] ), i + 1 );
-			factorTree->addFactor( std::move( svdFactor ) );
+			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1 );
+			factorTree->addFirstLevelFactor( svdFactor );
             //cg->append( factorName, factor );
         }
     }

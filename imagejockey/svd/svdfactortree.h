@@ -15,11 +15,13 @@ class SVDFactorTree : public QAbstractItemModel
 {
 public:
     SVDFactorTree();
+	virtual ~SVDFactorTree();
 
-    void addFactor( SVDFactor&& factor );
+	/** Adds a SVD Factor under the root node of this tree. All factors are deleted upon destruction of this object. */
+	void addFirstLevelFactor( SVDFactor* factor );
 
 private:
-    std::vector< SVDFactor > m_rootFactors;
+	SVDFactor *m_rootFactor;
 
 	// QAbstractItemModel interface
 public:

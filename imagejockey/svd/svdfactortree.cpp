@@ -1,12 +1,18 @@
 #include "svdfactortree.h"
 
-SVDFactorTree::SVDFactorTree()
+SVDFactorTree::SVDFactorTree() : QAbstractItemModel()
 {
+	m_rootFactor = new SVDFactor();
 }
 
-void SVDFactorTree::addFactor(SVDFactor &&factor)
+SVDFactorTree::~SVDFactorTree()
 {
-    m_rootFactors.push_back( std::move( factor ) );
+	delete m_rootFactor;
+}
+
+void SVDFactorTree::addFirstLevelFactor(SVDFactor * factor)
+{
+	m_rootFactor->addChildFactor( factor );
 }
 
 //-------------- QAbstractItemModel interface------------
@@ -18,17 +24,13 @@ QModelIndex SVDFactorTree::index(int row, int column, const QModelIndex &parent)
 	SVDFactor *parentItem;
 
 	if (!parent.isValid())
-		parentItem = nullptr;
+		parentItem = m_rootFactor;
 	else
 		parentItem = static_cast<SVDFactor*>(parent.internalPointer());
 
-	if ( parentItem ) {
-		SVDFactor *childItem = parentItem->getChildByIndex( row );
-		if( childItem )
-			return createIndex(row, column, childItem);
-		else
-			return QModelIndex();
-	}
+	SVDFactor *childItem = parentItem->getChildByIndex( row );
+	if (childItem)
+		return createIndex(row, column, childItem);
 	else
 		return QModelIndex();
 }
@@ -38,7 +40,7 @@ QModelIndex SVDFactorTree::parent(const QModelIndex &child) const
 		return QModelIndex();
 	SVDFactor *childItem = static_cast<SVDFactor*>(child.internalPointer());
 	SVDFactor *parentItem = childItem->getParent();
-	if ( ! parentItem )
+	if (parentItem == m_rootFactor)
 		return QModelIndex();
 	return createIndex(parentItem->getIndexInParent(), 0, parentItem);
 }
@@ -48,7 +50,7 @@ int SVDFactorTree::rowCount(const QModelIndex &parent) const
 	if (parent.column() > 0)
 		return 0;
 	if (!parent.isValid())
-		parentItem = nullptr;
+		parentItem = m_rootFactor;
 	else
 		parentItem = static_cast<SVDFactor*>(parent.internalPointer());
 	return parentItem->getChildCount();

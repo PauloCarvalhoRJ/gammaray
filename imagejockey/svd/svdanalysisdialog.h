@@ -19,7 +19,9 @@ public:
 
 	void setTree( SVDFactorTree* tree );
 
-	/** Sets whether the tree pointed to by m_tree will be deleted upon closing this dialog. Default is false.*/
+	/** Sets whether the tree pointed to by m_tree will be deleted upon closing this dialog. Default is false.
+	 *  This is normally set when the dialog is non-modal.
+	 */
 	void setDeleteTreeOnClose( bool flag ){ m_deleteTree = flag; }
 
 private:

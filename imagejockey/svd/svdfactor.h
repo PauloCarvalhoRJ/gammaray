@@ -24,12 +24,22 @@ public:
 	SVDFactor( spectral::array&& factorData,
 			   uint number,
 			   SVDFactor* parentFactor = nullptr );
+
+	/** Default constructor used for the root "factor" in SVDFactorTree. */
+	SVDFactor();
+
+	virtual ~SVDFactor();
+
+	void addChildFactor( SVDFactor* child );
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array m_factorData;
 	uint m_number;
-	std::vector< SVDFactor > m_childFactors;
+	std::vector< SVDFactor* > m_childFactors;
 	uint getIndexOfChild( SVDFactor* child );
+	bool isRoot();
+	void setParentFactor( SVDFactor* parent );
 
 	// Methods to support the QAbstractItemModel interface
 public:
