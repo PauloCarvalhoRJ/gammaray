@@ -16,6 +16,7 @@
 #include "svd/svdfactor.h"
 #include "svd/svdfactortree.h"
 #include "svd/svdanalysisdialog.h"
+#include "svd/svdfactorsel/svdfactorsselectiondialog.h"
 
 #include "spectral/svd.h" //third-party Eigen
 
@@ -381,10 +382,16 @@ void ImageJockeyDialog::onSVD()
 	spectral::SVD svd = spectral::svd( *a );
 	progressDialog.hide();
 
-	//TODO: let user select desired factors from a decay graph with the factor weights here.
+	//get the list with the factor weights (information quantity)
+	spectral::array weights = svd.factor_weights();
+	Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
 
-	//Get the desired number of factors
-    long numberOfFactors = dlg.getNumberOfFactors();
+	//Get the desired number of factors from the weight decay graph
+	SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+	svdfsd->exec();
+
+	long numberOfFactors = dlg.getNumberOfFactors();
+	//long numberOfFactors = svdfsd.getNumberOfFactors();
 
     //Create the structure to store the SVD factors
 	SVDFactorTree * factorTree = new SVDFactorTree();
@@ -409,9 +416,7 @@ void ImageJockeyDialog::onSVD()
     //delete the data array, since it's not necessary anymore
     delete a;
 
-	//assign the weights to each factor
-	spectral::array weights = svd.factor_weights();
-	Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
+	//assign the weights to each factor for the SVD analysis dialog
 	if( ! factorTree->assignWeights( weights.data() ) )
 		Application::instance()->logWarn("ImageJockeyDialog::onSVD(): weight assignment failed.");
 

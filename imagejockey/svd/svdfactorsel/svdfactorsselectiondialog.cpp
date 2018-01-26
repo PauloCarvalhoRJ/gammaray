@@ -1,16 +1,52 @@
 #include "svdfactorsselectiondialog.h"
 #include "ui_svdfactorsselectiondialog.h"
+#include "svdfactorsselectionchartview.h"
 
-SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(QWidget *parent) :
+#include <QLineSeries>
+#include <QValueAxis>
+
+SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(const std::vector<double> & weights, QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::SVDFactorsSelectionDialog)
+	ui(new Ui::SVDFactorsSelectionDialog),
+	m_weights( weights ),
+	m_factorsSelChartView( nullptr )
 {
     ui->setupUi(this);
 
     setWindowTitle( "SVD factors selection" );
+
+	//create and fill a data series object for the chart
+	QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
+	std::vector<double>::const_iterator it = m_weights.cbegin();
+	double cumulative = 0.0;
+	for(uint i = 0; it != m_weights.cend(); ++it, ++i){
+		cumulative += *it;
+		series->append( i+1, cumulative * 100 );
+	}
+
+	//create a new chart object using the data series
+	QtCharts::QChart *chart = new QtCharts::QChart();
+	chart->legend()->hide();
+	chart->addSeries(series);
+	chart->createDefaultAxes();
+	chart->setTitle("SVD factor cumulative information content curve");
+	chart->axisY( series )->setMax(100.0);
+	chart->axisY( series )->setMin(0.0);
+	chart->axisY( series )->setTitleText("%");
+	QtCharts::QValueAxis *axisX = new QtCharts::QValueAxis();
+	axisX->setLabelFormat("%.0f");
+	chart->setAxisX( axisX, series );
+	chart->axisX( series )->setTitleText("Factor #");
+	chart->setAcceptHoverEvents( true );
+
+	//create a chart view widget passing the chart object created
+	m_factorsSelChartView = new SVDFactorsSelectionChartView( chart, series );
+	m_factorsSelChartView->setRenderHint( QPainter::Antialiasing );
+	ui->layoutMain->addWidget( m_factorsSelChartView );
 }
 
 SVDFactorsSelectionDialog::~SVDFactorsSelectionDialog()
 {
     delete ui;
 }
+
