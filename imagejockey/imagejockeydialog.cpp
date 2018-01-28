@@ -356,13 +356,6 @@ void ImageJockeyDialog::onSVD()
         return;
     }
 
-    //Ask the user for the new variable names pattern.
-    bool ok;
-    QString var_suffix = QInputDialog::getText(this, "User input requested.", "Suffixes for the SVD factors:", QLineEdit::Normal,
-                                             "/SVD_", &ok);
-    if( ! ok )
-        return;
-
 	//Get the data
     long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
     spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
@@ -395,12 +388,10 @@ void ImageJockeyDialog::onSVD()
 		QProgressDialog progressDialog;
 		progressDialog.setRange(0,0);
 		progressDialog.show();
-		QString baseFactorName = m_atSelector->getSelectedVariableName();
         for (long i = 0; i < numberOfFactors; ++i) {
 			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
-            QString factorName = baseFactorName + var_suffix + QString::number( i + 1 );
 			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, 1.0 );
 			factorTree->addFirstLevelFactor( svdFactor );
             //cg->append( factorName, factor );
