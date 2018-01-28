@@ -7,7 +7,8 @@
 
 SVDFactorsSelectionChartCallout::SVDFactorsSelectionChartCallout(QtCharts::QChart * chart) :
 	QGraphicsItem(chart),
-	m_chart(chart)
+    m_chart(chart),
+    m_factorNumber( 0 )
 {
 }
 

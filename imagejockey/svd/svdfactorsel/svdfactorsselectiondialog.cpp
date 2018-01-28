@@ -9,7 +9,8 @@ SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(const std::vector<double> &
     QDialog(parent),
 	ui(new Ui::SVDFactorsSelectionDialog),
 	m_weights( weights ),
-	m_factorsSelChartView( nullptr )
+    m_factorsSelChartView( nullptr ),
+    m_numberOfFactors( 0 )
 {
     ui->setupUi(this);
 
@@ -43,6 +44,10 @@ SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(const std::vector<double> &
 	m_factorsSelChartView = new SVDFactorsSelectionChartView( chart, series );
 	m_factorsSelChartView->setRenderHint( QPainter::Antialiasing );
 	ui->layoutMain->addWidget( m_factorsSelChartView );
+
+    //to be notified of user selection.
+    connect( m_factorsSelChartView, SIGNAL(onNumberOfFactorsSelected(int)),
+             this, SLOT(numberOfFactorsSelected(int)) );
 }
 
 SVDFactorsSelectionDialog::~SVDFactorsSelectionDialog()

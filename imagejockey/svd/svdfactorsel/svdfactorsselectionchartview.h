@@ -20,9 +20,9 @@ public:
 	virtual void resizeEvent(QResizeEvent *event);
 	virtual void mouseMoveEvent(QMouseEvent *event);
 
-signals:
 
-public slots:
+signals:
+    void onNumberOfFactorsSelected( int number );
 
 private:
 	QGraphicsSimpleTextItem* m_coordX;
@@ -30,6 +30,8 @@ private:
 	QtCharts::QChart* m_chart;
 	SVDFactorsSelectionChartCallout *m_tooltip;
 	QList<SVDFactorsSelectionChartCallout *> m_callouts;
+    //returns zero if the user didn't made a selecion.
+    int getSelectedNumberOfFactors();
 
 private slots:
 	void keepCallout();

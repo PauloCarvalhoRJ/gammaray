@@ -44,13 +44,28 @@ void SVDFactorsSelectionChartView::mouseMoveEvent(QMouseEvent *event)
 {
 	m_coordX->setText(QString("Factor# %1").arg((int)m_chart->mapToValue(event->pos()).x()));
 	m_coordY->setText(QString("Info. cont: %1%").arg(m_chart->mapToValue(event->pos()).y()));
-	QGraphicsView::mouseMoveEvent(event);
+    QGraphicsView::mouseMoveEvent(event);
+}
+
+int SVDFactorsSelectionChartView::getSelectedNumberOfFactors()
+{
+    if( m_callouts.size() < 1 )
+        return 0;
+    //assumes there is just one fixed balloon showing the factor number
+    SVDFactorsSelectionChartCallout* callout = m_callouts.back();
+    return callout->getFactorNumber();
 }
 
 void SVDFactorsSelectionChartView::keepCallout()
 {
-	m_callouts.append(m_tooltip);
+    //clear the vector to keep just one
+    while( ! m_callouts.empty() ){
+        delete m_callouts.back();
+        m_callouts.pop_back();
+    }
+    m_callouts.append(m_tooltip);
 	m_tooltip = new SVDFactorsSelectionChartCallout(m_chart);
+    emit onNumberOfFactorsSelected( getSelectedNumberOfFactors() );
 }
 
 void SVDFactorsSelectionChartView::tooltip(QPointF point, bool state)
@@ -59,7 +74,8 @@ void SVDFactorsSelectionChartView::tooltip(QPointF point, bool state)
 		m_tooltip = new SVDFactorsSelectionChartCallout(m_chart);
 
 	if (state) {
-		m_tooltip->setText(QString("Factor# %1 \nInfo. cont: %2% ").arg((int)point.x()).arg(point.y()));
+        m_tooltip->setFactorNumber( (int)point.x() );
+        m_tooltip->setText(QString("Factor# %1 \nInfo. cont: %2% ").arg((int)point.x()).arg(point.y()));
 		m_tooltip->setAnchor(point);
 		m_tooltip->setZValue(11);
 		m_tooltip->updateGeometry();

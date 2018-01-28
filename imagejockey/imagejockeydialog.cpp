@@ -363,14 +363,8 @@ void ImageJockeyDialog::onSVD()
     if( ! ok )
         return;
 
-    //User enters SVD parameters
-    long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
-    SVDParametersDialog dlg( this );
-    int userResponse = dlg.exec();
-    if( userResponse != QDialog::Accepted )
-        return;
-
 	//Get the data
+    long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
     spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
 
 	//Compute SVD
@@ -382,16 +376,16 @@ void ImageJockeyDialog::onSVD()
 	spectral::SVD svd = spectral::svd( *a );
 	progressDialog.hide();
 
-	//get the list with the factor weights (information quantity)
-	spectral::array weights = svd.factor_weights();
-	Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
+    //get the list with the factor weights (information quantity)
+    spectral::array weights = svd.factor_weights();
+    Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
 
-	//Get the desired number of factors from the weight decay graph
-	SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
-	svdfsd->exec();
-
-	long numberOfFactors = dlg.getNumberOfFactors();
-	//long numberOfFactors = svdfsd.getNumberOfFactors();
+    //User enters number of SVD factors
+    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+    int userResponse = svdfsd->exec();
+    if( userResponse != QDialog::Accepted )
+        return;
+    long numberOfFactors = svdfsd->getNumberOfFactors();
 
     //Create the structure to store the SVD factors
 	SVDFactorTree * factorTree = new SVDFactorTree();

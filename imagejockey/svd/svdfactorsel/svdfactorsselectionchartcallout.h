@@ -20,6 +20,9 @@ public:
 	void setAnchor(QPointF point);
 	void updateGeometry();
 
+    void setFactorNumber( int number ){ m_factorNumber = number; }
+    int getFactorNumber(){ return m_factorNumber; }
+
 	QRectF boundingRect() const;
 	void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget);
 
@@ -34,6 +37,7 @@ private:
 	QPointF m_anchor;
 	QFont m_font;
 	QtCharts::QChart *m_chart;
+    int m_factorNumber;
 };
 
 #endif // SVDFACTORSSELECTIONCHARTCALLOUT_H
