@@ -3,7 +3,9 @@
 
 #include <QDialog>
 
-#include "svdfactortree.h"
+class SVDFactorTree;
+class SVDFactor;
+class QMenu;
 
 namespace Ui {
 class SVDAnalysisDialog;
@@ -28,6 +30,13 @@ private:
     Ui::SVDAnalysisDialog *ui;
 	SVDFactorTree *m_tree;
 	bool m_deleteTree;
+    //factor tree context menu
+    QMenu *m_factorContextMenu;
+    SVDFactor *m_right_clicked_factor;
+
+private slots:
+    void onFactorContextMenu(const QPoint &mouse_location);
+    void onFactorizeFurther();
 };
 
 #endif // SVDANALYSISDIALOG_H

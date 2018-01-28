@@ -1,6 +1,9 @@
 #include "svdanalysisdialog.h"
 #include "ui_svdanalysisdialog.h"
 #include "domain/application.h"
+#include "svdfactortree.h"
+
+#include <QMenu>
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),
@@ -17,6 +20,12 @@ SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
 
 	//positioning the splitter
 	ui->splitterMain->setSizes( QList<int>() << 300 << width()-300 );
+
+    //configure factor tree context menu
+    m_factorContextMenu = new QMenu( ui->svdFactorTreeView );
+    ui->svdFactorTreeView->setContextMenuPolicy( Qt::CustomContextMenu );
+    connect(ui->svdFactorTreeView, SIGNAL(customContextMenuRequested(const QPoint &)),
+            this, SLOT(onFactorContextMenu(const QPoint &)));
 }
 
 SVDAnalysisDialog::~SVDAnalysisDialog()
@@ -57,5 +66,33 @@ void SVDAnalysisDialog::setTree( SVDFactorTree *tree )
 			 QTreeView::branch:open:has-children:has-siblings  { \
 					 border-image: none; \
 					 image: url(:icons32/bopen32); \
-			 }");
+             }");
+}
+
+void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
+{
+    QModelIndex index = ui->svdFactorTreeView->indexAt(mouse_location); //get index to factor under mouse
+    m_factorContextMenu->clear(); //remove all context menu actions
+
+    //get all selected items, this may include other items different from the one under the mouse pointer.
+    QModelIndexList selected_indexes = ui->svdFactorTreeView->selectionModel()->selectedIndexes();
+
+    //if there is just one selected item.
+    if( selected_indexes.size() == 1 ){
+        //build context menu for a SVD factor
+        if ( index.isValid() ) {
+            m_right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
+            m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
+        }
+    }
+
+    //show the context menu under the mouse cursor.
+    if( m_factorContextMenu->actions().size() > 0 )
+        m_factorContextMenu->exec(ui->svdFactorTreeView->mapToGlobal(mouse_location));
+
+}
+
+void SVDAnalysisDialog::onFactorizeFurther()
+{
+
 }
