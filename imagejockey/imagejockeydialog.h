@@ -74,6 +74,9 @@ private:
     /** The set of sliders to attenuate or amplify frequency components. */
     EqualizerWidget* m_equalizerWidget;
 
+    /** The number of SVD factors set by the user in the SVD curve dialog. */
+    int m_numberOfSVDFactorsSetInTheDialog;
+
     /** Causes a replot in the 2D grid spectrogram display.
      * TODO: Think of a more elegant way to trigger a replot, since QwtPlot's replot() is not working.
     */
@@ -88,6 +91,7 @@ private Q_SLOTS:
     void preview();
     void restore();
     void onSVD();
+    void onUserSetNumberOfSVDFactors( int number );
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

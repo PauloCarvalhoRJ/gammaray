@@ -2,8 +2,9 @@
 #include "ui_svdanalysisdialog.h"
 #include "domain/application.h"
 #include "svdfactortree.h"
-
+#include "spectral/svd.h"
 #include <QMenu>
+#include <QProgressDialog>
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),
@@ -94,5 +95,16 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
 
 void SVDAnalysisDialog::onFactorizeFurther()
 {
+    SVDFactor* factor = m_right_clicked_factor;
+
+
+    //Compute SVD
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.setLabelText("Computing SVD factors...");
+    progressDialog.show();
+    QCoreApplication::processEvents();
+    spectral::SVD svd = spectral::svd( factor->getFactorData() );
+    progressDialog.hide();
 
 }

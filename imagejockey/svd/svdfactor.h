@@ -42,6 +42,8 @@ public:
 	 */
 	bool assignWeights( const std::vector<double>& weights );
 
+    spectral::array& getFactorData(){ return m_factorData; }
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array m_factorData;

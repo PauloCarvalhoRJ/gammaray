@@ -29,7 +29,8 @@
 ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ImageJockeyDialog),
-    m_spectrogram1Dparams( new Spectrogram1DParameters() )
+    m_spectrogram1Dparams( new Spectrogram1DParameters() ),
+    m_numberOfSVDFactorsSetInTheDialog( 0 )
 {
     ui->setupUi(this);
 
@@ -375,10 +376,11 @@ void ImageJockeyDialog::onSVD()
 
     //User enters number of SVD factors
     SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+    connect( svdfsd, SIGNAL(numberOfFactorsSelected(int)), this, SLOT(onUserSetNumberOfSVDFactors(int)) );
     int userResponse = svdfsd->exec();
     if( userResponse != QDialog::Accepted )
         return;
-    long numberOfFactors = svdfsd->getNumberOfFactors();
+    long numberOfFactors = m_numberOfSVDFactorsSetInTheDialog;
 
     //Create the structure to store the SVD factors
 	SVDFactorTree * factorTree = new SVDFactorTree();
@@ -405,9 +407,19 @@ void ImageJockeyDialog::onSVD()
 	if( ! factorTree->assignWeights( weights.data() ) )
 		Application::instance()->logWarn("ImageJockeyDialog::onSVD(): weight assignment failed.");
 
-    //show the SDV analysis dialog
-    SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
-	svdad->setTree( factorTree );
-	svdad->setDeleteTreeOnClose( true );
-    svdad->show();
+    if( numberOfFactors > 0 ){
+        //show the SDV analysis dialog
+        SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+        svdad->setTree( factorTree );
+        svdad->setDeleteTreeOnClose( true );
+        svdad->show();
+    } else {
+        Application::instance()->logError("ImageJockeyDialog::onSVD(): user set zero factors. Aborted.");
+        delete factorTree;
+    }
+}
+
+void ImageJockeyDialog::onUserSetNumberOfSVDFactors(int number)
+{
+    m_numberOfSVDFactorsSetInTheDialog = number;
 }

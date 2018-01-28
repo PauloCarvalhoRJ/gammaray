@@ -17,8 +17,10 @@ public:
 	explicit SVDFactorsSelectionDialog( const std::vector<double>& weights, QWidget *parent = 0);
     ~SVDFactorsSelectionDialog();
 
-    /** Returns zero if the user didn't make a selection. */
-    int getNumberOfFactors(){ return m_numberOfFactors; }
+
+signals:
+    /** If zero, the user didn't make a selection. */
+    void numberOfFactorsSelected( int number );
 
 private:
     Ui::SVDFactorsSelectionDialog *ui;
@@ -27,7 +29,7 @@ private:
     int m_numberOfFactors;
 
 private slots:
-    void numberOfFactorsSelected( int number ){ m_numberOfFactors = number; }
+    void onNumberOfFactorsSelected( int number ){ m_numberOfFactors = number; }
 };
 
 #endif // SVDFactorsSelectionDialog_H

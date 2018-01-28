@@ -47,7 +47,9 @@ SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(const std::vector<double> &
 
     //to be notified of user selection.
     connect( m_factorsSelChartView, SIGNAL(onNumberOfFactorsSelected(int)),
-             this, SLOT(numberOfFactorsSelected(int)) );
+             this, SLOT(onNumberOfFactorsSelected(int)) );
+    connect( m_factorsSelChartView, SIGNAL(onNumberOfFactorsSelected(int)),
+             this, SIGNAL(numberOfFactorsSelected(int)) );
 }
 
 SVDFactorsSelectionDialog::~SVDFactorsSelectionDialog()
