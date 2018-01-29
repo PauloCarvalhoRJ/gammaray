@@ -38,9 +38,17 @@ bool SVDFactor::assignWeights(const std::vector<double> & weights)
 	if( weights.size() < m_childFactors.size() )
 		return false;
 	std::vector<double>::const_iterator it = weights.cbegin();
-	for(int i = 0; i < m_childFactors.size(); ++it, ++i)
+	for(uint i = 0; i < m_childFactors.size(); ++it, ++i)
 		m_childFactors[i]->setWeight( *it );
 	return true;
+}
+
+QString SVDFactor::getHierarchicalNumber()
+{
+	QString result = QString::number( m_number );
+	if( ! isTopLevel() )
+		result = m_parentFactor->getHierarchicalNumber() + "." + result;
+	return result;
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
@@ -60,6 +68,13 @@ bool SVDFactor::isRoot()
 void SVDFactor::setParentFactor(SVDFactor * parent)
 {
 	m_parentFactor = parent;
+}
+
+bool SVDFactor::isTopLevel()
+{
+	if( isRoot() )
+		return false;
+	return m_parentFactor->isRoot();
 }
 
 SVDFactor *SVDFactor::getChildByIndex(uint index)
@@ -90,7 +105,7 @@ QString SVDFactor::getPresentationName()
 	if( ! m_parentFactor ) //root factor
 		return "ROOT";
 	else
-		return "Factor " + QString::number( m_number ) + " (" + QString::number( m_weight ) + ")";
+		return "Factor " + getHierarchicalNumber() + " (" + QString::number( m_weight ) + ")";
 }
 
 QIcon SVDFactor::getIcon()

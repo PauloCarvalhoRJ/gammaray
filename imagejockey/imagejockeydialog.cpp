@@ -404,6 +404,8 @@ void ImageJockeyDialog::onSVD()
     delete a;
 
 	//assign the weights to each factor for the SVD analysis dialog
+	//TODO: THIS IS NOT NECESSARY ANYMORE, SINCE WE NOW KNOW THE WEIGHTS ARE OBTAINED BEFORE
+	//      WEIGHT ASSIGNMENT CAN BE PERFORMED IN THE "Get the desired SVD factors" LOOP ABOVE
 	if( ! factorTree->assignWeights( weights.data() ) )
 		Application::instance()->logWarn("ImageJockeyDialog::onSVD(): weight assignment failed.");
 

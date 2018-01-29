@@ -44,6 +44,11 @@ public:
 
     spectral::array& getFactorData(){ return m_factorData; }
 
+	/** Returns a text showing the factor number reflecting its hierarchy, e.g. 4.2 meaning that it
+	 * is the second factor of the fourth root factor.
+	 */
+	QString getHierarchicalNumber();
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array m_factorData;
@@ -55,6 +60,7 @@ private:
 	bool isRoot();
 	void setParentFactor( SVDFactor* parent );
 	void setWeight( double weight ){ m_weight = weight; }
+	bool isTopLevel();
 
 	// Methods to support the QAbstractItemModel interface
 public:

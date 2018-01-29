@@ -33,10 +33,13 @@ private:
     //factor tree context menu
     QMenu *m_factorContextMenu;
     SVDFactor *m_right_clicked_factor;
+	int m_numberOfSVDFactorsSetInTheDialog;
+	void refreshTreeStyle();
 
 private slots:
     void onFactorContextMenu(const QPoint &mouse_location);
     void onFactorizeFurther();
+	void onUserSetNumberOfSVDFactors(int number);
 };
 
 #endif // SVDANALYSISDIALOG_H

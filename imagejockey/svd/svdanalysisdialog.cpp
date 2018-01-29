@@ -5,6 +5,7 @@
 #include "spectral/svd.h"
 #include <QMenu>
 #include <QProgressDialog>
+#include "svdfactorsel/svdfactorsselectiondialog.h"
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),
@@ -47,6 +48,11 @@ void SVDAnalysisDialog::setTree( SVDFactorTree *tree )
 	m_tree = tree;
 	ui->svdFactorTreeView->setModel( m_tree );
 	ui->svdFactorTreeView->header()->hide();
+	refreshTreeStyle();
+}
+
+void SVDAnalysisDialog::refreshTreeStyle()
+{
 	ui->svdFactorTreeView->setStyleSheet("QTreeView::branch:has-siblings:!adjoins-item { \
 								   border-image: url(:icons32/vline32) 0; } \
 			QTreeView::branch:has-siblings:adjoins-item { \
@@ -67,7 +73,7 @@ void SVDAnalysisDialog::setTree( SVDFactorTree *tree )
 			 QTreeView::branch:open:has-children:has-siblings  { \
 					 border-image: none; \
 					 image: url(:icons32/bopen32); \
-             }");
+			 }");
 }
 
 void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
@@ -95,16 +101,47 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
 
 void SVDAnalysisDialog::onFactorizeFurther()
 {
-    SVDFactor* factor = m_right_clicked_factor;
-
-
     //Compute SVD
     QProgressDialog progressDialog;
     progressDialog.setRange(0,0);
     progressDialog.setLabelText("Computing SVD factors...");
     progressDialog.show();
     QCoreApplication::processEvents();
-    spectral::SVD svd = spectral::svd( factor->getFactorData() );
+	spectral::SVD svd = spectral::svd( m_right_clicked_factor->getFactorData() );
     progressDialog.hide();
 
+	//get the list with the factor weights (information quantity)
+	spectral::array weights = svd.factor_weights();
+	Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
+
+	//User enters number of SVD factors
+	m_numberOfSVDFactorsSetInTheDialog = 0;
+	SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+	connect( svdfsd, SIGNAL(numberOfFactorsSelected(int)), this, SLOT(onUserSetNumberOfSVDFactors(int)) );
+	int userResponse = svdfsd->exec();
+	if( userResponse != QDialog::Accepted )
+		return;
+	long numberOfFactors = m_numberOfSVDFactorsSetInTheDialog;
+
+	//Get the desired SVD factors
+	{
+		QProgressDialog progressDialog;
+		progressDialog.setRange(0,0);
+		progressDialog.show();
+		for (long i = 0; i < numberOfFactors; ++i) {
+			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
+			QCoreApplication::processEvents();
+			spectral::array factor = svd.factor(i);
+			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i] );
+			m_right_clicked_factor->addChildFactor( svdFactor );
+		}
+	}
+
+	//update the tree widget
+	refreshTreeStyle();
+}
+
+void SVDAnalysisDialog::onUserSetNumberOfSVDFactors(int number)
+{
+	m_numberOfSVDFactorsSetInTheDialog = number;
 }
