@@ -89,8 +89,9 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
         //build context menu for a SVD factor
         if ( index.isValid() ) {
             m_right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
-            m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
-        }
+			m_factorContextMenu->addAction("Open...", this, SLOT(onOpenFactor()));
+			m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
+		}
     }
 
     //show the context menu under the mouse cursor.
@@ -144,4 +145,9 @@ void SVDAnalysisDialog::onFactorizeFurther()
 void SVDAnalysisDialog::onUserSetNumberOfSVDFactors(int number)
 {
 	m_numberOfSVDFactorsSetInTheDialog = number;
+}
+
+void SVDAnalysisDialog::onOpenFactor()
+{
+
 }

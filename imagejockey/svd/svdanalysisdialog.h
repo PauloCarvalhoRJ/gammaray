@@ -40,6 +40,7 @@ private slots:
     void onFactorContextMenu(const QPoint &mouse_location);
     void onFactorizeFurther();
 	void onUserSetNumberOfSVDFactors(int number);
+	void onOpenFactor();
 };
 
 #endif // SVDANALYSISDIALOG_H
