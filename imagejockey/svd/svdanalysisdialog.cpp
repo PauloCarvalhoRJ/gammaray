@@ -6,6 +6,7 @@
 #include <QMenu>
 #include <QProgressDialog>
 #include "svdfactorsel/svdfactorsselectiondialog.h"
+#include "../imagejockeygridplot.h"
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),
@@ -28,6 +29,10 @@ SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     ui->svdFactorTreeView->setContextMenuPolicy( Qt::CustomContextMenu );
     connect(ui->svdFactorTreeView, SIGNAL(customContextMenuRequested(const QPoint &)),
             this, SLOT(onFactorContextMenu(const QPoint &)));
+
+	//add a grid plot widget to the right pane of the dialog
+	m_gridPlot = new ImageJockeyGridPlot();
+	ui->frmRightTop->layout()->addWidget( m_gridPlot );
 }
 
 SVDAnalysisDialog::~SVDAnalysisDialog()

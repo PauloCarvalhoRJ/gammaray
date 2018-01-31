@@ -8,8 +8,10 @@ class SVDFactor;
 class QMenu;
 
 namespace Ui {
-class SVDAnalysisDialog;
+	class SVDAnalysisDialog;
 }
+
+class ImageJockeyGridPlot;
 
 class SVDAnalysisDialog : public QDialog
 {
@@ -34,6 +36,7 @@ private:
     QMenu *m_factorContextMenu;
     SVDFactor *m_right_clicked_factor;
 	int m_numberOfSVDFactorsSetInTheDialog;
+	ImageJockeyGridPlot* m_gridPlot;
 	void refreshTreeStyle();
 
 private slots:
