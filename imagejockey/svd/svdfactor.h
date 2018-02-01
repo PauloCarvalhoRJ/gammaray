@@ -11,6 +11,12 @@ namespace spectral{
    class array;
 }
 
+enum class SVDFactorPlaneOrientation : int {
+	XY,
+	XZ,
+	YZ
+};
+
 /**
  * @brief The SVDFactor class represents one factor obtained from Singular Value Decomposition (SVD).
  */
@@ -56,6 +62,8 @@ private:
 	std::vector< SVDFactor* > m_childFactors;
 	bool m_selected;
 	double m_weight;
+	SVDFactorPlaneOrientation m_currentPlaneOrientation;
+	uint m_currentPlane;
 	uint getIndexOfChild( SVDFactor* child );
 	bool isRoot();
 	void setParentFactor( SVDFactor* parent );

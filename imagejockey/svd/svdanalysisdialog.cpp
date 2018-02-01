@@ -156,3 +156,8 @@ void SVDAnalysisDialog::onOpenFactor()
 {
 
 }
+
+void SVDAnalysisDialog::onFactorClicked(QModelIndex index)
+{
+
+}

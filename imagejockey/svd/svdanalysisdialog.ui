@@ -265,5 +265,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>svdFactorTreeView</sender>
+   <signal>clicked(QModelIndex)</signal>
+   <receiver>SVDAnalysisDialog</receiver>
+   <slot>onFactorClicked(QModelIndex)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>220</x>
+     <y>406</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>296</x>
+     <y>463</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>onFactorClicked(QModelIndex)</slot>
+ </slots>
 </ui>

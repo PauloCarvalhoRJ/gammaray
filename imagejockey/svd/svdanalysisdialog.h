@@ -2,6 +2,7 @@
 #define SVDANALYSISDIALOG_H
 
 #include <QDialog>
+#include <QModelIndex>
 
 class SVDFactorTree;
 class SVDFactor;
@@ -44,6 +45,7 @@ private slots:
     void onFactorizeFurther();
 	void onUserSetNumberOfSVDFactors(int number);
 	void onOpenFactor();
+	void onFactorClicked( QModelIndex index );
 };
 
 #endif // SVDANALYSISDIALOG_H

@@ -5,7 +5,8 @@ SVDFactor::SVDFactor(spectral::array &&factorData, uint number, double weight, S
 	m_factorData( std::move( factorData) ),
 	m_number( number ),
 	m_selected( true ),
-	m_weight( weight )
+	m_weight( weight ),
+	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY )
 {
 }
 
@@ -14,7 +15,9 @@ SVDFactor::SVDFactor() :
 	//m_factorData( ), //initialized by default constructor
 	m_number( 0 ),
 	m_selected( false ),
-	m_weight( 0.0 )
+	m_weight( 0.0 ),
+	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY ),
+	m_currentPlane( 0 )
 {
 }
 

@@ -8,6 +8,8 @@ class Attribute;
 class SpectrogramData;
 class QwtPlotZoomer;
 class QwtPlotCurve;
+class SVDFactor;
+class FactorData;
 
 /** Widget used in ImageJockeyDialog to display a grid containing a Fourier image
  *  The grid values are displayed as their absolute values in decibel scaling for ease of
@@ -28,8 +30,11 @@ public:
 
     ImageJockeyGridPlot( QWidget * = nullptr );
 
-    /** Sets the Cartesian grid Attribute to display. */
+	/** Sets the Cartesian grid Attribute to display. If set, takes precedence of SVD factors. */
     void setAttribute( Attribute *at );
+
+	/** Sets the SVD Factor to display (it is a regular grid). */
+	void setSVDFactor( SVDFactor* svdFactor);
 
     double getScaleMaxValue();
     double getScaleMinValue();
@@ -64,6 +69,12 @@ private:
 
     /** Begin-of-scale value. */
     double m_colorScaleMin;
+
+	/** SVD factor (a type of regular grid) being displayed. */
+	SVDFactor* m_svdFactor;
+
+	/** Adapter between QwtRasterData and an SVDFactor (a type of regular grid). */
+	FactorData* m_factorData;
 
     QwtPlotCurve *m_curve1DSpectrogramHalfBand1;
     QwtPlotCurve *m_curve1DSpectrogramHalfBand2;

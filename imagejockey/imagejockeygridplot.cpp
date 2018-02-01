@@ -23,6 +23,8 @@
 #include "geostats/matrix3x3.h"
 #include "geostats/geostatsutils.h"
 
+#include "svd/svdfactor.h"
+
 //////////////////////////////////////////////ZOOMER CLASS////////////////////////////
 class SpectrogramZoomer: public QwtPlotZoomer
 {
@@ -110,6 +112,50 @@ private:
 };
 
 
+///////////////////////////////////////////RASTER DATA ADAPTER: QwtRasterData <-> SVDFactor ///////////////////////
+class FactorData: public QwtRasterData{
+public:
+	FactorData() : m_factor( nullptr ) {
+		//set some default values before the user chooses a factor
+		setInterval( Qt::XAxis, QwtInterval( -1.5, 1.5 ) );
+		setInterval( Qt::YAxis, QwtInterval( -1.5, 1.5 ) );
+		setInterval( Qt::ZAxis, QwtInterval( 0.0, 10.0 ) );
+	}
+	/** Returns a grid value as a function of spatial location.
+	 *  Returns NaN if the location is outside the grid or corresponds to an unvalued cell.
+	 */
+	virtual double value( double x, double y ) const {
+		if( ! m_factor ) //no factor selected
+			//returning a NaN means a blank plot
+			return std::numeric_limits<double>::quiet_NaN();
+		else{
+			// get the grid value as is
+			double value = m_factor->valueAtCurrentPlane( x, y );
+			if( m_factor->isNDV(value) ) //if there is no value there
+				value = std::numeric_limits<double>::quiet_NaN(); //returns NaN (blank plot)
+			return value;
+		}
+	}
+	/** Define the factor.  Resets the plot. */
+	void setFactor( SVDFactor* factor ){
+		m_factor = factor;
+		if( factor ){
+			//resets the map display coverage to show the entire map
+			setInterval( Qt::XAxis, QwtInterval( m_factor->getCurrentPlaneX0() - m_factor->getCurrentPlaneDX(),
+												 m_factor->getCurrentPlaneX0() + m_factor->getCurrentPlaneDX() * m_factor->getCurrentPlaneNX() ) );
+			setInterval( Qt::YAxis, QwtInterval( m_factor->getCurrentPlaneY0() - m_factor->getCurrentPlaneDY(),
+												 m_factor->getCurrentPlaneY0() + m_factor->getCurrentPlaneDY() * m_factor->getCurrentPlaneNY() ) );
+			//for Fourier images, get the absolute values in decibel for ease of interpretation
+			double min = m_factor->getMinValue();
+			double max = m_factor->getMaxValue();
+			//Z in a 2D raster plot is the attribute value, not the Z coordinate.
+			setInterval( Qt::ZAxis, QwtInterval( min, max ));
+		}
+	}
+private:
+	/** The SVD Factor being displayed. */
+	SVDFactor* m_factor;
+};
 
 
 /////////////////////////////////////////////A COLOR MAP/////////////////////////////
@@ -244,6 +290,7 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
     m_zoomer( nullptr ),
     m_colorScaleMax( 10.0 ),
     m_colorScaleMin( 0.0 ),
+	m_svdFactor( nullptr ),
     m_curve1DSpectrogramHalfBand1( nullptr ),
     m_curve1DSpectrogramHalfBand2( nullptr )
 {
