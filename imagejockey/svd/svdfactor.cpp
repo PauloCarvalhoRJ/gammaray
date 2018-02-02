@@ -171,6 +171,16 @@ double SVDFactor::getMaxValue()
 	m_isMaxValueDefined = true;
 }
 
+uint SVDFactor::getCurrentPlaneNumberOfSlices()
+{
+	switch( m_currentPlaneOrientation ){
+		case SVDFactorPlaneOrientation::XY: return m_factorData.K();
+		case SVDFactorPlaneOrientation::XZ: return m_factorData.N();
+		case SVDFactorPlaneOrientation::YZ: return m_factorData.M();
+		default: return m_factorData.N();
+	}
+}
+
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
 {
 	int i = 0;

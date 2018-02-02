@@ -30,10 +30,10 @@ public:
 
     ImageJockeyGridPlot( QWidget * = nullptr );
 
-	/** Sets the Cartesian grid Attribute to display. If set, takes precedence of SVD factors. */
+	/** Sets the Cartesian grid Attribute to display. If, set replaces the previous Attribute or SVDFactor.*/
     void setAttribute( Attribute *at );
 
-	/** Sets the SVD Factor to display (it is a regular grid). */
+	/** Sets the SVD Factor to display (it is a regular grid). If, set replaces the previous Attribute or SVDFactor.*/
 	void setSVDFactor( SVDFactor* svdFactor);
 
     double getScaleMaxValue();

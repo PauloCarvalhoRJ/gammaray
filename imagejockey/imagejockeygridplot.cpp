@@ -303,6 +303,8 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
         contourLevels += level;
     m_spectrogram->setContourLevels( contourLevels );
 
+	m_factorData = new FactorData(); //not used initially
+
     m_spectrumData = new SpectrogramData();
     m_spectrogram->setData( m_spectrumData );
     m_spectrogram->attach( this );
@@ -358,6 +360,7 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
 void ImageJockeyGridPlot::setAttribute(Attribute *at)
 {
     //get the data
+	m_at = at;
     File *file = at->getContainingFile();
     if( file->getFileType() != "CARTESIANGRID" ){
         Application::instance()->logError("ImageJockeyGridPlot::setAttribute(): Attributes of " +
@@ -366,6 +369,8 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     } else {
         m_spectrumData->setAttribute( at );
     }
+
+	m_spectrogram->setData( m_spectrumData );
 
     //redefine color scale/legend
     const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
@@ -384,7 +389,34 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     //reset the zoom stack to the possibly new geographic region.
     m_zoomer->setZoomBase();
 
-    replot();
+	replot();
+}
+
+void ImageJockeyGridPlot::setSVDFactor(SVDFactor * svdFactor)
+{
+	//get the data
+	m_factorData->setFactor( svdFactor );
+
+	m_spectrogram->setData( m_factorData );
+
+	//redefine color scale/legend
+	const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
+	// A color bar on the right axis
+	QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
+	rightAxis->setTitle( svdFactor->getPresentationName() + " (unitless)" );
+	setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
+	setColorMap( ImageJockeyGridPlot::RGBMap );
+
+	//set zoom to cover the entire grid
+	const QwtInterval xInterval = m_spectrogram->data()->interval( Qt::XAxis );
+	setAxisScale( QwtPlot::xBottom, xInterval.minValue(), xInterval.maxValue() );
+	const QwtInterval yInterval = m_spectrogram->data()->interval( Qt::YAxis );
+	setAxisScale( QwtPlot::yLeft, yInterval.minValue(), yInterval.maxValue() );
+
+	//reset the zoom stack to the possibly new geographic region.
+	m_zoomer->setZoomBase();
+
+	replot();
 }
 
 double ImageJockeyGridPlot::getScaleMaxValue()
@@ -471,7 +503,9 @@ void ImageJockeyGridPlot::setColorScaleMax(double value)
 {
     m_colorScaleMax = value;
     setColorMap( ImageJockeyGridPlot::RGBMap );
-    m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+	if( m_at )
+		m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+	m_factorData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
 
     const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
@@ -483,7 +517,9 @@ void ImageJockeyGridPlot::setColorScaleMin(double value)
 {
     m_colorScaleMin = value;
     setColorMap( ImageJockeyGridPlot::RGBMap );
-    m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+	if( m_at )
+		m_spectrumData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
+	m_factorData->setInterval( Qt::ZAxis, QwtInterval( m_colorScaleMin, m_colorScaleMax ) );
 
     const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );

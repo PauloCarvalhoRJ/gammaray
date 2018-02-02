@@ -98,6 +98,9 @@ public:
 	double getDZ(){ return m_dz; }
 	//@}
 
+	/** Returns the number of slices.  This depens on the current plane orientation (XY, XZ, YZ). */
+	uint getCurrentPlaneNumberOfSlices();
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array m_factorData;

@@ -167,5 +167,19 @@ void SVDAnalysisDialog::onOpenFactor()
 
 void SVDAnalysisDialog::onFactorClicked(QModelIndex index)
 {
-
+	if( ! index.isValid() )
+		return;
+	SVDFactor* factor = static_cast<SVDFactor*>( index.internalPointer() );
+	m_gridPlot->setSVDFactor( factor );
+	double min = factor->getMinValue();
+	double max = factor->getMaxValue();
+	m_gridPlot->setColorScaleMin( min );
+	m_gridPlot->setColorScaleMax( max );
+	ui->dblSpinColorScaleMax->setMaximum( max );
+	ui->dblSpinColorScaleMax->setMinimum( min );
+	ui->dblSpinColorScaleMax->setValue( max );
+	ui->dblSpinColorScaleMin->setMaximum( max );
+	ui->dblSpinColorScaleMin->setMinimum( min );
+	ui->dblSpinColorScaleMin->setValue( min );
+	ui->spinSlice->setMaximum( factor->getCurrentPlaneNumberOfSlices() );
 }
