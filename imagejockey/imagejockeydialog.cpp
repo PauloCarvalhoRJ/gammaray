@@ -361,6 +361,14 @@ void ImageJockeyDialog::onSVD()
     long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
     spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
 
+	//Get the grid geometry parameters (useful for displaying)
+	double x0 = cg->getX0();
+	double y0 = cg->getY0();
+	double z0 = cg->getZ0();
+	double dx = cg->getDX();
+	double dy = cg->getDY();
+	double dz = cg->getDZ();
+
 	//Compute SVD
 	QProgressDialog progressDialog;
 	progressDialog.setRange(0,0);
@@ -394,7 +402,7 @@ void ImageJockeyDialog::onSVD()
 			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
-			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, 1.0 );
+			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, 1.0, x0, y0, z0, dx, dy, dz );
 			factorTree->addFirstLevelFactor( svdFactor );
             //cg->append( factorName, factor );
         }

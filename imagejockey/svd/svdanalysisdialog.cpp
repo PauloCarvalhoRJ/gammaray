@@ -116,6 +116,14 @@ void SVDAnalysisDialog::onFactorizeFurther()
 	spectral::SVD svd = spectral::svd( m_right_clicked_factor->getFactorData() );
     progressDialog.hide();
 
+	//get the grid geometry parameters (useful for displaying)
+	double x0 = m_right_clicked_factor->getX0();
+	double y0 = m_right_clicked_factor->getY0();
+	double z0 = m_right_clicked_factor->getZ0();
+	double dx = m_right_clicked_factor->getDX();
+	double dy = m_right_clicked_factor->getDY();
+	double dz = m_right_clicked_factor->getDZ();
+
 	//get the list with the factor weights (information quantity)
 	spectral::array weights = svd.factor_weights();
 	Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
@@ -138,7 +146,7 @@ void SVDAnalysisDialog::onFactorizeFurther()
 			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
-			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i] );
+			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i], x0, y0, z0, dx, dy, dz );
 			m_right_clicked_factor->addChildFactor( svdFactor );
 		}
 	}
