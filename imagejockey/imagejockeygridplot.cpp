@@ -44,9 +44,6 @@ public:
     }
 };
 
-
-
-
 ///////////////////////////////////////////RASTER DATA ADAPTER: QwtRasterData <-> CartesianGrid ///////////////////////
 class SpectrogramData: public QwtRasterData{
 public:
@@ -111,11 +108,10 @@ private:
     double m_decibelRefValue;
 };
 
-
 ///////////////////////////////////////////RASTER DATA ADAPTER: QwtRasterData <-> SVDFactor ///////////////////////
 class FactorData: public QwtRasterData{
 public:
-	FactorData() : m_factor( nullptr ) {
+    FactorData() : m_factor( nullptr ), m_colorScaleForSVDFactor( ColorScaleForSVDFactor::LINEAR ) {
 		//set some default values before the user chooses a factor
 		setInterval( Qt::XAxis, QwtInterval( -1.5, 1.5 ) );
 		setInterval( Qt::YAxis, QwtInterval( -1.5, 1.5 ) );
@@ -133,6 +129,8 @@ public:
 			double value = m_factor->valueAtCurrentPlane( x, y );
 			if( m_factor->isNDV(value) ) //if there is no value there
 				value = std::numeric_limits<double>::quiet_NaN(); //returns NaN (blank plot)
+            if( m_colorScaleForSVDFactor == ColorScaleForSVDFactor::LOG )
+                value = std::log10( value );
 			return value;
 		}
 	}
@@ -152,11 +150,16 @@ public:
 			setInterval( Qt::ZAxis, QwtInterval( min, max ));
 		}
 	}
+    /** Set the color scale for viewing the SVD factor. */
+    void setColorScale( ColorScaleForSVDFactor setting ){
+        m_colorScaleForSVDFactor = setting;
+    }
+
 private:
 	/** The SVD Factor being displayed. */
 	SVDFactor* m_factor;
+    ColorScaleForSVDFactor m_colorScaleForSVDFactor;
 };
-
 
 /////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class LinearColorMapRGB: public QwtLinearColorMap
@@ -171,9 +174,6 @@ public:
     }
 };
 
-
-
-
 /////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class LinearColorMapIndexed: public QwtLinearColorMap
 {
@@ -186,11 +186,6 @@ public:
         addColorStop( 0.95, Qt::yellow );
     }
 };
-
-
-
-
-
 
 /////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class HueColorMap: public QwtColorMap
@@ -258,12 +253,6 @@ private:
     QRgb d_rgbMin, d_rgbMax, d_rgbTable[360];
 };
 
-
-
-
-
-
-
 /////////////////////////////////////////////A COLOR MAP/////////////////////////////
 class AlphaColorMap: public QwtAlphaColorMap
 {
@@ -274,13 +263,6 @@ public:
         setColor( QColor("SteelBlue") );
     }
 };
-
-
-
-
-
-
-
 
 /////////////////////////////////////////////THE IMAGE JOCKEY PLOT CLASS ITSELF/////////////////////////////
 ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
@@ -416,7 +398,14 @@ void ImageJockeyGridPlot::setSVDFactor(SVDFactor * svdFactor)
 	//reset the zoom stack to the possibly new geographic region.
 	m_zoomer->setZoomBase();
 
-	replot();
+    replot();
+}
+
+void ImageJockeyGridPlot::setColorScaleForSVDFactor(ColorScaleForSVDFactor setting)
+{
+    m_factorData->setColorScale( setting );
+    replot();
+    repaint();
 }
 
 double ImageJockeyGridPlot::getScaleMaxValue()

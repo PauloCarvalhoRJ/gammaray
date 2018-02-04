@@ -33,6 +33,10 @@ SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
 	//add a grid plot widget to the right pane of the dialog
 	m_gridPlot = new ImageJockeyGridPlot();
 	ui->frmRightTop->layout()->addWidget( m_gridPlot );
+
+    connect( ui->dblSpinColorScaleMin, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMin(double)));
+    connect( ui->dblSpinColorScaleMax, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMax(double)));
+    connect( ui->cmbColorScale, SIGNAL(currentIndexChanged(int)), this, SLOT(onCmbColorScaleValueChanged(int)));
 }
 
 SVDAnalysisDialog::~SVDAnalysisDialog()
@@ -78,7 +82,62 @@ void SVDAnalysisDialog::refreshTreeStyle()
 			 QTreeView::branch:open:has-children:has-siblings  { \
 					 border-image: none; \
 					 image: url(:icons32/bopen32); \
-			 }");
+             }");
+             }
+
+void SVDAnalysisDialog::forcePlotUpdate()
+{
+    //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working)
+    QList<int> oldSizes = ui->splitterMain->sizes();
+    QList<int> tmpSizes = oldSizes;
+    tmpSizes[0] = oldSizes[0] + 1;
+    tmpSizes[1] = oldSizes[1] - 1;
+    ui->splitterMain->setSizes( tmpSizes );
+    qApp->processEvents();
+    ui->splitterMain->setSizes( oldSizes );
+    qApp->processEvents();
+}
+
+void SVDAnalysisDialog::adjustColorTableWidgets(int cmbIndex)
+{
+    //get the current selected factor
+    QModelIndex modelIndex = ui->svdFactorTreeView->currentIndex();
+    if( ! modelIndex.isValid() )
+        return;
+    SVDFactor* factor = static_cast<SVDFactor*>( modelIndex.internalPointer() );
+
+    //adjust the color table widgets
+    double max = factor->getMaxValue();
+    double min = factor->getMinValue();
+    double valueMin = ui->dblSpinColorScaleMin->value();
+    double valueMax = ui->dblSpinColorScaleMax->value();
+    if( cmbIndex == 0 ) {//currently log, switching to linear
+        if( std::isnan( valueMax ) )
+            valueMax = max;
+        else
+            valueMax = std::pow( 10, valueMax );
+        if( std::isnan( valueMin ) )
+            valueMin = min;
+        else
+            valueMin = std::pow( 10, valueMin );
+    }
+    if( cmbIndex == 1 ){ //currently linear, switching to log
+        max = std::log10( max );
+        if( min < 0)
+            min = 1e-6;
+        min = std::log10( min );
+        valueMax = std::log10( valueMax );
+        if( valueMin < 0)
+            valueMin = 1e-6;
+        valueMin = std::log10( valueMin );
+    }
+    ui->dblSpinColorScaleMax->setMaximum( max );
+    ui->dblSpinColorScaleMin->setMaximum( max );
+    ui->dblSpinColorScaleMax->setMinimum( min );
+    ui->dblSpinColorScaleMin->setMinimum( min );
+    ui->dblSpinColorScaleMax->setValue( valueMax );
+    ui->dblSpinColorScaleMin->setValue( valueMin );
+
 }
 
 void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
@@ -181,5 +240,21 @@ void SVDAnalysisDialog::onFactorClicked(QModelIndex index)
 	ui->dblSpinColorScaleMin->setMaximum( max );
 	ui->dblSpinColorScaleMin->setMinimum( min );
 	ui->dblSpinColorScaleMin->setValue( min );
-	ui->spinSlice->setMaximum( factor->getCurrentPlaneNumberOfSlices() );
+    ui->spinSlice->setMaximum( factor->getCurrentPlaneNumberOfSlices() );
+    if( ui->cmbColorScale->currentIndex() == 1 )
+        adjustColorTableWidgets( 1 );
+}
+
+void SVDAnalysisDialog::onCmbColorScaleValueChanged(int index)
+{
+    //change color scaling
+    if( index == 0 )
+        m_gridPlot->setColorScaleForSVDFactor( ColorScaleForSVDFactor::LINEAR );
+    if( index == 1 )
+        m_gridPlot->setColorScaleForSVDFactor( ColorScaleForSVDFactor::LOG );
+
+    //adjust the color table max/min spin widgets
+    adjustColorTableWidgets( index );
+
+    forcePlotUpdate();
 }

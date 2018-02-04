@@ -39,6 +39,8 @@ private:
 	int m_numberOfSVDFactorsSetInTheDialog;
 	ImageJockeyGridPlot* m_gridPlot;
 	void refreshTreeStyle();
+    void forcePlotUpdate();
+    void adjustColorTableWidgets( int cmbIndex );
 
 private slots:
     void onFactorContextMenu(const QPoint &mouse_location);
@@ -46,6 +48,7 @@ private slots:
 	void onUserSetNumberOfSVDFactors(int number);
 	void onOpenFactor();
 	void onFactorClicked( QModelIndex index );
+    void onCmbColorScaleValueChanged( int index );
 };
 
 #endif // SVDANALYSISDIALOG_H

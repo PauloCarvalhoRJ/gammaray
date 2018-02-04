@@ -11,6 +11,11 @@ class QwtPlotCurve;
 class SVDFactor;
 class FactorData;
 
+enum class ColorScaleForSVDFactor : int {
+    LINEAR,
+    LOG
+};
+
 /** Widget used in ImageJockeyDialog to display a grid containing a Fourier image
  *  The grid values are displayed as their absolute values in decibel scaling for ease of
  *  interpretation since the frequency component intensities show great variation in order of magnitude.
@@ -35,6 +40,8 @@ public:
 
 	/** Sets the SVD Factor to display (it is a regular grid). If, set replaces the previous Attribute or SVDFactor.*/
 	void setSVDFactor( SVDFactor* svdFactor);
+
+    void setColorScaleForSVDFactor( ColorScaleForSVDFactor setting );
 
     double getScaleMaxValue();
     double getScaleMinValue();
