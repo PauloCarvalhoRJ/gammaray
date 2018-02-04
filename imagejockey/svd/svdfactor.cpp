@@ -188,6 +188,17 @@ void SVDFactor::setPlaneOrientation(SVDFactorPlaneOrientation orientation)
     m_currentPlaneOrientation = orientation;
 }
 
+void SVDFactor::addTo(spectral::array *array, bool ifSelected )
+{
+    if( m_childFactors.size() == 0 && ( !ifSelected || m_selected ) )
+        *array += m_factorData;
+    else{
+        std::vector<SVDFactor*>::iterator it = m_childFactors.begin();
+        for(; it != m_childFactors.end(); ++it)
+            (*it)->addTo( array, ifSelected );
+    }
+}
+
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
 {
 	int i = 0;

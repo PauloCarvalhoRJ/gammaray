@@ -13,6 +13,10 @@ class Spectrogram1DParameters;
 class Spectrogram1DPlot;
 class EqualizerWidget;
 
+namespace spectral {
+    struct array;
+}
+
 namespace Ui {
 class ImageJockeyDialog;
 }
@@ -92,6 +96,7 @@ private Q_SLOTS:
     void restore();
     void onSVD();
     void onUserSetNumberOfSVDFactors( int number );
+    void onSumOfFactorsWasComputed( spectral::array* sumOfFactors );
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

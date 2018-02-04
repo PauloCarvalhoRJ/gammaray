@@ -26,6 +26,13 @@ public:
 	 */
 	bool assignWeights( const std::vector<double>& weights );
 
+    /** Returns a new array object containing the sum of the selected leaf factors in the tree.
+     * The caller is responsible to deallocate the created object.
+     * Returns null pointer if there are no factors in the tree.
+     * Returns an array filled with zeroes if no factors are selected.
+     */
+    spectral::array *getSumOfSelectedFactors();
+
 private:
 	SVDFactor *m_rootFactor;
 

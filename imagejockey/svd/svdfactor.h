@@ -99,7 +99,10 @@ public:
 	double getDX(){ return m_dx; }
 	double getDY(){ return m_dy; }
 	double getDZ(){ return m_dz; }
-	//@}
+    int getNX(){ return m_factorData.M(); }
+    int getNY(){ return m_factorData.N(); }
+    int getNZ(){ return m_factorData.K(); }
+    //@}
 
     /** Returns the number of slices.  This depends on the current plane orientation (XY, XZ, YZ). */
 	uint getCurrentPlaneNumberOfSlices();
@@ -109,6 +112,12 @@ public:
     void setCurrentSlice( uint slice ){ m_currentSlice = slice; }
     void setPlaneOrientation( SVDFactorPlaneOrientation orientation );
     //@}
+
+    /** Adds this factor's data array's values to the passed array's values.
+     * The arrays involved in the sum must be compatible, similarly to addition of matrices.
+     * @param ifSelected If true, only factors set as selected will be added.
+     */
+    void addTo( spectral::array* array , bool ifSelected );
 
 private:
     SVDFactor* m_parentFactor;

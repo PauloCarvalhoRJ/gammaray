@@ -17,7 +17,32 @@ void SVDFactorTree::addFirstLevelFactor(SVDFactor * factor)
 
 bool SVDFactorTree::assignWeights(const std::vector<double> & weights)
 {
-	return m_rootFactor->assignWeights( weights );
+    return m_rootFactor->assignWeights( weights );
+}
+
+spectral::array *SVDFactorTree::getSumOfSelectedFactors()
+{
+    //does nothing if there are no factors in the tree
+    if( m_rootFactor->getChildCount() == 0 )
+        return nullptr;
+
+    //get the cell count of the first top-level factor
+    SVDFactor* factor1 = m_rootFactor->getChildByIndex(0);
+    int nI = factor1->getNX();
+    int nJ = factor1->getNY();
+    int nK = factor1->getNZ();
+
+    //init the resulting array with zeroes and with cell count of the first top-level factor.
+    //this assumes all factores in the tree have the same dimensions.
+    spectral::array* result = new spectral::array( (spectral::index)nI,
+                                                   (spectral::index)nJ,
+                                                   (spectral::index)nK );
+
+    //compute the sum
+    m_rootFactor->addTo( result, true );
+
+    //return the new array containing the sum of the selected factors.
+    return result;
 }
 
 //-------------- QAbstractItemModel interface------------

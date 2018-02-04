@@ -296,3 +296,9 @@ void SVDAnalysisDialog::onSpinSliceChanged(int value)
 
     forcePlotUpdate();
 }
+
+void SVDAnalysisDialog::onSave()
+{
+    spectral::array *sum = m_tree->getSumOfSelectedFactors();
+    emit sumOfFactorsComputed( sum );
+}

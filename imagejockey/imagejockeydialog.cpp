@@ -420,6 +420,8 @@ void ImageJockeyDialog::onSVD()
     if( numberOfFactors > 0 ){
         //show the SDV analysis dialog
         SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+        connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
+                 this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
         svdad->setTree( factorTree );
         svdad->setDeleteTreeOnClose( true );
         svdad->show();
@@ -432,4 +434,28 @@ void ImageJockeyDialog::onSVD()
 void ImageJockeyDialog::onUserSetNumberOfSVDFactors(int number)
 {
     m_numberOfSVDFactorsSetInTheDialog = number;
+}
+
+void ImageJockeyDialog::onSumOfFactorsWasComputed(spectral::array *sumOfFactors)
+{
+    //propose a name for the new variable in the source grid
+    QString proposed_name( m_atSelector->getSelectedVariableName() );
+    proposed_name.append( "_SVD" );
+
+    //open the renaming dialog
+    bool ok;
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New variable reconstructed from SVD factors:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        delete sumOfFactors; //discard the computed sum
+        return;
+    }
+
+    //save the sum to the grid in the project
+    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    cg->append(new_variable_name, *sumOfFactors );
+
+    //discard the computed sum
+    delete sumOfFactors;
 }

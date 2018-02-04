@@ -12,6 +12,10 @@ namespace Ui {
 	class SVDAnalysisDialog;
 }
 
+namespace spectral{
+    struct array;
+}
+
 class ImageJockeyGridPlot;
 
 class SVDAnalysisDialog : public QDialog
@@ -28,6 +32,12 @@ public:
 	 *  This is normally set when the dialog is non-modal.
 	 */
 	void setDeleteTreeOnClose( bool flag ){ m_deleteTree = flag; }
+
+signals:
+    /** Emitted when the user clicks on the "Save" or "Sum" button.
+     *  The slot is responsible for deleting or managing the object.
+     */
+    void sumOfFactorsComputed( spectral::array* sumOfFactors );
 
 private:
     Ui::SVDAnalysisDialog *ui;
@@ -51,6 +61,7 @@ private slots:
     void onCmbColorScaleValueChanged( int index );
     void onCmbPlaneChanged( int index );
     void onSpinSliceChanged( int value );
+    void onSave();
 };
 
 #endif // SVDANALYSISDIALOG_H

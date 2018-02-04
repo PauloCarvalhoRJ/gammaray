@@ -247,7 +247,7 @@
       <item>
        <widget class="QPushButton" name="btnSave">
         <property name="text">
-         <string>Sum selected factors and save grid</string>
+         <string>Save</string>
         </property>
        </widget>
       </item>
@@ -317,8 +317,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnSave</sender>
+   <signal>clicked()</signal>
+   <receiver>SVDAnalysisDialog</receiver>
+   <slot>onSave()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>54</x>
+     <y>478</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>107</x>
+     <y>464</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onFactorClicked(QModelIndex)</slot>
+  <slot>onSave()</slot>
  </slots>
 </ui>
