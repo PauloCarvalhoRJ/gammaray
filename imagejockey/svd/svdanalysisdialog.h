@@ -49,6 +49,8 @@ private slots:
 	void onOpenFactor();
 	void onFactorClicked( QModelIndex index );
     void onCmbColorScaleValueChanged( int index );
+    void onCmbPlaneChanged( int index );
+    void onSpinSliceChanged( int value );
 };
 
 #endif // SVDANALYSISDIALOG_H

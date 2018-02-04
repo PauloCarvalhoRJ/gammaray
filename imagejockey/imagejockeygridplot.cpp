@@ -363,10 +363,7 @@ void ImageJockeyGridPlot::setAttribute(Attribute *at)
     setColorMap( ImageJockeyGridPlot::RGBMap );
 
     //set zoom to cover the entire grid
-    const QwtInterval xInterval = m_spectrogram->data()->interval( Qt::XAxis );
-    setAxisScale( QwtPlot::xBottom, xInterval.minValue(), xInterval.maxValue() );
-    const QwtInterval yInterval = m_spectrogram->data()->interval( Qt::YAxis );
-    setAxisScale( QwtPlot::yLeft, yInterval.minValue(), yInterval.maxValue() );
+    pan();
 
     //reset the zoom stack to the possibly new geographic region.
     m_zoomer->setZoomBase();
@@ -390,10 +387,7 @@ void ImageJockeyGridPlot::setSVDFactor(SVDFactor * svdFactor)
 	setColorMap( ImageJockeyGridPlot::RGBMap );
 
 	//set zoom to cover the entire grid
-	const QwtInterval xInterval = m_spectrogram->data()->interval( Qt::XAxis );
-	setAxisScale( QwtPlot::xBottom, xInterval.minValue(), xInterval.maxValue() );
-	const QwtInterval yInterval = m_spectrogram->data()->interval( Qt::YAxis );
-	setAxisScale( QwtPlot::yLeft, yInterval.minValue(), yInterval.maxValue() );
+    pan();
 
 	//reset the zoom stack to the possibly new geographic region.
 	m_zoomer->setZoomBase();
@@ -416,6 +410,14 @@ double ImageJockeyGridPlot::getScaleMaxValue()
 double ImageJockeyGridPlot::getScaleMinValue()
 {
     return m_spectrogram->data()->interval( Qt::ZAxis ).minValue();
+}
+
+void ImageJockeyGridPlot::pan()
+{
+    const QwtInterval xInterval = m_spectrogram->data()->interval( Qt::XAxis );
+    setAxisScale( QwtPlot::xBottom, xInterval.minValue(), xInterval.maxValue() );
+    const QwtInterval yInterval = m_spectrogram->data()->interval( Qt::YAxis );
+    setAxisScale( QwtPlot::yLeft, yInterval.minValue(), yInterval.maxValue() );
 }
 
 void ImageJockeyGridPlot::showContour( bool on )

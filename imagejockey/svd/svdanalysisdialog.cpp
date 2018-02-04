@@ -37,6 +37,9 @@ SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     connect( ui->dblSpinColorScaleMin, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMin(double)));
     connect( ui->dblSpinColorScaleMax, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMax(double)));
     connect( ui->cmbColorScale, SIGNAL(currentIndexChanged(int)), this, SLOT(onCmbColorScaleValueChanged(int)));
+
+    connect( ui->cmbPlane, SIGNAL(currentIndexChanged(int)), this, SLOT(onCmbPlaneChanged(int)));
+    connect( ui->spinSlice, SIGNAL(valueChanged(int)), this, SLOT(onSpinSliceChanged(int)));
 }
 
 SVDAnalysisDialog::~SVDAnalysisDialog()
@@ -240,7 +243,7 @@ void SVDAnalysisDialog::onFactorClicked(QModelIndex index)
 	ui->dblSpinColorScaleMin->setMaximum( max );
 	ui->dblSpinColorScaleMin->setMinimum( min );
 	ui->dblSpinColorScaleMin->setValue( min );
-    ui->spinSlice->setMaximum( factor->getCurrentPlaneNumberOfSlices() );
+    ui->spinSlice->setMaximum( factor->getCurrentPlaneNumberOfSlices()-1 ); //1st == 0; last == total-1
     if( ui->cmbColorScale->currentIndex() == 1 )
         adjustColorTableWidgets( 1 );
 }
@@ -255,6 +258,41 @@ void SVDAnalysisDialog::onCmbColorScaleValueChanged(int index)
 
     //adjust the color table max/min spin widgets
     adjustColorTableWidgets( index );
+
+    forcePlotUpdate();
+}
+
+void SVDAnalysisDialog::onCmbPlaneChanged(int index)
+{
+    //get the current selected factor
+    QModelIndex modelIndex = ui->svdFactorTreeView->currentIndex();
+    if( ! modelIndex.isValid() )
+        return;
+    SVDFactor* factor = static_cast<SVDFactor*>( modelIndex.internalPointer() );
+
+    if( index == 0 )
+        factor->setPlaneOrientation( SVDFactorPlaneOrientation::XY );
+    if( index == 1 )
+        factor->setPlaneOrientation( SVDFactorPlaneOrientation::XZ );
+    if( index == 2 )
+        factor->setPlaneOrientation( SVDFactorPlaneOrientation::YZ );
+
+    ui->spinSlice->setMaximum( factor->getCurrentPlaneNumberOfSlices()-1 ); //1st == 0; last == total-1
+
+    onFactorClicked( modelIndex );
+
+    forcePlotUpdate();
+}
+
+void SVDAnalysisDialog::onSpinSliceChanged(int value)
+{
+    //get the current selected factor
+    QModelIndex modelIndex = ui->svdFactorTreeView->currentIndex();
+    if( ! modelIndex.isValid() )
+        return;
+    SVDFactor* factor = static_cast<SVDFactor*>( modelIndex.internalPointer() );
+
+    factor->setCurrentSlice( value );
 
     forcePlotUpdate();
 }

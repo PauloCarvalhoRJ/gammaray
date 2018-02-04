@@ -41,10 +41,19 @@ public:
 	/** Sets the SVD Factor to display (it is a regular grid). If, set replaces the previous Attribute or SVDFactor.*/
 	void setSVDFactor( SVDFactor* svdFactor);
 
+    /** Sets the color scaling (linear or log) for the SVD factor being viewed.
+     * This method has no effect if no SVD factor is being viewed or there is a Cartesian grid being viewed.
+     */
     void setColorScaleForSVDFactor( ColorScaleForSVDFactor setting );
 
+    //@{
+    /** Getters for the min/max values of the color scale (Z-axis). */
     double getScaleMaxValue();
     double getScaleMinValue();
+    //@}
+
+    /** Sets the zoom to cover the entire grid. */
+    void pan();
 
 public Q_SLOTS:
     void showContour( bool on );

@@ -85,8 +85,11 @@ public:
 	uint getCurrentPlaneNY();
 	//@}
 
-	double getMinValue();
+    //@{
+    /** Getters for the absolute max. and min. values in the factor. */
+    double getMinValue();
 	double getMaxValue();
+    //@}
 
 	//@{
 	/** Getters for the absolute grid geometry . */
@@ -98,8 +101,14 @@ public:
 	double getDZ(){ return m_dz; }
 	//@}
 
-	/** Returns the number of slices.  This depens on the current plane orientation (XY, XZ, YZ). */
+    /** Returns the number of slices.  This depends on the current plane orientation (XY, XZ, YZ). */
 	uint getCurrentPlaneNumberOfSlices();
+
+    //@{
+    /** These methods control data selection in 3D volumes for a 2D slice viewer. */
+    void setCurrentSlice( uint slice ){ m_currentSlice = slice; }
+    void setPlaneOrientation( SVDFactorPlaneOrientation orientation );
+    //@}
 
 private:
     SVDFactor* m_parentFactor;
@@ -109,7 +118,7 @@ private:
 	bool m_selected;
 	double m_weight;
 	SVDFactorPlaneOrientation m_currentPlaneOrientation;
-	uint m_currentPlane;
+    uint m_currentSlice;
 	double m_x0, m_y0, m_z0;
 	double m_dx, m_dy, m_dz;
 	bool m_isMinValueDefined, m_isMaxValueDefined;

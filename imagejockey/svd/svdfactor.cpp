@@ -14,7 +14,7 @@ SVDFactor::SVDFactor(spectral::array &&factorData, uint number, double weight, d
 	m_dy( dy ),
 	m_dz( dz ),
 	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY ),
-	m_currentPlane( 0 ),
+	m_currentSlice( 0 ),
 	m_isMinValueDefined( false ),
 	m_isMaxValueDefined( false )
 {
@@ -33,7 +33,7 @@ SVDFactor::SVDFactor() :
 	m_dy( 1.0 ),
 	m_dz( 1.0 ),
 	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY ),
-	m_currentPlane( 0 ),
+	m_currentSlice( 0 ),
 	m_isMinValueDefined( false ),
 	m_isMaxValueDefined( false )
 {
@@ -81,10 +81,10 @@ double SVDFactor::valueAtCurrentPlane(double localX, double localY)
 
 	//get the value
 	switch( m_currentPlaneOrientation ){
-		case SVDFactorPlaneOrientation::XY: return this->dataIJK( i, j, m_currentPlane );
-		case SVDFactorPlaneOrientation::XZ: return this->dataIJK( i, m_currentPlane, j );
-		case SVDFactorPlaneOrientation::YZ: return this->dataIJK( m_currentPlane, i, j );
-		default: return this->dataIJK( i, j, m_currentPlane );
+		case SVDFactorPlaneOrientation::XY: return this->dataIJK( i, j, m_currentSlice );
+		case SVDFactorPlaneOrientation::XZ: return this->dataIJK( i, m_currentSlice, j );
+		case SVDFactorPlaneOrientation::YZ: return this->dataIJK( m_currentSlice, i, j );
+		default: return this->dataIJK( i, j, m_currentSlice );
 	}
 }
 
@@ -161,6 +161,7 @@ double SVDFactor::getMinValue()
 		return m_minValue;
 	m_minValue = *std::min_element( m_factorData.data().begin(), m_factorData.data().end() ) ;
 	m_isMinValueDefined = true;
+    return m_minValue;
 }
 
 double SVDFactor::getMaxValue()
@@ -169,6 +170,7 @@ double SVDFactor::getMaxValue()
 		return m_maxValue;
 	m_maxValue = *std::max_element( m_factorData.data().begin(), m_factorData.data().end() ) ;
 	m_isMaxValueDefined = true;
+    return m_maxValue;
 }
 
 uint SVDFactor::getCurrentPlaneNumberOfSlices()
@@ -178,7 +180,12 @@ uint SVDFactor::getCurrentPlaneNumberOfSlices()
 		case SVDFactorPlaneOrientation::XZ: return m_factorData.N();
 		case SVDFactorPlaneOrientation::YZ: return m_factorData.M();
 		default: return m_factorData.N();
-	}
+    }
+}
+
+void SVDFactor::setPlaneOrientation(SVDFactorPlaneOrientation orientation)
+{
+    m_currentPlaneOrientation = orientation;
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
