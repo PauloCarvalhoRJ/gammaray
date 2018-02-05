@@ -130,7 +130,7 @@ public:
 			if( m_factor->isNDV(value) ) //if there is no value there
 				value = std::numeric_limits<double>::quiet_NaN(); //returns NaN (blank plot)
             if( m_colorScaleForSVDFactor == ColorScaleForSVDFactor::LOG )
-                value = std::log10( value );
+				value = std::log10( std::abs( value ) );
 			return value;
 		}
 	}
