@@ -7,14 +7,14 @@ SVDFactor::SVDFactor(spectral::array &&factorData, uint number, double weight, d
 	m_number( number ),
 	m_selected( true ),
 	m_weight( weight ),
+	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY ),
+	m_currentSlice( 0 ),
 	m_x0( x0 ),
 	m_y0( y0 ),
 	m_z0( z0 ),
 	m_dx( dx ),
 	m_dy( dy ),
 	m_dz( dz ),
-	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY ),
-	m_currentSlice( 0 ),
 	m_isMinValueDefined( false ),
 	m_isMaxValueDefined( false )
 {
@@ -26,14 +26,14 @@ SVDFactor::SVDFactor() :
 	m_number( 0 ),
 	m_selected( false ),
 	m_weight( 0.0 ),
+	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY ),
+	m_currentSlice( 0 ),
 	m_x0( 0.0 ),
 	m_y0( 0.0 ),
 	m_z0( 0.0 ),
 	m_dx( 1.0 ),
 	m_dy( 1.0 ),
 	m_dz( 1.0 ),
-	m_currentPlaneOrientation( SVDFactorPlaneOrientation::XY ),
-	m_currentSlice( 0 ),
 	m_isMinValueDefined( false ),
 	m_isMaxValueDefined( false )
 {
