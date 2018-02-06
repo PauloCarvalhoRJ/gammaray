@@ -199,7 +199,8 @@ SOURCES += main.cpp\
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartview.cpp \
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartcallout.cpp \
     imagejockey/ijabstractcartesiangrid.cpp \
-    imagejockey/ijabstractvariable.cpp
+    imagejockey/ijabstractvariable.cpp \
+    imagejockey/imagejockeyutils.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -376,7 +377,8 @@ HEADERS  += mainwindow.h \
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartview.h \
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartcallout.h \
     imagejockey/ijabstractcartesiangrid.h \
-    imagejockey/ijabstractvariable.h
+    imagejockey/ijabstractvariable.h \
+    imagejockey/imagejockeyutils.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

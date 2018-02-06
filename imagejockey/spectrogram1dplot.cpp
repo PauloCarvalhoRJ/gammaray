@@ -16,8 +16,7 @@
 #include "ijabstractcartesiangrid.h"
 #include "spectrogram1dparameters.h"
 #include "spectrogram1dplotpicker.h"
-#include "util.h"
-
+#include "imagejockeyutils.h"
 
 ///================================THE VISUAL GRID PATTERN FOR THE 1D SPECTROGRAM===============
 class Spectrogram1DGrid: public QwtPlotGrid
@@ -153,7 +152,7 @@ void Spectrogram1DPlot::rereadSpectrogramData()
     IJAbstractCartesianGrid* cg = m_var->getParentGrid();
 
     //TODO: add support for rotations
-    if( ! Util::almostEqual2sComplement( cg->getRotation(), 0.0, 1) ){
+	if( ! ImageJockeyUtils::almostEqual2sComplement( cg->getRotation(), 0.0, 1) ){
 		emit errorOccurred("Spectrogram1DPlot::rereadSpectrogramData(): rotation not supported yet.  Nothing done.");
         return;
     }
@@ -198,7 +197,7 @@ void Spectrogram1DPlot::rereadSpectrogramData()
                         intensity = std::numeric_limits<double>::quiet_NaN(); //intensity is NaN (blank plot)
                     else
                         //for Fourier images, get the absolute values in decibel for ease of interpretation
-                        intensity = Util::dB( std::abs<double>(value), m_decibelRefValue, 0.0000001 );
+						intensity = ImageJockeyUtils::dB( std::abs<double>(value), m_decibelRefValue, 0.0000001 );
                     // get the distance orthogonal distance components
                     double dX = cellCenterX - gridCenterX;
                     double dY = cellCenterY - gridCenterY;
