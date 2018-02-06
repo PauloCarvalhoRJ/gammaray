@@ -1,11 +1,12 @@
 #ifndef ATTRIBUTE_H
 #define ATTRIBUTE_H
 #include "projectcomponent.h"
+#include "imagejockey/ijabstractvariable.h"
 #include <QString>
 
 class File;
 
-class Attribute : public ProjectComponent
+class Attribute : public ProjectComponent, public IJAbstractVariable
 {
 public:
     /** Constructor. Index in GEO-EAS format begins with 1, not zero. */
@@ -40,6 +41,12 @@ public:
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
     virtual QString getTypeName(){ return "Attribute"; }
     virtual View3DConfigWidget* build3DViewerConfigWidget(View3DViewData viewObjects);
+
+//IJAbstractVariable interface
+public:
+    /** Returns null pointer if parent object is not a Cartesian grid. */
+    virtual IJAbstractCartesianGrid* getParentGrid();
+    virtual int getIndexInParentGrid();
 
 private:
     QString _name;

@@ -3,7 +3,7 @@
 
 #include <qwt_plot.h>
 
-class Attribute;
+class IJAbstractVariable;
 class QwtPlotCurve;
 
 /** Widget used in ImageJockeyDialog to display a 1D spectrogram along a band in a 2D Fourier image
@@ -21,7 +21,7 @@ public:
     virtual bool eventFilter(QObject *object, QEvent * e);
 
 public Q_SLOTS:
-    void setAttribute( Attribute* at );
+    void setVariable(IJAbstractVariable* var );
     /** Called when it is necessary to retrieve spectrography data from the Attribute's grid. */
     void rereadSpectrogramData();
     void setDecibelRefValue( double value );
@@ -32,7 +32,7 @@ public Q_SLOTS:
     void resetReferenceCurve();
 
 private:
-    Attribute* m_at;
+    IJAbstractVariable* m_var;
 
     /** The spectrogram graph curve. */
     QwtPlotCurve *m_curve;

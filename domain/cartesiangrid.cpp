@@ -13,7 +13,7 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/scoped_array.hpp>
 
-CartesianGrid::CartesianGrid( QString path )  : DataFile( path )
+CartesianGrid::CartesianGrid( QString path )  : DataFile( path ), IJAbstractCartesianGrid()
 {
     this->_dx = 0.0;
     this->_dy = 0.0;
@@ -313,6 +313,36 @@ double CartesianGrid::getDiagonalLength()
     double dy = yf - y0;
     double dz = zf - z0;
     return std::sqrt<double>( dx*dx + dy*dy + dz*dz ).real();
+}
+
+double CartesianGrid::getRotation()
+{
+    return getRot();
+}
+
+double CartesianGrid::getCenterY()
+{
+    return getCenter()._y;
+}
+
+double CartesianGrid::getCenterZ()
+{
+    return getCenter()._z;
+}
+
+double CartesianGrid::getData(int variableIndex, int i, int j, int k)
+{
+    return dataIJK( variableIndex, i, k, k );
+}
+
+bool CartesianGrid::isNoDataValue(double value)
+{
+    return isNDV( value );
+}
+
+double CartesianGrid::getCenterX()
+{
+    return getCenter()._x;
 }
 
 SpatialLocation CartesianGrid::getCenter()

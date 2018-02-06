@@ -3,6 +3,7 @@
 
 #include "datafile.h"
 #include "geostats/spatiallocation.h"
+#include "imagejockey/ijabstractcartesiangrid.h"
 #include <set>
 
 class GSLibParGrid;
@@ -13,7 +14,7 @@ namespace spectral{
    class array;
 }
 
-class CartesianGrid : public DataFile
+class CartesianGrid : public DataFile, public IJAbstractCartesianGrid
 {
 public:
     CartesianGrid( QString path );
@@ -107,9 +108,6 @@ public:
      */
     void setDataPageToRealization( uint nreal );
 
-    /** Returns the length of the grid's box diagonal. */
-    double getDiagonalLength();
-
     /** Returns the grid's center. */
     SpatialLocation getCenter();
 
@@ -167,6 +165,25 @@ public:
     QIcon getIcon();
     void save(QTextStream *txt_stream);
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
+
+//IJAbstractCartesianGrid interface
+public:
+    virtual double getDiagonalLength();
+    virtual double getRotation();
+    virtual double getCenterX();
+    virtual double getCenterY();
+    virtual double getCenterZ();
+    virtual int getNI() { return getNX(); }
+    virtual int getNJ() { return getNY(); }
+    virtual int getNK() { return getNZ(); }
+    virtual double getCellSizeI() { return getDX(); }
+    virtual double getCellSizeJ() { return getDY(); }
+    virtual double getCellSizeK() { return getDZ(); }
+    virtual double getOriginX() { return getX0(); }
+    virtual double getOriginY() { return getY0(); }
+    virtual double getOriginZ() { return getZ0(); }
+    virtual double getData( int variableIndex, int i, int j, int k );
+    virtual bool isNoDataValue( double value );
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;
