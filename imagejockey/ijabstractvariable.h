@@ -10,6 +10,7 @@ class IJAbstractVariable
 {
 public:
     IJAbstractVariable();
+	virtual ~IJAbstractVariable(){}
 
     /** Returns the pointer to the parent Cartesian grid object. */
     virtual IJAbstractCartesianGrid* getParentGrid() = 0;

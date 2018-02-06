@@ -332,7 +332,7 @@ double CartesianGrid::getCenterZ()
 
 double CartesianGrid::getData(int variableIndex, int i, int j, int k)
 {
-    return dataIJK( variableIndex, i, k, k );
+	return dataIJK( variableIndex, i, j, k );
 }
 
 bool CartesianGrid::isNoDataValue(double value)

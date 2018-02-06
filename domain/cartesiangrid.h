@@ -149,21 +149,21 @@ public:
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
-    bool isWeight( Attribute* /*at*/ ) { return false; }
+	virtual bool isWeight( Attribute* /*at*/ ) { return false; }
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
     virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 
 // File interface
 public:
-    bool canHaveMetaData();
-    QString getFileType();
-    void updateMetaDataFile();
-    bool isDataFile(){ return true; }
+	virtual bool canHaveMetaData();
+	virtual QString getFileType();
+	virtual void updateMetaDataFile();
+	virtual bool isDataFile(){ return true; }
 
 // ProjectComponent interface
 public:
-    QIcon getIcon();
-    void save(QTextStream *txt_stream);
+	virtual QIcon getIcon();
+	virtual void save(QTextStream *txt_stream);
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
 
 //IJAbstractCartesianGrid interface

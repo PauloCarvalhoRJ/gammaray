@@ -8,6 +8,7 @@ class IJAbstractCartesianGrid
 {
 public:
     IJAbstractCartesianGrid();
+	virtual ~IJAbstractCartesianGrid(){}
 
     /** Returns the length of the diagonal of the grid's box. */
     virtual double getDiagonalLength() = 0;

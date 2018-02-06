@@ -193,7 +193,7 @@ void Spectrogram1DPlot::rereadSpectrogramData()
                         ){
                     double intensity;
                     // get the grid value as is
-                    double value = cg->getData( columnIndex, i, j, k );
+					double value = cg->getData( columnIndex, i, j, k );
                     // calculate the intensity value from the raw spectrogram value
                     if( cg->isNoDataValue(value) ) //if there is no value there
                         intensity = std::numeric_limits<double>::quiet_NaN(); //intensity is NaN (blank plot)

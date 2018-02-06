@@ -32,11 +32,11 @@ public:
 
     // ProjectComponent interface
 public:
-    QString getName();
-    QIcon getIcon();
-    bool isFile();
-    bool isAttribute();
-    QString getPresentationName();
+	virtual QString getName();
+	virtual QIcon getIcon();
+	virtual bool isFile();
+	virtual bool isAttribute();
+	virtual QString getPresentationName();
     virtual QString getObjectLocator();
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
     virtual QString getTypeName(){ return "Attribute"; }

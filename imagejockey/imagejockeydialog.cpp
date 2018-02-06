@@ -215,7 +215,7 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     m_spectrogram1Dparams->setRefCenter( cg->getCenter() );
 
     //set the attribute for the 1D spectrogram plot
-    m_spectrogram1Dplot->setVariable( at );
+	m_spectrogram1Dplot->setVariable( at );
 
     //assuming Fourier image symmetry, the frequency limits range between 0.0 (DC) and half grid size
     m_equalizerWidget->setFrequencyLimits(0.0d, gridDiagLength / 2.0d);
