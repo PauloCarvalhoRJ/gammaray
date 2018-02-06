@@ -108,6 +108,7 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     m_spectrogram1Dplot = new Spectrogram1DPlot();
     ui->frm1DSpectrogram->layout()->addWidget( m_spectrogram1Dplot );
     ui->frm1DSpectrogram->setStyleSheet("background-color: black; border-radius: 10px; color: #00FF00;");
+	connect( m_spectrogram1Dplot, SIGNAL(errorOccurred(QString)), this, SLOT( onSpectrogram1DErrorOccurred(QString)));
     connect( m_wheelColorDecibelReference, SIGNAL(valueChanged(double)),
              m_spectrogram1Dplot, SLOT(setDecibelRefValue(double)));
     connect( m_wheelColorMax, SIGNAL(valueChanged(double)), m_spectrogram1Dplot, SLOT(setVerticalScaleMax(double)) );
@@ -457,5 +458,10 @@ void ImageJockeyDialog::onSumOfFactorsWasComputed(spectral::array *sumOfFactors)
     cg->append(new_variable_name, *sumOfFactors );
 
     //discard the computed sum
-    delete sumOfFactors;
+	delete sumOfFactors;
+}
+
+void ImageJockeyDialog::onSpectrogram1DErrorOccurred(QString message)
+{
+	Application::instance()->logError( message );
 }

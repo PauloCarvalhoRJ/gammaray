@@ -13,7 +13,6 @@
 #include <boost/scoped_array.hpp>
 
 #include "ijabstractvariable.h"
-#include "domain/application.h"
 #include "ijabstractcartesiangrid.h"
 #include "spectrogram1dparameters.h"
 #include "spectrogram1dplotpicker.h"
@@ -133,7 +132,7 @@ void Spectrogram1DPlot::rereadSpectrogramData()
 
     //check whether we the necessary data
     if( ! m_var ){
-        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): Attribute is null.  Nothing done.");
+		emit errorOccurred("Spectrogram1DPlot::rereadSpectrogramData(): Attribute is null.  Nothing done.");
         return;
     }
 
@@ -146,7 +145,7 @@ void Spectrogram1DPlot::rereadSpectrogramData()
     //check whether the event sender is a Spectrogram1DParameters
     Spectrogram1DParameters* spectr1DPar = qobject_cast<Spectrogram1DParameters*>( obj );
     if( ! spectr1DPar ){
-        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): sender is not an Spectrogram1DParameters object. Nothing done.");
+		emit errorOccurred("Spectrogram1DPlot::rereadSpectrogramData(): sender is not an Spectrogram1DParameters object. Nothing done.");
         return;
     }
 
@@ -155,7 +154,7 @@ void Spectrogram1DPlot::rereadSpectrogramData()
 
     //TODO: add support for rotations
     if( ! Util::almostEqual2sComplement( cg->getRotation(), 0.0, 1) ){
-        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): rotation not supported yet.  Nothing done.");
+		emit errorOccurred("Spectrogram1DPlot::rereadSpectrogramData(): rotation not supported yet.  Nothing done.");
         return;
     }
 

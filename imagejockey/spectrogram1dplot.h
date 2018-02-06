@@ -20,6 +20,10 @@ public:
     Spectrogram1DPlot(QWidget * parent = nullptr);
     virtual bool eventFilter(QObject *object, QEvent * e);
 
+signals:
+	/** Triggered when an error is captured. Client code should connect to this slot to get error reports. */
+	void errorOccurred( QString message );
+
 public Q_SLOTS:
     void setVariable(IJAbstractVariable* var );
     /** Called when it is necessary to retrieve spectrography data from the Attribute's grid. */
