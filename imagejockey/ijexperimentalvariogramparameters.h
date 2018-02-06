@@ -1,17 +1,17 @@
-#ifndef EXPERIMENTALVARIOGRAMPARAMETERS_H
-#define EXPERIMENTALVARIOGRAMPARAMETERS_H
+#ifndef IJEXPERIMENTALVARIOGRAMPARAMETERS_H
+#define IJEXPERIMENTALVARIOGRAMPARAMETERS_H
 
 #include <QObject>
 #include "geostats/spatiallocation.h"
 
 /** This class represents experimental variogram calculation parameters such as azimuth, bandwidth, etc. */
-class ExperimentalVariogramParameters : public QObject
+class IJExperimentalVariogramParameters : public QObject
 {
     Q_OBJECT
 
 public:
 
-    ExperimentalVariogramParameters();
+    IJExperimentalVariogramParameters();
 
     double azimuth() const;
     double azimuthTolerance() const;
@@ -37,4 +37,4 @@ protected:
     virtual void updateGeometry();
 };
 
-#endif // EXPERIMENTALVARIOGRAMPARAMETERS_H
+#endif // IJEXPERIMENTALVARIOGRAMPARAMETERS_H

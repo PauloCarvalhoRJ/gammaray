@@ -164,7 +164,6 @@ SOURCES += main.cpp\
     imagejockey/imagejockeydialog.cpp \
     imagejockey/imagejockeygridplot.cpp \
     widgets/grcompass.cpp \
-    geostats/experimentalvariogramparameters.cpp \
     imagejockey/spectrogram1dparameters.cpp \
     imagejockey/spectrogram1dplot.cpp \
     imagejockey/spectrogram1dplotpicker.cpp \
@@ -200,7 +199,8 @@ SOURCES += main.cpp\
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartcallout.cpp \
     imagejockey/ijabstractcartesiangrid.cpp \
     imagejockey/ijabstractvariable.cpp \
-    imagejockey/imagejockeyutils.cpp
+    imagejockey/imagejockeyutils.cpp \
+    imagejockey/ijexperimentalvariogramparameters.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -342,7 +342,6 @@ HEADERS  += mainwindow.h \
     imagejockey/imagejockeydialog.h \
     imagejockey/imagejockeygridplot.h \
     widgets/grcompass.h \
-    geostats/experimentalvariogramparameters.h \
     imagejockey/spectrogram1dparameters.h \
     imagejockey/spectrogram1dplot.h \
     imagejockey/spectrogram1dplotpicker.h \
@@ -378,7 +377,8 @@ HEADERS  += mainwindow.h \
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartcallout.h \
     imagejockey/ijabstractcartesiangrid.h \
     imagejockey/ijabstractvariable.h \
-    imagejockey/imagejockeyutils.h
+    imagejockey/imagejockeyutils.h \
+    imagejockey/ijexperimentalvariogramparameters.h
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \

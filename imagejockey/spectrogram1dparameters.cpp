@@ -7,7 +7,7 @@
 #include "geostats/geostatsutils.h"
 
 Spectrogram1DParameters::Spectrogram1DParameters() :
-    ExperimentalVariogramParameters()
+    IJExperimentalVariogramParameters()
 {
 }
 double Spectrogram1DParameters::radius() const
