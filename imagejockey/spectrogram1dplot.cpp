@@ -176,11 +176,11 @@ void Spectrogram1DPlot::rereadSpectrogramData()
     //TODO: this code assumes no grid rotation and that the grid is 2D.
     double gridCenterX = cg->getCenterX();
     double gridCenterY = cg->getCenterY();
-    for( uint k = 0; k < cg->getNK(); ++k ){
+	for( int k = 0; k < cg->getNK(); ++k ){
         // z coordinate is ignored in 2D spectrograms
-        for( uint j = 0; j < cg->getNJ(); ++j ){
+		for( int j = 0; j < cg->getNJ(); ++j ){
             double cellCenterY = cg->getOriginY() + j * cg->getCellSizeJ();
-            for( uint i = 0; i < cg->getNI(); ++i ){
+			for( int i = 0; i < cg->getNI(); ++i ){
                 double cellCenterX = cg->getOriginX() + i * cg->getCellSizeI();
                 boostPoint2D p(cellCenterX, cellCenterY);
                 // if the cell center lies within the 1D spectrogram calculation band
