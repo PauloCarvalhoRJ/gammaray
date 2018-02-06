@@ -21,6 +21,7 @@ public:
 
 Q_SIGNALS:
     void curveChanged( QwtPlotCurve* changed_curve );
+    void errorOccurred( QString message );
 
 private:
 

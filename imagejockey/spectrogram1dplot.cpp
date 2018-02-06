@@ -111,6 +111,7 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     Spectrogram1DPlotPicker* plotPicker = new Spectrogram1DPlotPicker( m_referenceCurve, this ); //TODO: delete?
     //To be notified when a calibration curve is edited by the used.
     connect( plotPicker, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onReferenceCurveChanged(QwtPlotCurve*)) );
+    connect( plotPicker, SIGNAL(errorOccurred(QString)), this, SIGNAL(errorOccurred(QString)));
 }
 
 void Spectrogram1DPlot::setVariable(IJAbstractVariable *var)
