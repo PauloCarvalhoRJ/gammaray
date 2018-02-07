@@ -1,5 +1,4 @@
 #include "ijexperimentalvariogramparameters.h"
-#include "domain/application.h"
 
 IJExperimentalVariogramParameters::IJExperimentalVariogramParameters() : QObject()
 {
@@ -51,7 +50,7 @@ void IJExperimentalVariogramParameters::setRefCenter(const IJSpatialLocation &re
 
 void IJExperimentalVariogramParameters::updateGeometry()
 {
-    Application::instance()->logError("IJExperimentalVariogramParameters::updateGeometry(): not implemented.  No geometry.");
+	emit errorOccurred("IJExperimentalVariogramParameters::updateGeometry(): not implemented.  No geometry.");
 }
 
 

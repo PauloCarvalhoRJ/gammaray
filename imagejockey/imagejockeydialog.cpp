@@ -122,6 +122,8 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     //paramaters (e.g. azimuth).
     connect( m_spectrogram1Dparams, SIGNAL(updated()), m_spectrogram1Dplot, SLOT( rereadSpectrogramData()) );
 
+	connect( m_spectrogram1Dparams, SIGNAL(errorOccurred(QString)), this, SLOT(onSpectrogram1DErrorOccurred(QString)));
+
     //the set of sliders to attenuate or amplify frquency components.
     m_equalizerWidget = new EqualizerWidget();
     ui->frmEqualizer->layout()->addWidget( m_equalizerWidget );

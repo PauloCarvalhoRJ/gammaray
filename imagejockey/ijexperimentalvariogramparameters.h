@@ -21,6 +21,7 @@ public:
 
 Q_SIGNALS:
     void updated();
+	void errorOccurred(QString message);
 
 public Q_SLOTS:
     void setAzimuth(double azimuth);
