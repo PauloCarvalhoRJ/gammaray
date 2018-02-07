@@ -193,14 +193,15 @@ SOURCES += main.cpp\
     imagejockey/svd/svdfactor.cpp \
     imagejockey/svd/svdfactortree.cpp \
     imagejockey/svd/svdanalysisdialog.cpp \
-	imagejockey/svd/svdfactortreeview.cpp \
-	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.cpp \
+    imagejockey/svd/svdfactortreeview.cpp \
+    imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.cpp \
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartview.cpp \
     imagejockey/svd/svdfactorsel/svdfactorsselectionchartcallout.cpp \
     imagejockey/ijabstractcartesiangrid.cpp \
     imagejockey/ijabstractvariable.cpp \
     imagejockey/imagejockeyutils.cpp \
-    imagejockey/ijexperimentalvariogramparameters.cpp
+    imagejockey/ijexperimentalvariogramparameters.cpp \
+    imagejockey/ijmatrix3x3.h
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -378,7 +379,9 @@ HEADERS  += mainwindow.h \
     imagejockey/ijabstractcartesiangrid.h \
     imagejockey/ijabstractvariable.h \
     imagejockey/imagejockeyutils.h \
-    imagejockey/ijexperimentalvariogramparameters.h
+    imagejockey/ijexperimentalvariogramparameters.h \
+    imagejockey/ijmatrix3x3.h
+
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -445,8 +448,8 @@ FORMS    += mainwindow.ui \
     viewer3d/view3dverticalexaggerationwidget.ui \
     dialogs/machinelearningdialog.ui \
     imagejockey/svd/svdparametersdialog.ui \
-	imagejockey/svd/svdanalysisdialog.ui \
-	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui
+    imagejockey/svd/svdanalysisdialog.ui \
+    imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
