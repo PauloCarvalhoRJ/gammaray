@@ -173,6 +173,7 @@ public:
     virtual double getCenterX();
     virtual double getCenterY();
     virtual double getCenterZ();
+	virtual IJSpatialLocation getCenterLocation();
     virtual int getNI() { return getNX(); }
     virtual int getNJ() { return getNY(); }
     virtual int getNK() { return getNZ(); }

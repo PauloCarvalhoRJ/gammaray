@@ -2,7 +2,7 @@
 #define IJEXPERIMENTALVARIOGRAMPARAMETERS_H
 
 #include <QObject>
-#include "geostats/spatiallocation.h"
+#include "ijspatiallocation.h"
 
 /** This class represents experimental variogram calculation parameters such as azimuth, bandwidth, etc. */
 class IJExperimentalVariogramParameters : public QObject
@@ -17,7 +17,7 @@ public:
     double azimuthTolerance() const;
     double bandWidth() const;
     /** A spatial location needed to visualize this object. It is not needed for variogram calculation.*/
-    const SpatialLocation& refCenter() const;
+	const IJSpatialLocation& refCenter() const;
 
 Q_SIGNALS:
     void updated();
@@ -26,13 +26,13 @@ public Q_SLOTS:
     void setAzimuth(double azimuth);
     void setAzimuthTolerance(double azimuthTolerance);
     void setBandWidth(double bandWidth);
-    void setRefCenter(const SpatialLocation &refCenter);
+	void setRefCenter(const IJSpatialLocation &refCenter);
 
 protected:
     double _azimuth;
     double _azimuthTolerance;
     double _bandWidth;
-    SpatialLocation _refCenter;
+	IJSpatialLocation _refCenter;
     /** Geometry is the set of geometric primitives that results from the parameters. */
     virtual void updateGeometry();
 };

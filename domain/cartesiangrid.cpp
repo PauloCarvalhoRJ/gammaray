@@ -327,7 +327,17 @@ double CartesianGrid::getCenterY()
 
 double CartesianGrid::getCenterZ()
 {
-    return getCenter()._z;
+	return getCenter()._z;
+}
+
+IJSpatialLocation CartesianGrid::getCenterLocation()
+{
+	IJSpatialLocation result;
+	SpatialLocation temp = getCenter();
+	result._x = temp._x;
+	result._y = temp._y;
+	result._z = temp._z;
+	return result;
 }
 
 double CartesianGrid::getData(int variableIndex, int i, int j, int k)

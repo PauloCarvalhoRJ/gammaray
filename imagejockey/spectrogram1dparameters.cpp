@@ -33,8 +33,8 @@ int Spectrogram1DParameters::getNPointsPerBandIn2DGeometry() const
 
 double Spectrogram1DParameters::distanceToAxis(double x, double y)
 {
-    SpatialLocation end;
-    SpatialLocation point;
+	IJSpatialLocation end;
+	IJSpatialLocation point;
     point._x = x;
     point._y = y;
 

@@ -213,7 +213,7 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     //the length of a half band for the 1D spectrogram calculation is half the diagonal of the grid
     //this ensures total grid coverage regardless of azimuth choice
     m_spectrogram1Dparams->setEndRadius( gridDiagLength / 2.0d );
-    m_spectrogram1Dparams->setRefCenter( cg->getCenter() );
+	m_spectrogram1Dparams->setRefCenter( cg->getCenterLocation() );
 
     //set the attribute for the 1D spectrogram plot
 	m_spectrogram1Dplot->setVariable( at );

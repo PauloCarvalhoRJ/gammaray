@@ -1,6 +1,8 @@
 #ifndef IJABSTRACTCARTESIANGRID_H
 #define IJABSTRACTCARTESIANGRID_H
 
+#include "ijspatiallocation.h"
+
 /**
  * The IJAbstractCartesianGrid class represents a Cartesian grid in the Image Jockey sub-system.
  */
@@ -21,6 +23,7 @@ public:
     virtual double getCenterX() = 0;
     virtual double getCenterY() = 0;
     virtual double getCenterZ() = 0;
+	virtual IJSpatialLocation getCenterLocation() = 0;
     //@}
 
     //@{

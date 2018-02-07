@@ -201,7 +201,8 @@ SOURCES += main.cpp\
     imagejockey/ijabstractvariable.cpp \
     imagejockey/imagejockeyutils.cpp \
     imagejockey/ijexperimentalvariogramparameters.cpp \
-    imagejockey/ijmatrix3x3.cpp
+    imagejockey/ijmatrix3x3.cpp \
+    imagejockey/ijspatiallocation.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -380,7 +381,8 @@ HEADERS  += mainwindow.h \
     imagejockey/ijabstractvariable.h \
     imagejockey/imagejockeyutils.h \
     imagejockey/ijexperimentalvariogramparameters.h \
-    imagejockey/ijmatrix3x3.h
+    imagejockey/ijmatrix3x3.h \
+    imagejockey/ijspatiallocation.h
 
 
 FORMS    += mainwindow.ui \

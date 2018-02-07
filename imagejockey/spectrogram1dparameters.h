@@ -61,7 +61,7 @@ protected:
     double _2DBand1y[_n2DBandPoints];
     double _2DBand2x[_n2DBandPoints];
     double _2DBand2y[_n2DBandPoints];
-    SpatialLocation _aPointOnAxis; //a point located on the axis along _azimuth (useful for the distanceToAxis() function).
+	IJSpatialLocation _aPointOnAxis; //a point located on the axis along _azimuth (useful for the distanceToAxis() function).
     //@}
 };
 

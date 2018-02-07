@@ -37,12 +37,12 @@ void IJExperimentalVariogramParameters::setBandWidth(double bandWidth)
     updateGeometry();
     emit updated();
 }
-const SpatialLocation &IJExperimentalVariogramParameters::refCenter() const
+const IJSpatialLocation & IJExperimentalVariogramParameters::refCenter() const
 {
     return _refCenter;
 }
 
-void IJExperimentalVariogramParameters::setRefCenter(const SpatialLocation &refCenter)
+void IJExperimentalVariogramParameters::setRefCenter(const IJSpatialLocation &refCenter)
 {
     _refCenter = refCenter;
     updateGeometry();
