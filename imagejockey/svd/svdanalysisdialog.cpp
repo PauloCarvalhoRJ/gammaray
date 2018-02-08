@@ -1,6 +1,5 @@
 #include "svdanalysisdialog.h"
 #include "ui_svdanalysisdialog.h"
-#include "domain/application.h"
 #include "svdfactortree.h"
 #include "spectral/svd.h"
 #include <QMenu>
@@ -44,15 +43,13 @@ SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
 
 SVDAnalysisDialog::~SVDAnalysisDialog()
 {
-    Application::instance()->logInfo("SVDAnalysisDialog destroyed.");
     delete ui;
 	if( m_deleteTree && m_tree ){
 		delete m_tree;
 		m_tree = nullptr;
-		Application::instance()->logInfo("Tree of SVDFactors destroyed.");
 	} else if( ! m_deleteTree && m_tree ){
-		Application::instance()->logInfo("Tree of SVDFactors was left in memory.");
-	}
+        //Tree of SVDFactors was left in memory
+    }
 }
 
 void SVDAnalysisDialog::setTree( SVDFactorTree *tree )
@@ -188,7 +185,6 @@ void SVDAnalysisDialog::onFactorizeFurther()
 
 	//get the list with the factor weights (information quantity)
 	spectral::array weights = svd.factor_weights();
-	Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
 
 	//User enters number of SVD factors
 	m_numberOfSVDFactorsSetInTheDialog = 0;
