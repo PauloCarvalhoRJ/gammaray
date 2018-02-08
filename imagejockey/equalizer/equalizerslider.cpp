@@ -1,7 +1,7 @@
 #include "equalizerslider.h"
 #include "ui_equalizerslider.h"
 
-#include "util.h"
+#include "../imagejockeyutils.h"
 
 #include <qwt_slider.h>
 
@@ -23,7 +23,7 @@ EqualizerSlider::EqualizerSlider(double centralFrequency, bool showScale, QWidge
     connect( m_slider, SIGNAL(valueChanged(double)), this, SLOT(setValue(double)) );
 
     //display the current center frequency
-    ui->lblCenterFrequency->setText( Util::humanReadable( m_centralFrequency ) );
+    ui->lblCenterFrequency->setText( ImageJockeyUtils::humanReadable( m_centralFrequency ) );
 }
 
 EqualizerSlider::~EqualizerSlider()
@@ -38,7 +38,7 @@ double EqualizerSlider::centralFrequency() const
 void EqualizerSlider::setCentralFrequency(double centralFrequency)
 {
     m_centralFrequency = centralFrequency;
-    ui->lblCenterFrequency->setText( Util::humanReadable( m_centralFrequency ) );
+    ui->lblCenterFrequency->setText( ImageJockeyUtils::humanReadable( m_centralFrequency ) );
 }
 
 void EqualizerSlider::setValue(double value)

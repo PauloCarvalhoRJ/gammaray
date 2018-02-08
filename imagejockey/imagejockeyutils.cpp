@@ -64,3 +64,25 @@ void ImageJockeyUtils::transform(IJMatrix3X3<double> &t, double &a1, double &a2,
     a2 = temp_a2;
     a3 = temp_a3;
 }
+
+QString ImageJockeyUtils::humanReadable(double value)
+{
+    //buffer string for formatting the output (QString's sptrintf doesn't honor field size)
+    char buffer[50];
+    //define base unit to change suffix (could be 1024 for ISO bytes (iB), for instance)
+    double unit = 1000.0d;
+    //return the plain value if it doesn't require a multiplier suffix (small values)
+    if (value <= unit){
+        std::sprintf(buffer, "%.1f", value);
+        return QString( buffer );
+    }
+    //compute the order of magnitude (approx. power of 1000) of the value
+    int exp = (int) (std::log10(value) / std::log10(unit));
+    //string that is a list of available multiplier suffixes
+    QString suffixes = "pnum kMGTPE";
+    //select the suffix
+    char suffix = suffixes.at( 5+exp-1 ).toLatin1(); //-5 because pico would result in a -5 index.
+    //format output, dividing the value by the power of 1000 found
+    std::sprintf(buffer, "%.1f%c", value / std::pow<double, int>(unit, exp), suffix);
+    return QString( buffer );
+}

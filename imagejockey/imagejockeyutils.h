@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <cstdint>
+#include <QString>
 #include "ijmatrix3x3.h"
 
 class ImageJockeyUtils
@@ -73,6 +74,14 @@ public:
     /** Transforms the 3x1 vector-column (a1, a2, a3) with the given 3x3 matrix. */
     static void transform( IJMatrix3X3<double>& t, double& a1, double& a2, double& a3 );
 
+    /** Returns a text containing a better human readable value.
+     * E.g.: 25000000 results in "25M".  Client code can then append a basic unit: "25M" +
+     * "Hz" to make "25MHz".
+     * This function supports multiplier suffixes from pico (p) to Exa (E).  More can be
+     * added with small changes
+     * to its code.
+     */
+    static QString humanReadable(double value);
 };
 
 #endif // IMAGEJOCKEYUTILS_H
