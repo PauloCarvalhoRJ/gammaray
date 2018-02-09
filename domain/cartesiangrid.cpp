@@ -350,6 +350,21 @@ bool CartesianGrid::isNoDataValue(double value)
     return isNDV( value );
 }
 
+double CartesianGrid::getDataAt(int dataColumn, double x, double y, double z)
+{
+    return valueAt( dataColumn, x, y, z );
+}
+
+double CartesianGrid::absMin(int column)
+{
+    return minAbs( column );
+}
+
+double CartesianGrid::absMax(int column)
+{
+    return maxAbs( column );
+}
+
 double CartesianGrid::getCenterX()
 {
     return getCenter()._x;

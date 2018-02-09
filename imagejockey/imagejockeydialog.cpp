@@ -166,7 +166,7 @@ void ImageJockeyDialog::spectrogramGridReplot()
 void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
 {
     //set the attribute
-    m_gridPlot->setAttribute( at );
+    m_gridPlot->setVariable( at );
 
     //read decibel extrema before assigning them to the widgets to prevent
     //that some unpredicted signal/slot chaining causes unpredicted behavior

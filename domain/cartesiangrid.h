@@ -185,6 +185,9 @@ public:
     virtual double getOriginZ() { return getZ0(); }
     virtual double getData( int variableIndex, int i, int j, int k );
     virtual bool isNoDataValue( double value );
+    virtual double getDataAt( int dataColumn, double x, double y, double z );
+    virtual double absMax( int column );
+    virtual double absMin( int column );
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;

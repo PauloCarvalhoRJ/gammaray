@@ -4,7 +4,7 @@
 #include <qwt_plot.h>
 
 class QwtPlotSpectrogram;
-class Attribute;
+class IJAbstractVariable;
 class SpectrogramData;
 class QwtPlotZoomer;
 class QwtPlotCurve;
@@ -35,8 +35,8 @@ public:
 
     ImageJockeyGridPlot( QWidget * = nullptr );
 
-	/** Sets the Cartesian grid Attribute to display. If, set replaces the previous Attribute or SVDFactor.*/
-    void setAttribute( Attribute *at );
+    /** Sets the grid variable to display. If, set replaces the previous variable or SVDFactor.*/
+    void setVariable(IJAbstractVariable *var );
 
 	/** Sets the SVD Factor to display (it is a regular grid). If, set replaces the previous Attribute or SVDFactor.*/
 	void setSVDFactor( SVDFactor* svdFactor);
@@ -71,8 +71,8 @@ private:
     int m_mapType;
     int m_alpha;
 
-    /** Attribute (of a Cartesian grid) being displayed. */
-    Attribute* m_at;
+    /** Variable (of a regular grid) being displayed. */
+    IJAbstractVariable* m_var;
 
     /** Adapter between QwtRasterData and Attribute of a Cartesian grid. */
     SpectrogramData* m_spectrumData;

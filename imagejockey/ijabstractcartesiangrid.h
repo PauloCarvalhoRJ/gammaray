@@ -44,6 +44,25 @@ public:
 
     /** Returns whether the given value is considered uninformed datum. */
     virtual bool isNoDataValue( double value ) = 0;
+
+    /** Returns the value of the variable (given by its zero-based index) at the given spatial location.
+     *  The function returns the value of grid cell that contains the given location.  The z coordinate is ignored
+     * if the grid is 2D.
+     * Make sure you load/select the desired realization prior to calling this in multi-realization grids.
+     */
+    virtual double getDataAt( int dataColumn, double x, double y, double z ) = 0;
+
+    /**
+     * Returns the maximum absolute value in the given column.
+     * First column is 0.
+     */
+    virtual double absMax( int column ) = 0;
+
+    /**
+     * Returns the minimum absolute value in the given column.
+     * First column is 0.
+     */
+    virtual double absMin( int column ) = 0;
 };
 
 #endif // IJABSTRACTCARTESIANGRID_H
