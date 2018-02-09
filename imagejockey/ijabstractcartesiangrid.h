@@ -50,7 +50,7 @@ public:
      * if the grid is 2D.
      * Make sure you load/select the desired realization prior to calling this in multi-realization grids.
      */
-    virtual double getDataAt( int dataColumn, double x, double y, double z ) = 0;
+	virtual double getDataAt( int variableIndex, double x, double y, double z ) = 0;
 
     /**
      * Returns the maximum absolute value in the given column.
@@ -63,6 +63,12 @@ public:
      * First column is 0.
      */
     virtual double absMin( int column ) = 0;
+
+	/**
+	 * This is called prior to data retrieval.
+	 * This may be an opportunity to prefetch data from files or databases.
+	 */
+	virtual void dataWillBeRequested() = 0;
 };
 
 #endif // IJABSTRACTCARTESIANGRID_H

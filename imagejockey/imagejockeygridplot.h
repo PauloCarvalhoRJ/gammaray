@@ -55,6 +55,10 @@ public:
     /** Sets the zoom to cover the entire grid. */
     void pan();
 
+signals:
+	/** This signal is triggered when an error occurs. */
+	void errorOccurred( QString message );
+
 public Q_SLOTS:
     void showContour( bool on );
     void showSpectrogram( bool on );

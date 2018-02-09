@@ -357,7 +357,12 @@ double CartesianGrid::getDataAt(int dataColumn, double x, double y, double z)
 
 double CartesianGrid::absMin(int column)
 {
-    return minAbs( column );
+	return minAbs( column );
+}
+
+void CartesianGrid::dataWillBeRequested()
+{
+	loadData();
 }
 
 double CartesianGrid::absMax(int column)

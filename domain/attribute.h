@@ -47,6 +47,7 @@ public:
     /** Returns null pointer if parent object is not a Cartesian grid. */
     virtual IJAbstractCartesianGrid* getParentGrid();
     virtual int getIndexInParentGrid();
+	virtual QString getVariableName();
 
 private:
     QString _name;

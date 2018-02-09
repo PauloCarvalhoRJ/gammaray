@@ -1,6 +1,8 @@
 #ifndef IJABSTRACTVARIABLE_H
 #define IJABSTRACTVARIABLE_H
 
+#include <QString>
+
 class IJAbstractCartesianGrid;
 
 /**
@@ -19,6 +21,9 @@ public:
      * The first variable should have index zero.
      */
     virtual int getIndexInParentGrid() = 0;
+
+	/** Returns the name of the variable. */
+	virtual QString getVariableName() = 0;
 };
 
 #endif // IJABSTRACTVARIABLE_H

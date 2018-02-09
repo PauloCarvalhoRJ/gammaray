@@ -108,7 +108,6 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     m_spectrogram1Dplot = new Spectrogram1DPlot();
     ui->frm1DSpectrogram->layout()->addWidget( m_spectrogram1Dplot );
     ui->frm1DSpectrogram->setStyleSheet("background-color: black; border-radius: 10px; color: #00FF00;");
-	connect( m_spectrogram1Dplot, SIGNAL(errorOccurred(QString)), this, SLOT( onSpectrogram1DErrorOccurred(QString)));
     connect( m_wheelColorDecibelReference, SIGNAL(valueChanged(double)),
              m_spectrogram1Dplot, SLOT(setDecibelRefValue(double)));
     connect( m_wheelColorMax, SIGNAL(valueChanged(double)), m_spectrogram1Dplot, SLOT(setVerticalScaleMax(double)) );
@@ -122,7 +121,10 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     //paramaters (e.g. azimuth).
     connect( m_spectrogram1Dparams, SIGNAL(updated()), m_spectrogram1Dplot, SLOT( rereadSpectrogramData()) );
 
-	connect( m_spectrogram1Dparams, SIGNAL(errorOccurred(QString)), this, SLOT(onSpectrogram1DErrorOccurred(QString)));
+	//Capture any errors that may occur in the widgets.
+	connect( m_spectrogram1Dparams, SIGNAL(errorOccurred(QString)), this, SLOT(onWidgetErrorOccurred(QString)));
+	connect( m_gridPlot, SIGNAL(errorOccurred(QString)), this, SLOT(onWidgetErrorOccurred(QString)));
+	connect( m_spectrogram1Dplot, SIGNAL(errorOccurred(QString)), this, SLOT( onWidgetErrorOccurred(QString)));
 
     //the set of sliders to attenuate or amplify frquency components.
     m_equalizerWidget = new EqualizerWidget();
@@ -463,7 +465,7 @@ void ImageJockeyDialog::onSumOfFactorsWasComputed(spectral::array *sumOfFactors)
 	delete sumOfFactors;
 }
 
-void ImageJockeyDialog::onSpectrogram1DErrorOccurred(QString message)
+void ImageJockeyDialog::onWidgetErrorOccurred(QString message)
 {
 	Application::instance()->logError( message );
 }

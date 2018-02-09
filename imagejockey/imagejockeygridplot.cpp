@@ -80,8 +80,8 @@ public:
                                                  m_cg->getOriginX() + m_cg->getCellSizeI() * m_cg->getNI() ) );
             setInterval( Qt::YAxis, QwtInterval( m_cg->getOriginY() - m_cg->getCellSizeJ(),
                                                  m_cg->getOriginY() + m_cg->getCellSizeJ() * m_cg->getNJ() ) );
-            //load data from file
-            m_cg->loadData();
+			//preload data from file, prefetch data from database...
+			m_cg->dataWillBeRequested();
             //for Fourier images, get the absolute values in decibel for ease of interpretation
             double min = ImageJockeyUtils::dB( m_cg->absMin( columnIndex ), m_decibelRefValue, 0.0000001 );
             double max = ImageJockeyUtils::dB( m_cg->absMax( columnIndex ), m_decibelRefValue, 0.0000001 );
@@ -339,10 +339,9 @@ void ImageJockeyGridPlot::setVariable(IJAbstractVariable *var)
 {
     //get the data
     m_var = var;
-    File *file = var->getContainingFile();
-    if( file->getFileType() != "CARTESIANGRID" ){
-        Application::instance()->logError("ImageJockeyGridPlot::setAttribute(): Attributes of " +
-                                          file->getFileType() + " files not accepted.");
+	IJAbstractCartesianGrid *file = var->getParentGrid();
+	if( ! file ){
+		emit errorOccurred("ImageJockeyGridPlot::setAttribute(): Only variables of Cartesian grids are accepted.");
         m_spectrumData->setAttribute( nullptr );
     } else {
         m_spectrumData->setAttribute( var );
@@ -354,7 +353,7 @@ void ImageJockeyGridPlot::setVariable(IJAbstractVariable *var)
     const QwtInterval zInterval = m_spectrogram->data()->interval( Qt::ZAxis );
     // A color bar on the right axis
     QwtScaleWidget *rightAxis = axisWidget( QwtPlot::yRight );
-    rightAxis->setTitle( var->getName() + " (dB)" );
+	rightAxis->setTitle( var->getVariableName() + " (dB)" );
     setAxisScale( QwtPlot::yRight, zInterval.minValue(), zInterval.maxValue() );
     setColorMap( ImageJockeyGridPlot::RGBMap );
 
@@ -535,7 +534,7 @@ void ImageJockeyGridPlot::draw1DSpectrogramBand()
     //check whether the event sender is a Spectrogram1DParameters
     Spectrogram1DParameters* spectr1DPar = qobject_cast<Spectrogram1DParameters*>( obj );
     if( ! spectr1DPar ){
-        Application::instance()->logError("ImageJockeyGridPlot::draw1DSpectrogramBand(): sender is not an Spectrogram1DParameters object. Nothing done.");
+		emit errorOccurred("ImageJockeyGridPlot::draw1DSpectrogramBand(): sender is not an Spectrogram1DParameters object. Nothing done.");
         return;
     }
 

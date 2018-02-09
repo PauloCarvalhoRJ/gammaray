@@ -123,5 +123,10 @@ IJAbstractCartesianGrid *Attribute::getParentGrid()
 
 int Attribute::getIndexInParentGrid()
 {
-    return getAttributeGEOEASgivenIndex() - 1;
+	return getAttributeGEOEASgivenIndex() - 1;
+}
+
+QString Attribute::getVariableName()
+{
+	return getName();
 }

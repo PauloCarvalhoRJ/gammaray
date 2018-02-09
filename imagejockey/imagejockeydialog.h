@@ -97,7 +97,7 @@ private Q_SLOTS:
     void onSVD();
     void onUserSetNumberOfSVDFactors( int number );
     void onSumOfFactorsWasComputed( spectral::array* sumOfFactors );
-	void onSpectrogram1DErrorOccurred( QString message );
+	void onWidgetErrorOccurred( QString message );
 };
 
 #endif // IMAGEJOCKEYDIALOG_H
