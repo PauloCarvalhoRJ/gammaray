@@ -202,7 +202,8 @@ SOURCES += main.cpp\
     imagejockey/imagejockeyutils.cpp \
     imagejockey/ijexperimentalvariogramparameters.cpp \
     imagejockey/ijmatrix3x3.cpp \
-    imagejockey/ijspatiallocation.cpp
+	imagejockey/ijspatiallocation.cpp \
+	imagejockey/widgets/ijcartesiangridselector.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -382,7 +383,8 @@ HEADERS  += mainwindow.h \
     imagejockey/imagejockeyutils.h \
     imagejockey/ijexperimentalvariogramparameters.h \
     imagejockey/ijmatrix3x3.h \
-    imagejockey/ijspatiallocation.h
+	imagejockey/ijspatiallocation.h \
+	imagejockey/widgets/ijcartesiangridselector.h
 
 
 FORMS    += mainwindow.ui \
@@ -451,7 +453,8 @@ FORMS    += mainwindow.ui \
     dialogs/machinelearningdialog.ui \
     imagejockey/svd/svdparametersdialog.ui \
     imagejockey/svd/svdanalysisdialog.ui \
-    imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui
+	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui \
+	imagejockey/widgets/ijcartesiangridselector.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
