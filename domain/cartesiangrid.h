@@ -111,20 +111,6 @@ public:
     /** Returns the grid's center. */
     SpatialLocation getCenter();
 
-    /** Amplifies (dB > 0) or attenuates (dB < 0) the values in the given data column (zero == first data column)
-     * Amplification means that positive values increase and negative values decrease.
-     * Attenuation means that values get closer to zero, so positive values decrease and negative
-     * values increase.
-     * @param area A set of points delimiting the area of the grid whithin the equalization will take place.
-     * @param delta_dB The mplification or attenuation factor.
-     * @param dataColumn The zero-based index of the data column containing the values to be equalized.
-     * @param dB_reference The value corresponding to 0dB.
-     * @param secondArea Another area used as spatial criterion.  If empty, this is not used.  If this area does
-     *        not intersect the first area (area parameter) no cell will be selected.
-     */
-    void equalizeValues(QList<QPointF>& area, double delta_dB, uint dataColumn, double dB_reference,
-                        const QList<QPointF>& secondArea = QList<QPointF>());
-
     /**
      * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
      * Returns false if the spatial coordinate lies outside the grid.
@@ -137,11 +123,6 @@ public:
      * realizations informed.
      */
     void setNReal( uint n );
-
-    /** Creates a spectral::array object from a column of this Cartesian grid.
-     * The client code is responsible for deleting the object.
-     */
-    spectral::array* createSpectralArray( uint nDataColumn );
 
     /** Adds de contents of the given data array as new column to this Cartesian grid. */
     long append( const QString columnName, const spectral::array& array );
@@ -192,8 +173,15 @@ public:
     virtual QString getGridName();
     virtual QIcon getGridIcon();
     virtual int getVariableIndexByName( QString variableName );
-    virtual IJAbstractVariable* getVariableByBame( QString variableName );
+    virtual IJAbstractVariable* getVariableByName( QString variableName );
     virtual void getAllVariables(  std::vector<IJAbstractVariable*>& result );
+    virtual IJAbstractVariable* getVariableByIndex( int variableIndex );
+    virtual void equalizeValues(QList<QPointF>& area, double delta_dB, int dataColumn, double dB_reference,
+                        const QList<QPointF>& secondArea = QList<QPointF>());
+    virtual void saveData();
+    virtual spectral::array* createSpectralArray( int nDataColumn );
+    virtual void clearLoadedData();
+    virtual long appendAsNewVariable( const QString variableName, const spectral::array& array );
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;

@@ -1655,17 +1655,6 @@ QString Util::humanReadable(double value)
     return QString( buffer );
 }
 
-void Util::mirror2D(QList<QPointF> &points, const SpatialLocation &point)
-{
-    QList<QPointF>::iterator it = points.begin();
-    for( ; it != points.end(); ++it){
-        double dx = (*it).x() - point._x;
-        double dy = (*it).y() - point._y;
-        (*it).setX( point._x - dx );
-        (*it).setY( point._y - dy );
-    }
-}
-
 bool Util::isWithinBBox(double x, double y, double minX, double minY, double maxX, double maxY)
 {
     if( x < minX ) return false;

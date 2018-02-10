@@ -1647,6 +1647,42 @@ void MainWindow::onDeleteVariable()
     }
 }
 
+void MainWindow::onPreviewRFFTImageJockey( CartesianGrid* cgWithFFT,
+                                           int indexOfVariableWithAmplitudes,
+                                           int indexOfVariableWithPhases)
+{
+    if( ! cgWithFFT )
+        return;
+
+    //creates a tmp path for the Cartesian grid with the FFT image
+    QString tmpPathFFT = Application::instance()->getProject()->generateUniqueTmpFilePath( "dat" );
+
+    //create a Cartesian grid object pointing to the newly created file
+    CartesianGrid* cgFFTtmp = new CartesianGrid( tmpPathFFT );
+
+    //get the gridspecs from the original FFT image
+    cgFFTtmp->setInfoFromOtherCG( cgWithFFT );
+
+    //get the edited Fourier data
+    std::vector<std::complex<double> > data =
+         cgWithFFT->getArray( indexOfVariableWithAmplitudes,
+                              indexOfVariableWithPhases
+                            );
+
+    //reverse FFT the edited data (result is written back to the input data array).
+    Util::fft3D( cgWithFFT->getNX(), cgWithFFT->getNY(), cgWithFFT->getNZ(), data,
+                 FFTComputationMode::REVERSE, FFTImageType::POLAR_FORM );
+
+    //add the in-memory data (now in real space) to the new Cartesian grid object
+    cgFFTtmp->addDataColumns( data, "real part of rFFT", "imaginary part of rFFT" );
+
+    //save the grid to filesystem
+    cgFFTtmp->writeToFS();
+
+    //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
+    Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+}
+
 void MainWindow::onCreateCategoryDefinition()
 {
     CategoryDefinition *cd = new CategoryDefinition("");
@@ -2043,7 +2079,20 @@ void MainWindow::openCokriging()
 
 void MainWindow::openImageJockey()
 {
-    ImageJockeyDialog *ijd = new ImageJockeyDialog( this );
+    //get all the Cartesian grids in the project
+    ObjectGroup* dataFileGroup = Application::instance()->getProject()->getDataFilesGroup();
+    std::vector< ProjectComponent*> dataFiles;
+    dataFileGroup->getAllObjects( dataFiles );
+    std::vector< ProjectComponent*>::iterator it = dataFiles.begin();
+    std::vector< IJAbstractCartesianGrid* > grids;
+    for(; it != dataFiles.end(); ++it){
+        ProjectComponent* pc = *it;
+        if( pc->getTypeName() == "CARTESIANGRID" ){
+            grids.push_back( dynamic_cast<CartesianGrid*>(pc) );
+        }
+    }
+    //calls the Image Jockey dialog
+    ImageJockeyDialog *ijd = new ImageJockeyDialog( grids, this );
     //ijd->show();
     ijd->showMaximized();
 }

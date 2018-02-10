@@ -3,10 +3,11 @@
 
 #include <QDialog>
 
-class CartesianGridSelector;
-class VariableSelector;
+class IJCartesianGridSelector;
+class IJVariableSelector;
 class ImageJockeyGridPlot;
-class Attribute;
+class IJAbstractVariable;
+class IJAbstractCartesianGrid;
 class QwtWheel;
 class GRCompass;
 class Spectrogram1DParameters;
@@ -30,20 +31,25 @@ class ImageJockeyDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit ImageJockeyDialog(QWidget *parent = 0);
+    explicit ImageJockeyDialog( const std::vector< IJAbstractCartesianGrid* >& grids, QWidget *parent = 0);
     ~ImageJockeyDialog();
+
+signals:
+    void errorOccurred( QString message );
+    void warningOccurred( QString message );
+    void infoOccurred( QString message );
 
 private:
     Ui::ImageJockeyDialog *ui;
 
     /** Selector of the grid with the data in frequency domain (Fourier image). */
-    CartesianGridSelector* m_cgSelector;
+    IJCartesianGridSelector* m_cgSelector;
 
-    /** Variable with the real part of the Fourier transform. */
-    VariableSelector* m_atSelector;
+    /** Variable with the amplitude part of the Fourier transform. */
+    IJVariableSelector* m_varAmplitudeSelector;
 
-    /** Variable with the imaginary part of the Fourier transform. */
-    VariableSelector* m_atSelectorImag;
+    /** Variable with the phase part of the Fourier transform. */
+    IJVariableSelector* m_varPhaseSelector;
 
     /** Widget that displays the grid. */
     ImageJockeyGridPlot* m_gridPlot;
@@ -81,13 +87,16 @@ private:
     /** The number of SVD factors set by the user in the SVD curve dialog. */
     int m_numberOfSVDFactorsSetInTheDialog;
 
+    /** The list of available Cartesian grids. */
+    std::vector< IJAbstractCartesianGrid* > m_grids;
+
     /** Causes a replot in the 2D grid spectrogram display.
      * TODO: Think of a more elegant way to trigger a replot, since QwtPlot's replot() is not working.
     */
     void spectrogramGridReplot();
 
 private Q_SLOTS:
-    void onUpdateGridPlot( Attribute *at );
+    void onUpdateGridPlot( IJAbstractVariable *var );
     void resetReferenceCurve();
     /** Negative dB variation means attenuation, positive variations mean amplification. */
     void equalizerAdjusted( double centralFrequency, double delta_dB );
@@ -98,6 +107,7 @@ private Q_SLOTS:
     void onUserSetNumberOfSVDFactors( int number );
     void onSumOfFactorsWasComputed( spectral::array* sumOfFactors );
 	void onWidgetErrorOccurred( QString message );
+    void onWidgetWarningOccurred( QString message );
 };
 
 #endif // IMAGEJOCKEYDIALOG_H

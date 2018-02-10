@@ -62,7 +62,7 @@ IJAbstractVariable *IJVariableSelector::getSelectedVariable()
         return nullptr;
     }
     //by selecting a variable name, surely the object is an Attribute
-    IJAbstractVariable* variable = m_grid->getVariableByBame( ui->cmbVariable->currentText() );
+    IJAbstractVariable* variable = m_grid->getVariableByName( ui->cmbVariable->currentText() );
     if( ! variable ){
         emit warningOccurred("IJVariableSelector::getSelectedVariable(): Selection resulted in null attribute. Returning nullptr.");
         return nullptr;
@@ -104,7 +104,7 @@ void IJVariableSelector::onSelection(int /*index*/)
         return;
     }
     //by selecting a variable name, surely the object is an Attribute
-    IJAbstractVariable* var = m_grid->getVariableByBame( ui->cmbVariable->currentText() );
+    IJAbstractVariable* var = m_grid->getVariableByName( ui->cmbVariable->currentText() );
     if( ! var ){
         emit warningOccurred("IJVariableSelector::onSelection(): Selection event resulted in null attribute. Ignoring.");
         return;

@@ -8,6 +8,10 @@
 
 class IJAbstractVariable;
 
+namespace spectral {
+    struct array;
+}
+
 /**
  * The IJAbstractCartesianGrid class represents a Cartesian grid in the Image Jockey sub-system.
  */
@@ -89,12 +93,52 @@ public:
     /** Returns a variable given its name.  Implementations should return null pointer if no variables
      * matches the passed name.
      */
-    virtual IJAbstractVariable* getVariableByBame( QString variableName ) = 0;
+    virtual IJAbstractVariable* getVariableByName( QString variableName ) = 0;
 
     /**
      * Fills the passed vector with pointers to the grid's variables.
      */
     virtual void getAllVariables(  std::vector<IJAbstractVariable*>& result ) = 0;
+
+    /**
+     * Returns the variable given its index.  Implementations should return null pointer if there is no
+     * variable with the given index or the index is invalid (e.g. negative).
+     */
+    virtual IJAbstractVariable* getVariableByIndex( int variableIndex ) = 0;
+
+    /** Amplifies (dB > 0) or attenuates (dB < 0) the values in the given data column (zero == first data column)
+     * Amplification means that positive values increase and negative values decrease.
+     * Attenuation means that values get closer to zero, so positive values decrease and negative
+     * values increase.
+     * @param area A set of points delimiting the area of the grid whithin the equalization will take place.
+     * @param delta_dB The mplification or attenuation factor.
+     * @param dataColumn The zero-based index of the data column containing the values to be equalized.
+     * @param dB_reference The value corresponding to 0dB.
+     * @param secondArea Another area used as spatial criterion.  If empty, this is not used.  If this area does
+     *        not intersect the first area (area parameter) no cell will be selected.
+     */
+    virtual void equalizeValues(QList<QPointF>& area,
+                                double delta_dB,
+                                int variableIndex,
+                                double dB_reference,
+                                const QList<QPointF>& secondArea = QList<QPointF>()) = 0;
+
+    /** Save data to persistence (file, database, etc.). */
+    virtual void saveData() = 0;
+
+    /** Creates a spectral::array object from a variable of this Cartesian grid.
+     * The client code is responsible for deleting the object.
+     * Implementations must include spectral/spectral.h header.
+     */
+    virtual spectral::array* createSpectralArray( int variableIndex ) = 0;
+
+    /**
+     * Clear data loaded to memory.
+     */
+    virtual void clearLoadedData() = 0;
+
+    /** Adds de contents of the given data array as new variable to this Cartesian grid. */
+    virtual long appendAsNewVariable( const QString variableName, const spectral::array& array ) = 0;
 };
 
 #endif // IJABSTRACTCARTESIANGRID_H

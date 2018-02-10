@@ -380,7 +380,7 @@ int CartesianGrid::getVariableIndexByName(QString variableName)
     return getFieldGEOEASIndex( variableName ) - 1;
 }
 
-IJAbstractVariable *CartesianGrid::getVariableByBame(QString variableName)
+IJAbstractVariable *CartesianGrid::getVariableByName(QString variableName)
 {
     ProjectComponent* pc = getChildByName( variableName );
     if( pc->isAttribute() )
@@ -400,6 +400,11 @@ void CartesianGrid::getAllVariables(std::vector<IJAbstractVariable *> &result)
             result.push_back( dynamic_cast<Attribute*>(pc) );
         }
     }
+}
+
+IJAbstractVariable *CartesianGrid::getVariableByIndex(int variableIndex)
+{
+    return getAttributeFromGEOEASIndex( variableIndex+1 );
 }
 
 double CartesianGrid::absMax(int column)
@@ -440,7 +445,7 @@ SpatialLocation CartesianGrid::getCenter()
     return result;
 }
 
-void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint dataColumn, double dB_reference,
+void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, int dataColumn, double dB_reference,
                                    const QList<QPointF> &secondArea)
 {
     //some typedefs to shorten code
@@ -515,6 +520,11 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
             }
         }
     }
+}
+
+void CartesianGrid::saveData()
+{
+    writeToFS();
 }
 
 bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uint &k)
@@ -623,7 +633,7 @@ View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
     return View3DBuilders::build( this, widget3D );
 }
 
-spectral::array *CartesianGrid::createSpectralArray(uint nDataColumn)
+spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
 {
     spectral::array* data = new spectral::array( _nx, _ny, _nz, 0.0 );
     long idx = 0;
@@ -636,6 +646,16 @@ spectral::array *CartesianGrid::createSpectralArray(uint nDataColumn)
         }
     }
     return data;
+}
+
+void CartesianGrid::clearLoadedData()
+{
+    freeLoadedData();
+}
+
+long CartesianGrid::appendAsNewVariable(const QString variableName, const spectral::array &array)
+{
+    return append( variableName, array );
 }
 
 long CartesianGrid::append(const QString columnName, const spectral::array &array)

@@ -163,7 +163,6 @@ SOURCES += main.cpp\
     dialogs/multivariogramdialog.cpp \
     imagejockey/imagejockeydialog.cpp \
     imagejockey/imagejockeygridplot.cpp \
-    widgets/grcompass.cpp \
     imagejockey/spectrogram1dparameters.cpp \
     imagejockey/spectrogram1dplot.cpp \
     imagejockey/spectrogram1dplotpicker.cpp \
@@ -204,7 +203,8 @@ SOURCES += main.cpp\
     imagejockey/ijmatrix3x3.cpp \
 	imagejockey/ijspatiallocation.cpp \
 	imagejockey/widgets/ijcartesiangridselector.cpp \
-	imagejockey/widgets/ijvariableselector.cpp
+	imagejockey/widgets/ijvariableselector.cpp \
+    imagejockey/widgets/grcompass.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -345,7 +345,6 @@ HEADERS  += mainwindow.h \
     dialogs/multivariogramdialog.h \
     imagejockey/imagejockeydialog.h \
     imagejockey/imagejockeygridplot.h \
-    widgets/grcompass.h \
     imagejockey/spectrogram1dparameters.h \
     imagejockey/spectrogram1dplot.h \
     imagejockey/spectrogram1dplotpicker.h \
@@ -386,7 +385,8 @@ HEADERS  += mainwindow.h \
     imagejockey/ijmatrix3x3.h \
 	imagejockey/ijspatiallocation.h \
 	imagejockey/widgets/ijcartesiangridselector.h \
-	imagejockey/widgets/ijvariableselector.h
+	imagejockey/widgets/ijvariableselector.h \
+    imagejockey/widgets/grcompass.h
 
 
 FORMS    += mainwindow.ui \

@@ -1,4 +1,5 @@
 #include "imagejockeyutils.h"
+#include "ijspatiallocation.h"
 #include <cstdlib>
 #include <cmath>
 
@@ -85,4 +86,15 @@ QString ImageJockeyUtils::humanReadable(double value)
     //format output, dividing the value by the power of 1000 found
     std::sprintf(buffer, "%.1f%c", value / std::pow<double, int>(unit, exp), suffix);
     return QString( buffer );
+}
+
+void ImageJockeyUtils::mirror2D(QList<QPointF> &points, const IJSpatialLocation &point)
+{
+    QList<QPointF>::iterator it = points.begin();
+    for( ; it != points.end(); ++it){
+        double dx = (*it).x() - point._x;
+        double dy = (*it).y() - point._y;
+        (*it).setX( point._x - dx );
+        (*it).setY( point._y - dy );
+    }
 }

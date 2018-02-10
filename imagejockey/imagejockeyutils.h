@@ -4,7 +4,10 @@
 #include <cassert>
 #include <cstdint>
 #include <QString>
+#include <QPointF>
 #include "ijmatrix3x3.h"
+
+class IJSpatialLocation;
 
 class ImageJockeyUtils
 {
@@ -82,6 +85,10 @@ public:
      * to its code.
      */
     static QString humanReadable(double value);
+
+    /** Mirrors a geometry (given as a set of QPointF) with respect a given point in
+     * space. */
+    static void mirror2D(QList<QPointF> &points, const IJSpatialLocation &point);
 };
 
 #endif // IMAGEJOCKEYUTILS_H

@@ -155,6 +155,9 @@ private slots:
     void onUpdateStatusBar();
     void onMachineLearning();
     void onDeleteVariable();
+    void onPreviewRFFTImageJockey(CartesianGrid *cgWithFFT,
+                                  int indexOfVariableWithAmplitudes,
+                                  int indexOfVariableWithPhases);
 
 private:
     /**

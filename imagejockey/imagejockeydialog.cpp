@@ -1,17 +1,15 @@
 #include "imagejockeydialog.h"
 #include "ui_imagejockeydialog.h"
-#include "widgets/cartesiangridselector.h"
-#include "widgets/variableselector.h"
+#include "widgets/ijcartesiangridselector.h"
+#include "widgets/ijvariableselector.h"
 #include "widgets/grcompass.h"
-#include "domain/application.h"
-#include "domain/cartesiangrid.h"
-#include "domain/attribute.h"
-#include "domain/project.h"
+#include "ijabstractcartesiangrid.h"
+#include "ijabstractvariable.h"
 #include "imagejockeygridplot.h"
 #include "spectrogram1dparameters.h"
 #include "spectrogram1dplot.h"
 #include "equalizer/equalizerwidget.h"
-#include "util.h"
+#include "imagejockeyutils.h"
 #include "svd/svdparametersdialog.h"
 #include "svd/svdfactor.h"
 #include "svd/svdfactortree.h"
@@ -26,11 +24,12 @@
 #include <QThread>
 #include <qwt_wheel.h>
 
-ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
+ImageJockeyDialog::ImageJockeyDialog(const std::vector<IJAbstractCartesianGrid *> &grids, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ImageJockeyDialog),
     m_spectrogram1Dparams( new Spectrogram1DParameters() ),
-    m_numberOfSVDFactorsSetInTheDialog( 0 )
+    m_numberOfSVDFactorsSetInTheDialog( 0 ),
+    m_grids( grids )
 {
     ui->setupUi(this);
 
@@ -49,22 +48,26 @@ ImageJockeyDialog::ImageJockeyDialog(QWidget *parent) :
     ui->frmGridPlot->layout()->addWidget( m_gridPlot );
 
     //the combo box to choose a Cartesian grid containing a Fourier image
-    m_cgSelector = new CartesianGridSelector( true );
+    m_cgSelector = new IJCartesianGridSelector( m_grids, true );
     ui->frmCmbGridPlaceholder->layout()->addWidget( m_cgSelector );
 
     //the combo box to choose the variable with the real part
-    m_atSelector = new VariableSelector();
-    ui->frmCmbAttributePlaceholder->layout()->addWidget( m_atSelector );
-    connect( m_cgSelector, SIGNAL(cartesianGridSelected(DataFile*)),
-             m_atSelector, SLOT(onListVariables(DataFile*)) );
-    connect( m_atSelector, SIGNAL(variableSelected(Attribute*)),
-             this, SLOT(onUpdateGridPlot(Attribute*)));
+    m_varAmplitudeSelector = new IJVariableSelector();
+    ui->frmCmbAttributePlaceholder->layout()->addWidget( m_varAmplitudeSelector );
+    connect( m_cgSelector, SIGNAL(cartesianGridSelected(IJAbstractCartesianGrid*)),
+             m_varAmplitudeSelector, SLOT(onListVariables(IJAbstractCartesianGrid*)) );
+    connect( m_varAmplitudeSelector, SIGNAL(variableSelected(IJAbstractVariable*)),
+             this, SLOT(onUpdateGridPlot(IJAbstractVariable*)));
+    connect( m_varAmplitudeSelector, SIGNAL(errorOccurred(QString)), this, SIGNAL(errorOccurred(QString)) );
+    connect( m_varAmplitudeSelector, SIGNAL(warningOccurred(QString)), this, SIGNAL(warningOccurred(QString)) );
 
     //the combo box to choose the variable with the imaginary part
-    m_atSelectorImag = new VariableSelector();
-    ui->frmCmbImagPartPlaceholder->layout()->addWidget( m_atSelectorImag );
-    connect( m_cgSelector, SIGNAL(cartesianGridSelected(DataFile*)),
-             m_atSelectorImag, SLOT(onListVariables(DataFile*)) );
+    m_varPhaseSelector = new IJVariableSelector();
+    ui->frmCmbImagPartPlaceholder->layout()->addWidget( m_varPhaseSelector );
+    connect( m_cgSelector, SIGNAL(cartesianGridSelected(IJAbstractCartesianGrid*)),
+             m_varPhaseSelector, SLOT(onListVariables(IJAbstractCartesianGrid*)) );
+    connect( m_varPhaseSelector, SIGNAL(errorOccurred(QString)), this, SIGNAL(errorOccurred(QString)) );
+    connect( m_varPhaseSelector, SIGNAL(warningOccurred(QString)), this, SIGNAL(warningOccurred(QString)) );
 
     //these wheels control the visual scale in decibels (dB)
     m_wheelColorMax = new QwtWheel();
@@ -149,7 +152,7 @@ ImageJockeyDialog::~ImageJockeyDialog()
 {
     delete ui;
     delete m_spectrogram1Dparams;
-    Application::instance()->logInfo("ImageJockeyDialog destroyed.");
+    emit infoOccurred("ImageJockeyDialog destroyed.");
 }
 
 void ImageJockeyDialog::spectrogramGridReplot()
@@ -165,10 +168,10 @@ void ImageJockeyDialog::spectrogramGridReplot()
     qApp->processEvents();
 }
 
-void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
+void ImageJockeyDialog::onUpdateGridPlot(IJAbstractVariable *var)
 {
     //set the attribute
-    m_gridPlot->setVariable( at );
+    m_gridPlot->setVariable( var );
 
     //read decibel extrema before assigning them to the widgets to prevent
     //that some unpredicted signal/slot chaining causes unpredicted behavior
@@ -187,11 +190,11 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
     m_wheelColorMin->setSingleStep( dBstep );
 
     //setup the dB reference wheel widget
-    int columnIndex = at->getAttributeGEOEASgivenIndex() - 1;
-    CartesianGrid* cg = (CartesianGrid*)at->getContainingFile(); //assumes Attribute's parent file is a Cartesian grid
-    cg->loadData();
-    double dataAbsMin = cg->minAbs( columnIndex );
-    double dataAbsMax = cg->maxAbs( columnIndex );
+    int variableIndex = var->getIndexInParentGrid();
+    IJAbstractCartesianGrid* cg = var->getParentGrid();
+    cg->dataWillBeRequested();
+    double dataAbsMin = cg->absMin( variableIndex );
+    double dataAbsMax = cg->absMax( variableIndex );
     double dataAbsStep = (dataAbsMax - dataAbsMin) / 360.0d; //dividing the span into units per wheel degree
     m_wheelColorDecibelReference->setMaximum( dataAbsMax );
     m_wheelColorDecibelReference->setMinimum( dataAbsMin );
@@ -220,7 +223,7 @@ void ImageJockeyDialog::onUpdateGridPlot(Attribute *at)
 	m_spectrogram1Dparams->setRefCenter( cg->getCenterLocation() );
 
     //set the attribute for the 1D spectrogram plot
-	m_spectrogram1Dplot->setVariable( at );
+    m_spectrogram1Dplot->setVariable( var );
 
     //assuming Fourier image symmetry, the frequency limits range between 0.0 (DC) and half grid size
     m_equalizerWidget->setFrequencyLimits(0.0d, gridDiagLength / 2.0d);
@@ -246,12 +249,12 @@ void ImageJockeyDialog::resetReferenceCurve()
 void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double delta_dB )
 {
     //assuming the selected file is a Cartesian grid
-    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
     if( ! cg )
         return;
 
     //get the variable
-    Attribute* at = cg->getAttributeFromGEOEASIndex( m_atSelector->getSelectedVariableGEOEASIndex() );
+    IJAbstractVariable* var = cg->getVariableByIndex( m_varAmplitudeSelector->getSelectedVariableIndex() );
 
     //get the geometry of the area of influence in the 2D spectrogram.
     //The central frequency is the distance from the center of the 2D spectrogram.
@@ -264,16 +267,16 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double delta_
     QList<QPointF> halfBand = m_spectrogram1Dparams->getHalfBandGeometry();
 
     //perform the equalization of values
-    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value(), halfBand );
+    cg->equalizeValues( aoi, delta_dB, var->getIndexInParentGrid(), m_wheelColorDecibelReference->value(), halfBand );
 
     //mirror the area of influence about the center of the 2D spectrogram
-    Util::mirror2D( aoi, cg->getCenter() );
+    ImageJockeyUtils::mirror2D( aoi, cg->getCenterLocation() );
 
     //mirror the half-band geometry about the center of the 2D spectrogram
-    Util::mirror2D( halfBand, cg->getCenter() );
+    ImageJockeyUtils::mirror2D( halfBand, cg->getCenterLocation() );
 
     //perform the equalization in the opposite area to preserve the 2D spectrogram's symmetry
-    cg->equalizeValues( aoi, delta_dB, at->getAttributeGEOEASgivenIndex()-1, m_wheelColorDecibelReference->value(), halfBand );
+    cg->equalizeValues( aoi, delta_dB, var->getIndexInParentGrid(), m_wheelColorDecibelReference->value(), halfBand );
 
     //update the 2D spectrogram plot
     spectrogramGridReplot();
@@ -285,21 +288,21 @@ void ImageJockeyDialog::equalizerAdjusted(double centralFrequency, double delta_
 
 void ImageJockeyDialog::save()
 {
-    //assuming the selected file is a Cartesian grid
-    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    //get the Cartesian grid
+    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
     if( ! cg )
         return;
 
     //save edited Fourier image to filesystem
-    cg->writeToFS();
+    cg->saveData();
 
-    Application::instance()->logInfo("ImageJockeyDialog::save(): file saved.");
+    emit infoOccurred("ImageJockeyDialog::save(): file saved.");
 }
 
 void ImageJockeyDialog::preview()
 {
     //assuming the selected file is a Cartesian grid
-    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
     if( ! cg )
         return;
 
@@ -314,8 +317,8 @@ void ImageJockeyDialog::preview()
 
     //get the edited Fourier data
     std::vector<std::complex<double> > data =
-         cg->getArray( m_atSelector->getSelectedVariableGEOEASIndex()-1,
-                       m_atSelectorImag->getSelectedVariableGEOEASIndex()-1
+         cg->getArray( m_varAmplitudeSelector->getSelectedVariableGEOEASIndex()-1,
+                       m_varPhaseSelector->getSelectedVariableGEOEASIndex()-1
                      );
 
     //reverse FFT the edited data (result is written back to the input data array).
@@ -334,16 +337,16 @@ void ImageJockeyDialog::preview()
 
 void ImageJockeyDialog::restore()
 {
-    //assuming the selected file is a Cartesian grid
-    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    //get the Cartesian grid
+    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
     if( ! cg )
         return;
 
     //delete data in memory (possibly edited)
-    cg->freeLoadedData();
+    cg->clearLoadedData();
 
     //reread data from filesystem.
-    cg->loadData();
+    cg->dataWillBeRequested();
 
     //update the 2D spectrogram plot
     spectrogramGridReplot();
@@ -356,23 +359,23 @@ void ImageJockeyDialog::restore()
 void ImageJockeyDialog::onSVD()
 {
     //Get the selected Cartesian grid containing a Fourier image or experimental variogram (e.g. for Factorial kriging)
-    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
+    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
     if( ! cg ){
         QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
         return;
     }
 
 	//Get the data
-    long selectedAttributeIndex = m_atSelector->getSelectedVariableGEOEASIndex()-1;
+    long selectedAttributeIndex = m_varAmplitudeSelector->getSelectedVariableIndex();
     spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
 
 	//Get the grid geometry parameters (useful for displaying)
-	double x0 = cg->getX0();
-	double y0 = cg->getY0();
-	double z0 = cg->getZ0();
-	double dx = cg->getDX();
-	double dy = cg->getDY();
-	double dz = cg->getDZ();
+    double x0 = cg->getOriginX();
+    double y0 = cg->getOriginY();
+    double z0 = cg->getOriginZ();
+    double dx = cg->getCellSizeI();
+    double dy = cg->getCellSizeJ();
+    double dz = cg->getCellSizeK();
 
 	//Compute SVD
 	QProgressDialog progressDialog;
@@ -385,7 +388,7 @@ void ImageJockeyDialog::onSVD()
 
     //get the list with the factor weights (information quantity)
     spectral::array weights = svd.factor_weights();
-    Application::instance()->logInfo("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
+    emit infoOccurred("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
 
     //User enters number of SVD factors
     SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
@@ -420,7 +423,7 @@ void ImageJockeyDialog::onSVD()
 	//TODO: THIS IS NOT NECESSARY ANYMORE, SINCE WE NOW KNOW THE WEIGHTS ARE OBTAINED BEFORE
 	//      WEIGHT ASSIGNMENT CAN BE PERFORMED IN THE "Get the desired SVD factors" LOOP ABOVE
 	if( ! factorTree->assignWeights( weights.data() ) )
-		Application::instance()->logWarn("ImageJockeyDialog::onSVD(): weight assignment failed.");
+        emit warningOccurred("ImageJockeyDialog::onSVD(): weight assignment failed.");
 
     if( numberOfFactors > 0 ){
         //show the SDV analysis dialog
@@ -431,7 +434,7 @@ void ImageJockeyDialog::onSVD()
         svdad->setDeleteTreeOnClose( true );
         svdad->show();
     } else {
-        Application::instance()->logError("ImageJockeyDialog::onSVD(): user set zero factors. Aborted.");
+        emit errorOccurred("ImageJockeyDialog::onSVD(): user set zero factors. Aborted.");
         delete factorTree;
     }
 }
@@ -444,7 +447,7 @@ void ImageJockeyDialog::onUserSetNumberOfSVDFactors(int number)
 void ImageJockeyDialog::onSumOfFactorsWasComputed(spectral::array *sumOfFactors)
 {
     //propose a name for the new variable in the source grid
-    QString proposed_name( m_atSelector->getSelectedVariableName() );
+    QString proposed_name( m_varAmplitudeSelector->getSelectedVariableName() );
     proposed_name.append( "_SVD" );
 
     //open the renaming dialog
@@ -458,8 +461,8 @@ void ImageJockeyDialog::onSumOfFactorsWasComputed(spectral::array *sumOfFactors)
     }
 
     //save the sum to the grid in the project
-    CartesianGrid* cg = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
-    cg->append(new_variable_name, *sumOfFactors );
+    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
+    cg->appendAsNewVariable(new_variable_name, *sumOfFactors );
 
     //discard the computed sum
 	delete sumOfFactors;
@@ -467,5 +470,10 @@ void ImageJockeyDialog::onSumOfFactorsWasComputed(spectral::array *sumOfFactors)
 
 void ImageJockeyDialog::onWidgetErrorOccurred(QString message)
 {
-	Application::instance()->logError( message );
+    emit errorOccurred( message );
+}
+
+void ImageJockeyDialog::onWidgetWarningOccurred(QString message)
+{
+    emit warningOccurred( message );
 }
