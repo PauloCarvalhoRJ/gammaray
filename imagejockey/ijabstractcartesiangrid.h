@@ -3,6 +3,9 @@
 
 #include "ijspatiallocation.h"
 
+#include <QString>
+#include <QIcon>
+
 /**
  * The IJAbstractCartesianGrid class represents a Cartesian grid in the Image Jockey sub-system.
  */
@@ -53,22 +56,28 @@ public:
 	virtual double getDataAt( int variableIndex, double x, double y, double z ) = 0;
 
     /**
-     * Returns the maximum absolute value in the given column.
-     * First column is 0.
+     * Returns the maximum absolute value in the given variable.
+     * First variable is 0.
      */
-    virtual double absMax( int column ) = 0;
+    virtual double absMax( int variableIndex ) = 0;
 
     /**
-     * Returns the minimum absolute value in the given column.
-     * First column is 0.
+     * Returns the minimum absolute value in the given variable.
+     * First variable is 0.
      */
-    virtual double absMin( int column ) = 0;
+    virtual double absMin( int variableIndex ) = 0;
 
 	/**
 	 * This is called prior to data retrieval.
 	 * This may be an opportunity to prefetch data from files or databases.
 	 */
 	virtual void dataWillBeRequested() = 0;
+
+    /** Returns the name of the grid. This is mainly used in presentation (e.g. text in widgets). */
+    virtual QString getGridName() = 0;
+
+    /** Returns the icon of the grid. This is mainly used in presentation (e.g. icons in widgets). */
+    virtual QIcon getGridIcon() = 0;
 };
 
 #endif // IJABSTRACTCARTESIANGRID_H

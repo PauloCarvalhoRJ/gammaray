@@ -189,6 +189,8 @@ public:
     virtual double absMax( int column );
     virtual double absMin( int column );
 	virtual void dataWillBeRequested();
+    virtual QString getGridName();
+    virtual QIcon getGridIcon();
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;

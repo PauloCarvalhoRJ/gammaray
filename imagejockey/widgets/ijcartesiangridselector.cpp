@@ -1,30 +1,24 @@
 #include "ijcartesiangridselector.h"
 #include "ui_ijcartesiangridselector.h"
-#include "../domain/project.h"
-#include "../domain/application.h"
-#include "../domain/objectgroup.h"
-#include "../domain/file.h"
+#include "../ijabstractcartesiangrid.h"
 
-IJCartesianGridSelector::IJCartesianGridSelector(bool show_not_set, QWidget *parent) :
+IJCartesianGridSelector::IJCartesianGridSelector(const std::vector<IJAbstractCartesianGrid *> &grids,
+                                                 bool show_not_set,
+                                                 QWidget *parent) :
     QWidget(parent),
     ui(new Ui::IJCartesianGridSelector),
     m_HasNotSetItem( show_not_set ),
-    m_dataFile( nullptr )
+    m_cg( nullptr ),
+    m_grids( grids )
 {
     ui->setupUi(this);
 
     if( m_HasNotSetItem )
         ui->cmbGrids->addItem( "NOT SET" );
 
-    Project* project = Application::instance()->getProject();
-
-    ObjectGroup* og = project->getDataFilesGroup();
-
-    for( int i = 0; i < og->getChildCount(); ++i){
-        File* varFile = (File*)og->getChildByIndex( i );
-        if( varFile->getFileType() == "CARTESIANGRID" ){
-            ui->cmbGrids->addItem( varFile->getIcon(), varFile->getName() );
-        }
+    for( uint i = 0; i < grids.size(); ++i){
+        IJAbstractCartesianGrid* grid = grids[i];
+        ui->cmbGrids->addItem( grid->getGridIcon(), grid->getGridName() );
     }
 }
 
@@ -35,17 +29,13 @@ IJCartesianGridSelector::~IJCartesianGridSelector()
 
 void IJCartesianGridSelector::onSelection(int /*index*/)
 {
-    m_dataFile = nullptr;
-    Project* project = Application::instance()->getProject();
-    ObjectGroup* og = project->getDataFilesGroup();
-    for( int i = 0; i < og->getChildCount(); ++i){
-        File* varFile = (File*)og->getChildByIndex( i );
-        if( varFile->getFileType() == "CARTESIANGRID" ){
-            if( varFile->getName() == ui->cmbGrids->currentText() ){
-                m_dataFile = (DataFile*)varFile;
-                emit cartesianGridSelected( (DataFile*)varFile );
-                return;
-            }
+    m_cg = nullptr;
+    for( uint i = 0; i < m_grids.size(); ++i){
+        IJAbstractCartesianGrid* grid = m_grids[i];
+        if( grid->getGridName() == ui->cmbGrids->currentText() ){
+            m_cg = grid;
+            emit cartesianGridSelected( grid );
+            return;
         }
     }
     //the user may select "NOT SET", so emit signal with null pointer.

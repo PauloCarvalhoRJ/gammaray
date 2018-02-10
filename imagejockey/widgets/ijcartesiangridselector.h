@@ -7,7 +7,7 @@ namespace Ui {
 class IJCartesianGridSelector;
 }
 
-class DataFile;
+class IJAbstractCartesianGrid;
 
 class IJCartesianGridSelector : public QWidget
 {
@@ -15,19 +15,22 @@ class IJCartesianGridSelector : public QWidget
 
 public:
     /** @param show_not_set If true, adds a "NOT SET" item as the first item. */
-    explicit IJCartesianGridSelector(bool show_not_set = false, QWidget *parent = 0);
+    explicit IJCartesianGridSelector( const std::vector<IJAbstractCartesianGrid*>& grids,
+                                      bool show_not_set = false,
+                                      QWidget *parent = 0);
     ~IJCartesianGridSelector();
 
-    /** Returns null pointer if no file is selected. */
-    DataFile* getSelectedDataFile(){ return m_dataFile; }
+    /** Returns null pointer if no grid is selected. */
+    IJAbstractCartesianGrid* getSelectedGrid(){ return m_cg; }
 
 signals:
-    void cartesianGridSelected( DataFile* ps );
+    void cartesianGridSelected( IJAbstractCartesianGrid* cg );
 
 private:
     Ui::IJCartesianGridSelector *ui;
     bool m_HasNotSetItem;
-    DataFile* m_dataFile;
+    IJAbstractCartesianGrid* m_cg;
+    const std::vector<IJAbstractCartesianGrid*>& m_grids;
 
 public slots:
     void onSelection( int index );

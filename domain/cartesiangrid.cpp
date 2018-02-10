@@ -362,7 +362,17 @@ double CartesianGrid::absMin(int column)
 
 void CartesianGrid::dataWillBeRequested()
 {
-	loadData();
+    loadData();
+}
+
+QString CartesianGrid::getGridName()
+{
+    return getName();
+}
+
+QIcon CartesianGrid::getGridIcon()
+{
+    return getIcon();
 }
 
 double CartesianGrid::absMax(int column)
