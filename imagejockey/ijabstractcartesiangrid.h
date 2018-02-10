@@ -6,6 +6,8 @@
 #include <QString>
 #include <QIcon>
 
+class IJAbstractVariable;
+
 /**
  * The IJAbstractCartesianGrid class represents a Cartesian grid in the Image Jockey sub-system.
  */
@@ -78,6 +80,21 @@ public:
 
     /** Returns the icon of the grid. This is mainly used in presentation (e.g. icons in widgets). */
     virtual QIcon getGridIcon() = 0;
+
+    /** Returns the index of a variable given its name. Implementations should return an invalid index
+     * (e.g. negative) if no variable matches the passed name.
+     */
+    virtual int getVariableIndexByName( QString variableName ) = 0;
+
+    /** Returns a variable given its name.  Implementations should return null pointer if no variables
+     * matches the passed name.
+     */
+    virtual IJAbstractVariable* getVariableByBame( QString variableName ) = 0;
+
+    /**
+     * Fills the passed vector with pointers to the grid's variables.
+     */
+    virtual void getAllVariables(  std::vector<IJAbstractVariable*>& result ) = 0;
 };
 
 #endif // IJABSTRACTCARTESIANGRID_H

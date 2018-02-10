@@ -191,6 +191,9 @@ public:
 	virtual void dataWillBeRequested();
     virtual QString getGridName();
     virtual QIcon getGridIcon();
+    virtual int getVariableIndexByName( QString variableName );
+    virtual IJAbstractVariable* getVariableByBame( QString variableName );
+    virtual void getAllVariables(  std::vector<IJAbstractVariable*>& result );
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;

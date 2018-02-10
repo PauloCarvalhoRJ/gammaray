@@ -1,14 +1,13 @@
 #include "ijvariableselector.h"
 #include "ui_ijvariableselector.h"
-#include "../domain/application.h"
-#include "../domain/datafile.h"
-#include "domain/attribute.h"
+#include "../ijabstractcartesiangrid.h"
+#include "../ijabstractvariable.h"
 
 IJVariableSelector::IJVariableSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::IJVariableSelector),
     m_hasNotSetItem( show_not_set ),
-    m_dataFile( nullptr )
+    m_grid( nullptr )
 {
     ui->setupUi(this);
 
@@ -22,15 +21,15 @@ IJVariableSelector::~IJVariableSelector()
     delete ui;
 }
 
-uint IJVariableSelector::getSelectedVariableGEOEASIndex()
+uint IJVariableSelector::getSelectedVariableIndex()
 {
-    if( ! m_dataFile )
+    if( ! m_grid )
         return 0;
     if( m_hasNotSetItem )
         if( ui->cmbVariable->currentIndex() == 0 )
             return 0;
     QString var_name = ui->cmbVariable->currentText();
-    return m_dataFile->getFieldGEOEASIndex( var_name );
+    return m_grid->getVariableIndexByName( var_name );
 }
 
 QString IJVariableSelector::getSelectedVariableName()
@@ -38,17 +37,17 @@ QString IJVariableSelector::getSelectedVariableName()
     return ui->cmbVariable->currentText();
 }
 
-void IJVariableSelector::addVariable(Attribute *at)
+void IJVariableSelector::addVariable(IJAbstractVariable *var)
 {
-    if( ! m_dataFile )
-        m_dataFile = (DataFile*)at->getContainingFile();
+    if( ! m_grid )
+        m_grid = var->getParentGrid();
     else{
-        if( m_dataFile != (DataFile*)at->getContainingFile() ){
-            Application::instance()->logError("IJVariableSelector::addVariable(): attempt to add variables from different files.");
+        if( m_grid != var->getParentGrid() ){
+            emit errorOccurred("IJVariableSelector::addVariable(): attempt to add variables from different grids.");
             return;
         }
     }
-    ui->cmbVariable->addItem( at->getIcon(), at->getName() );
+    ui->cmbVariable->addItem( var->getVariableIcon(), var->getVariableName() );
 }
 
 void IJVariableSelector::clear()
@@ -56,19 +55,19 @@ void IJVariableSelector::clear()
     ui->cmbVariable->clear();
 }
 
-Attribute *IJVariableSelector::getSelectedVariable()
+IJAbstractVariable *IJVariableSelector::getSelectedVariable()
 {
-    if( ! m_dataFile ){
-        Application::instance()->logWarn("IJVariableSelector::getVariable(): m_dataFile == nullptr. Returning nullptr.");
+    if( ! m_grid ){
+        emit warningOccurred("IJVariableSelector::getSelectedVariable(): m_grid == nullptr. Returning nullptr.");
         return nullptr;
     }
     //by selecting a variable name, surely the object is an Attribute
-    Attribute* at = (Attribute*)m_dataFile->getChildByName( ui->cmbVariable->currentText() );
-    if( ! at ){
-        Application::instance()->logWarn("IJVariableSelector::getVariable(): Selection resulted in null attribute. Returning nullptr.");
+    IJAbstractVariable* variable = m_grid->getVariableByBame( ui->cmbVariable->currentText() );
+    if( ! variable ){
+        emit warningOccurred("IJVariableSelector::getSelectedVariable(): Selection resulted in null attribute. Returning nullptr.");
         return nullptr;
     }
-    return at;
+    return variable;
 }
 
 int IJVariableSelector::getCurrentComboIndex()
@@ -81,37 +80,35 @@ void IJVariableSelector::setCaption(QString caption)
     ui->lblCaption->setText( caption );
 }
 
-void IJVariableSelector::onListVariables(DataFile *file)
+void IJVariableSelector::onListVariables(IJAbstractCartesianGrid *grid)
 {
-    m_dataFile = file;
+    m_grid = grid;
     ui->cmbVariable->clear();
     if( m_hasNotSetItem )
         ui->cmbVariable->addItem( "NOT SET" );
-    if( ! file )
+    if( ! grid )
         return;
-    std::vector<ProjectComponent*> all_contained_objects;
-    file->getAllObjects( all_contained_objects );
-    std::vector<ProjectComponent*>::iterator it = all_contained_objects.begin();
-    for(; it != all_contained_objects.end(); ++it){
-		ProjectComponent* pc = (ProjectComponent*)(*it);
-        if( pc->isAttribute() ){
-			ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
-        }
+    std::vector<IJAbstractVariable*> all_contained_variables;
+    grid->getAllVariables( all_contained_variables );
+    std::vector<IJAbstractVariable*>::iterator it = all_contained_variables.begin();
+    for(; it != all_contained_variables.end(); ++it){
+        IJAbstractVariable* var = *it;
+        ui->cmbVariable->addItem( var->getVariableIcon(), var->getVariableName() );
     }
 }
 
 void IJVariableSelector::onSelection(int /*index*/)
 {
-    if( ! m_dataFile ){
-        Application::instance()->logWarn("IJVariableSelector::onSelection(): Attempt to call this slot with m_dataFile == nullptr. Ignoring.");
+    if( ! m_grid ){
+        emit warningOccurred("IJVariableSelector::onSelection(): Attempt to call this slot with m_grid == nullptr. Ignoring.");
         return;
     }
     //by selecting a variable name, surely the object is an Attribute
-    Attribute* at = (Attribute*)m_dataFile->getChildByName( ui->cmbVariable->currentText() );
-    if( ! at ){
-        Application::instance()->logWarn("IJVariableSelector::onSelection(): Selection event resulted in null attribute. Ignoring.");
+    IJAbstractVariable* var = m_grid->getVariableByBame( ui->cmbVariable->currentText() );
+    if( ! var ){
+        emit warningOccurred("IJVariableSelector::onSelection(): Selection event resulted in null attribute. Ignoring.");
         return;
     }
-    emit variableSelected( at );
+    emit variableSelected( var );
     return;
 }

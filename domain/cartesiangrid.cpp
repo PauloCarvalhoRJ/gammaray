@@ -375,6 +375,33 @@ QIcon CartesianGrid::getGridIcon()
     return getIcon();
 }
 
+int CartesianGrid::getVariableIndexByName(QString variableName)
+{
+    return getFieldGEOEASIndex( variableName ) - 1;
+}
+
+IJAbstractVariable *CartesianGrid::getVariableByBame(QString variableName)
+{
+    ProjectComponent* pc = getChildByName( variableName );
+    if( pc->isAttribute() )
+        return dynamic_cast<Attribute*>(pc);
+    else
+        return nullptr;
+}
+
+void CartesianGrid::getAllVariables(std::vector<IJAbstractVariable *> &result)
+{
+    std::vector<ProjectComponent*> all_contained_objects;
+    getAllObjects( all_contained_objects );
+    std::vector<ProjectComponent*>::iterator it = all_contained_objects.begin();
+    for(; it != all_contained_objects.end(); ++it){
+        ProjectComponent* pc = (ProjectComponent*)(*it);
+        if( pc->isAttribute() ){
+            result.push_back( dynamic_cast<Attribute*>(pc) );
+        }
+    }
+}
+
 double CartesianGrid::absMax(int column)
 {
     return maxAbs( column );

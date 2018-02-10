@@ -48,6 +48,7 @@ public:
     virtual IJAbstractCartesianGrid* getParentGrid();
     virtual int getIndexInParentGrid();
 	virtual QString getVariableName();
+    virtual QIcon getVariableIcon();
 
 private:
     QString _name;

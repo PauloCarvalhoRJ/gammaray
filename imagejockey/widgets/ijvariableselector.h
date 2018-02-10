@@ -7,8 +7,8 @@ namespace Ui {
 class IJVariableSelector;
 }
 
-class DataFile;
-class Attribute;
+class IJAbstractCartesianGrid;
+class IJAbstractVariable;
 
 class IJVariableSelector : public QWidget
 {
@@ -19,22 +19,22 @@ public:
     explicit IJVariableSelector( bool show_not_set = false, QWidget *parent = 0);
     ~IJVariableSelector();
 
-    /** Returns the GEO-EAS column index of the selected variable.
-      * @return Zero if no variable is selected or m_dataFile is null.
+    /** Returns the index of the selected variable.
+      * @return Negative number if no variable is selected or m_grid is null.
       */
-    uint getSelectedVariableGEOEASIndex();
+    uint getSelectedVariableIndex();
 
     /** Returns the name of the selected variable. */
     QString getSelectedVariableName();
 
     /** Manually add a variable to the list. */
-    void addVariable( Attribute* at );
+    void addVariable(IJAbstractVariable* var );
 
     /** Clears the list of variables. */
     void clear();
 
     /** Returns the selected variable. */
-    Attribute* getSelectedVariable();
+    IJAbstractVariable* getSelectedVariable();
 
     /** Returns the index of the currently selected item in the combobox. */
     int getCurrentComboIndex();
@@ -43,17 +43,19 @@ public:
     void setCaption( QString caption );
 
 signals:
-    void variableSelected( Attribute* at );
+    void variableSelected( IJAbstractVariable* var );
     void currentIndexChanged( int index );
+    void errorOccurred( QString message );
+    void warningOccurred( QString message );
 
 public slots:
-    /** Updates the list of variables from the passed data file.*/
-    void onListVariables( DataFile* file );
+    /** Updates the list of variables from the passed grid.*/
+    void onListVariables(IJAbstractCartesianGrid* grid );
 
 private:
 	Ui::IJVariableSelector *ui;
     bool m_hasNotSetItem;
-    DataFile *m_dataFile;
+    IJAbstractCartesianGrid *m_grid;
 
 public slots:
     void onSelection( int index );

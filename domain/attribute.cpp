@@ -123,7 +123,12 @@ IJAbstractCartesianGrid *Attribute::getParentGrid()
 
 int Attribute::getIndexInParentGrid()
 {
-	return getAttributeGEOEASgivenIndex() - 1;
+    return getAttributeGEOEASgivenIndex() - 1;
+}
+
+QIcon Attribute::getVariableIcon()
+{
+    return getIcon();
 }
 
 QString Attribute::getVariableName()

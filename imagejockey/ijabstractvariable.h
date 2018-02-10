@@ -2,6 +2,7 @@
 #define IJABSTRACTVARIABLE_H
 
 #include <QString>
+#include <QIcon>
 
 class IJAbstractCartesianGrid;
 
@@ -24,6 +25,9 @@ public:
 
 	/** Returns the name of the variable. */
 	virtual QString getVariableName() = 0;
+
+    /** Returns the icon of the variable, normally used in presentation (e.g. widgets). */
+    virtual QIcon getVariableIcon() = 0;
 };
 
 #endif // IJABSTRACTVARIABLE_H
