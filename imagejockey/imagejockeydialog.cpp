@@ -302,6 +302,7 @@ void ImageJockeyDialog::save()
 void ImageJockeyDialog::preview()
 {
     //TODO: this code was duplicated in MainWindow (onPreviewRFFTImageJockey() slot)
+
     //assuming the selected file is a Cartesian grid
 //    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
 //    if( ! cg )

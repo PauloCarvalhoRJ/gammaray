@@ -204,7 +204,8 @@ SOURCES += main.cpp\
 	imagejockey/ijspatiallocation.cpp \
 	imagejockey/widgets/ijcartesiangridselector.cpp \
 	imagejockey/widgets/ijvariableselector.cpp \
-    imagejockey/widgets/grcompass.cpp
+    imagejockey/widgets/grcompass.cpp \
+    imagejockey/widgets/ijgridviewerwidget.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -386,7 +387,8 @@ HEADERS  += mainwindow.h \
 	imagejockey/ijspatiallocation.h \
 	imagejockey/widgets/ijcartesiangridselector.h \
 	imagejockey/widgets/ijvariableselector.h \
-    imagejockey/widgets/grcompass.h
+    imagejockey/widgets/grcompass.h \
+    imagejockey/widgets/ijgridviewerwidget.h
 
 
 FORMS    += mainwindow.ui \
@@ -457,7 +459,8 @@ FORMS    += mainwindow.ui \
     imagejockey/svd/svdanalysisdialog.ui \
 	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui \
 	imagejockey/widgets/ijcartesiangridselector.ui \
-	imagejockey/widgets/ijvariableselector.ui
+        imagejockey/widgets/ijvariableselector.ui \
+    imagejockey/widgets/ijgridviewerwidget.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
