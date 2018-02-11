@@ -149,7 +149,6 @@ public:
 
 //IJAbstractCartesianGrid interface
 public:
-    virtual double getDiagonalLength();
     virtual double getRotation();
     virtual double getCenterX();
     virtual double getCenterY();
