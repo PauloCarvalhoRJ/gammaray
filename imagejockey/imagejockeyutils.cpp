@@ -2,6 +2,7 @@
 #include "ijspatiallocation.h"
 #include <cstdlib>
 #include <cmath>
+#include <QList>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 

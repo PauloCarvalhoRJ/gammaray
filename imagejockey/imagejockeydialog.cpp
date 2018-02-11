@@ -301,38 +301,39 @@ void ImageJockeyDialog::save()
 
 void ImageJockeyDialog::preview()
 {
+    //TODO: this code was duplicated in MainWindow (onPreviewRFFTImageJockey() slot)
     //assuming the selected file is a Cartesian grid
-    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
-    if( ! cg )
-        return;
+//    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
+//    if( ! cg )
+//        return;
 
-    //creates a tmp path for the Cartesian grid with the FFT image
-    QString tmpPathFFT = Application::instance()->getProject()->generateUniqueTmpFilePath( "dat" );
+//    //creates a tmp path for the Cartesian grid with the FFT image
+//    QString tmpPathFFT = Application::instance()->getProject()->generateUniqueTmpFilePath( "dat" );
 
-    //create a Cartesian grid object pointing to the newly created file
-    CartesianGrid* cgFFTtmp = new CartesianGrid( tmpPathFFT );
+//    //create a Cartesian grid object pointing to the newly created file
+//    CartesianGrid* cgFFTtmp = new CartesianGrid( tmpPathFFT );
 
-    //get the gridspecs from the original FFT image
-    cgFFTtmp->setInfoFromOtherCG( cg );
+//    //get the gridspecs from the original FFT image
+//    cgFFTtmp->setInfoFromOtherCG( cg );
 
-    //get the edited Fourier data
-    std::vector<std::complex<double> > data =
-         cg->getArray( m_varAmplitudeSelector->getSelectedVariableGEOEASIndex()-1,
-                       m_varPhaseSelector->getSelectedVariableGEOEASIndex()-1
-                     );
+//    //get the edited Fourier data
+//    std::vector<std::complex<double> > data =
+//         cg->getArray( m_varAmplitudeSelector->getSelectedVariableGEOEASIndex()-1,
+//                       m_varPhaseSelector->getSelectedVariableGEOEASIndex()-1
+//                     );
 
-    //reverse FFT the edited data (result is written back to the input data array).
-    Util::fft3D( cg->getNX(), cg->getNY(), cg->getNZ(), data,
-                 FFTComputationMode::REVERSE, FFTImageType::POLAR_FORM );
+//    //reverse FFT the edited data (result is written back to the input data array).
+//    Util::fft3D( cg->getNX(), cg->getNY(), cg->getNZ(), data,
+//                 FFTComputationMode::REVERSE, FFTImageType::POLAR_FORM );
 
-    //add the in-memory data (now in real space) to the new Cartesian grid object
-    cgFFTtmp->addDataColumns( data, "real part of rFFT", "imaginary part of rFFT" );
+//    //add the in-memory data (now in real space) to the new Cartesian grid object
+//    cgFFTtmp->addDataColumns( data, "real part of rFFT", "imaginary part of rFFT" );
 
-    //save the grid to filesystem
-    cgFFTtmp->writeToFS();
+//    //save the grid to filesystem
+//    cgFFTtmp->writeToFS();
 
-    //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
-    Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+//    //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
+//    Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
 }
 
 void ImageJockeyDialog::restore()
