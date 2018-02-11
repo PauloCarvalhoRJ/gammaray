@@ -5,16 +5,18 @@
 #include "../imagejockeygridplot.h"
 #include "../svd/svdfactor.h"
 
-IJGridViewerWidget::IJGridViewerWidget(QWidget *parent) :
+IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::IJGridViewerWidget),
-    m_factor( nullptr )
+    m_factor( nullptr ),
+    m_deleteFactorOnClose( deleteFactorOnClose )
 {
     ui->setupUi(this);
 
     //deletes dialog from memory upon user closing it
 	this->setAttribute(Qt::WA_DeleteOnClose);
 
+    this->setWindowTitle( "Quick grid viewer" );
 
 	//add a grid plot widget to the right pane of the dialog
 	m_gridPlot = new ImageJockeyGridPlot();
@@ -30,6 +32,8 @@ IJGridViewerWidget::IJGridViewerWidget(QWidget *parent) :
 
 IJGridViewerWidget::~IJGridViewerWidget()
 {
+    if( m_deleteFactorOnClose && m_factor )
+        delete m_factor;
     delete ui;
 }
 
@@ -140,5 +144,10 @@ void IJGridViewerWidget::onSpinSliceChanged(int value)
     m_factor->setCurrentSlice( value );
 
     forcePlotUpdate();
+}
+
+void IJGridViewerWidget::onDismiss()
+{
+    this->close();
 }
 

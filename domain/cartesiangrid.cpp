@@ -626,6 +626,22 @@ spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
     return data;
 }
 
+spectral::complex_array *CartesianGrid::createSpectralComplexArray(int variableIndex1, int variableIndex2)
+{
+    spectral::complex_array* data = new spectral::complex_array( _nx, _ny, _nz );
+    long idx = 0;
+    for (ulong i = 0; i < _nx; ++i) {
+        for (ulong j = 0; j < _ny; ++j) {
+            for (ulong k = 0; k < _nz; ++k) {
+                data->d_[idx][0] = dataIJK(variableIndex1, i, j, k);
+                data->d_[idx][1] = dataIJK(variableIndex2, i, j, k);
+                ++idx;
+            }
+        }
+    }
+    return data;
+}
+
 void CartesianGrid::clearLoadedData()
 {
     freeLoadedData();

@@ -179,6 +179,8 @@ public:
                         const QList<QPointF>& secondArea = QList<QPointF>());
     virtual void saveData();
     virtual spectral::array* createSpectralArray( int nDataColumn );
+    virtual spectral::complex_array* createSpectralComplexArray( int variableIndex1,
+                                                                 int variableIndex2);
     virtual void clearLoadedData();
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array );
 

@@ -15,6 +15,7 @@
 #include "svd/svdfactortree.h"
 #include "svd/svdanalysisdialog.h"
 #include "svd/svdfactorsel/svdfactorsselectiondialog.h"
+#include "widgets/ijgridviewerwidget.h"
 
 #include "spectral/svd.h" //third-party Eigen
 
@@ -301,40 +302,87 @@ void ImageJockeyDialog::save()
 
 void ImageJockeyDialog::preview()
 {
-    //TODO: this code was duplicated in MainWindow (onPreviewRFFTImageJockey() slot)
+    //TODO: the working version of this function was copied to MainWindow (onPreviewRFFTImageJockey() slot)
+    //      The working version uses VTK's RFFT and GammaRay infrastructure.
 
-    //assuming the selected file is a Cartesian grid
-//    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
-//    if( ! cg )
-//        return;
+    //Get the Cartesian grid with the Fourier image in polar form.
+    IJAbstractCartesianGrid* cg = m_cgSelector->getSelectedGrid();
+    if( ! cg )
+        return;
 
-//    //creates a tmp path for the Cartesian grid with the FFT image
-//    QString tmpPathFFT = Application::instance()->getProject()->generateUniqueTmpFilePath( "dat" );
+    //Get the complex numbers:
+    //            a) in polar form ( a cis b );
+    //            b) with the lower frequencies shifted to the center for ease of interpretation;
+    spectral::complex_array* dataOriginal = cg->createSpectralComplexArray(
+                                                            m_varAmplitudeSelector->getSelectedVariableIndex(),
+                                                            m_varPhaseSelector->getSelectedVariableIndex()
+                                                                  );
 
-//    //create a Cartesian grid object pointing to the newly created file
-//    CartesianGrid* cgFFTtmp = new CartesianGrid( tmpPathFFT );
+    //create the array with the input de-shifted and in rectangular form.
+    spectral::complex_array dataReady( (spectral::index)cg->getNI(),
+                                       (spectral::index)cg->getNJ(),
+                                       (spectral::index)cg->getNK() );
 
-//    //get the gridspecs from the original FFT image
-//    cgFFTtmp->setInfoFromOtherCG( cg );
+    //De-shift and convert the complex numbers to rectangular form ( a + bi ).
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Converting FFT image...");
+        unsigned int nI = cg->getNI();
+        unsigned int nJ = cg->getNJ();
+        unsigned int nK = cg->getNK();
+        for(unsigned int k = 0; k < nK; ++k) {
+            QCoreApplication::processEvents(); //let Qt repaint widgets
+            //de-shift in topological direction K
+            int k_shift = (k + nK/2) % nK;
+            for(unsigned int j = 0; j < nJ; ++j){
+                //de-shift in topological direction J
+                int j_shift = (j + nJ/2) % nJ;
+                for(unsigned int i = 0; i < nI; ++i){
+                    //de-shift in topological direction I
+                    int i_shift = (i + nI/2) % nI;
+                    //compute the element index in the complex arrays
+                    //the scan order of fftw follows is the opposite of the GSLib convention
+                    int idxOriginal = k_shift + nK * (j_shift + nJ * i_shift );
+                    int idxReady = k + nK * ( j + nJ * i );
+                    //convert it to rectangular form
+                    std::complex<double> value = std::polar( dataOriginal->d_[idxOriginal][0],
+                                                             dataOriginal->d_[idxOriginal][1] );
+                    //fills the output array with the final rectangular form
+                    dataReady.d_[idxReady][0] = value.real();
+                    dataReady.d_[idxReady][1] = value.imag();
+                }
+            }
+        }
+    }
 
-//    //get the edited Fourier data
-//    std::vector<std::complex<double> > data =
-//         cg->getArray( m_varAmplitudeSelector->getSelectedVariableGEOEASIndex()-1,
-//                       m_varPhaseSelector->getSelectedVariableGEOEASIndex()-1
-//                     );
+    //Discard the input array
+    delete dataOriginal;
 
-//    //reverse FFT the edited data (result is written back to the input data array).
-//    Util::fft3D( cg->getNX(), cg->getNY(), cg->getNZ(), data,
-//                 FFTComputationMode::REVERSE, FFTImageType::POLAR_FORM );
+    //Create the output array.
+    spectral::array outputData( (spectral::index)cg->getNI(),
+                                (spectral::index)cg->getNJ(),
+                                (spectral::index)cg->getNK() );
 
-//    //add the in-memory data (now in real space) to the new Cartesian grid object
-//    cgFFTtmp->addDataColumns( data, "real part of rFFT", "imaginary part of rFFT" );
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Computing RFFT...");
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+        //Apply reverse FFT.
+        spectral::backward( outputData, dataReady );
+    }
 
-//    //save the grid to filesystem
-//    cgFFTtmp->writeToFS();
+    //Construct a displayable object from the result.
+    SVDFactor* factor = new SVDFactor( std::move(outputData), 1, 1, cg->getOriginX(), cg->getOriginY(), cg->getOriginZ(),
+                                       cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK());
 
-//    //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
-//    Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+    //Opens the viewer.
+    IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+    ijgvw->setFactor( factor );
+    ijgvw->show();
 }
 
 void ImageJockeyDialog::restore()

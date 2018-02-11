@@ -220,17 +220,20 @@
    <sender>btnDismiss</sender>
    <signal>clicked()</signal>
    <receiver>IJGridViewerWidget</receiver>
-   <slot>reject()</slot>
+   <slot>onDismiss()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>629</x>
-     <y>481</y>
+     <x>327</x>
+     <y>355</y>
     </hint>
     <hint type="destinationlabel">
-     <x>567</x>
-     <y>460</y>
+     <x>264</x>
+     <y>343</y>
     </hint>
    </hints>
   </connection>
  </connections>
+ <slots>
+  <slot>onDismiss()</slot>
+ </slots>
 </ui>

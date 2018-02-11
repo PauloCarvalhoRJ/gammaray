@@ -10,6 +10,7 @@ class IJAbstractVariable;
 
 namespace spectral {
     struct array;
+    struct complex_array;
 }
 
 /**
@@ -127,10 +128,19 @@ public:
     virtual void saveData() = 0;
 
     /** Creates a spectral::array object from a variable of this Cartesian grid.
-     * The client code is responsible for deleting the object.
+     * The client code is responsible for managing the memory occupied by the object.
      * Implementations must include spectral/spectral.h header.
      */
     virtual spectral::array* createSpectralArray( int variableIndex ) = 0;
+
+    /** Creates a spectral::complex_array object from two variables of this Cartesian grid.
+     * The client code is responsible for managing the memory occupied the object.
+     * Implementations must include spectral/spectral.h header.
+     * @note Beware of the form of the complex numbers, the first variable may be a magnitude
+     * and the second variable may be the phase if the complex numbers are in polar form.
+     */
+    virtual spectral::complex_array* createSpectralComplexArray( int variableIndex1,
+                                                                 int variableIndex2) = 0;
 
     /**
      * Clear data loaded to memory.

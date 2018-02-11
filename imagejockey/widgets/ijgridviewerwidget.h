@@ -25,7 +25,7 @@ class IJGridViewerWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit IJGridViewerWidget(QWidget *parent = 0);
+    explicit IJGridViewerWidget( bool deleteFactorOnClose, QWidget *parent = 0);
     ~IJGridViewerWidget();
     void setFactor(SVDFactor* factor );
 
@@ -33,6 +33,7 @@ private:
     Ui::IJGridViewerWidget *ui;
 	ImageJockeyGridPlot* m_gridPlot;
     SVDFactor* m_factor;
+    bool m_deleteFactorOnClose;
     void forcePlotUpdate();
     void adjustColorTableWidgets( int cmbIndex );
 
@@ -40,6 +41,7 @@ private slots:
     void onCmbColorScaleValueChanged( int index );
     void onCmbPlaneChanged( int index );
     void onSpinSliceChanged( int value );
+    void onDismiss();
 };
 
 #endif // IJGRIDVIEWERWIDGET_H
