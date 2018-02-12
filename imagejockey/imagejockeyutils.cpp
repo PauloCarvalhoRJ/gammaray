@@ -99,3 +99,12 @@ void ImageJockeyUtils::mirror2D(QList<QPointF> &points, const IJSpatialLocation 
         (*it).setY( point._y - dy );
     }
 }
+
+bool ImageJockeyUtils::isWithinBBox(double x, double y, double minX, double minY, double maxX, double maxY)
+{
+    if( x < minX ) return false;
+    if( x > maxX ) return false;
+    if( y < minY ) return false;
+    if( y > maxY ) return false;
+    return true;
+}

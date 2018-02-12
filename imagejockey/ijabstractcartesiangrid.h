@@ -30,10 +30,10 @@ public:
 
     //@{
     /** Getters for the spatial location of the center of the grid's box. */
-    virtual double getCenterX() = 0;
-    virtual double getCenterY() = 0;
-    virtual double getCenterZ() = 0;
-	virtual IJSpatialLocation getCenterLocation() = 0;
+    double getCenterX();
+    double getCenterY();
+    double getCenterZ();
+    IJSpatialLocation getCenterLocation();
     //@}
 
     //@{
@@ -130,6 +130,8 @@ public:
     /** Creates a spectral::array object from a variable of this Cartesian grid.
      * The client code is responsible for managing the memory occupied by the object.
      * Implementations must include spectral/spectral.h header.
+     * @note If you use private spectral::array objects, do not return pointers to them as the returned objects are
+     *       expected to be managed  by client code.  Create a new one or clone.
      */
     virtual spectral::array* createSpectralArray( int variableIndex ) = 0;
 

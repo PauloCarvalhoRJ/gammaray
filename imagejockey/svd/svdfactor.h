@@ -5,6 +5,7 @@
 
 #include <QString>
 #include <QIcon>
+#include "../ijabstractcartesiangrid.h"
 
 //third-party library Eigen
 namespace spectral{
@@ -20,7 +21,7 @@ enum class SVDFactorPlaneOrientation : int {
 /**
  * @brief The SVDFactor class represents one factor obtained from Singular Value Decomposition (SVD).
  */
-class SVDFactor
+class SVDFactor : public IJAbstractCartesianGrid
 {
 public:
     /**
@@ -99,9 +100,6 @@ public:
 	double getDX(){ return m_dx; }
 	double getDY(){ return m_dy; }
 	double getDZ(){ return m_dz; }
-    int getNX(){ return m_factorData.M(); }
-    int getNY(){ return m_factorData.N(); }
-    int getNZ(){ return m_factorData.K(); }
     //@}
 
     /** Returns the number of slices.  This depends on the current plane orientation (XY, XZ, YZ). */
@@ -132,6 +130,7 @@ private:
 	double m_dx, m_dy, m_dz;
 	bool m_isMinValueDefined, m_isMaxValueDefined;
 	double m_minValue, m_maxValue;
+    IJAbstractVariable* m_variableProxy; //this object represents the internal data for the IJAbstractCartesianGrid interface.
 	uint getIndexOfChild( SVDFactor* child );
 	bool isRoot();
 	void setParentFactor( SVDFactor* parent );
@@ -139,6 +138,12 @@ private:
 	bool isTopLevel();
 	bool XYtoIJinCurrentPlane(double localX, double localY, uint& i, uint& j );
 	double dataIJK( uint i, uint j, uint k);
+    /**
+     * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
+     * Returns false if the spatial coordinate lies outside the grid.
+     */
+    bool XYZtoIJK( double x, double y, double z,
+                   uint& i,   uint& j,   uint& k );
 
 	// Methods to support the QAbstractItemModel interface
 public:
@@ -148,6 +153,38 @@ public:
 	uint getChildCount( );
 	QString getPresentationName( );
 	QIcon getIcon( );
+
+    // IJAbstractCartesianGrid interface
+public:
+    virtual double getRotation(){ return 0.0; }
+    virtual int getNI(){ return m_factorData.M(); }
+    virtual int getNJ(){ return m_factorData.N(); }
+    virtual int getNK(){ return m_factorData.K(); }
+    virtual double getCellSizeI(){ return m_dx; }
+    virtual double getCellSizeJ(){ return m_dy; }
+    virtual double getCellSizeK(){ return m_dz; }
+    virtual double getOriginX(){ return m_x0; }
+    virtual double getOriginY(){ return m_y0; }
+    virtual double getOriginZ(){ return m_z0; }
+    virtual double getData(int variableIndex, int i, int j, int k);
+    virtual bool isNoDataValue(double){ return false; }
+    virtual double getDataAt(int variableIndex, double x, double y, double z);
+    virtual double absMax(int variableIndex);
+    virtual double absMin(int variableIndex);
+    virtual void dataWillBeRequested(){} //SVDFactors are in-memory grids, there is no need to prefetch data.
+    virtual QString getGridName(){ return getPresentationName(); }
+    virtual QIcon getGridIcon(){ return getIcon(); }
+    virtual int getVariableIndexByName(QString){ return 0; } //SVDFactors have just one variable.
+    virtual IJAbstractVariable *getVariableByName(QString){ return m_variableProxy; }
+    virtual void getAllVariables(std::vector<IJAbstractVariable *> &result);
+    virtual IJAbstractVariable *getVariableByIndex(int){ return m_variableProxy; }
+    virtual void equalizeValues(QList<QPointF> &area, double delta_dB, int variableIndex, double dB_reference, const QList<QPointF> &secondArea);
+    virtual void saveData();
+    virtual spectral::array *createSpectralArray(int variableIndex);
+    virtual spectral::complex_array *createSpectralComplexArray(int variableIndex1, int variableIndex2);
+    virtual void clearLoadedData(){} //SVDFactors are not persistible
+    virtual long appendAsNewVariable(const QString variableName, const spectral::array &array);
+
 };
 
 #endif // SVDFACTOR_H

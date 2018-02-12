@@ -1,7 +1,46 @@
 #include "svdfactor.h"
+#include <QMessageBox>
 #include <algorithm>
+#include <boost/geometry.hpp>
+#include <boost/geometry/geometries/point_xy.hpp>
+#include <boost/geometry/geometries/polygon.hpp>
+#include <boost/scoped_array.hpp>
+#include "../ijabstractvariable.h"
+#include "../imagejockeyutils.h"
 
-SVDFactor::SVDFactor(spectral::array &&factorData, uint number, double weight, double x0, double y0, double z0, double dx, double dy, double dz, SVDFactor *parentFactor) :
+//Implementing IJAbstractVariable to use the IJAbstractCartesianGrid interface,
+//so it is possible to use Image Jockey
+class CartesianGridVariable : public IJAbstractVariable{
+public:
+    CartesianGridVariable( SVDFactor* parent ) : m_parent( parent ){
+    }
+    // IJAbstractVariable interface
+public:
+    virtual IJAbstractCartesianGrid *getParentGrid()
+    {
+        return m_parent;
+    }
+    virtual int getIndexInParentGrid()
+    {
+        return 0; //SVDFactors have only one variable
+    }
+    virtual QString getVariableName()
+    {
+        return "values";
+    }
+    virtual QIcon getVariableIcon()
+    {
+        return QIcon(":ijicons32/ijvariable32");
+    }
+private:
+    SVDFactor* m_parent;
+};
+
+SVDFactor::SVDFactor(spectral::array &&factorData, uint number,
+                     double weight, double x0, double y0,
+                     double z0, double dx, double dy, double dz,
+                     SVDFactor *parentFactor) :
+    IJAbstractCartesianGrid(),
     m_parentFactor( parentFactor ),
 	m_factorData( std::move( factorData) ),
 	m_number( number ),
@@ -18,6 +57,7 @@ SVDFactor::SVDFactor(spectral::array &&factorData, uint number, double weight, d
 	m_isMinValueDefined( false ),
 	m_isMaxValueDefined( false )
 {
+    m_variableProxy = new CartesianGridVariable( this );
 }
 
 SVDFactor::SVDFactor() :
@@ -37,10 +77,13 @@ SVDFactor::SVDFactor() :
 	m_isMinValueDefined( false ),
 	m_isMaxValueDefined( false )
 {
+    m_variableProxy = new CartesianGridVariable( this );
 }
 
 SVDFactor::~SVDFactor()
 {
+    //delete the proxy variable object.
+    delete m_variableProxy;
 	//delete the child factors (if any).
 	while( ! m_childFactors.empty() ){
 		delete m_childFactors.back();
@@ -286,4 +329,184 @@ QString SVDFactor::getPresentationName()
 QIcon SVDFactor::getIcon()
 {
     return QIcon(":ijicons32/ijsvd32");
+}
+
+double SVDFactor::getData(int variableIndex, int i, int j, int k)
+{
+    Q_UNUSED( variableIndex ); //SVDFactors have just one variable
+    return dataIJK( i, j, k );
+}
+
+bool SVDFactor::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uint &k)
+{
+    //TODO: add support for rotations
+    if( ! ImageJockeyUtils::almostEqual2sComplement( getRotation(), 0.0, 1) ){
+        return false;
+    }
+
+    //compute the indexes from the spatial location.
+    double xWest = getOriginX() - getCellSizeI()/2.0;
+    double ySouth = getOriginY() - getCellSizeJ()/2.0;
+    double zBottom = getOriginZ() - getCellSizeK()/2.0;
+    i = (x - xWest) / getCellSizeI();
+    j = (y - ySouth) / getCellSizeJ();
+    k = 0;
+    if( getNK() > 1 )
+        k = (z - zBottom) / getCellSizeK();
+
+    //check whether the location is outside the grid
+    if( /*i < 0 ||*/ i >= getNI() || /*j < 0 ||*/ j >= getNJ() || /*k < 0 ||*/ k >= getNK() ){
+        return false;
+    }
+    return true;
+}
+
+
+double SVDFactor::getDataAt(int variableIndex, double x, double y, double z)
+{
+    //try to convert spatial coordinates into topological coordinates
+    uint i, j, k;
+    if( ! XYZtoIJK( x, y, z, i, j, k ) ){
+        //the passed spatial coordinates may fall outside the grid,
+        //so return NaN if the conversion fails.
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+    //get the value
+    return getData( variableIndex, i, j, k );
+}
+
+double SVDFactor::absMax(int variableIndex)
+{
+    Q_UNUSED( variableIndex ); //SVDFactors have just one variable
+    double result = 0.0d;
+    for (uint i = 0; i < m_factorData.data().size(); ++i) {
+        double value = m_factorData.data()[i];
+        if ( std::abs<double>(value) > result )
+            result = std::abs<double>(value);
+    }
+    return result;
+}
+
+double SVDFactor::absMin(int variableIndex)
+{
+    Q_UNUSED( variableIndex ); //SVDFactors have just one variable
+    double result = std::numeric_limits<double>::max();
+    for (uint i = 0; i < m_factorData.data().size(); ++i) {
+        double value = m_factorData.data()[i];
+        if ( std::abs<double>(value) < result )
+            result = std::abs<double>(value);
+    }
+    return result;
+}
+
+void SVDFactor::getAllVariables(std::vector<IJAbstractVariable *> &result)
+{
+    result.push_back( m_variableProxy );
+}
+
+void SVDFactor::equalizeValues(QList<QPointF> &area,
+                               double delta_dB,
+                               int variableIndex,
+                               double dB_reference,
+                               const QList<QPointF> &secondArea)
+{
+    //some typedefs to shorten code
+    typedef boost::geometry::model::d2::point_xy<double> boostPoint2D;
+    typedef boost::geometry::model::polygon<boostPoint2D> boostPolygon;
+
+    //define a Boost polygon from the area geometry points
+    const std::size_t n = area.size();
+    boost::scoped_array<boostPoint2D> points(new boostPoint2D[n]); //scoped_array frees memory when its scope ends.
+    for(std::size_t i = 0; i < n; ++i)
+        points[i] = boostPoint2D( area[i].x(), area[i].y() );
+    boostPolygon poly;
+    boost::geometry::assign_points( poly, std::make_pair(&points[0], &points[0] + n));
+
+    //define a Boost polygon from the second area (if not empty)
+    boostPolygon secondPoly;
+    if( ! secondArea.empty() ){
+        const std::size_t n = secondArea.size();
+        boost::scoped_array<boostPoint2D> secondPoints(new boostPoint2D[n]); //scoped_array frees memory when its scope ends.
+        for(std::size_t i = 0; i < n; ++i)
+            secondPoints[i] = boostPoint2D( secondArea[i].x(), secondArea[i].y() );
+        boost::geometry::assign_points( secondPoly, std::make_pair(&secondPoints[0], &secondPoints[0] + n));
+    }
+
+    //get the 2D bounding box of the polygon
+    double minX = std::numeric_limits<double>::max();
+    double maxX = std::numeric_limits<double>::lowest();
+    double minY = std::numeric_limits<double>::max();
+    double maxY = std::numeric_limits<double>::lowest();
+    QList<QPointF>::iterator it = area.begin();
+    for( ; it != area.end(); ++it){
+        minX = std::min<double>( minX, (*it).x() );
+        maxX = std::max<double>( maxX, (*it).x() );
+        minY = std::min<double>( minY, (*it).y() );
+        maxY = std::max<double>( maxY, (*it).y() );
+    }
+
+    //scan the grid, testing each cell whether it lies within the area.
+    //TODO: this code assumes no grid rotation and that the grid is 2D.
+    for( int k = 0; k < getNK(); ++k ){
+        // z coordinate is ignored in 2D spectrograms
+        for( int j = 0; j < getNJ(); ++j ){
+            double cellCenterY = getOriginY() + j * getCellSizeJ();
+            for( int i = 0; i < getNI(); ++i ){
+                double cellCenterX = getOriginX() + i * getCellSizeJ();
+                boostPoint2D p(cellCenterX, cellCenterY);
+                // if the cell center lies within the area
+                // The bounding box test is a faster test to promplty discard cells obviously outside.
+                if(     ImageJockeyUtils::isWithinBBox( cellCenterX, cellCenterY, minX, minY, maxX, maxY )
+                        &&
+                        boost::geometry::within(p, poly)
+                        &&
+                        ( secondArea.isEmpty() || boost::geometry::within(p, secondPoly) )   ){
+                    // get the grid value as is
+                    double value = getData( variableIndex, i, j, k );
+                    // determine whether the value is negative
+                    bool isNegative = value < 0.0;
+                    // get the absolute value
+                    value = std::abs(value);
+                    // get the absolute value in dB
+                    double value_dB = ImageJockeyUtils::dB( value, dB_reference, 0.00001);
+                    // apply adjustment in dB
+                    value_dB += delta_dB;
+                    // attenuate/amplify the absolute value
+                    value = std::pow( 10.0d, value_dB / 10.0/*DECIBEL_SCALE_FACTOR*/ ) * dB_reference;
+                    // add negative sign if the original value was negative
+                    if( isNegative )
+                        value = -value;
+                    // set the amplified/attenuated value to the grid
+                    m_factorData(i, j, k) = value;
+                }
+            }
+        }
+    }
+}
+
+void SVDFactor::saveData()
+{
+    QMessageBox::critical( nullptr, "Error", QString("SVDFactor::saveData(): Unsupported operation."));
+}
+
+spectral::array *SVDFactor::createSpectralArray(int variableIndex)
+{
+    Q_UNUSED( variableIndex );
+    return new spectral::array( m_factorData );
+}
+
+spectral::complex_array *SVDFactor::createSpectralComplexArray(int variableIndex1, int variableIndex2)
+{
+    Q_UNUSED(variableIndex1);
+    Q_UNUSED(variableIndex2);
+    QMessageBox::critical( nullptr, "Error", QString("SVDFactor::createSpectralComplexArray(): Unsupported operation."));
+    return nullptr;
+}
+
+long SVDFactor::appendAsNewVariable(const QString variableName, const spectral::array &array)
+{
+    Q_UNUSED(variableName);
+    Q_UNUSED(array);
+    QMessageBox::critical( nullptr, "Error", QString("SVDFactor::appendAsNewVariable(): Unsupported operation."));
+    return -1;
 }

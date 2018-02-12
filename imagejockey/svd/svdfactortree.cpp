@@ -28,9 +28,9 @@ spectral::array *SVDFactorTree::getSumOfSelectedFactors()
 
     //get the cell count of the first top-level factor
     SVDFactor* factor1 = m_rootFactor->getChildByIndex(0);
-    int nI = factor1->getNX();
-    int nJ = factor1->getNY();
-    int nK = factor1->getNZ();
+    int nI = factor1->getNI();
+    int nJ = factor1->getNJ();
+    int nK = factor1->getNK();
 
     //init the resulting array with zeroes and with cell count of the first top-level factor.
     //this assumes all factores in the tree have the same dimensions.
