@@ -285,5 +285,5 @@ QString SVDFactor::getPresentationName()
 
 QIcon SVDFactor::getIcon()
 {
-	return QIcon(":icons32/svd32");
+    return QIcon(":ijicons32/ijsvd32");
 }

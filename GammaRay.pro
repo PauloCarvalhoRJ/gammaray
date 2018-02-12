@@ -577,7 +577,8 @@ DEFINES += APP_NAME=\\\"$$TARGET\\\"
 DEFINES += APP_NAME_VER=\\\"$$TARGET\\\040$$VERSION\\\"
 
 RESOURCES += \
-    resources.qrc
+    resources.qrc \
+    imagejockey/ijresources.qrc
 
 #set the Windows executable icon
 win32:RC_ICONS += art/exeicon.ico

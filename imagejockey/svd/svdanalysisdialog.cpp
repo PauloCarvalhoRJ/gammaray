@@ -57,25 +57,25 @@ void SVDAnalysisDialog::setTree( SVDFactorTree *tree )
 void SVDAnalysisDialog::refreshTreeStyle()
 {
 	ui->svdFactorTreeView->setStyleSheet("QTreeView::branch:has-siblings:!adjoins-item { \
-								   border-image: url(:icons32/vline32) 0; } \
+                                   border-image: url(:ijicons32/ijvline32) 0; } \
 			QTreeView::branch:has-siblings:adjoins-item { \
-				 border-image: url(:icons32/bmore32) 0; \
+                 border-image: url(:ijicons32/ijbmore32) 0; \
 			 } \
 			\
 			 QTreeView::branch:!has-children:!has-siblings:adjoins-item { \
-				 border-image: url(:icons32/bend32) 0; \
+                 border-image: url(:ijicons32/ijbend32) 0; \
 			 } \
 			\
 			 QTreeView::branch:has-children:!has-siblings:closed, \
 			 QTreeView::branch:closed:has-children:has-siblings { \
 					 border-image: none; \
-					 image: url(:icons32/bclosed32); \
+                     image: url(:ijicons32/ijbclosed32); \
 			 } \
 			\
 			 QTreeView::branch:open:has-children:!has-siblings, \
 			 QTreeView::branch:open:has-children:has-siblings  { \
 					 border-image: none; \
-					 image: url(:icons32/bopen32); \
+                     image: url(:ijicons32/ijbopen32); \
              }");
              }
 
