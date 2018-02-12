@@ -28,6 +28,10 @@ IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent
 
     connect( ui->cmbPlane, SIGNAL(currentIndexChanged(int)), this, SLOT(onCmbPlaneChanged(int)));
     connect( ui->spinSlice, SIGNAL(valueChanged(int)), this, SLOT(onSpinSliceChanged(int)));
+
+    //Hide the dismiss button if this widget has a parent (not stand alone).
+    if( this->parentWidget() )
+        ui->frmBottom->hide();
 }
 
 IJGridViewerWidget::~IJGridViewerWidget()

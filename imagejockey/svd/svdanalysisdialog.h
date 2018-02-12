@@ -16,7 +16,7 @@ namespace spectral{
     struct array;
 }
 
-class ImageJockeyGridPlot;
+class IJGridViewerWidget;
 
 class SVDAnalysisDialog : public QDialog
 {
@@ -47,10 +47,9 @@ private:
     QMenu *m_factorContextMenu;
     SVDFactor *m_right_clicked_factor;
 	int m_numberOfSVDFactorsSetInTheDialog;
-	ImageJockeyGridPlot* m_gridPlot;
+    IJGridViewerWidget* m_gridViewerWidget;
 	void refreshTreeStyle();
     void forcePlotUpdate();
-    void adjustColorTableWidgets( int cmbIndex );
 
 private slots:
     void onFactorContextMenu(const QPoint &mouse_location);
@@ -58,9 +57,6 @@ private slots:
 	void onUserSetNumberOfSVDFactors(int number);
 	void onOpenFactor();
 	void onFactorClicked( QModelIndex index );
-    void onCmbColorScaleValueChanged( int index );
-    void onCmbPlaneChanged( int index );
-    void onSpinSliceChanged( int value );
     void onSave();
 };
 
