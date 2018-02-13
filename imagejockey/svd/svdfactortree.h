@@ -33,6 +33,12 @@ public:
      */
     spectral::array *getSumOfSelectedFactors();
 
+    /**
+     * Returns one of the top level factors in the tree given its index.
+     * Returns null pointer if the tree is empty, the root factor is undefined or the index is invalid.
+     */
+    SVDFactor* getOneTopLevelFactor( uint index );
+
 private:
 	SVDFactor *m_rootFactor;
 

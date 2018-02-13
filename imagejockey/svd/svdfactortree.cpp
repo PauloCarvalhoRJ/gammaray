@@ -45,6 +45,17 @@ spectral::array *SVDFactorTree::getSumOfSelectedFactors()
     return result;
 }
 
+SVDFactor *SVDFactorTree::getOneTopLevelFactor(uint index)
+{
+    if( ! m_rootFactor )
+        return nullptr;
+    if( ! m_rootFactor->hasChildren() )
+        return nullptr;
+    if( index >= m_rootFactor->getChildCount() )
+        return nullptr;
+    return m_rootFactor->getChildByIndex( index );
+}
+
 //-------------- QAbstractItemModel interface------------
 QModelIndex SVDFactorTree::index(int row, int column, const QModelIndex &parent) const
 {

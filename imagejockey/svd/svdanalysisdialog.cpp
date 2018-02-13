@@ -188,3 +188,21 @@ void SVDAnalysisDialog::onSave()
     spectral::array *sum = m_tree->getSumOfSelectedFactors();
     emit sumOfFactorsComputed( sum );
 }
+
+void SVDAnalysisDialog::onPreview()
+{
+    SVDFactor* exampleFactor = m_tree->getOneTopLevelFactor( 0 );
+    if( ! exampleFactor )
+        return;
+    spectral::array *sum = m_tree->getSumOfSelectedFactors();
+    SVDFactor* factor = new SVDFactor( std::move(*sum), 1, 1, exampleFactor->getOriginX(),
+                                       exampleFactor->getOriginY(),
+                                       exampleFactor->getOriginZ(),
+                                       exampleFactor->getCellSizeI(),
+                                       exampleFactor->getCellSizeJ(),
+                                       exampleFactor->getCellSizeK());
+    IJGridViewerWidget* wid = new IJGridViewerWidget( true );
+    factor->setCustomName( "Sum of selected factors" );
+    wid->setFactor( factor );
+    wid->show();
+}

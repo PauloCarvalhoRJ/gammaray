@@ -320,6 +320,8 @@ uint SVDFactor::getChildCount()
 
 QString SVDFactor::getPresentationName()
 {
+    if( ! m_customName.isEmpty() )
+        return m_customName;
 	if( ! m_parentFactor ) //root factor
 		return "ROOT";
 	else

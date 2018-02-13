@@ -58,6 +58,7 @@ private slots:
 	void onOpenFactor();
 	void onFactorClicked( QModelIndex index );
     void onSave();
+    void onPreview();
 };
 
 #endif // SVDANALYSISDIALOG_H

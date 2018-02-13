@@ -150,6 +150,13 @@
        <number>0</number>
       </property>
       <item>
+       <widget class="QPushButton" name="btnPreview">
+        <property name="text">
+         <string>Preview</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="btnSave">
         <property name="text">
          <string>Save</string>
@@ -229,8 +236,8 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>54</x>
-     <y>478</y>
+     <x>136</x>
+     <y>491</y>
     </hint>
     <hint type="destinationlabel">
      <x>107</x>
@@ -238,9 +245,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnPreview</sender>
+   <signal>clicked()</signal>
+   <receiver>SVDAnalysisDialog</receiver>
+   <slot>onPreview()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>36</x>
+     <y>478</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>175</x>
+     <y>463</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onFactorClicked(QModelIndex)</slot>
   <slot>onSave()</slot>
+  <slot>onPreview()</slot>
  </slots>
 </ui>

@@ -117,6 +117,14 @@ public:
      */
     void addTo( spectral::array* array , bool ifSelected );
 
+    /** Returns whether this factor has child factors. */
+    bool hasChildren(){ return !m_childFactors.empty(); }
+
+    /**
+     * Sets a name to be used instead of the default names like ROOT, Factor 1, Factor 2, etc.
+     */
+    void setCustomName( QString name ){ m_customName = name; }
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array m_factorData;
@@ -131,7 +139,8 @@ private:
 	bool m_isMinValueDefined, m_isMaxValueDefined;
 	double m_minValue, m_maxValue;
     IJAbstractVariable* m_variableProxy; //this object represents the internal data for the IJAbstractCartesianGrid interface.
-	uint getIndexOfChild( SVDFactor* child );
+    QString m_customName; //if defined, this is used as name, instead of Factor 1, Factor 2, etc.
+    uint getIndexOfChild( SVDFactor* child );
 	bool isRoot();
 	void setParentFactor( SVDFactor* parent );
 	void setWeight( double weight ){ m_weight = weight; }

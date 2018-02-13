@@ -381,6 +381,7 @@ void ImageJockeyDialog::preview()
 
     //Opens the viewer.
     IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+    factor->setCustomName("Reverse FFT");
     ijgvw->setFactor( factor );
     ijgvw->show();
 }
