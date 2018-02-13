@@ -3,15 +3,19 @@
 #include "svdfactortree.h"
 #include "spectral/svd.h"
 #include <QMenu>
+#include <QMessageBox>
 #include <QProgressDialog>
 #include "svdfactorsel/svdfactorsselectiondialog.h"
 #include "../widgets/ijgridviewerwidget.h"
+#include "../imagejockeyutils.h"
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),
 	ui(new Ui::SVDAnalysisDialog),
 	m_tree( nullptr ),
-	m_deleteTree( false )
+    m_deleteTree( false ),
+    m_gridWithPhaseForPossibleRFFT( nullptr ),
+    m_variableIndexWithPhaseForPossibleRFFT( 0 )
 {
     ui->setupUi(this);
 
@@ -51,7 +55,14 @@ void SVDAnalysisDialog::setTree( SVDFactorTree *tree )
 	m_tree = tree;
 	ui->svdFactorTreeView->setModel( m_tree );
 	ui->svdFactorTreeView->header()->hide();
-	refreshTreeStyle();
+    refreshTreeStyle();
+}
+
+void SVDAnalysisDialog::setGridWithPhaseForPossibleRFFT(IJAbstractCartesianGrid *grid,
+                                                        int indexOfVariableWithPhase)
+{
+    m_gridWithPhaseForPossibleRFFT = grid;
+    m_variableIndexWithPhaseForPossibleRFFT = indexOfVariableWithPhase;
 }
 
 void SVDAnalysisDialog::refreshTreeStyle()
@@ -195,7 +206,8 @@ void SVDAnalysisDialog::onPreview()
     if( ! exampleFactor )
         return;
     spectral::array *sum = m_tree->getSumOfSelectedFactors();
-    SVDFactor* factor = new SVDFactor( std::move(*sum), 1, 1, exampleFactor->getOriginX(),
+    SVDFactor* factor = new SVDFactor( std::move(*sum), 1, 1,
+                                       exampleFactor->getOriginX(),
                                        exampleFactor->getOriginY(),
                                        exampleFactor->getOriginZ(),
                                        exampleFactor->getCellSizeI(),
@@ -205,4 +217,67 @@ void SVDAnalysisDialog::onPreview()
     factor->setCustomName( "Sum of selected factors" );
     wid->setFactor( factor );
     wid->show();
+}
+
+void SVDAnalysisDialog::onPreviewRFFT()
+{
+    SVDFactor* exampleFactor = m_tree->getOneTopLevelFactor( 0 );
+    if( ! exampleFactor ){
+        QMessageBox::critical( nullptr, "Error", "SVDAnalysisDialog::onPreviewRFFT(): No factors.");
+        return;
+    }
+
+    if( ! m_gridWithPhaseForPossibleRFFT ){
+        QMessageBox::critical( nullptr, "Error", "SVDAnalysisDialog::onPreviewRFFT(): A grid with the phase was not supplied.");
+        return;
+    }
+
+    //create a factor object from the sum of selected factors.
+    spectral::array *sum = m_tree->getSumOfSelectedFactors();
+    SVDFactor* factor = new SVDFactor( std::move(*sum), 1, 1,
+                                       exampleFactor->getOriginX(),
+                                       exampleFactor->getOriginY(),
+                                       exampleFactor->getOriginZ(),
+                                       exampleFactor->getCellSizeI(),
+                                       exampleFactor->getCellSizeJ(),
+                                       exampleFactor->getCellSizeK());
+    factor->setCustomName( "RFFT of sum of factors" );
+
+    //create the array with the input de-shifted and in rectangular form.
+    spectral::complex_array dataReady( (spectral::index)exampleFactor->getNI(),
+                                       (spectral::index)exampleFactor->getNJ(),
+                                       (spectral::index)exampleFactor->getNK() );
+
+    //De-shift frequencies, convert the complex numbers to rectangular form ( a + bi ) and
+    //change the scan order from GSLib convention to FFTW3 convention.
+    ImageJockeyUtils::prepareToFFTW3reverseFFT( factor,
+                                                0,
+                                                m_gridWithPhaseForPossibleRFFT,
+                                                m_variableIndexWithPhaseForPossibleRFFT,
+                                                dataReady );
+    //Create the output array.
+    spectral::array outputData( (spectral::index)exampleFactor->getNI(),
+                                (spectral::index)exampleFactor->getNJ(),
+                                (spectral::index)exampleFactor->getNK() );
+
+    //Apply reverse FFT.
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Computing RFFT...");
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+        spectral::backward( outputData, dataReady );
+    }
+
+    //Construct a displayable object from the result.
+    SVDFactor* factorRFFT = new SVDFactor( std::move(outputData), 1, 1,
+                                       exampleFactor->getOriginX(), exampleFactor->getOriginY(), exampleFactor->getOriginZ(),
+                                       exampleFactor->getCellSizeI(), exampleFactor->getCellSizeJ(), exampleFactor->getCellSizeK());
+
+    //Opens the viewer.
+    IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+    factorRFFT->setCustomName("Reverse FFT");
+    ijgvw->setFactor( factorRFFT );
+    ijgvw->show();
 }

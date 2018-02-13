@@ -1,8 +1,13 @@
 #include "imagejockeyutils.h"
 #include "ijspatiallocation.h"
+#include "ijabstractcartesiangrid.h"
+#include "spectral/spectral.h"
 #include <cstdlib>
 #include <cmath>
+#include <complex>
 #include <QList>
+#include <QProgressDialog>
+#include <QCoreApplication>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -107,4 +112,82 @@ bool ImageJockeyUtils::isWithinBBox(double x, double y, double minX, double minY
     if( y < minY ) return false;
     if( y > maxY ) return false;
     return true;
+}
+
+void ImageJockeyUtils::prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWithAmplitudes,
+                                                uint indexOfVariableWithAmplitudes,
+                                                IJAbstractCartesianGrid *gridWithPhases,
+                                                uint indexOfVariableWithPhases,
+                                                spectral::complex_array& output)
+{
+    //Get the complex numbers:
+    //            a) in polar form ( a cis b );
+    //            b) with the lower frequencies shifted to the center for ease of interpretation;
+    //            c) grid scan order following the GSLib convention.
+    spectral::complex_array* dataOriginal;
+    if( gridWithAmplitudes == gridWithPhases )
+        //both amplitudes and phases come from the same grid: simple.
+        dataOriginal = gridWithAmplitudes->createSpectralComplexArray(
+                                                            indexOfVariableWithAmplitudes,
+                                                            indexOfVariableWithPhases
+                                                                  );
+    else{
+        //Amplitudes and phases come from different grids.
+        dataOriginal = new spectral::complex_array( gridWithAmplitudes->getNI(),
+                                                    gridWithAmplitudes->getNJ(),
+                                                    gridWithAmplitudes->getNK());
+        int i = 0; /*int nI = gridWithAmplitudes->getNI();*/
+        int j = 0; int nJ = gridWithAmplitudes->getNJ();
+        int k = 0; int nK = gridWithAmplitudes->getNK();
+        //Recall that spectral::complex_array grid scan convention (inner = k, mid = j, outer = i) is the opposite
+        // of GSLib's (inner = i, mid = j, outer = k)
+        for( int iGlobal = 0; iGlobal < dataOriginal->size(); ++iGlobal ){
+            dataOriginal->d_[iGlobal][0] = gridWithAmplitudes->getData( indexOfVariableWithAmplitudes,
+                                                                        i, j, k);
+            dataOriginal->d_[iGlobal][1] = gridWithPhases->getData( indexOfVariableWithPhases,
+                                                                        i, j, k);
+            ++k;
+            if( k == nK ){
+                k = 0;
+                ++j;
+            }
+            if( j == nJ ){
+                j = 0;
+                ++i;
+            }
+        }
+    }
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Converting FFT image...");
+    unsigned int nI = gridWithAmplitudes->getNI();
+    unsigned int nJ = gridWithAmplitudes->getNJ();
+    unsigned int nK = gridWithAmplitudes->getNK();
+    for(unsigned int k = 0; k < nK; ++k) {
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+        //de-shift in topological direction K
+        int k_shift = (k + nK/2) % nK;
+        for(unsigned int j = 0; j < nJ; ++j){
+            //de-shift in topological direction J
+            int j_shift = (j + nJ/2) % nJ;
+            for(unsigned int i = 0; i < nI; ++i){
+                //de-shift in topological direction I
+                int i_shift = (i + nI/2) % nI;
+                //compute the element index in the complex arrays
+                //the scan order of fftw follows is the opposite of the GSLib convention
+                int idxOriginal = k_shift + nK * (j_shift + nJ * i_shift );
+                int idxReady = k + nK * ( j + nJ * i );
+                //convert it to rectangular form
+                std::complex<double> value = std::polar( dataOriginal->d_[idxOriginal][0],
+                                                         dataOriginal->d_[idxOriginal][1] );
+                //fills the output array with the final rectangular form
+                output.d_[idxReady][0] = value.real();
+                output.d_[idxReady][1] = value.imag();
+            }
+        }
+    }
+    //discard the intermediary array.
+    delete dataOriginal;
 }

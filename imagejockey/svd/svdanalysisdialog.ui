@@ -152,7 +152,14 @@
       <item>
        <widget class="QPushButton" name="btnPreview">
         <property name="text">
-         <string>Preview</string>
+         <string>Preview sum</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnPreviewRFFT">
+        <property name="text">
+         <string>Preview RFFT</string>
         </property>
        </widget>
       </item>
@@ -236,7 +243,7 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>136</x>
+     <x>237</x>
      <y>491</y>
     </hint>
     <hint type="destinationlabel">
@@ -261,10 +268,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnPreviewRFFT</sender>
+   <signal>clicked()</signal>
+   <receiver>SVDAnalysisDialog</receiver>
+   <slot>onPreviewRFFT()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>132</x>
+     <y>480</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>484</x>
+     <y>464</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onFactorClicked(QModelIndex)</slot>
   <slot>onSave()</slot>
   <slot>onPreview()</slot>
+  <slot>onPreviewRFFT()</slot>
  </slots>
 </ui>

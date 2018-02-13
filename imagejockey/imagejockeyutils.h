@@ -8,6 +8,11 @@
 #include "ijmatrix3x3.h"
 
 class IJSpatialLocation;
+class IJAbstractCartesianGrid;
+
+namespace spectral {
+    struct complex_array;
+}
 
 class ImageJockeyUtils
 {
@@ -93,6 +98,22 @@ public:
     /** Tests whether the given 2D location lies within the given 2D bounding box. */
     static bool isWithinBBox(double x, double y, double minX, double minY, double maxX,
                              double maxY);
+
+    /** This function performs transforms in the passed data:
+     *     a) Shift low frequencies from the center to the corners of the grid.
+     *     b) Transform the complex numbers in polar form (a cis b) to Cartesian form (a + bi).
+     *     c) Changes the grid scan order from GSLib convention (inner I, mid J, outer K) to FFTW3 convention
+     *        (inner K, mid J, outer I)
+     * Low frequencies in the center and complex numbers in polar form are better for interpretation of data,
+     * but that presentation is not compatible with FFTW3 algorithms.
+     * The input grids ( gridWithAmplitudes and gridWithPhases ) can point to the same object (multivariate grid).
+     * The input grids must have the same rank, like compatible matrices for addition.
+     */
+    static void prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWithAmplitudes,
+                                         uint indexOfVariableWithAmplitudes,
+                                         IJAbstractCartesianGrid *gridWithPhases,
+                                         uint indexOfVariableWithPhases,
+                                         spectral::complex_array &output );
 
 };
 

@@ -310,68 +310,31 @@ void ImageJockeyDialog::preview()
     if( ! cg )
         return;
 
-    //Get the complex numbers:
-    //            a) in polar form ( a cis b );
-    //            b) with the lower frequencies shifted to the center for ease of interpretation;
-    spectral::complex_array* dataOriginal = cg->createSpectralComplexArray(
-                                                            m_varAmplitudeSelector->getSelectedVariableIndex(),
-                                                            m_varPhaseSelector->getSelectedVariableIndex()
-                                                                  );
-
     //create the array with the input de-shifted and in rectangular form.
     spectral::complex_array dataReady( (spectral::index)cg->getNI(),
                                        (spectral::index)cg->getNJ(),
                                        (spectral::index)cg->getNK() );
 
-    //De-shift and convert the complex numbers to rectangular form ( a + bi ).
-    {
-        QProgressDialog progressDialog;
-        progressDialog.setRange(0,0);
-        progressDialog.show();
-        progressDialog.setLabelText("Converting FFT image...");
-        unsigned int nI = cg->getNI();
-        unsigned int nJ = cg->getNJ();
-        unsigned int nK = cg->getNK();
-        for(unsigned int k = 0; k < nK; ++k) {
-            QCoreApplication::processEvents(); //let Qt repaint widgets
-            //de-shift in topological direction K
-            int k_shift = (k + nK/2) % nK;
-            for(unsigned int j = 0; j < nJ; ++j){
-                //de-shift in topological direction J
-                int j_shift = (j + nJ/2) % nJ;
-                for(unsigned int i = 0; i < nI; ++i){
-                    //de-shift in topological direction I
-                    int i_shift = (i + nI/2) % nI;
-                    //compute the element index in the complex arrays
-                    //the scan order of fftw follows is the opposite of the GSLib convention
-                    int idxOriginal = k_shift + nK * (j_shift + nJ * i_shift );
-                    int idxReady = k + nK * ( j + nJ * i );
-                    //convert it to rectangular form
-                    std::complex<double> value = std::polar( dataOriginal->d_[idxOriginal][0],
-                                                             dataOriginal->d_[idxOriginal][1] );
-                    //fills the output array with the final rectangular form
-                    dataReady.d_[idxReady][0] = value.real();
-                    dataReady.d_[idxReady][1] = value.imag();
-                }
-            }
-        }
-    }
-
-    //Discard the input array
-    delete dataOriginal;
+    //De-shift frequencies, convert the complex numbers to rectangular form ( a + bi ) and
+    //change the scan order from GSLib convention to FFTW3 convention.
+    ImageJockeyUtils::prepareToFFTW3reverseFFT( cg,
+                                                m_varAmplitudeSelector->getSelectedVariableIndex(),
+                                                cg,
+                                                m_varPhaseSelector->getSelectedVariableIndex(),
+                                                dataReady );
 
     //Create the output array.
     spectral::array outputData( (spectral::index)cg->getNI(),
                                 (spectral::index)cg->getNJ(),
                                 (spectral::index)cg->getNK() );
 
+    //Apply reverse FFT.
     {
         QProgressDialog progressDialog;
         progressDialog.setRange(0,0);
         progressDialog.show();
         progressDialog.setLabelText("Computing RFFT...");
         QCoreApplication::processEvents(); //let Qt repaint widgets
-        //Apply reverse FFT.
         spectral::backward( outputData, dataReady );
     }
 
@@ -482,6 +445,8 @@ void ImageJockeyDialog::onSVD()
         connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
                  this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
         svdad->setTree( factorTree );
+        //setting these enables RFFT preview in the SVD Analysis dialog
+        svdad->setGridWithPhaseForPossibleRFFT( cg, m_varPhaseSelector->getSelectedVariableIndex() );
         svdad->setDeleteTreeOnClose( true );
         svdad->show();
     } else {

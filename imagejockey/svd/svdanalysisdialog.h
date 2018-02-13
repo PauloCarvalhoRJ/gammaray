@@ -17,6 +17,7 @@ namespace spectral{
 }
 
 class IJGridViewerWidget;
+class IJAbstractCartesianGrid;
 
 class SVDAnalysisDialog : public QDialog
 {
@@ -33,6 +34,13 @@ public:
 	 */
 	void setDeleteTreeOnClose( bool flag ){ m_deleteTree = flag; }
 
+    /**
+     * Set the grid and variable index containing the phases from a Fourier transform.
+     * Setting these is optional and is only necessary if the SVD analysis are on a Fourier image.
+     */
+    void setGridWithPhaseForPossibleRFFT( IJAbstractCartesianGrid* grid,
+                                          int indexOfVariableWithPhase );
+
 signals:
     /** Emitted when the user clicks on the "Save" or "Sum" button.
      *  The slot is responsible for deleting or managing the object.
@@ -48,6 +56,8 @@ private:
     SVDFactor *m_right_clicked_factor;
 	int m_numberOfSVDFactorsSetInTheDialog;
     IJGridViewerWidget* m_gridViewerWidget;
+    IJAbstractCartesianGrid* m_gridWithPhaseForPossibleRFFT;
+    int m_variableIndexWithPhaseForPossibleRFFT;
 	void refreshTreeStyle();
     void forcePlotUpdate();
 
@@ -59,6 +69,7 @@ private slots:
 	void onFactorClicked( QModelIndex index );
     void onSave();
     void onPreview();
+    void onPreviewRFFT();
 };
 
 #endif // SVDANALYSISDIALOG_H
