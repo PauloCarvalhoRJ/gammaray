@@ -108,8 +108,9 @@ public:
      * but that presentation is not compatible with FFTW3 algorithms.
      * The input grids ( gridWithAmplitudes and gridWithPhases ) can point to the same object (multivariate grid).
      * The input grids must have the same rank, like compatible matrices for addition.
+     * Returns true if sucessfull.
      */
-    static void prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWithAmplitudes,
+    static bool prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWithAmplitudes,
                                          uint indexOfVariableWithAmplitudes,
                                          IJAbstractCartesianGrid *gridWithPhases,
                                          uint indexOfVariableWithPhases,

@@ -8,6 +8,7 @@
 #include "svdfactorsel/svdfactorsselectiondialog.h"
 #include "../widgets/ijgridviewerwidget.h"
 #include "../imagejockeyutils.h"
+#include "../imagejockeydialog.h"
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),
@@ -116,7 +117,7 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
         //build context menu for a SVD factor
         if ( index.isValid() ) {
             m_right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
-			m_factorContextMenu->addAction("Open...", this, SLOT(onOpenFactor()));
+            m_factorContextMenu->addAction("Open in Image Jockey...", this, SLOT(onOpenFactor()));
 			m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
 		}
     }
@@ -183,7 +184,11 @@ void SVDAnalysisDialog::onUserSetNumberOfSVDFactors(int number)
 
 void SVDAnalysisDialog::onOpenFactor()
 {
-
+    if( ! m_right_clicked_factor )
+        return;
+    //calls the Image Jockey dialog
+    ImageJockeyDialog *ijd = new ImageJockeyDialog( { m_right_clicked_factor }, this );
+    ijd->showMaximized();
 }
 
 void SVDAnalysisDialog::onFactorClicked(QModelIndex index)

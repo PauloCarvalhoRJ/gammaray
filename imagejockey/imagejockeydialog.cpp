@@ -317,11 +317,13 @@ void ImageJockeyDialog::preview()
 
     //De-shift frequencies, convert the complex numbers to rectangular form ( a + bi ) and
     //change the scan order from GSLib convention to FFTW3 convention.
-    ImageJockeyUtils::prepareToFFTW3reverseFFT( cg,
+    if( ! ImageJockeyUtils::prepareToFFTW3reverseFFT( cg,
                                                 m_varAmplitudeSelector->getSelectedVariableIndex(),
                                                 cg,
                                                 m_varPhaseSelector->getSelectedVariableIndex(),
-                                                dataReady );
+                                                dataReady ) ){
+        return;
+    }
 
     //Create the output array.
     spectral::array outputData( (spectral::index)cg->getNI(),

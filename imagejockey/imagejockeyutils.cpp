@@ -114,7 +114,7 @@ bool ImageJockeyUtils::isWithinBBox(double x, double y, double minX, double minY
     return true;
 }
 
-void ImageJockeyUtils::prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWithAmplitudes,
+bool ImageJockeyUtils::prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWithAmplitudes,
                                                 uint indexOfVariableWithAmplitudes,
                                                 IJAbstractCartesianGrid *gridWithPhases,
                                                 uint indexOfVariableWithPhases,
@@ -125,13 +125,15 @@ void ImageJockeyUtils::prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWit
     //            b) with the lower frequencies shifted to the center for ease of interpretation;
     //            c) grid scan order following the GSLib convention.
     spectral::complex_array* dataOriginal;
-    if( gridWithAmplitudes == gridWithPhases )
+    if( gridWithAmplitudes == gridWithPhases ){
         //both amplitudes and phases come from the same grid: simple.
         dataOriginal = gridWithAmplitudes->createSpectralComplexArray(
                                                             indexOfVariableWithAmplitudes,
                                                             indexOfVariableWithPhases
                                                                   );
-    else{
+        if( ! dataOriginal )
+            return false;
+    }else{
         //Amplitudes and phases come from different grids.
         dataOriginal = new spectral::complex_array( gridWithAmplitudes->getNI(),
                                                     gridWithAmplitudes->getNJ(),
@@ -190,4 +192,5 @@ void ImageJockeyUtils::prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWit
     }
     //discard the intermediary array.
     delete dataOriginal;
+    return true;
 }
