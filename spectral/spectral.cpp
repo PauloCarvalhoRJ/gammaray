@@ -302,7 +302,7 @@ array::array(const array &other) : d_(other.M_ * other.N_ * other.K_, 0)
     M_ = other.M_;
     N_ = other.N_;
     K_ = other.K_;
-    for (index i = 0; other.d_.size(); ++i) {
+    for (index i = 0; i < (index)other.d_.size(); ++i) {
         d_[i] = other[i];
     }
 }
