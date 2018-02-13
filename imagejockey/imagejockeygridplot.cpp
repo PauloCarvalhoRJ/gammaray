@@ -415,6 +415,12 @@ void ImageJockeyGridPlot::pan()
     setAxisScale( QwtPlot::yLeft, yInterval.minValue(), yInterval.maxValue() );
 }
 
+void ImageJockeyGridPlot::forceUpdate()
+{
+    //this causes a redraw
+    setColorScaleMax( getScaleMaxValue() );
+}
+
 void ImageJockeyGridPlot::showContour( bool on )
 {
     m_spectrogram->setDisplayMode( QwtPlotSpectrogram::ContourMode, on );

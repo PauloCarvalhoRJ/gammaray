@@ -44,7 +44,7 @@ IJGridViewerWidget::~IJGridViewerWidget()
 
 void IJGridViewerWidget::forcePlotUpdate()
 {
-    //TODO: implement this
+    m_gridPlot->forceUpdate();
 }
 
 void IJGridViewerWidget::adjustColorTableWidgets(int cmbIndex)

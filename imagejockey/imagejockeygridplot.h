@@ -55,6 +55,9 @@ public:
     /** Sets the zoom to cover the entire grid. */
     void pan();
 
+    /** Sometimes calling replot() is not enough. */
+    void forceUpdate();
+
 signals:
 	/** This signal is triggered when an error occurs. */
 	void errorOccurred( QString message );
