@@ -102,10 +102,10 @@ protected:
 
     // ProjectComponent interface
 public:
-    QString getName();
+	virtual QString getName();
     virtual QIcon getIcon() = 0;
-    bool isFile();
-    bool isAttribute();
+	virtual bool isFile();
+	virtual bool isAttribute();
     virtual QString getObjectLocator();
     virtual QString getTypeName(){ return getFileType(); }
 };

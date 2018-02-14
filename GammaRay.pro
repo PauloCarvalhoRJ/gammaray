@@ -4,25 +4,26 @@
 #
 #-------------------------------------------------
 
-QT       += core gui
+QT       += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 TARGET = GammaRay
 TEMPLATE = app
 
-release:DESTDIR = ../GammaRay_release/dist
-release:OBJECTS_DIR = ../GammaRay_release/obj
-release:MOC_DIR = ../GammaRay_release/moc
-release:RCC_DIR = ../GammaRay_release/rcc
-release:UI_DIR = ../GammaRay_release/ui
-
-debug:DESTDIR = ../GammaRay_debug/dist
-debug:OBJECTS_DIR = ../GammaRay_debug/obj
-debug:MOC_DIR = ../GammaRay_debug/moc
-debug:RCC_DIR = ../GammaRay_debug/rcc
-debug:UI_DIR = ../GammaRay_debug/ui
-
+CONFIG( release, debug|release ) {
+	DESTDIR = ../GammaRay_release/dist
+	OBJECTS_DIR = ../GammaRay_release/obj
+	MOC_DIR = ../GammaRay_release/moc
+	RCC_DIR = ../GammaRay_release/rcc
+	UI_DIR = ../GammaRay_release/ui
+} else {
+	DESTDIR = ../GammaRay_debug/dist
+	OBJECTS_DIR = ../GammaRay_debug/obj
+	MOC_DIR = ../GammaRay_debug/moc
+	RCC_DIR = ../GammaRay_debug/rcc
+	UI_DIR = ../GammaRay_debug/ui
+}
 CONFIG += c++11
 
 #QMAKE_CXXFLAGS += -m64
@@ -162,8 +163,6 @@ SOURCES += main.cpp\
     dialogs/multivariogramdialog.cpp \
     imagejockey/imagejockeydialog.cpp \
     imagejockey/imagejockeygridplot.cpp \
-    widgets/grcompass.cpp \
-    geostats/experimentalvariogramparameters.cpp \
     imagejockey/spectrogram1dparameters.cpp \
     imagejockey/spectrogram1dplot.cpp \
     imagejockey/spectrogram1dplotpicker.cpp \
@@ -177,7 +176,6 @@ SOURCES += main.cpp\
     spectral/pca.cpp \
     spectral/spectral.cpp \
     imagejockey/imagejockeysvdutils.cpp \
-    imagejockey/svdparametersdialog.cpp \
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
     dialogs/machinelearningdialog.cpp \
@@ -189,7 +187,25 @@ SOURCES += main.cpp\
     algorithms/randomforest.cpp \
     algorithms/decisiontree.cpp \
     domain/auxiliary/variableremover.cpp \
-    domain/auxiliary/datasaver.cpp
+    domain/auxiliary/datasaver.cpp \
+    imagejockey/svd/svdparametersdialog.cpp \
+    imagejockey/svd/svdfactor.cpp \
+    imagejockey/svd/svdfactortree.cpp \
+    imagejockey/svd/svdanalysisdialog.cpp \
+    imagejockey/svd/svdfactortreeview.cpp \
+    imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.cpp \
+    imagejockey/svd/svdfactorsel/svdfactorsselectionchartview.cpp \
+    imagejockey/svd/svdfactorsel/svdfactorsselectionchartcallout.cpp \
+    imagejockey/ijabstractcartesiangrid.cpp \
+    imagejockey/ijabstractvariable.cpp \
+    imagejockey/imagejockeyutils.cpp \
+    imagejockey/ijexperimentalvariogramparameters.cpp \
+    imagejockey/ijmatrix3x3.cpp \
+	imagejockey/ijspatiallocation.cpp \
+	imagejockey/widgets/ijcartesiangridselector.cpp \
+	imagejockey/widgets/ijvariableselector.cpp \
+    imagejockey/widgets/grcompass.cpp \
+    imagejockey/widgets/ijgridviewerwidget.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -268,7 +284,6 @@ HEADERS  += mainwindow.h \
     widgets/valuepairvertical.h \
     widgets/fileselectorwidget.h \
     scripting.h \
-    exprtk.hpp \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
     domain/triads.h \
@@ -331,8 +346,6 @@ HEADERS  += mainwindow.h \
     dialogs/multivariogramdialog.h \
     imagejockey/imagejockeydialog.h \
     imagejockey/imagejockeygridplot.h \
-    widgets/grcompass.h \
-    geostats/experimentalvariogramparameters.h \
     imagejockey/spectrogram1dparameters.h \
     imagejockey/spectrogram1dplot.h \
     imagejockey/spectrogram1dplotpicker.h \
@@ -346,7 +359,6 @@ HEADERS  += mainwindow.h \
     spectral/pca.h \
     spectral/spectral.h \
     imagejockey/imagejockeysvdutils.h \
-    imagejockey/svdparametersdialog.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
     dialogs/machinelearningdialog.h \
@@ -358,7 +370,26 @@ HEADERS  += mainwindow.h \
     algorithms/randomforest.h \
     algorithms/decisiontree.h \
     domain/auxiliary/variableremover.h \
-    domain/auxiliary/datasaver.h
+    domain/auxiliary/datasaver.h \
+    imagejockey/svd/svdparametersdialog.h \
+    imagejockey/svd/svdfactor.h \
+    imagejockey/svd/svdfactortree.h \
+    imagejockey/svd/svdanalysisdialog.h \
+	imagejockey/svd/svdfactortreeview.h \
+	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.h \
+    imagejockey/svd/svdfactorsel/svdfactorsselectionchartview.h \
+    imagejockey/svd/svdfactorsel/svdfactorsselectionchartcallout.h \
+    imagejockey/ijabstractcartesiangrid.h \
+    imagejockey/ijabstractvariable.h \
+    imagejockey/imagejockeyutils.h \
+    imagejockey/ijexperimentalvariogramparameters.h \
+    imagejockey/ijmatrix3x3.h \
+	imagejockey/ijspatiallocation.h \
+	imagejockey/widgets/ijcartesiangridselector.h \
+	imagejockey/widgets/ijvariableselector.h \
+    imagejockey/widgets/grcompass.h \
+    imagejockey/widgets/ijgridviewerwidget.h
+
 
 FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
@@ -423,8 +454,13 @@ FORMS    += mainwindow.ui \
     dialogs/sgsimdialog.ui \
     widgets/distributionfieldselector.ui \
     viewer3d/view3dverticalexaggerationwidget.ui \
-    imagejockey/svdparametersdialog.ui \
-    dialogs/machinelearningdialog.ui
+    dialogs/machinelearningdialog.ui \
+    imagejockey/svd/svdparametersdialog.ui \
+    imagejockey/svd/svdanalysisdialog.ui \
+	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui \
+	imagejockey/widgets/ijcartesiangridselector.ui \
+        imagejockey/widgets/ijvariableselector.ui \
+    imagejockey/widgets/ijgridviewerwidget.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -478,22 +514,36 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkCommonTransforms$$_VTK_VERSION_SUFFIX \
                -lvtkImagingSources$$_VTK_VERSION_SUFFIX \
                -lvtkImagingCore$$_VTK_VERSION_SUFFIX \
-               -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
-               -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
-               -lvtkImagingMath$$_VTK_VERSION_SUFFIX
-               #-lvtkGUISupportQtOpenGL2$$_VTK_VERSION_SUFFIX
+			   -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
+			   -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonMisc$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonComputationalGeometry$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonMath$$_VTK_VERSION_SUFFIX \
+			   -lvtksys$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersGeometry$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonColor$$_VTK_VERSION_SUFFIX \
+			   -lvtkCommonSystem$$_VTK_VERSION_SUFFIX \
+			   -lvtkglew$$_VTK_VERSION_SUFFIX \
+			   -lvtkfreetype$$_VTK_VERSION_SUFFIX \
+			   -lvtkzlib$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersHybrid$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersModeling$$_VTK_VERSION_SUFFIX \
+			   -lvtkImagingGeneral$$_VTK_VERSION_SUFFIX \
+			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
+			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
+			   -lvtkalglib$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
 #========= The FFTW3 include and lib path and libraries.=========
 _FFTW3_INCLUDE = $$(FFTW3_INCLUDE)
 isEmpty(_FFTW3_INCLUDE){
-    error(FFTW3_INCLUDE environment variable not defined.)
+	error(FFTW3_INCLUDE environment variable not defined.)
 }
 _FFTW3_LIB = $$(FFTW3_LIB)
 isEmpty(_FFTW3_LIB){
-    error(FFTW3_LIB environment variable not defined.)
+	error(FFTW3_LIB environment variable not defined.)
 }
 INCLUDEPATH += $$_FFTW3_INCLUDE
 LIBPATH     += $$_FFTW3_LIB
@@ -513,7 +563,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 3.6.1
+VERSION = 3.8
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
@@ -527,7 +577,8 @@ DEFINES += APP_NAME=\\\"$$TARGET\\\"
 DEFINES += APP_NAME_VER=\\\"$$TARGET\\\040$$VERSION\\\"
 
 RESOURCES += \
-    resources.qrc
+    resources.qrc \
+    imagejockey/ijresources.qrc
 
 #set the Windows executable icon
 win32:RC_ICONS += art/exeicon.ico

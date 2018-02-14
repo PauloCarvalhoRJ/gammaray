@@ -3,8 +3,10 @@
 #include "pointset.h"
 #include "util.h"
 #include "viewer3d/view3dconfigwidgetsbuilder.h"
+#include "cartesiangrid.h"
 
-Attribute::Attribute(QString name, int index_in_file, bool categorical)
+Attribute::Attribute(QString name, int index_in_file, bool categorical) :
+    IJAbstractVariable()
 {
     this->_name = name;
     this->_index = index_in_file;
@@ -40,7 +42,7 @@ QString Attribute::getName()
 
 QIcon Attribute::getIcon()
 {
-    if( this->getParent()->isFile() ){ //most attributes have a File as parent, but not always
+	if( this->getParent()->isFile() ){ //most attributes have a File as parent, but not always
         File* parent_file = (File*)this->getParent();
         if( parent_file){
             if( parent_file->getFileType() == "POINTSET" ){
@@ -106,5 +108,30 @@ View3DViewData Attribute::build3DViewObjects(View3DWidget *widget3D)
 
 View3DConfigWidget *Attribute::build3DViewerConfigWidget( View3DViewData viewObjects )
 {
-    return View3DConfigWidgetsBuilder::build( this, viewObjects );
+	return View3DConfigWidgetsBuilder::build( this, viewObjects );
+}
+
+IJAbstractCartesianGrid *Attribute::getParentGrid()
+{
+    File* file = getContainingFile();
+    if( file->getFileType() == "CARTESIANGRID" )
+		return dynamic_cast<CartesianGrid*>(file);
+    else
+        return nullptr;
+	return nullptr;
+}
+
+int Attribute::getIndexInParentGrid()
+{
+    return getAttributeGEOEASgivenIndex() - 1;
+}
+
+QIcon Attribute::getVariableIcon()
+{
+    return getIcon();
+}
+
+QString Attribute::getVariableName()
+{
+	return getName();
 }

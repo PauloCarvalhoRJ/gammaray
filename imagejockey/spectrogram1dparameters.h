@@ -1,10 +1,10 @@
 #ifndef SPECTROGRAM1DPARAMETERS_H
 #define SPECTROGRAM1DPARAMETERS_H
 
-#include "geostats/experimentalvariogramparameters.h"
+#include "ijexperimentalvariogramparameters.h"
 
 /** This class contains parameters to calculate a 1D spectrogram from a band in a 2D spectrogram. */
-class Spectrogram1DParameters : public ExperimentalVariogramParameters
+class Spectrogram1DParameters : public IJExperimentalVariogramParameters
 {
 
     Q_OBJECT
@@ -51,7 +51,7 @@ protected:
     double _radius;
     double _endRadius;
 
-// ExperimentalVariogramParameters interface
+// IJExperimentalVariogramParameters interface
     virtual void updateGeometry();
 
     //@{
@@ -61,7 +61,7 @@ protected:
     double _2DBand1y[_n2DBandPoints];
     double _2DBand2x[_n2DBandPoints];
     double _2DBand2y[_n2DBandPoints];
-    SpatialLocation _aPointOnAxis; //a point located on the axis along _azimuth (useful for the distanceToAxis() function).
+	IJSpatialLocation _aPointOnAxis; //a point located on the axis along _azimuth (useful for the distanceToAxis() function).
     //@}
 };
 

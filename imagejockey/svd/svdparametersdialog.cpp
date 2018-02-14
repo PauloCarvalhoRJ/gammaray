@@ -6,6 +6,8 @@ SVDParametersDialog::SVDParametersDialog(QWidget *parent) :
     ui(new Ui::SVDParametersDialog)
 {
     ui->setupUi(this);
+
+    setWindowTitle( "Parameters for the SVD algorithm" );
 }
 
 SVDParametersDialog::~SVDParametersDialog()

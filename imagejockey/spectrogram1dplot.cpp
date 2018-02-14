@@ -12,13 +12,11 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/scoped_array.hpp>
 
-#include "domain/attribute.h"
-#include "domain/application.h"
-#include "domain/cartesiangrid.h"
+#include "ijabstractvariable.h"
+#include "ijabstractcartesiangrid.h"
 #include "spectrogram1dparameters.h"
 #include "spectrogram1dplotpicker.h"
-#include "util.h"
-
+#include "imagejockeyutils.h"
 
 ///================================THE VISUAL GRID PATTERN FOR THE 1D SPECTROGRAM===============
 class Spectrogram1DGrid: public QwtPlotGrid
@@ -58,7 +56,7 @@ public:
 
 Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     QwtPlot( parent ),
-    m_at( nullptr ),
+    m_var( nullptr ),
     m_curve( new QwtPlotCurve() ), //TODO: this should be deleted in the destructor
     m_decibelRefValue(1000.0), //1000.0 intial reference for dB has no special meaning
     m_yScaleMax(20), //init dB scale max of 20 fits most cases
@@ -113,16 +111,16 @@ Spectrogram1DPlot::Spectrogram1DPlot(QWidget *parent) :
     Spectrogram1DPlotPicker* plotPicker = new Spectrogram1DPlotPicker( m_referenceCurve, this ); //TODO: delete?
     //To be notified when a calibration curve is edited by the used.
     connect( plotPicker, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onReferenceCurveChanged(QwtPlotCurve*)) );
+    connect( plotPicker, SIGNAL(errorOccurred(QString)), this, SIGNAL(errorOccurred(QString)));
 }
 
-void Spectrogram1DPlot::setAttribute(Attribute *at)
+void Spectrogram1DPlot::setVariable(IJAbstractVariable *var)
 {
-    m_at = at;
-    if( ! m_at ){
+    m_var = var;
+    if( ! m_var ){
         return;
     }
-    //assumes the Attribute's parent file is a Cartesian grid
-    CartesianGrid* cg = (CartesianGrid*)m_at->getContainingFile();
+    IJAbstractCartesianGrid* cg = m_var->getParentGrid();
     setHorizontalScaleMax( cg->getDiagonalLength() / 2.0 );
 }
 
@@ -133,13 +131,13 @@ void Spectrogram1DPlot::rereadSpectrogramData()
     typedef boost::geometry::model::polygon<boostPoint2D> boostPolygon;
 
     //check whether we the necessary data
-    if( ! m_at ){
-        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): Attribute is null.  Nothing done.");
+    if( ! m_var ){
+		emit errorOccurred("Spectrogram1DPlot::rereadSpectrogramData(): Attribute is null.  Nothing done.");
         return;
     }
 
-    //get the attribute's GEO-EAS column index
-    uint columnIndex = m_at->getAttributeGEOEASgivenIndex() - 1;
+    //get the attribute's column index
+    uint columnIndex = m_var->getIndexInParentGrid();
 
     //get the object that triggered the call to this slot
     QObject* obj = sender();
@@ -147,16 +145,16 @@ void Spectrogram1DPlot::rereadSpectrogramData()
     //check whether the event sender is a Spectrogram1DParameters
     Spectrogram1DParameters* spectr1DPar = qobject_cast<Spectrogram1DParameters*>( obj );
     if( ! spectr1DPar ){
-        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): sender is not an Spectrogram1DParameters object. Nothing done.");
+		emit errorOccurred("Spectrogram1DPlot::rereadSpectrogramData(): sender is not an Spectrogram1DParameters object. Nothing done.");
         return;
     }
 
-    //assumes the Attribute's parent file is a Cartesian grid
-    CartesianGrid* cg = (CartesianGrid*)m_at->getContainingFile();
+    //get the variable's parent Cartesian grid
+    IJAbstractCartesianGrid* cg = m_var->getParentGrid();
 
     //TODO: add support for rotations
-    if( ! Util::almostEqual2sComplement( cg->getRot(), 0.0, 1) ){
-        Application::instance()->logError("Spectrogram1DPlot::rereadSpectrogramData(): rotation not supported yet.  Nothing done.");
+	if( ! ImageJockeyUtils::almostEqual2sComplement( cg->getRotation(), 0.0, 1) ){
+		emit errorOccurred("Spectrogram1DPlot::rereadSpectrogramData(): rotation not supported yet.  Nothing done.");
         return;
     }
 
@@ -175,13 +173,14 @@ void Spectrogram1DPlot::rereadSpectrogramData()
 
     //scan the grid, testing each cell whether it lies in the 1D spectrogram calculation band.
     //TODO: this code assumes no grid rotation and that the grid is 2D.
-    SpatialLocation gridCenter = cg->getCenter();
-    for( uint k = 0; k < cg->getNZ(); ++k ){
+    double gridCenterX = cg->getCenterX();
+    double gridCenterY = cg->getCenterY();
+	for( int k = 0; k < cg->getNK(); ++k ){
         // z coordinate is ignored in 2D spectrograms
-        for( uint j = 0; j < cg->getNY(); ++j ){
-            double cellCenterY = cg->getY0() + j * cg->getDY();
-            for( uint i = 0; i < cg->getNX(); ++i ){
-                double cellCenterX = cg->getX0() + i * cg->getDX();
+		for( int j = 0; j < cg->getNJ(); ++j ){
+            double cellCenterY = cg->getOriginY() + j * cg->getCellSizeJ();
+			for( int i = 0; i < cg->getNI(); ++i ){
+                double cellCenterX = cg->getOriginX() + i * cg->getCellSizeI();
                 boostPoint2D p(cellCenterX, cellCenterY);
                 // if the cell center lies within the 1D spectrogram calculation band
                 // the distance-to-axis test runs faster than the point-in-poly test, so it allows a faster
@@ -193,16 +192,16 @@ void Spectrogram1DPlot::rereadSpectrogramData()
                         ){
                     double intensity;
                     // get the grid value as is
-                    double value = cg->dataIJK( columnIndex, i, j, k );
+					double value = cg->getData( columnIndex, i, j, k );
                     // calculate the intensity value from the raw spectrogram value
-                    if( cg->isNDV(value) ) //if there is no value there
+                    if( cg->isNoDataValue(value) ) //if there is no value there
                         intensity = std::numeric_limits<double>::quiet_NaN(); //intensity is NaN (blank plot)
                     else
                         //for Fourier images, get the absolute values in decibel for ease of interpretation
-                        intensity = Util::dB( std::abs<double>(value), m_decibelRefValue, 0.0000001 );
+						intensity = ImageJockeyUtils::dB( std::abs<double>(value), m_decibelRefValue, 0.0000001 );
                     // get the distance orthogonal distance components
-                    double dX = cellCenterX - gridCenter._x;
-                    double dY = cellCenterY - gridCenter._y;
+                    double dX = cellCenterX - gridCenterX;
+                    double dY = cellCenterY - gridCenterY;
                     // the spatial frequency in a spectrogram is proportional to the distance from its center
                     // the spatial frequency is the inverse of feature size
                     double spatialFrequency = std::sqrt<double>( dX*dX + dY*dY ).real();

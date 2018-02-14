@@ -7,6 +7,10 @@ namespace Ui {
 class MainWindow;
 }
 
+namespace spectral {
+    struct array;
+}
+
 class QAction;
 class QMenu;
 class File; //GammaRay API
@@ -155,6 +159,11 @@ private slots:
     void onUpdateStatusBar();
     void onMachineLearning();
     void onDeleteVariable();
+    void onPreviewRFFTImageJockey(CartesianGrid *cgWithFFT,
+                                  int indexOfVariableWithAmplitudes,
+                                  int indexOfVariableWithPhases);
+    void onSVD();
+    void onSumOfFactorsWasComputed(spectral::array *sumOfFactors); //called to save the sum of SVD factors in the dialog called in onSVD()
 
 private:
     /**

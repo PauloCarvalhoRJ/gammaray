@@ -3,13 +3,18 @@
 
 #include "datafile.h"
 #include "geostats/spatiallocation.h"
-#include "spectral/spectral.h"
+#include "imagejockey/ijabstractcartesiangrid.h"
 #include <set>
 
 class GSLibParGrid;
 class GridCell;
 
-class CartesianGrid : public DataFile
+//third-party library eigen
+namespace spectral{
+   class array;
+}
+
+class CartesianGrid : public DataFile, public IJAbstractCartesianGrid
 {
 public:
     CartesianGrid( QString path );
@@ -103,25 +108,8 @@ public:
      */
     void setDataPageToRealization( uint nreal );
 
-    /** Returns the length of the grid's box diagonal. */
-    double getDiagonalLength();
-
     /** Returns the grid's center. */
     SpatialLocation getCenter();
-
-    /** Amplifies (dB > 0) or attenuates (dB < 0) the values in the given data column (zero == first data column)
-     * Amplification means that positive values increase and negative values decrease.
-     * Attenuation means that values get closer to zero, so positive values decrease and negative
-     * values increase.
-     * @param area A set of points delimiting the area of the grid whithin the equalization will take place.
-     * @param delta_dB The mplification or attenuation factor.
-     * @param dataColumn The zero-based index of the data column containing the values to be equalized.
-     * @param dB_reference The value corresponding to 0dB.
-     * @param secondArea Another area used as spatial criterion.  If empty, this is not used.  If this area does
-     *        not intersect the first area (area parameter) no cell will be selected.
-     */
-    void equalizeValues(QList<QPointF>& area, double delta_dB, uint dataColumn, double dB_reference,
-                        const QList<QPointF>& secondArea = QList<QPointF>());
 
     /**
      * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
@@ -136,31 +124,61 @@ public:
      */
     void setNReal( uint n );
 
-    /** Creates a spectral::array object from a column of this Cartesian grid. */
-    spectral::array getSpectralArray( uint nDataColumn );
-
     /** Adds de contents of the given data array as new column to this Cartesian grid. */
     long append( const QString columnName, const spectral::array& array );
 
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
-    bool isWeight( Attribute* /*at*/ ) { return false; }
+	virtual bool isWeight( Attribute* /*at*/ ) { return false; }
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
     virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 
 // File interface
 public:
-    bool canHaveMetaData();
-    QString getFileType();
-    void updateMetaDataFile();
-    bool isDataFile(){ return true; }
+	virtual bool canHaveMetaData();
+	virtual QString getFileType();
+	virtual void updateMetaDataFile();
+	virtual bool isDataFile(){ return true; }
 
 // ProjectComponent interface
 public:
-    QIcon getIcon();
-    void save(QTextStream *txt_stream);
+	virtual QIcon getIcon();
+	virtual void save(QTextStream *txt_stream);
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
+
+//IJAbstractCartesianGrid interface
+public:
+    virtual double getRotation();
+    virtual int getNI() { return getNX(); }
+    virtual int getNJ() { return getNY(); }
+    virtual int getNK() { return getNZ(); }
+    virtual double getCellSizeI() { return getDX(); }
+    virtual double getCellSizeJ() { return getDY(); }
+    virtual double getCellSizeK() { return getDZ(); }
+    virtual double getOriginX() { return getX0(); }
+    virtual double getOriginY() { return getY0(); }
+    virtual double getOriginZ() { return getZ0(); }
+    virtual double getData( int variableIndex, int i, int j, int k );
+    virtual bool isNoDataValue( double value );
+    virtual double getDataAt( int dataColumn, double x, double y, double z );
+    virtual double absMax( int column );
+    virtual double absMin( int column );
+	virtual void dataWillBeRequested();
+    virtual QString getGridName();
+    virtual QIcon getGridIcon();
+    virtual int getVariableIndexByName( QString variableName );
+    virtual IJAbstractVariable* getVariableByName( QString variableName );
+    virtual void getAllVariables(  std::vector<IJAbstractVariable*>& result );
+    virtual IJAbstractVariable* getVariableByIndex( int variableIndex );
+    virtual void equalizeValues(QList<QPointF>& area, double delta_dB, int dataColumn, double dB_reference,
+                        const QList<QPointF>& secondArea = QList<QPointF>());
+    virtual void saveData();
+    virtual spectral::array* createSpectralArray( int nDataColumn );
+    virtual spectral::complex_array* createSpectralComplexArray( int variableIndex1,
+                                                                 int variableIndex2);
+    virtual void clearLoadedData();
+    virtual long appendAsNewVariable( const QString variableName, const spectral::array& array );
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;

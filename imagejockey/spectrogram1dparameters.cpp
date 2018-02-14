@@ -1,13 +1,13 @@
 #include "spectrogram1dparameters.h"
 
 #include <cmath>
+#include <QPointF>
 
-#include "util.h"
-#include "geostats/matrix3x3.h"
-#include "geostats/geostatsutils.h"
+#include "imagejockeyutils.h"
+#include "ijmatrix3x3.h"
 
 Spectrogram1DParameters::Spectrogram1DParameters() :
-    ExperimentalVariogramParameters()
+    IJExperimentalVariogramParameters()
 {
 }
 double Spectrogram1DParameters::radius() const
@@ -33,8 +33,8 @@ int Spectrogram1DParameters::getNPointsPerBandIn2DGeometry() const
 
 double Spectrogram1DParameters::distanceToAxis(double x, double y)
 {
-    SpatialLocation end;
-    SpatialLocation point;
+	IJSpatialLocation end;
+	IJSpatialLocation point;
     point._x = x;
     point._y = y;
 
@@ -58,12 +58,12 @@ QList<QPointF> Spectrogram1DParameters::getAreaOfInfluence(double centerFrequenc
 
     //convert the azimuth into a trigonometric angle in radians
     double azimuthp = -_azimuth - 90.0d ;
-    double angleRadians = ( azimuthp ) * Util::PI_OVER_180;
+    double angleRadians = ( azimuthp ) * ImageJockeyUtils::PI_OVER_180;
 
     // Center frequency and azimuth can by regarded as the radius and angle of polar coordinate in a 2D spectrogram.
     // then we convert them to x,y to get a 2D Cartesian location.
-    double centerX = _refCenter._x + centerFrequency * std::cos<double>( angleRadians ).real();
-    double centerY = _refCenter._y + centerFrequency * std::sin<double>( angleRadians ).real();
+    double centerX = _refCenter._x + centerFrequency * std::cos( angleRadians );
+    double centerY = _refCenter._y + centerFrequency * std::sin( angleRadians );
 
     //define a non-rotated rectangle (zero azimuth) centered at origin with width (east-west size) corresponding
     //to the bandwidth and with length (north-south size) corresponding to the frequency span.
@@ -76,12 +76,12 @@ QList<QPointF> Spectrogram1DParameters::getAreaOfInfluence(double centerFrequenc
 
     //rotates the rectangle towards the desired azimuth and
     //translates it the position corresponding to the 1D center frequency
-    Matrix3X3<double> xform = GeostatsUtils::getAnisoTransform( 1.0, 1.0, 1.0, azimuthp, 0.0, 0.0 );
+    IJMatrix3X3<double> xform = ImageJockeyUtils::getAnisoTransform( 1.0, 1.0, 1.0, azimuthp, 0.0, 0.0 );
     double not_used_in_2D;
     for(int i = 0; i < 5; ++i){
         double x = result[i].x();
         double y = result[i].y();
-        GeostatsUtils::transform( xform, x, y, not_used_in_2D );
+        ImageJockeyUtils::transform( xform, x, y, not_used_in_2D );
         result[i].setX( x + centerX );
         result[i].setY( y + centerY );
     }
@@ -120,7 +120,8 @@ void Spectrogram1DParameters::updateGeometry()
     double gridExtent = endRadius();
     double radiusp = radius();
     double bandw = bandWidth();
-    double ySect = bandw * std::tan( Util::PI/2.0d - azimuthTolerance() * Util::PI_OVER_180 ); //90deg - azimuth
+    double ySect = bandw * std::tan( ImageJockeyUtils::PI/2.0d -
+                                     azimuthTolerance() * ImageJockeyUtils::PI_OVER_180 ); //90deg - azimuth
     double azimuthp = -azimuth() - 90.0d;
 
     //==========================SET BAND 1=======================================
@@ -136,10 +137,10 @@ void Spectrogram1DParameters::updateGeometry()
 
     //rotates the geometry towards the desired azimuth and
     //translates the geometry to the grid's center
-    Matrix3X3<double> xform = GeostatsUtils::getAnisoTransform( 1.0, 1.0, 1.0, azimuthp, 0.0, 0.0 );
+    IJMatrix3X3<double> xform = ImageJockeyUtils::getAnisoTransform( 1.0, 1.0, 1.0, azimuthp, 0.0, 0.0 );
     double not_used_in_2D;
     for(int i = 0; i < n; ++i){
-        GeostatsUtils::transform( xform, x[i], y[i], not_used_in_2D );
+        ImageJockeyUtils::transform( xform, x[i], y[i], not_used_in_2D );
         _2DBand1x[i] = x[i] + x0;
         _2DBand1y[i] = y[i] + y0;
     }
@@ -152,7 +153,7 @@ void Spectrogram1DParameters::updateGeometry()
     _aPointOnAxis._y = gridExtent;
 
     //also rotates and translates the point-on-axis so it sits where it should be
-    GeostatsUtils::transform( xform, _aPointOnAxis._x, _aPointOnAxis._y, not_used_in_2D);
+    ImageJockeyUtils::transform( xform, _aPointOnAxis._x, _aPointOnAxis._y, not_used_in_2D);
     _aPointOnAxis._x += x0;
     _aPointOnAxis._y += y0;
 
@@ -169,7 +170,7 @@ void Spectrogram1DParameters::updateGeometry()
     //rotates the geometry towards the desired azimuth and
     //translates the geometry to the grid's center
     for(int i = 0; i < n; ++i){
-        GeostatsUtils::transform( xform, x[i], y[i], not_used_in_2D );
+        ImageJockeyUtils::transform( xform, x[i], y[i], not_used_in_2D );
         _2DBand2x[i] = x[i] + x0;
         _2DBand2y[i] = y[i] + y0;
     }

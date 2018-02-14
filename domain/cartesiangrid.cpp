@@ -6,12 +6,14 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "geostats/gridcell.h"
 
+#include "spectral/spectral.h" //eigen third party library
+
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/scoped_array.hpp>
 
-CartesianGrid::CartesianGrid( QString path )  : DataFile( path )
+CartesianGrid::CartesianGrid( QString path )  : DataFile( path ), IJAbstractCartesianGrid()
 {
     this->_dx = 0.0;
     this->_dy = 0.0;
@@ -291,26 +293,81 @@ void CartesianGrid::setDataPageToRealization(uint nreal)
     setDataPage( firstLine, lastLine );
 }
 
-double CartesianGrid::getDiagonalLength()
+double CartesianGrid::getRotation()
 {
-    //TODO: add support for rotations
-    if( ! Util::almostEqual2sComplement( this->_rot, 0.0, 1) ){
-        Application::instance()->logError("CartesianGrid::getDiagonalLength(): rotation not supported yet.  Returning NDV or NaN.");
-        if( this->hasNoDataValue() )
-            return getNoDataValueAsDouble();
-        else
-            return std::numeric_limits<double>::quiet_NaN();
+    return getRot();
+}
+
+double CartesianGrid::getData(int variableIndex, int i, int j, int k)
+{
+	return dataIJK( variableIndex, i, j, k );
+}
+
+bool CartesianGrid::isNoDataValue(double value)
+{
+    return isNDV( value );
+}
+
+double CartesianGrid::getDataAt(int dataColumn, double x, double y, double z)
+{
+    return valueAt( dataColumn, x, y, z );
+}
+
+double CartesianGrid::absMin(int column)
+{
+	return minAbs( column );
+}
+
+void CartesianGrid::dataWillBeRequested()
+{
+    loadData();
+}
+
+QString CartesianGrid::getGridName()
+{
+    return getName();
+}
+
+QIcon CartesianGrid::getGridIcon()
+{
+    return getIcon();
+}
+
+int CartesianGrid::getVariableIndexByName(QString variableName)
+{
+    return getFieldGEOEASIndex( variableName ) - 1;
+}
+
+IJAbstractVariable *CartesianGrid::getVariableByName(QString variableName)
+{
+    ProjectComponent* pc = getChildByName( variableName );
+    if( pc->isAttribute() )
+        return dynamic_cast<Attribute*>(pc);
+    else
+        return nullptr;
+}
+
+void CartesianGrid::getAllVariables(std::vector<IJAbstractVariable *> &result)
+{
+    std::vector<ProjectComponent*> all_contained_objects;
+    getAllObjects( all_contained_objects );
+    std::vector<ProjectComponent*>::iterator it = all_contained_objects.begin();
+    for(; it != all_contained_objects.end(); ++it){
+        ProjectComponent* pc = (ProjectComponent*)(*it);
+        if( pc->isAttribute() ){
+            result.push_back( dynamic_cast<Attribute*>(pc) );
+        }
     }
-    double x0 = _x0 - _dx / 2.0d;
-    double y0 = _y0 - _dy / 2.0d;
-    double z0 = _z0 - _dz / 2.0d;
-    double xf = x0 + _dx * _nx;
-    double yf = y0 + _dy * _ny;
-    double zf = z0 + _dz * _nz;
-    double dx = xf - x0;
-    double dy = yf - y0;
-    double dz = zf - z0;
-    return std::sqrt<double>( dx*dx + dy*dy + dz*dz ).real();
+}
+
+IJAbstractVariable *CartesianGrid::getVariableByIndex(int variableIndex)
+{
+    return getAttributeFromGEOEASIndex( variableIndex+1 );
+}
+
+double CartesianGrid::absMax(int column)
+{
+    return maxAbs( column );
 }
 
 SpatialLocation CartesianGrid::getCenter()
@@ -341,7 +398,7 @@ SpatialLocation CartesianGrid::getCenter()
     return result;
 }
 
-void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint dataColumn, double dB_reference,
+void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, int dataColumn, double dB_reference,
                                    const QList<QPointF> &secondArea)
 {
     //some typedefs to shorten code
@@ -416,6 +473,11 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, uint d
             }
         }
     }
+}
+
+void CartesianGrid::saveData()
+{
+    writeToFS();
 }
 
 bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uint &k)
@@ -524,14 +586,14 @@ View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
     return View3DBuilders::build( this, widget3D );
 }
 
-spectral::array CartesianGrid::getSpectralArray(uint nDataColumn)
+spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
 {
-    spectral::array data( _nx, _ny, _nz, 0.0 );
+    spectral::array* data = new spectral::array( _nx, _ny, _nz, 0.0 );
     long idx = 0;
-    for (long i = 0; i < _nx; ++i) {
-        for (long j = 0; j < _ny; ++j) {
-            for (long k = 0; k < _nz; ++k) {
-                data.d_[idx] = dataIJK(nDataColumn, i, j, k);
+    for (ulong i = 0; i < _nx; ++i) {
+        for (ulong j = 0; j < _ny; ++j) {
+            for (ulong k = 0; k < _nz; ++k) {
+                data->d_[idx] = dataIJK(nDataColumn, i, j, k);
                 ++idx;
             }
         }
@@ -539,14 +601,40 @@ spectral::array CartesianGrid::getSpectralArray(uint nDataColumn)
     return data;
 }
 
+spectral::complex_array *CartesianGrid::createSpectralComplexArray(int variableIndex1, int variableIndex2)
+{
+    spectral::complex_array* data = new spectral::complex_array( _nx, _ny, _nz );
+    long idx = 0;
+    for (ulong i = 0; i < _nx; ++i) {
+        for (ulong j = 0; j < _ny; ++j) {
+            for (ulong k = 0; k < _nz; ++k) {
+                data->d_[idx][0] = dataIJK(variableIndex1, i, j, k);
+                data->d_[idx][1] = dataIJK(variableIndex2, i, j, k);
+                ++idx;
+            }
+        }
+    }
+    return data;
+}
+
+void CartesianGrid::clearLoadedData()
+{
+    freeLoadedData();
+}
+
+long CartesianGrid::appendAsNewVariable(const QString variableName, const spectral::array &array)
+{
+    return append( variableName, array );
+}
+
 long CartesianGrid::append(const QString columnName, const spectral::array &array)
 {
     long index = addEmptyDataColumn( columnName, _nx * _ny * _nz );
 
-    long idx = 0;
-    for (long i = 0; i < _nx; ++i) {
-        for (long j = 0; j < _ny; ++j) {
-            for (long k = 0; k < _nz; ++k) {
+    ulong idx = 0;
+    for (ulong i = 0; i < _nx; ++i) {
+        for (ulong j = 0; j < _ny; ++j) {
+            for (ulong k = 0; k < _nz; ++k) {
                 double value = array.d_[idx];
                 setDataIJK( index, i, j, k, value );
                 ++idx;

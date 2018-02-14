@@ -24,14 +24,21 @@ public:
         default: return false;
         }
     }
-    bool operator<( const DataValue& other ){
+	bool operator<( const DataValue& other ) {
         switch( usedMember ){
         case 1: return value.continuous < other.value.continuous;
         case 2: return value.categorical < other.value.categorical;
         default: return false;
         }
     }
-    DataValue& operator=( double pValue ){
+	bool operator<( const DataValue& other ) const {
+		switch( usedMember ){
+		case 1: return value.continuous < other.value.continuous;
+		case 2: return value.categorical < other.value.categorical;
+		default: return false;
+		}
+	}
+	DataValue& operator=( double pValue ){
         usedMember = 1;
         value.continuous = pValue;
         return *this;

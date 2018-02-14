@@ -93,9 +93,9 @@ void VariableSelector::onListVariables(DataFile *file)
     file->getAllObjects( all_contained_objects );
     std::vector<ProjectComponent*>::iterator it = all_contained_objects.begin();
     for(; it != all_contained_objects.end(); ++it){
-        ProjectComponent* pc = (ProjectComponent*)(*it);
+		ProjectComponent* pc = (ProjectComponent*)(*it);
         if( pc->isAttribute() ){
-            ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
+			ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
         }
     }
 }

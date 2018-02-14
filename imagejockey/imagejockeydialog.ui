@@ -621,8 +621,8 @@
                    <string/>
                   </property>
                   <property name="icon">
-                   <iconset resource="../resources.qrc">
-                    <normaloff>:/icons32/removecurve32</normaloff>:/icons32/removecurve32</iconset>
+                   <iconset resource="ijresources.qrc">
+                    <normaloff>:/ijicons32/ijremovecurve32</normaloff>:/ijicons32/ijremovecurve32</iconset>
                   </property>
                   <property name="iconSize">
                    <size>
@@ -753,12 +753,21 @@
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
+                  <property name="toolTip">
+                   <string>Singular Value Decomposition</string>
+                  </property>
                   <property name="text">
                    <string/>
                   </property>
                   <property name="icon">
-                   <iconset resource="../resources.qrc">
-                    <normaloff>:/icons/bclosed</normaloff>:/icons/bclosed</iconset>
+                   <iconset resource="ijresources.qrc">
+                    <normaloff>:/ijicons32/ijsvd32</normaloff>:/ijicons32/ijsvd32</iconset>
+                  </property>
+                  <property name="iconSize">
+                   <size>
+                    <width>32</width>
+                    <height>32</height>
+                   </size>
                   </property>
                  </widget>
                 </item>
@@ -805,7 +814,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="../resources.qrc"/>
+  <include location="ijresources.qrc"/>
  </resources>
  <connections>
   <connection>

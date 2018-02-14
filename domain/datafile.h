@@ -288,8 +288,8 @@ public:
     double correlation(uint columnX, uint columnY );
 
 //File interface
-    void deleteFromFS();
-    void writeToFS();
+	virtual void deleteFromFS();
+	virtual void writeToFS();
 
 protected:
 

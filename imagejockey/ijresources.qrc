@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/ijicons32">
+        <file alias="ijvline32">icons/ijvline32.png</file>
+        <file alias="ijbclosed32">icons/ijbranchclosed32.png</file>
+        <file alias="ijbend32">icons/ijbranchend32.png</file>
+        <file alias="ijbmore32">icons/ijbranchmore32.png</file>
+        <file alias="ijbopen32">icons/ijbranchopen32.png</file>
+        <file alias="ijremovecurve32">icons/ijremovecurve32.png</file>
+        <file alias="ijsvd32">icons/ijsvd32.png</file>
+        <file alias="ijvariable32">icons/ijvariable32.png</file>
+    </qresource>
+</RCC>

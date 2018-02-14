@@ -1,7 +1,6 @@
 #include "spectrogram1dplotpicker.h"
 
 #include "spectrogram1dplot.h"
-#include "domain/application.h"
 
 #include <qwt_plot.h>
 #include <qwt_symbol.h>
@@ -71,7 +70,7 @@ void Spectrogram1DPlotPicker::draw( const QPoint &pos )
 {
     //check whether there is a curve object to edit
     if ( !m_drawingCurve ){
-        Application::instance()->logWarn("Spectrogram1DPlotPicker::draw: m_drawingCurve is null.");
+        emit errorOccurred("Spectrogram1DPlotPicker::draw: m_drawingCurve is null.");
         return;
     }
 
