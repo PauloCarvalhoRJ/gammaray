@@ -5,7 +5,9 @@
 #include <QLineSeries>
 #include <QValueAxis>
 
-SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(const std::vector<double> & weights, QWidget *parent) :
+SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(const std::vector<double> & weights,
+                                                     bool deleteSelfOnClose,
+                                                     QWidget *parent) :
     QDialog(parent),
 	ui(new Ui::SVDFactorsSelectionDialog),
 	m_weights( weights ),
@@ -13,6 +15,9 @@ SVDFactorsSelectionDialog::SVDFactorsSelectionDialog(const std::vector<double> &
     m_numberOfFactors( 0 )
 {
     ui->setupUi(this);
+
+    //deletes dialog from memory upon user closing it
+    this->setAttribute(Qt::WA_DeleteOnClose, deleteSelfOnClose);
 
     setWindowTitle( "SVD factors selection" );
 

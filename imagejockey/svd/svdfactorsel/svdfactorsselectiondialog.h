@@ -14,8 +14,12 @@ class SVDFactorsSelectionDialog : public QDialog
     Q_OBJECT
 
 public:
-	explicit SVDFactorsSelectionDialog( const std::vector<double>& weights, QWidget *parent = 0);
+    explicit SVDFactorsSelectionDialog(const std::vector<double>& weights,
+                                       bool deleteSelfOnClose,
+                                       QWidget *parent = 0);
     ~SVDFactorsSelectionDialog();
+
+    int getSelectedNumberOfFactors( ){ return m_numberOfFactors; }
 
 
 signals:

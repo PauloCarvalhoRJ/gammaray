@@ -65,6 +65,11 @@
 #include "dialogs/machinelearningdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
+#include "spectral/svd.h"
+#include "spectral/spectral.h"
+#include "imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.h"
+#include "imagejockey/svd/svdfactortree.h"
+#include "imagejockey/svd/svdanalysisdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -482,6 +487,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
+                _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
@@ -1681,6 +1687,107 @@ void MainWindow::onPreviewRFFTImageJockey( CartesianGrid* cgWithFFT,
 
     //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
     Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+}
+
+void MainWindow::onSVD()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Get the grid geometry parameters (useful for displaying)
+    double x0 = cg->getOriginX();
+    double y0 = cg->getOriginY();
+    double z0 = cg->getOriginZ();
+    double dx = cg->getCellSizeI();
+    double dy = cg->getCellSizeJ();
+    double dz = cg->getCellSizeK();
+
+    //Compute SVD
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.setLabelText("Computing SVD factors...");
+    progressDialog.show();
+    QCoreApplication::processEvents();
+    spectral::SVD svd = spectral::svd( *a );
+    progressDialog.hide();
+
+    //get the list with the factor weights (information quantity)
+    spectral::array weights = svd.factor_weights();
+    Application::instance()->logInfo("MainWindow::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
+
+    //User enters number of SVD factors
+    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), false, this );
+    int userResponse = svdfsd->exec();
+    if( userResponse != QDialog::Accepted )
+        return;
+    long numberOfFactors = svdfsd->getSelectedNumberOfFactors();
+    delete svdfsd;
+
+    //Create the structure to store the SVD factors
+    SVDFactorTree * factorTree = new SVDFactorTree();
+
+    //Get the desired SVD factors
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        for (long i = 0; i < numberOfFactors; ++i) {
+            progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
+            QCoreApplication::processEvents();
+            spectral::array factor = svd.factor(i);
+            SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights[i], x0, y0, z0, dx, dy, dz );
+            factorTree->addFirstLevelFactor( svdFactor );
+            //cg->append( factorName, factor );
+        }
+    }
+
+    //delete the data array, since it's not necessary anymore
+    delete a;
+
+    if( numberOfFactors > 0 ){
+        //show the SDV analysis dialog
+        SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+        connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
+                 this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
+        svdad->setTree( factorTree );
+        svdad->setDeleteTreeOnClose( true );
+        svdad->show();
+    } else {
+        Application::instance()->logError("MainWindow::onSVD(): user set zero factors. Aborted.");
+        delete factorTree;
+    }
+}
+
+void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
+{
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_SVD" );
+
+    //open the renaming dialog
+    bool ok;
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New variable reconstructed from SVD factors:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        delete sumOfFactors; //discard the computed sum
+        return;
+    }
+
+    //save the sum to the grid in the project
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>((CartesianGrid*)_right_clicked_attribute->getContainingFile());
+    cg->appendAsNewVariable(new_variable_name, *sumOfFactors );
+
+    //discard the computed sum
+    delete sumOfFactors;
 }
 
 void MainWindow::onCreateCategoryDefinition()
