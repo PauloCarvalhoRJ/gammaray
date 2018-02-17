@@ -205,7 +205,9 @@ SOURCES += main.cpp\
 	imagejockey/widgets/ijvariableselector.cpp \
     imagejockey/widgets/grcompass.cpp \
     imagejockey/widgets/ijgridviewerwidget.cpp \
-    calculator/scripting.cpp
+    calculator/calcscripting.cpp \
+    calculator/icalcpropertycollection.cpp \
+    calculator/calculatordialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -388,7 +390,9 @@ HEADERS  += mainwindow.h \
 	imagejockey/widgets/ijvariableselector.h \
     imagejockey/widgets/grcompass.h \
     imagejockey/widgets/ijgridviewerwidget.h \
-    calculator/scripting.h
+    calculator/calcscripting.h \
+    calculator/icalcpropertycollection.h \
+    calculator/calculatordialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -460,7 +464,8 @@ FORMS    += mainwindow.ui \
 	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui \
 	imagejockey/widgets/ijcartesiangridselector.ui \
         imagejockey/widgets/ijvariableselector.ui \
-    imagejockey/widgets/ijgridviewerwidget.ui
+    imagejockey/widgets/ijgridviewerwidget.ui \
+    calculator/calculatordialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -578,7 +583,8 @@ DEFINES += APP_NAME_VER=\\\"$$TARGET\\\040$$VERSION\\\"
 
 RESOURCES += \
     resources.qrc \
-    imagejockey/ijresources.qrc
+    imagejockey/ijresources.qrc\
+    calculator/calcresources.qrc
 
 #set the Windows executable icon
 win32:RC_ICONS += art/exeicon.ico

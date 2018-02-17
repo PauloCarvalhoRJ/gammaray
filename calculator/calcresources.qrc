@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/calcicons">
+        <file alias="calcsave">icons/calcsave.png</file>
+        <file alias="calcplay">icons/calcplay.png</file>
+    </qresource>
+</RCC>

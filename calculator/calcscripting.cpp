@@ -1,13 +1,13 @@
-#include "scripting.h"
-//#include <exprtk.hpp>
+#include "calcscripting.h"
+#include <exprtk.hpp>
 
-Scripting::Scripting()
+CalcScripting::CalcScripting()
 {
 }
 
-void Scripting::trig_function()
+void CalcScripting::trig_function()
 {
-/*   typedef exprtk::symbol_table<double> symbol_table_t;
+   typedef exprtk::symbol_table<double> symbol_table_t;
    typedef exprtk::expression<double>     expression_t;
    typedef exprtk::parser<double>             parser_t;
 
@@ -29,5 +29,5 @@ void Scripting::trig_function()
    {
       double y = expression.value();
       printf("%19.15f\t%19.15f\n",x,y);
-   }*/
+   }
 }
