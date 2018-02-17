@@ -100,7 +100,6 @@ SOURCES += main.cpp\
     domain/categorypdf.cpp \
     widgets/valuepairvertical.cpp \
     widgets/fileselectorwidget.cpp \
-    scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
     gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
     domain/triads.cpp \
@@ -205,7 +204,8 @@ SOURCES += main.cpp\
 	imagejockey/widgets/ijcartesiangridselector.cpp \
 	imagejockey/widgets/ijvariableselector.cpp \
     imagejockey/widgets/grcompass.cpp \
-    imagejockey/widgets/ijgridviewerwidget.cpp
+    imagejockey/widgets/ijgridviewerwidget.cpp \
+    calculator/scripting.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -283,7 +283,6 @@ HEADERS  += mainwindow.h \
     domain/categorypdf.h \
     widgets/valuepairvertical.h \
     widgets/fileselectorwidget.h \
-    scripting.h \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
     domain/triads.h \
@@ -388,7 +387,8 @@ HEADERS  += mainwindow.h \
 	imagejockey/widgets/ijcartesiangridselector.h \
 	imagejockey/widgets/ijvariableselector.h \
     imagejockey/widgets/grcompass.h \
-    imagejockey/widgets/ijgridviewerwidget.h
+    imagejockey/widgets/ijgridviewerwidget.h \
+    calculator/scripting.h
 
 
 FORMS    += mainwindow.ui \
