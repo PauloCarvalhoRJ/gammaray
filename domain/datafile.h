@@ -2,6 +2,7 @@
 #define DATAFILE_H
 
 #include "file.h"
+#include "calculator/icalcpropertycollection.h"
 #include <vector>
 #include <QMap>
 #include <QDateTime>
@@ -19,7 +20,7 @@ class IAlgorithmDataSource;
  * This class basically extends File with a data table and its associated load, save and access methods.
  */
 
-class DataFile : public File
+class DataFile : public File, public ICalcPropertyCollection
 {
 public:
     DataFile(QString path);
@@ -291,6 +292,12 @@ public:
 	virtual void deleteFromFS();
 	virtual void writeToFS();
 
+// ICalcPropertyCollection interface
+public:
+    virtual QString getCalcPropertyCollectionName(){ return getName(); }
+    virtual int getCalcPropertyCount(){ return getChildCount(); }
+    virtual ICalcProperty *getCalcProperty(int index);
+
 protected:
 
     /**
@@ -334,6 +341,7 @@ protected:
 
     /** The pointer to the internal interface to the algorithms' data source (see classes in /algorithms subdirectory). */
     std::shared_ptr<IAlgorithmDataSource> _algorithmDataSourceInterface;
+
 };
 
 #endif // DATAFILE_H

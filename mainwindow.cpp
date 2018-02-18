@@ -70,6 +70,7 @@
 #include "imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.h"
 #include "imagejockey/svd/svdfactortree.h"
 #include "imagejockey/svd/svdanalysisdialog.h"
+#include "calculator/calculatordialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -452,6 +453,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
+            }
+            if( _right_clicked_file->getFileType() == "CARTESIANGRID" ||
+                _right_clicked_file->getFileType() == "POINTSET" ){
+                _projectContextMenu->addAction("Calculator...", this, SLOT(onCalculator()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -1788,6 +1793,15 @@ void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
 
     //discard the computed sum
     delete sumOfFactors;
+}
+
+void MainWindow::onCalculator()
+{
+    if( ! _right_clicked_file->isDataFile() )
+        return;
+    DataFile *dataFile = (DataFile*)_right_clicked_file;
+    CalculatorDialog* cd = new CalculatorDialog( dataFile );
+    cd->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()

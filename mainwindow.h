@@ -164,6 +164,7 @@ private slots:
                                   int indexOfVariableWithPhases);
     void onSVD();
     void onSumOfFactorsWasComputed(spectral::array *sumOfFactors); //called to save the sum of SVD factors in the dialog called in onSVD()
+    void onCalculator();
 
 private:
     /**

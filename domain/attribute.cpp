@@ -6,7 +6,7 @@
 #include "cartesiangrid.h"
 
 Attribute::Attribute(QString name, int index_in_file, bool categorical) :
-    IJAbstractVariable()
+    IJAbstractVariable(), ICalcProperty()
 {
     this->_name = name;
     this->_index = index_in_file;

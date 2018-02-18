@@ -26,6 +26,8 @@ CONFIG( release, debug|release ) {
 }
 CONFIG += c++11
 
+QMAKE_CXXFLAGS_DEBUG += -O1
+
 #QMAKE_CXXFLAGS += -m64
 
 SOURCES += main.cpp\
@@ -207,7 +209,8 @@ SOURCES += main.cpp\
     imagejockey/widgets/ijgridviewerwidget.cpp \
     calculator/calcscripting.cpp \
     calculator/icalcpropertycollection.cpp \
-    calculator/calculatordialog.cpp
+    calculator/calculatordialog.cpp \
+    calculator/icalcproperty.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -392,7 +395,8 @@ HEADERS  += mainwindow.h \
     imagejockey/widgets/ijgridviewerwidget.h \
     calculator/calcscripting.h \
     calculator/icalcpropertycollection.h \
-    calculator/calculatordialog.h
+    calculator/calculatordialog.h \
+    calculator/icalcproperty.h
 
 
 FORMS    += mainwindow.ui \

@@ -27,6 +27,7 @@
 #include "auxiliary/variableremover.h"
 #include "auxiliary/datasaver.h"
 #include "algorithms/ialgorithmdatasource.h"
+#include "calculator/icalcproperty.h"
 
 /****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES
  * ****************************/
@@ -110,7 +111,7 @@ protected:
 /**********************************************************************************************************************************/
 
 DataFile::DataFile(QString path)
-    : File(path), _lastModifiedDateTimeLastLoad(), _dataPageFirstLine(0),
+    : File(path), ICalcPropertyCollection(), _lastModifiedDateTimeLastLoad(), _dataPageFirstLine(0),
       _dataPageLastLine(std::numeric_limits<long>::max())
 {
     _algorithmDataSourceInterface.reset(new AlgorithmDataSource(*this));
@@ -504,6 +505,11 @@ void DataFile::writeToFS()
     updatePropertyCollection();
     // update the project tree in the main window.
     Application::instance()->refreshProjectTree();
+}
+
+ICalcProperty *DataFile::getCalcProperty(int index)
+{
+    return dynamic_cast<ICalcProperty*>( (Attribute*)getChildByIndex(index) );
 }
 
 void DataFile::updatePropertyCollection()
