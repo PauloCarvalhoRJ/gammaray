@@ -4,6 +4,7 @@
 #include "icalcpropertycollection.h"
 #include "icalcproperty.h"
 
+#include <QDesktopServices>
 #include <QMessageBox>
 
 CalculatorDialog::CalculatorDialog(ICalcPropertyCollection* propertyCollection, QWidget *parent) :
@@ -49,4 +50,11 @@ void CalculatorDialog::onPropertyDoubleClicked(QListWidgetItem * item)
     }
     QTextCursor cursor = ui->txtScript->textCursor();
     cursor.insertText( item->text() );
+    ui->txtScript->setFocus();
+}
+
+void CalculatorDialog::onSyntaxPage()
+{
+    if( ! QDesktopServices::openUrl(QUrl( "http://www.partow.net/programming/exprtk/index.html" )) )
+        QMessageBox::critical( this, "Error", QString("Failed to open http://www.partow.net/programming/exprtk/index.html."));
 }

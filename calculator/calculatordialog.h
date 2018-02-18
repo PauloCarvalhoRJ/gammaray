@@ -24,6 +24,7 @@ private:
 
 private slots:
     void onPropertyDoubleClicked(QListWidgetItem*item);
+    void onSyntaxPage();
 };
 
 #endif // CALCULATORDIALOG_H

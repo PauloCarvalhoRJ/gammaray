@@ -1800,7 +1800,7 @@ void MainWindow::onCalculator()
     if( ! _right_clicked_file->isDataFile() )
         return;
     DataFile *dataFile = (DataFile*)_right_clicked_file;
-    CalculatorDialog* cd = new CalculatorDialog( dataFile );
+    CalculatorDialog* cd = new CalculatorDialog( dataFile, this );
     cd->show();
 }
 

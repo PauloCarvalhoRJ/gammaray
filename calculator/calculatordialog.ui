@@ -52,12 +52,6 @@
      </item>
      <item>
       <widget class="QListWidget" name="lstProperties">
-       <property name="gridSize">
-        <size>
-         <width>100</width>
-         <height>15</height>
-        </size>
-       </property>
        <property name="viewMode">
         <enum>QListView::ListMode</enum>
        </property>
@@ -185,6 +179,13 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="btnExprTkHelpPage">
+       <property name="text">
+        <string>ExprTk Syntax Page</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -219,8 +220,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>490</x>
-     <y>383</y>
+     <x>544</x>
+     <y>440</y>
     </hint>
     <hint type="destinationlabel">
      <x>438</x>
@@ -228,5 +229,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnExprTkHelpPage</sender>
+   <signal>clicked()</signal>
+   <receiver>CalculatorDialog</receiver>
+   <slot>onSyntaxPage()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>127</x>
+     <y>428</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>148</x>
+     <y>413</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>onSyntaxPage()</slot>
+ </slots>
 </ui>
