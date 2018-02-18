@@ -457,6 +457,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ||
                 _right_clicked_file->getFileType() == "POINTSET" ){
                 _projectContextMenu->addAction("Calculator...", this, SLOT(onCalculator()));
+                _projectContextMenu->addAction("Add new variable", this, SLOT(onNewAttribute()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -1802,6 +1803,28 @@ void MainWindow::onCalculator()
     DataFile *dataFile = (DataFile*)_right_clicked_file;
     CalculatorDialog* cd = new CalculatorDialog( dataFile, this );
     cd->show();
+}
+
+void MainWindow::onNewAttribute()
+{
+    if( ! _right_clicked_file->isDataFile() )
+        return;
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             "new_variable", &ok );
+
+    //if the user didn't cancel the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    DataFile *dataFile = (DataFile*)_right_clicked_file;
+    dataFile->loadData();
+    dataFile->addEmptyDataColumn( new_var_name, dataFile->getDataLineCount() );
+    dataFile->writeToFS();
 }
 
 void MainWindow::onCreateCategoryDefinition()

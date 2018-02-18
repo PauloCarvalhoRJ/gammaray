@@ -254,6 +254,8 @@ public:
 
     /**
      * Adds a new data column to this DataFile filled with zeroes.
+     * @param numberOfDataElements Number of values in the column, normally should be getDataLineCount(),
+     *        unless this object is a new one without any previous data.
      */
     long addEmptyDataColumn( const QString columnName, long numberOfDataElements );
 
