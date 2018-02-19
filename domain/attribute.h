@@ -55,6 +55,7 @@ public:
 public:
     virtual QString getCalcPropertyName(){ return getName(); }
     virtual QIcon getCalcPropertyIcon(){ return getIcon(); }
+	virtual int getCalcPropertyIndex(){ return getIndexInParent(); }
 
 private:
     QString _name;

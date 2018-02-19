@@ -3,6 +3,7 @@
 
 #include "icalcpropertycollection.h"
 #include "icalcproperty.h"
+#include "calcscripting.h"
 
 #include <QDesktopServices>
 #include <QMessageBox>
@@ -27,7 +28,7 @@ CalculatorDialog::CalculatorDialog(ICalcPropertyCollection* propertyCollection, 
     for( int i = 0; i < m_propertyCollection->getCalcPropertyCount(); ++i ){
         ICalcProperty* prop = m_propertyCollection->getCalcProperty( i );
         this->ui->lstProperties->addItem(new QListWidgetItem(prop->getCalcPropertyIcon(),
-                                                             prop->getCalcPropertyName()));
+															 prop->getScriptCompatibleName()));
     }
 
     //clear the script text area.
@@ -44,10 +45,6 @@ CalculatorDialog::~CalculatorDialog()
 
 void CalculatorDialog::onPropertyDoubleClicked(QListWidgetItem * item)
 {
-    if( item->text().contains(' ') ){
-        QMessageBox::critical( this, "Error", QString("Cannot bind variables with whitespaces in name."));
-        return;
-    }
     QTextCursor cursor = ui->txtScript->textCursor();
     cursor.insertText( item->text() );
     ui->txtScript->setFocus();
@@ -56,5 +53,15 @@ void CalculatorDialog::onPropertyDoubleClicked(QListWidgetItem * item)
 void CalculatorDialog::onSyntaxPage()
 {
     if( ! QDesktopServices::openUrl(QUrl( "http://www.partow.net/programming/exprtk/index.html" )) )
-        QMessageBox::critical( this, "Error", QString("Failed to open http://www.partow.net/programming/exprtk/index.html."));
+		QMessageBox::critical( this, "Error", QString("Failed to open http://www.partow.net/programming/exprtk/index.html."));
+}
+
+void CalculatorDialog::onRun()
+{
+	m_propertyCollection->computationWillStart();
+	CalcScripting cs( m_propertyCollection );
+	if( cs.doCalc( ui->txtScript->toPlainText() ) )
+		m_propertyCollection->computationCompleted();
+	else
+		QMessageBox::critical( this, "Script error", cs.getLastError() );
 }

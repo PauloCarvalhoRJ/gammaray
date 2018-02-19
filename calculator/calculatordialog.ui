@@ -245,8 +245,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnRun</sender>
+   <signal>clicked()</signal>
+   <receiver>CalculatorDialog</receiver>
+   <slot>onRun()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>30</x>
+     <y>428</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>45</x>
+     <y>411</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onSyntaxPage()</slot>
+  <slot>onRun()</slot>
  </slots>
 </ui>

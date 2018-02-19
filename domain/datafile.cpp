@@ -1093,5 +1093,14 @@ double DataFile::correlation(uint columnX, uint columnY)
     // use formula for calculating correlation coefficient.
     return (nValidValues * sum_XY - sum_X * sum_Y)
            / std::sqrt((nValidValues * squareSum_X - sum_X * sum_X)
-                       * (nValidValues * squareSum_Y - sum_Y * sum_Y));
+					   * (nValidValues * squareSum_Y - sum_Y * sum_Y));
+}
+
+void DataFile::setData(uint line, uint column, double value)
+{
+	switch (_data.size()) { // if _data is empty
+	case 0:
+		loadData(); // loads the data from disk.
+	}
+	this->_data.at(line).at(column) = value;
 }

@@ -290,6 +290,14 @@ public:
     /** Returns the Pearson correlation coefficient of the values in the given columns. */
     double correlation(uint columnX, uint columnY );
 
+	/**
+	  *  Sets the value at the given tabular position.
+	  *  This does not follow GEO_EAS convention, so the first data value, at the first line and first column of the file
+	  *  is at (0,0). ATTENTION: the coordinates are relative to file contents.  Do not confuse with
+	  *  grid coordinates in regular grids.
+	  */
+	void setData( uint line, uint column, double value );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
@@ -299,6 +307,11 @@ public:
     virtual QString getCalcPropertyCollectionName(){ return getName(); }
     virtual int getCalcPropertyCount(){ return getChildCount(); }
     virtual ICalcProperty *getCalcProperty(int index);
+	virtual int getCalcRecordCount(){ return getDataLineCount(); }
+	virtual double getCalcValue( int iVar, int iRecord ) { return data( iRecord, iVar ); }
+	virtual double setCalcValue( int iVar, int iRecord, double value ) { setData( iRecord, iVar, value ); }
+	virtual void computationCompleted(){ writeToFS(); }
+	virtual void computationWillStart(){ loadData(); }
 
 protected:
 

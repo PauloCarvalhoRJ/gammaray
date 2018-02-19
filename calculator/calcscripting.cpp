@@ -1,8 +1,63 @@
 #include "calcscripting.h"
-//#include <exprtk.hpp>
+#include <exprtk.hpp>
+#include "icalcpropertycollection.h"
+#include "icalcproperty.h"
 
-CalcScripting::CalcScripting()
+CalcScripting::CalcScripting(ICalcPropertyCollection * propertyCollection) :
+	m_propertyCollection( propertyCollection ),
+	m_registers( new double[propertyCollection->getCalcPropertyCount()] )
 {
+}
+
+CalcScripting::~CalcScripting()
+{
+	delete m_registers;
+}
+
+bool CalcScripting::doCalc( const QString & script )
+{
+	//Define some types for brevity.
+	typedef exprtk::symbol_table<double> symbol_table_t;
+	typedef exprtk::expression<double> expression_t;
+	typedef exprtk::parser<double> parser_t;
+
+	//Get the script text.
+	std::string expression_string = script.toStdString();
+
+	//Bind script variables to actual memory variables (the registers).
+	symbol_table_t symbol_table;
+	for( int i = 0; i < m_propertyCollection->getCalcPropertyCount(); ++i )
+		//                                                    [variable name in script]                              [actual variable]
+		//                         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv   vvvvvvvvvvvvvv
+		symbol_table.add_variable( m_propertyCollection->getCalcProperty(i)->getScriptCompatibleName().toStdString(), m_registers[i]);
+
+	//Bind constant symbols (e.g. pi).
+	symbol_table.add_constants();
+
+	//Register the variable bind table.
+	expression_t expression;
+	expression.register_symbol_table(symbol_table);
+
+	//Parse the script against the variable bind table.
+	parser_t parser;
+	if( ! parser.compile(expression_string, expression) ){
+		m_lastError = QString( parser.error().c_str() );
+		return false;
+	}
+
+	//Evaluate the script against all data records.
+	for ( int iRecord = 0; iRecord < m_propertyCollection->getCalcRecordCount(); ++iRecord)
+	{
+		//Fetch values from the property collection to the registers.
+		for( int iVar = 0; iVar < m_propertyCollection->getCalcPropertyCount(); ++iVar )
+			m_registers[iVar] = m_propertyCollection->getCalcValue( iVar, iRecord );
+		//Execute the script on the registers.
+		expression.value();
+		//Move the values from the registers to the property collection.
+		for( int iVar = 0; iVar < m_propertyCollection->getCalcPropertyCount(); ++iVar )
+			m_propertyCollection->setCalcValue( iVar, iRecord, m_registers[iVar] );
+	}
+	return true;
 }
 
 void CalcScripting::trig_function()

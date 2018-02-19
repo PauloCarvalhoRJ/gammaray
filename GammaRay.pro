@@ -6,7 +6,7 @@
 
 QT       += core gui charts
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = GammaRay
 TEMPLATE = app
@@ -26,6 +26,7 @@ CONFIG( release, debug|release ) {
 }
 CONFIG += c++11
 
+#This prevents "string table overflow" errors when compiling .cpp's that include exprtk.hpp in debug mode
 QMAKE_CXXFLAGS_DEBUG += -O1
 
 #QMAKE_CXXFLAGS += -m64
