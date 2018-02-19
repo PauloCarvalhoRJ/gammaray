@@ -21,6 +21,10 @@ bool CalcScripting::doCalc( const QString & script )
 	typedef exprtk::expression<double> expression_t;
 	typedef exprtk::parser<double> parser_t;
 
+	//The registers to hold the spatial and topological coordinates.
+	double _X_, _Y_, _Z_;
+	int _I_, _J_, _K_;
+
 	//Get the script text.
 	std::string expression_string = script.toStdString();
 
@@ -30,6 +34,14 @@ bool CalcScripting::doCalc( const QString & script )
 		//                                                    [variable name in script]                              [actual variable]
 		//                         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv   vvvvvvvvvvvvvv
 		symbol_table.add_variable( m_propertyCollection->getCalcProperty(i)->getScriptCompatibleName().toStdString(), m_registers[i]);
+
+	//Bind artificial variables to access spatial and topological coordinates.
+	symbol_table.add_variable("_X_", _X_);
+	symbol_table.add_variable("_Y_", _Z_);
+	symbol_table.add_variable("_Z_", _Y_);
+	symbol_table.add_variable("_I_", _I_);
+	symbol_table.add_variable("_J_", _J_);
+	symbol_table.add_variable("_K_", _K_);
 
 	//Bind constant symbols (e.g. pi).
 	symbol_table.add_constants();
@@ -51,11 +63,14 @@ bool CalcScripting::doCalc( const QString & script )
 		//Fetch values from the property collection to the registers.
 		for( int iVar = 0; iVar < m_propertyCollection->getCalcPropertyCount(); ++iVar )
 			m_registers[iVar] = m_propertyCollection->getCalcValue( iVar, iRecord );
+		//Fetch the spatial and topological coordinates special variables
+		m_propertyCollection->getSpatialAndTopologicalCoordinates( iRecord, _X_, _Y_, _Z_, _I_, _J_, _K_ );
 		//Execute the script on the registers.
 		expression.value();
 		//Move the values from the registers to the property collection.
 		for( int iVar = 0; iVar < m_propertyCollection->getCalcPropertyCount(); ++iVar )
 			m_propertyCollection->setCalcValue( iVar, iRecord, m_registers[iVar] );
+		//The spatial and topological coordinates are read-only.
 	}
 	return true;
 }

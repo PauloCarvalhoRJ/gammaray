@@ -41,6 +41,11 @@ public:
 	/** Called when a computation has completed.  This might prompt implementations to save
 	 *  changes to file, for example. */
 	virtual void computationCompleted() = 0;
+
+	/** Returns (via output parameters) the spatial coordinates (x,y,z) and the topological
+	 * coordinates (i,j,k) corresponding to the record index (data sample index).
+	 */
+	virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& y, int& i, int& j, int& k ) = 0;
 };
 
 #endif // ICALCPROPERTYCOLLECTION_H
