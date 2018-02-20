@@ -32,7 +32,7 @@ public:
 	virtual double getCalcValue( int iVar, int iRecord ) = 0;
 
 	/** Sets the value of the given variable (table column) in the given record (table line). */
-	virtual double setCalcValue( int iVar, int iRecord, double value ) = 0;
+	virtual void setCalcValue( int iVar, int iRecord, double value ) = 0;
 
 	/** Called when a computation will commence.  This might prompt implementations to fetch
 	 *  data from file, network, etc.. */
@@ -45,7 +45,7 @@ public:
 	/** Returns (via output parameters) the spatial coordinates (x,y,z) and the topological
 	 * coordinates (i,j,k) corresponding to the record index (data sample index).
 	 */
-	virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& y, int& i, int& j, int& k ) = 0;
+	virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& z, int& i, int& j, int& k ) = 0;
 };
 
 #endif // ICALCPROPERTYCOLLECTION_H

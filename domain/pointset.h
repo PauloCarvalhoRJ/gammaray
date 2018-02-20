@@ -74,6 +74,11 @@ public:
     void save(QTextStream *txt_stream);
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
 
+// ICalcPropertyCollection interface
+public:
+	virtual void getSpatialAndTopologicalCoordinates(int iRecord, double& x, double& y, double& z, int& i, int& j, int& k );
+
+
 private:
     int _x_field_index; //index start at 1. Zero means not set.
     int _y_field_index;

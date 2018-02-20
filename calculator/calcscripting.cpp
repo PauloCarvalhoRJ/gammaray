@@ -23,7 +23,8 @@ bool CalcScripting::doCalc( const QString & script )
 
 	//The registers to hold the spatial and topological coordinates.
 	double _X_, _Y_, _Z_;
-	int _I_, _J_, _K_;
+	double _I_, _J_, _K_; //set as double to be compatible with the ExprTk API (add_variable() template should be extended to support int)
+	int _iI_, _iJ_, _iK_;
 
 	//Get the script text.
 	std::string expression_string = script.toStdString();
@@ -36,12 +37,12 @@ bool CalcScripting::doCalc( const QString & script )
 		symbol_table.add_variable( m_propertyCollection->getCalcProperty(i)->getScriptCompatibleName().toStdString(), m_registers[i]);
 
 	//Bind artificial variables to access spatial and topological coordinates.
-	symbol_table.add_variable("_X_", _X_);
-	symbol_table.add_variable("_Y_", _Z_);
-	symbol_table.add_variable("_Z_", _Y_);
-	symbol_table.add_variable("_I_", _I_);
-	symbol_table.add_variable("_J_", _J_);
-	symbol_table.add_variable("_K_", _K_);
+	symbol_table.add_variable("X_", _X_);
+	symbol_table.add_variable("Y_", _Y_);
+	symbol_table.add_variable("Z_", _Z_);
+	symbol_table.add_variable("I_", _I_);
+	symbol_table.add_variable("J_", _J_);
+	symbol_table.add_variable("K_", _K_);
 
 	//Bind constant symbols (e.g. pi).
 	symbol_table.add_constants();
@@ -64,7 +65,10 @@ bool CalcScripting::doCalc( const QString & script )
 		for( int iVar = 0; iVar < m_propertyCollection->getCalcPropertyCount(); ++iVar )
 			m_registers[iVar] = m_propertyCollection->getCalcValue( iVar, iRecord );
 		//Fetch the spatial and topological coordinates special variables
-		m_propertyCollection->getSpatialAndTopologicalCoordinates( iRecord, _X_, _Y_, _Z_, _I_, _J_, _K_ );
+		m_propertyCollection->getSpatialAndTopologicalCoordinates( iRecord, _X_, _Y_, _Z_, _iI_, _iJ_, _iK_ );
+		_I_ = _iI_;
+		_J_ = _iJ_;
+		_K_ = _iK_;
 		//Execute the script on the registers.
 		expression.value();
 		//Move the values from the registers to the property collection.

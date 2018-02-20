@@ -309,9 +309,10 @@ public:
     virtual ICalcProperty *getCalcProperty(int index);
 	virtual int getCalcRecordCount(){ return getDataLineCount(); }
 	virtual double getCalcValue( int iVar, int iRecord ) { return data( iRecord, iVar ); }
-	virtual double setCalcValue( int iVar, int iRecord, double value ) { setData( iRecord, iVar, value ); }
+	virtual void setCalcValue( int iVar, int iRecord, double value ) { setData( iRecord, iVar, value ); }
 	virtual void computationCompleted(){ writeToFS(); }
 	virtual void computationWillStart(){ loadData(); }
+	virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& z, int& i, int& j, int& k ) = 0;
 
 protected:
 

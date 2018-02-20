@@ -127,6 +127,9 @@ public:
     /** Adds de contents of the given data array as new column to this Cartesian grid. */
     long append( const QString columnName, const spectral::array& array );
 
+	/** Converts a data row index into topological coordinates (output parameters). */
+	void indexToIJK(uint index, uint & i, uint & j, uint & k );
+
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
@@ -179,6 +182,11 @@ public:
                                                                  int variableIndex2);
     virtual void clearLoadedData();
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array );
+
+// ICalcPropertyCollection interface
+public:
+	virtual void getSpatialAndTopologicalCoordinates(int iRecord, double& x, double& y, double& z, int& i, int& j, int& k );
+
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;
