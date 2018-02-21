@@ -509,7 +509,23 @@ void DataFile::writeToFS()
 
 ICalcProperty *DataFile::getCalcProperty(int index)
 {
-    return dynamic_cast<ICalcProperty*>( (Attribute*)getChildByIndex(index) );
+	return dynamic_cast<ICalcProperty*>( (Attribute*)getChildByIndex(index) );
+}
+
+void DataFile::setCalcValue(int iVar, int iRecord, double value)
+{
+	if( isnan(value) ) {
+		if( hasNoDataValue() )
+			value = getNoDataValueAsDouble();
+		else
+			value = -999.0;
+	}
+	setData( iRecord, iVar, value);
+}
+
+int DataFile::getCalcPropertyIndex(const std::string & name)
+{
+	return getChildIndex( getChildByName( QString(name.c_str()) ) );
 }
 
 void DataFile::updatePropertyCollection()

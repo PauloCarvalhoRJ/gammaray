@@ -18,7 +18,7 @@ class CalcScripting
 public:
 
 	/**
-	 * @param propertyCollection Cannot be null because the m_registers array is created with its number of properties.
+	 * @param propertyCollection The collection of properties to run calculations on. Cannot be null because the m_registers array is created with its number of properties.
 	 */
 	CalcScripting( ICalcPropertyCollection* propertyCollection );
 
@@ -30,6 +30,9 @@ public:
 	bool doCalc(const QString& script);
 
 	QString getLastError(){ return m_lastError; }
+
+	/** Returns the property collection. */
+	ICalcPropertyCollection* getPropertyCollection( ){ return m_propertyCollection; }
 
 private:
 	/** Used for testing purposes. */
@@ -44,6 +47,9 @@ private:
 
 	/** Stores the last error message in case doCalc() fails. */
 	QString m_lastError;
+
+	/** Sets whether doCalc() is allowed to be called. */
+	bool m_isBlocked;
 };
 
 #endif // CALCSCRIPTING_H

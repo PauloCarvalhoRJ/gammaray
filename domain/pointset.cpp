@@ -9,6 +9,7 @@
 #include "../exceptions/invalidgslibdatafileexception.h"
 #include "weight.h"
 #include "util.h"
+#include <limits>
 
 PointSet::PointSet( QString path ) : DataFile( path )
 {
@@ -50,6 +51,16 @@ void PointSet::getSpatialAndTopologicalCoordinates(int iRecord, double & x, doub
 	i = 0;
 	j = 0;
 	k = 0;
+}
+
+double PointSet::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
+{
+	Q_UNUSED(iRecord);
+	Q_UNUSED(iVar);
+	Q_UNUSED(dI);
+	Q_UNUSED(dJ);
+	Q_UNUSED(dK);
+	return std::numeric_limits<double>::quiet_NaN();
 }
 
 void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_data_value)

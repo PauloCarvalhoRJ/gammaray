@@ -46,6 +46,20 @@ public:
 	 * coordinates (i,j,k) corresponding to the record index (data sample index).
 	 */
 	virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& z, int& i, int& j, int& k ) = 0;
+
+	/** Returns a property's index given its name. */
+	virtual int getCalcPropertyIndex( const std::string& name ) = 0;
+
+	/**
+	 * Returns a neighbouring value.  This only makes sense with property collections that have topology.
+	 * Non-topological implementations (e.g. point sets) or calls to non-existing neighbours (e.g. at edges) should return NaN.
+	 * @param iRecord Number of data line.
+	 * @param iVar Index of the variable to retrieve value.
+	 * @param dI Relative topological position, e.g. -1.
+	 * @param dJ Relative topological position.
+	 * @param dK Relative topological position.
+	 */
+	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK ) = 0;
 };
 
 #endif // ICALCPROPERTYCOLLECTION_H

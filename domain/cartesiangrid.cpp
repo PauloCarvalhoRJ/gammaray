@@ -635,6 +635,18 @@ void CartesianGrid::getSpatialAndTopologicalCoordinates(int iRecord, double & x,
 	z = _z0 + k * _dz;
 }
 
+double CartesianGrid::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
+{
+	uint i, j, k;
+	indexToIJK( iRecord, i, j, k );
+	i += dI;
+	j += dJ;
+	k += dK;
+	if( i >= _nx || j >= _ny || k >= _nz ) //unsigned ints become huge if converted from negative integers
+		return std::numeric_limits<double>::quiet_NaN();
+	return dataIJK( iVar, i, j, k );
+}
+
 long CartesianGrid::append(const QString columnName, const spectral::array &array)
 {
     long index = addEmptyDataColumn( columnName, _nx * _ny * _nz );

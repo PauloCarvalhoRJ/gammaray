@@ -77,6 +77,7 @@ public:
 // ICalcPropertyCollection interface
 public:
 	virtual void getSpatialAndTopologicalCoordinates(int iRecord, double& x, double& y, double& z, int& i, int& j, int& k );
+	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 
 
 private:
