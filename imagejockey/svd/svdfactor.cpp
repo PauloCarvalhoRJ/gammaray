@@ -97,16 +97,6 @@ void SVDFactor::addChildFactor(SVDFactor * child)
 	child->setParentFactor( this );
 }
 
-bool SVDFactor::assignWeights(const std::vector<double> & weights)
-{
-	if( weights.size() < m_childFactors.size() )
-		return false;
-	std::vector<double>::const_iterator it = weights.cbegin();
-	for(uint i = 0; i < m_childFactors.size(); ++it, ++i)
-		m_childFactors[i]->setWeight( *it );
-	return true;
-}
-
 QString SVDFactor::getHierarchicalNumber()
 {
 	QString result = QString::number( m_number );
@@ -239,7 +229,17 @@ void SVDFactor::addTo(spectral::array *array, bool ifSelected )
         std::vector<SVDFactor*>::iterator it = m_childFactors.begin();
         for(; it != m_childFactors.end(); ++it)
             (*it)->addTo( array, ifSelected );
-    }
+	}
+}
+
+void SVDFactor::merge( SVDFactor * &other )
+{
+	m_factorData += other->m_factorData;
+	m_weight += other->m_weight;
+	m_isMaxValueDefined = false;
+	m_isMinValueDefined = false;
+	delete other;
+	other = nullptr;
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)

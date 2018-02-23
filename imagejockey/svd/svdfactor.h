@@ -53,12 +53,6 @@ public:
 	bool isSelected(){ return m_selected; }
 	void setSelected( bool value ){ m_selected = value; }
 
-	/** Assigns weights to the child factors. The default weight is 1.0 for all factors.
-	 * The number of weights must be greater than or equal to the number of child factors.
-	 * @return Whether assignment was successful.
-	 */
-	bool assignWeights( const std::vector<double>& weights );
-
     spectral::array& getFactorData(){ return m_factorData; }
 
 	/** Returns a text showing the factor number reflecting its hierarchy, e.g. 4.2 meaning that it
@@ -124,6 +118,14 @@ public:
      * Sets a name to be used instead of the default names like ROOT, Factor 1, Factor 2, etc.
      */
     void setCustomName( QString name ){ m_customName = name; }
+
+	/**
+	 * Sums the weight and the factor data of the other factor, which is destroyed and the pointer set to null.
+	 * This and the other factor must be compatible, like matrices compatible for addition.
+	 */
+	void merge( SVDFactor *& other );
+
+	double getWeight(){ return m_weight; }
 
 private:
     SVDFactor* m_parentFactor;

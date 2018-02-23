@@ -1732,7 +1732,7 @@ void MainWindow::onSVD()
     delete svdfsd;
 
     //Create the structure to store the SVD factors
-    SVDFactorTree * factorTree = new SVDFactorTree();
+	SVDFactorTree * factorTree = new SVDFactorTree( 0.1 );
 
     //Get the desired SVD factors
     {
@@ -1745,7 +1745,6 @@ void MainWindow::onSVD()
             spectral::array factor = svd.factor(i);
             SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights[i], x0, y0, z0, dx, dy, dz );
             factorTree->addFirstLevelFactor( svdFactor );
-            //cg->append( factorName, factor );
         }
     }
 
