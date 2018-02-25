@@ -62,3 +62,10 @@ SVDFactorsSelectionDialog::~SVDFactorsSelectionDialog()
     delete ui;
 }
 
+void SVDFactorsSelectionDialog::onGetAllFactors()
+{
+    m_numberOfFactors = m_weights.size();
+    emit numberOfFactorsSelected( m_numberOfFactors );
+    accept();
+}
+

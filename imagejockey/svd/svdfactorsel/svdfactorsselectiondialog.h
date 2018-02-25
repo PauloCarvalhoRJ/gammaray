@@ -34,6 +34,7 @@ private:
 
 private slots:
     void onNumberOfFactorsSelected( int number ){ m_numberOfFactors = number; }
+    void onGetAllFactors();
 };
 
 #endif // SVDFactorsSelectionDialog_H
