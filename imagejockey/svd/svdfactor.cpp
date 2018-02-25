@@ -106,10 +106,7 @@ SVDFactor::~SVDFactor()
     //delete the proxy variable object.
     delete m_variableProxy;
 	//delete the child factors (if any).
-	while( ! m_childFactors.empty() ){
-		delete m_childFactors.back();
-		m_childFactors.pop_back();
-	}
+    deleteChildren();
     //delete the data array
     delete m_factorData;
 }
@@ -281,6 +278,14 @@ double SVDFactor::getInfoContent()
         return m_weight;
     else
         return m_weight * m_parentFactor->getInfoContent();
+}
+
+void SVDFactor::deleteChildren()
+{
+    while( ! m_childFactors.empty() ){
+        delete m_childFactors.back();
+        m_childFactors.pop_back();
+    }
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)

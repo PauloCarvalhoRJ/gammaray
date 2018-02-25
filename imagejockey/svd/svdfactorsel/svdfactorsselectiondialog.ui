@@ -18,7 +18,7 @@
     <layout class="QHBoxLayout" name="layoutMain"/>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
      <item>
       <widget class="QPushButton" name="pushButton">
        <property name="sizePolicy">
@@ -29,6 +29,13 @@
        </property>
        <property name="text">
         <string>Get all factors</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="text">
+        <string>Get all factors up to 100%</string>
        </property>
       </widget>
      </item>
@@ -102,8 +109,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>SVDFactorsSelectionDialog</receiver>
+   <slot>onGetAllFactorsUpTo100()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>145</x>
+     <y>390</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>428</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onGetAllFactors()</slot>
+  <slot>onGetAllFactorsUpTo100()</slot>
  </slots>
 </ui>

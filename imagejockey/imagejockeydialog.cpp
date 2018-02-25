@@ -407,7 +407,7 @@ void ImageJockeyDialog::onSVD()
     emit infoOccurred("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
 
     //User enters number of SVD factors
-    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), true, this );
     connect( svdfsd, SIGNAL(numberOfFactorsSelected(int)), this, SLOT(onUserSetNumberOfSVDFactors(int)) );
     int userResponse = svdfsd->exec();
     if( userResponse != QDialog::Accepted )

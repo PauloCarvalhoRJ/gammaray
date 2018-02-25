@@ -118,8 +118,11 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
         if ( index.isValid() ) {
             m_right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
             m_factorContextMenu->addAction("Open in Image Jockey...", this, SLOT(onOpenFactor()));
-			m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
-		}
+            if( ! m_right_clicked_factor->hasChildren() )
+                m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
+            else
+                m_factorContextMenu->addAction("Delete children", this, SLOT(onDeleteChildren()));
+        }
     }
 
     //show the context menu under the mouse cursor.
@@ -152,7 +155,7 @@ void SVDAnalysisDialog::onFactorizeFurther()
 
 	//User enters number of SVD factors
 	m_numberOfSVDFactorsSetInTheDialog = 0;
-	SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), true, this );
 	connect( svdfsd, SIGNAL(numberOfFactorsSelected(int)), this, SLOT(onUserSetNumberOfSVDFactors(int)) );
 	int userResponse = svdfsd->exec();
 	if( userResponse != QDialog::Accepted )
@@ -161,7 +164,8 @@ void SVDAnalysisDialog::onFactorizeFurther()
 
 	//Get the desired SVD factors
 	{
-		QProgressDialog progressDialog;
+        double splitThreshold = SVDFactor::getSVDFactorTreeSplitThreshold( true );
+        QProgressDialog progressDialog;
 		progressDialog.setRange(0,0);
 		progressDialog.show();
 		for (long i = 0; i < numberOfFactors; ++i) {
@@ -169,7 +173,7 @@ void SVDAnalysisDialog::onFactorizeFurther()
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
             SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i], x0, y0, z0, dx, dy, dz,
-                                                  SVDFactor::getSVDFactorTreeSplitThreshold() );
+                                                  splitThreshold );
 			m_right_clicked_factor->addChildFactor( svdFactor );
 		}
 	}
@@ -289,4 +293,11 @@ void SVDAnalysisDialog::onPreviewRFFT()
     factorRFFT->setCustomName("Reverse FFT");
     ijgvw->setFactor( factorRFFT );
     ijgvw->show();
+}
+
+void SVDAnalysisDialog::onDeleteChildren()
+{
+    m_right_clicked_factor->deleteChildren();
+    //update the tree widget
+    refreshTreeStyle();
 }

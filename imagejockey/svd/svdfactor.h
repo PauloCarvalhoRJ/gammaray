@@ -141,6 +141,9 @@ public:
      */
     double getInfoContent();
 
+    /** Deletes the subtree of SVD factors under this factor. */
+    void deleteChildren();
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;

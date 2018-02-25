@@ -70,6 +70,7 @@ private slots:
     void onSave();
     void onPreview();
     void onPreviewRFFT();
+    void onDeleteChildren();
 };
 
 #endif // SVDANALYSISDIALOG_H
