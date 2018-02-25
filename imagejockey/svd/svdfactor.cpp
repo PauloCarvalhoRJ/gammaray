@@ -1,4 +1,5 @@
 #include "svdfactor.h"
+#include <QInputDialog>
 #include <QMessageBox>
 #include <algorithm>
 #include <boost/geometry.hpp>
@@ -8,8 +9,6 @@
 #include "../ijabstractvariable.h"
 #include "../imagejockeyutils.h"
 #include "spectral/spectral.h"
-
-double SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD = 0.5;
 
 //Implementing IJAbstractVariable to use the IJAbstractCartesianGrid interface,
 //so it is possible to use Image Jockey
@@ -38,6 +37,22 @@ public:
 private:
     SVDFactor* m_parent;
 };
+
+double SVDFactor::getSVDFactorTreeSplitThreshold(bool reset)
+{
+    static double setting = -1.0;
+    if( setting < 0.0 || reset ){
+        //ask the user once for the default tree split threshold
+        bool ok;
+        int percentage = QInputDialog::getInt(nullptr, "Further SVD factoring threshold",
+                                     "Percentage:", 50, 1, 50, 5, &ok);
+        if (ok)
+            setting = percentage / 100.0;
+        else
+            setting = 0.5; //default to 50%
+    }
+    return setting;
+}
 
 SVDFactor::SVDFactor(spectral::array &&factorData, uint number,
                      double weight, double x0, double y0,

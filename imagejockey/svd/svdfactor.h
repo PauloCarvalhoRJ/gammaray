@@ -26,7 +26,7 @@ enum class SVDFactorPlaneOrientation : int {
 class SVDFactor : public IJAbstractCartesianGrid
 {
 public:
-    static double SVD_FACTOR_TREE_SPLIT_THRESHOLD;
+    static double getSVDFactorTreeSplitThreshold( bool reset = false );
 
     /**
 	 * @param factorData The array of values of the factor.

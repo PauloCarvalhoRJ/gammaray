@@ -1732,7 +1732,7 @@ void MainWindow::onSVD()
     delete svdfsd;
 
     //Create the structure to store the SVD factors
-    SVDFactorTree * factorTree = new SVDFactorTree( SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD );
+    SVDFactorTree * factorTree = new SVDFactorTree( SVDFactor::getSVDFactorTreeSplitThreshold( true ) );
 
     //Get the desired SVD factors
     {
@@ -1744,7 +1744,7 @@ void MainWindow::onSVD()
             QCoreApplication::processEvents();
             spectral::array factor = svd.factor(i);
             SVDFactor* svdFactor = new SVDFactor( std::move(factor), i + 1, weights[i], x0, y0, z0, dx, dy, dz,
-                                                  SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD );
+                                                  SVDFactor::getSVDFactorTreeSplitThreshold() );
             factorTree->addFirstLevelFactor( svdFactor );
         }
     }
