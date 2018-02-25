@@ -7,6 +7,9 @@
 #include <boost/scoped_array.hpp>
 #include "../ijabstractvariable.h"
 #include "../imagejockeyutils.h"
+#include "spectral/spectral.h"
+
+double SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD = 0.5;
 
 //Implementing IJAbstractVariable to use the IJAbstractCartesianGrid interface,
 //so it is possible to use Image Jockey
@@ -39,10 +42,11 @@ private:
 SVDFactor::SVDFactor(spectral::array &&factorData, uint number,
                      double weight, double x0, double y0,
                      double z0, double dx, double dy, double dz,
+                     double mergeThreshold,
                      SVDFactor *parentFactor) :
     IJAbstractCartesianGrid(),
     m_parentFactor( parentFactor ),
-	m_factorData( std::move( factorData) ),
+    m_factorData( new spectral::array( std::move( factorData ) ) ),
 	m_number( number ),
 	m_selected( true ),
 	m_weight( weight ),
@@ -55,14 +59,15 @@ SVDFactor::SVDFactor(spectral::array &&factorData, uint number,
 	m_dy( dy ),
 	m_dz( dz ),
 	m_isMinValueDefined( false ),
-	m_isMaxValueDefined( false )
+    m_isMaxValueDefined( false ),
+    m_mergeThreshold( mergeThreshold )
 {
     m_variableProxy = new CartesianGridVariable( this );
 }
 
 SVDFactor::SVDFactor() :
 	m_parentFactor( nullptr ),
-	//m_factorData( ), //initialized by default constructor
+    m_factorData( new spectral::array() ),
 	m_number( 0 ),
 	m_selected( false ),
 	m_weight( 0.0 ),
@@ -74,8 +79,9 @@ SVDFactor::SVDFactor() :
 	m_dx( 1.0 ),
 	m_dy( 1.0 ),
 	m_dz( 1.0 ),
-	m_isMinValueDefined( false ),
-	m_isMaxValueDefined( false )
+    m_isMinValueDefined( false ),
+    m_isMaxValueDefined( false ),
+    m_mergeThreshold( -1.0 )
 {
     m_variableProxy = new CartesianGridVariable( this );
 }
@@ -89,12 +95,24 @@ SVDFactor::~SVDFactor()
 		delete m_childFactors.back();
 		m_childFactors.pop_back();
 	}
+    //delete the data array
+    delete m_factorData;
 }
 
 void SVDFactor::addChildFactor(SVDFactor * child)
 {
-	m_childFactors.push_back( child );
-	child->setParentFactor( this );
+    //get the lastly added child factor
+    SVDFactor* lastChildFactor = nullptr;
+    if( ! m_childFactors.empty() )
+        lastChildFactor = m_childFactors.back();
+
+    //merges the new factor into the last one or add as a new child factor (depends on the merge threshold).
+    if( lastChildFactor && lastChildFactor->getWeight() < m_mergeThreshold )
+        lastChildFactor->merge( child );
+    else{
+        m_childFactors.push_back( child );
+        child->setParentFactor( this );
+    }
 }
 
 QString SVDFactor::getHierarchicalNumber()
@@ -151,10 +169,10 @@ double SVDFactor::getCurrentPlaneDX()
 uint SVDFactor::getCurrentPlaneNX()
 {
 	switch( m_currentPlaneOrientation ){
-		case SVDFactorPlaneOrientation::XY: return m_factorData.M();
-		case SVDFactorPlaneOrientation::XZ: return m_factorData.M();
-		case SVDFactorPlaneOrientation::YZ: return m_factorData.N();
-		default: return m_factorData.M();
+        case SVDFactorPlaneOrientation::XY: return m_factorData->M();
+        case SVDFactorPlaneOrientation::XZ: return m_factorData->M();
+        case SVDFactorPlaneOrientation::YZ: return m_factorData->N();
+        default: return m_factorData->M();
 	}
 }
 
@@ -181,10 +199,10 @@ double SVDFactor::getCurrentPlaneDY()
 uint SVDFactor::getCurrentPlaneNY()
 {
 	switch( m_currentPlaneOrientation ){
-		case SVDFactorPlaneOrientation::XY: return m_factorData.N();
-		case SVDFactorPlaneOrientation::XZ: return m_factorData.K();
-		case SVDFactorPlaneOrientation::YZ: return m_factorData.K();
-		default: return m_factorData.N();
+        case SVDFactorPlaneOrientation::XY: return m_factorData->N();
+        case SVDFactorPlaneOrientation::XZ: return m_factorData->K();
+        case SVDFactorPlaneOrientation::YZ: return m_factorData->K();
+        default: return m_factorData->N();
 	}
 }
 
@@ -192,7 +210,7 @@ double SVDFactor::getMinValue()
 {
 	if( m_isMinValueDefined )
 		return m_minValue;
-	m_minValue = *std::min_element( m_factorData.data().begin(), m_factorData.data().end() ) ;
+    m_minValue = *std::min_element( m_factorData->data().begin(), m_factorData->data().end() ) ;
 	m_isMinValueDefined = true;
     return m_minValue;
 }
@@ -201,7 +219,7 @@ double SVDFactor::getMaxValue()
 {
 	if( m_isMaxValueDefined )
 		return m_maxValue;
-	m_maxValue = *std::max_element( m_factorData.data().begin(), m_factorData.data().end() ) ;
+    m_maxValue = *std::max_element( m_factorData->data().begin(), m_factorData->data().end() ) ;
 	m_isMaxValueDefined = true;
     return m_maxValue;
 }
@@ -209,10 +227,10 @@ double SVDFactor::getMaxValue()
 uint SVDFactor::getCurrentPlaneNumberOfSlices()
 {
 	switch( m_currentPlaneOrientation ){
-		case SVDFactorPlaneOrientation::XY: return m_factorData.K();
-		case SVDFactorPlaneOrientation::XZ: return m_factorData.N();
-		case SVDFactorPlaneOrientation::YZ: return m_factorData.M();
-		default: return m_factorData.N();
+        case SVDFactorPlaneOrientation::XY: return m_factorData->K();
+        case SVDFactorPlaneOrientation::XZ: return m_factorData->N();
+        case SVDFactorPlaneOrientation::YZ: return m_factorData->M();
+        default: return m_factorData->N();
     }
 }
 
@@ -224,7 +242,7 @@ void SVDFactor::setPlaneOrientation(SVDFactorPlaneOrientation orientation)
 void SVDFactor::addTo(spectral::array *array, bool ifSelected )
 {
     if( m_childFactors.size() == 0 && ( !ifSelected || m_selected ) )
-        *array += m_factorData;
+        *array += *m_factorData;
     else{
         std::vector<SVDFactor*>::iterator it = m_childFactors.begin();
         for(; it != m_childFactors.end(); ++it)
@@ -234,12 +252,20 @@ void SVDFactor::addTo(spectral::array *array, bool ifSelected )
 
 void SVDFactor::merge( SVDFactor * &other )
 {
-	m_factorData += other->m_factorData;
+    *m_factorData += *(other->m_factorData);
 	m_weight += other->m_weight;
 	m_isMaxValueDefined = false;
 	m_isMinValueDefined = false;
 	delete other;
-	other = nullptr;
+    other = nullptr;
+}
+
+double SVDFactor::getInfoContent()
+{
+    if( isTopLevel() )
+        return m_weight;
+    else
+        return m_weight * m_parentFactor->getInfoContent();
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
@@ -292,7 +318,7 @@ bool SVDFactor::XYtoIJinCurrentPlane(double localX, double localY, uint & i, uin
 
 double SVDFactor::dataIJK(uint i, uint j, uint k)
 {
-	return m_factorData(i, j, k);
+    return (*m_factorData)(i, j, k);
 }
 
 SVDFactor *SVDFactor::getChildByIndex(uint index)
@@ -322,10 +348,12 @@ QString SVDFactor::getPresentationName()
 {
     if( ! m_customName.isEmpty() )
         return m_customName;
-	if( ! m_parentFactor ) //root factor
+
+    if( ! m_parentFactor ) //root factor
 		return "ROOT";
-	else
-		return "Factor " + getHierarchicalNumber() + " (" + QString::number( m_weight ) + ")";
+    else{
+        return "Factor " + getHierarchicalNumber() + " (" + QString::number( getInfoContent() * 100 ) + "%)";
+    }
 }
 
 QIcon SVDFactor::getIcon()
@@ -357,7 +385,7 @@ bool SVDFactor::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uint &k
         k = (z - zBottom) / getCellSizeK();
 
     //check whether the location is outside the grid
-    if( /*i < 0 ||*/ i >= getNI() || /*j < 0 ||*/ j >= getNJ() || /*k < 0 ||*/ k >= getNK() ){
+    if( /*i < 0 ||*/ i >= (uint)getNI() || /*j < 0 ||*/ j >= (uint)getNJ() || /*k < 0 ||*/ k >= (uint)getNK() ){
         return false;
     }
     return true;
@@ -381,8 +409,8 @@ double SVDFactor::absMax(int variableIndex)
 {
     Q_UNUSED( variableIndex ); //SVDFactors have just one variable
     double result = 0.0d;
-    for (uint i = 0; i < m_factorData.data().size(); ++i) {
-        double value = m_factorData.data()[i];
+    for (uint i = 0; i < m_factorData->data().size(); ++i) {
+        double value = m_factorData->data()[i];
         if ( std::abs<double>(value) > result )
             result = std::abs<double>(value);
     }
@@ -393,8 +421,8 @@ double SVDFactor::absMin(int variableIndex)
 {
     Q_UNUSED( variableIndex ); //SVDFactors have just one variable
     double result = std::numeric_limits<double>::max();
-    for (uint i = 0; i < m_factorData.data().size(); ++i) {
-        double value = m_factorData.data()[i];
+    for (uint i = 0; i < m_factorData->data().size(); ++i) {
+        double value = m_factorData->data()[i];
         if ( std::abs<double>(value) < result )
             result = std::abs<double>(value);
     }
@@ -479,7 +507,7 @@ void SVDFactor::equalizeValues(QList<QPointF> &area,
                     if( isNegative )
                         value = -value;
                     // set the amplified/attenuated value to the grid
-                    m_factorData(i, j, k) = value;
+                    (*m_factorData)(i, j, k) = value;
                 }
             }
         }
@@ -494,7 +522,7 @@ void SVDFactor::saveData()
 spectral::array *SVDFactor::createSpectralArray(int variableIndex)
 {
     Q_UNUSED( variableIndex );
-    return new spectral::array( m_factorData );
+    return new spectral::array( *m_factorData );
 }
 
 spectral::complex_array *SVDFactor::createSpectralComplexArray(int variableIndex1, int variableIndex2)
@@ -511,4 +539,19 @@ long SVDFactor::appendAsNewVariable(const QString variableName, const spectral::
     Q_UNUSED(array);
     QMessageBox::critical( nullptr, "Error", QString("SVDFactor::appendAsNewVariable(): Unsupported operation."));
     return -1;
+}
+
+int SVDFactor::getNI()
+{
+    return m_factorData->M();
+}
+
+int SVDFactor::getNJ()
+{
+    return m_factorData->N();
+}
+
+int SVDFactor::getNK()
+{
+    return m_factorData->K();
 }

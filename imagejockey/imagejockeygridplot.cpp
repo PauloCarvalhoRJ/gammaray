@@ -11,6 +11,7 @@
 #include <qwt_plot_renderer.h>
 #include <qwt_plot_canvas.h>
 #include <qwt_plot_curve.h>
+#include <cmath>
 
 #include <qapplication.h>
 
@@ -63,7 +64,7 @@ public:
                 value = std::numeric_limits<double>::quiet_NaN(); //returns NaN (blank plot)
             else
                 //for Fourier images, get the absolute values in decibel for ease of interpretation
-                value = ImageJockeyUtils::dB( std::abs<double>(value), m_decibelRefValue, 0.0000001 );
+                value = ImageJockeyUtils::dB( std::abs(value), m_decibelRefValue, 0.0000001 );
             return value;
         }
     }

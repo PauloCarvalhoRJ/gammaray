@@ -1,4 +1,5 @@
 #include "svdfactortree.h"
+#include "spectral/spectral.h"
 
 SVDFactorTree::SVDFactorTree(double mergeThreshold) : QAbstractItemModel(),
 	m_mergeThreshold( mergeThreshold )

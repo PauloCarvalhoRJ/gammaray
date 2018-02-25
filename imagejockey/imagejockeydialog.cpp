@@ -342,7 +342,7 @@ void ImageJockeyDialog::preview()
 
     //Construct a displayable object from the result.
     SVDFactor* factor = new SVDFactor( std::move(outputData), 1, 1, cg->getOriginX(), cg->getOriginY(), cg->getOriginZ(),
-                                       cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK());
+                                       cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK(), SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD);
 
     //Opens the viewer.
     IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
@@ -415,7 +415,7 @@ void ImageJockeyDialog::onSVD()
     long numberOfFactors = m_numberOfSVDFactorsSetInTheDialog;
 
     //Create the structure to store the SVD factors
-	SVDFactorTree * factorTree = new SVDFactorTree( 0.1 );
+    SVDFactorTree * factorTree = new SVDFactorTree( SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD );
 
 	//Get the desired SVD factors
     {
@@ -426,7 +426,7 @@ void ImageJockeyDialog::onSVD()
 			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
-			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights[i], x0, y0, z0, dx, dy, dz );
+            SVDFactor* svdFactor = new SVDFactor( std::move(factor), i + 1, weights[i], x0, y0, z0, dx, dy, dz, SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD );
 			factorTree->addFirstLevelFactor( svdFactor );
             //cg->append( factorName, factor );
         }

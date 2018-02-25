@@ -168,7 +168,8 @@ void SVDAnalysisDialog::onFactorizeFurther()
 			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
-			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i], x0, y0, z0, dx, dy, dz );
+            SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i], x0, y0, z0, dx, dy, dz,
+                                                  SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD );
 			m_right_clicked_factor->addChildFactor( svdFactor );
 		}
 	}
@@ -217,7 +218,8 @@ void SVDAnalysisDialog::onPreview()
                                        exampleFactor->getOriginZ(),
                                        exampleFactor->getCellSizeI(),
                                        exampleFactor->getCellSizeJ(),
-                                       exampleFactor->getCellSizeK());
+                                       exampleFactor->getCellSizeK(),
+                                       SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD);
     IJGridViewerWidget* wid = new IJGridViewerWidget( true );
     factor->setCustomName( "Sum of selected factors" );
     wid->setFactor( factor );
@@ -245,7 +247,8 @@ void SVDAnalysisDialog::onPreviewRFFT()
                                        exampleFactor->getOriginZ(),
                                        exampleFactor->getCellSizeI(),
                                        exampleFactor->getCellSizeJ(),
-                                       exampleFactor->getCellSizeK());
+                                       exampleFactor->getCellSizeK(),
+                                       SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD);
     factor->setCustomName( "RFFT of sum of factors" );
 
     //create the array with the input de-shifted and in rectangular form.
@@ -278,7 +281,8 @@ void SVDAnalysisDialog::onPreviewRFFT()
     //Construct a displayable object from the result.
     SVDFactor* factorRFFT = new SVDFactor( std::move(outputData), 1, 1,
                                        exampleFactor->getOriginX(), exampleFactor->getOriginY(), exampleFactor->getOriginZ(),
-                                       exampleFactor->getCellSizeI(), exampleFactor->getCellSizeJ(), exampleFactor->getCellSizeK());
+                                       exampleFactor->getCellSizeI(), exampleFactor->getCellSizeJ(), exampleFactor->getCellSizeK(),
+                                           SVDFactor::SVD_FACTOR_TREE_SPLIT_THRESHOLD);
 
     //Opens the viewer.
     IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
