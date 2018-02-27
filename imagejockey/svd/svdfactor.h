@@ -1,8 +1,6 @@
 #ifndef SVDFACTOR_H
 #define SVDFACTOR_H
 
-//#include "spectral/spectral.h"
-
 #include <QString>
 #include <QIcon>
 #include "../ijabstractcartesiangrid.h"
@@ -143,6 +141,12 @@ public:
 
     /** Deletes the subtree of SVD factors under this factor. */
     void deleteChildren();
+
+    /** Sets the child merge threshold (e.g. 0.1 or 10% of information content).
+     * It has no effect if this factor aready has children.  Remove all children with deleteChildre()
+     * before resetting this value.
+     */
+    void setChildMergeThreshold( double threshold );
 
 private:
     SVDFactor* m_parentFactor;

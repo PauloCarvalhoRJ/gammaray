@@ -165,6 +165,7 @@ void SVDAnalysisDialog::onFactorizeFurther()
 	//Get the desired SVD factors
 	{
         double splitThreshold = SVDFactor::getSVDFactorTreeSplitThreshold( true );
+        m_right_clicked_factor->setChildMergeThreshold( splitThreshold );
         QProgressDialog progressDialog;
 		progressDialog.setRange(0,0);
 		progressDialog.show();

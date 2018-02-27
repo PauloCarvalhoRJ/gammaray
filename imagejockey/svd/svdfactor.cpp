@@ -288,6 +288,12 @@ void SVDFactor::deleteChildren()
     }
 }
 
+void SVDFactor::setChildMergeThreshold(double threshold)
+{
+    if( ! hasChildren() )
+        m_mergeThreshold = threshold;
+}
+
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
 {
 	int i = 0;

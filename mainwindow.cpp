@@ -1734,6 +1734,9 @@ void MainWindow::onSVD()
     //Create the structure to store the SVD factors
     SVDFactorTree * factorTree = new SVDFactorTree( SVDFactor::getSVDFactorTreeSplitThreshold( true ) );
 
+    //saves the current right-clicked attribute for the onSumOfFactorsWasComputed() slot.
+    _right_clicked_attribute_onSVD = _right_clicked_attribute;
+
     //Get the desired SVD factors
     {
         QProgressDialog progressDialog;
@@ -1769,7 +1772,7 @@ void MainWindow::onSVD()
 void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
 {
     //propose a name for the new variable in the source grid
-    QString proposed_name( _right_clicked_attribute->getName() );
+    QString proposed_name( _right_clicked_attribute_onSVD->getName() );
     proposed_name.append( "_SVD" );
 
     //open the renaming dialog
@@ -1783,7 +1786,7 @@ void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
     }
 
     //save the sum to the grid in the project
-    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>((CartesianGrid*)_right_clicked_attribute->getContainingFile());
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>((CartesianGrid*)_right_clicked_attribute_onSVD->getContainingFile());
     cg->appendAsNewVariable(new_variable_name, *sumOfFactors );
 
     //discard the computed sum
