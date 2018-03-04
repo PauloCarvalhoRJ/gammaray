@@ -158,6 +158,12 @@ public:
      */
     void setType( SVDFactorType type ){ m_type = type; }
 
+    /**
+     * Sums the child factors passed in the list to become one.
+     * Factors that are not children of this factor are ignored.
+     */
+    void aggregate(std::vector<SVDFactor *> &factors_to_aggregate );
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;

@@ -124,6 +124,29 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
                 m_factorContextMenu->addAction("Delete children", this, SLOT(onDeleteChildren()));
         }
     }
+    //if there are more than one selected item.
+    else {
+        SVDFactor* parent_factor = nullptr;
+        bool parents_are_the_same = true;
+        //for each of the right-clicked factors...
+        for( int i = 0; i < selected_indexes.size(); ++i){
+            //get its tree widget index
+            QModelIndex index = selected_indexes.at(i);
+            if( index.isValid() ){
+                //retrieve the object pointer
+                SVDFactor* right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
+                //tests whether all selected factors have the same parent factor
+                if( parent_factor && right_clicked_factor->getParent() != parent_factor )
+                    parents_are_the_same = false;
+                parent_factor = right_clicked_factor->getParent();
+            } else {
+                parents_are_the_same = false;
+            }
+        }
+        if( parents_are_the_same ){
+            m_factorContextMenu->addAction("Aggregate selected factors", this, SLOT(onAggregate()));
+        }
+    }
 
     //show the context menu under the mouse cursor.
     if( m_factorContextMenu->actions().size() > 0 )
@@ -160,8 +183,9 @@ void SVDAnalysisDialog::onFactorizeFurther()
         //update the tree widget to show the factor's new icon
         refreshTreeStyle();
         return;
-    } else
+    } else {
         m_right_clicked_factor->setType( SVDFactorType::GEOLOGICAL );
+    }
 
 	//User enters number of SVD factors
 	m_numberOfSVDFactorsSetInTheDialog = 0;
@@ -311,4 +335,64 @@ void SVDAnalysisDialog::onDeleteChildren()
     m_right_clicked_factor->deleteChildren();
     //update the tree widget
     refreshTreeStyle();
+}
+
+void SVDAnalysisDialog::onAggregate()
+{
+    //upon call of this slot, it is assumed the parent factor is the same for all selected factors
+    //get all selected items, this may include other items different from the one under the mouse pointer.
+    QModelIndexList selected_indexes = ui->svdFactorTreeView->selectionModel()->selectedIndexes();
+    SVDFactor* parent_factor = nullptr;
+    std::vector<SVDFactor*> selected_factors;
+    //for each of the right-clicked factors...
+    for( int i = 0; i < selected_indexes.size(); ++i){
+        //get its tree widget index
+        QModelIndex index = selected_indexes.at(i);
+        if( index.isValid() ){
+            //retrieve the object pointer
+            SVDFactor* right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
+            //get the parent factor
+            parent_factor = right_clicked_factor->getParent();
+            //update the list of selected factors
+            selected_factors.push_back( right_clicked_factor );
+        }
+    }
+    saveTreeUIState();
+    //disable the model to prevent crashes during aggregation
+    ui->svdFactorTreeView->setModel( nullptr );
+    //aggregate the selected factors
+    parent_factor->aggregate( selected_factors );
+    //re-enabling the tree widget model
+    //TODO: restore tree state
+    ui->svdFactorTreeView->setModel( m_tree );
+    restoreTreeUIState();
+}
+
+void SVDAnalysisDialog::saveTreeUIState()
+{
+    m_listForTreeStateKeeping.clear();
+    // prepare list
+    // PS: getPersistentIndexList() function is a simple `return this->persistentIndexList()` from TreeModel model class
+    foreach (QModelIndex index, m_tree->getPersistentIndexList() )
+    {
+        if ( ui->svdFactorTreeView->isExpanded(index))
+        {
+            m_listForTreeStateKeeping << index.data(Qt::DisplayRole).toString(); //DisplayRole == item label (may use UserRole with an unique ID to assure uniqueness)
+        }
+    }
+}
+
+
+void SVDAnalysisDialog::restoreTreeUIState()
+{
+    foreach (QString item, m_listForTreeStateKeeping)
+    {
+        // search `item` data in model
+        foreach (QModelIndex model_item, m_tree->getIndexList( QModelIndex() )){
+            if ( model_item.data( Qt::DisplayRole ).toString() == item ){
+                ui->svdFactorTreeView->setExpanded(model_item, true);
+                break; //end internal loop since the item was found.
+            }
+        }
+    }
 }

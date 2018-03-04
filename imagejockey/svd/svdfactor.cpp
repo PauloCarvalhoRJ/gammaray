@@ -45,7 +45,7 @@ double SVDFactor::getSVDFactorTreeSplitThreshold(bool reset)
         //ask the user once for the default tree split threshold
         bool ok;
         int percentage = QInputDialog::getInt(nullptr, "Further SVD factoring threshold",
-                                     "Percentage:", 50, 1, 50, 5, &ok);
+                                     "Split information content in percentage parts (%):", 50, 1, 50, 5, &ok);
         if (ok)
             setting = percentage / 100.0;
         else
@@ -294,6 +294,33 @@ void SVDFactor::setChildMergeThreshold(double threshold)
 {
     if( ! hasChildren() )
         m_mergeThreshold = threshold;
+}
+
+void SVDFactor::aggregate(std::vector<SVDFactor *>& factors_to_aggregate)
+{
+    std::vector<SVDFactor *>::iterator it = factors_to_aggregate.begin();
+    SVDFactor* firstCome = nullptr;
+    for(; it != factors_to_aggregate.end(); ++it){
+        //ignore factors whose parent is not this factor
+        if( (*it)->m_parentFactor != this )
+            continue;
+        //define the first-come child
+        if( ! firstCome ) {
+            firstCome = (*it);
+            //the previously computed children will not represent the new ammount of information after aggregation
+            firstCome->deleteChildren();
+        }
+        //aggregate the following children in the list
+        else {
+            SVDFactor* currentFactor = *it;
+            firstCome->merge( *it ); //SVDFactor::merge() deletes and sets the pointer to nullptr.
+            //remove the item from the list of child factores
+            m_childFactors.erase( std::remove_if (m_childFactors.begin(), m_childFactors.end(),
+                                   [currentFactor](SVDFactor* i) { return i == currentFactor; }), m_childFactors.end());
+            //when at least one factor is aggregated, this factor becomes geological (non-fundamental)
+            firstCome->setType( SVDFactorType::GEOLOGICAL );
+        }
+    }
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)

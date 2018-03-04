@@ -59,6 +59,27 @@ SVDFactor *SVDFactorTree::getOneTopLevelFactor(uint index)
     return m_rootFactor->getChildByIndex( index );
 }
 
+QModelIndexList SVDFactorTree::getPersistentIndexList()
+{
+    return this->persistentIndexList();
+}
+
+QModelIndexList SVDFactorTree::getIndexList(const QModelIndex &parent)
+{
+    QModelIndexList retval;
+    int rowCount = this->rowCount(parent);
+    for(int i = 0; i < rowCount; ++i)
+    {
+        QModelIndex idx = this->index(i, 0, parent);
+        if(idx.isValid())
+        {
+            retval << idx;
+            retval << this->getIndexList(idx);
+        }
+    }
+    return retval;
+}
+
 //-------------- QAbstractItemModel interface------------
 QModelIndex SVDFactorTree::index(int row, int column, const QModelIndex &parent) const
 {
@@ -86,6 +107,8 @@ QModelIndex SVDFactorTree::parent(const QModelIndex &child) const
 	SVDFactor *parentItem = childItem->getParent();
 	if (parentItem == m_rootFactor)
 		return QModelIndex();
+    if( ! parentItem )
+        return QModelIndex();
 	return createIndex(parentItem->getIndexInParent(), 0, parentItem);
 }
 int SVDFactorTree::rowCount(const QModelIndex &parent) const

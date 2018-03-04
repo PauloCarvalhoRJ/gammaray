@@ -37,6 +37,16 @@ public:
      */
     SVDFactor* getOneTopLevelFactor( uint index );
 
+    /** Returns a list of tree model indexes, which are references to the
+     * objects referenced in the tree widget */
+    QModelIndexList getPersistentIndexList();
+
+    /** Returns a list of all items under the given parent item.
+     * This method is recursive.  Pass QModelIndex() to return all intems.
+     */
+    QModelIndexList getIndexList(const QModelIndex &parent);
+
+
 private:
 	SVDFactor *m_rootFactor;
 	double m_mergeThreshold;

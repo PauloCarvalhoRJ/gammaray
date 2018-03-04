@@ -58,8 +58,11 @@ private:
     IJGridViewerWidget* m_gridViewerWidget;
     IJAbstractCartesianGrid* m_gridWithPhaseForPossibleRFFT;
     int m_variableIndexWithPhaseForPossibleRFFT;
+    QStringList m_listForTreeStateKeeping;
 	void refreshTreeStyle();
     void forcePlotUpdate();
+    void saveTreeUIState();
+    void restoreTreeUIState();
 
 private slots:
     void onFactorContextMenu(const QPoint &mouse_location);
@@ -71,6 +74,7 @@ private slots:
     void onPreview();
     void onPreviewRFFT();
     void onDeleteChildren();
+    void onAggregate();
 };
 
 #endif // SVDANALYSISDIALOG_H
