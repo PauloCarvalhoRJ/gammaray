@@ -153,6 +153,12 @@ void SVDAnalysisDialog::onFactorizeFurther()
 	//get the list with the factor weights (information quantity)
 	spectral::array weights = svd.factor_weights();
 
+    //tests whether the factor is factorizable (not fundamental)
+    if( weights[0] > 0.999999 ){
+        QMessageBox::information( nullptr, "Information", "Selected factor is aready fundamental (not factorizable).");
+        return;
+    }
+
 	//User enters number of SVD factors
 	m_numberOfSVDFactorsSetInTheDialog = 0;
     SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), true, this );
