@@ -75,7 +75,8 @@ SVDFactor::SVDFactor(spectral::array &&factorData, uint number,
 	m_dz( dz ),
 	m_isMinValueDefined( false ),
     m_isMaxValueDefined( false ),
-    m_mergeThreshold( mergeThreshold )
+    m_mergeThreshold( mergeThreshold ),
+    m_type( SVDFactorType::UNSPECIFIED )
 {
     m_variableProxy = new CartesianGridVariable( this );
 }
@@ -96,7 +97,8 @@ SVDFactor::SVDFactor() :
 	m_dz( 1.0 ),
     m_isMinValueDefined( false ),
     m_isMaxValueDefined( false ),
-    m_mergeThreshold( -1.0 )
+    m_mergeThreshold( -1.0 ),
+    m_type( SVDFactorType::UNSPECIFIED )
 {
     m_variableProxy = new CartesianGridVariable( this );
 }
@@ -384,7 +386,16 @@ QString SVDFactor::getPresentationName()
 
 QIcon SVDFactor::getIcon()
 {
-    return QIcon(":ijicons32/ijsvd32");
+    switch( m_type ){
+    case SVDFactorType::GEOLOGICAL:
+        return QIcon(":ijicons32/ijgeofactor32");
+        break;
+    case SVDFactorType::FUNDAMENTAL:
+        return QIcon(":ijicons32/ijfundfactor32");
+        break;
+    default:
+        return QIcon(":ijicons32/ijsvd32");
+    }
 }
 
 double SVDFactor::getData(int variableIndex, int i, int j, int k)

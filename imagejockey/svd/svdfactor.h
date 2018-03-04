@@ -17,6 +17,11 @@ enum class SVDFactorPlaneOrientation : int {
 	YZ
 };
 
+enum class SVDFactorType : int {
+    UNSPECIFIED,
+    FUNDAMENTAL,
+    GEOLOGICAL
+};
 
 /**
  * @brief The SVDFactor class represents one factor obtained from Singular Value Decomposition (SVD).
@@ -148,6 +153,11 @@ public:
      */
     void setChildMergeThreshold( double threshold );
 
+    /**
+     * Sets the factor type (fundamental, geological (non-fundamental) or unspecified (default)).
+     */
+    void setType( SVDFactorType type ){ m_type = type; }
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;
@@ -164,6 +174,7 @@ private:
     IJAbstractVariable* m_variableProxy; //this object represents the internal data for the IJAbstractCartesianGrid interface.
     QString m_customName; //if defined, this is used as name, instead of Factor 1, Factor 2, etc.
     double m_mergeThreshold;
+    SVDFactorType m_type;
     uint getIndexOfChild( SVDFactor* child );
 	bool isRoot();
 	void setParentFactor( SVDFactor* parent );

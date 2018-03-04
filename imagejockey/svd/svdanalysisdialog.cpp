@@ -156,8 +156,12 @@ void SVDAnalysisDialog::onFactorizeFurther()
     //tests whether the factor is factorizable (not fundamental)
     if( weights[0] > 0.999999 ){
         QMessageBox::information( nullptr, "Information", "Selected factor is aready fundamental (not factorizable).");
+        m_right_clicked_factor->setType( SVDFactorType::FUNDAMENTAL );
+        //update the tree widget to show the factor's new icon
+        refreshTreeStyle();
         return;
-    }
+    } else
+        m_right_clicked_factor->setType( SVDFactorType::GEOLOGICAL );
 
 	//User enters number of SVD factors
 	m_numberOfSVDFactorsSetInTheDialog = 0;
