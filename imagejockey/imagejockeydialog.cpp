@@ -342,7 +342,7 @@ void ImageJockeyDialog::preview()
 
     //Construct a displayable object from the result.
     SVDFactor* factor = new SVDFactor( std::move(outputData), 1, 1, cg->getOriginX(), cg->getOriginY(), cg->getOriginZ(),
-                                       cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK());
+                                       cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK(), SVDFactor::getSVDFactorTreeSplitThreshold());
 
     //Opens the viewer.
     IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
@@ -407,7 +407,7 @@ void ImageJockeyDialog::onSVD()
     emit infoOccurred("ImageJockeyDialog::onSVD(): " + QString::number( weights.data().size() ) + " factor(s) were found.");
 
     //User enters number of SVD factors
-    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), true, this );
     connect( svdfsd, SIGNAL(numberOfFactorsSelected(int)), this, SLOT(onUserSetNumberOfSVDFactors(int)) );
     int userResponse = svdfsd->exec();
     if( userResponse != QDialog::Accepted )
@@ -415,7 +415,7 @@ void ImageJockeyDialog::onSVD()
     long numberOfFactors = m_numberOfSVDFactorsSetInTheDialog;
 
     //Create the structure to store the SVD factors
-	SVDFactorTree * factorTree = new SVDFactorTree();
+    SVDFactorTree * factorTree = new SVDFactorTree( SVDFactor::getSVDFactorTreeSplitThreshold( true ) );
 
 	//Get the desired SVD factors
     {
@@ -426,7 +426,7 @@ void ImageJockeyDialog::onSVD()
 			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
-			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, 1.0, x0, y0, z0, dx, dy, dz );
+            SVDFactor* svdFactor = new SVDFactor( std::move(factor), i + 1, weights[i], x0, y0, z0, dx, dy, dz, SVDFactor::getSVDFactorTreeSplitThreshold() );
 			factorTree->addFirstLevelFactor( svdFactor );
             //cg->append( factorName, factor );
         }
@@ -434,12 +434,6 @@ void ImageJockeyDialog::onSVD()
 
     //delete the data array, since it's not necessary anymore
     delete a;
-
-	//assign the weights to each factor for the SVD analysis dialog
-	//TODO: THIS IS NOT NECESSARY ANYMORE, SINCE WE NOW KNOW THE WEIGHTS ARE OBTAINED BEFORE
-	//      WEIGHT ASSIGNMENT CAN BE PERFORMED IN THE "Get the desired SVD factors" LOOP ABOVE
-	if( ! factorTree->assignWeights( weights.data() ) )
-        emit warningOccurred("ImageJockeyDialog::onSVD(): weight assignment failed.");
 
     if( numberOfFactors > 0 ){
         //show the SDV analysis dialog

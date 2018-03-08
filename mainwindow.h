@@ -106,6 +106,8 @@ private:
     CartesianGrid* _right_clicked_cartesian_grid;
     //pointer to right clicked Point Set (set in onProjectContextMenu() slot)
     PointSet* _right_clicked_point_set;
+    //saves the right clicked attribute in the last call to onSVD() slot.
+    Attribute *_right_clicked_attribute_onSVD;
 
 private slots:
     void onProjectContextMenu(const QPoint &mouse_location);

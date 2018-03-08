@@ -14,17 +14,15 @@
 class SVDFactorTree : public QAbstractItemModel
 {
 public:
-    SVDFactorTree();
+	/** @param mergeThreshold the minimum ammount of information content per top-level factor, e.g. 0.1 == 10%.
+	 *         Low information factors are merged until reaching this value.  Setting a value less than or equal to zero
+	 *         causes all factors to become top level.
+	 */
+	SVDFactorTree( double mergeThreshold );
 	virtual ~SVDFactorTree();
 
 	/** Adds a SVD Factor under the root node of this tree. All factors are deleted upon destruction of this object. */
 	void addFirstLevelFactor( SVDFactor* factor );
-
-	/** Assigns weights to the top level factors of the tree. The default weight is 1.0 for all factors.
-	 * The number of weights must match the number of top level factors.
-	 * @return Whether assignment was successful.
-	 */
-	bool assignWeights( const std::vector<double>& weights );
 
     /** Returns a new array object containing the sum of the selected leaf factors in the tree.
      * The caller is responsible to deallocate the created object.
@@ -39,8 +37,19 @@ public:
      */
     SVDFactor* getOneTopLevelFactor( uint index );
 
+    /** Returns a list of tree model indexes, which are references to the
+     * objects referenced in the tree widget */
+    QModelIndexList getPersistentIndexList();
+
+    /** Returns a list of all items under the given parent item.
+     * This method is recursive.  Pass QModelIndex() to return all intems.
+     */
+    QModelIndexList getIndexList(const QModelIndex &parent);
+
+
 private:
 	SVDFactor *m_rootFactor;
+	double m_mergeThreshold;
 
 	// QAbstractItemModel interface
 public:
