@@ -8,5 +8,7 @@
         <file alias="ijremovecurve32">icons/ijremovecurve32.png</file>
         <file alias="ijsvd32">icons/ijsvd32.png</file>
         <file alias="ijvariable32">icons/ijvariable32.png</file>
+        <file alias="ijfundfactor32">icons/ijfundfactor32.png</file>
+        <file alias="ijgeofactor32">icons/ijgeofactor32.png</file>
     </qresource>
 </RCC>

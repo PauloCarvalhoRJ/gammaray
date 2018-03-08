@@ -1,8 +1,6 @@
 #ifndef SVDFACTOR_H
 #define SVDFACTOR_H
 
-#include "spectral/spectral.h"
-
 #include <QString>
 #include <QIcon>
 #include "../ijabstractcartesiangrid.h"
@@ -10,6 +8,7 @@
 //third-party library Eigen
 namespace spectral{
    class array;
+   class complex_array;
 }
 
 enum class SVDFactorPlaneOrientation : int {
@@ -18,12 +17,20 @@ enum class SVDFactorPlaneOrientation : int {
 	YZ
 };
 
+enum class SVDFactorType : int {
+    UNSPECIFIED,
+    FUNDAMENTAL,
+    GEOLOGICAL
+};
+
 /**
  * @brief The SVDFactor class represents one factor obtained from Singular Value Decomposition (SVD).
  */
 class SVDFactor : public IJAbstractCartesianGrid
 {
 public:
+    static double getSVDFactorTreeSplitThreshold( bool reset = false );
+
     /**
 	 * @param factorData The array of values of the factor.
 	 * @param number The factor number in the series. This number is used to make the factor name.
@@ -34,14 +41,18 @@ public:
 	 * @param dx Cell size (useful for viewers).
 	 * @param dy Cell size (useful for viewers).
 	 * @param dz Cell size (useful for viewers).
-	 * @param parentFactor If set, this SVD factor is a decomposition of another SVD factor.
+     * @param mergeThreshold the minimum ammount of information content per child factor, e.g. 0.1 == 10%.
+     *         Low information factors are merged until reaching this value.  Setting a value less than or equal to zero
+     *         causes all individual factors to become a child.
+     * @param parentFactor If set, this SVD factor is a decomposition of another SVD factor.
 	 */
-	SVDFactor(spectral::array&& factorData,
-			   uint number,
-			   double weight,
-			   double x0, double y0, double z0,
-			   double dx, double dy, double dz,
-			   SVDFactor* parentFactor = nullptr );
+    SVDFactor(spectral::array &&factorData,
+               uint number,
+               double weight,
+               double x0, double y0, double z0,
+               double dx, double dy, double dz,
+               double mergeThreshold,
+               SVDFactor* parentFactor = nullptr );
 
 	/** Default constructor used for the root "factor" in SVDFactorTree. */
 	SVDFactor();
@@ -53,13 +64,7 @@ public:
 	bool isSelected(){ return m_selected; }
 	void setSelected( bool value ){ m_selected = value; }
 
-	/** Assigns weights to the child factors. The default weight is 1.0 for all factors.
-	 * The number of weights must be greater than or equal to the number of child factors.
-	 * @return Whether assignment was successful.
-	 */
-	bool assignWeights( const std::vector<double>& weights );
-
-    spectral::array& getFactorData(){ return m_factorData; }
+    spectral::array& getFactorData(){ return *m_factorData; }
 
 	/** Returns a text showing the factor number reflecting its hierarchy, e.g. 4.2 meaning that it
 	 * is the second factor of the fourth root factor.
@@ -125,9 +130,43 @@ public:
      */
     void setCustomName( QString name ){ m_customName = name; }
 
+	/**
+	 * Sums the weight and the factor data of the other factor, which is destroyed and the pointer set to null.
+	 * This and the other factor must be compatible, like matrices compatible for addition.
+	 */
+	void merge( SVDFactor *& other );
+
+	double getWeight(){ return m_weight; }
+
+    /** Returns the information content corresponding to this factor.
+     * It equals the factor weight if it is a top-level factor.  For a factor that was
+     * split from a parent factor, it equals this factor's weight times the parent's information content.
+     */
+    double getInfoContent();
+
+    /** Deletes the subtree of SVD factors under this factor. */
+    void deleteChildren();
+
+    /** Sets the child merge threshold (e.g. 0.1 or 10% of information content).
+     * It has no effect if this factor aready has children.  Remove all children with deleteChildre()
+     * before resetting this value.
+     */
+    void setChildMergeThreshold( double threshold );
+
+    /**
+     * Sets the factor type (fundamental, geological (non-fundamental) or unspecified (default)).
+     */
+    void setType( SVDFactorType type ){ m_type = type; }
+
+    /**
+     * Sums the child factors passed in the list to become one.
+     * Factors that are not children of this factor are ignored.
+     */
+    void aggregate(std::vector<SVDFactor *> &factors_to_aggregate );
+
 private:
     SVDFactor* m_parentFactor;
-    spectral::array m_factorData;
+    spectral::array* m_factorData;
 	uint m_number;
 	std::vector< SVDFactor* > m_childFactors;
 	bool m_selected;
@@ -140,6 +179,8 @@ private:
 	double m_minValue, m_maxValue;
     IJAbstractVariable* m_variableProxy; //this object represents the internal data for the IJAbstractCartesianGrid interface.
     QString m_customName; //if defined, this is used as name, instead of Factor 1, Factor 2, etc.
+    double m_mergeThreshold;
+    SVDFactorType m_type;
     uint getIndexOfChild( SVDFactor* child );
 	bool isRoot();
 	void setParentFactor( SVDFactor* parent );
@@ -166,9 +207,9 @@ public:
     // IJAbstractCartesianGrid interface
 public:
     virtual double getRotation(){ return 0.0; }
-    virtual int getNI(){ return m_factorData.M(); }
-    virtual int getNJ(){ return m_factorData.N(); }
-    virtual int getNK(){ return m_factorData.K(); }
+    virtual int getNI();
+    virtual int getNJ();
+    virtual int getNK();
     virtual double getCellSizeI(){ return m_dx; }
     virtual double getCellSizeJ(){ return m_dy; }
     virtual double getCellSizeK(){ return m_dz; }

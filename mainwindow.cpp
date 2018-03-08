@@ -1738,7 +1738,10 @@ void MainWindow::onSVD()
     delete svdfsd;
 
     //Create the structure to store the SVD factors
-    SVDFactorTree * factorTree = new SVDFactorTree();
+    SVDFactorTree * factorTree = new SVDFactorTree( SVDFactor::getSVDFactorTreeSplitThreshold( true ) );
+
+    //saves the current right-clicked attribute for the onSumOfFactorsWasComputed() slot.
+    _right_clicked_attribute_onSVD = _right_clicked_attribute;
 
     //Get the desired SVD factors
     {
@@ -1749,9 +1752,9 @@ void MainWindow::onSVD()
             progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
             QCoreApplication::processEvents();
             spectral::array factor = svd.factor(i);
-            SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights[i], x0, y0, z0, dx, dy, dz );
+            SVDFactor* svdFactor = new SVDFactor( std::move(factor), i + 1, weights[i], x0, y0, z0, dx, dy, dz,
+                                                  SVDFactor::getSVDFactorTreeSplitThreshold() );
             factorTree->addFirstLevelFactor( svdFactor );
-            //cg->append( factorName, factor );
         }
     }
 
@@ -1775,7 +1778,7 @@ void MainWindow::onSVD()
 void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
 {
     //propose a name for the new variable in the source grid
-    QString proposed_name( _right_clicked_attribute->getName() );
+    QString proposed_name( _right_clicked_attribute_onSVD->getName() );
     proposed_name.append( "_SVD" );
 
     //open the renaming dialog
@@ -1789,7 +1792,7 @@ void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
     }
 
     //save the sum to the grid in the project
-    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>((CartesianGrid*)_right_clicked_attribute->getContainingFile());
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>((CartesianGrid*)_right_clicked_attribute_onSVD->getContainingFile());
     cg->appendAsNewVariable(new_variable_name, *sumOfFactors );
 
     //discard the computed sum

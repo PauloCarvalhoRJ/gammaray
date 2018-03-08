@@ -1,6 +1,8 @@
 #include "svdfactortree.h"
+#include "spectral/spectral.h"
 
-SVDFactorTree::SVDFactorTree() : QAbstractItemModel()
+SVDFactorTree::SVDFactorTree(double mergeThreshold) : QAbstractItemModel(),
+	m_mergeThreshold( mergeThreshold )
 {
 	m_rootFactor = new SVDFactor();
 }
@@ -12,12 +14,13 @@ SVDFactorTree::~SVDFactorTree()
 
 void SVDFactorTree::addFirstLevelFactor(SVDFactor * factor)
 {
-	m_rootFactor->addChildFactor( factor );
-}
-
-bool SVDFactorTree::assignWeights(const std::vector<double> & weights)
-{
-    return m_rootFactor->assignWeights( weights );
+	//get the lastly added top level factor
+	SVDFactor* lastTopLevelFactor = getOneTopLevelFactor( m_rootFactor->getChildCount()-1 );
+	//merges the new factor into the last one or add as a new child factor (depends on the merge threshold).
+	if( lastTopLevelFactor && lastTopLevelFactor->getWeight() < m_mergeThreshold )
+		lastTopLevelFactor->merge( factor );
+	else
+		m_rootFactor->addChildFactor( factor );
 }
 
 spectral::array *SVDFactorTree::getSumOfSelectedFactors()
@@ -56,6 +59,27 @@ SVDFactor *SVDFactorTree::getOneTopLevelFactor(uint index)
     return m_rootFactor->getChildByIndex( index );
 }
 
+QModelIndexList SVDFactorTree::getPersistentIndexList()
+{
+    return this->persistentIndexList();
+}
+
+QModelIndexList SVDFactorTree::getIndexList(const QModelIndex &parent)
+{
+    QModelIndexList retval;
+    int rowCount = this->rowCount(parent);
+    for(int i = 0; i < rowCount; ++i)
+    {
+        QModelIndex idx = this->index(i, 0, parent);
+        if(idx.isValid())
+        {
+            retval << idx;
+            retval << this->getIndexList(idx);
+        }
+    }
+    return retval;
+}
+
 //-------------- QAbstractItemModel interface------------
 QModelIndex SVDFactorTree::index(int row, int column, const QModelIndex &parent) const
 {
@@ -83,6 +107,8 @@ QModelIndex SVDFactorTree::parent(const QModelIndex &child) const
 	SVDFactor *parentItem = childItem->getParent();
 	if (parentItem == m_rootFactor)
 		return QModelIndex();
+    if( ! parentItem )
+        return QModelIndex();
 	return createIndex(parentItem->getIndexInParent(), 0, parentItem);
 }
 int SVDFactorTree::rowCount(const QModelIndex &parent) const

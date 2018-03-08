@@ -18,14 +18,44 @@
     <layout class="QHBoxLayout" name="layoutMain"/>
    </item>
    <item>
-    <widget class="QDialogButtonBox" name="buttonBox">
-     <property name="orientation">
-      <enum>Qt::Horizontal</enum>
-     </property>
-     <property name="standardButtons">
-      <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
-     </property>
-    </widget>
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
+     <item>
+      <widget class="QPushButton" name="pushButton">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Get all factors</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButton_2">
+       <property name="text">
+        <string>Get all factors up to 100%</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDialogButtonBox" name="buttonBox">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="standardButtons">
+        <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
+       </property>
+      </widget>
+     </item>
+    </layout>
    </item>
   </layout>
  </widget>
@@ -38,8 +68,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>339</x>
+     <y>394</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -54,8 +84,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>407</x>
+     <y>394</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -63,5 +93,41 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>SVDFactorsSelectionDialog</receiver>
+   <slot>onGetAllFactors()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>60</x>
+     <y>380</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>104</x>
+     <y>319</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>SVDFactorsSelectionDialog</receiver>
+   <slot>onGetAllFactorsUpTo100()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>145</x>
+     <y>390</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>136</x>
+     <y>428</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>onGetAllFactors()</slot>
+  <slot>onGetAllFactorsUpTo100()</slot>
+ </slots>
 </ui>

@@ -62,3 +62,26 @@ SVDFactorsSelectionDialog::~SVDFactorsSelectionDialog()
     delete ui;
 }
 
+void SVDFactorsSelectionDialog::onGetAllFactors()
+{
+    m_numberOfFactors = m_weights.size();
+    emit numberOfFactorsSelected( m_numberOfFactors );
+    accept();
+}
+
+void SVDFactorsSelectionDialog::onGetAllFactorsUpTo100()
+{
+    //get the factor number that reaches 100% of information content
+    std::vector<double>::const_iterator it = m_weights.cbegin();
+    double cumulative = 0.0;
+    uint i = 1;
+    for(i = 1; it != m_weights.cend(); ++it, ++i){
+        cumulative += *it;
+        if( cumulative > 0.99999 )
+            break;
+    }
+    m_numberOfFactors = i;
+    emit numberOfFactorsSelected( m_numberOfFactors );
+    accept();
+}
+

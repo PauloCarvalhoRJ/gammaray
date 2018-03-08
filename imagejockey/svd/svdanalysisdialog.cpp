@@ -118,8 +118,34 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
         if ( index.isValid() ) {
             m_right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
             m_factorContextMenu->addAction("Open in Image Jockey...", this, SLOT(onOpenFactor()));
-			m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
-		}
+            if( ! m_right_clicked_factor->hasChildren() )
+                m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
+            else
+                m_factorContextMenu->addAction("Delete children", this, SLOT(onDeleteChildren()));
+        }
+    }
+    //if there are more than one selected item.
+    else {
+        SVDFactor* parent_factor = nullptr;
+        bool parents_are_the_same = true;
+        //for each of the right-clicked factors...
+        for( int i = 0; i < selected_indexes.size(); ++i){
+            //get its tree widget index
+            QModelIndex index = selected_indexes.at(i);
+            if( index.isValid() ){
+                //retrieve the object pointer
+                SVDFactor* right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
+                //tests whether all selected factors have the same parent factor
+                if( parent_factor && right_clicked_factor->getParent() != parent_factor )
+                    parents_are_the_same = false;
+                parent_factor = right_clicked_factor->getParent();
+            } else {
+                parents_are_the_same = false;
+            }
+        }
+        if( parents_are_the_same ){
+            m_factorContextMenu->addAction("Aggregate selected factors", this, SLOT(onAggregate()));
+        }
     }
 
     //show the context menu under the mouse cursor.
@@ -150,9 +176,20 @@ void SVDAnalysisDialog::onFactorizeFurther()
 	//get the list with the factor weights (information quantity)
 	spectral::array weights = svd.factor_weights();
 
+    //tests whether the factor is factorizable (not fundamental)
+    if( weights[0] > 0.999999 ){
+        QMessageBox::information( nullptr, "Information", "Selected factor is aready fundamental (not factorizable).");
+        m_right_clicked_factor->setType( SVDFactorType::FUNDAMENTAL );
+        //update the tree widget to show the factor's new icon
+        refreshTreeStyle();
+        return;
+    } else {
+        m_right_clicked_factor->setType( SVDFactorType::GEOLOGICAL );
+    }
+
 	//User enters number of SVD factors
 	m_numberOfSVDFactorsSetInTheDialog = 0;
-	SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), this );
+    SVDFactorsSelectionDialog * svdfsd = new SVDFactorsSelectionDialog( weights.data(), true, this );
 	connect( svdfsd, SIGNAL(numberOfFactorsSelected(int)), this, SLOT(onUserSetNumberOfSVDFactors(int)) );
 	int userResponse = svdfsd->exec();
 	if( userResponse != QDialog::Accepted )
@@ -161,14 +198,17 @@ void SVDAnalysisDialog::onFactorizeFurther()
 
 	//Get the desired SVD factors
 	{
-		QProgressDialog progressDialog;
+        double splitThreshold = SVDFactor::getSVDFactorTreeSplitThreshold( true );
+        m_right_clicked_factor->setChildMergeThreshold( splitThreshold );
+        QProgressDialog progressDialog;
 		progressDialog.setRange(0,0);
 		progressDialog.show();
 		for (long i = 0; i < numberOfFactors; ++i) {
 			progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(numberOfFactors) + "...");
 			QCoreApplication::processEvents();
 			spectral::array factor = svd.factor(i);
-			SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i], x0, y0, z0, dx, dy, dz );
+            SVDFactor* svdFactor = new SVDFactor( std::move( factor ), i + 1, weights.data()[i], x0, y0, z0, dx, dy, dz,
+                                                  splitThreshold );
 			m_right_clicked_factor->addChildFactor( svdFactor );
 		}
 	}
@@ -217,7 +257,8 @@ void SVDAnalysisDialog::onPreview()
                                        exampleFactor->getOriginZ(),
                                        exampleFactor->getCellSizeI(),
                                        exampleFactor->getCellSizeJ(),
-                                       exampleFactor->getCellSizeK());
+                                       exampleFactor->getCellSizeK(),
+                                       SVDFactor::getSVDFactorTreeSplitThreshold());
     IJGridViewerWidget* wid = new IJGridViewerWidget( true );
     factor->setCustomName( "Sum of selected factors" );
     wid->setFactor( factor );
@@ -245,7 +286,8 @@ void SVDAnalysisDialog::onPreviewRFFT()
                                        exampleFactor->getOriginZ(),
                                        exampleFactor->getCellSizeI(),
                                        exampleFactor->getCellSizeJ(),
-                                       exampleFactor->getCellSizeK());
+                                       exampleFactor->getCellSizeK(),
+                                       SVDFactor::getSVDFactorTreeSplitThreshold());
     factor->setCustomName( "RFFT of sum of factors" );
 
     //create the array with the input de-shifted and in rectangular form.
@@ -278,11 +320,79 @@ void SVDAnalysisDialog::onPreviewRFFT()
     //Construct a displayable object from the result.
     SVDFactor* factorRFFT = new SVDFactor( std::move(outputData), 1, 1,
                                        exampleFactor->getOriginX(), exampleFactor->getOriginY(), exampleFactor->getOriginZ(),
-                                       exampleFactor->getCellSizeI(), exampleFactor->getCellSizeJ(), exampleFactor->getCellSizeK());
+                                       exampleFactor->getCellSizeI(), exampleFactor->getCellSizeJ(), exampleFactor->getCellSizeK(),
+                                           SVDFactor::getSVDFactorTreeSplitThreshold());
 
     //Opens the viewer.
     IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
     factorRFFT->setCustomName("Reverse FFT");
     ijgvw->setFactor( factorRFFT );
     ijgvw->show();
+}
+
+void SVDAnalysisDialog::onDeleteChildren()
+{
+    m_right_clicked_factor->deleteChildren();
+    //update the tree widget
+    refreshTreeStyle();
+}
+
+void SVDAnalysisDialog::onAggregate()
+{
+    //upon call of this slot, it is assumed the parent factor is the same for all selected factors
+    //get all selected items, this may include other items different from the one under the mouse pointer.
+    QModelIndexList selected_indexes = ui->svdFactorTreeView->selectionModel()->selectedIndexes();
+    SVDFactor* parent_factor = nullptr;
+    std::vector<SVDFactor*> selected_factors;
+    //for each of the right-clicked factors...
+    for( int i = 0; i < selected_indexes.size(); ++i){
+        //get its tree widget index
+        QModelIndex index = selected_indexes.at(i);
+        if( index.isValid() ){
+            //retrieve the object pointer
+            SVDFactor* right_clicked_factor = static_cast<SVDFactor*>( index.internalPointer() );
+            //get the parent factor
+            parent_factor = right_clicked_factor->getParent();
+            //update the list of selected factors
+            selected_factors.push_back( right_clicked_factor );
+        }
+    }
+    saveTreeUIState();
+    //disable the model to prevent crashes during aggregation
+    ui->svdFactorTreeView->setModel( nullptr );
+    //aggregate the selected factors
+    parent_factor->aggregate( selected_factors );
+    //re-enabling the tree widget model
+    //TODO: restore tree state
+    ui->svdFactorTreeView->setModel( m_tree );
+    restoreTreeUIState();
+}
+
+void SVDAnalysisDialog::saveTreeUIState()
+{
+    m_listForTreeStateKeeping.clear();
+    // prepare list
+    // PS: getPersistentIndexList() function is a simple `return this->persistentIndexList()` from TreeModel model class
+    foreach (QModelIndex index, m_tree->getPersistentIndexList() )
+    {
+        if ( ui->svdFactorTreeView->isExpanded(index))
+        {
+            m_listForTreeStateKeeping << index.data(Qt::DisplayRole).toString(); //DisplayRole == item label (may use UserRole with an unique ID to assure uniqueness)
+        }
+    }
+}
+
+
+void SVDAnalysisDialog::restoreTreeUIState()
+{
+    foreach (QString item, m_listForTreeStateKeeping)
+    {
+        // search `item` data in model
+        foreach (QModelIndex model_item, m_tree->getIndexList( QModelIndex() )){
+            if ( model_item.data( Qt::DisplayRole ).toString() == item ){
+                ui->svdFactorTreeView->setExpanded(model_item, true);
+                break; //end internal loop since the item was found.
+            }
+        }
+    }
 }
