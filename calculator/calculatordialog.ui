@@ -166,6 +166,9 @@
      </item>
      <item>
       <widget class="QPushButton" name="btnSave">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
        <property name="toolTip">
         <string>Save script</string>
        </property>

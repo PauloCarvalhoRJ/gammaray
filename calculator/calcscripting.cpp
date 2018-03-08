@@ -2,6 +2,7 @@
 #include <exprtk.hpp>
 #include "icalcpropertycollection.h"
 #include "icalcproperty.h"
+#include <cmath>
 
 //This controls the use of custom script functions which are static.
 CalcScripting* s_calcEngineUser = nullptr;
@@ -61,7 +62,7 @@ struct neigh : public exprtk::igeneric_function<T>
 template <typename T>
 inline T isNaN(T value)
 {
-   return isnan( value );
+   return std::isnan( value );
 }
 
 CalcScripting::CalcScripting(ICalcPropertyCollection * propertyCollection) :
