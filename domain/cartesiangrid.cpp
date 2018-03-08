@@ -624,7 +624,27 @@ void CartesianGrid::clearLoadedData()
 
 long CartesianGrid::appendAsNewVariable(const QString variableName, const spectral::array &array)
 {
-    return append( variableName, array );
+	return append( variableName, array );
+}
+
+void CartesianGrid::getSpatialAndTopologicalCoordinates(int iRecord, double & x, double & y, double & z, int & i, int & j, int & k)
+{
+	indexToIJK( iRecord, (uint&)i, (uint&)j, (uint&)k );
+	x = _x0 + i * _dx;
+	y = _y0 + j * _dy;
+	z = _z0 + k * _dz;
+}
+
+double CartesianGrid::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
+{
+	uint i, j, k;
+	indexToIJK( iRecord, i, j, k );
+	i += dI;
+	j += dJ;
+	k += dK;
+	if( i >= _nx || j >= _ny || k >= _nz ) //unsigned ints become huge if converted from negative integers
+		return std::numeric_limits<double>::quiet_NaN();
+	return dataIJK( iVar, i, j, k );
 }
 
 long CartesianGrid::append(const QString columnName, const spectral::array &array)
@@ -650,5 +670,15 @@ long CartesianGrid::append(const QString columnName, const spectral::array &arra
     //update the project tree in the main window.
     Application::instance()->refreshProjectTree();
 
-    return index;
+	return index;
+}
+
+void CartesianGrid::indexToIJK(uint index, uint & i, uint & j, uint & k)
+{
+	uint val = index;
+	uint nynx = _ny * _nx;
+	k = val / nynx;
+	val -= (k*nynx);
+	j = val / _nx;
+	i = val % _nx;
 }

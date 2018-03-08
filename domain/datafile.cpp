@@ -27,6 +27,7 @@
 #include "auxiliary/variableremover.h"
 #include "auxiliary/datasaver.h"
 #include "algorithms/ialgorithmdatasource.h"
+#include "calculator/icalcproperty.h"
 
 /****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES
  * ****************************/
@@ -110,7 +111,7 @@ protected:
 /**********************************************************************************************************************************/
 
 DataFile::DataFile(QString path)
-    : File(path), _lastModifiedDateTimeLastLoad(), _dataPageFirstLine(0),
+    : File(path), ICalcPropertyCollection(), _lastModifiedDateTimeLastLoad(), _dataPageFirstLine(0),
       _dataPageLastLine(std::numeric_limits<long>::max())
 {
     _algorithmDataSourceInterface.reset(new AlgorithmDataSource(*this));
@@ -504,6 +505,27 @@ void DataFile::writeToFS()
     updatePropertyCollection();
     // update the project tree in the main window.
     Application::instance()->refreshProjectTree();
+}
+
+ICalcProperty *DataFile::getCalcProperty(int index)
+{
+	return dynamic_cast<ICalcProperty*>( (Attribute*)getChildByIndex(index) );
+}
+
+void DataFile::setCalcValue(int iVar, int iRecord, double value)
+{
+	if( isnan(value) ) {
+		if( hasNoDataValue() )
+			value = getNoDataValueAsDouble();
+		else
+			value = -999.0;
+	}
+	setData( iRecord, iVar, value);
+}
+
+int DataFile::getCalcPropertyIndex(const std::string & name)
+{
+	return getChildIndex( getChildByName( QString(name.c_str()) ) );
 }
 
 void DataFile::updatePropertyCollection()
@@ -1087,5 +1109,14 @@ double DataFile::correlation(uint columnX, uint columnY)
     // use formula for calculating correlation coefficient.
     return (nValidValues * sum_XY - sum_X * sum_Y)
            / std::sqrt((nValidValues * squareSum_X - sum_X * sum_X)
-                       * (nValidValues * squareSum_Y - sum_Y * sum_Y));
+					   * (nValidValues * squareSum_Y - sum_Y * sum_Y));
+}
+
+void DataFile::setData(uint line, uint column, double value)
+{
+	switch (_data.size()) { // if _data is empty
+	case 0:
+		loadData(); // loads the data from disk.
+	}
+	this->_data.at(line).at(column) = value;
 }

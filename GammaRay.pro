@@ -6,7 +6,7 @@
 
 QT       += core gui charts
 
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
 TARGET = GammaRay
 TEMPLATE = app
@@ -25,6 +25,9 @@ CONFIG( release, debug|release ) {
 	UI_DIR = ../GammaRay_debug/ui
 }
 CONFIG += c++11
+
+#This prevents "string table overflow" errors when compiling .cpp's that include exprtk.hpp in debug mode
+QMAKE_CXXFLAGS_DEBUG += -O1
 
 #QMAKE_CXXFLAGS += -m64
 
@@ -100,7 +103,6 @@ SOURCES += main.cpp\
     domain/categorypdf.cpp \
     widgets/valuepairvertical.cpp \
     widgets/fileselectorwidget.cpp \
-    scripting.cpp \
     gslib/gslibparams/gslibparvmodel.cpp \
     gslib/gslibparams/widgets/widgetgslibparvmodel.cpp \
     domain/triads.cpp \
@@ -205,7 +207,11 @@ SOURCES += main.cpp\
 	imagejockey/widgets/ijcartesiangridselector.cpp \
 	imagejockey/widgets/ijvariableselector.cpp \
     imagejockey/widgets/grcompass.cpp \
-    imagejockey/widgets/ijgridviewerwidget.cpp
+    imagejockey/widgets/ijgridviewerwidget.cpp \
+    calculator/calcscripting.cpp \
+    calculator/icalcpropertycollection.cpp \
+    calculator/calculatordialog.cpp \
+    calculator/icalcproperty.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -283,7 +289,6 @@ HEADERS  += mainwindow.h \
     domain/categorypdf.h \
     widgets/valuepairvertical.h \
     widgets/fileselectorwidget.h \
-    scripting.h \
     gslib/gslibparams/gslibparvmodel.h \
     gslib/gslibparams/widgets/widgetgslibparvmodel.h \
     domain/triads.h \
@@ -388,7 +393,11 @@ HEADERS  += mainwindow.h \
 	imagejockey/widgets/ijcartesiangridselector.h \
 	imagejockey/widgets/ijvariableselector.h \
     imagejockey/widgets/grcompass.h \
-    imagejockey/widgets/ijgridviewerwidget.h
+    imagejockey/widgets/ijgridviewerwidget.h \
+    calculator/calcscripting.h \
+    calculator/icalcpropertycollection.h \
+    calculator/calculatordialog.h \
+    calculator/icalcproperty.h
 
 
 FORMS    += mainwindow.ui \
@@ -460,7 +469,8 @@ FORMS    += mainwindow.ui \
 	imagejockey/svd/svdfactorsel/svdfactorsselectiondialog.ui \
 	imagejockey/widgets/ijcartesiangridselector.ui \
         imagejockey/widgets/ijvariableselector.ui \
-    imagejockey/widgets/ijgridviewerwidget.ui
+    imagejockey/widgets/ijgridviewerwidget.ui \
+    calculator/calculatordialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -563,7 +573,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 3.8
+VERSION = 4.0
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
@@ -578,7 +588,8 @@ DEFINES += APP_NAME_VER=\\\"$$TARGET\\\040$$VERSION\\\"
 
 RESOURCES += \
     resources.qrc \
-    imagejockey/ijresources.qrc
+    imagejockey/ijresources.qrc\
+    calculator/calcresources.qrc
 
 #set the Windows executable icon
 win32:RC_ICONS += art/exeicon.ico

@@ -2,6 +2,7 @@
 #define DATAFILE_H
 
 #include "file.h"
+#include "calculator/icalcpropertycollection.h"
 #include <vector>
 #include <QMap>
 #include <QDateTime>
@@ -19,7 +20,7 @@ class IAlgorithmDataSource;
  * This class basically extends File with a data table and its associated load, save and access methods.
  */
 
-class DataFile : public File
+class DataFile : public File, public ICalcPropertyCollection
 {
 public:
     DataFile(QString path);
@@ -253,6 +254,8 @@ public:
 
     /**
      * Adds a new data column to this DataFile filled with zeroes.
+     * @param numberOfDataElements Number of values in the column, normally should be getDataLineCount(),
+     *        unless this object is a new one without any previous data.
      */
     long addEmptyDataColumn( const QString columnName, long numberOfDataElements );
 
@@ -287,9 +290,31 @@ public:
     /** Returns the Pearson correlation coefficient of the values in the given columns. */
     double correlation(uint columnX, uint columnY );
 
+	/**
+	  *  Sets the value at the given tabular position.
+	  *  This does not follow GEO_EAS convention, so the first data value, at the first line and first column of the file
+	  *  is at (0,0). ATTENTION: the coordinates are relative to file contents.  Do not confuse with
+	  *  grid coordinates in regular grids.
+	  */
+	void setData( uint line, uint column, double value );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
+
+// ICalcPropertyCollection interface
+public:
+    virtual QString getCalcPropertyCollectionName(){ return getName(); }
+    virtual int getCalcPropertyCount(){ return getChildCount(); }
+    virtual ICalcProperty *getCalcProperty(int index);
+	virtual int getCalcRecordCount(){ return getDataLineCount(); }
+	virtual double getCalcValue( int iVar, int iRecord ) { return data( iRecord, iVar ); }
+	virtual void setCalcValue( int iVar, int iRecord, double value );
+	virtual void computationCompleted(){ writeToFS(); }
+	virtual void computationWillStart(){ loadData(); }
+	virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& z, int& i, int& j, int& k ) = 0;
+	virtual int getCalcPropertyIndex( const std::string& name ) ;
+	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK ) = 0;
 
 protected:
 
@@ -334,6 +359,7 @@ protected:
 
     /** The pointer to the internal interface to the algorithms' data source (see classes in /algorithms subdirectory). */
     std::shared_ptr<IAlgorithmDataSource> _algorithmDataSourceInterface;
+
 };
 
 #endif // DATAFILE_H

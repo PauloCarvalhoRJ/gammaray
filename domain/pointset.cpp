@@ -9,6 +9,7 @@
 #include "../exceptions/invalidgslibdatafileexception.h"
 #include "weight.h"
 #include "util.h"
+#include <limits>
 
 PointSet::PointSet( QString path ) : DataFile( path )
 {
@@ -35,7 +36,31 @@ void PointSet::save(QTextStream *txt_stream)
 
 View3DViewData PointSet::build3DViewObjects(View3DWidget *widget3D)
 {
-    return View3DBuilders::build( this, widget3D );
+	return View3DBuilders::build( this, widget3D );
+}
+
+void PointSet::getSpatialAndTopologicalCoordinates(int iRecord, double & x, double & y, double & z, int & i, int & j, int & k)
+{
+	x = data( iRecord, getXindex() );
+	y = data( iRecord, getYindex() );
+	if( is3D() )
+		z = data( iRecord, getZindex() );
+	else
+		z = 0.0;
+	//Point sets don't have topological coordinates, they don't even have topology.
+	i = 0;
+	j = 0;
+	k = 0;
+}
+
+double PointSet::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
+{
+	Q_UNUSED(iRecord);
+	Q_UNUSED(iVar);
+	Q_UNUSED(dI);
+	Q_UNUSED(dJ);
+	Q_UNUSED(dK);
+	return std::numeric_limits<double>::quiet_NaN();
 }
 
 void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_data_value)

@@ -2,11 +2,12 @@
 #define ATTRIBUTE_H
 #include "projectcomponent.h"
 #include "imagejockey/ijabstractvariable.h"
+#include "calculator/icalcproperty.h"
 #include <QString>
 
 class File;
 
-class Attribute : public ProjectComponent, public IJAbstractVariable
+class Attribute : public ProjectComponent, public IJAbstractVariable, public ICalcProperty
 {
 public:
     /** Constructor. Index in GEO-EAS format begins with 1, not zero. */
@@ -50,10 +51,17 @@ public:
 	virtual QString getVariableName();
     virtual QIcon getVariableIcon();
 
+// ICalcProperty interface
+public:
+    virtual QString getCalcPropertyName(){ return getName(); }
+    virtual QIcon getCalcPropertyIcon(){ return getIcon(); }
+	virtual int getCalcPropertyIndex(){ return getIndexInParent(); }
+
 private:
     QString _name;
     int _index; //index in GEO-EAS format begins with 1, not zero.
     bool _categorical;
+
 };
 
 #endif // ATTRIBUTE_H
