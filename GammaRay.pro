@@ -211,7 +211,9 @@ SOURCES += main.cpp\
     calculator/calcscripting.cpp \
     calculator/icalcpropertycollection.cpp \
     calculator/calculatordialog.cpp \
-    calculator/icalcproperty.cpp
+    calculator/icalcproperty.cpp \
+    calculator/calclinenumberarea.cpp \
+    calculator/calccodeeditor.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -397,7 +399,9 @@ HEADERS  += mainwindow.h \
     calculator/calcscripting.h \
     calculator/icalcpropertycollection.h \
     calculator/calculatordialog.h \
-    calculator/icalcproperty.h
+    calculator/icalcproperty.h \
+    calculator/calclinenumberarea.h \
+    calculator/calccodeeditor.h
 
 
 FORMS    += mainwindow.ui \
