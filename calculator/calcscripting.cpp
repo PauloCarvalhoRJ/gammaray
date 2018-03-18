@@ -26,7 +26,7 @@ struct neigh : public exprtk::igeneric_function<T>
 		string_t tmpVarName(parameters[0]);
 		std::string varName;
 		varName.reserve(100); //this speeds up things a bit
-		for( int i = 0; i < tmpVarName.size(); ++i )
+        for( unsigned int i = 0; i < tmpVarName.size(); ++i )
 			varName.push_back( tmpVarName[i] );
 
 		//get the numerical parameters
@@ -45,15 +45,18 @@ struct neigh : public exprtk::igeneric_function<T>
 		//This is to speed up the resolution of property index a bit
 		int propIndex;
 		if( varNameFromPreviousCall != varName ){
-			propIndex = propCol->getCalcPropertyIndex( varName );
+            propIndex = propCol->getCalcPropertyIndexByScriptCompatibleName( varName );
 			propIndexFromPreviousCall = propIndex;
 			varNameFromPreviousCall = varName;
 		}else{
 			propIndex = propIndexFromPreviousCall;
 		}
 
-		//finally actually retrieve the neighbor value
-		return propCol->getNeighborValue( s_currentIteraction, propIndex, dI, dJ, dK );
+        if( propIndex < 0 )
+            return std::numeric_limits<double>::quiet_NaN();
+
+        //finally actually retrieve the neighbor value
+        return propCol->getNeighborValue( s_currentIteraction, propIndex, dI, dJ, dK );
 	}
 };
 
