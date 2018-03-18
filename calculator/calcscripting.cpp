@@ -148,6 +148,10 @@ bool CalcScripting::doCalc( const QString & script )
 	//Bind constant symbols (e.g. pi).
 	symbol_table.add_constants();
 
+    //Bind vector functions like avg(), sort(), etc...
+    exprtk::rtl::vecops::package<double> vecops_package;
+    symbol_table.add_package ( vecops_package );
+
 	//Register the variable bind table.
 	expression_t expression;
 	expression.register_symbol_table(symbol_table);
