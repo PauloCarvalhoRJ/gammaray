@@ -644,7 +644,10 @@ double CartesianGrid::getNeighborValue(int iRecord, int iVar, int dI, int dJ, in
 	k += dK;
 	if( i >= _nx || j >= _ny || k >= _nz ) //unsigned ints become huge if converted from negative integers
 		return std::numeric_limits<double>::quiet_NaN();
-	return dataIJK( iVar, i, j, k );
+    double value = dataIJK( iVar, i, j, k );
+    if( isNDV( value ) )
+        value = std::numeric_limits<double>::quiet_NaN();
+    return value;
 }
 
 long CartesianGrid::append(const QString columnName, const spectral::array &array)
