@@ -145,11 +145,22 @@ double SVDFactor::valueAtCurrentPlane(double localX, double localY)
 		return std::numeric_limits<double>::quiet_NaN();
 
 	//get the value
+	//TODO: REUSE: replace this with a call to valueAtCurrentPlaneIJ(i, j)
 	switch( m_currentPlaneOrientation ){
 		case SVDFactorPlaneOrientation::XY: return this->dataIJK( i, j, m_currentSlice );
 		case SVDFactorPlaneOrientation::XZ: return this->dataIJK( i, m_currentSlice, j );
 		case SVDFactorPlaneOrientation::YZ: return this->dataIJK( m_currentSlice, i, j );
 		default: return this->dataIJK( i, j, m_currentSlice );
+	}
+}
+
+double SVDFactor::valueAtCurrentPlaneIJ(unsigned int localI, unsigned int localJ)
+{
+	switch( m_currentPlaneOrientation ){
+		case SVDFactorPlaneOrientation::XY: return this->dataIJK( localI, localJ, m_currentSlice );
+		case SVDFactorPlaneOrientation::XZ: return this->dataIJK( localI, m_currentSlice, localJ );
+		case SVDFactorPlaneOrientation::YZ: return this->dataIJK( m_currentSlice, localI, localJ );
+		default: return this->dataIJK( localI, localJ, m_currentSlice );
 	}
 }
 
@@ -320,7 +331,18 @@ void SVDFactor::aggregate(std::vector<SVDFactor *>& factors_to_aggregate)
             //when at least one factor is aggregated, this factor becomes geological (non-fundamental)
             firstCome->setType( SVDFactorType::GEOLOGICAL );
         }
-    }
+	}
+}
+
+SVDFactor *SVDFactor::createFactorFromCurrent2DSlice()
+{
+	unsigned int ni = getCurrentPlaneNX();
+	unsigned int nj = getCurrentPlaneNY();
+	spectral::array data( (spectral::index)ni, (spectral::index)nj );
+	for( uint j = 0; j < nj; j++ )
+		for( uint i = 0; i < ni; i++ )
+			data( i, j ) = valueAtCurrentPlaneIJ( i, j );
+	return new SVDFactor( std::move(data), 1, 0.0, m_x0, m_y0, m_z0, m_dx, m_dy, m_dz, 0.5 );
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)

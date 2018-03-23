@@ -1,6 +1,7 @@
 #include "ijgridviewerwidget.h"
 #include "ui_ijgridviewerwidget.h"
 #include "spectral/svd.h"
+#include <QFile>
 #include <QProgressDialog>
 #include "../imagejockeygridplot.h"
 #include "../svd/svdfactor.h"
@@ -152,6 +153,17 @@ void IJGridViewerWidget::onSpinSliceChanged(int value)
 
 void IJGridViewerWidget::onDismiss()
 {
-    this->close();
+	this->close();
+}
+
+void IJGridViewerWidget::onExportSliceAsPNG()
+{
+//	SVDFactor* slice =  m_factor->createFactorFromCurrent2DSlice();
+
+//	QPixmap pixmap( slice->getNI(), slice->getCellSizeJ() );
+//	pixmap.
+//	QFile file("~Test.png");
+//	file.open(QIODevice::WriteOnly);
+//	pixmap.save(&file, "PNG");
 }
 

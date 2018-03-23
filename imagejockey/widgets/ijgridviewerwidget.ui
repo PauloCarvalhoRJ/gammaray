@@ -17,16 +17,7 @@
    <property name="spacing">
     <number>0</number>
    </property>
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>0</number>
    </property>
    <item>
@@ -41,16 +32,7 @@
       <property name="spacing">
        <number>1</number>
       </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>0</number>
       </property>
       <item>
@@ -71,16 +53,7 @@
          <property name="spacing">
           <number>1</number>
          </property>
-         <property name="leftMargin">
-          <number>1</number>
-         </property>
-         <property name="topMargin">
-          <number>1</number>
-         </property>
-         <property name="rightMargin">
-          <number>1</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>1</number>
          </property>
         </layout>
@@ -193,6 +166,26 @@
            </item>
           </widget>
          </item>
+         <item row="1" column="6">
+          <widget class="QPushButton" name="btnExportToPNG">
+           <property name="toolTip">
+            <string>Export current slice data as PNG image.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../ijresources.qrc">
+             <normaloff>:/ijicons32/ijpng32</normaloff>:/ijicons32/ijpng32</iconset>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>32</width>
+             <height>32</height>
+            </size>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
@@ -214,16 +207,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>0</number>
       </property>
       <item>
@@ -251,7 +235,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../ijresources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>btnDismiss</sender>
@@ -269,8 +255,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnExportToPNG</sender>
+   <signal>clicked()</signal>
+   <receiver>IJGridViewerWidget</receiver>
+   <slot>onExportSliceAsPNG()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>293</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>255</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onDismiss()</slot>
+  <slot>onExportSliceAsPNG()</slot>
  </slots>
 </ui>

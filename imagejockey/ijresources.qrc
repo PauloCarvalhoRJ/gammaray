@@ -10,5 +10,6 @@
         <file alias="ijvariable32">icons/ijvariable32.png</file>
         <file alias="ijfundfactor32">icons/ijfundfactor32.png</file>
         <file alias="ijgeofactor32">icons/ijgeofactor32.png</file>
+        <file alias="ijpng32">icons/ijpng32.png</file>
     </qresource>
 </RCC>

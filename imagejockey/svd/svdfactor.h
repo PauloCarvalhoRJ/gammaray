@@ -72,11 +72,18 @@ public:
 	QString getHierarchicalNumber();
 
 	/** Returns a value at the current X,Y position with respect to the currently selected plane.
-	 * The select plane depends on m_currentPlaneOrientation and m_currentPlane settings.
+	 * The selected plane depends on m_currentPlaneOrientation and m_currentPlane settings.
 	 * The passed coordinates are with respect to the plane and not world coordinates, for example,
 	 * localY is actually a Z coordinate if current plane orientation is XZ.
 	 */
 	double valueAtCurrentPlane( double localX, double localY );
+
+	/** Returns a value at the current I,J topological position with respect to the currently selected plane.
+	 * The selected plane depends on m_currentPlaneOrientation and m_currentPlane settings.
+	 * The passed coordinates are with respect to the plane and not global grid coordinates, for example,
+	 * localJ is actually a global K coordinate if current plane orientation is XZ.
+	 */
+	double valueAtCurrentPlaneIJ( unsigned int localI, unsigned int localJ );
 
 	/** Returns whether the passed value represents a non-informed datum. */
 	bool isNDV( double value );
@@ -163,6 +170,13 @@ public:
      * Factors that are not children of this factor are ignored.
      */
     void aggregate(std::vector<SVDFactor *> &factors_to_aggregate );
+
+	/**
+	 * Creates a new 2D SVDFactor grid depending on the current settings of slice selection members such as
+	 * m_currentPlaneOrientation and m_currentSlice.
+	 * Client code is responsible for deallocating the returned object.
+	 */
+	SVDFactor* createFactorFromCurrent2DSlice();
 
 private:
     SVDFactor* m_parentFactor;

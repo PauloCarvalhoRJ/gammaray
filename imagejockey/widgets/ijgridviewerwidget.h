@@ -42,6 +42,7 @@ private slots:
     void onCmbPlaneChanged( int index );
     void onSpinSliceChanged( int value );
     void onDismiss();
+	void onExportSliceAsPNG();
 };
 
 #endif // IJGRIDVIEWERWIDGET_H
