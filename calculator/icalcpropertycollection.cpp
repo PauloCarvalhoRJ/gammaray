@@ -5,7 +5,7 @@ ICalcPropertyCollection::ICalcPropertyCollection()
 {
 }
 
-int ICalcPropertyCollection::getCalcPropertyIndexByScriptCompatibleName(const std::__cxx11::string &name)
+int ICalcPropertyCollection::getCalcPropertyIndexByScriptCompatibleName(const std::string& name)
 {
     int n = getCalcPropertyCount();
     for( int i = 0; i < n; ++i){
