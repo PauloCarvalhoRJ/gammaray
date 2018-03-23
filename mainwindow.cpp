@@ -71,6 +71,7 @@
 #include "imagejockey/svd/svdfactortree.h"
 #include "imagejockey/svd/svdanalysisdialog.h"
 #include "calculator/calculatordialog.h"
+#include "imagejockey/widgets/ijgridviewerwidget.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -495,7 +496,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
-                CartesianGrid* cg = (CartesianGrid*)parent_file;
+				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
+				CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
@@ -1827,7 +1829,32 @@ void MainWindow::onNewAttribute()
     DataFile *dataFile = (DataFile*)_right_clicked_file;
     dataFile->loadData();
     dataFile->addEmptyDataColumn( new_var_name, dataFile->getDataLineCount() );
-    dataFile->writeToFS();
+	dataFile->writeToFS();
+}
+
+void MainWindow::onQuickView()
+{
+	//Get the Cartesian grid (assumes the Attribute's parent file is one)
+	IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile());
+	if( ! cg ){
+		QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+		return;
+	}
+
+	//Get the data
+	long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+
+	spectral::array* array = cg->createSpectralArray( selectedAttributeIndex );
+
+	//Construct a displayable object from the result.
+	SVDFactor* factor = new SVDFactor( std::move( *array ), 1, 1, cg->getOriginX(), cg->getOriginY(), cg->getOriginZ(),
+									   cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK(), 0.42 ); /* The last parameter is not actually used */
+
+	//Opens the viewer.
+	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+	factor->setCustomName( cg->getGridName() );
+	ijgvw->setFactor( factor );
+	ijgvw->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()
