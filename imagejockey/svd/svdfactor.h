@@ -181,6 +181,9 @@ public:
     /** Returns the data value given its topological address (IJK). */
     double dataIJK( uint i, uint j, uint k);
 
+    /** Sets the data value given its topological address (IJK). */
+    void setDataIJK( uint i, uint j, uint k, double value);
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;

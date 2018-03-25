@@ -397,6 +397,11 @@ double SVDFactor::dataIJK(uint i, uint j, uint k)
     return (*m_factorData)(i, j, k);
 }
 
+void SVDFactor::setDataIJK(uint i, uint j, uint k, double value)
+{
+    (*m_factorData)(i, j, k) = value;
+}
+
 SVDFactor *SVDFactor::getChildByIndex(uint index)
 {
 	return m_childFactors[index];

@@ -48,6 +48,12 @@ private slots:
      * pixels.
      */
 	void onExportSliceAsPNG();
+    /** Replaces the data of the currently viewed grid slice with data from a 2D grayscale image
+     * file in PNG format. The 0-255 values are re-scaled to the global min-max of current grid.
+     * Transparent pixels are imported as uninformed values.  Incompatible images or images containing
+     * non-gray pixels result in error.
+     */
+    void onImportSliceDataFromPNG();
 };
 
 #endif // IJGRIDVIEWERWIDGET_H
