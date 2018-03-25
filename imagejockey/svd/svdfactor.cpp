@@ -9,6 +9,7 @@
 #include "../ijabstractvariable.h"
 #include "../imagejockeyutils.h"
 #include "spectral/spectral.h"
+#include <cmath>
 
 //Implementing IJAbstractVariable to use the IJAbstractCartesianGrid interface,
 //so it is possible to use Image Jockey
@@ -166,9 +167,7 @@ double SVDFactor::valueAtCurrentPlaneIJ(unsigned int localI, unsigned int localJ
 
 bool SVDFactor::isNDV(double value)
 {
-	Q_UNUSED(value);
-	//TODO: ASSUMES THERE IS NO UNINFORMED CELLS.
-	return false;
+    return isNoDataValue( value );
 }
 
 double SVDFactor::getCurrentPlaneX0()
@@ -451,6 +450,11 @@ double SVDFactor::getData(int variableIndex, int i, int j, int k)
 {
     Q_UNUSED( variableIndex ); //SVDFactors have just one variable
     return dataIJK( i, j, k );
+}
+
+bool SVDFactor::isNoDataValue(double value)
+{
+    return std::isnan(value);
 }
 
 bool SVDFactor::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uint &k)

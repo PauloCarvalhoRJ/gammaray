@@ -593,7 +593,11 @@ spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
     for (ulong i = 0; i < _nx; ++i) {
         for (ulong j = 0; j < _ny; ++j) {
             for (ulong k = 0; k < _nz; ++k) {
-                data->d_[idx] = dataIJK(nDataColumn, i, j, k);
+                double value = dataIJK(nDataColumn, i, j, k);
+                if( ! isNDV( value ) )
+                    data->d_[idx] = value ;
+                else
+                    data->d_[idx] =  std::numeric_limits<double>::quiet_NaN();;
                 ++idx;
             }
         }

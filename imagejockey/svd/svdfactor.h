@@ -233,7 +233,7 @@ public:
     virtual double getOriginY(){ return m_y0; }
     virtual double getOriginZ(){ return m_z0; }
     virtual double getData(int variableIndex, int i, int j, int k);
-    virtual bool isNoDataValue(double){ return false; }
+    virtual bool isNoDataValue(double value);
     virtual double getDataAt(int variableIndex, double x, double y, double z);
     virtual double absMax(int variableIndex);
     virtual double absMin(int variableIndex);

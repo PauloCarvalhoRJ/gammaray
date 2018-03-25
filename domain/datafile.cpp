@@ -514,7 +514,7 @@ ICalcProperty *DataFile::getCalcProperty(int index)
 
 void DataFile::setCalcValue(int iVar, int iRecord, double value)
 {
-	if( isnan(value) ) {
+    if( std::isnan(value) ) {
 		if( hasNoDataValue() )
 			value = getNoDataValueAsDouble();
 		else
