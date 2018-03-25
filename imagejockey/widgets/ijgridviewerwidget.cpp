@@ -1,10 +1,15 @@
 #include "ijgridviewerwidget.h"
 #include "ui_ijgridviewerwidget.h"
 #include "spectral/svd.h"
+#include <QDesktopServices>
 #include <QFile>
+#include <QFileDialog>
 #include <QProgressDialog>
 #include "../imagejockeygridplot.h"
 #include "../svd/svdfactor.h"
+#include "../imagejockeyutils.h"
+
+/*static*/ QString IJGridViewerWidget::m_lastOpenedPath = "";
 
 IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent) :
     QWidget(parent),
@@ -158,12 +163,47 @@ void IJGridViewerWidget::onDismiss()
 
 void IJGridViewerWidget::onExportSliceAsPNG()
 {
-//	SVDFactor* slice =  m_factor->createFactorFromCurrent2DSlice();
+    //User enters file path to save the image.
+    QString filePath = QFileDialog::getSaveFileName( this, "Select directory for image",
+                                                     IJGridViewerWidget::m_lastOpenedPath,
+                                                     "*.png");
+    if( ! filePath.isEmpty() ){
+        //Get the entered directory for later reuse.
+        QFileInfo fileInfo( filePath );
+        IJGridViewerWidget::m_lastOpenedPath = fileInfo.dir().absolutePath();
+    }else
+        return;
 
-//	QPixmap pixmap( slice->getNI(), slice->getCellSizeJ() );
-//	pixmap.
-//	QFile file("~Test.png");
-//	file.open(QIODevice::WriteOnly);
-//	pixmap.save(&file, "PNG");
+    //Get the 2D grid of the currently viewed grid slice.
+    SVDFactor* slice =  m_factor->createFactorFromCurrent2DSlice();
+
+    //Get the value extrema for rescaling to 0-255 gray levels.
+    double max = m_factor->getMaxValue();
+    double min = m_factor->getMinValue();
+
+    //Create an image object equivalent to the grid slice.
+    QImage image( slice->getNI(), slice->getNJ(), QImage::Format_ARGB32 );
+
+    //Set the pixel gray levels ( image J origin is at top left )
+    for( int j = 0; j < slice->getNJ(); ++j )
+        for( int i = 0; i < slice->getNI(); ++i ){
+            double value = slice->dataIJK( i, j, 0 );
+            uint level = 255 * (value - min) / (max - min);
+            uint alpha = ( slice->isNDV( value ) ? 0 : 255 );
+            image.setPixelColor( QPoint(i,slice->getNJ()-1-j), QColor( level, level, level, alpha ) );
+        }
+
+    //Save pixel data as PNG image.
+    QPixmap pixmap;
+    pixmap.convertFromImage( image );
+    QFile file( filePath );
+    file.open(QIODevice::WriteOnly);
+    pixmap.save(&file, "PNG");
+
+    //Opens the image.
+    QDesktopServices::openUrl(QUrl::fromLocalFile( filePath ));
+
+    //Discard the slice data.
+    delete slice;
 }
 

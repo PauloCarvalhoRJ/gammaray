@@ -178,6 +178,9 @@ public:
 	 */
 	SVDFactor* createFactorFromCurrent2DSlice();
 
+    /** Returns the data value given its topological address (IJK). */
+    double dataIJK( uint i, uint j, uint k);
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;
@@ -201,7 +204,6 @@ private:
 	void setWeight( double weight ){ m_weight = weight; }
 	bool isTopLevel();
 	bool XYtoIJinCurrentPlane(double localX, double localY, uint& i, uint& j );
-	double dataIJK( uint i, uint j, uint k);
     /**
      * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
      * Returns false if the spatial coordinate lies outside the grid.

@@ -8,6 +8,7 @@
 #include <QList>
 #include <QProgressDialog>
 #include <QCoreApplication>
+#include <QDir>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -193,4 +194,18 @@ bool ImageJockeyUtils::prepareToFFTW3reverseFFT(IJAbstractCartesianGrid *gridWit
     //discard the intermediary array.
     delete dataOriginal;
     return true;
+}
+
+QString ImageJockeyUtils::generateUniqueFilePathInDir(const QString directory, const QString file_extension)
+{
+    while(true){
+        int r = ( (int)((double)rand() / RAND_MAX * 10000000)) + 10000000;
+        QString filename = QString::number(r);
+        filename.append(".");
+        filename.append(file_extension);
+        QDir dir( directory );
+        QFile file(dir.absoluteFilePath(filename));
+        if( ! file.exists() )
+            return dir.absoluteFilePath(filename);
+    }
 }

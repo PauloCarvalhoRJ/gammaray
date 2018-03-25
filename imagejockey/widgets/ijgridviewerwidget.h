@@ -34,6 +34,7 @@ private:
 	ImageJockeyGridPlot* m_gridPlot;
     SVDFactor* m_factor;
     bool m_deleteFactorOnClose;
+    static QString m_lastOpenedPath;
     void forcePlotUpdate();
     void adjustColorTableWidgets( int cmbIndex );
 
@@ -42,6 +43,10 @@ private slots:
     void onCmbPlaneChanged( int index );
     void onSpinSliceChanged( int value );
     void onDismiss();
+    /** Saves the currently viewed grid slice as a 2D grayscale image file in PNG format.
+     * The values are re-scaled to 0-255 gray level interval.  Null values are saved as transparent
+     * pixels.
+     */
 	void onExportSliceAsPNG();
 };
 

@@ -116,6 +116,10 @@ public:
                                          uint indexOfVariableWithPhases,
                                          spectral::complex_array &output );
 
+    /** Generates a unique file name in the given directory.
+     * Returns the complete path to it.  File extension must include the dot.
+     */
+    QString generateUniqueFilePathInDir(const QString directory, const QString file_extension);
 };
 
 #endif // IMAGEJOCKEYUTILS_H
