@@ -184,6 +184,12 @@ public:
     /** Sets the data value given its topological address (IJK). */
     void setDataIJK( uint i, uint j, uint k, double value);
 
+	/** Replaces the data of the slice set by m_currentPlaneOrientation and m_currentSlice with the data contained
+	 * in the grid (SVDFactor) passed as parameter. The passed grid must be 2D and compatible with current slice geometry.
+	 * Returns true if the operation succeeded.
+	 */
+	bool setSlice( SVDFactor* slice );
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;

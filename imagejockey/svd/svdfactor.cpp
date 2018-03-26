@@ -399,7 +399,33 @@ double SVDFactor::dataIJK(uint i, uint j, uint k)
 
 void SVDFactor::setDataIJK(uint i, uint j, uint k, double value)
 {
-    (*m_factorData)(i, j, k) = value;
+	(*m_factorData)(i, j, k) = value;
+}
+
+bool SVDFactor::setSlice(SVDFactor * slice)
+{
+	if( slice->getNI() != getCurrentPlaneNX() ||
+		slice->getNJ() != getCurrentPlaneNY() ){
+		QMessageBox::critical( nullptr, "Error", QString("SVDFactor::setSlice(): passed grid does not fit in the current slice."));
+		return false;
+	}
+
+	if( slice->getNK() != 1 ){
+		QMessageBox::critical( nullptr, "Error", QString("SVDFactor::setSlice(): passed grid is not 2D."));
+		return false;
+	}
+
+	for( int j = 0; j < slice->getNJ(); ++j )
+		for( int i = 0; i < slice->getNI(); ++i ){
+			double value = slice->dataIJK( i, j, 0 );
+			switch( m_currentPlaneOrientation ){
+				case SVDFactorPlaneOrientation::XY: this->setDataIJK( i, j, m_currentSlice, value );
+				case SVDFactorPlaneOrientation::XZ: this->setDataIJK( i, m_currentSlice, j, value );
+				case SVDFactorPlaneOrientation::YZ: this->setDataIJK( m_currentSlice, i, j, value );
+				default: this->dataIJK( i, j, m_currentSlice );
+			}
+		}
+	return true;
 }
 
 SVDFactor *SVDFactor::getChildByIndex(uint index)
