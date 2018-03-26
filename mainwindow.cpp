@@ -604,6 +604,42 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction(menu_caption, this, SLOT(onGetPoints()));
             }
         }
+        //if one object is a property of a cartesian grid and the other is a cartesian grid then grid projection can be used.
+        //Grid projection means copying values cell-to-cell in topological space (the spatial size
+        //and location of cells don't matter) such that the centers of the grids coincide.
+        if( index1.isValid() && index2.isValid() ){
+            File* file = nullptr;
+            Attribute* at = nullptr;
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isFile() ){
+                file = static_cast<File*>( index1.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isAttribute() ){
+                at = static_cast<Attribute*>( index2.internalPointer() );
+            }
+            //determine the destination CartesianGrid of the projection operation
+            CartesianGrid* cg = nullptr;
+            cg = static_cast<CartesianGrid*>( file );
+            //if user selected an attribute and a grid
+            if( at && cg ){
+                Application::instance()->logError("hhhhhhhh");
+                //determine the origin grid.
+                CartesianGrid* cgOrig = nullptr;
+                File* parentFileOfSelectedAttribute = at->getContainingFile();
+                if( parentFileOfSelectedAttribute->getFileType() == "CARTESIANGRID" )
+                    Application::instance()->logError("jjjjjj");
+                    cgOrig = static_cast<CartesianGrid*>( parentFileOfSelectedAttribute );
+                if( cgOrig ){
+                    Application::instance()->logError("iiiiiii");
+                    _right_clicked_attribute = at;
+                    _right_clicked_cartesian_grid = cg;
+                    QString menu_caption = "Project ";
+                    menu_caption.append( cgOrig->getName() );
+                    menu_caption.append(" onto ");
+                    menu_caption.append( cg->getName());
+                    _projectContextMenu->addAction(menu_caption, this, SLOT(onProjectGrids()));
+                }
+            }
+        }
     //three items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 3 ) {
         QModelIndex index1 = selected_indexes.first();
@@ -1854,7 +1890,42 @@ void MainWindow::onQuickView()
 	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
 	factor->setCustomName( cg->getGridName() );
 	ijgvw->setFactor( factor );
-	ijgvw->show();
+    ijgvw->show();
+}
+
+void MainWindow::onProjectGrids()
+{
+    Attribute* at = _right_clicked_attribute;
+    CartesianGrid* cgDestination = _right_clicked_cartesian_grid;
+
+    //get the source grid
+    CartesianGrid* cgSource = static_cast<CartesianGrid*>(_right_clicked_attribute->getContainingFile());
+
+    //get the index of the attribute
+    int atIndex = at->getAttributeGEOEASgivenIndex()-1;
+
+    //create a data array matching the destination grid
+    spectral::array dataArray( cgDestination->getNI(), cgDestination->getNJ(), cgDestination->getNK(), 0.0);
+
+    cgSource->loadData();
+
+    //projection loop
+    for( int k = 0; k < cgSource->getNK(); ++k ){
+        int kDest = k + cgSource->getNK()/2 - cgDestination->getNK()/2;
+        for( int j = 0; j < cgSource->getNJ(); ++j ){
+            int jDest = j + cgSource->getNJ()/2 - cgDestination->getNJ()/2;
+            for( int i = 0; i < cgSource->getNI(); ++i ){
+                int iDest = i + cgSource->getNI()/2 - cgDestination->getNI()/2;
+                if( iDest >= 0 && iDest < cgDestination->getNI() &&
+                    jDest >= 0 && jDest < cgDestination->getNJ() &&
+                    kDest >= 0 && kDest < cgDestination->getNK() )
+                 dataArray( iDest, jDest, kDest ) = cgSource->dataIJK( atIndex, i, j, k );
+            }
+        }
+    }
+
+    //append the data as a new attribute to the destination grid.
+    cgDestination->append(at->getName(), dataArray);
 }
 
 void MainWindow::onCreateCategoryDefinition()
