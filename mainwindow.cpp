@@ -621,15 +621,12 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             cg = static_cast<CartesianGrid*>( file );
             //if user selected an attribute and a grid
             if( at && cg ){
-                Application::instance()->logError("hhhhhhhh");
                 //determine the origin grid.
                 CartesianGrid* cgOrig = nullptr;
                 File* parentFileOfSelectedAttribute = at->getContainingFile();
                 if( parentFileOfSelectedAttribute->getFileType() == "CARTESIANGRID" )
-                    Application::instance()->logError("jjjjjj");
                     cgOrig = static_cast<CartesianGrid*>( parentFileOfSelectedAttribute );
                 if( cgOrig ){
-                    Application::instance()->logError("iiiiiii");
                     _right_clicked_attribute = at;
                     _right_clicked_cartesian_grid = cg;
                     QString menu_caption = "Project ";
@@ -1909,13 +1906,15 @@ void MainWindow::onProjectGrids()
 
     cgSource->loadData();
 
+    cgDestination->loadData();
+
     //projection loop
     for( int k = 0; k < cgSource->getNK(); ++k ){
-        int kDest = k + cgSource->getNK()/2 - cgDestination->getNK()/2;
+        int kDest = k - cgSource->getNK()/2 + cgDestination->getNK()/2;
         for( int j = 0; j < cgSource->getNJ(); ++j ){
-            int jDest = j + cgSource->getNJ()/2 - cgDestination->getNJ()/2;
+            int jDest = j - cgSource->getNJ()/2 + cgDestination->getNJ()/2;
             for( int i = 0; i < cgSource->getNI(); ++i ){
-                int iDest = i + cgSource->getNI()/2 - cgDestination->getNI()/2;
+                int iDest = i - cgSource->getNI()/2 + cgDestination->getNI()/2;
                 if( iDest >= 0 && iDest < cgDestination->getNI() &&
                     jDest >= 0 && jDest < cgDestination->getNJ() &&
                     kDest >= 0 && kDest < cgDestination->getNK() )
