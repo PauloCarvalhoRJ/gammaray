@@ -610,11 +610,11 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         if( index1.isValid() && index2.isValid() ){
             File* file = nullptr;
             Attribute* at = nullptr;
-            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isFile() ){
-                file = static_cast<File*>( index1.internalPointer() );
+			if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+				file = static_cast<File*>( index2.internalPointer() );
             }
-            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isAttribute() ){
-                at = static_cast<Attribute*>( index2.internalPointer() );
+			if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isAttribute() ){
+				at = static_cast<Attribute*>( index1.internalPointer() );
             }
             //determine the destination CartesianGrid of the projection operation
             CartesianGrid* cg = nullptr;
@@ -630,7 +630,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     _right_clicked_attribute = at;
                     _right_clicked_cartesian_grid = cg;
                     QString menu_caption = "Project ";
-                    menu_caption.append( cgOrig->getName() );
+					menu_caption.append( cgOrig->getName() + "/" + at->getName() );
                     menu_caption.append(" onto ");
                     menu_caption.append( cg->getName());
                     _projectContextMenu->addAction(menu_caption, this, SLOT(onProjectGrids()));
