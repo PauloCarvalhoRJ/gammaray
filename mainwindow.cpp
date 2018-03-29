@@ -497,6 +497,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
+				_projectContextMenu->addAction("Covariance map", this, SLOT(onCovarianceMap()));
 				CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
@@ -1944,6 +1945,38 @@ void MainWindow::onQuickViewerClosed(SVDFactor * factor, bool wasChanged)
 	}
 	//unregister the pair factor-attribute because the quick view dialog was closed.
 	m_attributesCurrentlyBeingViewed.erase( factor );
+}
+
+void MainWindow::onCovarianceMap()
+{
+	//the parent file is surely a CartesianGrid.
+	CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
+
+	//get the array containing the data
+	std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+
+	//run FFT to get a + bi (real and imaginary parts or the rectangular form).
+	{
+		QProgressDialog progressDialog;
+		progressDialog.setRange(0,0);
+		progressDialog.show();
+		progressDialog.setLabelText("Computing FFT...");
+		QCoreApplication::processEvents(); //let Qt repaint widgets
+
+		//run FFT
+		Util::fft3D( cg->getNX(),
+					 cg->getNY(),
+					 cg->getNZ(),
+					 array,
+					 FFTComputationMode::DIRECT,
+					 FFTImageType::RECTANGULAR_FORM );
+	}
+
+	//recompute the array to get (a+bi)*(a-bi) or ||z|| == COV(A,A) computed with FFT (Theorem of Convolution).
+	std::vector< std::complex<double> >::iterator it = array.begin();
+	for(; it != array.end(); ++it)
+		(*it).real( (*it).real() * (*it).real() + (*it).imag() * (*it).imag() );
+
 }
 
 void MainWindow::onCreateCategoryDefinition()

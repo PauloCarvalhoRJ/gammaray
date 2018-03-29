@@ -173,6 +173,7 @@ private slots:
 	void onQuickView();
     void onProjectGrids();
 	void onQuickViewerClosed( SVDFactor* factor, bool wasChanged );
+	void onCovarianceMap();
 
 private:
     /**
