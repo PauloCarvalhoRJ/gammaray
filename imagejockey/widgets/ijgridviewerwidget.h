@@ -29,12 +29,21 @@ public:
     ~IJGridViewerWidget();
     void setFactor(SVDFactor* factor );
 
+signals:
+	/** Triggered when the user closes the viewer.
+	 * @param factor Points to the factor passed in setFactor().
+	 * @param wasChanged If true, the user changed the data in the SVDFactor grid object.
+	 *        Client code may trap this signal to save possible changes made by the user.
+	 */
+	void closed( SVDFactor* factor, bool wasChanged );
+
 private:
     Ui::IJGridViewerWidget *ui;
 	ImageJockeyGridPlot* m_gridPlot;
     SVDFactor* m_factor;
     bool m_deleteFactorOnClose;
     static QString m_lastOpenedPath;
+	bool m_dataChanged;
     void forcePlotUpdate();
     void adjustColorTableWidgets( int cmbIndex );
 

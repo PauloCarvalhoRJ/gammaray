@@ -689,3 +689,36 @@ void CartesianGrid::indexToIJK(uint index, uint & i, uint & j, uint & k)
 	j = val / _nx;
 	i = val % _nx;
 }
+
+void CartesianGrid::setColumnData(uint dataColumn, spectral::array & array)
+{
+	loadData();
+
+	double NDV;
+	if( hasNoDataValue() )
+		NDV = getNoDataValueAsDouble();
+	else
+		NDV = -99999.0;
+
+	//data replacement loop
+	ulong idx = 0;
+	for (ulong i = 0; i < _nx; ++i) {
+		for (ulong j = 0; j < _ny; ++j) {
+			for (ulong k = 0; k < _nz; ++k) {
+				double value = array.d_[idx];
+				if( std::isnan( value ) )
+					value = NDV;
+				setDataIJK( dataColumn, i, j, k, value );
+				++idx;
+			}
+		}
+	}
+
+	if( idx != _nx * _ny * _nz )
+		Application::instance()->logError("CartesianGrid::setColumnData(): mismatch between number of data values added and Cartesian grid cell count.");
+
+	writeToFS();
+
+	//update the project tree in the main window.
+	Application::instance()->refreshProjectTree();
+}

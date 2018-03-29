@@ -16,7 +16,8 @@ IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent
     QWidget(parent),
     ui(new Ui::IJGridViewerWidget),
     m_factor( nullptr ),
-    m_deleteFactorOnClose( deleteFactorOnClose )
+	m_deleteFactorOnClose( deleteFactorOnClose ),
+	m_dataChanged( false )
 {
     ui->setupUi(this);
 
@@ -159,6 +160,7 @@ void IJGridViewerWidget::onSpinSliceChanged(int value)
 
 void IJGridViewerWidget::onDismiss()
 {
+	emit closed( m_factor, m_dataChanged );
 	this->close();
 }
 
@@ -246,7 +248,7 @@ void IJGridViewerWidget::onImportSliceDataFromPNG()
     for( int j = 0; j < slice->getNJ(); ++j )
         for( int i = 0; i < slice->getNI(); ++i ){
             //Get the color of the pixel.
-            QColor color = image.pixelColor( i,slice->getNJ()-1-j );
+			QColor color = image.pixelColor( i, slice->getNJ()-1-j );
             //Check whether it is gray.
             if( color.red() != color.blue() || color.red() != color.green() ){
                 QMessageBox::critical( this, "Error", QString("Image contains non-gray pixels."));
@@ -263,8 +265,15 @@ void IJGridViewerWidget::onImportSliceDataFromPNG()
             slice->setDataIJK( i, j, 0, value );
         }
 
-    //TODO: SET SLICE
+	//Set imported slice data.
+	m_factor->setSlice( slice );
 
     //Discard the slice data.
     delete slice;
+
+	//Update the plot.
+	forcePlotUpdate();
+
+	//Set that the data was changed.
+	m_dataChanged = true;
 }

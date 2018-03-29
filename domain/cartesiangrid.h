@@ -130,6 +130,9 @@ public:
 	/** Converts a data row index into topological coordinates (output parameters). */
 	void indexToIJK(uint index, uint & i, uint & j, uint & k );
 
+	/** Replaces the data in the column with the data in passed data array. */
+	void setColumnData( uint dataColumn, spectral::array& array );
+
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */

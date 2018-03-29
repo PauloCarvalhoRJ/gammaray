@@ -1883,10 +1883,14 @@ void MainWindow::onQuickView()
 	SVDFactor* factor = new SVDFactor( std::move( *array ), 1, 1, cg->getOriginX(), cg->getOriginY(), cg->getOriginZ(),
 									   cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK(), 0.42 ); /* The last parameter is not actually used */
 
+	//Registers the pair factor-attribute objects.
+	m_attributesCurrentlyBeingViewed[ factor ] = _right_clicked_attribute;
+
 	//Opens the viewer.
 	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
 	factor->setCustomName( cg->getGridName() );
 	ijgvw->setFactor( factor );
+	connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), this, SLOT(onQuickViewerClosed(SVDFactor*,bool)) );
     ijgvw->show();
 }
 
@@ -1924,7 +1928,22 @@ void MainWindow::onProjectGrids()
     }
 
     //append the data as a new attribute to the destination grid.
-    cgDestination->append(at->getName(), dataArray);
+	cgDestination->append(at->getName(), dataArray);
+}
+
+void MainWindow::onQuickViewerClosed(SVDFactor * factor, bool wasChanged)
+{
+	if( wasChanged ){
+		uint result = QMessageBox::question(this, "Confirmation dialog.", "Save changes to grid?",
+									  QMessageBox::Yes|QMessageBox::No);
+		if (result == QMessageBox::Yes) {
+			Attribute* at = m_attributesCurrentlyBeingViewed[ factor ];
+			CartesianGrid* cg = static_cast<CartesianGrid*>( at->getContainingFile() );
+			cg->setColumnData( at->getAttributeGEOEASgivenIndex()-1, factor->getFactorData() );
+		}
+	}
+	//unregister the pair factor-attribute because the quick view dialog was closed.
+	m_attributesCurrentlyBeingViewed.erase( factor );
 }
 
 void MainWindow::onCreateCategoryDefinition()
