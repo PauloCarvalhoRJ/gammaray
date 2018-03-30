@@ -122,6 +122,7 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
                 m_factorContextMenu->addAction("Factorize further", this, SLOT(onFactorizeFurther()));
             else
                 m_factorContextMenu->addAction("Delete children", this, SLOT(onDeleteChildren()));
+            m_factorContextMenu->addAction("Save individual factor", this, SLOT(onSaveAFactor()));
         }
     }
     //if there are more than one selected item.
@@ -366,6 +367,13 @@ void SVDAnalysisDialog::onAggregate()
     //TODO: restore tree state
     ui->svdFactorTreeView->setModel( m_tree );
     restoreTreeUIState();
+}
+
+void SVDAnalysisDialog::onSaveAFactor()
+{
+    spectral::array *oneFactorData = new spectral::array( m_right_clicked_factor->getFactorData() );
+    //reuse the signal to save a single factor data
+    emit sumOfFactorsComputed( oneFactorData );
 }
 
 void SVDAnalysisDialog::saveTreeUIState()

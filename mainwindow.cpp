@@ -1820,7 +1820,7 @@ void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
     //open the renaming dialog
     bool ok;
     QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
-                                             "New variable reconstructed from SVD factors:", QLineEdit::Normal,
+                                             "New variable from individual or sum of SVD factors:", QLineEdit::Normal,
                                              proposed_name, &ok);
     if( ! ok ){
         delete sumOfFactors; //discard the computed sum
