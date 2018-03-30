@@ -133,6 +133,9 @@ public:
 	/** Replaces the data in the column with the data in passed data array. */
 	void setColumnData( uint dataColumn, spectral::array& array );
 
+    /** Translates the grid to the given origin. */
+    void setOrigin( double x0, double y0, double z0 );
+
     //DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */

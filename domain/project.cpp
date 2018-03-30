@@ -374,7 +374,7 @@ void Project::importPlot(const QString from_path, const QString new_file_name)
     Application::instance()->refreshProjectTree();
 }
 
-void Project::importCartesianGrid(CartesianGrid *cg, const QString new_file_name)
+CartesianGrid *Project::importCartesianGrid(CartesianGrid *cg, const QString new_file_name)
 {
     CartesianGrid * new_cg = new CartesianGrid( cg->getPath() );
     new_cg->setInfoFromOtherCG( cg );
@@ -383,6 +383,7 @@ void Project::importCartesianGrid(CartesianGrid *cg, const QString new_file_name
     //TODO: do not add again if there is already a plot with the same name.
     this->addDataFile( new_cg );
     Application::instance()->refreshProjectTree();
+    return new_cg;
 }
 
 void Project::importExperimentalVariogram(const QString from_path,

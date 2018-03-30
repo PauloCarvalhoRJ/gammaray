@@ -497,7 +497,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
-				_projectContextMenu->addAction("Covariance map", this, SLOT(onCovarianceMap()));
+                _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
 				CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
@@ -1952,6 +1952,18 @@ void MainWindow::onCovarianceMap()
 	//the parent file is surely a CartesianGrid.
 	CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
 
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new grid",
+                                             "New grid name:", QLineEdit::Normal,
+                                             _right_clicked_attribute->getName() + "_Varmap.dat", &ok );
+
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
 	//get the array containing the data
 	std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
@@ -1974,9 +1986,83 @@ void MainWindow::onCovarianceMap()
 
 	//recompute the array to get (a+bi)*(a-bi) or ||z|| == COV(A,A) computed with FFT (Theorem of Convolution).
 	std::vector< std::complex<double> >::iterator it = array.begin();
-	for(; it != array.end(); ++it)
-		(*it).real( (*it).real() * (*it).real() + (*it).imag() * (*it).imag() );
+    for(; it != array.end(); ++it){
+        //save the current complex value
+        //get the complex modulus of the complex value.
+        double z1 = (*it).real() * (*it).real() + (*it).imag() * (*it).imag();
+        //make the real part as the square root of ||z||^2
+        (*it).real( z1 );
+        //make the imaginary part as zero
+        (*it).imag( 0.0 );
+    }
 
+    //run RFFT on the polar form of ||Z|| and phase==0.0 to get the covariance.
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Computing RFFT...");
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+
+        //run RFFT
+        Util::fft3D( cg->getNX(),
+                     cg->getNY(),
+                     cg->getNZ(),
+                     array,
+                     FFTComputationMode::REVERSE,
+                     FFTImageType::POLAR_FORM );
+    }
+
+    //The covariance at h=0 ends up in the corners of the grid, then
+    //we shift the data so cov(0) is in the grid center
+    //this also normalizes the values (divide by number of cells)
+    uint nI = cg->getNX();
+    uint nJ = cg->getNY();
+    uint nK = cg->getNZ();
+    uint n = nI*nJ*nK;
+    std::vector< std::complex<double> > arrayShifted( nI * nJ * nK );
+    for(uint k = 0; k < nK; ++k) {
+        int k_shift = (k + nK/2) % nK;
+        for(uint j = 0; j < nJ; ++j){
+            int j_shift = (j + nJ/2) % nJ;
+            for(uint i = 0; i < nI; ++i){
+                int i_shift = (i + nI/2) % nI;
+                //normalize the values
+                double value = array[i + j*nI + k*nJ*nI].real() / n;
+                //shift the values
+                arrayShifted[i_shift + j_shift*nI + k_shift*nJ*nI].real( value );
+            }
+        }
+    }
+
+    //make a tmp file path
+    QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+    //crate a new cartesian grid pointing to the tmp path
+    CartesianGrid * new_cg = new CartesianGrid( tmp_file_path );
+
+    //set the geometry info based on the original grid
+    new_cg->setInfoFromOtherCG( cg, false );
+
+    //sets the origin so h=0 is in the grid center
+    double newX0 = -new_cg->getDX() * new_cg->getNX() / 2;
+    double newY0 = -new_cg->getDY() * new_cg->getNY() / 2;
+    double newZ0 = -new_cg->getDZ() * new_cg->getNZ() / 2;
+    new_cg->setOrigin( newX0, newY0, newZ0 );
+
+    //save the results in the project's tmp directory
+    Util::createGEOEASGrid( "Covariance", "Delete_This", arrayShifted, tmp_file_path);
+
+    //import the saved file to the project
+    CartesianGrid * definitiveCG = Application::instance()->getProject()->importCartesianGrid( new_cg, new_var_name );
+
+    //remove the second useless attribute
+    definitiveCG->deleteVariable( 1 );
+
+    //delete the temporary Cartesian grid object.
+    delete new_cg;
+
+    Application::instance()->logInfo("Quick varmap completed.");
 }
 
 void MainWindow::onCreateCategoryDefinition()

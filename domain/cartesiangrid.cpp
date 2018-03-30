@@ -720,5 +720,12 @@ void CartesianGrid::setColumnData(uint dataColumn, spectral::array & array)
 	writeToFS();
 
 	//update the project tree in the main window.
-	Application::instance()->refreshProjectTree();
+    Application::instance()->refreshProjectTree();
+}
+
+void CartesianGrid::setOrigin(double x0, double y0, double z0)
+{
+    _x0 = x0;
+    _y0 = y0;
+    _z0 = z0;
 }

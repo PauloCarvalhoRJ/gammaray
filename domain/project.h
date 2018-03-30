@@ -85,8 +85,9 @@ public:
      * and registered in the project's metadata file.  cg must contain all grid metadata
      * as well as the original source path, including the original file name. new_file_name must include extension.
      * @note A new object is created, so it is up to the client code the management of the passed pointer.
+     * @return The pointer to the final Cartesian grid object.
      */
-    void importCartesianGrid( CartesianGrid* cg, const QString new_file_name );
+    CartesianGrid* importCartesianGrid( CartesianGrid* cg, const QString new_file_name );
 
     /** Creates a new experimental variogram object given path to the file and its new name once
      * in the project.  The file is copied into the project's directory, renamed
