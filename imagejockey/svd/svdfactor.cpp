@@ -9,6 +9,7 @@
 #include "../ijabstractvariable.h"
 #include "../imagejockeyutils.h"
 #include "spectral/spectral.h"
+#include <cmath>
 
 //Implementing IJAbstractVariable to use the IJAbstractCartesianGrid interface,
 //so it is possible to use Image Jockey
@@ -145,6 +146,7 @@ double SVDFactor::valueAtCurrentPlane(double localX, double localY)
 		return std::numeric_limits<double>::quiet_NaN();
 
 	//get the value
+	//TODO: REUSE: replace this with a call to valueAtCurrentPlaneIJ(i, j)
 	switch( m_currentPlaneOrientation ){
 		case SVDFactorPlaneOrientation::XY: return this->dataIJK( i, j, m_currentSlice );
 		case SVDFactorPlaneOrientation::XZ: return this->dataIJK( i, m_currentSlice, j );
@@ -153,11 +155,19 @@ double SVDFactor::valueAtCurrentPlane(double localX, double localY)
 	}
 }
 
+double SVDFactor::valueAtCurrentPlaneIJ(unsigned int localI, unsigned int localJ)
+{
+	switch( m_currentPlaneOrientation ){
+		case SVDFactorPlaneOrientation::XY: return this->dataIJK( localI, localJ, m_currentSlice );
+		case SVDFactorPlaneOrientation::XZ: return this->dataIJK( localI, m_currentSlice, localJ );
+		case SVDFactorPlaneOrientation::YZ: return this->dataIJK( m_currentSlice, localI, localJ );
+		default: return this->dataIJK( localI, localJ, m_currentSlice );
+	}
+}
+
 bool SVDFactor::isNDV(double value)
 {
-	Q_UNUSED(value);
-	//TODO: ASSUMES THERE IS NO UNINFORMED CELLS.
-	return false;
+    return isNoDataValue( value );
 }
 
 double SVDFactor::getCurrentPlaneX0()
@@ -320,7 +330,18 @@ void SVDFactor::aggregate(std::vector<SVDFactor *>& factors_to_aggregate)
             //when at least one factor is aggregated, this factor becomes geological (non-fundamental)
             firstCome->setType( SVDFactorType::GEOLOGICAL );
         }
-    }
+	}
+}
+
+SVDFactor *SVDFactor::createFactorFromCurrent2DSlice()
+{
+	unsigned int ni = getCurrentPlaneNX();
+	unsigned int nj = getCurrentPlaneNY();
+	spectral::array data( (spectral::index)ni, (spectral::index)nj );
+	for( uint j = 0; j < nj; j++ )
+		for( uint i = 0; i < ni; i++ )
+			data( i, j ) = valueAtCurrentPlaneIJ( i, j );
+	return new SVDFactor( std::move(data), 1, 0.0, m_x0, m_y0, m_z0, m_dx, m_dy, m_dz, 0.5 );
 }
 
 uint SVDFactor::getIndexOfChild(SVDFactor* child)
@@ -376,6 +397,37 @@ double SVDFactor::dataIJK(uint i, uint j, uint k)
     return (*m_factorData)(i, j, k);
 }
 
+void SVDFactor::setDataIJK(uint i, uint j, uint k, double value)
+{
+	(*m_factorData)(i, j, k) = value;
+}
+
+bool SVDFactor::setSlice(SVDFactor * slice)
+{
+	if( slice->getNI() != getCurrentPlaneNX() ||
+		slice->getNJ() != getCurrentPlaneNY() ){
+		QMessageBox::critical( nullptr, "Error", QString("SVDFactor::setSlice(): passed grid does not fit in the current slice."));
+		return false;
+	}
+
+	if( slice->getNK() != 1 ){
+		QMessageBox::critical( nullptr, "Error", QString("SVDFactor::setSlice(): passed grid is not 2D."));
+		return false;
+	}
+
+	for( int j = 0; j < slice->getNJ(); ++j )
+		for( int i = 0; i < slice->getNI(); ++i ){
+			double value = slice->dataIJK( i, j, 0 );
+			switch( m_currentPlaneOrientation ){
+				case SVDFactorPlaneOrientation::XY: this->setDataIJK( i, j, m_currentSlice, value );
+				case SVDFactorPlaneOrientation::XZ: this->setDataIJK( i, m_currentSlice, j, value );
+				case SVDFactorPlaneOrientation::YZ: this->setDataIJK( m_currentSlice, i, j, value );
+				default: this->dataIJK( i, j, m_currentSlice );
+			}
+		}
+	return true;
+}
+
 SVDFactor *SVDFactor::getChildByIndex(uint index)
 {
 	return m_childFactors[index];
@@ -429,6 +481,11 @@ double SVDFactor::getData(int variableIndex, int i, int j, int k)
 {
     Q_UNUSED( variableIndex ); //SVDFactors have just one variable
     return dataIJK( i, j, k );
+}
+
+bool SVDFactor::isNoDataValue(double value)
+{
+    return std::isnan(value);
 }
 
 bool SVDFactor::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uint &k)

@@ -47,12 +47,15 @@ public:
 	 */
 	virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& z, int& i, int& j, int& k ) = 0;
 
-	/** Returns a property's index given its name. */
+    /** Returns a property's index given its name.
+     * Implementations should return -1 if the property is not found.
+     */
 	virtual int getCalcPropertyIndex( const std::string& name ) = 0;
 
 	/**
 	 * Returns a neighbouring value.  This only makes sense with property collections that have topology.
-	 * Non-topological implementations (e.g. point sets) or calls to non-existing neighbours (e.g. at edges) should return NaN.
+     * Non-topological implementations (e.g. point sets) or calls to non-existing neighbours (e.g. at edges)
+     *  should return std::numeric_limits<double>::quiet_NaN();.
 	 * @param iRecord Number of data line.
 	 * @param iVar Index of the variable to retrieve value.
 	 * @param dI Relative topological position, e.g. -1.
@@ -60,6 +63,11 @@ public:
 	 * @param dK Relative topological position.
 	 */
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK ) = 0;
+
+    /** Returns a property's index given its script-compatible name (with illegal characters replaced
+     * by underscores). Returns -1 if the property is not found.
+     */
+    int getCalcPropertyIndexByScriptCompatibleName( const std::string& name );
 };
 
 #endif // ICALCPROPERTYCOLLECTION_H

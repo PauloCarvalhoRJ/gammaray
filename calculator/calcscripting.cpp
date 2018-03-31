@@ -26,7 +26,7 @@ struct neigh : public exprtk::igeneric_function<T>
 		string_t tmpVarName(parameters[0]);
 		std::string varName;
 		varName.reserve(100); //this speeds up things a bit
-		for( int i = 0; i < tmpVarName.size(); ++i )
+        for( unsigned int i = 0; i < tmpVarName.size(); ++i )
 			varName.push_back( tmpVarName[i] );
 
 		//get the numerical parameters
@@ -45,15 +45,18 @@ struct neigh : public exprtk::igeneric_function<T>
 		//This is to speed up the resolution of property index a bit
 		int propIndex;
 		if( varNameFromPreviousCall != varName ){
-			propIndex = propCol->getCalcPropertyIndex( varName );
+            propIndex = propCol->getCalcPropertyIndexByScriptCompatibleName( varName );
 			propIndexFromPreviousCall = propIndex;
 			varNameFromPreviousCall = varName;
 		}else{
 			propIndex = propIndexFromPreviousCall;
 		}
 
-		//finally actually retrieve the neighbor value
-		return propCol->getNeighborValue( s_currentIteraction, propIndex, dI, dJ, dK );
+        if( propIndex < 0 )
+            return std::numeric_limits<double>::quiet_NaN();
+
+        //finally actually retrieve the neighbor value
+        return propCol->getNeighborValue( s_currentIteraction, propIndex, dI, dJ, dK );
 	}
 };
 
@@ -83,6 +86,22 @@ CalcScripting::~CalcScripting()
 	delete m_registers;
 }
 
+/** LOCAL FUNCTION: Converts an absolute char postion into line number an column number in the expression text. */
+void getLineAndColumnFromPosition( const QString& expression, int position, int& line, int& col ){
+    line = 1;
+    col = 1;
+    for( int i = 0; i < expression.size(); ++i ){
+        if( i == position )
+            return;
+        QChar c = expression.at(i);
+        if( c == '\n'){
+            ++line;
+            col = 1;
+        }
+        ++col;
+    }
+}
+
 bool CalcScripting::doCalc( const QString & script )
 {
 	if( m_isBlocked ){
@@ -94,6 +113,7 @@ bool CalcScripting::doCalc( const QString & script )
 	typedef exprtk::symbol_table<double> symbol_table_t;
 	typedef exprtk::expression<double> expression_t;
 	typedef exprtk::parser<double> parser_t;
+    typedef exprtk::parser_error::type error_t;
 
 	//The registers to hold the spatial and topological coordinates.
 	double _X_, _Y_, _Z_;
@@ -128,6 +148,10 @@ bool CalcScripting::doCalc( const QString & script )
 	//Bind constant symbols (e.g. pi).
 	symbol_table.add_constants();
 
+    //Bind vector functions like avg(), sort(), etc...
+    exprtk::rtl::vecops::package<double> vecops_package;
+    symbol_table.add_package ( vecops_package );
+
 	//Register the variable bind table.
 	expression_t expression;
 	expression.register_symbol_table(symbol_table);
@@ -135,8 +159,22 @@ bool CalcScripting::doCalc( const QString & script )
 	//Parse the script against the variable bind table.
 	parser_t parser;
 	if( ! parser.compile(expression_string, expression) ){
-		m_lastError = QString( parser.error().c_str() );
-		return false;
+        m_lastError = QString( parser.error().c_str() ) + "<br><br>\n\nError details:<br>\n";
+        //retrive compilation error details
+        for (std::size_t i = 0; i < parser.error_count(); ++i){
+           error_t error = parser.get_error(i);
+           QString tmp;
+           int lin, col;
+           getLineAndColumnFromPosition( script, error.token.position, lin, col);
+           tmp.sprintf("%2d) %14s @ line=%3d, col=%3d: %s; <BR>\n",
+                  (int)i+1,
+                  exprtk::parser_error::to_str(error.mode).c_str(),
+                  lin,
+                  col,
+                  error.diagnostic.c_str());
+           m_lastError += tmp + '\n';
+        }
+        return false;
 	}
 
 	//Evaluate the script against all data records.

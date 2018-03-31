@@ -75,6 +75,7 @@ private slots:
     void onPreviewRFFT();
     void onDeleteChildren();
     void onAggregate();
+    void onSaveAFactor();
 };
 
 #endif // SVDANALYSISDIALOG_H

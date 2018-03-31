@@ -137,7 +137,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QPlainTextEdit" name="txtScript">
+    <widget class="CalcCodeEditor" name="txtScript">
      <property name="font">
       <font>
        <family>Courier New</family>
@@ -212,6 +212,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>CalcCodeEditor</class>
+   <extends>QPlainTextEdit</extends>
+   <header>calculator/calccodeeditor.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="calcresources.qrc"/>
  </resources>

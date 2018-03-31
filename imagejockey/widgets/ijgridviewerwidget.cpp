@@ -1,15 +1,23 @@
 #include "ijgridviewerwidget.h"
 #include "ui_ijgridviewerwidget.h"
 #include "spectral/svd.h"
+#include <QDesktopServices>
+#include <QFile>
+#include <QFileDialog>
+#include <QMessageBox>
 #include <QProgressDialog>
 #include "../imagejockeygridplot.h"
 #include "../svd/svdfactor.h"
+#include "../imagejockeyutils.h"
+
+/*static*/ QString IJGridViewerWidget::m_lastOpenedPath = "";
 
 IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::IJGridViewerWidget),
     m_factor( nullptr ),
-    m_deleteFactorOnClose( deleteFactorOnClose )
+	m_deleteFactorOnClose( deleteFactorOnClose ),
+	m_dataChanged( false )
 {
     ui->setupUi(this);
 
@@ -152,6 +160,120 @@ void IJGridViewerWidget::onSpinSliceChanged(int value)
 
 void IJGridViewerWidget::onDismiss()
 {
-    this->close();
+	emit closed( m_factor, m_dataChanged );
+	this->close();
 }
 
+void IJGridViewerWidget::onExportSliceAsPNG()
+{
+    //User enters file path to save the image.
+    QString filePath = QFileDialog::getSaveFileName( this, "Select directory for image",
+                                                     IJGridViewerWidget::m_lastOpenedPath,
+                                                     "*.png");
+    if( ! filePath.isEmpty() ){
+        //Get the entered directory for later reuse.
+        QFileInfo fileInfo( filePath );
+        IJGridViewerWidget::m_lastOpenedPath = fileInfo.dir().absolutePath();
+    }else
+        return;
+
+    //Get the 2D grid of the currently viewed grid slice.
+    SVDFactor* slice =  m_factor->createFactorFromCurrent2DSlice();
+
+    //Get the value extrema for rescaling to 0-255 gray levels.
+    double max = m_factor->getMaxValue();
+    double min = m_factor->getMinValue();
+
+    //Create an image object equivalent to the grid slice.
+    QImage image( slice->getNI(), slice->getNJ(), QImage::Format_ARGB32 );
+
+    //Set the pixel gray levels ( image J origin is at top left )
+    for( int j = 0; j < slice->getNJ(); ++j )
+        for( int i = 0; i < slice->getNI(); ++i ){
+            double value = slice->dataIJK( i, j, 0 );
+            uint level = 255 * (value - min) / (max - min);
+            uint alpha = ( slice->isNDV( value ) ? 0 : 255 );
+            image.setPixelColor( QPoint(i,slice->getNJ()-1-j), QColor( level, level, level, alpha ) );
+        }
+
+    //Save pixel data as PNG image.
+    QPixmap pixmap;
+    pixmap.convertFromImage( image );
+    QFile file( filePath );
+    file.open(QIODevice::WriteOnly);
+    pixmap.save(&file, "PNG");
+
+    //Opens the image.
+    QDesktopServices::openUrl(QUrl::fromLocalFile( filePath ));
+
+    //Discard the slice data.
+    delete slice;
+}
+
+void IJGridViewerWidget::onImportSliceDataFromPNG()
+{
+    //User enters file path to choose the image to load.
+    QString filePath = QFileDialog::getOpenFileName( this, "Select image file",
+                                                     IJGridViewerWidget::m_lastOpenedPath,
+                                                     "*.png");
+    if( ! filePath.isEmpty() ){
+        //Get the entered directory for later reuse.
+        QFileInfo fileInfo( filePath );
+        IJGridViewerWidget::m_lastOpenedPath = fileInfo.dir().absolutePath();
+    }else
+        return;
+
+    //Load PNG file.
+    QPixmap pixmap;
+    pixmap.load( filePath, "PNG" );
+
+    //Get the 2D grid of the currently viewed grid slice.
+    SVDFactor* slice =  m_factor->createFactorFromCurrent2DSlice();
+
+    //Check weather the image as the slice are compatible.
+    if( pixmap.width() != slice->getNI() || pixmap.height() != slice->getNJ() ){
+        QMessageBox::critical( this, "Error", QString("Image and current slice are incompatible."));
+        delete slice;
+        return;
+    }
+
+    //Get the value extrema for rescaling from 0-255 gray levels.
+    double max = m_factor->getMaxValue();
+    double min = m_factor->getMinValue();
+
+    //Get the QImage object, so we can access individual pixel data.
+    QImage image = pixmap.toImage();
+
+    //Get the pixel gray levels ( image J origin is at top left )
+    for( int j = 0; j < slice->getNJ(); ++j )
+        for( int i = 0; i < slice->getNI(); ++i ){
+            //Get the color of the pixel.
+			QColor color = image.pixelColor( i, slice->getNJ()-1-j );
+            //Check whether it is gray.
+            if( color.red() != color.blue() || color.red() != color.green() ){
+                QMessageBox::critical( this, "Error", QString("Image contains non-gray pixels."));
+                delete slice;
+                return;
+            }
+            //Compute the value from the gray level
+            int level = color.blue(); //could be either from red or green.
+            double value = min + level / 255.0 * (max - min);
+            //If the pixel is transparent, set the value to NaN.
+            if( color.alpha() == 0 )
+                value = std::numeric_limits<double>::quiet_NaN();
+            //Set the data value.
+            slice->setDataIJK( i, j, 0, value );
+        }
+
+	//Set imported slice data.
+	m_factor->setSlice( slice );
+
+    //Discard the slice data.
+    delete slice;
+
+	//Update the plot.
+	forcePlotUpdate();
+
+	//Set that the data was changed.
+	m_dataChanged = true;
+}

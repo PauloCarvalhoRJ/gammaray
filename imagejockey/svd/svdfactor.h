@@ -72,11 +72,18 @@ public:
 	QString getHierarchicalNumber();
 
 	/** Returns a value at the current X,Y position with respect to the currently selected plane.
-	 * The select plane depends on m_currentPlaneOrientation and m_currentPlane settings.
+	 * The selected plane depends on m_currentPlaneOrientation and m_currentPlane settings.
 	 * The passed coordinates are with respect to the plane and not world coordinates, for example,
 	 * localY is actually a Z coordinate if current plane orientation is XZ.
 	 */
 	double valueAtCurrentPlane( double localX, double localY );
+
+	/** Returns a value at the current I,J topological position with respect to the currently selected plane.
+	 * The selected plane depends on m_currentPlaneOrientation and m_currentPlane settings.
+	 * The passed coordinates are with respect to the plane and not global grid coordinates, for example,
+	 * localJ is actually a global K coordinate if current plane orientation is XZ.
+	 */
+	double valueAtCurrentPlaneIJ( unsigned int localI, unsigned int localJ );
 
 	/** Returns whether the passed value represents a non-informed datum. */
 	bool isNDV( double value );
@@ -164,6 +171,25 @@ public:
      */
     void aggregate(std::vector<SVDFactor *> &factors_to_aggregate );
 
+	/**
+	 * Creates a new 2D SVDFactor grid depending on the current settings of slice selection members such as
+	 * m_currentPlaneOrientation and m_currentSlice.
+	 * Client code is responsible for deallocating the returned object.
+	 */
+	SVDFactor* createFactorFromCurrent2DSlice();
+
+    /** Returns the data value given its topological address (IJK). */
+    double dataIJK( uint i, uint j, uint k);
+
+    /** Sets the data value given its topological address (IJK). */
+    void setDataIJK( uint i, uint j, uint k, double value);
+
+	/** Replaces the data of the slice set by m_currentPlaneOrientation and m_currentSlice with the data contained
+	 * in the grid (SVDFactor) passed as parameter. The passed grid must be 2D and compatible with current slice geometry.
+	 * Returns true if the operation succeeded.
+	 */
+	bool setSlice( SVDFactor* slice );
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;
@@ -187,7 +213,6 @@ private:
 	void setWeight( double weight ){ m_weight = weight; }
 	bool isTopLevel();
 	bool XYtoIJinCurrentPlane(double localX, double localY, uint& i, uint& j );
-	double dataIJK( uint i, uint j, uint k);
     /**
      * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
      * Returns false if the spatial coordinate lies outside the grid.
@@ -217,7 +242,7 @@ public:
     virtual double getOriginY(){ return m_y0; }
     virtual double getOriginZ(){ return m_z0; }
     virtual double getData(int variableIndex, int i, int j, int k);
-    virtual bool isNoDataValue(double){ return false; }
+    virtual bool isNoDataValue(double value);
     virtual double getDataAt(int variableIndex, double x, double y, double z);
     virtual double absMax(int variableIndex);
     virtual double absMin(int variableIndex);

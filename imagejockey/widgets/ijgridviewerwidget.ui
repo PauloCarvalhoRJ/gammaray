@@ -116,15 +116,72 @@
          <property name="verticalSpacing">
           <number>3</number>
          </property>
-         <item row="1" column="0" colspan="2">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Color table: min.:</string>
+         <item row="0" column="6" rowspan="3">
+          <widget class="QFrame" name="frame">
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
            </property>
+           <property name="frameShadow">
+            <enum>QFrame::Raised</enum>
+           </property>
+           <layout class="QVBoxLayout" name="verticalLayout">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QPushButton" name="btnExportToPNG">
+              <property name="toolTip">
+               <string>Export current slice data as PNG image.</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../ijresources.qrc">
+                <normaloff>:/ijicons32/ijpng32</normaloff>:/ijicons32/ijpng32</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>32</width>
+                <height>32</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnImportPNG">
+              <property name="toolTip">
+               <string>Replace current slice data with data from a PNG file.</string>
+              </property>
+              <property name="text">
+               <string/>
+              </property>
+              <property name="icon">
+               <iconset resource="../ijresources.qrc">
+                <normaloff>:/ijicons32/ijpngimp32</normaloff>:/ijicons32/ijpngimp32</iconset>
+              </property>
+              <property name="iconSize">
+               <size>
+                <width>32</width>
+                <height>32</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+           </layout>
           </widget>
-         </item>
-         <item row="1" column="2">
-          <widget class="QDoubleSpinBox" name="dblSpinColorScaleMin"/>
          </item>
          <item row="1" column="3">
           <widget class="QLabel" name="label_2">
@@ -133,8 +190,21 @@
            </property>
           </widget>
          </item>
+         <item row="1" column="2">
+          <widget class="QDoubleSpinBox" name="dblSpinColorScaleMin"/>
+         </item>
+         <item row="1" column="0" colspan="2">
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Color table: min.:</string>
+           </property>
+          </widget>
+         </item>
          <item row="1" column="4" colspan="2">
           <widget class="QDoubleSpinBox" name="dblSpinColorScaleMax"/>
+         </item>
+         <item row="2" column="4" colspan="2">
+          <widget class="QSpinBox" name="spinSlice"/>
          </item>
          <item row="2" column="0">
           <widget class="QLabel" name="label_3">
@@ -149,9 +219,6 @@
             <string>Slice:</string>
            </property>
           </widget>
-         </item>
-         <item row="2" column="4" colspan="2">
-          <widget class="QSpinBox" name="spinSlice"/>
          </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_5">
@@ -251,7 +318,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../ijresources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>btnDismiss</sender>
@@ -269,8 +338,42 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnExportToPNG</sender>
+   <signal>clicked()</signal>
+   <receiver>IJGridViewerWidget</receiver>
+   <slot>onExportSliceAsPNG()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>293</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>255</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnImportPNG</sender>
+   <signal>clicked()</signal>
+   <receiver>IJGridViewerWidget</receiver>
+   <slot>onImportSliceDataFromPNG()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>319</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>371</x>
+     <y>320</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onDismiss()</slot>
+  <slot>onExportSliceAsPNG()</slot>
+  <slot>onImportSliceDataFromPNG()</slot>
  </slots>
 </ui>

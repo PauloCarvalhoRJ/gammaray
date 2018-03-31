@@ -593,7 +593,11 @@ spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
     for (ulong i = 0; i < _nx; ++i) {
         for (ulong j = 0; j < _ny; ++j) {
             for (ulong k = 0; k < _nz; ++k) {
-                data->d_[idx] = dataIJK(nDataColumn, i, j, k);
+                double value = dataIJK(nDataColumn, i, j, k);
+                if( ! isNDV( value ) )
+                    data->d_[idx] = value ;
+                else
+                    data->d_[idx] =  std::numeric_limits<double>::quiet_NaN();;
                 ++idx;
             }
         }
@@ -644,7 +648,10 @@ double CartesianGrid::getNeighborValue(int iRecord, int iVar, int dI, int dJ, in
 	k += dK;
 	if( i >= _nx || j >= _ny || k >= _nz ) //unsigned ints become huge if converted from negative integers
 		return std::numeric_limits<double>::quiet_NaN();
-	return dataIJK( iVar, i, j, k );
+    double value = dataIJK( iVar, i, j, k );
+    if( isNDV( value ) )
+        value = std::numeric_limits<double>::quiet_NaN();
+    return value;
 }
 
 long CartesianGrid::append(const QString columnName, const spectral::array &array)
@@ -681,4 +688,44 @@ void CartesianGrid::indexToIJK(uint index, uint & i, uint & j, uint & k)
 	val -= (k*nynx);
 	j = val / _nx;
 	i = val % _nx;
+}
+
+void CartesianGrid::setColumnData(uint dataColumn, spectral::array & array)
+{
+	loadData();
+
+	double NDV;
+	if( hasNoDataValue() )
+		NDV = getNoDataValueAsDouble();
+	else
+		NDV = -99999.0;
+
+	//data replacement loop
+	ulong idx = 0;
+	for (ulong i = 0; i < _nx; ++i) {
+		for (ulong j = 0; j < _ny; ++j) {
+			for (ulong k = 0; k < _nz; ++k) {
+				double value = array.d_[idx];
+				if( std::isnan( value ) )
+					value = NDV;
+				setDataIJK( dataColumn, i, j, k, value );
+				++idx;
+			}
+		}
+	}
+
+	if( idx != _nx * _ny * _nz )
+		Application::instance()->logError("CartesianGrid::setColumnData(): mismatch between number of data values added and Cartesian grid cell count.");
+
+	writeToFS();
+
+	//update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
+}
+
+void CartesianGrid::setOrigin(double x0, double y0, double z0)
+{
+    _x0 = x0;
+    _y0 = y0;
+    _z0 = z0;
 }

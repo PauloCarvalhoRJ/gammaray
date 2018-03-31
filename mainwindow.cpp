@@ -71,6 +71,7 @@
 #include "imagejockey/svd/svdfactortree.h"
 #include "imagejockey/svd/svdanalysisdialog.h"
 #include "calculator/calculatordialog.h"
+#include "imagejockey/widgets/ijgridviewerwidget.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -495,7 +496,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
-                CartesianGrid* cg = (CartesianGrid*)parent_file;
+				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
+                _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
+				CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
@@ -600,6 +603,39 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 menu_caption.append(" to ");
                 menu_caption.append( point_set->getName());
                 _projectContextMenu->addAction(menu_caption, this, SLOT(onGetPoints()));
+            }
+        }
+        //if one object is a property of a cartesian grid and the other is a cartesian grid then grid projection can be used.
+        //Grid projection means copying values cell-to-cell in topological space (the spatial size
+        //and location of cells don't matter) such that the centers of the grids coincide.
+        if( index1.isValid() && index2.isValid() ){
+            File* file = nullptr;
+            Attribute* at = nullptr;
+			if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+				file = static_cast<File*>( index2.internalPointer() );
+            }
+			if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isAttribute() ){
+				at = static_cast<Attribute*>( index1.internalPointer() );
+            }
+            //determine the destination CartesianGrid of the projection operation
+            CartesianGrid* cg = nullptr;
+            cg = static_cast<CartesianGrid*>( file );
+            //if user selected an attribute and a grid
+            if( at && cg ){
+                //determine the origin grid.
+                CartesianGrid* cgOrig = nullptr;
+                File* parentFileOfSelectedAttribute = at->getContainingFile();
+                if( parentFileOfSelectedAttribute->getFileType() == "CARTESIANGRID" )
+                    cgOrig = static_cast<CartesianGrid*>( parentFileOfSelectedAttribute );
+                if( cgOrig ){
+                    _right_clicked_attribute = at;
+                    _right_clicked_cartesian_grid = cg;
+                    QString menu_caption = "Project ";
+					menu_caption.append( cgOrig->getName() + "/" + at->getName() );
+                    menu_caption.append(" onto ");
+                    menu_caption.append( cg->getName());
+                    _projectContextMenu->addAction(menu_caption, this, SLOT(onProjectGrids()));
+                }
             }
         }
     //three items were selected.  The context menu depends on the combination of items.
@@ -1784,7 +1820,7 @@ void MainWindow::onSumOfFactorsWasComputed( spectral::array *sumOfFactors )
     //open the renaming dialog
     bool ok;
     QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
-                                             "New variable reconstructed from SVD factors:", QLineEdit::Normal,
+                                             "New variable from individual or sum of SVD factors:", QLineEdit::Normal,
                                              proposed_name, &ok);
     if( ! ok ){
         delete sumOfFactors; //discard the computed sum
@@ -1827,7 +1863,206 @@ void MainWindow::onNewAttribute()
     DataFile *dataFile = (DataFile*)_right_clicked_file;
     dataFile->loadData();
     dataFile->addEmptyDataColumn( new_var_name, dataFile->getDataLineCount() );
-    dataFile->writeToFS();
+	dataFile->writeToFS();
+}
+
+void MainWindow::onQuickView()
+{
+	//Get the Cartesian grid (assumes the Attribute's parent file is one)
+	IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile());
+	if( ! cg ){
+		QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+		return;
+	}
+
+	//Get the data
+	long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+
+	spectral::array* array = cg->createSpectralArray( selectedAttributeIndex );
+
+	//Construct a displayable object from the result.
+	SVDFactor* factor = new SVDFactor( std::move( *array ), 1, 1, cg->getOriginX(), cg->getOriginY(), cg->getOriginZ(),
+									   cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK(), 0.42 ); /* The last parameter is not actually used */
+
+	//Registers the pair factor-attribute objects.
+	m_attributesCurrentlyBeingViewed[ factor ] = _right_clicked_attribute;
+
+	//Opens the viewer.
+	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+	factor->setCustomName( cg->getGridName() );
+	ijgvw->setFactor( factor );
+	connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), this, SLOT(onQuickViewerClosed(SVDFactor*,bool)) );
+    ijgvw->show();
+}
+
+void MainWindow::onProjectGrids()
+{
+    Attribute* at = _right_clicked_attribute;
+    CartesianGrid* cgDestination = _right_clicked_cartesian_grid;
+
+    //get the source grid
+    CartesianGrid* cgSource = static_cast<CartesianGrid*>(_right_clicked_attribute->getContainingFile());
+
+    //get the index of the attribute
+    int atIndex = at->getAttributeGEOEASgivenIndex()-1;
+
+    //create a data array matching the destination grid
+    spectral::array dataArray( cgDestination->getNI(), cgDestination->getNJ(), cgDestination->getNK(), 0.0);
+
+    cgSource->loadData();
+
+    cgDestination->loadData();
+
+    //projection loop
+    for( int k = 0; k < cgSource->getNK(); ++k ){
+        int kDest = k - cgSource->getNK()/2 + cgDestination->getNK()/2;
+        for( int j = 0; j < cgSource->getNJ(); ++j ){
+            int jDest = j - cgSource->getNJ()/2 + cgDestination->getNJ()/2;
+            for( int i = 0; i < cgSource->getNI(); ++i ){
+                int iDest = i - cgSource->getNI()/2 + cgDestination->getNI()/2;
+                if( iDest >= 0 && iDest < cgDestination->getNI() &&
+                    jDest >= 0 && jDest < cgDestination->getNJ() &&
+                    kDest >= 0 && kDest < cgDestination->getNK() )
+                 dataArray( iDest, jDest, kDest ) = cgSource->dataIJK( atIndex, i, j, k );
+            }
+        }
+    }
+
+    //append the data as a new attribute to the destination grid.
+	cgDestination->append(at->getName(), dataArray);
+}
+
+void MainWindow::onQuickViewerClosed(SVDFactor * factor, bool wasChanged)
+{
+	if( wasChanged ){
+		uint result = QMessageBox::question(this, "Confirmation dialog.", "Save changes to grid?",
+									  QMessageBox::Yes|QMessageBox::No);
+		if (result == QMessageBox::Yes) {
+			Attribute* at = m_attributesCurrentlyBeingViewed[ factor ];
+			CartesianGrid* cg = static_cast<CartesianGrid*>( at->getContainingFile() );
+			cg->setColumnData( at->getAttributeGEOEASgivenIndex()-1, factor->getFactorData() );
+		}
+	}
+	//unregister the pair factor-attribute because the quick view dialog was closed.
+	m_attributesCurrentlyBeingViewed.erase( factor );
+}
+
+void MainWindow::onCovarianceMap()
+{
+	//the parent file is surely a CartesianGrid.
+	CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
+
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new grid",
+                                             "New grid name:", QLineEdit::Normal,
+                                             _right_clicked_attribute->getName() + "_Varmap.dat", &ok );
+
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+	//get the array containing the data
+	std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+
+	//run FFT to get a + bi (real and imaginary parts or the rectangular form).
+	{
+		QProgressDialog progressDialog;
+		progressDialog.setRange(0,0);
+		progressDialog.show();
+		progressDialog.setLabelText("Computing FFT...");
+		QCoreApplication::processEvents(); //let Qt repaint widgets
+
+		//run FFT
+		Util::fft3D( cg->getNX(),
+					 cg->getNY(),
+					 cg->getNZ(),
+					 array,
+					 FFTComputationMode::DIRECT,
+					 FFTImageType::RECTANGULAR_FORM );
+	}
+
+	//recompute the array to get (a+bi)*(a-bi) or ||z|| == COV(A,A) computed with FFT (Theorem of Convolution).
+	std::vector< std::complex<double> >::iterator it = array.begin();
+    for(; it != array.end(); ++it){
+        //save the current complex value
+        //get the complex modulus of the complex value.
+        double z1 = (*it).real() * (*it).real() + (*it).imag() * (*it).imag();
+        //make the real part as the square root of ||z||^2
+        (*it).real( z1 );
+        //make the imaginary part as zero
+        (*it).imag( 0.0 );
+    }
+
+    //run RFFT on the polar form of ||Z|| and phase==0.0 to get the covariance.
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Computing RFFT...");
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+
+        //run RFFT
+        Util::fft3D( cg->getNX(),
+                     cg->getNY(),
+                     cg->getNZ(),
+                     array,
+                     FFTComputationMode::REVERSE,
+                     FFTImageType::POLAR_FORM );
+    }
+
+    //The covariance at h=0 ends up in the corners of the grid, then
+    //we shift the data so cov(0) is in the grid center
+    //this also normalizes the values (divide by number of cells)
+    uint nI = cg->getNX();
+    uint nJ = cg->getNY();
+    uint nK = cg->getNZ();
+    uint n = nI*nJ*nK;
+    std::vector< std::complex<double> > arrayShifted( nI * nJ * nK );
+    for(uint k = 0; k < nK; ++k) {
+        int k_shift = (k + nK/2) % nK;
+        for(uint j = 0; j < nJ; ++j){
+            int j_shift = (j + nJ/2) % nJ;
+            for(uint i = 0; i < nI; ++i){
+                int i_shift = (i + nI/2) % nI;
+                //normalize the values
+                double value = array[i + j*nI + k*nJ*nI].real() / n;
+                //shift the values
+                arrayShifted[i_shift + j_shift*nI + k_shift*nJ*nI].real( value );
+            }
+        }
+    }
+
+    //make a tmp file path
+    QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+    //crate a new cartesian grid pointing to the tmp path
+    CartesianGrid * new_cg = new CartesianGrid( tmp_file_path );
+
+    //set the geometry info based on the original grid
+    new_cg->setInfoFromOtherCG( cg, false );
+
+    //sets the origin so h=0 is in the grid center
+    double newX0 = -new_cg->getDX() * new_cg->getNX() / 2;
+    double newY0 = -new_cg->getDY() * new_cg->getNY() / 2;
+    double newZ0 = -new_cg->getDZ() * new_cg->getNZ() / 2;
+    new_cg->setOrigin( newX0, newY0, newZ0 );
+
+    //save the results in the project's tmp directory
+    Util::createGEOEASGrid( "Covariance", "Delete_This", arrayShifted, tmp_file_path);
+
+    //import the saved file to the project
+    CartesianGrid * definitiveCG = Application::instance()->getProject()->importCartesianGrid( new_cg, new_var_name );
+
+    //remove the second useless attribute
+    definitiveCG->deleteVariable( 1 );
+
+    //delete the temporary Cartesian grid object.
+    delete new_cg;
+
+    Application::instance()->logInfo("Quick varmap completed.");
 }
 
 void MainWindow::onCreateCategoryDefinition()

@@ -514,7 +514,7 @@ ICalcProperty *DataFile::getCalcProperty(int index)
 
 void DataFile::setCalcValue(int iVar, int iRecord, double value)
 {
-	if( isnan(value) ) {
+    if( std::isnan(value) ) {
 		if( hasNoDataValue() )
 			value = getNoDataValueAsDouble();
 		else
@@ -525,7 +525,7 @@ void DataFile::setCalcValue(int iVar, int iRecord, double value)
 
 int DataFile::getCalcPropertyIndex(const std::string & name)
 {
-	return getChildIndex( getChildByName( QString(name.c_str()) ) );
+    return getChildIndex( getChildByName( QString(name.c_str()) ) );
 }
 
 void DataFile::updatePropertyCollection()

@@ -2,6 +2,7 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <map>
 
 namespace Ui {
 class MainWindow;
@@ -19,6 +20,7 @@ class CartesianGrid;
 class PointSet;
 class VariogramModel;
 class UnivariateCategoryClassification;
+class SVDFactor;
 
 class MainWindow : public QMainWindow
 {
@@ -168,6 +170,10 @@ private slots:
     void onSumOfFactorsWasComputed(spectral::array *sumOfFactors); //called to save the sum of SVD factors in the dialog called in onSVD()
     void onCalculator();
     void onNewAttribute();
+	void onQuickView();
+    void onProjectGrids();
+	void onQuickViewerClosed( SVDFactor* factor, bool wasChanged );
+	void onCovarianceMap();
 
 private:
     /**
@@ -208,6 +214,12 @@ private:
      * The pointer to the dynamic sub-menu "Map as" of the project tree context menu.
      */
     QMenu* m_subMenuMapAs;
+
+	/**
+	 * Lists the attributes currently being viewed in the quick view dialog.
+	 */
+	std::map< SVDFactor*, Attribute* > m_attributesCurrentlyBeingViewed;
+
     /**
       * Creates the dynamic items of sub-menu "Map as".
       */
