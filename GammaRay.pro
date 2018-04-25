@@ -213,7 +213,8 @@ SOURCES += main.cpp\
     calculator/calculatordialog.cpp \
     calculator/icalcproperty.cpp \
     calculator/calclinenumberarea.cpp \
-    calculator/calccodeeditor.cpp
+	calculator/calccodeeditor.cpp \
+	imagejockey/vardecomp/variographicdecompositiondialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -401,7 +402,8 @@ HEADERS  += mainwindow.h \
     calculator/calculatordialog.h \
     calculator/icalcproperty.h \
     calculator/calclinenumberarea.h \
-    calculator/calccodeeditor.h
+	calculator/calccodeeditor.h \
+	imagejockey/vardecomp/variographicdecompositiondialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -474,7 +476,8 @@ FORMS    += mainwindow.ui \
 	imagejockey/widgets/ijcartesiangridselector.ui \
         imagejockey/widgets/ijvariableselector.ui \
     imagejockey/widgets/ijgridviewerwidget.ui \
-    calculator/calculatordialog.ui
+	calculator/calculatordialog.ui \
+	imagejockey/vardecomp/variographicdecompositiondialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

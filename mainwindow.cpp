@@ -72,6 +72,7 @@
 #include "imagejockey/svd/svdanalysisdialog.h"
 #include "calculator/calculatordialog.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
+#include "imagejockey/vardecomp/variographicdecompositiondialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -2062,7 +2063,13 @@ void MainWindow::onCovarianceMap()
     //delete the temporary Cartesian grid object.
     delete new_cg;
 
-    Application::instance()->logInfo("Quick varmap completed.");
+	Application::instance()->logInfo("Quick varmap completed.");
+}
+
+void MainWindow::onVarigraphicDecomposition()
+{
+	VariographicDecompositionDialog *vdd = new VariographicDecompositionDialog(this);
+	vdd->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()

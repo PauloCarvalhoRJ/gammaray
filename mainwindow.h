@@ -174,6 +174,7 @@ private slots:
     void onProjectGrids();
 	void onQuickViewerClosed( SVDFactor* factor, bool wasChanged );
 	void onCovarianceMap();
+	void onVarigraphicDecomposition();
 
 private:
     /**
