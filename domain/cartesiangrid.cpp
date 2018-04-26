@@ -354,7 +354,7 @@ void CartesianGrid::getAllVariables(std::vector<IJAbstractVariable *> &result)
     std::vector<ProjectComponent*>::iterator it = all_contained_objects.begin();
     for(; it != all_contained_objects.end(); ++it){
         ProjectComponent* pc = (ProjectComponent*)(*it);
-        if( pc->isAttribute() ){
+		if( pc->isAttribute() ){
             result.push_back( dynamic_cast<Attribute*>(pc) );
         }
     }

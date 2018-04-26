@@ -2068,7 +2068,10 @@ void MainWindow::onCovarianceMap()
 
 void MainWindow::onVarigraphicDecomposition()
 {
-	VariographicDecompositionDialog *vdd = new VariographicDecompositionDialog(this);
+	//get all the Cartesian grids in the project
+	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
+	//calls the Image Jockey dialog
+	VariographicDecompositionDialog *vdd = new VariographicDecompositionDialog( std::move(grids), this);
 	vdd->show();
 }
 
@@ -2469,18 +2472,8 @@ void MainWindow::openCokriging()
 void MainWindow::openImageJockey()
 {
     //get all the Cartesian grids in the project
-    ObjectGroup* dataFileGroup = Application::instance()->getProject()->getDataFilesGroup();
-    std::vector< ProjectComponent*> dataFiles;
-    dataFileGroup->getAllObjects( dataFiles );
-    std::vector< ProjectComponent*>::iterator it = dataFiles.begin();
-    std::vector< IJAbstractCartesianGrid* > grids;
-    for(; it != dataFiles.end(); ++it){
-        ProjectComponent* pc = *it;
-        if( pc->getTypeName() == "CARTESIANGRID" ){
-            grids.push_back( dynamic_cast<CartesianGrid*>(pc) );
-        }
-    }
-    //calls the Image Jockey dialog
+	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
+	//calls the Image Jockey dialog
     ImageJockeyDialog *ijd = new ImageJockeyDialog( grids, this );
     //ijd->show();
     ijd->showMaximized();
