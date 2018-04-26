@@ -587,7 +587,23 @@ void Project::freeLoadedData()
                 dataFileAspect->freeLoadedData();
             }
         }
-    }
+	}
+}
+
+std::vector<IJAbstractCartesianGrid *> Project::getAllCartesianGrids()
+{
+	std::vector<IJAbstractCartesianGrid *> grids;
+	ObjectGroup* dataFileGroup = getDataFilesGroup();
+	std::vector< ProjectComponent*> dataFiles;
+	dataFileGroup->getAllObjects( dataFiles );
+	std::vector< ProjectComponent*>::iterator it = dataFiles.begin();
+	for(; it != dataFiles.end(); ++it){
+		ProjectComponent* pc = *it;
+		if( pc->getTypeName() == "CARTESIANGRID" ){
+			grids.push_back( dynamic_cast<CartesianGrid*>(pc) );
+		}
+	}
+	return grids;
 }
 
 //-------------- QAbstractItemModel interface------------
