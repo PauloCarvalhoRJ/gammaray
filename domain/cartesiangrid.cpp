@@ -341,7 +341,7 @@ int CartesianGrid::getVariableIndexByName(QString variableName)
 IJAbstractVariable *CartesianGrid::getVariableByName(QString variableName)
 {
     ProjectComponent* pc = getChildByName( variableName );
-    if( pc->isAttribute() )
+	if( pc && pc->isAttribute() )
         return dynamic_cast<Attribute*>(pc);
     else
         return nullptr;
