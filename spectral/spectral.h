@@ -229,5 +229,7 @@ array imag(const complex_array &in);
 
 Eigen::MatrixXd to_2d(const array &A);
 
+void print( const array &A );
+
 } // namepsace spectral
 

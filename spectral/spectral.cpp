@@ -1521,7 +1521,13 @@ complex_array to_complex_array(const array &in, double scale)
         a(i)[1] = 0;
     }
 
-    return a;
+	return a;
+}
+
+void print(const array & A)
+{
+	Eigen::MatrixXd tmp = spectral::to_2d( A );
+	std::cout << "Here is the matrix:\n" << tmp << std::endl;
 }
 
 } // namespace spectral
