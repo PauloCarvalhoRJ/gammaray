@@ -365,6 +365,14 @@ array &array::operator+=(const array &other)
     return *this;
 }
 
+array &array::operator*(double scalar)
+{
+    array result( M_, N_, K_ );
+    for (index i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] * scalar;
+    return result;
+}
+
 array::~array() {}
 
 double &array::operator()(index i, index j, index k)
