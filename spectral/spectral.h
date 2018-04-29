@@ -100,7 +100,7 @@ struct array {
 
     array &operator+=(const array &other);
 
-    array &operator*( double scalar );
+    array operator*( double scalar );
 
     virtual ~array();
 
@@ -232,6 +232,14 @@ array imag(const complex_array &in);
 Eigen::MatrixXd to_2d(const array &A);
 
 void print( const array &A );
+
+/**
+ *  Creates a new array by shifting all elements such that the elements in the corners
+ *  are in the center.  This is useful to display spectrograms and variogram maps, as
+ *  this makes interpretation of results intuitive for people (zero frequency or zero
+ *  separation in the center).
+ */
+array shiftByHalf(const array &in);
 
 } // namepsace spectral
 
