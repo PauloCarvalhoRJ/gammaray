@@ -365,7 +365,7 @@ array &array::operator+=(const array &other)
     return *this;
 }
 
-array &array::operator*(double scalar)
+array array::operator*(double scalar)
 {
     array result( M_, N_, K_ );
     for (index i = 0; i < d_.size(); ++i)
@@ -1535,7 +1535,26 @@ complex_array to_complex_array(const array &in, double scale)
 void print(const array & A)
 {
 	Eigen::MatrixXd tmp = spectral::to_2d( A );
-	std::cout << "Here is the matrix:\n" << tmp << std::endl;
+    std::cout << "Here is the matrix:\n" << tmp << std::endl;
+}
+
+array shiftByHalf(const array &in)
+{
+    int nI = in.M();
+    int nJ = in.N();
+    int nK = in.K();
+    array result( (index)nI, (index)nJ, (index)nK );
+    for (size_t i = 0; i < nI; ++i) {
+        int i_shift = (i + nI/2) % nI;
+        for (size_t j = 0; j < nJ; ++j) {
+            int j_shift = (j + nJ/2) % nJ;
+            for (size_t k = 0; k < nK; ++k) {
+                int k_shift = (k + nK/2) % nK;
+                result(i_shift, j_shift, k_shift) = in(i, j, k);
+            }
+        }
+    }
+    return result;
 }
 
 } // namespace spectral
