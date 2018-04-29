@@ -6,6 +6,9 @@
 #include "../ijabstractvariable.h"
 #include "../imagejockeyutils.h"
 #include "spectral/svd.h"
+#include "../svd/svdfactortree.h"
+#include "../svd/svdfactor.h"
+#include "../svd/svdanalysisdialog.h"
 
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -67,7 +70,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	std::vector< spectral::array > svdFactors;
 	int n = 0;
 	{
-		// Perform FFT to get a grid of complex numbersi in rectangular form: real part (a), imaginary part (b).
+        // Perform FFT to get a grid of complex numbers in rectangular form: real part (a), imaginary part (b).
 		// PRODUCTS: 2 grids: real and imaginary parts.
 		spectral::complex_array gridRealAndImaginaryParts;
 		{
@@ -122,6 +125,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			spectral::backward( gridVarmap, gridNormSquaredAndZeroPhase );
 		}
 
+        //divide the varmap values by the number of cells of the grid.
+        gridVarmap = gridVarmap * (1.0/(nI*nJ*nK));
+
 		//Compute SVD of varmap
 		{
 			//Get the number of usable fundamental SVD factors.
@@ -156,7 +162,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 					progressDialog.setRange(0,0);
 					progressDialog.show();
 					for (long i = 0; i < n; ++i) {
-						progressDialog.setLabelText("Retrieving SVD factor " + QString::number(i+1) + " of " + QString::number(n) + "...");
+                        progressDialog.setLabelText("Retrieving fundamental SVD factor " + QString::number(i+1) +
+                                                    " of " + QString::number(n) + "...");
 						QCoreApplication::processEvents();
 						spectral::array factor = svd.factor(i);
 						svdFactors.push_back( std::move( factor ) );
@@ -179,7 +186,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	for( int line = 0; line < n; ++line )
 		B( line, 0 ) = 1.0;
 
-	//Make the identity matrix to find the sundamental factors weights a from the parameters w: [a] = Adagger.B + (I-Adagger.A)[w]
+    //Make the identity matrix to find the fundamental factors weights [a] from the parameters w:
+    //     [a] = Adagger.B + (I-Adagger.A)[w]
 	spectral::array I( (spectral::index)m*n, (spectral::index)m*n );
 	for( int i = 0; i < m*n; ++i )
 		I( i, i ) = 1.0;
@@ -188,7 +196,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	spectral::SVD svd = spectral::svd( A );
 	spectral::array U = svd.U();
 	spectral::array Sigma = svd.S();
-	spectral::array V = svd.V(); //SVD yields V* already transposed, thus V, but to check, you must transpose V to get A = U.Sigma.V*
+    spectral::array V = svd.V(); //SVD yields V* already transposed, that is V, but to check, you must transpose V
+                                 //to get A = U.Sigma.V*
 
 	//Make a full Sigma matrix (to be compatible with multiplication with the othe matrices)
 	{
@@ -228,7 +237,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		Adagger = spectral::to_array( eigenAdagger );
 	}
 
-	//Initialize the vector of system parameters [w]=[0]
+    //Initialize the vector of linear system parameters [w]=[0]
 	spectral::array vw( (spectral::index)m*n );
 
 	//-------------------------OPTIMIZATION LOOP BEGINS HERE-------------------------------------------
@@ -245,15 +254,105 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		va = spectral::to_array( eigenva );
 	}
 
-	//Make the m geological factors (expected variographic structures)
+    //Make the m geological factors (expected variographic structures)
 	std::vector< spectral::array > geologicalFactors;
-	for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
-		spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nK, (spectral::index)nJ );
-		for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
-			//TODO: implement * operator ( spectral::array with double )
-			geologicalFactor = geologicalFactor + svdFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
-		}
-		geologicalFactors.push_back( std::move( geologicalFactor ) );
-	}
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Making the geological factors...");
+        for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
+            spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+            for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
+                QCoreApplication::processEvents();
+                geologicalFactor += svdFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
+            }
+            geologicalFactors.push_back( std::move( geologicalFactor ) );
+        }
+    }
 
+
+    //Display the geological factors
+    {
+        //Create the structure to store the geological factors
+        SVDFactorTree * factorTree = new SVDFactorTree( 0.0 ); //the split factor of 0.0 has no special meaning here
+        //Populate the factor container with the geological factors.
+        std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+        for(int i = 1; it != geologicalFactors.end(); ++it, ++i){
+            //make a local copy of the geological factor data
+            spectral::array geoFactorDataCopy = spectral::shiftByHalf( *it );
+            //Create a displayble object from the geological factor data
+            //This pointer will be managed by the SVDFactorTree object.
+            SVDFactor* geoFactor = new SVDFactor( std::move(geoFactorDataCopy), i, 1/m,
+                                               grid->getOriginX(), grid->getOriginY(), grid->getOriginZ(),
+                                               grid->getCellSizeI(), grid->getCellSizeJ(), grid->getCellSizeK(),
+                                               0.0);
+            //Declare it as a geological factor (decomposable, not fundamental)
+            geoFactor->setType( SVDFactorType::GEOLOGICAL );
+            //add the displayable object to the factor tree (container)
+            factorTree->addFirstLevelFactor( geoFactor );
+        }
+        //use the SVD analysis dialog to display the geological factors.
+        //NOTE: do not use heap to allocate the dialog, unless you remove the Qt::WA_DeleteOnClose behavior of the dialog.
+        SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+        svdad->setTree( factorTree );
+        svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
+        svdad->exec(); //open the dialog modally
+    }
+
+    //Compute the grid derived form the geological factors (ideally it must match the input grid)
+    spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+    std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+    for( ; it != geologicalFactors.end(); ++it ){
+        //Compute FFT of the geological factor
+        spectral::complex_array tmp;
+        spectral::foward( tmp, *it );
+        //inbue the geological factor's FFT with the phase field of the original data.
+        for( int idx = 0; idx < tmp.size(); ++idx)
+        {
+            std::complex<double> value;
+            //get the complex number value in rectangular form
+            value.real( tmp.d_[idx][0] ); //real part
+            value.imag( tmp.d_[idx][1] ); //imaginary part
+            //convert to polar form
+            //but phase is replaced with that of the original data
+            tmp.d_[idx][0] = std::abs( value ); //magnitude part
+            tmp.d_[idx][1] = gridMagnitudeAndPhaseParts.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
+            //convert back to rectangular form
+            value = std::polar( tmp.d_[idx][0], tmp.d_[idx][1] );
+            tmp.d_[idx][0] = value.real();
+            tmp.d_[idx][1] = value.imag();
+        }
+        //Compute RFFT (with the phase of the original data imbued)
+        spectral::array rfftResult;
+        spectral::backward( rfftResult, tmp );
+        //Update the derived grid.
+        derivedGrid += rfftResult;
+    }
+
+    return;
+
+    //Display the derived grid
+    {
+        //Create the structure to store the derived grid
+        SVDFactorTree * factorTree = new SVDFactorTree( 0.0 ); //the split factor of 0.0 has no special meaning here
+        //make a local copy of the derived grid.
+        spectral::array derivedGridDataCopy = spectral::shiftByHalf( derivedGrid );
+        //Create a displayble object from the geological factor data
+        //This pointer will be managed by the SVDFactorTree object.
+        SVDFactor* derivedGridAsAFactor = new SVDFactor( std::move(derivedGridDataCopy), 1, 0.5,
+                                           grid->getOriginX(), grid->getOriginY(), grid->getOriginZ(),
+                                           grid->getCellSizeI(), grid->getCellSizeJ(), grid->getCellSizeK(),
+                                           0.0);
+        //Declare it as a geological factor (decomposable, not fundamental)
+        derivedGridAsAFactor->setType( SVDFactorType::GEOLOGICAL );
+        //add the displayable object to the factor tree (container)
+        factorTree->addFirstLevelFactor( derivedGridAsAFactor );
+        //use the SVD analysis dialog to display the geological factors.
+        //NOTE: do not use heap to allocate the dialog, unless you remove the Qt::WA_DeleteOnClose behavior of the dialog.
+        SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+        svdad->setTree( factorTree );
+        svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
+        svdad->exec(); //open the dialog modally
+    }
 }

@@ -1799,7 +1799,7 @@ void MainWindow::onSVD()
     delete a;
 
     if( numberOfFactors > 0 ){
-        //show the SDV analysis dialog
+        //show the SVD analysis dialog
         SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
         connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
                  this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
