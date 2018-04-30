@@ -102,6 +102,8 @@ struct array {
 
     array operator*( double scalar );
 
+    array operator-( const array &other );
+
     virtual ~array();
 
     double &operator()(index i);

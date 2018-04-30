@@ -373,6 +373,14 @@ array array::operator*(double scalar)
     return result;
 }
 
+array array::operator-(const array &other)
+{
+    array result( M_, N_, K_ );
+    for (index i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] - other.d_[i];
+    return result;
+}
+
 array::~array() {}
 
 double &array::operator()(index i, index j, index k)

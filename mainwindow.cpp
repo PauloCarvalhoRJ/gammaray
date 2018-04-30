@@ -2072,6 +2072,9 @@ void MainWindow::onVarigraphicDecomposition()
 	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
 	//calls the Image Jockey dialog
 	VariographicDecompositionDialog *vdd = new VariographicDecompositionDialog( std::move(grids), this);
+    //TODO: cannot use the slot below, since it depends on a previous right-click, which is not good.
+//    connect( vdd, SIGNAL(saveArray(spectral::array*)),
+//             this, SLOT(onSumOfFactorsWasComputed(spectral::array*)));
 	vdd->show();
 }
 
