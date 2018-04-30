@@ -316,6 +316,8 @@ void SVDAnalysisDialog::onPreviewRFFT()
         progressDialog.setLabelText("Computing RFFT...");
         QCoreApplication::processEvents(); //let Qt repaint widgets
         spectral::backward( outputData, dataReady );
+        //fftw3's RFFT requires that the result be divided by the number of cells to be in right scale.
+        outputData = outputData * (1.0/(exampleFactor->getNI()*exampleFactor->getNJ()*exampleFactor->getNK()));
     }
 
     //Construct a displayable object from the result.
