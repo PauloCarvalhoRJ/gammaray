@@ -12,6 +12,7 @@
 
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <cstdlib>
 
 VariographicDecompositionDialog::VariographicDecompositionDialog(const std::vector<IJAbstractCartesianGrid *> &&grids, QWidget *parent) :
     QDialog(parent),
@@ -43,7 +44,83 @@ VariographicDecompositionDialog::VariographicDecompositionDialog(const std::vect
 
 VariographicDecompositionDialog::~VariographicDecompositionDialog()
 {
-	delete ui;
+    delete ui;
+}
+
+double VariographicDecompositionDialog::F(const spectral::array &originalGrid,
+                                          const spectral::array &vectorOfParameters,
+                                          const spectral::array &A,
+                                          const spectral::array &Adagger,
+                                          const spectral::array &B,
+                                          const spectral::array &I,
+                                          int m,
+                                          const std::vector<spectral::array> &fundamentalFactors,
+                                          const spectral::complex_array& fftOriginalGridMagAndPhase )
+{
+
+    int nI = originalGrid.M();
+    int nJ = originalGrid.N();
+    int nK = originalGrid.K();
+    int n = fundamentalFactors.size();
+
+    //Compute the vector of weights [a] = Adagger.B + (I-Adagger.A)[w]
+    spectral::array va;
+    {
+        Eigen::MatrixXd eigenAdagger = spectral::to_2d( Adagger );
+        Eigen::MatrixXd eigenB = spectral::to_2d( B );
+        Eigen::MatrixXd eigenI = spectral::to_2d( I );
+        Eigen::MatrixXd eigenA = spectral::to_2d( A );
+        Eigen::MatrixXd eigenvw = spectral::to_2d( vectorOfParameters );
+        Eigen::MatrixXd eigenva = eigenAdagger * eigenB + ( eigenI - eigenAdagger * eigenA ) * eigenvw;
+        va = spectral::to_array( eigenva );
+    }
+
+    //Make the m geological factors (expected variographic structures)
+    std::vector< spectral::array > geologicalFactors;
+    {
+        for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
+            spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+            for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
+                geologicalFactor += fundamentalFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
+            }
+            geologicalFactors.push_back( std::move( geologicalFactor ) );
+        }
+    }
+
+    //Compute the grid derived form the geological factors (ideally it must match the input grid)
+    spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+    std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+    for( ; it != geologicalFactors.end(); ++it ){
+        //Compute FFT of the geological factor
+        spectral::complex_array tmp;
+        spectral::foward( tmp, *it );
+        //inbue the geological factor's FFT with the phase field of the original data.
+        for( int idx = 0; idx < tmp.size(); ++idx)
+        {
+            std::complex<double> value;
+            //get the complex number value in rectangular form
+            value.real( tmp.d_[idx][0] ); //real part
+            value.imag( tmp.d_[idx][1] ); //imaginary part
+            //convert to polar form
+            //but phase is replaced with that of the original data
+            tmp.d_[idx][0] = std::abs( value ); //magnitude part
+            tmp.d_[idx][1] = fftOriginalGridMagAndPhase.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
+            //convert back to rectangular form
+            value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
+            tmp.d_[idx][0] = value.real();
+            tmp.d_[idx][1] = value.imag();
+        }
+        //Compute RFFT (with the phase of the original data imbued)
+        spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+        spectral::backward( rfftResult, tmp );
+        //Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
+        rfftResult = rfftResult * (1.0/(nI*nJ*nK));
+        //Update the derived grid.
+        derivedGrid += rfftResult;
+    }
+
+    //Return the measure of difference between the original data and the derived grid
+    return spectral::sumOfAbsDifference( originalGrid, derivedGrid );
 }
 
 void VariographicDecompositionDialog::doVariographicDecomposition()
@@ -67,6 +144,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 
 	// The user-given number of geological factors (m).
 	int m = ui->spinNumberOfGeologicalFactors->value();
+
+    // The user-given epsilon (useful for numerical calculus).
+    double epsilon = std::log10( ui->spinLogEpsilon->value() );
 
 	// PRODUCTS: 1) grid with phase of FFT transform of the input variable.
 	//           2) collection of grids with the fundamental SVD factors of the variable's varmap.
@@ -260,58 +340,60 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
         }
 
         //Make the m geological factors (expected variographic structures)
-        std::vector< spectral::array > geologicalFactors;
-        std::vector< std::string > titles;
-        {
-            QProgressDialog progressDialog;
-            progressDialog.setRange(0,0);
-            progressDialog.show();
-            progressDialog.setLabelText("Making the geological factors...");
-            for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
-                spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-                for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
-                    QCoreApplication::processEvents();
-                    geologicalFactor += svdFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
-                }
-                QString title = QString("Geological factor #") + QString::number(iGeoFactor+1);
-                titles.push_back( title.toStdString() );
-                geologicalFactors.push_back( std::move( geologicalFactor ) );
-            }
-        }
-
-        //Display the geological factors
-        displayGrids( geologicalFactors, titles );
-
-        //Compute the grid derived form the geological factors (ideally it must match the input grid)
         spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-        std::vector< spectral::array >::iterator it = geologicalFactors.begin();
-        for( ; it != geologicalFactors.end(); ++it ){
-            //Compute FFT of the geological factor
-            spectral::complex_array tmp;
-            spectral::foward( tmp, *it );
-            //inbue the geological factor's FFT with the phase field of the original data.
-            for( int idx = 0; idx < tmp.size(); ++idx)
+        {
+            std::vector< spectral::array > geologicalFactors;
+            std::vector< std::string > titles;
             {
-                std::complex<double> value;
-                //get the complex number value in rectangular form
-                value.real( tmp.d_[idx][0] ); //real part
-                value.imag( tmp.d_[idx][1] ); //imaginary part
-                //convert to polar form
-                //but phase is replaced with that of the original data
-                tmp.d_[idx][0] = std::abs( value ); //magnitude part
-                tmp.d_[idx][1] = gridMagnitudeAndPhaseParts.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
-                //convert back to rectangular form
-                value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
-                tmp.d_[idx][0] = value.real();
-                tmp.d_[idx][1] = value.imag();
+                QProgressDialog progressDialog;
+                progressDialog.setRange(0,0);
+                progressDialog.show();
+                progressDialog.setLabelText("Making the geological factors...");
+                for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
+                    spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+                    for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
+                        QCoreApplication::processEvents();
+                        geologicalFactor += svdFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
+                    }
+                    QString title = QString("Geological factor #") + QString::number(iGeoFactor+1);
+                    titles.push_back( title.toStdString() );
+                    geologicalFactors.push_back( std::move( geologicalFactor ) );
+                }
             }
-            //Compute RFFT (with the phase of the original data imbued)
-            spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-            spectral::backward( rfftResult, tmp );
-            //Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
-            rfftResult = rfftResult * (1.0/(nI*nJ*nK));
-            //Update the derived grid.
-            derivedGrid += rfftResult;
+
+            //Display the geological factors
+            displayGrids( geologicalFactors, titles );
+
+            //Compute the grid derived form the geological factors (ideally it must match the input grid)
+            std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+            for( ; it != geologicalFactors.end(); ++it ){
+                //Compute FFT of the geological factor
+                spectral::complex_array tmp;
+                spectral::foward( tmp, *it );
+                //inbue the geological factor's FFT with the phase field of the original data.
+                for( int idx = 0; idx < tmp.size(); ++idx)
+                {
+                    std::complex<double> value;
+                    //get the complex number value in rectangular form
+                    value.real( tmp.d_[idx][0] ); //real part
+                    value.imag( tmp.d_[idx][1] ); //imaginary part
+                    //convert to polar form
+                    //but phase is replaced with that of the original data
+                    tmp.d_[idx][0] = std::abs( value ); //magnitude part
+                    tmp.d_[idx][1] = gridMagnitudeAndPhaseParts.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
+                    //convert back to rectangular form
+                    value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
+                    tmp.d_[idx][0] = value.real();
+                    tmp.d_[idx][1] = value.imag();
+                }
+                //Compute RFFT (with the phase of the original data imbued)
+                spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+                spectral::backward( rfftResult, tmp );
+                //Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
+                rfftResult = rfftResult * (1.0/(nI*nJ*nK));
+                //Update the derived grid.
+                derivedGrid += rfftResult;
+            }
         }
 
         //Display the derived grid and its difference with respect to the original grid.
@@ -322,7 +404,54 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
             delete gridData;
         }
 
-        break;
+        //Compute the gradient vector of objective function F with the current [w] parameters.
+        spectral::array gradient( vw.size() );
+        {
+            spectral::array *gridData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+            //For each partial derivative.
+            for( int i = 0; i < gradient.size(); ++i ){
+                //Make a set of parameters slightly shifted to the right (more positive) along one parameter.
+                spectral::array vwFromRight( vw );
+                vwFromRight(i) = vwFromRight(i) + epsilon;
+                //Make a set of parameters slightly shifted to the left (more negative) along one parameter.
+                spectral::array vwFromLeft( vw );
+                vwFromLeft(i) = vwFromLeft(i) - epsilon;
+                //Compute (numerically) the partial derivative with respect to one parameter.
+                gradient(i) = (F( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts )
+                                     -
+                               F( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts ))
+                                     /
+                              ( 2 * epsilon );
+            }
+            delete gridData;
+        }
+
+        //Update the system's parameters according to gradient descent.
+        {
+            spectral::array *gridData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+            double alpha = 1.0;
+            //reduces aplha until we get a descent (current gradient vector may result in overshooting)
+            while( true ){
+                spectral::array new_vw = vw - gradient * alpha;
+                //Impose domain constraints to the parameters.
+                for( int i = 0; i < new_vw.size(); ++i){
+                    if( new_vw.d_[i] < 0.0 )
+                        new_vw.d_[i] = 0.0;
+                    if( new_vw.d_[i] > 1.0 )
+                        new_vw.d_[i] = 1.0;
+                }
+                double currentF = F( *gridData, vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
+                double nextF = F( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
+                std::cout << currentF << " ... " << nextF << std::endl;
+                if( nextF < currentF ){
+                    vw = new_vw;
+                    break;
+                }
+                alpha /= 2.0;
+            }
+            delete gridData;
+        }
+
     } //----------------------END OF PARAMETER OPTIMIZATION LOOP-----------------
 }
 
