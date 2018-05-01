@@ -365,7 +365,7 @@ array &array::operator+=(const array &other)
     return *this;
 }
 
-array array::operator*(double scalar)
+array array::operator*(double scalar) const
 {
     array result( M_, N_, K_ );
     for (index i = 0; i < d_.size(); ++i)
@@ -1554,6 +1554,14 @@ array shiftByHalf(const array &in)
             }
         }
     }
+    return result;
+}
+
+double sumOfAbsDifference(const array &one, const array &other)
+{
+    double result = 0.0;
+    for( int i = 0; i < one.size(); ++i )
+        result += std::abs( one.d_[i] - other.d_[i] );
     return result;
 }
 

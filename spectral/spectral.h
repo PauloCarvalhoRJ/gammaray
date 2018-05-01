@@ -100,7 +100,7 @@ struct array {
 
     array &operator+=(const array &other);
 
-    array operator*( double scalar );
+    array operator*( double scalar ) const;
 
     virtual ~array();
 
@@ -240,6 +240,12 @@ void print( const array &A );
  *  separation in the center).
  */
 array shiftByHalf(const array &in);
+
+/**
+ * Computes element-wise the sum of the absolute value of the differences between
+ * the two given data arrays.  Both arrays must have the same number of elements.
+ */
+double sumOfAbsDifference( const array &one, const array &other );
 
 } // namepsace spectral
 
