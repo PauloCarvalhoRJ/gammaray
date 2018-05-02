@@ -161,6 +161,11 @@ void SGSIMDialog::preview()
     //the number of realizations.
     m_cg_simulation->setNReal( m_gpf_sgsim->getParameter<GSLibParUInt*>(14)->_value );
 
+	if( m_cg_simulation->getChildCount() < 1 ){
+		QMessageBox::critical( this, "Error", "SGSIM yielded a file without data.  It is possible that SGSIM crashed.  Check the message panel.  Aborted.");
+		return;
+	}
+
     //get the variable with the simulated values (normally the first)
     Attribute* est_var = (Attribute*)m_cg_simulation->getChildByIndex( 0 );
 
