@@ -2075,7 +2075,28 @@ void MainWindow::onVarigraphicDecomposition()
     //TODO: cannot use the slot below, since it depends on a previous right-click, which is not good.
 //    connect( vdd, SIGNAL(saveArray(spectral::array*)),
 //             this, SLOT(onSumOfFactorsWasComputed(spectral::array*)));
+	connect( vdd, SIGNAL(info(QString)),
+			 this, SLOT(onInfo(QString)));
+	connect( vdd, SIGNAL(warning(QString)),
+			 this, SLOT(onWarning(QString)));
+	connect( vdd, SIGNAL(error(QString)),
+			 this, SLOT(onError(QString)));
 	vdd->show();
+}
+
+void MainWindow::onInfo(QString message)
+{
+	Application::instance()->logInfo( message );
+}
+
+void MainWindow::onWarning(QString message)
+{
+	Application::instance()->logWarn( message );
+}
+
+void MainWindow::onError(QString message)
+{
+	Application::instance()->logError( message );
 }
 
 void MainWindow::onCreateCategoryDefinition()

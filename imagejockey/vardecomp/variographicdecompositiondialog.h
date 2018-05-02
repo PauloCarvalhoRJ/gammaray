@@ -26,6 +26,9 @@ public:
 
 Q_SIGNALS:
     void saveArray( spectral::array *gridData );
+	void error( QString message );
+	void warning( QString message );
+	void info( QString message );
 
 private:
     Ui::VariographicDecompositionDialog *ui;
@@ -64,9 +67,9 @@ private:
 
 private Q_SLOTS:
 	void doVariographicDecomposition();
-    void displayGrids( const std::vector< spectral::array >& grids,
-                       const std::vector< std::string >& titles,
-                       bool doShiftByHalf = true );
+	void displayGrids(const std::vector< spectral::array >& grids,
+					   const std::vector< std::string >& titles,
+					   const std::vector< bool >& shiftByHalves );
     void onSumOfFactorsWasComputed(spectral::array *gridData); //called to save grid data as a Cartesian grid
 };
 

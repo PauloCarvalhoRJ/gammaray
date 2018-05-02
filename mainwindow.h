@@ -175,6 +175,9 @@ private slots:
 	void onQuickViewerClosed( SVDFactor* factor, bool wasChanged );
 	void onCovarianceMap();
 	void onVarigraphicDecomposition();
+	void onInfo( QString message );
+	void onWarning( QString message );
+	void onError( QString message );
 
 private:
     /**
