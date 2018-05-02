@@ -13,6 +13,134 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <cstdlib>
+#include <thread>
+#include <algorithm>
+
+/** The objective function for the optimization process.
+ * See complete theory in the program manual for in-depth explanation of the method's parameters below.
+ * @param originalGrid  The grid with original data for comparison.
+ * @param vectorOfParameters The column-vector with the free paramateres.
+ * @param A The LHS of the linear system originated from the information conservation constraints.
+ * @param Adagger The pseudo-inverse of A.
+ * @param B The RHS of the linear system originated from the information conservation constraints.
+ * @param I The identity matrix compatible with the formula: [a] = Adagger.B + (I-Adagger.A)[w]
+ * @param m The desired number of geological factor.
+ * @param fundamentalFactors  The list with the original data's fundamental factors computed with SVD.
+ * @param fftOriginalGridMagAndPhase The Fourier image of the original data in polar form.
+ * @return A distance/difference measure.
+ */
+//TODO: PERFORMANCE: F is costly and is called often.  Invest optimization effort here first.
+double F(const spectral::array &originalGrid,
+		 const spectral::array &vectorOfParameters,
+		 const spectral::array &A,
+		 const spectral::array &Adagger,
+		 const spectral::array &B,
+		 const spectral::array &I,
+		 const int m,
+		 const std::vector<spectral::array> &fundamentalFactors,
+		 const spectral::complex_array& fftOriginalGridMagAndPhase )
+{
+
+	int nI = originalGrid.M();
+	int nJ = originalGrid.N();
+	int nK = originalGrid.K();
+	int n = fundamentalFactors.size();
+
+	//Compute the vector of weights [a] = Adagger.B + (I-Adagger.A)[w]
+	spectral::array va;
+	{
+		Eigen::MatrixXd eigenAdagger = spectral::to_2d( Adagger );
+		Eigen::MatrixXd eigenB = spectral::to_2d( B );
+		Eigen::MatrixXd eigenI = spectral::to_2d( I );
+		Eigen::MatrixXd eigenA = spectral::to_2d( A );
+		Eigen::MatrixXd eigenvw = spectral::to_2d( vectorOfParameters );
+		Eigen::MatrixXd eigenva = eigenAdagger * eigenB + ( eigenI - eigenAdagger * eigenA ) * eigenvw;
+		va = spectral::to_array( eigenva );
+	}
+
+	//Make the m geological factors (expected variographic structures)
+	std::vector< spectral::array > geologicalFactors;
+	{
+		for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
+			spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+			for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
+				geologicalFactor += fundamentalFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
+			}
+			geologicalFactors.push_back( std::move( geologicalFactor ) );
+		}
+	}
+
+	//Compute the grid derived form the geological factors (ideally it must match the input grid)
+	spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+	std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+	for( ; it != geologicalFactors.end(); ++it ){
+		//Compute FFT of the geological factor
+		spectral::complex_array tmp;
+		spectral::foward( tmp, *it );
+		//inbue the geological factor's FFT with the phase field of the original data.
+		for( int idx = 0; idx < tmp.size(); ++idx)
+		{
+			std::complex<double> value;
+			//get the complex number value in rectangular form
+			value.real( tmp.d_[idx][0] ); //real part
+			value.imag( tmp.d_[idx][1] ); //imaginary part
+			//convert to polar form
+			//but phase is replaced with that of the original data
+			tmp.d_[idx][0] = std::abs( value ); //magnitude part
+			tmp.d_[idx][1] = fftOriginalGridMagAndPhase.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
+			//convert back to rectangular form (recall that the varmap holds covariance values, then it is necessary to take its square root)
+			value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
+			tmp.d_[idx][0] = value.real();
+			tmp.d_[idx][1] = value.imag();
+		}
+		//Compute RFFT (with the phase of the original data imbued)
+		spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+		spectral::backward( rfftResult, tmp );
+		//Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
+		rfftResult = rfftResult * (1.0/(nI*nJ*nK));
+		//Update the derived grid.
+		derivedGrid += rfftResult;
+	}
+
+	//Return the measure of difference between the original data and the derived grid
+	return spectral::sumOfAbsDifference( originalGrid, derivedGrid );
+}
+
+/** The code for multithreaded gradient vector calculation.
+ *
+ */
+void taskOnePartialDerivative(
+							   const spectral::array& vw,
+							   const std::vector< int >& parameterIndexBin,
+							   const double epsilon,
+							   const spectral::array* gridData,
+							   const spectral::array& A,
+							   const spectral::array& Adagger,
+							   const spectral::array& B,
+							   const spectral::array& I,
+							   const int m,
+							   const std::vector< spectral::array >& svdFactors,
+							   const spectral::complex_array& gridMagnitudeAndPhaseParts,
+							   spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
+							   ){
+	std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
+	for(; it != parameterIndexBin.cend(); ++it ){
+		int iParameter = *it;
+		//Make a set of parameters slightly shifted to the right (more positive) along one parameter.
+		spectral::array vwFromRight( vw );
+		vwFromRight(iParameter) = vwFromRight(iParameter) + epsilon;
+		//Make a set of parameters slightly shifted to the left (more negative) along one parameter.
+		spectral::array vwFromLeft( vw );
+		vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
+		//Compute (numerically) the partial derivative with respect to one parameter.
+		(*gradient)(iParameter) = (F( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts )
+									 -
+								   F( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts ))
+									 /
+								   ( 2 * epsilon );
+	}
+}
+
 
 VariographicDecompositionDialog::VariographicDecompositionDialog(const std::vector<IJAbstractCartesianGrid *> &&grids, QWidget *parent) :
     QDialog(parent),
@@ -45,83 +173,6 @@ VariographicDecompositionDialog::VariographicDecompositionDialog(const std::vect
 VariographicDecompositionDialog::~VariographicDecompositionDialog()
 {
     delete ui;
-}
-
-//TODO: PERFORMANCE: F is costly and is called often.  Invest optimization effort here first.
-double VariographicDecompositionDialog::F(const spectral::array &originalGrid,
-                                          const spectral::array &vectorOfParameters,
-                                          const spectral::array &A,
-                                          const spectral::array &Adagger,
-                                          const spectral::array &B,
-                                          const spectral::array &I,
-                                          int m,
-                                          const std::vector<spectral::array> &fundamentalFactors,
-                                          const spectral::complex_array& fftOriginalGridMagAndPhase )
-{
-
-    int nI = originalGrid.M();
-    int nJ = originalGrid.N();
-    int nK = originalGrid.K();
-    int n = fundamentalFactors.size();
-
-    //Compute the vector of weights [a] = Adagger.B + (I-Adagger.A)[w]
-    spectral::array va;
-    {
-        Eigen::MatrixXd eigenAdagger = spectral::to_2d( Adagger );
-        Eigen::MatrixXd eigenB = spectral::to_2d( B );
-        Eigen::MatrixXd eigenI = spectral::to_2d( I );
-        Eigen::MatrixXd eigenA = spectral::to_2d( A );
-        Eigen::MatrixXd eigenvw = spectral::to_2d( vectorOfParameters );
-        Eigen::MatrixXd eigenva = eigenAdagger * eigenB + ( eigenI - eigenAdagger * eigenA ) * eigenvw;
-        va = spectral::to_array( eigenva );
-    }
-
-    //Make the m geological factors (expected variographic structures)
-    std::vector< spectral::array > geologicalFactors;
-    {
-        for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
-            spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-            for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
-                geologicalFactor += fundamentalFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
-            }
-            geologicalFactors.push_back( std::move( geologicalFactor ) );
-        }
-    }
-
-    //Compute the grid derived form the geological factors (ideally it must match the input grid)
-    spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-    std::vector< spectral::array >::iterator it = geologicalFactors.begin();
-    for( ; it != geologicalFactors.end(); ++it ){
-        //Compute FFT of the geological factor
-        spectral::complex_array tmp;
-        spectral::foward( tmp, *it );
-        //inbue the geological factor's FFT with the phase field of the original data.
-        for( int idx = 0; idx < tmp.size(); ++idx)
-        {
-            std::complex<double> value;
-            //get the complex number value in rectangular form
-            value.real( tmp.d_[idx][0] ); //real part
-            value.imag( tmp.d_[idx][1] ); //imaginary part
-            //convert to polar form
-            //but phase is replaced with that of the original data
-            tmp.d_[idx][0] = std::abs( value ); //magnitude part
-            tmp.d_[idx][1] = fftOriginalGridMagAndPhase.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
-            //convert back to rectangular form
-            value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
-            tmp.d_[idx][0] = value.real();
-            tmp.d_[idx][1] = value.imag();
-        }
-        //Compute RFFT (with the phase of the original data imbued)
-        spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-        spectral::backward( rfftResult, tmp );
-        //Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
-        rfftResult = rfftResult * (1.0/(nI*nJ*nK));
-        //Update the derived grid.
-        derivedGrid += rfftResult;
-    }
-
-    //Return the measure of difference between the original data and the derived grid
-    return spectral::sumOfAbsDifference( originalGrid, derivedGrid );
 }
 
 void VariographicDecompositionDialog::doVariographicDecomposition()
@@ -262,6 +313,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		}
 	}
 
+	//TODO: there is a crash happening in fftw3 probably due to some race condition, so multithreading is disabled.
+	//      there are concurrent calls to fftw3 in the objective function (F()).
+	//get the number of threads from logical CPUs or number of free parameters (whichever is the lowest)
+	//unsigned int nThreads = std::min( std::thread::hardware_concurrency(), (unsigned int)m*n );
+	unsigned int nThreads = 1;
+
 	//Make the A matrix of the linear system originated by the information
 	//conservation constraint (see program manual for the complete theory).
 	//elements are initialized to zero.
@@ -353,22 +410,35 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
         spectral::array gradient( vw.size() );
         {
             spectral::array *gridData = grid->createSpectralArray( variable->getIndexInParentGrid() );
-            //For each partial derivative.
-			//TODO: PERFORMANCE: This loop can be done in parallel.
-            for( int i = 0; i < gradient.size(); ++i ){
-                //Make a set of parameters slightly shifted to the right (more positive) along one parameter.
-                spectral::array vwFromRight( vw );
-                vwFromRight(i) = vwFromRight(i) + epsilon;
-                //Make a set of parameters slightly shifted to the left (more negative) along one parameter.
-                spectral::array vwFromLeft( vw );
-                vwFromLeft(i) = vwFromLeft(i) - epsilon;
-                //Compute (numerically) the partial derivative with respect to one parameter.
-                gradient(i) = (F( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts )
-                                     -
-                               F( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts ))
-                                     /
-                              ( 2 * epsilon );
-            }
+
+			//distribute the parameter indexes among the n-threads
+			std::vector<int> parameterIndexBins[nThreads];
+			int parameterIndex = 0;
+			for( unsigned int iThread = 0; parameterIndex < vw.size(); ++parameterIndex, ++iThread)
+				parameterIndexBins[ iThread % nThreads ].push_back( parameterIndex );
+
+			//create and run the partial derivative calculation threads
+			std::thread threads[nThreads];
+			for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
+				threads[iThread] = std::thread( taskOnePartialDerivative,
+												vw,
+												parameterIndexBins[iThread],
+												epsilon,
+												gridData,
+												A,
+												Adagger,
+												B,
+												I,
+												m,
+												svdFactors,
+												gridMagnitudeAndPhaseParts,
+												&gradient);
+			}
+
+			//wait for the threads to finish.
+			for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+				threads[iThread].join();
+
             delete gridData;
         }
 
