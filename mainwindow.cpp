@@ -1965,61 +1965,65 @@ void MainWindow::onCovarianceMap()
         return;
     }
 
-	//get the array containing the data
-	std::vector< std::complex<double> > array = cg->getArray( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+    //get the grid dimensions
+    uint nI = cg->getNI();
+    uint nJ = cg->getNJ();
+    uint nK = cg->getNK();
 
-	//run FFT to get a + bi (real and imaginary parts or the rectangular form).
-	{
-		QProgressDialog progressDialog;
-		progressDialog.setRange(0,0);
-		progressDialog.show();
-		progressDialog.setLabelText("Computing FFT...");
-		QCoreApplication::processEvents(); //let Qt repaint widgets
-
-		//run FFT
-		Util::fft3D( cg->getNX(),
-					 cg->getNY(),
-					 cg->getNZ(),
-					 array,
-					 FFTComputationMode::DIRECT,
-					 FFTImageType::RECTANGULAR_FORM );
-	}
-
-	//recompute the array to get (a+bi)*(a-bi) or ||z|| == COV(A,A) computed with FFT (Theorem of Convolution).
-	std::vector< std::complex<double> >::iterator it = array.begin();
-    for(; it != array.end(); ++it){
-        //save the current complex value
-        //get the complex modulus of the complex value.
-        double z1 = (*it).real() * (*it).real() + (*it).imag() * (*it).imag();
-        //make the real part (actually magnitude) as ||z||
-        (*it).real( z1 );
-        //make the imaginary part (actually phase) as zero
-        (*it).imag( 0.0 );
-    }
-
-    //run RFFT on the polar form of ||Z|| and phase==0.0 to get the covariance.
+    // Perform FFT to get a grid of complex numbers in rectangular form: real part (a), imaginary part (b).
+    spectral::complex_array gridRealAndImaginaryParts;
     {
         QProgressDialog progressDialog;
         progressDialog.setRange(0,0);
         progressDialog.show();
-        progressDialog.setLabelText("Computing RFFT...");
+        progressDialog.setLabelText("Computing FFT...");
         QCoreApplication::processEvents(); //let Qt repaint widgets
-
-        //run RFFT
-        Util::fft3D( cg->getNX(),
-                     cg->getNY(),
-                     cg->getNZ(),
-                     array,
-                     FFTComputationMode::REVERSE,
-                     FFTImageType::POLAR_FORM );
+        spectral::array *gridData = cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() );
+        spectral::foward( gridRealAndImaginaryParts, *gridData );
+        delete gridData;
     }
+
+    // 1) Convert real and imaginary parts to magnitude and phase (phi).
+    // 2) Make ||z|| = zz* = (a+bi)(a-bi) = a^2+b^2 (Convolution Theorem: a convolution reduces to a cell-to-cell product in frequency domain).
+    // 3) RFFT of ||z|| as magnitude and a grid filled with zeros as phase (zero phase).
+    // PRODUCTS: 3 grids: magnitude and phase parts; variographic map.
+    spectral::array gridVarmap( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Converting FFT results to polar form...");
+        spectral::complex_array gridNormSquaredAndZeroPhase( nI, nJ, nK );
+        for(unsigned int k = 0; k < nK; ++k) {
+            QCoreApplication::processEvents(); //let Qt repaint widgets
+            for(unsigned int j = 0; j < nJ; ++j){
+                for(unsigned int i = 0; i < nI; ++i){
+                    std::complex<double> value;
+                    //the scan order of fftw follows is the opposite of the GSLib convention
+                    int idx = k + nK * (j + nJ * i );
+                    //compute the complex number norm squared
+                    double normSquared = gridRealAndImaginaryParts.d_[idx][0]*gridRealAndImaginaryParts.d_[idx][0] +
+                                         gridRealAndImaginaryParts.d_[idx][1]*gridRealAndImaginaryParts.d_[idx][1];
+                    double phase = 0.0;
+                    //convert to rectangular form
+                    value = std::polar( normSquared, phase );
+                    //save the rectangular form in the grid
+                    gridNormSquaredAndZeroPhase.d_[idx][0] = value.real();
+                    gridNormSquaredAndZeroPhase.d_[idx][1] = value.imag();
+                }
+            }
+        }
+        progressDialog.setLabelText("Computing RFFT to get varmap...");
+        QCoreApplication::processEvents(); //let Qt repaint widgets
+        spectral::backward( gridVarmap, gridNormSquaredAndZeroPhase );
+    }
+
+    //divide the varmap (due to fftw3's RFFT implementation) values by the number of cells of the grid.
+    gridVarmap = gridVarmap * (1.0/(nI*nJ*nK));
 
     //The covariance at h=0 ends up in the corners of the grid, then
     //we shift the data so cov(0) is in the grid center
     //this also normalizes the values (divide by number of cells)
-    uint nI = cg->getNX();
-    uint nJ = cg->getNY();
-    uint nK = cg->getNZ();
     uint n = nI*nJ*nK;
     std::vector< std::complex<double> > arrayShifted( nI * nJ * nK );
     for(uint k = 0; k < nK; ++k) {
@@ -2028,8 +2032,10 @@ void MainWindow::onCovarianceMap()
             int j_shift = (j + nJ/2) % nJ;
             for(uint i = 0; i < nI; ++i){
                 int i_shift = (i + nI/2) % nI;
-                //normalize the values
-                double value = array[i + j*nI + k*nJ*nI].real() / n;
+                //the scan order of fftw follows is the opposite of the GSLib convention
+                int idx = k + nK * (j + nJ * i );
+                //get the value
+                double value = gridVarmap.d_[idx];
                 //shift the values
                 arrayShifted[i_shift + j_shift*nI + k_shift*nJ*nI].real( value );
             }
