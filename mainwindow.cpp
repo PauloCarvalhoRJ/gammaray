@@ -1991,9 +1991,9 @@ void MainWindow::onCovarianceMap()
         //save the current complex value
         //get the complex modulus of the complex value.
         double z1 = (*it).real() * (*it).real() + (*it).imag() * (*it).imag();
-        //make the real part as the square root of ||z||^2
+        //make the real part (actually magnitude) as ||z||
         (*it).real( z1 );
-        //make the imaginary part as zero
+        //make the imaginary part (actually phase) as zero
         (*it).imag( 0.0 );
     }
 
