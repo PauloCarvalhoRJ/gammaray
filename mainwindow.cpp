@@ -2017,8 +2017,13 @@ void MainWindow::onCovarianceMap()
         spectral::backward( gridVarmap, gridNormSquaredAndZeroPhase );
     }
 
-    //divide the varmap (due to fftw3's RFFT implementation) values by the number of cells of the grid.
-    gridVarmap = gridVarmap * (1.0/(nI*nJ*nK));
+
+	//mirrors the correlogram so it becomes an actual variogram map.
+	//this also puts the variogram in the 0-1 scale
+	double max = gridVarmap.max();
+	gridVarmap = max - gridVarmap;
+	spectral::standardize( gridVarmap );
+
 
     //The covariance at h=0 ends up in the corners of the grid, then
     //we shift the data so cov(0) is in the grid center
