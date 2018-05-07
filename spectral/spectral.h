@@ -102,7 +102,11 @@ struct array {
 
     array operator*( double scalar ) const;
 
-    array operator-( const array &other );
+	array operator/( double scalar ) const;
+
+	array operator-( double scalar ) const;
+
+	array operator-( const array &other ) const;
 
     virtual ~array();
 
@@ -129,12 +133,17 @@ struct array {
     void set_size(index M, index N);
     void set_size(index M);
 
+	double max() const;
+	double min() const;
+
     std::vector<double> d_;
     index ndim_ = 1;
     index M_ = 1; // dim 1
     index N_ = 1; // dim 2
     index K_ = 1; // dim 3
 };
+
+array operator-( double theValue, const array& theArray );
 
 // fft 1D
 void foward(complex_array &out, double *in, index M);
@@ -218,6 +227,9 @@ void autocovariance_naive(array &out, const array &a, bool centered);
 void normalize(complex_array &in, const std::complex<double> &K);
 void normalize(complex_array &in, double K);
 void normalize(array &in, double K);
+
+/** Puts the values in the 0-1 range. */
+void standardize(array &in);
 
 double mse(const array &A, const array &B);
 double absolute_error(const array &A, const array &B);
