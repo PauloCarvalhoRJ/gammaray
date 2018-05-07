@@ -370,6 +370,30 @@ array array::operator*(double scalar) const
     array result( M_, N_, K_ );
     for (index i = 0; i < d_.size(); ++i)
         result.d_[i] = d_[i] * scalar;
+	return result;
+}
+
+array array::operator/(double scalar) const
+{
+	array result( M_, N_, K_ );
+	for (index i = 0; i < d_.size(); ++i)
+		result.d_[i] = d_[i] / scalar;
+	return result;
+}
+
+array array::operator-(double scalar) const
+{
+	array result( M_, N_, K_ );
+	for (index i = 0; i < d_.size(); ++i)
+		result.d_[i] = d_[i] - scalar;
+	return result;
+}
+
+array array::operator-(const array &other) const
+{
+    array result( M_, N_, K_ );
+    for (index i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] - other.d_[i];
     return result;
 }
 
@@ -445,7 +469,17 @@ void array::set_size(index M)
     M_ = M;
     N_ = 1;
     K_ = 1;
-    d_.resize(M);
+	d_.resize(M);
+}
+
+double array::max() const
+{
+	return *std::max_element( d_.begin(), d_.end() );
+}
+
+double array::min() const
+{
+	return *std::min_element( d_.begin(), d_.end() );
 }
 
 const double &array::operator()(index i, index j) const { return d_.at(i * N_ + j); }
@@ -1563,6 +1597,21 @@ double sumOfAbsDifference(const array &one, const array &other)
     for( int i = 0; i < one.size(); ++i )
         result += std::abs( one.d_[i] - other.d_[i] );
     return result;
+}
+
+array operator-(double theValue, const array & theArray){
+	array result( theArray.M(), theArray.N(), theArray.K() );
+	for( int i = 0; i < theArray.size(); ++i )
+		result.d_[i] = theValue - theArray.d_[i];
+	return result;
+}
+
+void standardize(array &in)
+{
+	double min = in.min();
+	in = in - min;
+	double max = in.max();
+	in = in / max;
 }
 
 } // namespace spectral
