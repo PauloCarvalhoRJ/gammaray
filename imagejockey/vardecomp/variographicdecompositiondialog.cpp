@@ -15,6 +15,7 @@
 #include <cstdlib>
 #include <thread>
 #include <algorithm>
+#include <limits>
 
 /** The objective function for the optimization process.
  * See complete theory in the program manual for in-depth explanation of the method's parameters below.
@@ -354,8 +355,14 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	}
 
 	//Make U*
-	//U is square, symmetrical and contains only real number, thus U's transpose conjugate is itself.
+	//U contains only real numbers, thus U's transpose conjugate is its transpose.
 	spectral::array Ustar( U );
+	//transpose U to get U*
+	{
+		Eigen::MatrixXd tmp = spectral::to_2d( Ustar );
+		tmp.transposeInPlace();
+		Ustar = spectral::to_array( tmp );
+	}
 
 	//Make Sigmadagger (pseudoinverse of Sigma)
 	spectral::array SigmaDagger( Sigma );
@@ -363,8 +370,11 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		//compute reciprocals of the non-zero elements in the main diagonal.
 		for( int i = 0; i < n; ++i){
 			double value = SigmaDagger(i, i);
-			if( ! ImageJockeyUtils::almostEqual2sComplement( value, 0.0, 1 ) )
+			//only absolute values greater than the machine epsilon are considered non-zero.
+			if( std::abs( value ) > std::numeric_limits<double>::epsilon() )
 				SigmaDagger( i, i ) = 1.0 / value;
+			else
+				SigmaDagger( i, i ) = 0.0;
 		}
 		//transpose
 		Eigen::MatrixXd tmp = spectral::to_2d( SigmaDagger );
@@ -387,6 +397,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	spectral::array vw( (spectral::index)m*n );
 
 	//-------------------------OPTIMIZATION LOOP -------------------------------------------
+	QProgressDialog progressDialog;
+	progressDialog.setRange(0,0);
+	progressDialog.show();
+	progressDialog.setLabelText("Optimization in progress...");
 	int iOptStep = 0;
 	spectral::array va;
 	for( ; iOptStep < maxNumberOfOptimizationSteps; ++iOptStep ){
@@ -402,9 +416,14 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
             Eigen::MatrixXd eigenI = spectral::to_2d( I );
             Eigen::MatrixXd eigenA = spectral::to_2d( A );
             Eigen::MatrixXd eigenvw = spectral::to_2d( vw );
-            Eigen::MatrixXd eigenva = eigenAdagger * eigenB + ( eigenI - eigenAdagger * eigenA ) * eigenvw;
+			Eigen::MatrixXd eigenva = eigenAdagger * eigenB + ( eigenI - eigenAdagger * eigenA ) * eigenvw;
             va = spectral::to_array( eigenva );
         }
+
+		{
+			spectral::array debug_va( va );
+			debug_va.set_size( (spectral::index)n, (spectral::index)m );
+		}
 
         //Compute the gradient vector of objective function F with the current [w] parameters.
         spectral::array gradient( vw.size() );
@@ -479,7 +498,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 
 		emit info( "F(k)/F(k+1) ratio: " + QString::number( ratio ) );
 
-    } //----------------------END OF PARAMETER OPTIMIZATION LOOP-----------------
+	}
+	progressDialog.hide();
+	//----------------------END OF PARAMETER OPTIMIZATION LOOP-----------------
 
 	//---------------------------PRESENT THE RESULTS-----------------------------
 
@@ -503,13 +524,23 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			progressDialog.setLabelText("Making the geological factors...");
 			for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
 				spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+				double sumOfFundamentalFactorsWeights = 0.0;
 				for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
 					QCoreApplication::processEvents();
-					geologicalFactor += svdFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
+					double weight = va.d_[ iGeoFactor * m + iSVDFactor ];
+					geologicalFactor += svdFactors[iSVDFactor] * weight;
+					sumOfFundamentalFactorsWeights += weight;
 				}
+				//prints the sum of fundamental factors for each geological factors.  These sums must be near 1.0 for
+				//conservation of information content.
+				emit info( QString(" Sum of weights for geological factor: " + QString::number(sumOfFundamentalFactorsWeights) ) );
 				geologicalFactors.push_back( std::move( geologicalFactor ) );
 			}
 		}
+
+		//Change the weights m*n vector to a n by m matrix for displaying (fundamental factors as columns and geological factors as lines)
+		va.set_size( (spectral::index)n, (spectral::index)m );
+		displayGrids( {va}, {"parameters"}, {false} );
 
 		//Compute the grid derived form the geological factors (ideally it must match the input grid)
 		std::vector< spectral::array >::iterator it = geologicalFactors.begin();

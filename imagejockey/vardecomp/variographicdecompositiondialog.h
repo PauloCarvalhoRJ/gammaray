@@ -44,6 +44,8 @@ private:
 
 private Q_SLOTS:
 	void doVariographicDecomposition();
+	//you can use this function to see the contents of large matrices and grids during debug.
+	//TIP C++11: use displayGrids({A}, {"A matrix"}, {false}); to display a single object.
 	void displayGrids(const std::vector< spectral::array >& grids,
 					   const std::vector< std::string >& titles,
 					   const std::vector< bool >& shiftByHalves );
