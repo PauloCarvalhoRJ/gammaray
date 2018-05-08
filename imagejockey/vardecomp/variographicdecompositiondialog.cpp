@@ -16,6 +16,9 @@
 #include <thread>
 #include <algorithm>
 #include <limits>
+#include <mutex>
+
+std::mutex mutexObjectiveFunction;
 
 /** The objective function for the optimization process.
  * See complete theory in the program manual for in-depth explanation of the method's parameters below.
@@ -41,6 +44,7 @@ double F(const spectral::array &originalGrid,
 		 const std::vector<spectral::array> &fundamentalFactors,
 		 const spectral::complex_array& fftOriginalGridMagAndPhase )
 {
+	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
 
 	int nI = originalGrid.M();
 	int nJ = originalGrid.N();
@@ -77,7 +81,9 @@ double F(const spectral::array &originalGrid,
 	for( ; it != geologicalFactors.end(); ++it ){
 		//Compute FFT of the geological factor
 		spectral::complex_array tmp;
+		lck.lock();
 		spectral::foward( tmp, *it );
+		lck.unlock();
 		//inbue the geological factor's FFT with the phase field of the original data.
 		for( int idx = 0; idx < tmp.size(); ++idx)
 		{
@@ -96,7 +102,9 @@ double F(const spectral::array &originalGrid,
 		}
 		//Compute RFFT (with the phase of the original data imbued)
 		spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+		lck.lock();
 		spectral::backward( rfftResult, tmp );
+		lck.unlock();
 		//Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
 		rfftResult = rfftResult * (1.0/(nI*nJ*nK));
 		//Update the derived grid.
@@ -169,6 +177,9 @@ VariographicDecompositionDialog::VariographicDecompositionDialog(const std::vect
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
     m_gridSelector->onSelection( 0 );
+
+	//get the number of threads from logical CPUs or number of free parameters (whichever is the lowest)
+	ui->spinNumberOfThreads->setValue( (int)std::thread::hardware_concurrency() );
 }
 
 VariographicDecompositionDialog::~VariographicDecompositionDialog()
@@ -202,7 +213,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	int maxNumberOfAlphaReductionSteps = ui->spinMaxStepsAlphaReduction->value();
 	double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
 
+	//-------------------------------------------------------------------------------------------------
 	//-----------------------------------PREPARATION STEPS---------------------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 	// PRODUCTS: 1) grid with phase of FFT transform of the input variable.
 	//           2) collection of grids with the fundamental SVD factors of the variable's varmap.
@@ -314,11 +327,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		}
 	}
 
-	//TODO: there is a crash happening in fftw3 probably due to some race condition, so multithreading is disabled.
-	//      there are concurrent calls to fftw3 in the objective function (F()).
-	//get the number of threads from logical CPUs or number of free parameters (whichever is the lowest)
-	//unsigned int nThreads = std::min( std::thread::hardware_concurrency(), (unsigned int)m*n );
-	unsigned int nThreads = 1;
+	//---------------------------------------------------------------------------------------------------------------------------
+	//---------------------------------------SET UP THE LINEAR SYSTEM TO IMPOSE THE CONSERVATION CONSTRAINTS---------------------
+	//---------------------------------------------------------------------------------------------------------------------------
 
 	//Make the A matrix of the linear system originated by the information
 	//conservation constraint (see program manual for the complete theory).
@@ -396,16 +407,134 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
     //Initialize the vector of linear system parameters [w]=[0]
 	spectral::array vw( (spectral::index)m*n );
 
-	//-------------------------OPTIMIZATION LOOP -------------------------------------------
+	//---------------------------------------------------------------------------------------------------------------
+	//-------------------------SIMULATED ANNEALING TO INITIALIZE THE PARAMETERS [w] NEAR A GLOBAL MINIMUM------------
+	//---------------------------------------------------------------------------------------------------------------
+	{
+		//...................................Annealing Parameters.................................
+		//Intial temperature.
+		double f_Tinitial = ui->spinInitialTemperature->value();
+		//Final temperature.
+		double f_Tfinal = ui->spinFinalTemperature->value();
+		//Max number of SA steps.
+		int i_kmax = ui->spinMaxStepsSA->value();
+		//Minimum value allowed for the parameters w (all zeros). DOMAIN CONSTRAINT
+		spectral::array L_wMin( vw.size(), 0.0d );
+		//Maximum value allowed for the parameters w (all ones). DOMAIN CONSTRAINT
+		spectral::array L_wMax( vw.size(), 1.0d );
+		/*Factor used to control the size of the random state “hop”.  For example, if the maximum “hop” must be
+		 10% of domain size, set 0.1.  Small values (e.g. 0.001) result in slow, but more accurate convergence.
+		 Large values (e.g. 100.0) covers more space faster, but falls outside the domain are more frequent,
+		 resulting in more re-searches due to more invalid parameter value penalties. */
+		double f_factorSearch = ui->spinMaxHopFactor->value();
+		//Intialize the random number generator with the same seed
+		std::srand ((unsigned)ui->spinSeed->value());
+		//.................................End of Annealing Parameters.............................
+		//Returns the current “temperature” of the system.  It yields a log curve that decays as the step number increase.
+		// The initial temperature plays an important role: curve starting with 5.000 is steeper than another that starts with 1.000.
+		//  This means the the lower the temperature, the more linear the temperature decreases.
+		// i_stepNumber: the current step number of the annealing process ( 0 = first ).
+		auto temperature = [=](int i_stepNumber) { return f_Tinitial * std::exp( -i_stepNumber / (double)1000 * (1.5 * std::log10( f_Tinitial ) ) ); };
+		/*Returns the probability of acceptance of the energy state for the next iteration.
+		  This allows acceptance of higher values to break free from local minima.
+		  f_eCurrent: current energy of the system.
+		  f_eNew: energy level of the next step.
+		  f_T: current “temperature” of the system.*/
+		auto probAcceptance = [=]( double f_eCurrent, double f_eNewLocal, double f_T ) {
+		   //If the new state is more energetic, calculates a probability of acceptance
+		   //which is as high as the current “temperature” of the process.  The “temperature”
+		   //diminishes with iterations.
+		   if ( f_eNewLocal > f_eCurrent )
+			  return ( f_T - f_Tfinal ) / ( f_Tinitial - f_Tfinal );
+		   //If the new state is less energetic, the probability of acceptance is 100% (natural search for minima).
+		   else
+			  return 1.0;
+		};
+		//Get the number of parameters.
+		int i_nPar = vw.size();
+		//Make a copy of the initial state (parameter set.
+		spectral::array L_wCurrent( vw );
+		//The parameters variations (maxes - mins)
+		spectral::array L_wDelta = L_wMax - L_wMin;
+		//Get the input data.
+		spectral::array *gridData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+		//...................Main annealing loop...................
+		QProgressDialog progressDialog;
+		progressDialog.setRange(0,0);
+		progressDialog.show();
+		progressDialog.setLabelText("Simulated Annealing in progress...");
+		double f_eNew = std::numeric_limits<double>::max();
+		double f_lowestEnergyFound = std::numeric_limits<double>::max();
+		spectral::array L_wOfLowestEnergyFound;
+		int k = 0;
+		for( ; k < i_kmax; ++k ){
+			emit info( "Commencing SA step #" + QString::number( k ) );
+			QCoreApplication::processEvents();
+			//Get current temperature.
+			double f_T = temperature( k );
+			//Quit if temperature is lower than the minimum annealing temperature.
+			if( f_T < f_Tfinal )
+				break;
+			//Randomly searches for a neighboring state with respect to current state.
+			spectral::array L_wNew(L_wCurrent);
+			for( int i = 0; i < i_nPar; ++i ){ //for each parameter
+			   //Ensures that the values randomly obtained are inside the domain.
+			   double f_tmp = 0.0;
+			   while( true ){
+				  double LO = L_wCurrent[i] - (f_factorSearch * L_wDelta[i]);
+				  double HI = L_wCurrent[i] + (f_factorSearch * L_wDelta[i]);
+				  f_tmp = LO + std::rand() / (RAND_MAX/(HI-LO)) ;
+				  if ( f_tmp >= L_wMin[i] && f_tmp <= L_wMax[i] )
+					 break;
+			   }
+			   //Updates the parameter value.
+			   L_wNew[i] = f_tmp;
+			}
+			//Computes the “energy” of the current state (set of parameters).
+			//The “energy” in this case is how different the image as given the parameters is with respect
+			//the data grid, considered the reference image.
+			double f_eCurrent = F( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
+			//Computes the “energy” of the neighboring state.
+			f_eNew = F( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
+			//Changes states stochastically.  There is a probability of acceptance of a more energetic state so
+			//the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
+			double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
+			if( f_probMov > ( (double)std::rand() / RAND_MAX ) ) {//draws a value between 0.0 and 1.0
+				L_wCurrent = L_wNew; //replaces the current state with the neighboring random state
+				emit info("  moved to energy level " + QString::number( f_eNew ));
+				//if the energy is the record low, store it, just in case the SA loop ends without converging.
+				if( f_eNew < f_lowestEnergyFound ){
+					f_lowestEnergyFound = f_eNew;
+					L_wOfLowestEnergyFound = spectral::array( L_wCurrent );
+				}
+			}
+		}
+		// The input data is no longer necessary.
+		delete gridData;
+		// Delivers the set of parameters near the global minimum (hopefully) for the Gradient Descent algorithm.
+		// The SA loop may end in a higher energy state, so we return the lowest found in that case
+		if( k == i_kmax && f_lowestEnergyFound < f_eNew ){
+			vw = L_wOfLowestEnergyFound;
+			emit info( "SA completed by number of steps.  Using the lowest energy state found (" + QString::number( f_lowestEnergyFound ) + "), which is unlikely to be the global minimum." );
+		}else{
+			vw = L_wCurrent;
+			emit info( "SA completed by reaching the lowest temperature, resulting in a state which is likely to be the global minimum." );
+		}
+	}
+
+	//---------------------------------------------------------------------------------------------------------
+	//--------------------------------------------OPTIMIZATION LOOP -------------------------------------------
+	//---------------------------------------------------------------------------------------------------------
+	unsigned int nThreads = ui->spinNumberOfThreads->value();
 	QProgressDialog progressDialog;
 	progressDialog.setRange(0,0);
 	progressDialog.show();
-	progressDialog.setLabelText("Optimization in progress...");
+	progressDialog.setLabelText("Gradient Descent in progress...");
 	int iOptStep = 0;
 	spectral::array va;
 	for( ; iOptStep < maxNumberOfOptimizationSteps; ++iOptStep ){
 
-		emit info( "Commencing step #" + QString::number( iOptStep ) );
+		emit info( "Commencing GD step #" + QString::number( iOptStep ) );
 
 		QCoreApplication::processEvents();
 
@@ -500,9 +629,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 
 	}
 	progressDialog.hide();
-	//----------------------END OF PARAMETER OPTIMIZATION LOOP-----------------
 
-	//---------------------------PRESENT THE RESULTS-----------------------------
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------------PRESENT THE RESULTS------------------------------------------
+	//-------------------------------------------------------------------------------------------------
 
 	if( iOptStep == maxNumberOfOptimizationSteps )
 		QMessageBox::warning( this, "Warning", "Completed by reaching maximum number of optimization steps. Check results.");
@@ -524,16 +654,11 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			progressDialog.setLabelText("Making the geological factors...");
 			for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
 				spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-				double sumOfFundamentalFactorsWeights = 0.0;
 				for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
 					QCoreApplication::processEvents();
 					double weight = va.d_[ iGeoFactor * m + iSVDFactor ];
 					geologicalFactor += svdFactors[iSVDFactor] * weight;
-					sumOfFundamentalFactorsWeights += weight;
 				}
-				//prints the sum of fundamental factors for each geological factors.  These sums must be near 1.0 for
-				//conservation of information content.
-				emit info( QString(" Sum of weights for geological factor: " + QString::number(sumOfFundamentalFactorsWeights) ) );
 				geologicalFactors.push_back( std::move( geologicalFactor ) );
 			}
 		}
