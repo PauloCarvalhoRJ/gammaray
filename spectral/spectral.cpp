@@ -482,6 +482,11 @@ double array::min() const
 	return *std::min_element( d_.begin(), d_.end() );
 }
 
+double array::euclideanLength() const
+{
+	return std::sqrt( spectral::dot( *this, *this ) );
+}
+
 const double &array::operator()(index i, index j) const { return d_.at(i * N_ + j); }
 
 const double &array::operator()(index i) const { return d_.at(i); }
@@ -1612,6 +1617,25 @@ void standardize(array &in)
 	in = in - min;
 	double max = in.max();
 	in = in / max;
+}
+
+double dot(const array & one, const array & other)
+{
+	double result = 0;
+	for( int i = 0; i < one.size(); ++i )
+		result += one.d_[i] * other.d_[i];
+	return result;
+}
+
+double angle(const array & one, const array & other)
+{
+	double dot = spectral::dot( one, other );
+	double mags_sqr = one.euclideanLength() * other.euclideanLength();
+	if( std::abs(mags_sqr) < 0.000001 ) //the the mags squared is too small, consider it zero.
+		return 0.0;
+	double argument = dot / mags_sqr;
+	argument = ( argument < -1.0 ? -1.0 : ( argument > 1.0 ? 1.0 : argument ) ); //avoids domain errors when calling acos()
+	return std::acos( argument );
 }
 
 } // namespace spectral
