@@ -136,6 +136,8 @@ struct array {
 	double max() const;
 	double min() const;
 
+	double euclideanLength() const;
+
     std::vector<double> d_;
     index ndim_ = 1;
     index M_ = 1; // dim 1
@@ -249,9 +251,9 @@ void print( const array &A );
 
 /**
  *  Creates a new array by shifting all elements such that the elements in the corners
- *  are in the center.  This is useful to display spectrograms and variogram maps, as
- *  this makes interpretation of results intuitive for people (zero frequency or zero
- *  separation in the center).
+ *  are in the center.  This is useful to display center-symetric data such as spectrograms
+ *  and variogram maps, as this makes interpretation of results intuitive for people (zero
+ *  frequency or zero  separation in the center).
  */
 array shiftByHalf(const array &in);
 
@@ -260,6 +262,16 @@ array shiftByHalf(const array &in);
  * the two given data arrays.  Both arrays must have the same number of elements.
  */
 double sumOfAbsDifference( const array &one, const array &other );
+
+/** Computes the dot product between the given arrays.
+ * This function assumes both arrays have the same element count.
+ */
+double dot( const array &one, const array &other );
+
+/** Computes the angle (in radians) between the vectors represented by the given arrays.
+ */
+double angle( const array &one, const array &other );
+
 
 } // namepsace spectral
 
