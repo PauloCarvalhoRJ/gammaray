@@ -28,7 +28,7 @@ std::mutex mutexObjectiveFunction;
  * @param Adagger The pseudo-inverse of A.
  * @param B The RHS of the linear system originated from the information conservation constraints.
  * @param I The identity matrix compatible with the formula: [a] = Adagger.B + (I-Adagger.A)[w]
- * @param m The desired number of geological factor.
+ * @param m The desired number of geological factors.
  * @param fundamentalFactors  The list with the original data's fundamental factors computed with SVD.
  * @param fftOriginalGridMagAndPhase The Fourier image of the original data in polar form.
  * @return A distance/difference measure.
@@ -77,14 +77,19 @@ double F(const spectral::array &originalGrid,
 
 	//Compute the grid derived form the geological factors (ideally it must match the input grid)
 	spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-	std::vector< spectral::array >::iterator it = geologicalFactors.begin();
-	for( ; it != geologicalFactors.end(); ++it ){
-		//Compute FFT of the geological factor
+	{
+		//Sum up all geological factors.
+		spectral::array sum( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+		std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+		for( ; it != geologicalFactors.end(); ++it ){
+			sum += *it;
+		}
+		//Compute FFT of the sum
 		spectral::complex_array tmp;
-		lck.lock();
-		spectral::foward( tmp, *it );
-		lck.unlock();
-		//inbue the geological factor's FFT with the phase field of the original data.
+		lck.lock();                   //
+		spectral::foward( tmp, sum ); //fftw crashes when called simultaneously
+		lck.unlock();                 //
+		//inbue the sum's FFT with the phase field of the original data.
 		for( int idx = 0; idx < tmp.size(); ++idx)
 		{
 			std::complex<double> value;
@@ -102,21 +107,100 @@ double F(const spectral::array &originalGrid,
 		}
 		//Compute RFFT (with the phase of the original data imbued)
 		spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-		lck.lock();
-		spectral::backward( rfftResult, tmp );
-		lck.unlock();
+		lck.lock();                            //
+		spectral::backward( rfftResult, tmp ); //fftw crashes when called simultaneously
+		lck.unlock();                          //
 		//Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
 		rfftResult = rfftResult * (1.0/(nI*nJ*nK));
-		//Update the derived grid.
 		derivedGrid += rfftResult;
 	}
 
+
+
+//	//Compute the grid derived form the geological factors (ideally it must match the input grid)
+//	spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+//	std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+//	for( ; it != geologicalFactors.end(); ++it ){
+//		//Compute FFT of the geological factor
+//		spectral::complex_array tmp;
+//		lck.lock();                   //
+//		spectral::foward( tmp, *it ); //fftw crashes when called simultaneously
+//		lck.unlock();                 //
+//		//inbue the geological factor's FFT with the phase field of the original data.
+//		for( int idx = 0; idx < tmp.size(); ++idx)
+//		{
+//			std::complex<double> value;
+//			//get the complex number value in rectangular form
+//			value.real( tmp.d_[idx][0] ); //real part
+//			value.imag( tmp.d_[idx][1] ); //imaginary part
+//			//convert to polar form
+//			//but phase is replaced with that of the original data
+//			tmp.d_[idx][0] = std::abs( value ); //magnitude part
+//			tmp.d_[idx][1] = fftOriginalGridMagAndPhase.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
+//			//convert back to rectangular form (recall that the varmap holds covariance values, then it is necessary to take its square root)
+//			value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
+//			tmp.d_[idx][0] = value.real();
+//			tmp.d_[idx][1] = value.imag();
+//		}
+//		//Compute RFFT (with the phase of the original data imbued)
+//		spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+//		lck.lock();                            //
+//		spectral::backward( rfftResult, tmp ); //fftw crashes when called simultaneously
+//		lck.unlock();                          //
+//		//Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
+//		rfftResult = rfftResult * (1.0/(nI*nJ*nK));
+//		//Update the derived grid.
+//		derivedGrid += rfftResult;
+//	}
+
+	//Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
+	//The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
+	//The penalty value equals the smallest angle in radians between any pair of weights vectors.
+//	double penalty = 1.571; //1.571 radians ~ 90 degrees
+//	{
+//		//make the vectors of weights for each geological factor
+//		std::vector<spectral::array*> vectors;
+//		spectral::array* currentVector = new spectral::array();
+//		for( int i = 0; i < va.d_.size(); ++i){
+//			if( currentVector->size() < n )
+//				currentVector->d_.push_back( va.d_[i] );
+//			else{
+//				vectors.push_back( currentVector );
+//				currentVector = new spectral::array();
+//			}
+//		}
+//		//compute the penalty
+//		for( int i = 0; i < vectors.size()-1; ++i ){
+//			for( int j = i+1; j < vectors.size(); ++j ){
+//				spectral::array* vectorA = vectors[i];
+//				spectral::array* vectorB = vectors[j];
+//				double angle = spectral::angle( *vectorA, *vectorB );
+//				if( angle < penalty )
+//					penalty = angle;
+//			}
+//		}
+//		//cleanup the vectors
+//		for( int i = 0; i < vectors.size(); ++i )
+//			delete vectors[i];
+//	}
+
 	//Return the measure of difference between the original data and the derived grid
-	return spectral::sumOfAbsDifference( originalGrid, derivedGrid );
+	// The measure is multiplied by a factor that is a function of weights vector angle penalty (the more close to orthogonal the less penalty )
+	return spectral::sumOfAbsDifference( originalGrid, derivedGrid ); /* * (1.571 - penalty); //1.571 radians ~ 90 degrees */
+
+//	double measure = 0.0;
+//	for( int i = 0; i < geologicalFactors.size()-1; ++i ){
+//		for( int j = i+1; j < geologicalFactors.size(); ++j ){
+//			const spectral::array& gfA = geologicalFactors[i];
+//			const spectral::array& gfB = geologicalFactors[j];
+//			measure += spectral::sumOfAbsDifference( gfA, gfB );
+//		}
+//	}
+//	return measure;
 }
 
-/** The code for multithreaded gradient vector calculation.
- *
+/**
+ * The code for multithreaded gradient vector calculation.
  */
 void taskOnePartialDerivative(
 							   const spectral::array& vw,
@@ -499,7 +583,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			//Changes states stochastically.  There is a probability of acceptance of a more energetic state so
 			//the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
 			double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
-			if( f_probMov > ( (double)std::rand() / RAND_MAX ) ) {//draws a value between 0.0 and 1.0
+			if( f_probMov >= ( (double)std::rand() / RAND_MAX ) ) {//draws a value between 0.0 and 1.0
 				L_wCurrent = L_wNew; //replaces the current state with the neighboring random state
 				emit info("  moved to energy level " + QString::number( f_eNew ));
 				//if the energy is the record low, store it, just in case the SA loop ends without converging.
@@ -513,13 +597,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		delete gridData;
 		// Delivers the set of parameters near the global minimum (hopefully) for the Gradient Descent algorithm.
 		// The SA loop may end in a higher energy state, so we return the lowest found in that case
-		if( k == i_kmax && f_lowestEnergyFound < f_eNew ){
-			vw = L_wOfLowestEnergyFound;
-			emit info( "SA completed by number of steps.  Using the lowest energy state found (" + QString::number( f_lowestEnergyFound ) + "), which is unlikely to be the global minimum." );
-		}else{
-			vw = L_wCurrent;
-			emit info( "SA completed by reaching the lowest temperature, resulting in a state which is likely to be the global minimum." );
-		}
+		if( k == i_kmax && f_lowestEnergyFound < f_eNew )
+			emit info( "SA completed by number of steps." );
+		else
+			emit info( "SA completed by reaching the lowest temperature." );
+		vw = L_wOfLowestEnergyFound;
+		emit info( "Using the state of lowest energy found (" + QString::number( f_lowestEnergyFound ) + ")" );
 	}
 
 	//---------------------------------------------------------------------------------------------------------
