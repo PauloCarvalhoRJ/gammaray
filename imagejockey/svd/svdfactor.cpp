@@ -46,7 +46,7 @@ double SVDFactor::getSVDFactorTreeSplitThreshold(bool reset)
         //ask the user once for the default tree split threshold
         bool ok;
         int percentage = QInputDialog::getInt(nullptr, "Further SVD factoring threshold",
-                                     "Split information content in percentage parts (%):", 50, 1, 50, 5, &ok);
+									 "Split information content in percentage parts (%):", 50, 0, 50, 5, &ok);
         if (ok)
             setting = percentage / 100.0;
         else
