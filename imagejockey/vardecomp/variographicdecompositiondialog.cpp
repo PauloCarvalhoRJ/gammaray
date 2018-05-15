@@ -76,6 +76,7 @@ double F(const spectral::array &originalGrid,
 	}
 
 	//Compute the grid derived form the geological factors (ideally it must match the input grid)
+	//TODO: THIS BLOCK'S LOGIC IS UNDER EVALUATION
 	spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
 	{
 		//Sum up all geological factors.
@@ -156,37 +157,37 @@ double F(const spectral::array &originalGrid,
 	//Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
 	//The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
 	//The penalty value equals the smallest angle in radians between any pair of weights vectors.
-//	double penalty = 1.571; //1.571 radians ~ 90 degrees
-//	{
-//		//make the vectors of weights for each geological factor
-//		std::vector<spectral::array*> vectors;
-//		spectral::array* currentVector = new spectral::array();
-//		for( int i = 0; i < va.d_.size(); ++i){
-//			if( currentVector->size() < n )
-//				currentVector->d_.push_back( va.d_[i] );
-//			else{
-//				vectors.push_back( currentVector );
-//				currentVector = new spectral::array();
-//			}
-//		}
-//		//compute the penalty
-//		for( int i = 0; i < vectors.size()-1; ++i ){
-//			for( int j = i+1; j < vectors.size(); ++j ){
-//				spectral::array* vectorA = vectors[i];
-//				spectral::array* vectorB = vectors[j];
-//				double angle = spectral::angle( *vectorA, *vectorB );
-//				if( angle < penalty )
-//					penalty = angle;
-//			}
-//		}
-//		//cleanup the vectors
-//		for( int i = 0; i < vectors.size(); ++i )
-//			delete vectors[i];
-//	}
+	double penalty = 1.571; //1.571 radians ~ 90 degrees
+	{
+		//make the vectors of weights for each geological factor
+		std::vector<spectral::array*> vectors;
+		spectral::array* currentVector = new spectral::array();
+		for( int i = 0; i < va.d_.size(); ++i){
+			if( currentVector->size() < n )
+				currentVector->d_.push_back( va.d_[i] );
+			else{
+				vectors.push_back( currentVector );
+				currentVector = new spectral::array();
+			}
+		}
+		//compute the penalty
+		for( int i = 0; i < vectors.size()-1; ++i ){
+			for( int j = i+1; j < vectors.size(); ++j ){
+				spectral::array* vectorA = vectors[i];
+				spectral::array* vectorB = vectors[j];
+				double angle = spectral::angle( *vectorA, *vectorB );
+				if( angle < penalty )
+					penalty = angle;
+			}
+		}
+		//cleanup the vectors
+		for( int i = 0; i < vectors.size(); ++i )
+			delete vectors[i];
+	}
 
 	//Return the measure of difference between the original data and the derived grid
 	// The measure is multiplied by a factor that is a function of weights vector angle penalty (the more close to orthogonal the less penalty )
-	return spectral::sumOfAbsDifference( originalGrid, derivedGrid ); /* * (1.571 - penalty); //1.571 radians ~ 90 degrees */
+	return spectral::sumOfAbsDifference( originalGrid, derivedGrid ) * (1.571 - penalty) * (1.571 - penalty); //1.571 radians ~ 90 degrees */
 
 //	double measure = 0.0;
 //	for( int i = 0; i < geologicalFactors.size()-1; ++i ){
@@ -606,7 +607,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	}
 
 	//---------------------------------------------------------------------------------------------------------
-	//--------------------------------------------OPTIMIZATION LOOP -------------------------------------------
+	//--------------------------------------OPTIMIZATION LOOP (GRADIENT DESCENT)-------------------------------
 	//---------------------------------------------------------------------------------------------------------
 	unsigned int nThreads = ui->spinNumberOfThreads->value();
 	QProgressDialog progressDialog;
@@ -746,11 +747,47 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			}
 		}
 
+		//Compute the grid derived form the geological factors (ideally it must match the input grid)
+		{
+			//Sum up all geological factors.
+			spectral::array sum( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+			std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+			for( ; it != geologicalFactors.end(); ++it ){
+				sum += *it;
+			}
+			//Compute FFT of the sum
+			spectral::complex_array tmp;
+			spectral::foward( tmp, sum ); //fftw crashes when called simultaneously
+			//inbue the sum's FFT with the phase field of the original data.
+			for( int idx = 0; idx < tmp.size(); ++idx)
+			{
+				std::complex<double> value;
+				//get the complex number value in rectangular form
+				value.real( tmp.d_[idx][0] ); //real part
+				value.imag( tmp.d_[idx][1] ); //imaginary part
+				//convert to polar form
+				//but phase is replaced with that of the original data
+				tmp.d_[idx][0] = std::abs( value ); //magnitude part
+				tmp.d_[idx][1] = gridMagnitudeAndPhaseParts.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
+				//convert back to rectangular form (recall that the varmap holds covariance values, then it is necessary to take its square root)
+				value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
+				tmp.d_[idx][0] = value.real();
+				tmp.d_[idx][1] = value.imag();
+			}
+			//Compute RFFT (with the phase of the original data imbued)
+			spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+			spectral::backward( rfftResult, tmp ); //fftw crashes when called simultaneously
+			//Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
+			rfftResult = rfftResult * (1.0/(nI*nJ*nK));
+			derivedGrid += rfftResult;
+		}
+
 		//Change the weights m*n vector to a n by m matrix for displaying (fundamental factors as columns and geological factors as lines)
 		va.set_size( (spectral::index)n, (spectral::index)m );
 		displayGrids( {va}, {"parameters"}, {false} );
 
-		//Compute the grid derived form the geological factors (ideally it must match the input grid)
+		//Collect the geological factors (variographic structures and reconstructed information)
+		//as separate grids for display.
 		std::vector< spectral::array >::iterator it = geologicalFactors.begin();
 		for( int iGeoFactor = 0; it != geologicalFactors.end(); ++it, ++iGeoFactor ){
 			//Compute FFT of the geological factor
@@ -777,8 +814,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			spectral::backward( rfftResult, tmp );
 			//Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
 			rfftResult = rfftResult * (1.0/(nI*nJ*nK));
-			//Update the derived grid.
-			derivedGrid += rfftResult;
+			//Collect the grids.
 			QString title = QString("Factor #") + QString::number(iGeoFactor+1);
 			titles.push_back( title.toStdString() );
 			grids.push_back( std::move( rfftResult ) );
