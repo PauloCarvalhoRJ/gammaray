@@ -190,6 +190,17 @@ public:
 	 */
 	bool setSlice( SVDFactor* slice );
 
+	/**
+	 * Appends to the passed list the child factors that are selected.
+	 */
+	void getSelectedChildFactors( std::vector<SVDFactor *> &selectedFactors );
+
+	/**
+	  * Sums the values in the given array to the values of this factors.
+	  * This method assumes both data arrays are compatible.
+	  */
+	void sum( const spectral::array& valuesToSum );
+
 private:
     SVDFactor* m_parentFactor;
     spectral::array* m_factorData;

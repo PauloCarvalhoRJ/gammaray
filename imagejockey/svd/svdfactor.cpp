@@ -428,6 +428,22 @@ bool SVDFactor::setSlice(SVDFactor * slice)
 	return true;
 }
 
+void SVDFactor::getSelectedChildFactors(std::vector<SVDFactor *> & selectedFactors)
+{
+	std::vector<SVDFactor*>::iterator it = m_childFactors.begin();
+	for(; it != m_childFactors.end(); ++it){
+		if( (*it)->isSelected() ){
+			selectedFactors.push_back( *it );
+			(*it)->getSelectedChildFactors( selectedFactors );
+		}
+	}
+}
+
+void SVDFactor::sum(const spectral::array & valuesToSum)
+{
+	(*m_factorData) += valuesToSum;
+}
+
 SVDFactor *SVDFactor::getChildByIndex(uint index)
 {
 	return m_childFactors[index];
