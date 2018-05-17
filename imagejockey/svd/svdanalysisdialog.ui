@@ -14,16 +14,7 @@
    <string>Dialog</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>0</number>
    </property>
    <item>
@@ -57,16 +48,7 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
+       <property name="margin">
         <number>0</number>
        </property>
        <item>
@@ -92,16 +74,7 @@
        <enum>QFrame::Raised</enum>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_3">
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
+       <property name="margin">
         <number>0</number>
        </property>
        <item>
@@ -140,16 +113,7 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>0</number>
       </property>
       <item>
@@ -170,6 +134,13 @@
        <widget class="QPushButton" name="btnSave">
         <property name="text">
          <string>Save</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnCustomAnalysis">
+        <property name="text">
+         <string>Custom Analysis</string>
         </property>
        </widget>
       </item>
@@ -246,8 +217,8 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>237</x>
-     <y>491</y>
+     <x>264</x>
+     <y>490</y>
     </hint>
     <hint type="destinationlabel">
      <x>107</x>
@@ -287,11 +258,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnCustomAnalysis</sender>
+   <signal>clicked()</signal>
+   <receiver>SVDAnalysisDialog</receiver>
+   <slot>onCustomAnalysis()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>357</x>
+     <y>482</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>411</x>
+     <y>495</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onFactorClicked(QModelIndex)</slot>
   <slot>onSave()</slot>
   <slot>onPreview()</slot>
   <slot>onPreviewRFFT()</slot>
+  <slot>onCustomAnalysis()</slot>
  </slots>
 </ui>

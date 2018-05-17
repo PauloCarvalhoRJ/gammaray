@@ -76,6 +76,10 @@ private slots:
     void onDeleteChildren();
     void onAggregate();
     void onSaveAFactor();
+	void onCheckSelected();
+	void onUncheckSelected();
+	void onInvertCheckOfSelected();
+	void onCustomAnalysis();
 };
 
 #endif // SVDANALYSISDIALOG_H
