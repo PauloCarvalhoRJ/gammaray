@@ -64,6 +64,7 @@ double F(const spectral::array &originalGrid,
 	}
 
 	//Make the m geological factors (expected variographic structures)
+//	uint geologicalFactorsComplexity = 0;  ///////////////////////////////////////////////////////////////////////////////////////
 	std::vector< spectral::array > geologicalFactors;
 	{
 		for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
@@ -71,6 +72,28 @@ double F(const spectral::array &originalGrid,
 			for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
 				geologicalFactor += fundamentalFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
 			}
+//			//Compute the penalty that is higher with geological factor complexity.
+//			//Geological factors should be, ideally, simple variographic structures.
+//			{
+//				uint geologicalFactorSVDN = 0;
+//				lck.lock();                                       // to prevent race conditions in 3rd party library
+//				spectral::SVD svd = spectral::svd( geologicalFactor );
+//				//get the list with the factor weights (information quantity)
+//				spectral::array weights = svd.factor_weights();
+//				lck.unlock();                                     //  to prevent race conditions in 3rd party library
+//				//get the number of fundamental factors that have the total information content as specified by the user.
+//				{
+//					double cumulative = 0.0;
+//					uint i = 0;
+//					for(; i < weights.size(); ++i){
+//						cumulative += weights.d_[i];
+//						if( cumulative > 0.95 )
+//							break;
+//					}
+//					geologicalFactorSVDN = i+1;
+//				}
+//				geologicalFactorsComplexity += geologicalFactorSVDN;
+//			}
 			geologicalFactors.push_back( std::move( geologicalFactor ) );
 		}
 	}
@@ -154,40 +177,40 @@ double F(const spectral::array &originalGrid,
 //		derivedGrid += rfftResult;
 //	}
 
-	//Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
-	//The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
-	//The penalty value equals the smallest angle in radians between any pair of weights vectors.
-	double penalty = 1.571; //1.571 radians ~ 90 degrees
-	{
-		//make the vectors of weights for each geological factor
-		std::vector<spectral::array*> vectors;
-		spectral::array* currentVector = new spectral::array();
-		for( int i = 0; i < va.d_.size(); ++i){
-			if( currentVector->size() < n )
-				currentVector->d_.push_back( va.d_[i] );
-			else{
-				vectors.push_back( currentVector );
-				currentVector = new spectral::array();
-			}
-		}
-		//compute the penalty
-		for( int i = 0; i < vectors.size()-1; ++i ){
-			for( int j = i+1; j < vectors.size(); ++j ){
-				spectral::array* vectorA = vectors[i];
-				spectral::array* vectorB = vectors[j];
-				double angle = spectral::angle( *vectorA, *vectorB );
-				if( angle < penalty )
-					penalty = angle;
-			}
-		}
-		//cleanup the vectors
-		for( int i = 0; i < vectors.size(); ++i )
-			delete vectors[i];
-	}
+//	//Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
+//	//The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
+//	//The penalty value equals the smallest angle in radians between any pair of weights vectors.
+//	double penalty = 1.571; //1.571 radians ~ 90 degrees
+//	{
+//		//make the vectors of weights for each geological factor
+//		std::vector<spectral::array*> vectors;
+//		spectral::array* currentVector = new spectral::array();
+//		for( int i = 0; i < va.d_.size(); ++i){
+//			if( currentVector->size() < n )
+//				currentVector->d_.push_back( va.d_[i] );
+//			else{
+//				vectors.push_back( currentVector );
+//				currentVector = new spectral::array();
+//			}
+//		}
+//		//compute the penalty
+//		for( int i = 0; i < vectors.size()-1; ++i ){
+//			for( int j = i+1; j < vectors.size(); ++j ){
+//				spectral::array* vectorA = vectors[i];
+//				spectral::array* vectorB = vectors[j];
+//				double angle = spectral::angle( *vectorA, *vectorB );
+//				if( angle < penalty )
+//					penalty = angle;
+//			}
+//		}
+//		//cleanup the vectors
+//		for( int i = 0; i < vectors.size(); ++i )
+//			delete vectors[i];
+//	}
 
 	//Return the measure of difference between the original data and the derived grid
 	// The measure is multiplied by a factor that is a function of weights vector angle penalty (the more close to orthogonal the less penalty )
-	return spectral::sumOfAbsDifference( originalGrid, derivedGrid ) * (1.571 - penalty) * (1.571 - penalty); //1.571 radians ~ 90 degrees */
+	return spectral::sumOfAbsDifference( originalGrid, derivedGrid ); /* * (geologicalFactorsComplexity+1); */ /* * (1.571 - penalty) * (1.571 - penalty); //1.571 radians ~ 90 degrees */
 
 //	double measure = 0.0;
 //	for( int i = 0; i < geologicalFactors.size()-1; ++i ){
@@ -297,6 +320,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	double initialAlpha = ui->spinInitialAlpha->value();
 	int maxNumberOfAlphaReductionSteps = ui->spinMaxStepsAlphaReduction->value();
 	double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
+	double infoContentToKeepForSVD = ui->spinInfoContentToKeepForSVD->value() / 100.0;
 
 	//-------------------------------------------------------------------------------------------------
 	//-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -380,20 +404,23 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 				//get the list with the factor weights (information quantity)
 				spectral::array weights = svd.factor_weights();
 				progressDialog.hide();
-				//get the number of fundamental factors that have 100% of information content.
+				//get the number of fundamental factors that have the total information content as specified by the user.
 				{
 					double cumulative = 0.0;
 					uint i = 0;
 					for(; i < weights.size(); ++i){
 						cumulative += weights.d_[i];
-						if( cumulative > 0.99999 )
+						if( cumulative > infoContentToKeepForSVD )
 							break;
 					}
 					n = i+1;
 				}
 				if( n < 3 ){
-					QMessageBox::warning( this, "Warning", "The data's varmap must be decomposable in at least three usable fundamental factors to proceed.");
+					QMessageBox::warning( this, "Warning", "The data's varmap must be decomposable into at least three usable fundamental factors to proceed.");
 					return;
+				} else {
+					emit info( "Using " + QString::number(n) + " fundamental factors out of " + QString::number(weights.size()) +
+							   " to cover " + QString::number(ui->spinInfoContentToKeepForSVD->value()) + "% of information content." );
 				}
 				//Get the usable fundamental SVD factors.
 				{
