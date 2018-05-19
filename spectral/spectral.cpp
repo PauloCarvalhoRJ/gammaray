@@ -365,6 +365,38 @@ array &array::operator+=(const array &other)
     return *this;
 }
 
+array array::operator*(double scalar) const
+{
+    array result( M_, N_, K_ );
+    for (index i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] * scalar;
+	return result;
+}
+
+array array::operator/(double scalar) const
+{
+	array result( M_, N_, K_ );
+	for (index i = 0; i < d_.size(); ++i)
+		result.d_[i] = d_[i] / scalar;
+	return result;
+}
+
+array array::operator-(double scalar) const
+{
+	array result( M_, N_, K_ );
+	for (index i = 0; i < d_.size(); ++i)
+		result.d_[i] = d_[i] - scalar;
+	return result;
+}
+
+array array::operator-(const array &other) const
+{
+    array result( M_, N_, K_ );
+    for (index i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] - other.d_[i];
+    return result;
+}
+
 array::~array() {}
 
 double &array::operator()(index i, index j, index k)
@@ -437,7 +469,22 @@ void array::set_size(index M)
     M_ = M;
     N_ = 1;
     K_ = 1;
-    d_.resize(M);
+	d_.resize(M);
+}
+
+double array::max() const
+{
+	return *std::max_element( d_.begin(), d_.end() );
+}
+
+double array::min() const
+{
+	return *std::min_element( d_.begin(), d_.end() );
+}
+
+double array::euclideanLength() const
+{
+	return std::sqrt( spectral::dot( *this, *this ) );
 }
 
 const double &array::operator()(index i, index j) const { return d_.at(i * N_ + j); }
@@ -1521,7 +1568,74 @@ complex_array to_complex_array(const array &in, double scale)
         a(i)[1] = 0;
     }
 
-    return a;
+	return a;
+}
+
+void print(const array & A)
+{
+	Eigen::MatrixXd tmp = spectral::to_2d( A );
+    std::cout << "Here is the matrix:\n" << tmp << std::endl;
+}
+
+array shiftByHalf(const array &in)
+{
+    int nI = in.M();
+    int nJ = in.N();
+    int nK = in.K();
+    array result( (index)nI, (index)nJ, (index)nK );
+    for (size_t i = 0; i < nI; ++i) {
+        int i_shift = (i + nI/2) % nI;
+        for (size_t j = 0; j < nJ; ++j) {
+            int j_shift = (j + nJ/2) % nJ;
+            for (size_t k = 0; k < nK; ++k) {
+                int k_shift = (k + nK/2) % nK;
+                result(i_shift, j_shift, k_shift) = in(i, j, k);
+            }
+        }
+    }
+    return result;
+}
+
+double sumOfAbsDifference(const array &one, const array &other)
+{
+    double result = 0.0;
+    for( int i = 0; i < one.size(); ++i )
+        result += std::abs( one.d_[i] - other.d_[i] );
+    return result;
+}
+
+array operator-(double theValue, const array & theArray){
+	array result( theArray.M(), theArray.N(), theArray.K() );
+	for( int i = 0; i < theArray.size(); ++i )
+		result.d_[i] = theValue - theArray.d_[i];
+	return result;
+}
+
+void standardize(array &in)
+{
+	double min = in.min();
+	in = in - min;
+	double max = in.max();
+	in = in / max;
+}
+
+double dot(const array & one, const array & other)
+{
+	double result = 0;
+	for( int i = 0; i < one.size(); ++i )
+		result += one.d_[i] * other.d_[i];
+	return result;
+}
+
+double angle(const array & one, const array & other)
+{
+	double dot = spectral::dot( one, other );
+	double mags_sqr = one.euclideanLength() * other.euclideanLength();
+	if( std::abs(mags_sqr) < 0.000001 ) //the the mags squared is too small, consider it zero.
+		return 0.0;
+	double argument = dot / mags_sqr;
+	argument = ( argument < -1.0 ? -1.0 : ( argument > 1.0 ? 1.0 : argument ) ); //avoids domain errors when calling acos()
+	return std::acos( argument );
 }
 
 } // namespace spectral

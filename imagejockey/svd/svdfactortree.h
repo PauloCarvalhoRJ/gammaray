@@ -46,6 +46,9 @@ public:
      */
     QModelIndexList getIndexList(const QModelIndex &parent);
 
+	/** Returns a list with the selected factors in the tree (recursive).
+	 */
+	std::vector<SVDFactor*> getSelectedFactors();
 
 private:
 	SVDFactor *m_rootFactor;

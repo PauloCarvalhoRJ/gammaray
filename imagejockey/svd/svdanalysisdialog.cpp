@@ -2,9 +2,11 @@
 #include "ui_svdanalysisdialog.h"
 #include "svdfactortree.h"
 #include "spectral/svd.h"
+#include <QFileDialog>
 #include <QMenu>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QtCore>
 #include "svdfactorsel/svdfactorsselectiondialog.h"
 #include "../widgets/ijgridviewerwidget.h"
 #include "../imagejockeyutils.h"
@@ -147,7 +149,10 @@ void SVDAnalysisDialog::onFactorContextMenu(const QPoint &mouse_location)
         if( parents_are_the_same ){
             m_factorContextMenu->addAction("Aggregate selected factors", this, SLOT(onAggregate()));
         }
-    }
+		m_factorContextMenu->addAction("Check selected", this, SLOT(onCheckSelected()));
+		m_factorContextMenu->addAction("Uncheck selected", this, SLOT(onUncheckSelected()));
+		m_factorContextMenu->addAction("Invert check of selected", this, SLOT(onInvertCheckOfSelected()));
+	}
 
     //show the context menu under the mouse cursor.
     if( m_factorContextMenu->actions().size() > 0 )
@@ -316,6 +321,8 @@ void SVDAnalysisDialog::onPreviewRFFT()
         progressDialog.setLabelText("Computing RFFT...");
         QCoreApplication::processEvents(); //let Qt repaint widgets
         spectral::backward( outputData, dataReady );
+        //fftw3's RFFT requires that the result be divided by the number of cells to be in right scale.
+        outputData = outputData * (1.0/(exampleFactor->getNI()*exampleFactor->getNJ()*exampleFactor->getNK()));
     }
 
     //Construct a displayable object from the result.
@@ -373,7 +380,154 @@ void SVDAnalysisDialog::onSaveAFactor()
 {
     spectral::array *oneFactorData = new spectral::array( m_right_clicked_factor->getFactorData() );
     //reuse the signal to save a single factor data
-    emit sumOfFactorsComputed( oneFactorData );
+	emit sumOfFactorsComputed( oneFactorData );
+}
+
+void SVDAnalysisDialog::onCheckSelected()
+{
+	QModelIndexList selected_indexes = ui->svdFactorTreeView->selectionModel()->selectedIndexes();
+	//for each of the selected factors...
+	for( int i = 0; i < selected_indexes.size(); ++i){
+		//get its tree widget index
+		QModelIndex index = selected_indexes.at(i);
+		if( index.isValid() ){
+			//retrieve the object pointer
+			SVDFactor* selected_factor = static_cast<SVDFactor*>( index.internalPointer() );
+			selected_factor->setSelected( true );
+		}
+	}
+}
+
+void SVDAnalysisDialog::onUncheckSelected()
+{
+	QModelIndexList selected_indexes = ui->svdFactorTreeView->selectionModel()->selectedIndexes();
+	//for each of the selected factors...
+	for( int i = 0; i < selected_indexes.size(); ++i){
+		//get its tree widget index
+		QModelIndex index = selected_indexes.at(i);
+		if( index.isValid() ){
+			//retrieve the object pointer
+			SVDFactor* selected_factor = static_cast<SVDFactor*>( index.internalPointer() );
+			selected_factor->setSelected( false );
+		}
+	}
+}
+
+void SVDAnalysisDialog::onInvertCheckOfSelected()
+{
+	QModelIndexList selected_indexes = ui->svdFactorTreeView->selectionModel()->selectedIndexes();
+	//for each of the selected factors...
+	for( int i = 0; i < selected_indexes.size(); ++i){
+		//get its tree widget index
+		QModelIndex index = selected_indexes.at(i);
+		if( index.isValid() ){
+			//retrieve the object pointer
+			SVDFactor* selected_factor = static_cast<SVDFactor*>( index.internalPointer() );
+			selected_factor->setSelected( ! selected_factor->isSelected()  );
+		}
+	}
+}
+
+void SVDAnalysisDialog::onCustomAnalysis()
+{
+	typedef std::vector< double > Line;
+	typedef std::vector< Line > Table;
+	QString fileName = QFileDialog::getOpenFileName(this, "Open text file with factor weights");
+
+	std::vector< SVDFactor* > selectedFactors = m_tree->getSelectedFactors();
+
+	//Loads the files with custom weights:
+	//
+	// Example of file contents:
+	//
+	// 1.00 0.00
+	// 1.00 0.00
+	// 0.50 0.50
+	// 0.00 1.00
+	//
+	// The example above creates two images:
+	//
+	//                                       1st = 100% of 1st fundamental factor +
+	//                                             100% of 2nd fundamental factor +
+	//                                              50% of 3rd fundamental factor +
+	//                                               0% of 4th fundamental factor
+	//
+	//                                       2nd =   0% of 1st fundamental factor +
+	//                                               0% of 2nd fundamental factor +
+	//                                              50% of 3rd fundamental factor +
+	//                                             100% of 4th fundamental factor
+	//
+	// Lines are read until matching the number of fundamental factors.
+	// For example, if there are 40 fundamental factors, only the first 40 lines of the file are read.
+	Table table;
+	uint nFields = 0;
+	{
+		QFile file( fileName );
+		file.open( QFile::ReadOnly | QFile::Text );
+		QTextStream in(&file);
+		for (int i = 0; !in.atEnd() && i < selectedFactors.size() ; ++i)
+		{
+			QString line = in.readLine();
+			QStringList fields = line.split(QRegExp("[\\s]"), QString::SplitBehavior::SkipEmptyParts);
+			if( ! nFields )
+				nFields = fields.size();
+			Line values;
+			QStringList::iterator it = fields.begin();
+			for(; it != fields.end(); ++it) {
+				values.push_back( (*it).toDouble() );
+			}
+			table.push_back( values );
+		}
+		file.close();
+	}
+
+
+	//Make all-zeros geological factors (one per column in the supplied data file)
+	SVDFactor* geoFactors[nFields];
+	{
+		SVDFactor* exampleFactor = m_tree->getOneTopLevelFactor( 0 );
+		uint nI = exampleFactor->getNI();
+		uint nJ = exampleFactor->getNJ();
+		uint nK = exampleFactor->getNK();
+		double x0 = exampleFactor->getOriginX();
+		double y0 = exampleFactor->getOriginY();
+		double z0 = exampleFactor->getOriginZ();
+		double dx = exampleFactor->getCellSizeI();
+		double dy = exampleFactor->getCellSizeJ();
+		double dz = exampleFactor->getCellSizeK();
+		for( int i = 0; i < nFields; ++i ){
+			spectral::array zeros( (spectral::index) nI, (spectral::index)nJ, (spectral::index)nK );
+			geoFactors[i] = new SVDFactor( std::move(zeros), i+1, 1.0, x0, y0, z0, dx, dy, dz, 0.0 );
+		}
+	}
+
+	//compute the geological factors
+	Table::iterator itRows = table.begin();
+	for(int iRow = 0; itRows != table.end(); ++itRows, ++iRow ){
+		Line::iterator itCols = (*itRows).begin();
+		for(int iCol = 0; itCols != (*itRows).end(); ++itCols, ++iCol ){
+			geoFactors[iCol]->sum( selectedFactors[iRow]->getFactorData() * *itCols );
+		}
+	}
+
+	//display the geological factors for investigation
+	QWidget* window = new QWidget();
+	window->setWindowTitle("Geological factors");
+	window->setAttribute(Qt::WA_DeleteOnClose);
+	QHBoxLayout* layout = new QHBoxLayout();
+	for( int i = 0; i < nFields; ++i ){
+		IJGridViewerWidget* wid = new IJGridViewerWidget( true );
+		geoFactors[i]->setCustomName( "Geological factor #" + QString::number(i+1) );
+		wid->setFactor( geoFactors[i] );
+		layout->addWidget( wid );
+	}
+	window->setLayout( layout );
+	window->show();
+
+	//delete the geological factors (deleted by the dialogs before)
+//	for( int i = 0; i < nFields; ++i )
+//		delete geoFactors[i];
+
 }
 
 void SVDAnalysisDialog::saveTreeUIState()

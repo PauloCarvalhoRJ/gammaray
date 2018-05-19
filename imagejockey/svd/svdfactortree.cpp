@@ -77,7 +77,14 @@ QModelIndexList SVDFactorTree::getIndexList(const QModelIndex &parent)
             retval << this->getIndexList(idx);
         }
     }
-    return retval;
+	return retval;
+}
+
+std::vector<SVDFactor *> SVDFactorTree::getSelectedFactors()
+{
+	std::vector<SVDFactor *> result;
+	m_rootFactor->getSelectedChildFactors( result );
+	return result;
 }
 
 //-------------- QAbstractItemModel interface------------

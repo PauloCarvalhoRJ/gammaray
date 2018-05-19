@@ -46,7 +46,7 @@ double SVDFactor::getSVDFactorTreeSplitThreshold(bool reset)
         //ask the user once for the default tree split threshold
         bool ok;
         int percentage = QInputDialog::getInt(nullptr, "Further SVD factoring threshold",
-                                     "Split information content in percentage parts (%):", 50, 1, 50, 5, &ok);
+									 "Split information content in percentage parts (%):", 50, 0, 50, 5, &ok);
         if (ok)
             setting = percentage / 100.0;
         else
@@ -426,6 +426,22 @@ bool SVDFactor::setSlice(SVDFactor * slice)
 			}
 		}
 	return true;
+}
+
+void SVDFactor::getSelectedChildFactors(std::vector<SVDFactor *> & selectedFactors)
+{
+	std::vector<SVDFactor*>::iterator it = m_childFactors.begin();
+	for(; it != m_childFactors.end(); ++it){
+		if( (*it)->isSelected() ){
+			selectedFactors.push_back( *it );
+			(*it)->getSelectedChildFactors( selectedFactors );
+		}
+	}
+}
+
+void SVDFactor::sum(const spectral::array & valuesToSum)
+{
+	(*m_factorData) += valuesToSum;
 }
 
 SVDFactor *SVDFactor::getChildByIndex(uint index)

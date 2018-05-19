@@ -100,6 +100,14 @@ struct array {
 
     array &operator+=(const array &other);
 
+    array operator*( double scalar ) const;
+
+    array operator/( double scalar ) const;
+
+    array operator-( double scalar ) const;
+
+    array operator-( const array &other ) const;
+
     virtual ~array();
 
     double &operator()(index i);
@@ -125,12 +133,19 @@ struct array {
     void set_size(index M, index N);
     void set_size(index M);
 
+	double max() const;
+	double min() const;
+
+	double euclideanLength() const;
+
     std::vector<double> d_;
     index ndim_ = 1;
     index M_ = 1; // dim 1
     index N_ = 1; // dim 2
     index K_ = 1; // dim 3
 };
+
+array operator-( double theValue, const array& theArray );
 
 // fft 1D
 void foward(complex_array &out, double *in, index M);
@@ -215,6 +230,9 @@ void normalize(complex_array &in, const std::complex<double> &K);
 void normalize(complex_array &in, double K);
 void normalize(array &in, double K);
 
+/** Puts the values in the 0-1 range. */
+void standardize(array &in);
+
 double mse(const array &A, const array &B);
 double absolute_error(const array &A, const array &B);
 
@@ -228,6 +246,32 @@ array real(const complex_array &in);
 array imag(const complex_array &in);
 
 Eigen::MatrixXd to_2d(const array &A);
+
+void print( const array &A );
+
+/**
+ *  Creates a new array by shifting all elements such that the elements in the corners
+ *  are in the center.  This is useful to display center-symetric data such as spectrograms
+ *  and variogram maps, as this makes interpretation of results intuitive for people (zero
+ *  frequency or zero  separation in the center).
+ */
+array shiftByHalf(const array &in);
+
+/**
+ * Computes element-wise the sum of the absolute value of the differences between
+ * the two given data arrays.  Both arrays must have the same number of elements.
+ */
+double sumOfAbsDifference( const array &one, const array &other );
+
+/** Computes the dot product between the given arrays.
+ * This function assumes both arrays have the same element count.
+ */
+double dot( const array &one, const array &other );
+
+/** Computes the angle (in radians) between the vectors represented by the given arrays.
+ */
+double angle( const array &one, const array &other );
+
 
 } // namepsace spectral
 
