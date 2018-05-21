@@ -63,6 +63,16 @@ double F(const spectral::array &originalGrid,
 		va = spectral::to_array( eigenva );
 	}
 
+	//Compute the sparsity of the solution matrix
+	double sparsityPenalty = 0.0;
+	{
+		int nNonZeros = va.size();
+		for (int i = 0; i < va.size(); ++i )
+			if( std::abs(va.d_[i]) < 0.001  )
+				--nNonZeros;
+		sparsityPenalty = 500 * nNonZeros/(double)va.size();
+	}
+
 	//Make the m geological factors (expected variographic structures)
 //	uint geologicalFactorsComplexity = 0;  ///////////////////////////////////////////////////////////////////////////////////////
 	std::vector< spectral::array > geologicalFactors;
@@ -210,7 +220,7 @@ double F(const spectral::array &originalGrid,
 
 	//Return the measure of difference between the original data and the derived grid
 	// The measure is multiplied by a factor that is a function of weights vector angle penalty (the more close to orthogonal the less penalty )
-	return spectral::sumOfAbsDifference( originalGrid, derivedGrid ); /* * (geologicalFactorsComplexity+1); */ /* * (1.571 - penalty) * (1.571 - penalty); //1.571 radians ~ 90 degrees */
+	return /*spectral::sumOfAbsDifference( originalGrid, derivedGrid ) */ sparsityPenalty; /* * (geologicalFactorsComplexity+1); */ /* * (1.571 - penalty) * (1.571 - penalty); //1.571 radians ~ 90 degrees */
 
 //	double measure = 0.0;
 //	for( int i = 0; i < geologicalFactors.size()-1; ++i ){
