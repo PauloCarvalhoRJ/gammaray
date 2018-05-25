@@ -42,7 +42,9 @@ double F(const spectral::array &originalGrid,
 		 const spectral::array &I,
 		 const int m,
 		 const std::vector<spectral::array> &fundamentalFactors,
-		 const spectral::complex_array& fftOriginalGridMagAndPhase )
+		 const spectral::complex_array& fftOriginalGridMagAndPhase,
+		 const bool addSparsityPenalty,
+		 const bool addOrthogonalityPenalty)
 {
 	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
 
@@ -64,17 +66,16 @@ double F(const spectral::array &originalGrid,
 	}
 
 	//Compute the sparsity of the solution matrix
-	double sparsityPenalty = 0.0;
-	{
+	double sparsityPenalty = 1.0;
+	if( addSparsityPenalty ){
 		int nNonZeros = va.size();
 		for (int i = 0; i < va.size(); ++i )
 			if( std::abs(va.d_[i]) < 0.001  )
 				--nNonZeros;
-		sparsityPenalty = 500 * nNonZeros/(double)va.size();
+		sparsityPenalty = nNonZeros/(double)va.size();
 	}
 
 	//Make the m geological factors (expected variographic structures)
-//	uint geologicalFactorsComplexity = 0;  ///////////////////////////////////////////////////////////////////////////////////////
 	std::vector< spectral::array > geologicalFactors;
 	{
 		for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
@@ -82,28 +83,6 @@ double F(const spectral::array &originalGrid,
 			for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
 				geologicalFactor += fundamentalFactors[iSVDFactor] * va.d_[ iGeoFactor * m + iSVDFactor ];
 			}
-//			//Compute the penalty that is higher with geological factor complexity.
-//			//Geological factors should be, ideally, simple variographic structures.
-//			{
-//				uint geologicalFactorSVDN = 0;
-//				lck.lock();                                       // to prevent race conditions in 3rd party library
-//				spectral::SVD svd = spectral::svd( geologicalFactor );
-//				//get the list with the factor weights (information quantity)
-//				spectral::array weights = svd.factor_weights();
-//				lck.unlock();                                     //  to prevent race conditions in 3rd party library
-//				//get the number of fundamental factors that have the total information content as specified by the user.
-//				{
-//					double cumulative = 0.0;
-//					uint i = 0;
-//					for(; i < weights.size(); ++i){
-//						cumulative += weights.d_[i];
-//						if( cumulative > 0.95 )
-//							break;
-//					}
-//					geologicalFactorSVDN = i+1;
-//				}
-//				geologicalFactorsComplexity += geologicalFactorSVDN;
-//			}
 			geologicalFactors.push_back( std::move( geologicalFactor ) );
 		}
 	}
@@ -149,88 +128,43 @@ double F(const spectral::array &originalGrid,
 		derivedGrid += rfftResult;
 	}
 
-
-
-//	//Compute the grid derived form the geological factors (ideally it must match the input grid)
-//	spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-//	std::vector< spectral::array >::iterator it = geologicalFactors.begin();
-//	for( ; it != geologicalFactors.end(); ++it ){
-//		//Compute FFT of the geological factor
-//		spectral::complex_array tmp;
-//		lck.lock();                   //
-//		spectral::foward( tmp, *it ); //fftw crashes when called simultaneously
-//		lck.unlock();                 //
-//		//inbue the geological factor's FFT with the phase field of the original data.
-//		for( int idx = 0; idx < tmp.size(); ++idx)
-//		{
-//			std::complex<double> value;
-//			//get the complex number value in rectangular form
-//			value.real( tmp.d_[idx][0] ); //real part
-//			value.imag( tmp.d_[idx][1] ); //imaginary part
-//			//convert to polar form
-//			//but phase is replaced with that of the original data
-//			tmp.d_[idx][0] = std::abs( value ); //magnitude part
-//			tmp.d_[idx][1] = fftOriginalGridMagAndPhase.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
-//			//convert back to rectangular form (recall that the varmap holds covariance values, then it is necessary to take its square root)
-//			value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
-//			tmp.d_[idx][0] = value.real();
-//			tmp.d_[idx][1] = value.imag();
-//		}
-//		//Compute RFFT (with the phase of the original data imbued)
-//		spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-//		lck.lock();                            //
-//		spectral::backward( rfftResult, tmp ); //fftw crashes when called simultaneously
-//		lck.unlock();                          //
-//		//Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
-//		rfftResult = rfftResult * (1.0/(nI*nJ*nK));
-//		//Update the derived grid.
-//		derivedGrid += rfftResult;
-//	}
-
-//	//Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
-//	//The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
-//	//The penalty value equals the smallest angle in radians between any pair of weights vectors.
-//	double penalty = 1.571; //1.571 radians ~ 90 degrees
-//	{
-//		//make the vectors of weights for each geological factor
-//		std::vector<spectral::array*> vectors;
-//		spectral::array* currentVector = new spectral::array();
-//		for( int i = 0; i < va.d_.size(); ++i){
-//			if( currentVector->size() < n )
-//				currentVector->d_.push_back( va.d_[i] );
-//			else{
-//				vectors.push_back( currentVector );
-//				currentVector = new spectral::array();
-//			}
-//		}
-//		//compute the penalty
-//		for( int i = 0; i < vectors.size()-1; ++i ){
-//			for( int j = i+1; j < vectors.size(); ++j ){
-//				spectral::array* vectorA = vectors[i];
-//				spectral::array* vectorB = vectors[j];
-//				double angle = spectral::angle( *vectorA, *vectorB );
-//				if( angle < penalty )
-//					penalty = angle;
-//			}
-//		}
-//		//cleanup the vectors
-//		for( int i = 0; i < vectors.size(); ++i )
-//			delete vectors[i];
-//	}
+	//Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
+	//The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
+	//The penalty value equals the smallest angle in radians between any pair of weights vectors.
+	double orthogonalityPenalty = 1.0;
+	if( addOrthogonalityPenalty ){
+		//make the vectors of weights for each geological factor
+		std::vector<spectral::array*> vectors;
+		spectral::array* currentVector = new spectral::array();
+		for( int i = 0; i < va.d_.size(); ++i){
+			if( currentVector->size() < n )
+				currentVector->d_.push_back( va.d_[i] );
+			else{
+				vectors.push_back( currentVector );
+				currentVector = new spectral::array();
+			}
+		}
+		//compute the penalty
+		for( int i = 0; i < vectors.size()-1; ++i ){
+			for( int j = i+1; j < vectors.size(); ++j ){
+				spectral::array* vectorA = vectors[i];
+				spectral::array* vectorB = vectors[j];
+				double angle = spectral::angle( *vectorA, *vectorB );
+				if( angle < orthogonalityPenalty )
+					orthogonalityPenalty = angle;
+			}
+		}
+		orthogonalityPenalty = 1.0 - orthogonalityPenalty/1.571; //1.571 radians ~ 90 degrees
+		//cleanup the vectors
+		for( int i = 0; i < vectors.size(); ++i )
+			delete vectors[i];
+	}
 
 	//Return the measure of difference between the original data and the derived grid
 	// The measure is multiplied by a factor that is a function of weights vector angle penalty (the more close to orthogonal the less penalty )
-	return /*spectral::sumOfAbsDifference( originalGrid, derivedGrid ) */ sparsityPenalty; /* * (geologicalFactorsComplexity+1); */ /* * (1.571 - penalty) * (1.571 - penalty); //1.571 radians ~ 90 degrees */
-
-//	double measure = 0.0;
-//	for( int i = 0; i < geologicalFactors.size()-1; ++i ){
-//		for( int j = i+1; j < geologicalFactors.size(); ++j ){
-//			const spectral::array& gfA = geologicalFactors[i];
-//			const spectral::array& gfB = geologicalFactors[j];
-//			measure += spectral::sumOfAbsDifference( gfA, gfB );
-//		}
-//	}
-//	return measure;
+	return spectral::sumOfAbsDifference( originalGrid, derivedGrid )
+		   * sparsityPenalty
+		   * orthogonalityPenalty;
 }
 
 /**
@@ -248,6 +182,8 @@ void taskOnePartialDerivative(
 							   const int m,
 							   const std::vector< spectral::array >& svdFactors,
 							   const spectral::complex_array& gridMagnitudeAndPhaseParts,
+							   const bool addSparsityPenalty,
+							   const bool addOrthogonalityPenalty,
 							   spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
 							   ){
 	std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
@@ -260,9 +196,9 @@ void taskOnePartialDerivative(
 		spectral::array vwFromLeft( vw );
 		vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
 		//Compute (numerically) the partial derivative with respect to one parameter.
-		(*gradient)(iParameter) = (F( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts )
+		(*gradient)(iParameter) = (F( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty )
 									 -
-								   F( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts ))
+								   F( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty ))
 									 /
 								   ( 2 * epsilon );
 	}
@@ -331,6 +267,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	int maxNumberOfAlphaReductionSteps = ui->spinMaxStepsAlphaReduction->value();
 	double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
 	double infoContentToKeepForSVD = ui->spinInfoContentToKeepForSVD->value() / 100.0;
+	bool addSparsityPenalty = ui->chkEnableSparsityPenalty->isChecked();
+	bool addOrthogonalityPenalty = ui->chkEnableOrthogonalityPenalty->isChecked();
 
 	//-------------------------------------------------------------------------------------------------
 	//-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -615,9 +553,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			//Computes the “energy” of the current state (set of parameters).
 			//The “energy” in this case is how different the image as given the parameters is with respect
 			//the data grid, considered the reference image.
-			double f_eCurrent = F( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
+			double f_eCurrent = F( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
 			//Computes the “energy” of the neighboring state.
-			f_eNew = F( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
+			f_eNew = F( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
 			//Changes states stochastically.  There is a probability of acceptance of a more energetic state so
 			//the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
 			double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
@@ -701,6 +639,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 												m,
 												svdFactors,
 												gridMagnitudeAndPhaseParts,
+												addSparsityPenalty,
+												addOrthogonalityPenalty,
 												&gradient);
 			}
 
@@ -728,8 +668,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
                     if( new_vw.d_[i] > 1.0 )
                         new_vw.d_[i] = 1.0;
                 }
-				currentF = F( *gridData, vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
-				nextF = F( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts );
+				currentF = F( *gridData, vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
+				nextF = F( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
                 if( nextF < currentF ){
                     vw = new_vw;
                     break;
