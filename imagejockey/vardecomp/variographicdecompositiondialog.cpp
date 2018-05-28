@@ -88,7 +88,6 @@ double F(const spectral::array &originalGrid,
 	}
 
 	//Compute the grid derived form the geological factors (ideally it must match the input grid)
-	//TODO: THIS BLOCK'S LOGIC IS UNDER EVALUATION
 	spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
 	{
 		//Sum up all geological factors.
