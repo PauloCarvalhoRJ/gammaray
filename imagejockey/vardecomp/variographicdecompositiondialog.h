@@ -50,6 +50,7 @@ private Q_SLOTS:
 					   const std::vector< std::string >& titles,
 					   const std::vector< bool >& shiftByHalves );
     void onSumOfFactorsWasComputed(spectral::array *gridData); //called to save grid data as a Cartesian grid
+    void doVariographicDecompositionSVDonData();
 };
 
 #endif // VARIOGRAPHICDECOMPOSITIONDIALOG_H
