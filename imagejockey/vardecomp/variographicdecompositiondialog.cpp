@@ -17,6 +17,10 @@
 #include <algorithm>
 #include <limits>
 #include <mutex>
+#include <vtkImageData.h>
+#include <vtkSmartPointer.h>
+#include <vtkContourFilter.h>
+#include <vtkPolyData.h>
 
 std::mutex mutexObjectiveFunction;
 
@@ -189,7 +193,9 @@ double F2(const spectral::array &originalGrid,
          const bool addSparsityPenalty,
          const bool addOrthogonalityPenalty)
 {
-    int nI = originalGrid.M();
+	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
+
+	int nI = originalGrid.M();
     int nJ = originalGrid.N();
     int nK = originalGrid.K();
     int n = fundamentalFactors.size();
@@ -216,7 +222,8 @@ double F2(const spectral::array &originalGrid,
         sparsityPenalty = nNonZeros/(double)va.size();
     }
 
-    //Make the m geological factors (data decomposed into gris with features with different spatial correlation)
+	//Make the m geological factors (data decomposed into grids with features with different spatial correlation)
+	//The geological factors are linear combinations of fundamental factors whose weights are given by the array va.
     std::vector< spectral::array > geologicalFactors;
     {
         for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
@@ -228,83 +235,90 @@ double F2(const spectral::array &originalGrid,
         }
     }
 
-//    //Compute the grid derived form the geological factors (ideally it must match the input grid)
-//    spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-//    {
-//        //Sum up all geological factors.
-//        spectral::array sum( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-//        std::vector< spectral::array >::iterator it = geologicalFactors.begin();
-//        for( ; it != geologicalFactors.end(); ++it ){
-//            sum += *it;
-//        }
-//        //Compute FFT of the sum
-//        spectral::complex_array tmp;
-//        lck.lock();                   //
-//        spectral::foward( tmp, sum ); //fftw crashes when called simultaneously
-//        lck.unlock();                 //
-//        //inbue the sum's FFT with the phase field of the original data.
-//        for( int idx = 0; idx < tmp.size(); ++idx)
-//        {
-//            std::complex<double> value;
-//            //get the complex number value in rectangular form
-//            value.real( tmp.d_[idx][0] ); //real part
-//            value.imag( tmp.d_[idx][1] ); //imaginary part
-//            //convert to polar form
-//            //but phase is replaced with that of the original data
-//            tmp.d_[idx][0] = std::abs( value ); //magnitude part
-//            tmp.d_[idx][1] = fftOriginalGridMagAndPhase.d_[idx][1]; //std::arg( value ); //phase part (this should be zero all over the grid)
-//            //convert back to rectangular form (recall that the varmap holds covariance values, then it is necessary to take its square root)
-//            value = std::polar( std::sqrt(tmp.d_[idx][0]), tmp.d_[idx][1] );
-//            tmp.d_[idx][0] = value.real();
-//            tmp.d_[idx][1] = value.imag();
-//        }
-//        //Compute RFFT (with the phase of the original data imbued)
-//        spectral::array rfftResult( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-//        lck.lock();                            //
-//        spectral::backward( rfftResult, tmp ); //fftw crashes when called simultaneously
-//        lck.unlock();                          //
-//        //Divide the RFFT result (due to fftw3's RFFT implementation) by the number of grid cells
-//        rfftResult = rfftResult * (1.0/(nI*nJ*nK));
-//        derivedGrid += rfftResult;
-//    }
+	//Get the Fourier transforms of the geological factors
+	std::vector< spectral::complex_array > geologicalFactorsFTs;
+	{
+		std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+		for( ; it != geologicalFactors.end(); ++it ){
+			spectral::array& geologicalFactor = *it;
+			spectral::complex_array tmp;
+			lck.lock();                                //
+			spectral::foward( tmp, geologicalFactor ); //fftw crashes when called simultaneously
+			lck.unlock();                              //
+			geologicalFactorsFTs.push_back( std::move( tmp ));
+		}
+	}
 
-//    //Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
-//    //The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
-//    //The penalty value equals the smallest angle in radians between any pair of weights vectors.
-//    double orthogonalityPenalty = 1.0;
-//    if( addOrthogonalityPenalty ){
-//        //make the vectors of weights for each geological factor
-//        std::vector<spectral::array*> vectors;
-//        spectral::array* currentVector = new spectral::array();
-//        for( int i = 0; i < va.d_.size(); ++i){
-//            if( currentVector->size() < n )
-//                currentVector->d_.push_back( va.d_[i] );
-//            else{
-//                vectors.push_back( currentVector );
-//                currentVector = new spectral::array();
-//            }
-//        }
-//        //compute the penalty
-//        for( int i = 0; i < vectors.size()-1; ++i ){
-//            for( int j = i+1; j < vectors.size(); ++j ){
-//                spectral::array* vectorA = vectors[i];
-//                spectral::array* vectorB = vectors[j];
-//                double angle = spectral::angle( *vectorA, *vectorB );
-//                if( angle < orthogonalityPenalty )
-//                    orthogonalityPenalty = angle;
-//            }
-//        }
-//        orthogonalityPenalty = 1.0 - orthogonalityPenalty/1.571; //1.571 radians ~ 90 degrees
-//        //cleanup the vectors
-//        for( int i = 0; i < vectors.size(); ++i )
-//            delete vectors[i];
-//    }
+	//Get the varmaps from the FTs of the geological factors.
+	std::vector< spectral::array > geologicalFactorsVarmaps;
+	{
+		std::vector< spectral::complex_array >::iterator it = geologicalFactorsFTs.begin();
+		for( ; it != geologicalFactorsFTs.end(); ++it )
+		{
+			spectral::complex_array& geologicalFactorFT = *it;
+			spectral::array gridVarmap( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+			{
+				spectral::complex_array gridNormSquaredAndZeroPhase( nI, nJ, nK );
+				for(unsigned int k = 0; k < nK; ++k) {
+					for(unsigned int j = 0; j < nJ; ++j){
+						for(unsigned int i = 0; i < nI; ++i){
+							std::complex<double> value;
+							//the scan order of fftw follows is the opposite of the GSLib convention
+							int idx = k + nK * (j + nJ * i );
+							//compute the complex number norm squared
+							double normSquared = geologicalFactorFT.d_[idx][0]*geologicalFactorFT.d_[idx][0] +
+												 geologicalFactorFT.d_[idx][1]*geologicalFactorFT.d_[idx][1];
+							double phase = 0.0;
+							//convert to rectangular form
+							value = std::polar( normSquared, phase );
+							//save the rectangular form in the grid
+							gridNormSquaredAndZeroPhase.d_[idx][0] = value.real();
+							gridNormSquaredAndZeroPhase.d_[idx][1] = value.imag();
+						}
+					}
+				}
+				lck.lock();                                                    //
+				spectral::backward( gridVarmap, gridNormSquaredAndZeroPhase ); //fftw crashes when called simultaneously
+				lck.unlock();                                                  //
+			}
+			//divide the varmap (due to fftw3's RFFT implementation) values by the number of cells of the grid.
+			gridVarmap = gridVarmap * (1.0/(nI*nJ*nK));
+			geologicalFactorsVarmaps.push_back( std::move( gridVarmap ) );
+		}
+	}
 
-//    //Return the measure of difference between the original data and the derived grid
-//    // The measure is multiplied by a factor that is a function of weights vector angle penalty (the more close to orthogonal the less penalty )
-//    return spectral::sumOfAbsDifference( originalGrid, derivedGrid )
-//           * sparsityPenalty
-//           * orthogonalityPenalty;
+	//Get isocontours/isosurfaces from the varmaps.
+	{
+		std::vector< spectral::array >::iterator it = geologicalFactorsVarmaps.begin();
+		for( ; it != geologicalFactorsVarmaps.end(); ++it )
+		{
+			//Get the geological factor's varmap.
+			spectral::array& geologicalFactorVarmap = *it;
+			//Convert it to a VTK grid object.
+			vtkSmartPointer<vtkImageData> vtkVarmap = vtkSmartPointer<vtkImageData>::New();
+			ImageJockeyUtils::makeVTKImageDataFromSpectralArray( vtkVarmap, geologicalFactorVarmap );
+			//Create the varmap's isosurface(s).
+			vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
+			contourFilter->SetInputData( vtkVarmap );
+			contourFilter->GenerateValues(1, 10, 10); // (numContours, rangeStart, rangeEnd)
+			//Get the isocontour/isosurface as polygonal data
+			vtkPolyData* poly = contourFilter->GetOutput();
+		}
+	}
+
+//  TODO: rasterize the poly data for visual check purposes.
+	//https://www.vtk.org/pipermail/vtkusers/2008-May/046477.html
+//	The vtkPolyDataToImageStencil filter will do what you want.  Look at
+//	Hybrid/Testing/Tcl/TestImageStencilWithPolydata.tcl.  For image data,
+//	I wouldn't advise using a generic filter like vtkSelectEnclosedPoints
+//	because it will be quite slow.
+	//https://www.vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataContourToImageData
+	//https://www.vtk.org/Wiki/VTK/Examples/PolyData/PolyDataToImageData
+
+	//TODO: perform skeletonization on the isocontours/isosurfaces
+
+	//TODO: evaluate skeletons' branching pattern to get a measure of "ellipticallity"
+
     return 0.0;
 }
 
