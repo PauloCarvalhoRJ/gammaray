@@ -9,8 +9,10 @@
 
 class IJSpatialLocation;
 class IJAbstractCartesianGrid;
+class vtkImageData;
 
 namespace spectral {
+	struct array;
     struct complex_array;
 }
 
@@ -120,6 +122,13 @@ public:
      * Returns the complete path to it.  File extension must include the dot.
      */
     QString generateUniqueFilePathInDir(const QString directory, const QString file_extension);
+
+	/**
+	 * Populates a vtkImageData object with the data from a spectral::array object.
+	 * Client code must create the vtkImageData object beforehand with a call to
+	 * vtkSmartPointer<vtkImageData>::New(), for example.
+	 */
+	static void makeVTKImageDataFromSpectralArray( vtkImageData* out, const spectral::array& in );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

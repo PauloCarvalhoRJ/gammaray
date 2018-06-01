@@ -9,6 +9,7 @@
 #include <QProgressDialog>
 #include <QCoreApplication>
 #include <QDir>
+#include <vtkImageData.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -207,5 +208,21 @@ QString ImageJockeyUtils::generateUniqueFilePathInDir(const QString directory, c
         QFile file(dir.absoluteFilePath(filename));
         if( ! file.exists() )
             return dir.absoluteFilePath(filename);
-    }
+	}
+}
+
+void ImageJockeyUtils::makeVTKImageDataFromSpectralArray(vtkImageData * out, const spectral::array & in)
+{
+	out->SetExtent(0, in.M()-1, 0, in.N()-1, 0, in.K()-1); //extent (indexes) of GammaRay grids start at i=0,j=0,k=0
+	out->AllocateScalars(VTK_DOUBLE, 1); //each cell will contain one double value.
+	int* extent = out->GetExtent();
+
+	for (int k = extent[4]; k <= extent[5]; ++k){
+		for (int j = extent[2]; j <= extent[3]; ++j){
+			for (int i = extent[0]; i <= extent[1]; ++i){
+				double* pixel = static_cast<double*>(out->GetScalarPointer(i,j,k));
+				pixel[0] = in( i, j, k );
+			}
+		}
+	}
 }
