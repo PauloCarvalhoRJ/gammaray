@@ -530,7 +530,7 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkImagingSources$$_VTK_VERSION_SUFFIX \
                -lvtkImagingCore$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
-			   -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
+                           -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
 			   -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
 			   -lvtkCommonMisc$$_VTK_VERSION_SUFFIX \
 			   -lvtkCommonComputationalGeometry$$_VTK_VERSION_SUFFIX \
@@ -547,7 +547,8 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkImagingGeneral$$_VTK_VERSION_SUFFIX \
 			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
-			   -lvtkalglib$$_VTK_VERSION_SUFFIX
+                           -lvtkalglib$$_VTK_VERSION_SUFFIX \
+                -lvtkImagingStencil$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
