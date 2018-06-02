@@ -177,7 +177,6 @@ SOURCES += main.cpp\
     spectral/svd.cpp \
     spectral/pca.cpp \
     spectral/spectral.cpp \
-    imagejockey/imagejockeysvdutils.cpp \
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
     dialogs/machinelearningdialog.cpp \
@@ -366,7 +365,6 @@ HEADERS  += mainwindow.h \
     spectral/svd.h \
     spectral/pca.h \
     spectral/spectral.h \
-    imagejockey/imagejockeysvdutils.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
     dialogs/machinelearningdialog.h \
