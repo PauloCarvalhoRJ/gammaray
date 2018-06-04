@@ -10,6 +10,11 @@
 #include <QCoreApplication>
 #include <QDir>
 #include <vtkImageData.h>
+#include <vtkSmartPointer.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataToImageStencil.h>
+#include <vtkPointData.h>
+#include <vtkImageStencil.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -224,5 +229,66 @@ void ImageJockeyUtils::makeVTKImageDataFromSpectralArray(vtkImageData * out, con
 				pixel[0] = in( i, j, k );
 			}
 		}
-	}
+    }
+}
+
+void ImageJockeyUtils::rasterize( spectral::array &out, vtkPolyData *in, double rX, double rY, double rZ )
+{
+    // Set grid cell sizes.
+    vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
+    double bounds[6];
+    in->GetBounds(bounds);
+    double spacing[3]; // desired volume spacing
+    spacing[0] = rX;
+    spacing[1] = rY;
+    spacing[2] = rZ;
+    image->SetSpacing(spacing);
+
+    // Compute grid dimensions.
+    int dim[3];
+    for (int i = 0; i < 3; i++)
+        dim[i] = static_cast<int>(std::ceil((bounds[i * 2 + 1] - bounds[i * 2]) / spacing[i]));
+    image->SetDimensions(dim);
+    image->SetExtent(0, dim[0] - 1, 0, dim[1] - 1, 0, dim[2] - 1);
+
+    // Set grid origin.
+    double origin[3];
+    origin[0] = bounds[0] + spacing[0] / 2;
+    origin[1] = bounds[2] + spacing[1] / 2;
+    origin[2] = bounds[4] + spacing[2] / 2;
+    image->SetOrigin(origin);
+
+    // Paints all grid cells.
+    image->AllocateScalars( VTK_UNSIGNED_CHAR, 1 ); //doubles are not necessary to store in/out values
+    unsigned char inval = 255;
+    unsigned char outval = 0;
+    vtkIdType count = image->GetNumberOfPoints();
+    for (vtkIdType i = 0; i < count; ++i)
+        image->GetPointData()->GetScalars()->SetTuple1(i, inval);
+
+    // Make a vector geometry to raster image stencil.
+    vtkSmartPointer<vtkPolyDataToImageStencil> pol2stenc = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    pol2stenc->SetInputData(in);
+    pol2stenc->SetOutputOrigin(origin);
+    pol2stenc->SetOutputSpacing(spacing);
+    pol2stenc->SetOutputWholeExtent(image->GetExtent());
+    pol2stenc->Update();
+
+    // Perform stencil (paints voxels outside the shape with another value).
+    vtkSmartPointer<vtkImageStencil> imgstenc = vtkSmartPointer<vtkImageStencil>::New();
+    imgstenc->SetInputData(image);
+    imgstenc->SetStencilConnection(pol2stenc->GetOutputPort());
+    imgstenc->ReverseStencilOff();
+    imgstenc->SetBackgroundValue(outval);
+    imgstenc->Update();
+
+    // Transfer results to spectral::array object.
+    out.set_size( dim[0], dim[1], dim[2] );
+    vtkImageData* outputImage = imgstenc->GetOutput();
+    for( int k = 0; k < dim[2]; ++k )
+        for( int j = 0; j < dim[1]; ++j )
+            for( int i = 0; i < dim[0]; ++i ){
+                double* cell = static_cast<double*>(outputImage->GetScalarPointer(i,j,k));
+                out(i, j, k) = *cell;
+            }
 }

@@ -10,6 +10,7 @@
 class IJSpatialLocation;
 class IJAbstractCartesianGrid;
 class vtkImageData;
+class vtkPolyData;
 
 namespace spectral {
 	struct array;
@@ -129,6 +130,14 @@ public:
 	 * vtkSmartPointer<vtkImageData>::New(), for example.
 	 */
 	static void makeVTKImageDataFromSpectralArray( vtkImageData* out, const spectral::array& in );
+
+    /**
+     * Rasterizes the vector geometry (as a vtkPolyData) into a spectral::array grid object.
+     * The grid dimensions of the spectral::array object is set or re-set to acommodate the polygonal
+     * object's bounding box.
+     * The three r* parameters are resolutions at which the polygonal object will be rasterized.
+     */
+    static void rasterize(spectral::array& out, vtkPolyData *in , double rX, double rY, double rZ);
 };
 
 #endif // IMAGEJOCKEYUTILS_H
