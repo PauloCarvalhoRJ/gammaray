@@ -288,6 +288,7 @@ double F2(const spectral::array &originalGrid,
 	}
 
 	//Get isocontours/isosurfaces from the varmaps.
+    std::vector< vtkSmartPointer<vtkPolyData> > geolgicalFactorsVarmapsIsosurfaces;
 	{
 		std::vector< spectral::array >::iterator it = geologicalFactorsVarmaps.begin();
 		for( ; it != geologicalFactorsVarmaps.end(); ++it )
@@ -303,7 +304,11 @@ double F2(const spectral::array &originalGrid,
 			contourFilter->GenerateValues(1, 10, 10); // (numContours, rangeStart, rangeEnd)
 			//Get the isocontour/isosurface as polygonal data
 			vtkPolyData* poly = contourFilter->GetOutput();
-		}
+            //Copy it before the parent contour filter is destroyed.
+            vtkSmartPointer<vtkPolyData> polydataCopy = vtkSmartPointer<vtkPolyData>::New();
+            polydataCopy->DeepCopy(poly);
+            geolgicalFactorsVarmapsIsosurfaces.push_back( polydataCopy );
+        }
 	}
 
 //  TODO: rasterize the poly data for visual check purposes.
