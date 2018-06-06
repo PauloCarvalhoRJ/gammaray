@@ -24,6 +24,11 @@ public:
 	explicit VariographicDecompositionDialog(const std::vector<IJAbstractCartesianGrid *> && grids, QWidget *parent = 0);
     ~VariographicDecompositionDialog();
 
+	/** Displays a single volume grid for debugging purposes. */
+	static void displayGrid(const spectral::array& grid,
+							const std::string& title,
+							bool shiftByHalf );
+
 Q_SIGNALS:
     void saveArray( spectral::array *gridData );
 	void error( QString message );
@@ -47,8 +52,8 @@ private Q_SLOTS:
 	//you can use this function to see the contents of large matrices and grids during debug.
 	//TIP C++11: use displayGrids({A}, {"A matrix"}, {false}); to display a single object.
 	void displayGrids(const std::vector< spectral::array >& grids,
-					   const std::vector< std::string >& titles,
-					   const std::vector< bool >& shiftByHalves );
+					  const std::vector< std::string >& titles,
+					  const std::vector< bool >& shiftByHalves );
     void onSumOfFactorsWasComputed(spectral::array *gridData); //called to save grid data as a Cartesian grid
     void doVariographicDecompositionSVDonData();
 };

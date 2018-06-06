@@ -302,6 +302,7 @@ double F2(const spectral::array &originalGrid,
 			vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
 			contourFilter->SetInputData( vtkVarmap );
 			contourFilter->GenerateValues(1, 10, 10); // (numContours, rangeStart, rangeEnd)
+			contourFilter->Update();
 			//Get the isocontour/isosurface as polygonal data
 			vtkPolyData* poly = contourFilter->GetOutput();
             //Copy it before the parent contour filter is destroyed.
@@ -319,6 +320,12 @@ double F2(const spectral::array &originalGrid,
 //	because it will be quite slow.
 	//https://www.vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataContourToImageData
 	//https://www.vtk.org/Wiki/VTK/Examples/PolyData/PolyDataToImageData
+
+	//TODO: WIP: these are for debugging the countour lines.  REMOVE AFTER TESTS.
+	spectral::array tmp;
+	ImageJockeyUtils::rasterize( tmp, geolgicalFactorsVarmapsIsosurfaces[0], 0.1, 0.1, 0.1 );
+	VariographicDecompositionDialog::displayGrid( tmp, "test", false );
+
 
 	//TODO: perform skeletonization on the isocontours/isosurfaces
 
@@ -1005,7 +1012,7 @@ void VariographicDecompositionDialog::displayGrids(const std::vector<spectral::a
     }
     //use the SVD analysis dialog to display the geological factors.
     //NOTE: do not use heap to allocate the dialog, unless you remove the Qt::WA_DeleteOnClose behavior of the dialog.
-    SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+	SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
     svdad->setTree( factorTree );
     svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
     connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
@@ -1299,5 +1306,32 @@ void VariographicDecompositionDialog::doVariographicDecompositionSVDonData()
             emit info( "SA completed by reaching the lowest temperature." );
         vw = L_wOfLowestEnergyFound;
         emit info( "Using the state of lowest energy found (" + QString::number( f_lowestEnergyFound ) + ")" );
-    }
+	}
+}
+
+void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
+{
+	//Create the structure to store the geological factors
+	SVDFactorTree * factorTree = new SVDFactorTree( 0.0 ); //the split factor of 0.0 has no special meaning here
+	//make a local copy of the grid data
+	spectral::array geoFactorDataCopy;
+	if( shiftByHalf )
+		geoFactorDataCopy = spectral::shiftByHalf( grid );
+	else
+		geoFactorDataCopy = spectral::array( grid );
+	//Create a displayble object from the grid data
+	//This pointer will be managed by the SVDFactorTree object.
+	SVDFactor* geoFactor = new SVDFactor( std::move(geoFactorDataCopy), 1, 1.0,
+											0, 0, 0, 1, 1, 1, 0.0);
+	//Declare it as a geological factor (decomposable, not fundamental)
+	geoFactor->setType( SVDFactorType::GEOLOGICAL );
+	geoFactor->setCustomName( QString( title.c_str() ) );
+	//add the displayable object to the factor tree (container)
+	factorTree->addFirstLevelFactor( geoFactor );
+	//use the SVD analysis dialog to display the geological factors.
+	//NOTE: do not use heap to allocate the dialog, unless you remove the Qt::WA_DeleteOnClose behavior of the dialog.
+	SVDAnalysisDialog* svdad = new SVDAnalysisDialog( nullptr );
+	svdad->setTree( factorTree );
+	svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
+	svdad->exec(); //open the dialog modally
 }

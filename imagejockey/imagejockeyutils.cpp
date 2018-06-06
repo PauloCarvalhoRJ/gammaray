@@ -247,7 +247,7 @@ void ImageJockeyUtils::rasterize( spectral::array &out, vtkPolyData *in, double 
     // Compute grid dimensions.
     int dim[3];
     for (int i = 0; i < 3; i++)
-        dim[i] = static_cast<int>(std::ceil((bounds[i * 2 + 1] - bounds[i * 2]) / spacing[i]));
+		dim[i] = static_cast<int>( std::abs( std::ceil((bounds[i * 2 + 1] - bounds[i * 2]) / spacing[i]) ) );
     image->SetDimensions(dim);
     image->SetExtent(0, dim[0] - 1, 0, dim[1] - 1, 0, dim[2] - 1);
 
