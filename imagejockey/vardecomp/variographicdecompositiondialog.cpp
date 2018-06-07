@@ -9,6 +9,7 @@
 #include "../svd/svdfactortree.h"
 #include "../svd/svdfactor.h"
 #include "../svd/svdanalysisdialog.h"
+#include "../widgets/ijquick3dviewer.h"
 
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -193,6 +194,12 @@ double F2(const spectral::array &originalGrid,
          const bool addSparsityPenalty,
          const bool addOrthogonalityPenalty)
 {
+	//TODO: remove this after tests
+	static IJQuick3DViewer* q3Dv = new IJQuick3DViewer();
+	q3Dv->show();
+	/////////////////////////////////
+
+
 	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
 
 	int nI = originalGrid.M();
@@ -287,6 +294,7 @@ double F2(const spectral::array &originalGrid,
 		}
 	}
 
+
 	//Get isocontours/isosurfaces from the varmaps.
     std::vector< vtkSmartPointer<vtkPolyData> > geolgicalFactorsVarmapsIsosurfaces;
 	{
@@ -295,20 +303,29 @@ double F2(const spectral::array &originalGrid,
 		{
 			//Get the geological factor's varmap.
 			spectral::array& geologicalFactorVarmap = *it;
+			//Get the geological factor's varmap with h=0 in the center of the grid.
+			spectral::array geologicalFactorVarmapShifted = spectral::shiftByHalf( geologicalFactorVarmap );
 			//Convert it to a VTK grid object.
 			vtkSmartPointer<vtkImageData> vtkVarmap = vtkSmartPointer<vtkImageData>::New();
-			ImageJockeyUtils::makeVTKImageDataFromSpectralArray( vtkVarmap, geologicalFactorVarmap );
+			ImageJockeyUtils::makeVTKImageDataFromSpectralArray( vtkVarmap, geologicalFactorVarmapShifted );
+
+			//q3Dv->display( vtkVarmap, geologicalFactorVarmapShifted.min(), geologicalFactorVarmapShifted.max() );
+
 			//Create the varmap's isosurface(s).
 			vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
 			contourFilter->SetInputData( vtkVarmap );
-			contourFilter->GenerateValues(1, 10, 10); // (numContours, rangeStart, rangeEnd)
+			contourFilter->GenerateValues(10, 1000, 3000); // (numContours, rangeStart, rangeEnd)
 			contourFilter->Update();
 			//Get the isocontour/isosurface as polygonal data
 			vtkPolyData* poly = contourFilter->GetOutput();
             //Copy it before the parent contour filter is destroyed.
             vtkSmartPointer<vtkPolyData> polydataCopy = vtkSmartPointer<vtkPolyData>::New();
             polydataCopy->DeepCopy(poly);
-            geolgicalFactorsVarmapsIsosurfaces.push_back( polydataCopy );
+
+			q3Dv->display( poly );
+
+
+			geolgicalFactorsVarmapsIsosurfaces.push_back( polydataCopy );
         }
 	}
 
@@ -322,9 +339,9 @@ double F2(const spectral::array &originalGrid,
 	//https://www.vtk.org/Wiki/VTK/Examples/PolyData/PolyDataToImageData
 
 	//TODO: WIP: these are for debugging the countour lines.  REMOVE AFTER TESTS.
-	spectral::array tmp;
-	ImageJockeyUtils::rasterize( tmp, geolgicalFactorsVarmapsIsosurfaces[0], 0.1, 0.1, 0.1 );
-	VariographicDecompositionDialog::displayGrid( tmp, "test", false );
+//	spectral::array tmp;
+//	ImageJockeyUtils::rasterize( tmp, geolgicalFactorsVarmapsIsosurfaces[0], 0.1, 0.1, 0.1 );
+//	VariographicDecompositionDialog::displayGrid( tmp, "test", false );
 
 
 	//TODO: perform skeletonization on the isocontours/isosurfaces
