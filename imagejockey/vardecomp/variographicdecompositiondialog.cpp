@@ -314,18 +314,12 @@ double F2(const spectral::array &originalGrid,
 
 			//remove open lines
 			//TODO: ineffective with 3D models (isosurfaces)
-			{
-				vtkSmartPointer<vtkCellArray> polygons = poly->GetPolys();
-				polygons->InitTraversal();
-				vtkSmartPointer<vtkIdList> idList;
-				while( polygons->GetNextCell( idList ) ){
-
-				}
-			}
+			ImageJockeyUtils::removeOpenPolyLines( poly );
 
 			/////TODO: remove this after tests
 			q3Dv[i]->display( poly );
 			//////////////////////////////
+
 			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );
         }
 	}

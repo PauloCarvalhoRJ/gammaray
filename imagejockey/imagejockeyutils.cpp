@@ -308,7 +308,7 @@ vtkSmartPointer<vtkPolyData> ImageJockeyUtils::computeIsosurfaces(const spectral
 	contourFilter->GenerateValues( nContours, minValue, maxValue); // (numContours, rangeStart, rangeEnd)
 	contourFilter->Update();
 	//Get the isocontour/isosurface as polygonal data
-	vtkPolyData* poly = contourFilter->GetOutput();
+	vtkSmartPointer<vtkPolyData> poly = contourFilter->GetOutput();
 	//Copy it before the parent contour filter is destroyed.
 	vtkSmartPointer<vtkPolyData> polydataCopy = vtkSmartPointer<vtkPolyData>::New();
 	polydataCopy->DeepCopy(poly);
@@ -317,8 +317,6 @@ vtkSmartPointer<vtkPolyData> ImageJockeyUtils::computeIsosurfaces(const spectral
 
 void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> polyDataToModify)
 {
-	typedef double[3] doubleVector3;
-
 	// Get poly geometry data.
 	vtkSmartPointer<vtkPoints> in_Pts   = polyDataToModify->GetPoints();
 	vtkSmartPointer<vtkCellArray> in_Polys = polyDataToModify->GetPolys();
@@ -327,25 +325,20 @@ void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> polyData
 	if ( polyDataToModify->GetNumberOfPoints() == 0 )
 		return;
 
-	// Get the number of polyline primitives.
+	//TODO: find a way to join the to-point lines into polys
+
+	in_Polys->InitTraversal();
 	int nc = in_Polys->GetNumberOfCells();
-
-	// Prepare the in/out classification bins.
-	vtkSmartPointer<vtkCellArray> out_Polys = vtkSmartPointer<vtkCellArray>::New();
-	vtkSmartPointer<vtkCellArray> bad_Polys = vtkSmartPointer<vtkCellArray>::New();
-
-	// Should have same polys out as in if no bad ones are found
-	out_Polys->Allocate(nc,nc);
-	bad_Polys->Allocate(nc,nc);
-
-	// Traverse polygons and test them all
-	vtkIdType npoints, *pt_IDs, polyID = 0;
-	int m_c_s = polyDataToModify->GetMaxCellSize();
-	doublevector3 *points = new doublevector3[m_c_s];
-	for( in_Polys->InitTraversal(); in_Polys->GetNextCell(npoints, pt_IDs); ++polyID ) {
-		// make local copy of cell points
-		float *rawdata = (float*)in_Pts->GetData()->GetVoidPointer();
-		for( int i = 0; i < npoints; ++i )
-			points[i] = rawdata[i];
+	for(int i = 0; i < nc; ++i){
+		vtkSmartPointer<vtkIdList> idList;
+		in_Polys->GetNextCell( idList );
+		int a = idList->GetId( 0 );
+		int b = idList->GetId( 1 );
+		int c = idList->GetId( 2 );
+		std::cout << a << std::endl;
+		std::cout << b << std::endl;
+		std::cout << c << std::endl;
 	}
+
+
 }
