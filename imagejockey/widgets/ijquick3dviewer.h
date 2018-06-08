@@ -13,6 +13,7 @@ class vtkRenderer;
 class vtkOrientationMarkerWidget;
 class vtkPolyData;
 class vtkImageData;
+class vtkActor;
 
 /**
  * The IJQuick3DViewer class allows quick inspection of 3D data (e.g. during debugging).
@@ -41,6 +42,12 @@ private:
 	// this must be class variable, otherwise a crash ensues due to smart pointer going
 	// out of scope
 	vtkSmartPointer<vtkOrientationMarkerWidget> _vtkAxesWidget;
+
+	// Points to the object being viewed (if any) so it is removed in the next call to display().
+	vtkSmartPointer<vtkActor> _currentActor;
+
+	/** Removes the actor currently being displayed (if any). */
+	void clearScene();
 
 private slots:
 	void onDismiss();
