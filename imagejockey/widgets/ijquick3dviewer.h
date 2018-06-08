@@ -51,7 +51,6 @@ private:
 
 private slots:
 	void onDismiss();
-	void onContinue();
 };
 
 #endif // IJQUICK3DVIEWER_H

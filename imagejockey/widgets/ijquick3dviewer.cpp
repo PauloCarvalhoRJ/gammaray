@@ -158,7 +158,3 @@ void IJQuick3DViewer::onDismiss()
 	this->close();
 }
 
-void IJQuick3DViewer::onContinue()
-{
-
-}

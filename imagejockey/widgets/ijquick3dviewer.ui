@@ -54,13 +54,6 @@
        <number>1</number>
       </property>
       <item>
-       <widget class="QPushButton" name="btnContinue">
-        <property name="text">
-         <string>Continuer</string>
-        </property>
-       </widget>
-      </item>
-      <item>
        <widget class="QPushButton" name="btnDismiss">
         <property name="text">
          <string>Dismiss</string>
@@ -90,25 +83,8 @@
     </hint>
    </hints>
   </connection>
-  <connection>
-   <sender>btnContinue</sender>
-   <signal>clicked()</signal>
-   <receiver>IJQuick3DViewer</receiver>
-   <slot>onContinue()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>224</x>
-     <y>403</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>0</x>
-     <y>365</y>
-    </hint>
-   </hints>
-  </connection>
  </connections>
  <slots>
   <slot>onDismiss()</slot>
-  <slot>onContinue()</slot>
  </slots>
 </ui>
