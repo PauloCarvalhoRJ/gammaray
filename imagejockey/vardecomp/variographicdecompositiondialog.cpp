@@ -18,9 +18,6 @@
 #include <algorithm>
 #include <limits>
 #include <mutex>
-#include <vtkImageData.h>
-#include <vtkSmartPointer.h>
-#include <vtkContourFilter.h>
 #include <vtkPolyData.h>
 
 std::mutex mutexObjectiveFunction;
@@ -305,27 +302,15 @@ double F2(const spectral::array &originalGrid,
 			spectral::array& geologicalFactorVarmap = *it;
 			//Get the geological factor's varmap with h=0 in the center of the grid.
 			spectral::array geologicalFactorVarmapShifted = spectral::shiftByHalf( geologicalFactorVarmap );
-			//Convert it to a VTK grid object.
-			vtkSmartPointer<vtkImageData> vtkVarmap = vtkSmartPointer<vtkImageData>::New();
-			ImageJockeyUtils::makeVTKImageDataFromSpectralArray( vtkVarmap, geologicalFactorVarmapShifted );
-
-			//q3Dv->display( vtkVarmap, geologicalFactorVarmapShifted.min(), geologicalFactorVarmapShifted.max() );
-
-			//Create the varmap's isosurface(s).
-			vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
-			contourFilter->SetInputData( vtkVarmap );
-			contourFilter->GenerateValues(10, 1000, 3000); // (numContours, rangeStart, rangeEnd)
-			contourFilter->Update();
-			//Get the isocontour/isosurface as polygonal data
-			vtkPolyData* poly = contourFilter->GetOutput();
-            //Copy it before the parent contour filter is destroyed.
-            vtkSmartPointer<vtkPolyData> polydataCopy = vtkSmartPointer<vtkPolyData>::New();
-            polydataCopy->DeepCopy(poly);
+			//Get the isocontour/isosurface.
+			vtkSmartPointer<vtkPolyData> poly = ImageJockeyUtils::computeIsosurfaces( geologicalFactorVarmapShifted,
+																					  20,
+																					  geologicalFactorVarmapShifted.min(),
+																					  geologicalFactorVarmapShifted.max() );
 
 			q3Dv->display( poly );
 
-
-			geolgicalFactorsVarmapsIsosurfaces.push_back( polydataCopy );
+			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );
         }
 	}
 

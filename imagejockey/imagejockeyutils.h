@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <QString>
 #include <QPointF>
+#include <vtkSmartPointer.h>
 #include "ijmatrix3x3.h"
 
 class IJSpatialLocation;
@@ -138,6 +139,14 @@ public:
      * The three r* parameters are resolutions at which the polygonal object will be rasterized.
      */
     static void rasterize(spectral::array& out, vtkPolyData *in , double rX, double rY, double rZ);
+
+	/**
+	 * Computes the isocontours/isosurfaces of the values in the passed grid.
+	 */
+	static vtkSmartPointer<vtkPolyData> computeIsosurfaces(const spectral::array& in,
+														   int nCountours,
+														   double minValue,
+														   double maxValue);
 };
 
 #endif // IMAGEJOCKEYUTILS_H

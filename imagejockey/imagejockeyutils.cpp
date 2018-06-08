@@ -15,6 +15,7 @@
 #include <vtkPolyDataToImageStencil.h>
 #include <vtkPointData.h>
 #include <vtkImageStencil.h>
+#include <vtkContourFilter.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -290,5 +291,26 @@ void ImageJockeyUtils::rasterize( spectral::array &out, vtkPolyData *in, double 
             for( int i = 0; i < dim[0]; ++i ){
                 double* cell = static_cast<double*>(outputImage->GetScalarPointer(i,j,k));
                 out(i, j, k) = *cell;
-            }
+			}
+}
+
+vtkSmartPointer<vtkPolyData> ImageJockeyUtils::computeIsosurfaces(const spectral::array & in,
+																  int nContours,
+																  double minValue,
+																  double maxValue)
+{
+	//Convert the grid into a VTK grid object.
+	vtkSmartPointer<vtkImageData> vtkVarmap = vtkSmartPointer<vtkImageData>::New();
+	ImageJockeyUtils::makeVTKImageDataFromSpectralArray( vtkVarmap, in );
+	//Create the varmap's isosurface(s).
+	vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
+	contourFilter->SetInputData( vtkVarmap );
+	contourFilter->GenerateValues( nContours, minValue, maxValue); // (numContours, rangeStart, rangeEnd)
+	contourFilter->Update();
+	//Get the isocontour/isosurface as polygonal data
+	vtkPolyData* poly = contourFilter->GetOutput();
+	//Copy it before the parent contour filter is destroyed.
+	vtkSmartPointer<vtkPolyData> polydataCopy = vtkSmartPointer<vtkPolyData>::New();
+	polydataCopy->DeepCopy(poly);
+	return polydataCopy;
 }
