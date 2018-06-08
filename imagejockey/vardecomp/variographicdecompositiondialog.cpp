@@ -191,10 +191,15 @@ double F2(const spectral::array &originalGrid,
          const bool addSparsityPenalty,
          const bool addOrthogonalityPenalty)
 {
-	//TODO: remove this after tests
-	static IJQuick3DViewer* q3Dv = new IJQuick3DViewer();
-	q3Dv->show();
-	/////////////////////////////////
+	///TODO: remove this after tests/////////////
+	static IJQuick3DViewer* q3Dv[50];
+	static bool inited = false;
+	for( int i = 0; i < m && !inited; ++i){
+		q3Dv[i] = new IJQuick3DViewer();
+		q3Dv[i]->show();
+	}
+	inited = true;
+	/////////////////////////////////////////////
 
 
 	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
@@ -291,12 +296,11 @@ double F2(const spectral::array &originalGrid,
 		}
 	}
 
-
 	//Get isocontours/isosurfaces from the varmaps.
     std::vector< vtkSmartPointer<vtkPolyData> > geolgicalFactorsVarmapsIsosurfaces;
 	{
 		std::vector< spectral::array >::iterator it = geologicalFactorsVarmaps.begin();
-		for( ; it != geologicalFactorsVarmaps.end(); ++it )
+		for( int i = 0 ; it != geologicalFactorsVarmaps.end(); ++it, ++i )
 		{
 			//Get the geological factor's varmap.
 			spectral::array& geologicalFactorVarmap = *it;
@@ -308,26 +312,23 @@ double F2(const spectral::array &originalGrid,
 																					  geologicalFactorVarmapShifted.min(),
 																					  geologicalFactorVarmapShifted.max() );
 
-			q3Dv->display( poly );
+			//remove open lines
+			//TODO: ineffective with 3D models (isosurfaces)
+			{
+				vtkSmartPointer<vtkCellArray> polygons = poly->GetPolys();
+				polygons->InitTraversal();
+				vtkSmartPointer<vtkIdList> idList;
+				while( polygons->GetNextCell( idList ) ){
 
+				}
+			}
+
+			/////TODO: remove this after tests
+			q3Dv[i]->display( poly );
+			//////////////////////////////
 			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );
         }
 	}
-
-//  TODO: rasterize the poly data for visual check purposes.
-	//https://www.vtk.org/pipermail/vtkusers/2008-May/046477.html
-//	The vtkPolyDataToImageStencil filter will do what you want.  Look at
-//	Hybrid/Testing/Tcl/TestImageStencilWithPolydata.tcl.  For image data,
-//	I wouldn't advise using a generic filter like vtkSelectEnclosedPoints
-//	because it will be quite slow.
-	//https://www.vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataContourToImageData
-	//https://www.vtk.org/Wiki/VTK/Examples/PolyData/PolyDataToImageData
-
-	//TODO: WIP: these are for debugging the countour lines.  REMOVE AFTER TESTS.
-//	spectral::array tmp;
-//	ImageJockeyUtils::rasterize( tmp, geolgicalFactorsVarmapsIsosurfaces[0], 0.1, 0.1, 0.1 );
-//	VariographicDecompositionDialog::displayGrid( tmp, "test", false );
-
 
 	//TODO: perform skeletonization on the isocontours/isosurfaces
 

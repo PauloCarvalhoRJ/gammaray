@@ -314,3 +314,38 @@ vtkSmartPointer<vtkPolyData> ImageJockeyUtils::computeIsosurfaces(const spectral
 	polydataCopy->DeepCopy(poly);
 	return polydataCopy;
 }
+
+void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> polyDataToModify)
+{
+	typedef double[3] doubleVector3;
+
+	// Get poly geometry data.
+	vtkSmartPointer<vtkPoints> in_Pts   = polyDataToModify->GetPoints();
+	vtkSmartPointer<vtkCellArray> in_Polys = polyDataToModify->GetPolys();
+
+	// If there is no geometry, there is nothing to do.
+	if ( polyDataToModify->GetNumberOfPoints() == 0 )
+		return;
+
+	// Get the number of polyline primitives.
+	int nc = in_Polys->GetNumberOfCells();
+
+	// Prepare the in/out classification bins.
+	vtkSmartPointer<vtkCellArray> out_Polys = vtkSmartPointer<vtkCellArray>::New();
+	vtkSmartPointer<vtkCellArray> bad_Polys = vtkSmartPointer<vtkCellArray>::New();
+
+	// Should have same polys out as in if no bad ones are found
+	out_Polys->Allocate(nc,nc);
+	bad_Polys->Allocate(nc,nc);
+
+	// Traverse polygons and test them all
+	vtkIdType npoints, *pt_IDs, polyID = 0;
+	int m_c_s = polyDataToModify->GetMaxCellSize();
+	doublevector3 *points = new doublevector3[m_c_s];
+	for( in_Polys->InitTraversal(); in_Polys->GetNextCell(npoints, pt_IDs); ++polyID ) {
+		// make local copy of cell points
+		float *rawdata = (float*)in_Pts->GetData()->GetVoidPointer();
+		for( int i = 0; i < npoints; ++i )
+			points[i] = rawdata[i];
+	}
+}

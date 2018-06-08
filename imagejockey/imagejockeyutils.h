@@ -137,6 +137,11 @@ public:
      * The grid dimensions of the spectral::array object is set or re-set to acommodate the polygonal
      * object's bounding box.
      * The three r* parameters are resolutions at which the polygonal object will be rasterized.
+	 * 	Further reading : https://www.vtk.org/pipermail/vtkusers/2008-May/046477.html
+	 *	                  Hybrid/Testing/Tcl/TestImageStencilWithPolydata.tcl.
+	 *	                  I wouldn't advise using a generic filter like vtkSelectEnclosedPoints because it will be quite slow.
+	 *                    https://www.vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataContourToImageData
+	 *                    https://www.vtk.org/Wiki/VTK/Examples/PolyData/PolyDataToImageData
      */
     static void rasterize(spectral::array& out, vtkPolyData *in , double rX, double rY, double rZ);
 
@@ -147,6 +152,9 @@ public:
 														   int nCountours,
 														   double minValue,
 														   double maxValue);
+
+	/** Keeps only the closed polyognals in the given polygonal object. */
+	static void removeOpenPolyLines( vtkSmartPointer<vtkPolyData> polyDataToModify );
 };
 
 #endif // IMAGEJOCKEYUTILS_H
