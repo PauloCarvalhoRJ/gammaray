@@ -153,8 +153,10 @@ public:
 														   double minValue,
 														   double maxValue);
 
-	/** Keeps only the closed polyognals in the given polygonal object. */
-	static void removeOpenPolyLines( vtkSmartPointer<vtkPolyData> polyDataToModify );
+    /** Keeps only the closed polyognals in the given polygonal object.
+     * The smart pointer passed points to another new vtkPolyData object without open poly lines.
+     */
+    static void removeOpenPolyLines( vtkSmartPointer<vtkPolyData>& polyDataToModify );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

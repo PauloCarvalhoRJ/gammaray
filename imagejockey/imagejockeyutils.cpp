@@ -16,6 +16,8 @@
 #include <vtkPointData.h>
 #include <vtkImageStencil.h>
 #include <vtkContourFilter.h>
+#include <vtkStripper.h>
+#include <vtkCleanPolyData.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -315,30 +317,53 @@ vtkSmartPointer<vtkPolyData> ImageJockeyUtils::computeIsosurfaces(const spectral
 	return polydataCopy;
 }
 
-void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> polyDataToModify)
+void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> &polyDataToModify)
 {
-	// Get poly geometry data.
-	vtkSmartPointer<vtkPoints> in_Pts   = polyDataToModify->GetPoints();
-	vtkSmartPointer<vtkCellArray> in_Polys = polyDataToModify->GetPolys();
-
 	// If there is no geometry, there is nothing to do.
 	if ( polyDataToModify->GetNumberOfPoints() == 0 )
 		return;
 
-	//TODO: find a way to join the to-point lines into polys
+    // Join the connected lines into polygonal lines.
+    vtkSmartPointer<vtkStripper> geometryJoiner = vtkSmartPointer<vtkStripper>::New();
+    geometryJoiner->SetInputData( polyDataToModify );
+    geometryJoiner->JoinContiguousSegmentsOn();
+    geometryJoiner->Update();
 
-	in_Polys->InitTraversal();
-	int nc = in_Polys->GetNumberOfCells();
-	for(int i = 0; i < nc; ++i){
-		vtkSmartPointer<vtkIdList> idList;
-		in_Polys->GetNextCell( idList );
-		int a = idList->GetId( 0 );
-		int b = idList->GetId( 1 );
-		int c = idList->GetId( 2 );
-		std::cout << a << std::endl;
-		std::cout << b << std::endl;
-		std::cout << c << std::endl;
-	}
+    // Get the joined poly data object.
+    vtkSmartPointer<vtkPolyData> joinedPolyData = geometryJoiner->GetOutput();
 
+    // Get joined poly geometry data.
+    vtkSmartPointer<vtkCellArray> in_Lines = joinedPolyData->GetLines();
 
+    // Make the final poly data sans open poly lines.
+    vtkSmartPointer<vtkPolyData> polyDataSansOpenLines = vtkSmartPointer<vtkPolyData>::New();
+
+    // Initially populate the final poly data with the same vertexes.
+    polyDataSansOpenLines->SetPoints( joinedPolyData->GetPoints() );
+
+    // Prepare a container of closed lines.
+    vtkSmartPointer<vtkCellArray> closedLines = vtkSmartPointer<vtkCellArray>::New();
+
+    // Traverse the joined the poly lines.
+    in_Lines->InitTraversal();
+    vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+    while( in_Lines->GetNextCell( vertexIdList ) ){
+        int initialVertexID = vertexIdList->GetId( 0 );
+        int finalVertexID = vertexIdList->GetId( vertexIdList->GetNumberOfIds()-1 );
+        // If the poly line is closed.
+        if( initialVertexID == finalVertexID )
+            // Adds the list of vertexes to the closed lines container.
+            closedLines->InsertNextCell( vertexIdList );
+    }
+
+    // Assign the closed lines to the final poly data.
+    polyDataSansOpenLines->SetLines( closedLines );
+
+    // Remove unused vertexes.
+    vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputData( polyDataSansOpenLines );
+    cleaner->Update();
+
+    // Replace the input poly data with the processed one without open poly lines.
+    polyDataToModify = cleaner->GetOutput();
 }
