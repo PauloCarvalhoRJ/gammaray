@@ -167,6 +167,20 @@ public:
                                               double centerZ,
                                               double toleranceRadius
                                               );
+
+    /**
+     * Computes the ellipse parameters from the factors of the ellipse implicit equation in the form
+     * Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0, commonly yielded by ellipse-fitting algorithms.
+     * The parameters passed by reference are the output parameters.
+     *
+     * CREDIT: Ruobing Li http://miracle21.blogspot.com/2011/12/ellipse-fitting-and-parameter.html
+     */
+    static void getEllipseParametersFromImplicit(double A, double B, double C, double D, double E, double F,
+                                                  double& semiMajorAxis,
+                                                  double& semiMinorAxis,
+                                                  double& rotationAngle,
+                                                  double& centerX,
+                                                  double& centerY );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

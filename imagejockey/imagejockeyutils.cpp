@@ -451,3 +451,36 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
     // Replace the input poly data with the poly data containing only concentric poly lines.
     polyDataToModify = cleaner->GetOutput();
 }
+
+void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, double C, double D, double E, double F,
+                                                        double &semiMajorAxis,
+                                                        double &semiMinorAxis,
+                                                        double &rotationAngle,
+                                                        double &centerX,
+                                                        double &centerY)
+{
+    // Input parameters: a, b, c, d, e, f
+    rotationAngle = std::atan(B / (A - C)) * 0.5; // rotation
+    double cos_phi = std::cos(rotationAngle);
+    double sin_phi = std::sin(rotationAngle);
+    centerX = (2 * C * D - B * E) / (B * B - 4 * A * C);
+    centerY = (2 * A * E - B * D) / (B * B - 4 * A * C);
+    //center = cv::Vec2d(u, v);        // center
+
+    // eliminate rotation and recalculate 6 parameters
+    double aa = A * cos_phi * cos_phi - B * cos_phi * sin_phi + C * sin_phi * sin_phi;
+    double bb = 0;
+    double cc = A * sin_phi * sin_phi + B * cos_phi * sin_phi + C * cos_phi * cos_phi;
+    double dd = D * cos_phi - E * sin_phi;
+    double ee = D * sin_phi + E * cos_phi;
+    double ff = 1 + (D * D) / (4 * A) + (E * E) / (4 * C);
+
+    semiMajorAxis = std::sqrt(ff / aa);              // semi-major axis
+    semiMinorAxis = std::sqrt(ff / cc);              // semi-minor axis
+
+    if(semiMajorAxis < semiMinorAxis) {
+        double temp = semiMajorAxis;
+        semiMajorAxis = semiMinorAxis;
+        semiMinorAxis = temp;
+    }
+}
