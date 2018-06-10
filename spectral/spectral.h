@@ -272,6 +272,10 @@ double dot( const array &one, const array &other );
  */
 double angle( const array &one, const array &other );
 
+/** Performs the Hadamard product, also known as Schur product or element-wise product.
+ * Both operands must have the same dimension and the result is another
+ * array with the same dimension of the operands. */
+array hadamard( const array &one, const array &other );
 
 } // namepsace spectral
 
