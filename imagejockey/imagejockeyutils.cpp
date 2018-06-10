@@ -18,6 +18,7 @@
 #include <vtkContourFilter.h>
 #include <vtkStripper.h>
 #include <vtkCleanPolyData.h>
+#include <vtkCenterOfMass.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -333,6 +334,7 @@ void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> &polyDat
     vtkSmartPointer<vtkPolyData> joinedPolyData = geometryJoiner->GetOutput();
 
     // Get joined poly geometry data.
+    // TODO: to get the joined isosurfaces, it is necessary to call vtkPolyData::GetPolys().
     vtkSmartPointer<vtkCellArray> in_Lines = joinedPolyData->GetLines();
 
     // Make the final poly data sans open poly lines.
@@ -365,5 +367,87 @@ void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> &polyDat
     cleaner->Update();
 
     // Replace the input poly data with the processed one without open poly lines.
+    polyDataToModify = cleaner->GetOutput();
+}
+
+void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData> &polyDataToModify,
+                                                    double centerX,
+                                                    double centerY,
+                                                    double centerZ,
+                                                    double toleranceRadius
+                                                    )
+{
+    // If there is no geometry, there is nothing to do.
+    if ( polyDataToModify->GetNumberOfPoints() == 0 )
+        return;
+
+    // Get poly lines.
+    // TODO: for surfaces (3D), it is necessary to call vtkPolyData::GetPolys().
+    vtkSmartPointer<vtkCellArray> in_Lines = polyDataToModify->GetLines();
+
+    // Prepare the resulting poly data.
+    vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
+
+    // Initially set all the points in the result.
+    result->SetPoints( polyDataToModify->GetPoints() );
+
+    // Prepare a container of line definitions for the result.
+    vtkSmartPointer<vtkCellArray> linesForResult = vtkSmartPointer<vtkCellArray>::New();
+
+    // Make a temporary poly data object to use the vtkCenterOfMass algorithm.
+    vtkSmartPointer<vtkPolyData> tmpPolyData = vtkSmartPointer<vtkPolyData>::New();
+
+    // Prepare a container of line definitions.
+    vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
+
+    // Traverse the input poly lines.
+    in_Lines->InitTraversal();
+    vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+    while( in_Lines->GetNextCell( vertexIdList ) ){
+        // Set the container of line definitions to an empty state.
+        lines->Initialize();
+
+        // Set the vertexes of the temporary poly data with the same vertexes of the input poly data.
+        tmpPolyData->SetPoints( polyDataToModify->GetPoints() );
+
+        // Adds the list of vertexes defining an individual input line to the temporary container.
+        lines->InsertNextCell( vertexIdList );
+
+        // Assign the line definition to the temporary poly data.
+        tmpPolyData->SetLines( lines );
+
+        // Discard the unused vertexes.
+        vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+        cleaner->SetInputData( tmpPolyData );
+        cleaner->Update();
+
+        // Compute the center of mass.
+        vtkSmartPointer<vtkCenterOfMass> centerOfMassFilter = vtkSmartPointer<vtkCenterOfMass>::New();
+        centerOfMassFilter->SetInputConnection( cleaner->GetOutputPort() );
+        centerOfMassFilter->SetUseScalarsAsWeights(false);
+        centerOfMassFilter->Update();
+        double center[3];
+        centerOfMassFilter->GetCenter(center);
+
+        // Compute the distance to the point considered as "the" center.
+        double dx = centerX - center[0];
+        double dy = centerY - center[1];
+        double dz = centerZ - center[2];
+        double distance = std::sqrt( dx*dx + dy*dy + dz*dz );
+
+        // Assign the line definitions if they correspond to a concentric poly line.
+        if( distance <= toleranceRadius )
+            linesForResult->InsertNextCell( vertexIdList );
+    }
+
+    // Set the poly lines considered concentric.
+    result->SetLines( linesForResult );
+
+    // Discard the unused vertexes in the result.
+    vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputData( result );
+    cleaner->Update();
+
+    // Replace the input poly data with the poly data containing only concentric poly lines.
     polyDataToModify = cleaner->GetOutput();
 }

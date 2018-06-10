@@ -302,19 +302,29 @@ double F2(const spectral::array &originalGrid,
 		std::vector< spectral::array >::iterator it = geologicalFactorsVarmaps.begin();
 		for( int i = 0 ; it != geologicalFactorsVarmaps.end(); ++it, ++i )
 		{
-			//Get the geological factor's varmap.
+            // Get the geological factor's varmap.
 			spectral::array& geologicalFactorVarmap = *it;
-			//Get the geological factor's varmap with h=0 in the center of the grid.
+            // Get the geological factor's varmap with h=0 in the center of the grid.
 			spectral::array geologicalFactorVarmapShifted = spectral::shiftByHalf( geologicalFactorVarmap );
-			//Get the isocontour/isosurface.
+            // Get the isocontour/isosurface.
 			vtkSmartPointer<vtkPolyData> poly = ImageJockeyUtils::computeIsosurfaces( geologicalFactorVarmapShifted,
 																					  20,
 																					  geologicalFactorVarmapShifted.min(),
 																					  geologicalFactorVarmapShifted.max() );
+            // Get the isomap's bounding box.
+            double bbox[6];
+            poly->GetBounds( bbox );
 
-			//remove open lines
-			//TODO: ineffective with 3D models (isosurfaces)
+            // Remove open isocontours/isosurfaces.
+            //TODO: currently ineffective with 3D models (isosurfaces)
 			ImageJockeyUtils::removeOpenPolyLines( poly );
+
+            // Remove the non-concentric iscontours/isosurfaces.
+            ImageJockeyUtils::removeNonConcentricPolyLines( poly,
+                                                            (bbox[1]+bbox[0])/2,
+                                                            (bbox[3]+bbox[2])/2,
+                                                            (bbox[5]+bbox[4])/2,
+                                                             1.0 );
 
 			/////TODO: remove this after tests
 			q3Dv[i]->display( poly );

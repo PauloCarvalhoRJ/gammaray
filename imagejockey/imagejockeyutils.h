@@ -154,9 +154,19 @@ public:
 														   double maxValue);
 
     /** Keeps only the closed polyognals in the given polygonal object.
-     * The smart pointer passed points to another new vtkPolyData object without open poly lines.
+     * After the call, the smart pointer passed refers to another new vtkPolyData object without open poly lines.
      */
     static void removeOpenPolyLines( vtkSmartPointer<vtkPolyData>& polyDataToModify );
+
+    /** Keeps only the polyognals whose center of mass is close to the passed coordinate.
+     * After the call, the smart pointer passed refers to another new vtkPolyData object without open poly lines.
+     */
+    static void removeNonConcentricPolyLines( vtkSmartPointer<vtkPolyData>& polyDataToModify,
+                                              double centerX,
+                                              double centerY,
+                                              double centerZ,
+                                              double toleranceRadius
+                                              );
 };
 
 #endif // IMAGEJOCKEYUTILS_H
