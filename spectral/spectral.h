@@ -2,6 +2,8 @@
 Spectral primitives
 
 (c) 2017, Pericles Lopes Machado
+
+With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 */
 
 #pragma once
@@ -291,6 +293,11 @@ array transpose( const array &input );
 
 /** Inverts the given array. */
 array inv( const array &input );
+
+/** Returns the matrix with the eigenvectors as columns (first element in the returned pair) and
+ * the eigenvalues as a column-vector (second element) of the given matrix.
+ */
+std::pair< array, array > eig( const array &input );
 
 } // namepsace spectral
 

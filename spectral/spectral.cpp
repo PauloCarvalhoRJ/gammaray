@@ -2,10 +2,13 @@
 Spectral primitives
 
 (c) 2017, Péricles Lopes Machado
+
+With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 */
 
 #include "spectral.h"
 #include <cmath>
+#include <Eigen/Dense>
 
 namespace spectral
 {
@@ -1689,6 +1692,16 @@ array inv(const array &input)
 {
     Eigen::MatrixXd temp = to_2d( input );
     return to_array( temp.inverse() );
+}
+
+std::pair<array, array> eig(const array &input)
+{
+    Eigen::MatrixXd temp = to_2d( input );
+    Eigen::SelfAdjointEigenSolver< Eigen::MatrixXd > eigensolver(temp);
+    //if (eigensolver.info() != Success) abort();
+    Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors();
+    Eigen::MatrixXd eigenvalues = eigensolver.eigenvalues();
+    return { eigenvectors, eigenvalues };
 }
 
 } // namespace spectral
