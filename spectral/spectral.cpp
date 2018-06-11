@@ -1674,8 +1674,8 @@ array joinColumnVectors(const std::vector<const array *> &columnVectors)
 
     // Perform the join.
     std::vector<Eigen::MatrixXd>::iterator it = columnVectorsAsEigenMatrices.begin();
-    for(; it != columnVectorsAsEigenMatrices.cend(); ++it){
-        result << *it;
+    for( int iCol = 0; it != columnVectorsAsEigenMatrices.cend(); ++it, ++iCol){
+        result.col( iCol ) << *it;
     }
 
     return spectral::to_array( result );
@@ -1701,7 +1701,7 @@ std::pair<array, array> eig(const array &input)
     //if (eigensolver.info() != Success) abort();
     Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors();
     Eigen::MatrixXd eigenvalues = eigensolver.eigenvalues();
-    return { eigenvectors, eigenvalues };
+    return { to_array(eigenvectors), to_array(eigenvalues) };
 }
 
 } // namespace spectral
