@@ -326,8 +326,12 @@ double F2(const spectral::array &originalGrid,
                                                             (bbox[5]+bbox[4])/2,
                                                              1.0 );
 
+            // Fit ellipses to the concentric isocontours/isosurfaces.
+            vtkSmartPointer<vtkPolyData> ellipses;
+            ImageJockeyUtils::fitEllipses( poly, ellipses );
+
 			/////TODO: remove this after tests
-			q3Dv[i]->display( poly );
+            q3Dv[i]->display( ellipses );
 			//////////////////////////////
 
 			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );

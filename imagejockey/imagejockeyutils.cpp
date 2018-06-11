@@ -559,7 +559,7 @@ void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::arr
     spectral::array aXX = spectral::hadamard( aX, aX ); //Hadamard product == element-wise product.
     spectral::array aXY = spectral::hadamard( aX, aY );
     spectral::array aYY = spectral::hadamard( aY, aY );
-    spectral::array aOnes( aX.M(), 1.0);
+    spectral::array aOnes( aX.M(), 1.0 );
 
     // Build design matrix (n x 6), where n is the number of X,Y samples.
     spectral::array aDesign = spectral::joinColumnVectors( { &aXX, &aXY, &aYY, &aX, &aY, &aOnes } );
@@ -573,7 +573,7 @@ void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::arr
     spectral::array aScatter = spectral::transpose( aDesign ) * aDesign;
 
     // Build the 6x6 constraint matrix.
-    spectral::array aConstraint( (spectral::index)6, (spectral::index)6 );
+    spectral::array aConstraint( (spectral::index)6, (spectral::index)6, (double)0.0 );
     aConstraint(1, 3) = 2;
     aConstraint(2, 2) = -1;
     aConstraint(3, 1) = 2;
@@ -585,7 +585,7 @@ void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::arr
     // Find the index of the positive eigenvalue.
     int PosC = 0;
     for( ; PosC < 6; ++PosC )
-        if( eigenvalues( PosC ) > 0 && ! std::isinf( eigenvalues( PosC ) ) )
+        if( eigenvalues( PosC ) > 0 && std::isfinite( eigenvalues( PosC ) ) )
             break;
 
     // The PosC-th eigenvector contains the A...F factors, which are returned.
