@@ -289,5 +289,8 @@ array joinColumnVectors(const std::vector<const array *>& columnVectors );
 /** Transposes the given array. */
 array transpose( const array &input );
 
+/** Inverts the given array. */
+array inv( const array &input );
+
 } // namepsace spectral
 

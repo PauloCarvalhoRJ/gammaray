@@ -1685,5 +1685,11 @@ array transpose( const array &input )
     return to_array( tempT );
 }
 
+array inv(const array &input)
+{
+    Eigen::MatrixXd temp = to_2d( input );
+    return to_array( temp.inverse() );
+}
+
 } // namespace spectral
 
