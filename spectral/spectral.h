@@ -277,5 +277,12 @@ double angle( const array &one, const array &other );
  * array with the same dimension of the operands. */
 array hadamard( const array &one, const array &other );
 
+/** Makes a new array by joining the passed column vectors in a container.
+ * All the input vectors must have the same number of elements.
+ * The resulting array will have n rows and m columns, where n is the number
+ * of elements in each of the column vectors and m is the number of column vectors.
+ */
+array joinColumnVectors(const std::vector<const array *>& columnVectors );
+
 } // namepsace spectral
 

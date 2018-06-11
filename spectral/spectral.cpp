@@ -1646,5 +1646,30 @@ array hadamard(const array &one, const array &other)
     return result;
 }
 
+array joinColumnVectors(const std::vector<const array *> &columnVectors)
+{
+    // Convert the spectral::array's to Eigen matrices.
+    std::vector<Eigen::MatrixXd> columnVectorsAsEigenMatrices;
+    {
+        std::vector<const array *>::const_iterator it = columnVectors.cbegin();
+        for(; it != columnVectors.cend(); ++it){
+            columnVectorsAsEigenMatrices.push_back( spectral::to_2d(**it) );
+        }
+    }
+
+    // Instantiate the resulting matrix as Eigen matrix.
+    //  Use the size of the first vector to define the number of rows in the
+    //  resulting matrix.
+    Eigen::MatrixXd result( columnVectors[0]->M(), columnVectors.size() );
+
+    // Perform the join.
+    std::vector<Eigen::MatrixXd>::iterator it = columnVectorsAsEigenMatrices.begin();
+    for(; it != columnVectorsAsEigenMatrices.cend(); ++it){
+        result << *it;
+    }
+
+    return spectral::to_array( result );
+}
+
 } // namespace spectral
 
