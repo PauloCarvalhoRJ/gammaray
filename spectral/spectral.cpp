@@ -370,7 +370,14 @@ array array::operator*(double scalar) const
     array result( M_, N_, K_ );
     for (index i = 0; i < d_.size(); ++i)
         result.d_[i] = d_[i] * scalar;
-	return result;
+    return result;
+}
+
+array array::operator*(const array &other) const
+{
+    Eigen::MatrixXd tmpMe = to_2d( *this );
+    Eigen::MatrixXd tmpOther = to_2d( other );
+    return to_array( tmpMe * tmpOther );
 }
 
 array array::operator/(double scalar) const
