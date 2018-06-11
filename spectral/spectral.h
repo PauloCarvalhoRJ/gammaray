@@ -284,5 +284,8 @@ array hadamard( const array &one, const array &other );
  */
 array joinColumnVectors(const std::vector<const array *>& columnVectors );
 
+/** Transposes the given array. */
+array transpose( const array &input );
+
 } // namepsace spectral
 

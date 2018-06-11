@@ -1671,5 +1671,12 @@ array joinColumnVectors(const std::vector<const array *> &columnVectors)
     return spectral::to_array( result );
 }
 
+array transpose( const array &input )
+{
+    Eigen::MatrixXd temp = to_2d( input );
+    Eigen::MatrixXd tempT = temp.transpose();
+    return to_array( tempT );
+}
+
 } // namespace spectral
 
