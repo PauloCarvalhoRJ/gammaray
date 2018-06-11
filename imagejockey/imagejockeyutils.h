@@ -168,6 +168,12 @@ public:
                                               double toleranceRadius
                                               );
 
+    /** Fits ellipses to each poly line in the input poly data.  The ellipses are stored
+     * in another poly data object to be referenced in passed VTK smart pointer.
+     */
+    static void fitEllipses( const vtkSmartPointer<vtkPolyData>& polyData,
+                             vtkSmartPointer<vtkPolyData>& ellipses );
+
     /**
      * Computes the ellipse parameters from the factors of the ellipse implicit equation in the form
      * Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0, commonly yielded by ellipse-fitting algorithms.
@@ -181,6 +187,19 @@ public:
                                                   double& rotationAngle,
                                                   double& centerX,
                                                   double& centerY );
+
+    /**
+     * Fits an ellipse to a given set of spatial coordinates.  The parameters passed by reference are the
+     * output parameters.  The ellipse parameters are the factors of its implicit equation
+     * Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0.  Use the getEllipseParametersFromImplicit() method to obtain
+     * its geometric parameters such as semi-axes, center, etc.
+     * This function uses the direct least squares method proposed by Fitzgibbon et al (1996), which yields
+     * the fitted ellipse in a single step (non-iterative) and assures an ellipse quadric
+     * (e.g. not hyperbola, parabola, etc.) for bad data.
+     */
+    static void ellipseFit( const spectral::array& aX,
+                            const spectral::array& aY,
+                            double& A, double& B, double& C, double& D, double& E, double& F );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

@@ -19,6 +19,8 @@
 #include <vtkStripper.h>
 #include <vtkCleanPolyData.h>
 #include <vtkCenterOfMass.h>
+#include <vtkEllipseArcSource.h>
+#include <vtkAppendPolyData.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -401,6 +403,7 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
     vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
 
     // Traverse the input poly lines.
+    // TODO: this loop is a performance bottleneck.
     in_Lines->InitTraversal();
     vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
     while( in_Lines->GetNextCell( vertexIdList ) ){
@@ -452,6 +455,71 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
     polyDataToModify = cleaner->GetOutput();
 }
 
+void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
+                                   vtkSmartPointer<vtkPolyData> &ellipses)
+{
+    // If there is no geometry, there is nothing to do.
+    if ( polyData->GetNumberOfPoints() == 0 )
+        return;
+
+    // Get poly lines definitions.
+    vtkSmartPointer<vtkCellArray> in_Lines = polyData->GetLines();
+
+    // Prepare the result poly data.
+    vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
+
+    // Traverse the input poly lines.
+    in_Lines->InitTraversal();
+    vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+    while( in_Lines->GetNextCell( vertexIdList ) ){
+
+        // Collect the X and Y vertex coordinates of a poly line
+        spectral::array aX( vertexIdList->GetNumberOfIds() );
+        spectral::array aY( vertexIdList->GetNumberOfIds() );
+        for( vtkIdType iVertex = 0; iVertex < vertexIdList->GetNumberOfIds(); ++iVertex ){
+            double vertex[3];
+            ///////NOTE: DO NOT CALL THIS METHOD FROM MULTIPLE THREADS.
+            polyData->GetPoint( vertexIdList->GetId( iVertex ), vertex );
+            ////////////////////////////////////////////////////////////
+            aX( iVertex ) = vertex[0];
+            aY( iVertex ) = vertex[1];
+        }
+
+        // Fit the ellipse (find the A...F factors of its implicit equation).
+        double A, B, C, D, E, F;
+        ImageJockeyUtils::ellipseFit( aX, aY, A, B, C, D, E, F );
+
+        // Find the geometric parameters of the ellipse.
+        double semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY;
+        ImageJockeyUtils::getEllipseParametersFromImplicit( A, B, C, D, E, F,
+                                                            semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY );
+
+        // Make the ellipse poly.
+        vtkSmartPointer< vtkEllipseArcSource > ellipseSource = vtkSmartPointer< vtkEllipseArcSource >::New();
+        ellipseSource->SetCenter( centerX, centerY, 0 );
+        ellipseSource->SetNormal( 0, 0, 1 );
+        ellipseSource->SetMajorRadiusVector( semiMajorAxis * std::cos( rotationAngle ),
+                                             semiMajorAxis * std::sin( rotationAngle ),
+                                             0 );
+        ellipseSource->SetSegmentAngle( 360 );
+        ellipseSource->SetRatio( semiMinorAxis / semiMajorAxis );
+        ellipseSource->Update();
+        vtkSmartPointer< vtkPolyData > ellipse = ellipseSource->GetOutput();
+
+        // Append the ellipse poly data to the result poly data.
+        vtkSmartPointer< vtkAppendPolyData > appendFilter = vtkSmartPointer< vtkAppendPolyData >::New();
+        appendFilter->AddInputData( result );
+        appendFilter->AddInputData( ellipse );
+        appendFilter->Update();
+
+        //result = result + ellipse.
+        result = appendFilter->GetOutput();
+    }
+
+    // Return the result poly data.
+    ellipses = result;
+}
+
 void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, double C, double D, double E, double F,
                                                         double &semiMajorAxis,
                                                         double &semiMinorAxis,
@@ -483,4 +551,48 @@ void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, doub
         semiMajorAxis = semiMinorAxis;
         semiMinorAxis = temp;
     }
+}
+
+void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::array &aY,
+                                  double &A, double &B, double &C, double &D, double &E, double &F)
+{
+    spectral::array aXX = spectral::hadamard( aX, aX ); //Hadamard product == element-wise product.
+    spectral::array aXY = spectral::hadamard( aX, aY );
+    spectral::array aYY = spectral::hadamard( aY, aY );
+    spectral::array aOnes( aX.M(), 1.0);
+
+    // Build design matrix (n x 6), where n is the number of X,Y samples.
+    spectral::array aDesign = spectral::joinColumnVectors( { &aXX, &aXY, &aYY, &aX, &aY, &aOnes } );
+
+    // Build scatter matrix.
+    // NOTE: Fitzgibbon et al (1996)'s Matlab implementation makes the scatter matrix as
+    //     S = D' * D
+    //     The ' operator is the transpose conjugate operator, which is different from
+    //     the transpose operator .'.  But for real numbers, ' and .' result in the same matrix.
+    //     The code below assumes all the elements are real numbers.
+    spectral::array aScatter = spectral::transpose( aDesign ) * aDesign;
+
+    // Build the 6x6 constraint matrix.
+    spectral::array aConstraint( (spectral::index)6, (spectral::index)6 );
+    aConstraint(1, 3) = 2;
+    aConstraint(2, 2) = -1;
+    aConstraint(3, 1) = 2;
+
+    // Solve eigensystem.
+    spectral::array eigenvectors, eigenvalues;
+    std::tie( eigenvectors, eigenvalues ) = spectral::eig( spectral::inv( aScatter ) * aConstraint );
+
+    // Find the index of the positive eigenvalue.
+    int PosC = 0;
+    for( ; PosC < 6; ++PosC )
+        if( eigenvalues( PosC ) > 0 && ! std::isinf( eigenvalues( PosC ) ) )
+            break;
+
+    // The PosC-th eigenvector contains the A...F factors, which are returned.
+    A = eigenvectors( 0, PosC );
+    B = eigenvectors( 1, PosC );
+    C = eigenvectors( 2, PosC );
+    D = eigenvectors( 3, PosC );
+    E = eigenvectors( 4, PosC );
+    F = eigenvectors( 5, PosC );
 }
