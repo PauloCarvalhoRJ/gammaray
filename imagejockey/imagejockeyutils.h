@@ -188,7 +188,7 @@ public:
                                                   double& centerX,
                                                   double& centerY );
 
-	/** Does the same as getEllipseParametersFromImplicit() but formulae taken from Wikipedia:
+	/** Does the same as getEllipseParametersFromImplicit() but with formulae taken from Wikipedia:
 	 * https://en.wikipedia.org/wiki/Ellipse (Ellipse as quadric)
 	 */
 	static void getEllipseParametersFromImplicit2(double A, double B, double C, double D, double E, double F,

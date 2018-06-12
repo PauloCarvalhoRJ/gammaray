@@ -331,7 +331,7 @@ double F2(const spectral::array &originalGrid,
             ImageJockeyUtils::fitEllipses( poly, ellipses );
 
 			/////TODO: remove this after tests
-            q3Dv[i]->display( ellipses );
+			q3Dv[i]->display( ellipses );
 			//////////////////////////////
 
 			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );

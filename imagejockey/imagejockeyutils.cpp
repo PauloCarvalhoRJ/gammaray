@@ -467,6 +467,7 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 
     // Prepare the result poly data.
     vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
+	result->DeepCopy( polyData );
 
     // Traverse the input poly lines.
     in_Lines->InitTraversal();

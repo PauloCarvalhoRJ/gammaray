@@ -20,6 +20,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkImageData.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkLookupTable.h>
+#include <vtkProperty.h>
 
 IJQuick3DViewer::IJQuick3DViewer( QWidget *parent ) :
     QWidget(parent),
@@ -96,6 +97,7 @@ void IJQuick3DViewer::display( vtkPolyData* polyData )
 
 	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper( mapper );
+	actor->GetProperty()->SetColor(0, 255, 255);
 
 	_renderer->AddActor(actor);
 	_currentActor = actor;
