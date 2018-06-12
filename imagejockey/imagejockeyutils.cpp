@@ -491,7 +491,7 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 
         // Find the geometric parameters of the ellipse.
         double semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY;
-        ImageJockeyUtils::getEllipseParametersFromImplicit( A, B, C, D, E, F,
+		ImageJockeyUtils::getEllipseParametersFromImplicit2( A, B, C, D, E, F,
                                                             semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY );
 
         // Make the ellipse poly.
@@ -537,10 +537,10 @@ void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, doub
 
     // eliminate rotation and recalculate 6 parameters
     double aa = A * cos_phi * cos_phi - B * cos_phi * sin_phi + C * sin_phi * sin_phi;
-    double bb = 0;
+	//double bb = 0;
     double cc = A * sin_phi * sin_phi + B * cos_phi * sin_phi + C * cos_phi * cos_phi;
-    double dd = D * cos_phi - E * sin_phi;
-    double ee = D * sin_phi + E * cos_phi;
+	//double dd = D * cos_phi - E * sin_phi;
+	//double ee = D * sin_phi + E * cos_phi;
     double ff = 1 + (D * D) / (4 * A) + (E * E) / (4 * C);
 
     semiMajorAxis = std::sqrt(ff / aa);              // semi-major axis
@@ -551,6 +551,28 @@ void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, doub
         semiMajorAxis = semiMinorAxis;
         semiMinorAxis = temp;
     }
+}
+
+void ImageJockeyUtils::getEllipseParametersFromImplicit2(double A, double B, double C, double D, double E, double F,
+														 double & semiMajorAxis, double & semiMinorAxis, double & rotationAngle, double & centerX, double & centerY)
+{
+	double determinant = B*B - 4*A*C;
+	double part1 = 2 * ( A*E*E + C*D*D - B*D*E + (determinant)*F );
+	double part2 = std::sqrt( (A-C)*(A-C) + B*B );
+	semiMajorAxis = -std::sqrt( part1 * (A+C + part2) ) / determinant;
+	semiMinorAxis = -std::sqrt( part1 * (A+C - part2) ) / determinant;
+	centerX = (2*C*D - B*E) / determinant;
+	centerY = (2*A*E - B*D) / determinant;
+	//determine the angle (of the ellipse's semi-major axis).
+	{
+		if( std::abs(B) < 0.00001){
+			if( A < C )
+				rotationAngle = 0;
+			else
+				rotationAngle = ImageJockeyUtils::PI / 2.0;
+		} else
+			rotationAngle = std::atan( ( C-A-part2 ) / B );
+	}
 }
 
 void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::array &aY,
@@ -573,10 +595,11 @@ void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::arr
     spectral::array aScatter = spectral::transpose( aDesign ) * aDesign;
 
     // Build the 6x6 constraint matrix.
+	// All elements are initialized with zeros.
     spectral::array aConstraint( (spectral::index)6, (spectral::index)6, (double)0.0 );
-    aConstraint(1, 3) = 2;
-    aConstraint(2, 2) = -1;
-    aConstraint(3, 1) = 2;
+	aConstraint(0, 2) = 2;
+	aConstraint(1, 1) = -1;
+	aConstraint(2, 0) = 2;
 
     // Solve eigensystem.
     spectral::array eigenvectors, eigenvalues;

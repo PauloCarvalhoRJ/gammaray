@@ -188,6 +188,16 @@ public:
                                                   double& centerX,
                                                   double& centerY );
 
+	/** Does the same as getEllipseParametersFromImplicit() but formulae taken from Wikipedia:
+	 * https://en.wikipedia.org/wiki/Ellipse (Ellipse as quadric)
+	 */
+	static void getEllipseParametersFromImplicit2(double A, double B, double C, double D, double E, double F,
+												  double& semiMajorAxis,
+												  double& semiMinorAxis,
+												  double& rotationAngle,
+												  double& centerX,
+												  double& centerY );
+
     /**
      * Fits an ellipse to a given set of spatial coordinates.  The parameters passed by reference are the
      * output parameters.  The ellipse parameters are the factors of its implicit equation

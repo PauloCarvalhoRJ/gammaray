@@ -1696,12 +1696,13 @@ array inv(const array &input)
 
 std::pair<array, array> eig(const array &input)
 {
-    Eigen::MatrixXd temp = to_2d( input );
-    Eigen::SelfAdjointEigenSolver< Eigen::MatrixXd > eigensolver(temp);
-    //if (eigensolver.info() != Success) abort();
-    Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors();
-    Eigen::MatrixXd eigenvalues = eigensolver.eigenvalues();
-    return { to_array(eigenvectors), to_array(eigenvalues) };
+	Eigen::MatrixXd temp = to_2d( input );
+	Eigen::EigenSolver< Eigen::MatrixXd > eigensolver(temp);
+//	if (eigensolver.info() != Eigen::Success)
+//		abort();
+	Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors().real(); //EigenSolver yields complex matrices, even if the result are real.
+	Eigen::MatrixXd eigenvalues = eigensolver.eigenvalues().real();
+	return { to_array(eigenvectors), to_array(eigenvalues) };
 }
 
 } // namespace spectral
