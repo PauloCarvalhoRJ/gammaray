@@ -324,23 +324,35 @@ double F2(const spectral::array &originalGrid,
                                                             (bbox[1]+bbox[0])/2,
                                                             (bbox[3]+bbox[2])/2,
                                                             (bbox[5]+bbox[4])/2,
-                                                             1.0 );
-
-            // Fit ellipses to the concentric isocontours/isosurfaces.
-            vtkSmartPointer<vtkPolyData> ellipses;
-            ImageJockeyUtils::fitEllipses( poly, ellipses );
-
-			/////TODO: remove this after tests
-			q3Dv[i]->display( ellipses );
-			//////////////////////////////
+															 1.0,
+															 10 );
 
 			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );
         }
 	}
 
-	//TODO: perform skeletonization on the isocontours/isosurfaces
+	// Fit ellipses to the isocontours/isosurfaces of the varmaps.
+	std::vector< vtkSmartPointer<vtkPolyData> > geolgicalFactorsVarmapsIsosurfacesEllipses;
+	{
+		std::vector< vtkSmartPointer<vtkPolyData> >::iterator it = geolgicalFactorsVarmapsIsosurfaces.begin();
+		for( int i = 0 ; it != geolgicalFactorsVarmapsIsosurfaces.end(); ++it, ++i )
+		{
+			// Get the isocontours/isosurfaces.
+			vtkSmartPointer<vtkPolyData> isos = *it;
 
-	//TODO: evaluate skeletons' branching pattern to get a measure of "ellipticallity"
+			// Fit ellipses to them.
+			vtkSmartPointer<vtkPolyData> ellipses;
+			ImageJockeyUtils::fitEllipses( isos, ellipses );
+
+			/////TODO: remove this after tests
+			q3Dv[i]->display( ellipses );
+			//////////////////////////////
+
+			geolgicalFactorsVarmapsIsosurfacesEllipses.push_back( ellipses );
+		}
+	}
+
+	//Compute the fit error.
 
     return 0.0;
 }

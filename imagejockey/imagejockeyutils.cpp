@@ -376,7 +376,8 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
                                                     double centerX,
                                                     double centerY,
                                                     double centerZ,
-                                                    double toleranceRadius
+													double toleranceRadius,
+													int numberOfVertexesThreshold
                                                     )
 {
     // If there is no geometry, there is nothing to do.
@@ -439,7 +440,7 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
         double distance = std::sqrt( dx*dx + dy*dy + dz*dz );
 
         // Assign the line definitions if they correspond to a concentric poly line.
-        if( distance <= toleranceRadius )
+		if( distance <= toleranceRadius && vertexIdList->GetNumberOfIds() > numberOfVertexesThreshold )
             linesForResult->InsertNextCell( vertexIdList );
     }
 

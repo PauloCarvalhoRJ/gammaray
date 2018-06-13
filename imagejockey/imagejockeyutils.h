@@ -160,13 +160,15 @@ public:
 
     /** Keeps only the polyognals whose center of mass is close to the passed coordinate.
      * After the call, the smart pointer passed refers to another new vtkPolyData object without open poly lines.
+	 * @parameter numberOfVertexesThreshold The minimum number of vertexes for a polyine to be acceptable.
+	 *                                      Setting zero causes no rejection.
      */
-    static void removeNonConcentricPolyLines( vtkSmartPointer<vtkPolyData>& polyDataToModify,
-                                              double centerX,
-                                              double centerY,
-                                              double centerZ,
-                                              double toleranceRadius
-                                              );
+	static void removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>& polyDataToModify,
+											  double centerX,
+											  double centerY,
+											  double centerZ,
+											  double toleranceRadius,
+											  int numberOfVertexesThreshold = 0);
 
     /** Fits ellipses to each poly line in the input poly data.  The ellipses are stored
      * in another poly data object to be referenced in passed VTK smart pointer.
