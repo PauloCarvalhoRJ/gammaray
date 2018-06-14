@@ -172,9 +172,13 @@ public:
 
     /** Fits ellipses to each poly line in the input poly data.  The ellipses are stored
      * in another poly data object to be referenced in passed VTK smart pointer.
-     */
-    static void fitEllipses( const vtkSmartPointer<vtkPolyData>& polyData,
-                             vtkSmartPointer<vtkPolyData>& ellipses );
+	 * @param mean_error Filled with the mean fitness error of all ellipses.
+	 * @param max_error Filled with the largest fitness error of all ellipses.
+	 * @param sum_error Filled with the sum of fitness errors of all ellipses.
+	 */
+	static void fitEllipses(const vtkSmartPointer<vtkPolyData>& polyData,
+							vtkSmartPointer<vtkPolyData>& ellipses ,
+							double & mean_error, double & max_error, double & sum_error);
 
     /**
      * Computes the ellipse parameters from the factors of the ellipse implicit equation in the form
@@ -208,10 +212,11 @@ public:
      * This function uses the direct least squares method proposed by Fitzgibbon et al (1996), which yields
      * the fitted ellipse in a single step (non-iterative) and assures an ellipse quadric
      * (e.g. not hyperbola, parabola, etc.) for bad data.
+	 * The fitness error (normalized) is also returned.
      */
-    static void ellipseFit( const spectral::array& aX,
-                            const spectral::array& aY,
-                            double& A, double& B, double& C, double& D, double& E, double& F );
+	static void ellipseFit(const spectral::array& aX,
+							const spectral::array& aY,
+							double& A, double& B, double& C, double& D, double& E, double& F, double & fitnessError);
 };
 
 #endif // IMAGEJOCKEYUTILS_H

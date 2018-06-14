@@ -19,6 +19,8 @@
 #include <limits>
 #include <mutex>
 #include <vtkPolyData.h>
+#include <vtkDelaunay2D.h>
+#include <vtkCleanPolyData.h>
 
 std::mutex mutexObjectiveFunction;
 
@@ -326,12 +328,17 @@ double F2(const spectral::array &originalGrid,
                                                             (bbox[5]+bbox[4])/2,
 															 1.0,
 															 10 );
+			/////TODO: remove this after tests
+			q3Dv[i]->clearScene();
+			q3Dv[i]->display( poly, 0, 255, 255 );
+			//////////////////////////////
 
 			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );
         }
 	}
 
-	// Fit ellipses to the isocontours/isosurfaces of the varmaps.
+	// Fit ellipses to the isocontours/isosurfaces of the varmaps, computing the fitting error.
+	double objectiveFunctionValue = 0.0;
 	std::vector< vtkSmartPointer<vtkPolyData> > geolgicalFactorsVarmapsIsosurfacesEllipses;
 	{
 		std::vector< vtkSmartPointer<vtkPolyData> >::iterator it = geolgicalFactorsVarmapsIsosurfaces.begin();
@@ -342,19 +349,19 @@ double F2(const spectral::array &originalGrid,
 
 			// Fit ellipses to them.
 			vtkSmartPointer<vtkPolyData> ellipses;
-			ImageJockeyUtils::fitEllipses( isos, ellipses );
+			double max_error, mean_error, sum_error;
+			ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error );
+			objectiveFunctionValue += mean_error;
 
 			/////TODO: remove this after tests
-			q3Dv[i]->display( ellipses );
+			q3Dv[i]->display( ellipses, 255, 0, 0 );
 			//////////////////////////////
 
 			geolgicalFactorsVarmapsIsosurfacesEllipses.push_back( ellipses );
 		}
 	}
 
-	//Compute the fit error.
-
-    return 0.0;
+	return objectiveFunctionValue;
 }
 
 /**

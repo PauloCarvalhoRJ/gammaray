@@ -457,7 +457,10 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
 }
 
 void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
-                                   vtkSmartPointer<vtkPolyData> &ellipses)
+								   vtkSmartPointer<vtkPolyData> &ellipses,
+								   double &mean_error,
+								   double &max_error,
+								   double &sum_error)
 {
     // If there is no geometry, there is nothing to do.
     if ( polyData->GetNumberOfPoints() == 0 )
@@ -468,11 +471,12 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 
     // Prepare the result poly data.
     vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
-	result->DeepCopy( polyData );
 
     // Traverse the input poly lines.
     in_Lines->InitTraversal();
     vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+	sum_error = 0.0;
+	max_error = 0.0;
     while( in_Lines->GetNextCell( vertexIdList ) ){
 
         // Collect the X and Y vertex coordinates of a poly line
@@ -489,7 +493,10 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 
         // Fit the ellipse (find the A...F factors of its implicit equation).
         double A, B, C, D, E, F;
-        ImageJockeyUtils::ellipseFit( aX, aY, A, B, C, D, E, F );
+		double error;
+		ImageJockeyUtils::ellipseFit( aX, aY, A, B, C, D, E, F, error );
+		sum_error += error;
+		max_error = std::max( max_error, error );
 
         // Find the geometric parameters of the ellipse.
         double semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY;
@@ -517,6 +524,9 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
         //result = result + ellipse.
         result = appendFilter->GetOutput();
     }
+
+	if( in_Lines->GetNumberOfCells() > 0 )
+		mean_error = sum_error / in_Lines->GetNumberOfCells();
 
     // Return the result poly data.
     ellipses = result;
@@ -578,7 +588,8 @@ void ImageJockeyUtils::getEllipseParametersFromImplicit2(double A, double B, dou
 }
 
 void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::array &aY,
-                                  double &A, double &B, double &C, double &D, double &E, double &F)
+								  double &A, double &B, double &C, double &D, double &E, double &F,
+								  double& fitnessError )
 {
     spectral::array aXX = spectral::hadamard( aX, aX ); //Hadamard product == element-wise product.
     spectral::array aXY = spectral::hadamard( aX, aY );
@@ -620,4 +631,18 @@ void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::arr
     D = eigenvectors( 3, PosC );
     E = eigenvectors( 4, PosC );
     F = eigenvectors( 5, PosC );
+
+	// ============ Paper's agorithm ends here. ===============
+
+	// ============= Commencing fitness error computation. ============
+
+	// Create the a vector-column with the A...F factors.
+	spectral::array a( (spectral::index)6, (double)0.0 );
+	a(0) = A; a(1) = B; a(2) = C; a(3) = D; a(4) = E; a(5) = F;
+
+	// Acoording to the paper, the objective is to minimize ||Da||^2, that is, the fitness error.
+	// D in the paper is the design matrix, or aDesign in this code.
+	spectral::array Da = aDesign * a;
+	Da = Da / Da.euclideanLength(); //normalize the Da vector to remove scale effect (error would be proportional to the size of the fitted ellipse).
+	fitnessError = Da(0)*Da(0) + Da(1)*Da(1) + Da(2)*Da(2) + Da(3)*Da(3) + Da(4)*Da(4) + Da(5)*Da(5);
 }
