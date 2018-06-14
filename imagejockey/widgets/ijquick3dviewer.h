@@ -27,9 +27,14 @@ public:
     explicit IJQuick3DViewer( QWidget *parent = 0 );
     ~IJQuick3DViewer();
 
-	void display(vtkPolyData* polyData);
+	/** Renders the given polytopes with the given color expressed as RGB values. */
+	void display( vtkPolyData* polyData, int r=255, int g=255, int b=255 );
 
-	void display(vtkImageData* imageData, double colorScaleMin, double colorScaleMax);
+	/** Renders the regular grid.  Its values are mapped to a grayscale set between given values. */
+	void display( vtkImageData* imageData, double colorScaleMin, double colorScaleMax );
+
+	/** Removes the actor(s) currently being displayed (if any). */
+	void clearScene();
 
 private:
 	Ui::IJQuick3DViewer *ui;
@@ -43,11 +48,9 @@ private:
 	// out of scope
 	vtkSmartPointer<vtkOrientationMarkerWidget> _vtkAxesWidget;
 
-	// Points to the object being viewed (if any) so it is removed in the next call to display().
-	vtkSmartPointer<vtkActor> _currentActor;
+	// List of pointers to the objects being viewed (if any).
+	std::vector< vtkSmartPointer<vtkActor> > _currentActors;
 
-	/** Removes the actor currently being displayed (if any). */
-	void clearScene();
 
 private slots:
 	void onDismiss();

@@ -88,19 +88,17 @@ vtkSmartPointer<vtkLookupTable> makeGrayScaleColorTable(double min, double max)
 }
 
 
-void IJQuick3DViewer::display( vtkPolyData* polyData )
+void IJQuick3DViewer::display(vtkPolyData* polyData , int r, int g, int b)
 {
-	clearScene();
-
 	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapper->SetInputData( polyData );
 
 	vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper( mapper );
-	actor->GetProperty()->SetColor(0, 255, 255);
+	actor->GetProperty()->SetColor(r, g, b);
 
 	_renderer->AddActor(actor);
-	_currentActor = actor;
+	_currentActors.push_back( actor );
 
 	//===========VTK TEST CODE==========================================
 //		vtkSmartPointer<vtkSphereSource> sphereSource =
@@ -139,7 +137,7 @@ void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, do
 	actor->SetMapper( mapper );
 
 	_renderer->AddActor(actor);
-	_currentActor = actor;
+	_currentActors.push_back( actor );
 
 	_renderer->ResetCamera();
 
@@ -148,11 +146,11 @@ void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, do
 
 void IJQuick3DViewer::clearScene()
 {
-	if( _currentActor.GetPointer() ){
-		_renderer->RemoveActor( _currentActor );
-		_currentActor = nullptr;
+	std::vector< vtkSmartPointer<vtkActor> >::iterator it = _currentActors.begin();
+	for( ; it != _currentActors.end(); ){ // erase() already increments the iteator.
+		_renderer->RemoveActor( *it );
+		it = _currentActors.erase( it );
 	}
-
 }
 
 void IJQuick3DViewer::onDismiss()
