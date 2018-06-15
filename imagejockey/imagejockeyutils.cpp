@@ -475,7 +475,7 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
             aY( iVertex ) = vertex[1];
         }
 
-        // Fit the ellipse (find the A...F factors of its implicit equation).
+		// Fit the ellipse (find the A...F factors of its implicit equation).
         double A, B, C, D, E, F;
 		double error;
 		ImageJockeyUtils::ellipseFit( aX, aY, A, B, C, D, E, F, error );
@@ -487,7 +487,7 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 		ImageJockeyUtils::getEllipseParametersFromImplicit2( A, B, C, D, E, F,
                                                             semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY );
 
-        // Make the ellipse poly.
+		// Make the ellipse poly generator.
         vtkSmartPointer< vtkEllipseArcSource > ellipseSource = vtkSmartPointer< vtkEllipseArcSource >::New();
         ellipseSource->SetCenter( centerX, centerY, 0 );
         ellipseSource->SetNormal( 0, 0, 1 );
@@ -497,12 +497,11 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
         ellipseSource->SetSegmentAngle( 360 );
         ellipseSource->SetRatio( semiMinorAxis / semiMajorAxis );
         ellipseSource->Update();
-        vtkSmartPointer< vtkPolyData > ellipse = ellipseSource->GetOutput();
 
-        // Append the ellipse poly data to the result poly data.
+		// Append the ellipse poly data (output of an algorithm) to the result poly data.
         vtkSmartPointer< vtkAppendPolyData > appendFilter = vtkSmartPointer< vtkAppendPolyData >::New();
         appendFilter->AddInputData( result );
-        appendFilter->AddInputData( ellipse );
+		appendFilter->AddInputConnection( ellipseSource->GetOutputPort() );
         appendFilter->Update();
 
         //result = result + ellipse.
