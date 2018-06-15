@@ -193,18 +193,20 @@ double F2(const spectral::array &originalGrid,
          const bool addSparsityPenalty,
          const bool addOrthogonalityPenalty)
 {
+	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
+
 	///TODO: remove this after tests/////////////
+	lck.lock();
 	static IJQuick3DViewer* q3Dv[50];
 	static bool inited = false;
-	for( int i = 0; i < m && !inited; ++i){
-		q3Dv[i] = new IJQuick3DViewer();
+	for( int i = 0; i < m; ++i){
+		if( ! inited )
+			q3Dv[i] = new IJQuick3DViewer();
 		q3Dv[i]->show();
 	}
 	inited = true;
+	lck.unlock();
 	/////////////////////////////////////////////
-
-
-	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
 
 	int nI = originalGrid.M();
     int nJ = originalGrid.N();
@@ -223,14 +225,14 @@ double F2(const spectral::array &originalGrid,
         va = spectral::to_array( eigenva );
     }
 
-    //Compute the sparsity of the solution matrix
-    double sparsityPenalty = 1.0;
+	//Compute the sparsity of the solution matrix
+	double sparsityPenalty = 1000.0;
     if( addSparsityPenalty ){
         int nNonZeros = va.size();
         for (int i = 0; i < va.size(); ++i )
-            if( std::abs(va.d_[i]) < 0.001  )
+			if( std::abs(va.d_[i]) < 0.3  )
                 --nNonZeros;
-        sparsityPenalty = nNonZeros/(double)va.size();
+		sparsityPenalty = nNonZeros/(double)va.size() * 1000.0;
     }
 
 	//Make the m geological factors (data decomposed into grids with features with different spatial correlation)
@@ -309,29 +311,34 @@ double F2(const spectral::array &originalGrid,
             // Get the geological factor's varmap with h=0 in the center of the grid.
 			spectral::array geologicalFactorVarmapShifted = spectral::shiftByHalf( geologicalFactorVarmap );
             // Get the isocontour/isosurface.
-			vtkSmartPointer<vtkPolyData> poly = ImageJockeyUtils::computeIsosurfaces( geologicalFactorVarmapShifted,
-																					  20,
-																					  geologicalFactorVarmapShifted.min(),
-																					  geologicalFactorVarmapShifted.max() );
-            // Get the isomap's bounding box.
-            double bbox[6];
-            poly->GetBounds( bbox );
+			lck.lock(); // not all VTK algorithms are thread-safe, so put all VTK-using code in a critical zone just in case.
+			vtkSmartPointer<vtkPolyData> poly;
+			{
+				poly = ImageJockeyUtils::computeIsosurfaces( geologicalFactorVarmapShifted,
+															 20,
+															 geologicalFactorVarmapShifted.min(),
+															 geologicalFactorVarmapShifted.max() );
+				// Get the isomap's bounding box.
+				double bbox[6];
+				poly->GetBounds( bbox );
 
-            // Remove open isocontours/isosurfaces.
-            //TODO: currently ineffective with 3D models (isosurfaces)
-			ImageJockeyUtils::removeOpenPolyLines( poly );
+				// Remove open isocontours/isosurfaces.
+				//TODO: currently ineffective with 3D models (isosurfaces)
+				ImageJockeyUtils::removeOpenPolyLines( poly );
 
-            // Remove the non-concentric iscontours/isosurfaces.
-            ImageJockeyUtils::removeNonConcentricPolyLines( poly,
-                                                            (bbox[1]+bbox[0])/2,
-                                                            (bbox[3]+bbox[2])/2,
-                                                            (bbox[5]+bbox[4])/2,
-															 1.0,
-															 10 );
-			/////TODO: remove this after tests
-			q3Dv[i]->clearScene();
-			q3Dv[i]->display( poly, 0, 255, 255 );
-			//////////////////////////////
+				// Remove the non-concentric iscontours/isosurfaces.
+				ImageJockeyUtils::removeNonConcentricPolyLines( poly,
+																(bbox[1]+bbox[0])/2,
+																(bbox[3]+bbox[2])/2,
+																(bbox[5]+bbox[4])/2,
+																 1.0,
+																 25 );
+				/////TODO: remove this after tests
+				q3Dv[i]->clearScene();
+				q3Dv[i]->display( poly, 0, 255, 255 );
+				//////////////////////////////
+			}
+			lck.unlock();
 
 			geolgicalFactorsVarmapsIsosurfaces.push_back( poly );
         }
@@ -339,7 +346,6 @@ double F2(const spectral::array &originalGrid,
 
 	// Fit ellipses to the isocontours/isosurfaces of the varmaps, computing the fitting error.
 	double objectiveFunctionValue = 0.0;
-	std::vector< vtkSmartPointer<vtkPolyData> > geolgicalFactorsVarmapsIsosurfacesEllipses;
 	{
 		std::vector< vtkSmartPointer<vtkPolyData> >::iterator it = geolgicalFactorsVarmapsIsosurfaces.begin();
 		for( int i = 0 ; it != geolgicalFactorsVarmapsIsosurfaces.end(); ++it, ++i )
@@ -348,24 +354,25 @@ double F2(const spectral::array &originalGrid,
 			vtkSmartPointer<vtkPolyData> isos = *it;
 
 			// Fit ellipses to them.
-			vtkSmartPointer<vtkPolyData> ellipses;
-			double max_error, mean_error, sum_error;
-			ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error );
-			objectiveFunctionValue += mean_error;
-
-			/////TODO: remove this after tests
-			q3Dv[i]->display( ellipses, 255, 0, 0 );
-			//////////////////////////////
-
-			geolgicalFactorsVarmapsIsosurfacesEllipses.push_back( ellipses );
+			lck.lock(); // not all VTK algorithms are thread-safe, so put all VTK-using code in a critical zone just in case.
+			{
+				vtkSmartPointer<vtkPolyData> ellipses;
+				double max_error, mean_error, sum_error;
+				ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error );
+				objectiveFunctionValue += mean_error;
+				/////TODO: remove this after tests
+				q3Dv[i]->display( ellipses, 255, 0, 0 );
+				//////////////////////////////
+			}
+			lck.unlock();
 		}
 	}
 
-	return objectiveFunctionValue;
+	return objectiveFunctionValue * sparsityPenalty;
 }
 
 /**
- * The code for multithreaded gradient vector calculation.
+ * The code for multithreaded gradient vector calculation for objective function F().
  */
 void taskOnePartialDerivative(
 							   const spectral::array& vw,
@@ -400,6 +407,43 @@ void taskOnePartialDerivative(
 								   ( 2 * epsilon );
 	}
 }
+
+/**
+ * The code for multithreaded gradient vector calculation for objective function F2().
+ */
+void taskOnePartialDerivative2(
+							   const spectral::array& vw,
+							   const std::vector< int >& parameterIndexBin,
+							   const double epsilon,
+							   const spectral::array* gridData,
+							   const spectral::array& A,
+							   const spectral::array& Adagger,
+							   const spectral::array& B,
+							   const spectral::array& I,
+							   const int m,
+							   const std::vector< spectral::array >& svdFactors,
+							   const bool addSparsityPenalty,
+							   const bool addOrthogonalityPenalty,
+							   spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
+							   ){
+	std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
+	for(; it != parameterIndexBin.cend(); ++it ){
+		int iParameter = *it;
+		//Make a set of parameters slightly shifted to the right (more positive) along one parameter.
+		spectral::array vwFromRight( vw );
+		vwFromRight(iParameter) = vwFromRight(iParameter) + epsilon;
+		//Make a set of parameters slightly shifted to the left (more negative) along one parameter.
+		spectral::array vwFromLeft( vw );
+		vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
+		//Compute (numerically) the partial derivative with respect to one parameter.
+		(*gradient)(iParameter) = (F2( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty )
+									 -
+								   F2( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty ))
+									 /
+								   ( 2 * epsilon );
+	}
+}
+
 
 
 VariographicDecompositionDialog::VariographicDecompositionDialog(const std::vector<IJAbstractCartesianGrid *> &&grids, QWidget *parent) :
@@ -1294,7 +1338,7 @@ void VariographicDecompositionDialog::doVariographicDecompositionSVDonData()
                 break;
             //Randomly searches for a neighboring state with respect to current state.
             spectral::array L_wNew(L_wCurrent);
-            for( int i = 0; i < i_nPar; ++i ){ //for each parameter
+			for( int i = 0; i < i_nPar; ++i ){ //for each parameter
                //Ensures that the values randomly obtained are inside the domain.
                double f_tmp = 0.0;
                while( true ){
@@ -1306,7 +1350,7 @@ void VariographicDecompositionDialog::doVariographicDecompositionSVDonData()
                }
                //Updates the parameter value.
                L_wNew[i] = f_tmp;
-            }
+			}
             //Computes the “energy” of the current state (set of parameters).
             //The “energy” in this case is how different the image as given the parameters is with respect
             //the data grid, considered the reference image.
@@ -1337,6 +1381,169 @@ void VariographicDecompositionDialog::doVariographicDecompositionSVDonData()
         vw = L_wOfLowestEnergyFound;
         emit info( "Using the state of lowest energy found (" + QString::number( f_lowestEnergyFound ) + ")" );
 	}
+
+	//---------------------------------------------------------------------------------------------------------
+	//--------------------------------------OPTIMIZATION LOOP (GRADIENT DESCENT)-------------------------------
+	//---------------------------------------------------------------------------------------------------------
+	unsigned int nThreads = ui->spinNumberOfThreads->value();
+	QProgressDialog progressDialog;
+	progressDialog.setRange(0,0);
+	progressDialog.show();
+	progressDialog.setLabelText("Gradient Descent in progress...");
+	int iOptStep = 0;
+	spectral::array va;
+	for( ; iOptStep < maxNumberOfOptimizationSteps; ++iOptStep ){
+
+		emit info( "Commencing GD step #" + QString::number( iOptStep ) );
+
+		QCoreApplication::processEvents();
+
+		//Compute the vector of weights [a] = Adagger.B + (I-Adagger.A)[w] (see program manual for theory)
+		{
+			Eigen::MatrixXd eigenAdagger = spectral::to_2d( Adagger );
+			Eigen::MatrixXd eigenB = spectral::to_2d( B );
+			Eigen::MatrixXd eigenI = spectral::to_2d( I );
+			Eigen::MatrixXd eigenA = spectral::to_2d( A );
+			Eigen::MatrixXd eigenvw = spectral::to_2d( vw );
+			Eigen::MatrixXd eigenva = eigenAdagger * eigenB + ( eigenI - eigenAdagger * eigenA ) * eigenvw;
+			va = spectral::to_array( eigenva );
+		}
+
+		{
+			spectral::array debug_va( va );
+			debug_va.set_size( (spectral::index)n, (spectral::index)m );
+		}
+
+		//Compute the gradient vector of objective function F with the current [w] parameters.
+		spectral::array gradient( vw.size() );
+		{
+			spectral::array *gridData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+
+			//distribute the parameter indexes among the n-threads
+			std::vector<int> parameterIndexBins[nThreads];
+			int parameterIndex = 0;
+			for( unsigned int iThread = 0; parameterIndex < vw.size(); ++parameterIndex, ++iThread)
+				parameterIndexBins[ iThread % nThreads ].push_back( parameterIndex );
+
+			//create and run the partial derivative calculation threads
+			std::thread threads[nThreads];
+			for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
+				threads[iThread] = std::thread( taskOnePartialDerivative2,
+												vw,
+												parameterIndexBins[iThread],
+												epsilon,
+												gridData,
+												A,
+												Adagger,
+												B,
+												I,
+												m,
+												svdFactors,
+												addSparsityPenalty,
+												addOrthogonalityPenalty,
+												&gradient);
+			}
+
+			//wait for the threads to finish.
+			for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+				threads[iThread].join();
+
+			delete gridData;
+		}
+
+		//Update the system's parameters according to gradient descent.
+		double currentF = 999.0;
+		double nextF = 1.0;
+		{
+			spectral::array *gridData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+			double alpha = initialAlpha;
+			//halves alpha until we get a descent (current gradient vector may result in overshooting)
+			int iAlphaReductionStep = 0;
+			for( ; iAlphaReductionStep < maxNumberOfAlphaReductionSteps; ++iAlphaReductionStep ){
+				spectral::array new_vw = vw - gradient * alpha;
+				//Impose domain constraints to the parameters.
+				for( int i = 0; i < new_vw.size(); ++i){
+					if( new_vw.d_[i] < 0.0 )
+						new_vw.d_[i] = 0.0;
+					if( new_vw.d_[i] > 1.0 )
+						new_vw.d_[i] = 1.0;
+				}
+				currentF = F2( *gridData, vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty );
+				nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty );
+				if( nextF < currentF ){
+					vw = new_vw;
+					break;
+				}
+				alpha /= 2.0;
+			}
+			if( iAlphaReductionStep == maxNumberOfAlphaReductionSteps )
+				emit warning( "WARNING: reached maximum alpha reduction steps." );
+			delete gridData;
+		}
+
+		//Check the convergence criterion.
+		double ratio = currentF / nextF;
+		if( ratio  < (1.0 + convergenceCriterion) )
+			break;
+
+		emit info( "F2(k)/F2(k+1) ratio: " + QString::number( ratio ) );
+
+	}
+	progressDialog.hide();
+
+	//-------------------------------------------------------------------------------------------------
+	//------------------------------------PRESENT THE RESULTS------------------------------------------
+	//-------------------------------------------------------------------------------------------------
+
+	if( iOptStep == maxNumberOfOptimizationSteps )
+		QMessageBox::warning( this, "Warning", "Completed by reaching maximum number of optimization steps. Check results.");
+	else
+		QMessageBox::information( this, "Info", "Completed by satisfaction of convergence criterion.");
+
+	std::vector< spectral::array > grids;
+	std::vector< std::string > titles;
+	std::vector< bool > shiftByHalves;
+
+	spectral::array derivedGrid( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+	{
+		//Make the m geological factors (expected maps with different variographic structures)
+		std::vector< spectral::array > geologicalFactors;
+		{
+			QProgressDialog progressDialog;
+			progressDialog.setRange(0,0);
+			progressDialog.show();
+			progressDialog.setLabelText("Making the geological factors...");
+			for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
+				spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
+				for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
+					QCoreApplication::processEvents();
+					double weight = va.d_[ iGeoFactor * m + iSVDFactor ];
+					geologicalFactor += svdFactors[iSVDFactor] * weight;
+				}
+				geologicalFactors.push_back( std::move( geologicalFactor ) );
+			}
+		}
+
+		//Change the weights m*n vector to a n by m matrix for displaying (fundamental factors as columns and geological factors as lines)
+		va.set_size( (spectral::index)n, (spectral::index)m );
+		displayGrids( {va}, {"parameters"}, {false} );
+
+		//Collect the geological factors (expected maps with different variographic structures)
+		//as separate grids for display.
+		std::vector< spectral::array >::iterator it = geologicalFactors.begin();
+		for( int iGeoFactor = 0; it != geologicalFactors.end(); ++it, ++iGeoFactor ){
+			spectral::array rfftResult( *it );
+			//Collect the grids.
+			QString title = QString("Factor #") + QString::number(iGeoFactor+1);
+			titles.push_back( title.toStdString() );
+			grids.push_back( std::move( rfftResult ) );
+			shiftByHalves.push_back( false );
+		}
+	}
+
+	//Display the derived grid and its difference with respect to the original grid.
+	//Also display the geological factors and their resulting partial grids.
+	displayGrids( grids, titles, shiftByHalves );
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)

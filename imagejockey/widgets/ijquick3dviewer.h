@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <vtkSmartPointer.h>
+#include <thread>
 
 namespace Ui {
 class IJQuick3DViewer;
@@ -51,6 +52,14 @@ private:
 	// List of pointers to the objects being viewed (if any).
 	std::vector< vtkSmartPointer<vtkActor> > _currentActors;
 
+	// The id of the thread that created the 3D viewer.
+	// This prevents call to the display() methods from other threads from causing a crash.
+	std::thread::id _ownerThreadId;
+
+	/** Prevents OpenGL calls from different threads, which lead to crashes.
+	 * This must be checked in all methods that result in rendering operations.
+	 */
+	bool threadCheck();
 
 private slots:
 	void onDismiss();

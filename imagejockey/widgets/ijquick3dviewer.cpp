@@ -26,6 +26,8 @@ IJQuick3DViewer::IJQuick3DViewer( QWidget *parent ) :
     QWidget(parent),
     ui(new Ui::IJQuick3DViewer)
 {
+	_ownerThreadId = std::this_thread::get_id();
+
     ui->setupUi(this);
 
 	this->setWindowTitle("Quick 3D Viewer");
@@ -90,6 +92,9 @@ vtkSmartPointer<vtkLookupTable> makeGrayScaleColorTable(double min, double max)
 
 void IJQuick3DViewer::display(vtkPolyData* polyData , int r, int g, int b)
 {
+	if (! threadCheck() )
+		return;
+
 	vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 	mapper->SetInputData( polyData );
 
@@ -120,6 +125,9 @@ void IJQuick3DViewer::display(vtkPolyData* polyData , int r, int g, int b)
 
 void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, double colorScaleMax )
 {
+	if (! threadCheck() )
+		return;
+
 	clearScene();
 
 	vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
@@ -146,11 +154,20 @@ void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, do
 
 void IJQuick3DViewer::clearScene()
 {
+	if (! threadCheck() )
+		return;
+
 	std::vector< vtkSmartPointer<vtkActor> >::iterator it = _currentActors.begin();
 	for( ; it != _currentActors.end(); ){ // erase() already increments the iteator.
 		_renderer->RemoveActor( *it );
 		it = _currentActors.erase( it );
 	}
+}
+
+bool IJQuick3DViewer::threadCheck()
+{
+	std::thread::id callingThreadId = std::this_thread::get_id();
+	return callingThreadId == _ownerThreadId;
 }
 
 void IJQuick3DViewer::onDismiss()
