@@ -386,7 +386,9 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
 
     // Get poly lines.
     // TODO: for surfaces (3D), it is necessary to call vtkPolyData::GetPolys().
-    vtkSmartPointer<vtkCellArray> in_Lines = polyDataToModify->GetLines();
+	vtkSmartPointer<vtkCellArray> in_Lines = vtkSmartPointer<vtkCellArray>::New();
+	in_Lines->Allocate( polyDataToModify->GetNumberOfLines() );
+	in_Lines->SetCells( polyDataToModify->GetNumberOfLines(), polyDataToModify->GetLines()->GetData() );
 
     // Prepare the resulting poly data.
     vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
@@ -394,44 +396,26 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
     // Initially set all the points in the result.
     result->SetPoints( polyDataToModify->GetPoints() );
 
-    // Prepare a container of line definitions for the result.
+	// Prepare a container of line definitions for the result.
     vtkSmartPointer<vtkCellArray> linesForResult = vtkSmartPointer<vtkCellArray>::New();
 
-    // Make a temporary poly data object to use the vtkCenterOfMass algorithm.
-    vtkSmartPointer<vtkPolyData> tmpPolyData = vtkSmartPointer<vtkPolyData>::New();
-
-    // Prepare a container of line definitions.
-    vtkSmartPointer<vtkCellArray> lines = vtkSmartPointer<vtkCellArray>::New();
-
     // Traverse the input poly lines.
-    // TODO: this loop is a performance bottleneck.
     in_Lines->InitTraversal();
     vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
-    while( in_Lines->GetNextCell( vertexIdList ) ){
-        // Set the container of line definitions to an empty state.
-        lines->Initialize();
+	double vertexCoords[3];
+	while( in_Lines->GetNextCell( vertexIdList ) ){
 
-        // Set the vertexes of the temporary poly data with the same vertexes of the input poly data.
-        tmpPolyData->SetPoints( polyDataToModify->GetPoints() );
-
-        // Adds the list of vertexes defining an individual input line to the temporary container.
-        lines->InsertNextCell( vertexIdList );
-
-        // Assign the line definition to the temporary poly data.
-        tmpPolyData->SetLines( lines );
-
-        // Discard the unused vertexes.
-        vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
-        cleaner->SetInputData( tmpPolyData );
-        cleaner->Update();
-
-        // Compute the center of mass.
-        vtkSmartPointer<vtkCenterOfMass> centerOfMassFilter = vtkSmartPointer<vtkCenterOfMass>::New();
-        centerOfMassFilter->SetInputConnection( cleaner->GetOutputPort() );
-        centerOfMassFilter->SetUseScalarsAsWeights(false);
-        centerOfMassFilter->Update();
-        double center[3];
-        centerOfMassFilter->GetCenter(center);
+		// Compute the center of the poly line
+		double center[3] = {0.0, 0.0, 0.0};
+		for( int idVertex = 0; idVertex < vertexIdList->GetNumberOfIds(); ++idVertex ){
+			polyDataToModify->GetPoint( vertexIdList->GetId( idVertex ), vertexCoords );
+			center[0] += vertexCoords[0];
+			center[1] += vertexCoords[1];
+			center[2] += vertexCoords[2];
+		}
+		center[0] /= vertexIdList->GetNumberOfIds();
+		center[1] /= vertexIdList->GetNumberOfIds();
+		center[2] /= vertexIdList->GetNumberOfIds();
 
         // Compute the distance to the point considered as "the" center.
         double dx = centerX - center[0];
