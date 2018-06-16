@@ -444,7 +444,9 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 								   vtkSmartPointer<vtkPolyData> &ellipses,
 								   double &mean_error,
 								   double &max_error,
-								   double &sum_error)
+                                   double &sum_error,
+                                   double &angle_variance,
+                                   double &ratio_variance)
 {
     // If there is no geometry, there is nothing to do.
     if ( polyData->GetNumberOfPoints() == 0 )
@@ -461,6 +463,8 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
     vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
 	sum_error = 0.0;
 	max_error = 0.0;
+    std::vector< double > angles; //collects ellipse orientations.
+    std::vector< double> ratios; //collects ellipse axes ratios.
     while( in_Lines->GetNextCell( vertexIdList ) ){
 
         // Collect the X and Y vertex coordinates of a poly line
@@ -478,7 +482,7 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 		// Fit the ellipse (find the A...F factors of its implicit equation).
         double A, B, C, D, E, F;
 		double error;
-		ImageJockeyUtils::ellipseFit( aX, aY, A, B, C, D, E, F, error );
+        ImageJockeyUtils::ellipseFit( aX, aY, A, B, C, D, E, F, error );
 		sum_error += error;
 		max_error = std::max( max_error, error );
 
@@ -486,6 +490,10 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
         double semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY;
 		ImageJockeyUtils::getEllipseParametersFromImplicit2( A, B, C, D, E, F,
                                                             semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY );
+
+        // Collect ellipse data for ellipse stats.
+        angles.push_back( rotationAngle );
+        ratios.push_back( semiMinorAxis / semiMajorAxis );
 
 		// Make the ellipse poly generator.
         vtkSmartPointer< vtkEllipseArcSource > ellipseSource = vtkSmartPointer< vtkEllipseArcSource >::New();
@@ -513,6 +521,10 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 
     // Return the result poly data.
     ellipses = result;
+
+    // Return the stats.
+    angle_variance = getVariance( angles );
+    ratio_variance = getVariance( ratios );
 }
 
 void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, double C, double D, double E, double F,

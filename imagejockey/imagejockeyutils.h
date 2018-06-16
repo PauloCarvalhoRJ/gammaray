@@ -6,6 +6,10 @@
 #include <QString>
 #include <QPointF>
 #include <vtkSmartPointer.h>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <numeric>
 #include "ijmatrix3x3.h"
 
 class IJSpatialLocation;
@@ -175,10 +179,13 @@ public:
 	 * @param mean_error Filled with the mean fitness error of all ellipses.
 	 * @param max_error Filled with the largest fitness error of all ellipses.
 	 * @param sum_error Filled with the sum of fitness errors of all ellipses.
+     * @param angle_variance Filled with the variance of the ellipses' angles.
+     * @param ratio_variance Filled with the variance of the ellipses' semi-axes ratios.
 	 */
-	static void fitEllipses(const vtkSmartPointer<vtkPolyData>& polyData,
-							vtkSmartPointer<vtkPolyData>& ellipses ,
-							double & mean_error, double & max_error, double & sum_error);
+    static void fitEllipses(const vtkSmartPointer<vtkPolyData>& polyData,
+                            vtkSmartPointer<vtkPolyData>& ellipses ,
+                            double &mean_error, double &max_error, double &sum_error,
+                            double &angle_variance, double &ratio_variance);
 
     /**
      * Computes the ellipse parameters from the factors of the ellipse implicit equation in the form
@@ -217,6 +224,22 @@ public:
 	static void ellipseFit(const spectral::array& aX,
 							const spectral::array& aY,
 							double& A, double& B, double& C, double& D, double& E, double& F, double & fitnessError);
+
+    /**
+     * Computes the variance of a collection of values.
+     */
+    template <class T>
+    static double getVariance( const std::vector<T>& values ){
+        double total = 0.0;
+        for (auto& value : values)
+            total += value;
+        double mean = total / std::accumulate( values.begin(), values.end(), 0.0 );
+        std::vector<T> diff( values.size() );
+        std::transform( values.begin(), values.end(), diff.begin(), [mean](T x) { return x - mean; });
+        double squaredSum = std::inner_product( diff.begin(), diff.end(), diff.begin(), 0.0 );
+        double stdev = std::sqrt(squaredSum / (double)values.size());
+        return stdev * stdev;
+    }
 };
 
 #endif // IMAGEJOCKEYUTILS_H

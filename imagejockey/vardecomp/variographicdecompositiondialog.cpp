@@ -334,7 +334,7 @@ double F2(const spectral::array &originalGrid,
 																(bbox[3]+bbox[2])/2,
 																(bbox[5]+bbox[4])/2,
 																 1.0,
-																 25 );
+                                                                 15 );
 				/////TODO: remove this after tests
 				q3Dv[i]->clearScene();
 				q3Dv[i]->display( poly, 0, 255, 255 );
@@ -348,7 +348,10 @@ double F2(const spectral::array &originalGrid,
 
 	// Fit ellipses to the isocontours/isosurfaces of the varmaps, computing the fitting error.
 	double objectiveFunctionValue = 0.0;
+    double angle_variance_mean = 0.0;
+    double ratio_variance_mean = 0.0;
 	{
+        // For each geological factor.
 		std::vector< vtkSmartPointer<vtkPolyData> >::iterator it = geolgicalFactorsVarmapsIsosurfaces.begin();
 		for( int i = 0 ; it != geolgicalFactorsVarmapsIsosurfaces.end(); ++it, ++i )
 		{
@@ -360,8 +363,11 @@ double F2(const spectral::array &originalGrid,
 			{
 				vtkSmartPointer<vtkPolyData> ellipses;
 				double max_error, mean_error, sum_error;
-				ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error );
+                double angle_variance, ratio_variance;
+                ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error, angle_variance, ratio_variance );
 				objectiveFunctionValue += mean_error;
+                angle_variance_mean += angle_variance;
+                ratio_variance_mean += ratio_variance;
 				/////TODO: remove this after tests
 				q3Dv[i]->display( ellipses, 255, 0, 0 );
 				//////////////////////////////
@@ -369,6 +375,8 @@ double F2(const spectral::array &originalGrid,
 			lck.unlock();
 		}
 	}
+    angle_variance_mean /= n;
+    ratio_variance_mean /= n;
 
     //Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
     //The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
@@ -403,7 +411,9 @@ double F2(const spectral::array &originalGrid,
     }
 
 
-    return objectiveFunctionValue * sparsityPenalty * orthogonalityPenalty;
+    return objectiveFunctionValue *
+            sparsityPenalty * orthogonalityPenalty *
+            angle_variance_mean * ratio_variance_mean * 1000;
 }
 
 /**
