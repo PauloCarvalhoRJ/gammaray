@@ -48,7 +48,8 @@ double F(const spectral::array &originalGrid,
 		 const std::vector<spectral::array> &fundamentalFactors,
 		 const spectral::complex_array& fftOriginalGridMagAndPhase,
 		 const bool addSparsityPenalty,
-		 const bool addOrthogonalityPenalty)
+         const bool addOrthogonalityPenalty,
+         const double sparsityThreshold)
 {
 	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
 
@@ -74,7 +75,7 @@ double F(const spectral::array &originalGrid,
 	if( addSparsityPenalty ){
 		int nNonZeros = va.size();
 		for (int i = 0; i < va.size(); ++i )
-			if( std::abs(va.d_[i]) < 0.001  )
+            if( std::abs(va.d_[i]) <= sparsityThreshold )
 				--nNonZeros;
 		sparsityPenalty = nNonZeros/(double)va.size();
 	}
@@ -191,7 +192,8 @@ double F2(const spectral::array &originalGrid,
          const int m,
          const std::vector<spectral::array> &fundamentalFactors,
          const bool addSparsityPenalty,
-         const bool addOrthogonalityPenalty)
+         const bool addOrthogonalityPenalty,
+         const double sparsityThreshold )
 {
 	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
 
@@ -226,13 +228,13 @@ double F2(const spectral::array &originalGrid,
     }
 
 	//Compute the sparsity of the solution matrix
-	double sparsityPenalty = 1000.0;
+    double sparsityPenalty = 1.0;
     if( addSparsityPenalty ){
         int nNonZeros = va.size();
         for (int i = 0; i < va.size(); ++i )
-			if( std::abs(va.d_[i]) < 0.3  )
+            if( std::abs(va.d_[i]) <= sparsityThreshold  )
                 --nNonZeros;
-		sparsityPenalty = nNonZeros/(double)va.size() * 1000.0;
+        sparsityPenalty = nNonZeros/(double)va.size() * 1.0;
     }
 
 	//Make the m geological factors (data decomposed into grids with features with different spatial correlation)
@@ -368,7 +370,40 @@ double F2(const spectral::array &originalGrid,
 		}
 	}
 
-	return objectiveFunctionValue * sparsityPenalty;
+    //Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
+    //The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
+    //The penalty value equals the smallest angle in radians between any pair of weights vectors.
+    double orthogonalityPenalty = 1.0;
+    if( addOrthogonalityPenalty ){
+        //make the vectors of weights for each geological factor
+        std::vector<spectral::array*> vectors;
+        spectral::array* currentVector = new spectral::array();
+        for( int i = 0; i < va.d_.size(); ++i){
+            if( currentVector->size() < n )
+                currentVector->d_.push_back( va.d_[i] );
+            else{
+                vectors.push_back( currentVector );
+                currentVector = new spectral::array();
+            }
+        }
+        //compute the penalty
+        for( int i = 0; i < vectors.size()-1; ++i ){
+            for( int j = i+1; j < vectors.size(); ++j ){
+                spectral::array* vectorA = vectors[i];
+                spectral::array* vectorB = vectors[j];
+                double angle = spectral::angle( *vectorA, *vectorB );
+                if( angle < orthogonalityPenalty )
+                    orthogonalityPenalty = angle;
+            }
+        }
+        orthogonalityPenalty = 1.0 - orthogonalityPenalty/1.571; //1.571 radians ~ 90 degrees
+        //cleanup the vectors
+        for( int i = 0; i < vectors.size(); ++i )
+            delete vectors[i];
+    }
+
+
+    return objectiveFunctionValue * sparsityPenalty * orthogonalityPenalty;
 }
 
 /**
@@ -388,6 +423,7 @@ void taskOnePartialDerivative(
 							   const spectral::complex_array& gridMagnitudeAndPhaseParts,
 							   const bool addSparsityPenalty,
 							   const bool addOrthogonalityPenalty,
+                               const double sparsityThreshold,
 							   spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
 							   ){
 	std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
@@ -400,9 +436,9 @@ void taskOnePartialDerivative(
 		spectral::array vwFromLeft( vw );
 		vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
 		//Compute (numerically) the partial derivative with respect to one parameter.
-		(*gradient)(iParameter) = (F( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty )
+        (*gradient)(iParameter) = (F( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold )
 									 -
-								   F( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty ))
+                                   F( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold ))
 									 /
 								   ( 2 * epsilon );
 	}
@@ -424,6 +460,7 @@ void taskOnePartialDerivative2(
 							   const std::vector< spectral::array >& svdFactors,
 							   const bool addSparsityPenalty,
 							   const bool addOrthogonalityPenalty,
+                               const double sparsityThreshold,
 							   spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
 							   ){
 	std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
@@ -436,9 +473,9 @@ void taskOnePartialDerivative2(
 		spectral::array vwFromLeft( vw );
 		vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
 		//Compute (numerically) the partial derivative with respect to one parameter.
-		(*gradient)(iParameter) = (F2( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty )
+        (*gradient)(iParameter) = (F2( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold )
 									 -
-								   F2( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty ))
+                                   F2( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold ))
 									 /
 								   ( 2 * epsilon );
 	}
@@ -510,6 +547,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	double infoContentToKeepForSVD = ui->spinInfoContentToKeepForSVD->value() / 100.0;
 	bool addSparsityPenalty = ui->chkEnableSparsityPenalty->isChecked();
 	bool addOrthogonalityPenalty = ui->chkEnableOrthogonalityPenalty->isChecked();
+    double sparsityThreshold = ui->spinSparsityThreshold->value();
 
 	//-------------------------------------------------------------------------------------------------
 	//-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -794,9 +832,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			//Computes the “energy” of the current state (set of parameters).
 			//The “energy” in this case is how different the image as given the parameters is with respect
 			//the data grid, considered the reference image.
-			double f_eCurrent = F( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
+            double f_eCurrent = F( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
 			//Computes the “energy” of the neighboring state.
-			f_eNew = F( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
+            f_eNew = F( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
 			//Changes states stochastically.  There is a probability of acceptance of a more energetic state so
 			//the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
 			double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
@@ -882,6 +920,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 												gridMagnitudeAndPhaseParts,
 												addSparsityPenalty,
 												addOrthogonalityPenalty,
+                                                sparsityThreshold,
 												&gradient);
 			}
 
@@ -909,8 +948,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
                     if( new_vw.d_[i] > 1.0 )
                         new_vw.d_[i] = 1.0;
                 }
-				currentF = F( *gridData, vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
-				nextF = F( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty );
+                currentF = F( *gridData, vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+                nextF = F( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, gridMagnitudeAndPhaseParts, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
                 if( nextF < currentF ){
                     vw = new_vw;
                     break;
@@ -1127,6 +1166,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
     double infoContentToKeepForSVD = ui->spinInfoContentToKeepForSVD->value() / 100.0;
     bool addSparsityPenalty = ui->chkEnableSparsityPenalty->isChecked();
     bool addOrthogonalityPenalty = ui->chkEnableOrthogonalityPenalty->isChecked();
+    double sparsityThreshold = ui->spinSparsityThreshold->value();
 
     //-------------------------------------------------------------------------------------------------
     //-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -1354,9 +1394,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
             //Computes the “energy” of the current state (set of parameters).
             //The “energy” in this case is how different the image as given the parameters is with respect
             //the data grid, considered the reference image.
-            double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty );
+            double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
             //Computes the “energy” of the neighboring state.
-            f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty );
+            f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
             //Changes states stochastically.  There is a probability of acceptance of a more energetic state so
             //the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
             double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
@@ -1441,6 +1481,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 												svdFactors,
 												addSparsityPenalty,
 												addOrthogonalityPenalty,
+                                                sparsityThreshold,
 												&gradient);
 			}
 
@@ -1468,8 +1509,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 					if( new_vw.d_[i] > 1.0 )
 						new_vw.d_[i] = 1.0;
 				}
-				currentF = F2( *gridData, vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty );
-				nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty );
+                currentF = F2( *gridData, vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+                nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
 				if( nextF < currentF ){
 					vw = new_vw;
 					break;
