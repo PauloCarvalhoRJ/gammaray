@@ -1099,7 +1099,7 @@ void VariographicDecompositionDialog::onSumOfFactorsWasComputed(spectral::array 
     emit saveArray( gridData );
 }
 
-void VariographicDecompositionDialog::doVariographicDecompositionSVDonData()
+void VariographicDecompositionDialog::doVariographicDecomposition2()
 {
     // Get the data objects.
     IJAbstractCartesianGrid* grid = m_gridSelector->getSelectedGrid();

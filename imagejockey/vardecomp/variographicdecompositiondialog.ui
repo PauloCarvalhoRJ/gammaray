@@ -420,14 +420,14 @@
      <item row="24" column="0" colspan="2">
       <widget class="QPushButton" name="btnProcessSVDonOriginalData">
        <property name="text">
-        <string>Process (SVD on data)</string>
+        <string>Process 2 (SVD on data)</string>
        </property>
       </widget>
      </item>
      <item row="23" column="0" colspan="2">
       <widget class="QPushButton" name="btnProcess">
        <property name="text">
-        <string>Process (SVD on data's varmap)</string>
+        <string>Process 1 (SVD on data's varmap)</string>
        </property>
       </widget>
      </item>
@@ -499,7 +499,7 @@
    <sender>btnProcessSVDonOriginalData</sender>
    <signal>clicked()</signal>
    <receiver>VariographicDecompositionDialog</receiver>
-   <slot>doVariographicDecompositionSVDonData()</slot>
+   <slot>doVariographicDecomposition2()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>227</x>
@@ -514,6 +514,6 @@
  </connections>
  <slots>
   <slot>doVariographicDecomposition()</slot>
-  <slot>doVariographicDecompositionSVDonData()</slot>
+  <slot>doVariographicDecomposition2()</slot>
  </slots>
 </ui>
