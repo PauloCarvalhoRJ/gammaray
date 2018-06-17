@@ -181,11 +181,13 @@ public:
 	 * @param sum_error Filled with the sum of fitness errors of all ellipses.
      * @param angle_variance Filled with the variance of the ellipses' angles.
      * @param ratio_variance Filled with the variance of the ellipses' semi-axes ratios.
-	 */
+     * @param angle_mean Filled with the mean of the ellipses' angles.
+     * @param ratio_mean Filled with the mean of the ellipses' semi-axes ratios.
+     */
     static void fitEllipses(const vtkSmartPointer<vtkPolyData>& polyData,
                             vtkSmartPointer<vtkPolyData>& ellipses ,
                             double &mean_error, double &max_error, double &sum_error,
-                            double &angle_variance, double &ratio_variance);
+                            double &angle_variance, double &ratio_variance, double &angle_mean, double &ratio_mean);
 
     /**
      * Computes the ellipse parameters from the factors of the ellipse implicit equation in the form
@@ -226,19 +228,16 @@ public:
 							double& A, double& B, double& C, double& D, double& E, double& F, double & fitnessError);
 
     /**
-     * Computes the variance of a collection of values.
+     * Computes the variance and mean of a collection of values of some type.
      */
     template <class T>
-    static double getVariance( const std::vector<T>& values ){
-        double total = 0.0;
-        for (auto& value : values)
-            total += value;
-        double mean = total / std::accumulate( values.begin(), values.end(), 0.0 );
+    static void getStats( const std::vector<T>& values, double& variance, double& mean ){
+        mean = std::accumulate( values.begin(), values.end(), 0.0 ) / values.size();
         std::vector<T> diff( values.size() );
         std::transform( values.begin(), values.end(), diff.begin(), [mean](T x) { return x - mean; });
         double squaredSum = std::inner_product( diff.begin(), diff.end(), diff.begin(), 0.0 );
         double stdev = std::sqrt(squaredSum / (double)values.size());
-        return stdev * stdev;
+        variance = stdev * stdev;
     }
 };
 

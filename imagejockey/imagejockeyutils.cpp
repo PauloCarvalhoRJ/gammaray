@@ -446,7 +446,9 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 								   double &max_error,
                                    double &sum_error,
                                    double &angle_variance,
-                                   double &ratio_variance)
+                                   double &ratio_variance,
+                                   double &angle_mean,
+                                   double &ratio_mean)
 {
     // If there is no geometry, there is nothing to do.
     if ( polyData->GetNumberOfPoints() == 0 )
@@ -523,8 +525,8 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
     ellipses = result;
 
     // Return the stats.
-    angle_variance = getVariance( angles );
-    ratio_variance = getVariance( ratios );
+    ImageJockeyUtils::getStats( angles, angle_variance, angle_mean );
+    ImageJockeyUtils::getStats( ratios, ratio_variance, ratio_mean );
 }
 
 void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, double C, double D, double E, double F,
