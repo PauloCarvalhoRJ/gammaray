@@ -348,9 +348,14 @@ double F2(const spectral::array &originalGrid,
 
 	// Fit ellipses to the isocontours/isosurfaces of the varmaps, computing the fitting error.
 	double objectiveFunctionValue = 0.0;
-    double angle_variance_mean = 0.0;
-    double ratio_variance_mean = 0.0;
-	{
+    double angle_variance_mean = 0.0; // mean of the variances of the ellipses angles in the geological factors. Zero is ideal.
+    double ratio_variance_mean = 0.0; // mean of the variances of the ellipses aspect ratio in the geological factors. Zero is ideal.
+    double angle_mean_variance = 0.0; // variance of the means of the ellipses angles in the geological factors.  The greater, the better.
+    double ratio_mean_variance = 0.0; // variance of the means of the ellipses aspect ratio in the geological factors. The greater, the better.
+    {
+        // Collect the ellipse angle and ratio means of each geological factor.
+        std::vector<double> angle_means, ratio_means;
+
         // For each geological factor.
 		std::vector< vtkSmartPointer<vtkPolyData> >::iterator it = geolgicalFactorsVarmapsIsosurfaces.begin();
 		for( int i = 0 ; it != geolgicalFactorsVarmapsIsosurfaces.end(); ++it, ++i )
@@ -363,20 +368,29 @@ double F2(const spectral::array &originalGrid,
 			{
 				vtkSmartPointer<vtkPolyData> ellipses;
 				double max_error, mean_error, sum_error;
-                double angle_variance, ratio_variance;
-                ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error, angle_variance, ratio_variance );
+                double angle_variance, ratio_variance, angle_mean, ratio_mean;
+                ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error, angle_variance, ratio_variance, angle_mean, ratio_mean );
 				objectiveFunctionValue += mean_error;
                 angle_variance_mean += angle_variance;
                 ratio_variance_mean += ratio_variance;
+                angle_means.push_back( angle_mean );
+                ratio_means.push_back( ratio_mean );
 				/////TODO: remove this after tests
 				q3Dv[i]->display( ellipses, 255, 0, 0 );
 				//////////////////////////////
 			}
 			lck.unlock();
 		}
-	}
-    angle_variance_mean /= n;
-    ratio_variance_mean /= n;
+
+        // Compute the means of the variances of ellipses angle and ratio all geological factors.
+        angle_variance_mean /= n;
+        ratio_variance_mean /= n;
+
+        // Compute the variances of the ellipses angle and ratio means of each geological factor.
+        double unused;
+        ImageJockeyUtils::getStats( angle_means, angle_mean_variance, unused );
+        ImageJockeyUtils::getStats( ratio_means, ratio_mean_variance, unused );
+    }
 
     //Compute the penalty caused by the angles between the vectors formed by the fundamental factors in each geological factor
     //The more orthogonal (angle == PI/2) the better.  Low angles result in more penalty.
@@ -411,9 +425,14 @@ double F2(const spectral::array &originalGrid,
     }
 
 
+    std::cout << objectiveFunctionValue << " " <<
+                 sparsityPenalty << " " << orthogonalityPenalty << " " <<
+                 angle_variance_mean << " " << ratio_variance_mean << " " << (1.0/angle_mean_variance) << " " << (1.0/ratio_mean_variance) << std::endl;
+
+    // Finally, return the objective function value.
     return objectiveFunctionValue *
             sparsityPenalty * orthogonalityPenalty *
-            angle_variance_mean * ratio_variance_mean * 1000;
+            angle_variance_mean * ratio_variance_mean * (1.0/angle_mean_variance) * (1.0/ratio_mean_variance);
 }
 
 /**
