@@ -467,9 +467,10 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 	max_error = 0.0;
     std::vector< double > angles; //collects ellipse orientations.
     std::vector< double> ratios; //collects ellipse axes ratios.
-    while( in_Lines->GetNextCell( vertexIdList ) ){
+	int nEllipsesFit = 0;
+	for(int iPoly = 0; in_Lines->GetNextCell( vertexIdList ); ++iPoly ){
 
-        // Collect the X and Y vertex coordinates of a poly line
+		// Collect the X and Y vertex coordinates of a poly line
         spectral::array aX( vertexIdList->GetNumberOfIds() );
         spectral::array aY( vertexIdList->GetNumberOfIds() );
         for( vtkIdType iVertex = 0; iVertex < vertexIdList->GetNumberOfIds(); ++iVertex ){
@@ -516,10 +517,13 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 
         //result = result + ellipse.
         result = appendFilter->GetOutput();
-    }
 
-	if( in_Lines->GetNumberOfCells() > 0 )
-		mean_error = sum_error / in_Lines->GetNumberOfCells();
+		// Update the ellipse fit count.
+		++nEllipsesFit;
+	}
+
+	if( nEllipsesFit > 0 ) //One could simply use in_Lines->GetNumberOfCells(), but some ellipses may not be processed.
+		mean_error = sum_error / nEllipsesFit;
 
     // Return the result poly data.
     ellipses = result;

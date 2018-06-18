@@ -53,7 +53,7 @@ private:
 	std::vector< vtkSmartPointer<vtkActor> > _currentActors;
 
 	// The id of the thread that created the 3D viewer.
-	// This prevents call to the display() methods from other threads from causing a crash.
+	// This prevents crashes when calling the display() methods from other threads.
 	std::thread::id _ownerThreadId;
 
 	/** Prevents OpenGL calls from different threads, which lead to crashes.

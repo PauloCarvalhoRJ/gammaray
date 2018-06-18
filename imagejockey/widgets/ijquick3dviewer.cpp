@@ -158,7 +158,7 @@ void IJQuick3DViewer::clearScene()
 		return;
 
 	std::vector< vtkSmartPointer<vtkActor> >::iterator it = _currentActors.begin();
-	for( ; it != _currentActors.end(); ){ // erase() already increments the iteator.
+	for( ; it != _currentActors.end(); ){ // erase() already increments the iterator.
 		_renderer->RemoveActor( *it );
 		it = _currentActors.erase( it );
 	}

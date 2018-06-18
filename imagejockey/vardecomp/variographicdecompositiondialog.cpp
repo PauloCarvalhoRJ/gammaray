@@ -195,20 +195,20 @@ double F2(const spectral::array &originalGrid,
          const bool addOrthogonalityPenalty,
          const double sparsityThreshold )
 {
+
+	// A mutex to create critical sections to avoid crashes in multithreaded calls.
 	std::unique_lock<std::mutex> lck (mutexObjectiveFunction, std::defer_lock);
 
-	///TODO: remove this after tests/////////////
+	///Visualizing the results on the fly is optional/////////////
 	lck.lock();
-	static IJQuick3DViewer* q3Dv[50];
-	static bool inited = false;
+	static IJQuick3DViewer* q3Dv[50]{}; //initializes all elements to zero (null pointer)
 	for( int i = 0; i < m; ++i){
-		if( ! inited )
+		if( ! q3Dv[i] )
 			q3Dv[i] = new IJQuick3DViewer();
 		q3Dv[i]->show();
 	}
-	inited = true;
 	lck.unlock();
-	/////////////////////////////////////////////
+	///////////////////////////////////////////////////////////////
 
 	int nI = originalGrid.M();
     int nJ = originalGrid.N();
@@ -317,7 +317,7 @@ double F2(const spectral::array &originalGrid,
 			vtkSmartPointer<vtkPolyData> poly;
 			{
 				poly = ImageJockeyUtils::computeIsosurfaces( geologicalFactorVarmapShifted,
-															 20,
+															 40,
 															 geologicalFactorVarmapShifted.min(),
 															 geologicalFactorVarmapShifted.max() );
 				// Get the isomap's bounding box.
@@ -335,10 +335,10 @@ double F2(const spectral::array &originalGrid,
 																(bbox[5]+bbox[4])/2,
 																 1.0,
                                                                  15 );
-				/////TODO: remove this after tests
+				///Visualizing the results on the fly is optional/////////////
 				q3Dv[i]->clearScene();
 				q3Dv[i]->display( poly, 0, 255, 255 );
-				//////////////////////////////
+				//////////////////////////////////////////////////////////////
 			}
 			lck.unlock();
 
@@ -370,14 +370,14 @@ double F2(const spectral::array &originalGrid,
 				double max_error, mean_error, sum_error;
                 double angle_variance, ratio_variance, angle_mean, ratio_mean;
                 ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error, angle_variance, ratio_variance, angle_mean, ratio_mean );
-				objectiveFunctionValue += mean_error;
+				objectiveFunctionValue += sum_error;
                 angle_variance_mean += angle_variance;
                 ratio_variance_mean += ratio_variance;
                 angle_means.push_back( angle_mean );
                 ratio_means.push_back( ratio_mean );
-				/////TODO: remove this after tests
+				///Visualizing the results on the fly is optional/////////////
 				q3Dv[i]->display( ellipses, 255, 0, 0 );
-				//////////////////////////////
+				//////////////////////////////////////////////////////////////
 			}
 			lck.unlock();
 		}
@@ -424,15 +424,10 @@ double F2(const spectral::array &originalGrid,
             delete vectors[i];
     }
 
-
-    std::cout << objectiveFunctionValue << " " <<
-                 sparsityPenalty << " " << orthogonalityPenalty << " " <<
-                 angle_variance_mean << " " << ratio_variance_mean << " " << (1.0/angle_mean_variance) << " " << (1.0/ratio_mean_variance) << std::endl;
-
     // Finally, return the objective function value.
-    return objectiveFunctionValue *
-            sparsityPenalty * orthogonalityPenalty *
-            angle_variance_mean * ratio_variance_mean * (1.0/angle_mean_variance) * (1.0/ratio_mean_variance);
+	return objectiveFunctionValue *
+			sparsityPenalty * orthogonalityPenalty *
+			angle_variance_mean * ratio_variance_mean * (1.0/angle_mean_variance) * (1.0/ratio_mean_variance);
 }
 
 /**
