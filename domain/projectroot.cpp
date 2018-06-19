@@ -5,7 +5,7 @@ ProjectRoot::ProjectRoot() : ProjectComponent ()
 {
 }
 
-QString ProjectRoot::getName()
+QString ProjectRoot::getName() const
 {
     return "PROJECT ROOT";
 }

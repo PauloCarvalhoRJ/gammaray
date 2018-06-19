@@ -35,7 +35,7 @@ void Attribute::setCategorical(bool value)
 }
 
 
-QString Attribute::getName()
+QString Attribute::getName() const
 {
     return this->_name;
 }

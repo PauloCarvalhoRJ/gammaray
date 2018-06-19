@@ -8,7 +8,7 @@ ObjectGroup::ObjectGroup(const QString name, const QIcon icon, const QString int
     this->_internal_name = internal_name;
 }
 
-QString ObjectGroup::getName()
+QString ObjectGroup::getName() const
 {
     return this->_name;
 }

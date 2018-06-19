@@ -5,6 +5,7 @@
 #include "attribute.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "geostats/gridcell.h"
+#include "imagejockey/svd/svdfactor.h"
 
 #include "spectral/spectral.h" //eigen third party library
 
@@ -157,7 +158,33 @@ void CartesianGrid::setInfoFromOtherCG(CartesianGrid *other_cg, bool copyCategor
     if( copyCategoricalAttributesList )
         categorical_attributes = other_cg->getCategoricalAttributes();
     this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal,
-                   ndv, nsvar_var_trn_triads, categorical_attributes);
+				   ndv, nsvar_var_trn_triads, categorical_attributes);
+}
+
+void CartesianGrid::setInfoFromSVDFactor(const SVDFactor * factor)
+{
+	double x0 = 0.0, y0 = 0.0, z0 = 0.0;
+	double dx = 0.0, dy = 0.0, dz = 0.0;
+	uint nx = 0, ny = 0, nz = 0;
+	double rot = 0.0;
+	uint nreal = 0;
+	QString ndv;
+	QMap<uint, QPair<uint, QString> > nsvar_var_trn_triads;
+	QList< QPair<uint, QString> > categorical_attributes;
+	x0 = factor->getOriginX();
+	y0 = factor->getOriginY();
+	z0 = factor->getOriginZ();
+	nx = factor->getNI();
+	ny = factor->getNJ();
+	nz = factor->getNK();
+	dx = factor->getCellSizeI();
+	dy = factor->getCellSizeJ();
+	dz = factor->getCellSizeK();
+	rot = factor->getRotation();
+	nreal = 1;
+	ndv = "";
+	this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal,
+				   ndv, nsvar_var_trn_triads, categorical_attributes);
 }
 
 void CartesianGrid::setInfoFromGridParameter(GSLibParGrid *pg)
@@ -293,7 +320,7 @@ void CartesianGrid::setDataPageToRealization(uint nreal)
     setDataPage( firstLine, lastLine );
 }
 
-double CartesianGrid::getRotation()
+double CartesianGrid::getRotation() const
 {
     return getRot();
 }
@@ -323,7 +350,7 @@ void CartesianGrid::dataWillBeRequested()
     loadData();
 }
 
-QString CartesianGrid::getGridName()
+QString CartesianGrid::getGridName() const
 {
     return getName();
 }

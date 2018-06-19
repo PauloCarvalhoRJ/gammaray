@@ -16,7 +16,7 @@ public:
 
     // ProjectComponent interface
 public:
-    QString getName();
+	QString getName() const;
     QIcon getIcon();
     bool isFile();
     bool isAttribute();

@@ -64,12 +64,12 @@ public:
 	bool isSelected(){ return m_selected; }
 	void setSelected( bool value ){ m_selected = value; }
 
-    spectral::array& getFactorData(){ return *m_factorData; }
+	spectral::array& getFactorData() const { return *m_factorData; }
 
 	/** Returns a text showing the factor number reflecting its hierarchy, e.g. 4.2 meaning that it
 	 * is the second factor of the fourth root factor.
 	 */
-	QString getHierarchicalNumber();
+	QString getHierarchicalNumber() const;
 
 	/** Returns a value at the current X,Y position with respect to the currently selected plane.
 	 * The selected plane depends on m_currentPlaneOrientation and m_currentPlane settings.
@@ -149,7 +149,7 @@ public:
      * It equals the factor weight if it is a top-level factor.  For a factor that was
      * split from a parent factor, it equals this factor's weight times the parent's information content.
      */
-    double getInfoContent();
+	double getInfoContent() const;
 
     /** Deletes the subtree of SVD factors under this factor. */
     void deleteChildren();
@@ -219,10 +219,10 @@ private:
     double m_mergeThreshold;
     SVDFactorType m_type;
     uint getIndexOfChild( SVDFactor* child );
-	bool isRoot();
+	bool isRoot() const;
 	void setParentFactor( SVDFactor* parent );
 	void setWeight( double weight ){ m_weight = weight; }
-	bool isTopLevel();
+	bool isTopLevel() const;
 	bool XYtoIJinCurrentPlane(double localX, double localY, uint& i, uint& j );
     /**
      * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
@@ -237,28 +237,28 @@ public:
 	SVDFactor* getParent( );
 	uint getIndexInParent( );
 	uint getChildCount( );
-	QString getPresentationName( );
+	QString getPresentationName( ) const;
 	QIcon getIcon( );
 
     // IJAbstractCartesianGrid interface
 public:
-    virtual double getRotation(){ return 0.0; }
-    virtual int getNI();
-    virtual int getNJ();
-    virtual int getNK();
-    virtual double getCellSizeI(){ return m_dx; }
-    virtual double getCellSizeJ(){ return m_dy; }
-    virtual double getCellSizeK(){ return m_dz; }
-    virtual double getOriginX(){ return m_x0; }
-    virtual double getOriginY(){ return m_y0; }
-    virtual double getOriginZ(){ return m_z0; }
+	virtual double getRotation() const { return 0.0; }
+	virtual int getNI() const;
+	virtual int getNJ() const;
+	virtual int getNK() const;
+	virtual double getCellSizeI() const { return m_dx; }
+	virtual double getCellSizeJ() const { return m_dy; }
+	virtual double getCellSizeK() const { return m_dz; }
+	virtual double getOriginX() const { return m_x0; }
+	virtual double getOriginY() const { return m_y0; }
+	virtual double getOriginZ() const { return m_z0; }
     virtual double getData(int variableIndex, int i, int j, int k);
     virtual bool isNoDataValue(double value);
     virtual double getDataAt(int variableIndex, double x, double y, double z);
     virtual double absMax(int variableIndex);
     virtual double absMin(int variableIndex);
     virtual void dataWillBeRequested(){} //SVDFactors are in-memory grids, there is no need to prefetch data.
-    virtual QString getGridName(){ return getPresentationName(); }
+	virtual QString getGridName() const { return getPresentationName(); }
     virtual QIcon getGridIcon(){ return getIcon(); }
     virtual int getVariableIndexByName(QString){ return 0; } //SVDFactors have just one variable.
     virtual IJAbstractVariable *getVariableByName(QString){ return m_variableProxy; }

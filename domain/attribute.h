@@ -33,7 +33,7 @@ public:
 
     // ProjectComponent interface
 public:
-	virtual QString getName();
+	virtual QString getName() const;
 	virtual QIcon getIcon();
 	virtual bool isFile();
 	virtual bool isAttribute();
