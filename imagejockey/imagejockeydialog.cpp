@@ -340,6 +340,9 @@ void ImageJockeyDialog::preview()
         spectral::backward( outputData, dataReady );
     }
 
+	//fftw's RFFT requires that the result be divided by the number of cells.
+	outputData = outputData / static_cast<double>( cg->getNI()*cg->getNJ()*cg->getNK() );
+
     //Construct a displayable object from the result.
     SVDFactor* factor = new SVDFactor( std::move(outputData), 1, 1, cg->getOriginX(), cg->getOriginY(), cg->getOriginZ(),
                                        cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK(), SVDFactor::getSVDFactorTreeSplitThreshold());
