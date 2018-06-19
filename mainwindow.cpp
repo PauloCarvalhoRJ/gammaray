@@ -1729,7 +1729,44 @@ void MainWindow::onPreviewRFFTImageJockey( CartesianGrid* cgWithFFT,
     cgFFTtmp->writeToFS();
 
     //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
-    Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+	Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+}
+
+void MainWindow::onSavePreviewRFFTImageJockey( const SVDFactor * previewGrid )
+{
+	//propose a name for the new grid to contain the preview image
+	QString proposed_name = previewGrid->getGridName() + ".dat";
+
+	//user enters the name for the new grid with FFT image
+	QString new_cg_name = QInputDialog::getText(this, "Name the new grid",
+											 "Name for the new grid:", QLineEdit::Normal,
+											 proposed_name );
+
+	//if the user canceled the input box
+	if ( new_cg_name.isEmpty() ){
+		//abort
+		return;
+	}
+
+	//make a tmp file path
+	QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+	//crate a new cartesian grid pointing to the tmp path
+	CartesianGrid * new_cg = new CartesianGrid( tmp_file_path );
+
+	//set the geometry info based on the original grid
+	new_cg->setInfoFromSVDFactor( previewGrid );
+
+	//add the SVDFactor's contents as new variable.
+	new_cg->appendAsNewVariable( new_cg_name, previewGrid->getFactorData() );
+
+	//save data to filesystem.
+	new_cg->writeToFS();
+
+	//import the saved file to the project
+	Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
+
+	Application::instance()->logInfo("Grid preview saved.");
 }
 
 void MainWindow::onSVD()
@@ -2512,6 +2549,7 @@ void MainWindow::openImageJockey()
     ImageJockeyDialog *ijd = new ImageJockeyDialog( grids, this );
     //ijd->show();
     ijd->showMaximized();
+	connect( ijd, SIGNAL(savePreviewAs(const SVDFactor*)), this, SLOT(onSavePreviewRFFTImageJockey(const SVDFactor*)) );
 }
 
 void MainWindow::openSGSIM()

@@ -13,6 +13,7 @@ class GRCompass;
 class Spectrogram1DParameters;
 class Spectrogram1DPlot;
 class EqualizerWidget;
+class SVDFactor;
 
 namespace spectral {
     struct array;
@@ -38,6 +39,7 @@ signals:
     void errorOccurred( QString message );
     void warningOccurred( QString message );
     void infoOccurred( QString message );
+	void savePreviewAs( const SVDFactor* factor );
 
 private:
     Ui::ImageJockeyDialog *ui;
@@ -108,6 +110,7 @@ private Q_SLOTS:
     void onSumOfFactorsWasComputed( spectral::array* sumOfFactors );
 	void onWidgetErrorOccurred( QString message );
     void onWidgetWarningOccurred( QString message );
+	void onSavePreview( const SVDFactor* factor  ); //this is evoked when the user wants to save the grid shown in the preview dialog.
 };
 
 #endif // IMAGEJOCKEYDIALOG_H
