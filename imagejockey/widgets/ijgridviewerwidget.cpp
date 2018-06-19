@@ -12,12 +12,13 @@
 
 /*static*/ QString IJGridViewerWidget::m_lastOpenedPath = "";
 
-IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent) :
+IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, bool showSaveButton, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::IJGridViewerWidget),
     m_factor( nullptr ),
 	m_deleteFactorOnClose( deleteFactorOnClose ),
-	m_dataChanged( false )
+	m_dataChanged( false ),
+	m_showSaveButton( showSaveButton )
 {
     ui->setupUi(this);
 
@@ -38,8 +39,13 @@ IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent
     connect( ui->spinSlice, SIGNAL(valueChanged(int)), this, SLOT(onSpinSliceChanged(int)));
 
     //Hide the dismiss button if this widget has a parent (not stand alone).
+	// TODO: apparently this has no effect.
     if( this->parentWidget() )
         ui->frmBottom->hide();
+
+	//Hide the "Save" button accordingly to the respective flag.
+	if( ! m_showSaveButton )
+		ui->btnSave->hide();
 }
 
 IJGridViewerWidget::~IJGridViewerWidget()
@@ -276,4 +282,9 @@ void IJGridViewerWidget::onImportSliceDataFromPNG()
 
 	//Set that the data was changed.
 	m_dataChanged = true;
+}
+
+void IJGridViewerWidget::onSave()
+{
+	emit save( m_factor );
 }
