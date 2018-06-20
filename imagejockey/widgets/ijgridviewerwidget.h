@@ -25,7 +25,7 @@ class IJGridViewerWidget : public QWidget
     Q_OBJECT
 
 public:
-	explicit IJGridViewerWidget( bool deleteFactorOnClose, bool showSaveButton = false, QWidget *parent = 0);
+	explicit IJGridViewerWidget( bool deleteFactorOnClose, bool showSaveButton, bool showDismissButton, QWidget *parent = 0);
     ~IJGridViewerWidget();
     void setFactor(SVDFactor* factor );
 
@@ -52,6 +52,7 @@ private:
     static QString m_lastOpenedPath;
 	bool m_dataChanged;
 	bool m_showSaveButton;
+	bool m_showDismissButton;
     void forcePlotUpdate();
     void adjustColorTableWidgets( int cmbIndex );
 

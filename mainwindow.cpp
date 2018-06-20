@@ -1926,7 +1926,7 @@ void MainWindow::onQuickView()
 	m_attributesCurrentlyBeingViewed[ factor ] = _right_clicked_attribute;
 
 	//Opens the viewer.
-	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
 	factor->setCustomName( cg->getGridName() );
 	ijgvw->setFactor( factor );
 	connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), this, SLOT(onQuickViewerClosed(SVDFactor*,bool)) );

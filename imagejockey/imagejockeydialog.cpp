@@ -348,7 +348,7 @@ void ImageJockeyDialog::preview()
                                        cg->getCellSizeI(), cg->getCellSizeJ(), cg->getCellSizeK(), SVDFactor::getSVDFactorTreeSplitThreshold());
 
     //Opens the viewer.
-	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true );
+	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
     factor->setCustomName("Reverse FFT");
     ijgvw->setFactor( factor );
 	connect( ijgvw, SIGNAL(save(const SVDFactor*)), this, SLOT(onSavePreview(const SVDFactor*)) );
