@@ -1611,6 +1611,11 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 	displayGrids( grids, titles, shiftByHalves );
 }
 
+void VariographicDecompositionDialog::doVariographicDecomposition3()
+{
+
+}
+
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
 {
 	//Create the structure to store the geological factors
@@ -1636,4 +1641,49 @@ void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, 
 	svdad->setTree( factorTree );
 	svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
 	svdad->exec(); //open the dialog modally
+}
+
+void VariographicDecompositionDialog::doSVDonData(const spectral::array* gridInputData,
+												  double infoContentToKeepForSVD,
+												  std::vector<spectral::array> & svdFactors)
+{
+	//Get the number of usable fundamental SVD factors.
+	{
+		int n = 0;
+		spectral::SVD svd = spectral::svd( *gridInputData );
+		delete gridInputData;
+		//get the list with the factor weights (information quantity)
+		spectral::array weights = svd.factor_weights();
+		//get the number of fundamental factors that have the total information content as specified by the user.
+		{
+			double cumulative = 0.0;
+			uint i = 0;
+			for(; i < weights.size(); ++i){
+				cumulative += weights.d_[i];
+				if( cumulative > infoContentToKeepForSVD )
+					break;
+			}
+			n = i+1;
+		}
+		if( n < 3 ){
+			QMessageBox::warning( this, "Warning", "The data must be decomposable into at least three usable fundamental factors to proceed.");
+			return;
+		} else {
+			emit info( "Using " + QString::number(n) + " fundamental factors out of " + QString::number(weights.size()) +
+					   " to cover " + QString::number(ui->spinInfoContentToKeepForSVD->value()) + "% of information content." );
+		}
+		//Get the usable fundamental SVD factors.
+		{
+			QProgressDialog progressDialog;
+			progressDialog.setRange(0,0);
+			progressDialog.show();
+			for (long i = 0; i < n; ++i) {
+				progressDialog.setLabelText("Retrieving fundamental SVD factor " + QString::number(i+1) +
+											" of " + QString::number(n) + "...");
+				QCoreApplication::processEvents();
+				spectral::array factor = svd.factor(i);
+				svdFactors.push_back( std::move( factor ) );
+			}
+		}
+	}
 }

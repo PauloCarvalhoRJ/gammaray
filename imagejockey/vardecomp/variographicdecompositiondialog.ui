@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>548</width>
-    <height>627</height>
+    <height>652</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -185,6 +185,13 @@
        </property>
       </widget>
      </item>
+     <item row="19" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
      <item row="7" column="1">
       <widget class="QCheckBox" name="chkEnableOrthogonalityPenalty">
        <property name="text">
@@ -331,16 +338,7 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
+        <property name="margin">
          <number>0</number>
         </property>
        </layout>
@@ -358,16 +356,7 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
+        <property name="margin">
          <number>0</number>
         </property>
        </layout>
@@ -410,13 +399,6 @@
        </property>
       </widget>
      </item>
-     <item row="19" column="0">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
      <item row="25" column="0" colspan="2">
       <widget class="QPushButton" name="btnProcessSVDonOriginalData">
        <property name="text">
@@ -442,16 +424,7 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
+        <property name="margin">
          <number>0</number>
         </property>
         <item>
@@ -496,6 +469,13 @@
        </layout>
       </widget>
      </item>
+     <item row="26" column="0" colspan="2">
+      <widget class="QPushButton" name="btnProcess3">
+       <property name="text">
+        <string>Process 3 (spectrum partitioning on data)</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -519,8 +499,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>266</x>
-     <y>580</y>
+     <x>275</x>
+     <y>642</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -535,8 +515,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>334</x>
-     <y>580</y>
+     <x>343</x>
+     <y>642</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -567,8 +547,8 @@
    <slot>doVariographicDecomposition2()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>227</x>
-     <y>543</y>
+     <x>237</x>
+     <y>571</y>
     </hint>
     <hint type="destinationlabel">
      <x>252</x>
@@ -576,9 +556,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnProcess3</sender>
+   <signal>clicked()</signal>
+   <receiver>VariographicDecompositionDialog</receiver>
+   <slot>doVariographicDecomposition3()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>121</x>
+     <y>593</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>158</x>
+     <y>613</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>doVariographicDecomposition()</slot>
   <slot>doVariographicDecomposition2()</slot>
+  <slot>doVariographicDecomposition3()</slot>
  </slots>
 </ui>
