@@ -472,7 +472,7 @@
      <item row="26" column="0" colspan="2">
       <widget class="QPushButton" name="btnProcess3">
        <property name="text">
-        <string>Process 3 (spectrum partitioning on data)</string>
+        <string>Process 3 (P2 but w/ spectrum partitioning on data)</string>
        </property>
       </widget>
      </item>

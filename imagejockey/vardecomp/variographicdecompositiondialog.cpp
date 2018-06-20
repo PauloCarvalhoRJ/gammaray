@@ -1130,7 +1130,7 @@ void VariographicDecompositionDialog::onSumOfFactorsWasComputed(spectral::array 
     emit saveArray( gridData );
 }
 
-void VariographicDecompositionDialog::doVariographicDecomposition2()
+void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD )
 {
     // Get the data objects.
     IJAbstractCartesianGrid* grid = m_gridSelector->getSelectedGrid();
@@ -1168,23 +1168,36 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 	std::vector< spectral::array > fundamentalFactors;
     int n = 0;
     {
-        //Compute SVD of input variable
-        {
+		//Atom learning method: SVD of input variable.
+		if( useSVD ){
 			//Get the number of usable fundamental factors.
-            {
-                QProgressDialog progressDialog;
-                progressDialog.setRange(0,0);
-                progressDialog.setLabelText("Computing SVD factors of input data...");
-                progressDialog.show();
-                QCoreApplication::processEvents();
-                spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
-				doSVDonData( gridInputData, infoContentToKeepForSVD, fundamentalFactors );
-				delete gridInputData;
-				n = fundamentalFactors.size();
-            }
-        }
+			QProgressDialog progressDialog;
+			progressDialog.setRange(0,0);
+			progressDialog.setLabelText("Computing SVD factors of input data...");
+			progressDialog.show();
+			QCoreApplication::processEvents();
+			spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+			doSVDonData( gridInputData, infoContentToKeepForSVD, fundamentalFactors );
+			delete gridInputData;
+			n = fundamentalFactors.size();
+		//Atom learning method: frequency spectrum partitioning of input variable.
+		} else {
+			QProgressDialog progressDialog;
+			progressDialog.setRange(0,0);
+			progressDialog.setLabelText("Computing Fourier partitioning of input data...");
+			progressDialog.show();
+			QCoreApplication::processEvents();
+			spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+			doFourierPartitioningOnData( gridInputData, fundamentalFactors );
+			delete gridInputData;
+			n = fundamentalFactors.size();
+		}
     }
 
+	if( n == 0 ){
+		emit error( "VariographicDecompositionDialog::doVariographicDecomposition2(): No fundamental factors. Aborted." );
+		return;
+	}
 
     //---------------------------------------------------------------------------------------------------------------------------
     //---------------------------------------SET UP THE LINEAR SYSTEM TO IMPOSE THE CONSERVATION CONSTRAINTS---------------------
@@ -1548,7 +1561,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 
 void VariographicDecompositionDialog::doVariographicDecomposition3()
 {
-
+	doVariographicDecomposition2( false );
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
@@ -1620,4 +1633,110 @@ void VariographicDecompositionDialog::doSVDonData(const spectral::array* gridInp
 			}
 		}
 	}
+}
+
+void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral::array * gridInputData,
+																  std::vector<spectral::array> & frequencyFactors)
+{
+	double cellWidth = 1.0;
+	double cellHeight = 1.0;
+	double cellThickness = 1.0;
+	int nTracks = 10;
+	double gridWidth = inputFFTreal.M() * cellWidth;
+	double gridHeight = inputFFTreal.N() * cellHeight;
+	double gridDepth = inputFFTreal.K() * cellThickness;
+
+	// A Sector is a division of a HalfTrack spanning some angles.
+	struct Sector{
+		double startAzimuth;
+		double endAzimuth;
+		spectral::array grid;
+		void makeGrid( int nI, int nJ, int nK ){
+			grid = spectral::array( nI, nJ, nK, 0.0d );
+		}
+	};
+
+	// A HalfTrack is a half-circular band centered at the grid's center and arcing between N000E (north) and N180E (south)
+	// passing through east (N090E).  The spectrogram of a real-valued grid is symmetric, meaning that a values
+	// along the N045E azimuth, for example, equals those along the N225E azimuth, thus it is not necessary to model
+	// an all-around track.	It is divided into Sectors.
+	struct HalfTrack{
+		double innerRadius;
+		double outerRadius;
+		int index;
+		std::vector< Sector > sectors;
+		void makeSectors(){
+			int nSectors = 1;
+			if( index > 0 )
+				nSectors = 2 * (index+1); //innermost track = 1 sector, then 4, then 6, then 8, then 10...
+			double azimuthSpan = 180.0d / nSectors;
+			double currentStartAzimuth = 0.0;
+			double currentEndAzimuth = azimuthSpan;
+			for( int i = 0; i < nSectors; ++nSectors){
+				Sector sector;
+				sector.startAzimuth = currentStartAzimuth;
+				sector.endAzimuth = currentEndAzimuth;
+				sector.makeGrid();
+				currentStartAzimuth += azimuthSpan;
+				currentEndAzimuth += azimuthSpan;
+				sectors.push_back( sector );
+			}
+		}
+	};
+
+	//Compute FFT of the input data
+	spectral::array inputFFTreal;
+	spectral::array inputFFTimaginary;
+	{
+		spectral::array inputCopy( *gridInputData );
+		spectral::complex_array inputFFT;
+		spectral::foward( inputFFT, inputCopy );
+		inputFFTreal = spectral::real( inputFFT );
+		inputFFTimaginary = spectral::imag( inputFFT );
+	}
+
+	// Compute the track geometries.
+	std::vector< HalfTrack > tracks;
+	{
+		// Get global geometry.
+		double diagonal = std::sqrt( gridWidth*gridWidth + gridHeight*gridHeight );
+		double trackWidth = (diagonal/2) / nTracks;
+		double currentInnerRadius = 0.0;
+		double currentOuterRadius = trackWidth;
+		// Create the tracks from center outwards.
+		for( int i = 0; i < nTracks; ++i){
+			HalfTrack track;
+			track.innerRadius = currentInnerRadius;
+			track.outerRadius = currentOuterRadius;
+			track.index = i;
+			track.makeSectors();
+			tracks.push_back( track );
+			currentInnerRadius += trackWidth;
+			currentOuterRadius += trackWidth;
+		}
+	}
+
+	// Scan the Fourier image, assigning cell values to the tracks/sectors.
+	double gridCenterX = gridWidth/2;
+	double gridCenterY = gridHeight/2;
+	double gridCenterZ = gridDepth/2;
+	for( int i = 0; i < gridInputData->M(); ++i ){
+		double cellCenterX = cellWidth/2 + i * cellHeight;
+		for( int j = 0; j < gridInputData->N(); ++j ){
+			double cellCenterY = cellHeight/2 + i * cellHeight;
+			for( int k = 0; k < gridInputData->K(); ++k ){
+				double cellCenterZ = cellThickness/2 + i * cellThickness;
+				double dX = cellCenterX - gridCenterX;
+				double dY = cellCenterY - gridCenterY;
+				double dZ = cellCenterZ - gridCenterZ;
+				double distance = std::sqrt( dX*dX + dY*dY + dZ*dZ );
+
+			}
+		}
+	}
+}
+
+void VariographicDecompositionDialog::doVariographicDecomposition2( )
+{
+	doVariographicDecomposition2( true );
 }

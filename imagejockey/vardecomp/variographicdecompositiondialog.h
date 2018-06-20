@@ -55,6 +55,14 @@ private:
 					 double infoContentToKeepForSVD,
 					 std::vector<spectral::array> & svdFactors);
 
+	/** Computes the fundamental factors for the given variable of the given grid using a Fourier image partitioning method
+	 * to factorize the input image into a series of additive images.
+	 */
+	void doFourierPartitioningOnData(const spectral::array* gridInputData,
+									 std::vector<spectral::array> & frequencyFactors);
+
+	void doVariographicDecomposition2( bool useSVD );
+
 private Q_SLOTS:
 	void doVariographicDecomposition();
 	//you can use this function to see the contents of large matrices and grids during debug.
