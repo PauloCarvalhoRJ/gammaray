@@ -651,41 +651,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 				progressDialog.setLabelText("Computing SVD factors of varmap...");
 				progressDialog.show();
 				QCoreApplication::processEvents();
-				spectral::SVD svd = spectral::svd( gridVarmap );
-				//get the list with the factor weights (information quantity)
-				spectral::array weights = svd.factor_weights();
+				doSVDonData( &gridVarmap, infoContentToKeepForSVD, svdFactors );
+				n = svdFactors.size();
 				progressDialog.hide();
-				//get the number of fundamental factors that have the total information content as specified by the user.
-				{
-					double cumulative = 0.0;
-					uint i = 0;
-					for(; i < weights.size(); ++i){
-						cumulative += weights.d_[i];
-						if( cumulative > infoContentToKeepForSVD )
-							break;
-					}
-					n = i+1;
-				}
-				if( n < 3 ){
-					QMessageBox::warning( this, "Warning", "The data's varmap must be decomposable into at least three usable fundamental factors to proceed.");
-					return;
-				} else {
-					emit info( "Using " + QString::number(n) + " fundamental factors out of " + QString::number(weights.size()) +
-							   " to cover " + QString::number(ui->spinInfoContentToKeepForSVD->value()) + "% of information content." );
-				}
-				//Get the usable fundamental SVD factors.
-				{
-					QProgressDialog progressDialog;
-					progressDialog.setRange(0,0);
-					progressDialog.show();
-					for (long i = 0; i < n; ++i) {
-                        progressDialog.setLabelText("Retrieving fundamental SVD factor " + QString::number(i+1) +
-                                                    " of " + QString::number(n) + "...");
-						QCoreApplication::processEvents();
-						spectral::array factor = svd.factor(i);
-						svdFactors.push_back( std::move( factor ) );
-					}
-				}
 			}
 		}
 	}
