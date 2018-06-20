@@ -133,7 +133,7 @@ public:
      * @note If you use private spectral::array objects, do not return pointers to them as the returned objects are
      *       expected to be managed  by client code.  Create a new one or clone.
      */
-    virtual spectral::array* createSpectralArray( int variableIndex ) = 0;
+	virtual spectral::array* createSpectralArray( int variableIndex ) = 0;
 
     /** Creates a spectral::complex_array object from two variables of this Cartesian grid.
      * The client code is responsible for managing the memory occupied the object.

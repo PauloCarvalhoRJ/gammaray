@@ -23,7 +23,7 @@ public:
      * Returns the GEO-EAS index passed in the constructor,
      * so this is not necessarily read from a GEO-EAS file.
      */
-    int getAttributeGEOEASgivenIndex(){ return _index; }
+	int getAttributeGEOEASgivenIndex() const { return _index; }
 
     /** Returns whether this attribute was considered as a categorical variable. */
     bool isCategorical();
@@ -47,7 +47,7 @@ public:
 public:
     /** Returns null pointer if parent object is not a Cartesian grid. */
     virtual IJAbstractCartesianGrid* getParentGrid();
-    virtual int getIndexInParentGrid();
+	virtual int getIndexInParentGrid() const;
 	virtual QString getVariableName();
     virtual QIcon getVariableIcon();
 

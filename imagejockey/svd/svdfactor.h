@@ -266,7 +266,7 @@ public:
     virtual IJAbstractVariable *getVariableByIndex(int){ return m_variableProxy; }
     virtual void equalizeValues(QList<QPointF> &area, double delta_dB, int variableIndex, double dB_reference, const QList<QPointF> &secondArea);
     virtual void saveData();
-    virtual spectral::array *createSpectralArray(int variableIndex);
+	virtual spectral::array *createSpectralArray(int variableIndex);
     virtual spectral::complex_array *createSpectralComplexArray(int variableIndex1, int variableIndex2);
     virtual void clearLoadedData(){} //SVDFactors are not persistible
     virtual long appendAsNewVariable(const QString variableName, const spectral::array &array);

@@ -121,7 +121,7 @@ IJAbstractCartesianGrid *Attribute::getParentGrid()
 	return nullptr;
 }
 
-int Attribute::getIndexInParentGrid()
+int Attribute::getIndexInParentGrid() const
 {
     return getAttributeGEOEASgivenIndex() - 1;
 }

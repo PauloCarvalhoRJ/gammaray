@@ -188,7 +188,7 @@ public:
     virtual void equalizeValues(QList<QPointF>& area, double delta_dB, int dataColumn, double dB_reference,
                         const QList<QPointF>& secondArea = QList<QPointF>());
     virtual void saveData();
-    virtual spectral::array* createSpectralArray( int nDataColumn );
+	virtual spectral::array* createSpectralArray( int nDataColumn );
     virtual spectral::complex_array* createSpectralComplexArray( int variableIndex1,
                                                                  int variableIndex2);
     virtual void clearLoadedData();

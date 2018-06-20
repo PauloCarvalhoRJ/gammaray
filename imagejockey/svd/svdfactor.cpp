@@ -23,7 +23,7 @@ public:
     {
         return m_parent;
     }
-    virtual int getIndexInParentGrid()
+	virtual int getIndexInParentGrid() const
     {
         return 0; //SVDFactors have only one variable
     }
