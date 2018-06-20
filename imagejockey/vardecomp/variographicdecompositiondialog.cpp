@@ -1196,13 +1196,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
     //-----------------------------------PREPARATION STEPS---------------------------------------------
     //-------------------------------------------------------------------------------------------------
 
-    // PRODUCT: a collection of grids with the fundamental SVD factors of the variable.
-    std::vector< spectral::array > svdFactors;
+	// PRODUCT: a collection of grids with the fundamental factors of the variable.
+	std::vector< spectral::array > fundamentalFactors;
     int n = 0;
     {
         //Compute SVD of input variable
         {
-            //Get the number of usable fundamental SVD factors.
+			//Get the number of usable fundamental factors.
             {
                 QProgressDialog progressDialog;
                 progressDialog.setRange(0,0);
@@ -1210,42 +1210,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
                 progressDialog.show();
                 QCoreApplication::processEvents();
                 spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
-                spectral::SVD svd = spectral::svd( *gridInputData );
-                delete gridInputData;
-                //get the list with the factor weights (information quantity)
-                spectral::array weights = svd.factor_weights();
-                progressDialog.hide();
-                //get the number of fundamental factors that have the total information content as specified by the user.
-                {
-                    double cumulative = 0.0;
-                    uint i = 0;
-                    for(; i < weights.size(); ++i){
-                        cumulative += weights.d_[i];
-                        if( cumulative > infoContentToKeepForSVD )
-                            break;
-                    }
-                    n = i+1;
-                }
-                if( n < 3 ){
-                    QMessageBox::warning( this, "Warning", "The data must be decomposable into at least three usable fundamental factors to proceed.");
-                    return;
-                } else {
-                    emit info( "Using " + QString::number(n) + " fundamental factors out of " + QString::number(weights.size()) +
-                               " to cover " + QString::number(ui->spinInfoContentToKeepForSVD->value()) + "% of information content." );
-                }
-                //Get the usable fundamental SVD factors.
-                {
-                    QProgressDialog progressDialog;
-                    progressDialog.setRange(0,0);
-                    progressDialog.show();
-                    for (long i = 0; i < n; ++i) {
-                        progressDialog.setLabelText("Retrieving fundamental SVD factor " + QString::number(i+1) +
-                                                    " of " + QString::number(n) + "...");
-                        QCoreApplication::processEvents();
-                        spectral::array factor = svd.factor(i);
-                        svdFactors.push_back( std::move( factor ) );
-                    }
-                }
+				doSVDonData( gridInputData, infoContentToKeepForSVD, fundamentalFactors );
+				delete gridInputData;
+				n = fundamentalFactors.size();
             }
         }
     }
@@ -1418,9 +1385,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
             //Computes the “energy” of the current state (set of parameters).
             //The “energy” in this case is how different the image as given the parameters is with respect
             //the data grid, considered the reference image.
-            double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+			double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
             //Computes the “energy” of the neighboring state.
-            f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+			f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
             //Changes states stochastically.  There is a probability of acceptance of a more energetic state so
             //the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
             double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
@@ -1502,7 +1469,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 												B,
 												I,
 												m,
-												svdFactors,
+												fundamentalFactors,
 												addSparsityPenalty,
 												addOrthogonalityPenalty,
                                                 sparsityThreshold,
@@ -1533,8 +1500,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 					if( new_vw.d_[i] > 1.0 )
 						new_vw.d_[i] = 1.0;
 				}
-                currentF = F2( *gridData, vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
-                nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+				currentF = F2( *gridData, vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+				nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
 				if( nextF < currentF ){
 					vw = new_vw;
 					break;
@@ -1583,7 +1550,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2()
 				for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
 					QCoreApplication::processEvents();
 					double weight = va.d_[ iGeoFactor * m + iSVDFactor ];
-					geologicalFactor += svdFactors[iSVDFactor] * weight;
+					geologicalFactor += fundamentalFactors[iSVDFactor] * weight;
 				}
 				geologicalFactors.push_back( std::move( geologicalFactor ) );
 			}
@@ -1651,7 +1618,6 @@ void VariographicDecompositionDialog::doSVDonData(const spectral::array* gridInp
 	{
 		int n = 0;
 		spectral::SVD svd = spectral::svd( *gridInputData );
-		delete gridInputData;
 		//get the list with the factor weights (information quantity)
 		spectral::array weights = svd.factor_weights();
 		//get the number of fundamental factors that have the total information content as specified by the user.
