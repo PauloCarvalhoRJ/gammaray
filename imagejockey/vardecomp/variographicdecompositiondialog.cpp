@@ -1756,6 +1756,8 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		}
 	}
 
+	//////// TODO: DISCARD ALL-ZEROS SECTORS //////////////
+
 	// Scan the Fourier image, assigning cell values to the tracks/sectors.
 	double gridCenterX = gridWidth/2;
 	double gridCenterY = gridHeight/2;
@@ -1763,9 +1765,9 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 	for( int i = 0; i < inputFFTreal.M(); ++i ){
 		double cellCenterX = cellWidth/2 + i * cellHeight;
 		for( int j = 0; j < inputFFTreal.N(); ++j ){
-			double cellCenterY = cellHeight/2 + i * cellHeight;
+			double cellCenterY = cellHeight/2 + j * cellHeight;
 			for( int k = 0; k < inputFFTreal.K(); ++k ){
-				// double cellCenterZ = cellThickness/2 + i * cellThickness; // distance criterion currently only in 2D.
+				// double cellCenterZ = cellThickness/2 + k * cellThickness; // distance criterion currently only in 2D.
 				double dX = cellCenterX - gridCenterX;
 				double dY = cellCenterY - gridCenterY;
 				// double dZ = cellCenterZ - gridCenterZ; // distance criterion currently only in 2D.
@@ -1787,6 +1789,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
 		for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
 			q3Dv->display( (*itSector).grid, (*itSector).grid.min(), (*itSector).grid.max() );
+			QMessageBox::information( this, "jjj", "jjj" );
 		}
 	}
 
