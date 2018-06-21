@@ -1638,6 +1638,13 @@ void VariographicDecompositionDialog::doSVDonData(const spectral::array* gridInp
 void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral::array * gridInputData,
 																  std::vector<spectral::array> & frequencyFactors)
 {
+	///Visualizing the results on the fly is optional/////////////
+	static IJQuick3DViewer* q3Dv = nullptr;
+	if( ! q3Dv )
+		q3Dv = new IJQuick3DViewer();
+	q3Dv->show();
+	///////////////////////////////////////////////////////////////
+
 	///////////////////////////////// ACESS GRID GEOMETRY ///////////////////////////
 
 	double cellWidth = 1.0;
@@ -1661,6 +1668,16 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		void makeGrid( int pnI, int pnJ, int pnK ){
 			grid = spectral::array( pnI, pnJ, pnK, 0.0d );
 		}
+		bool isAligned( double azimuth ){
+			return azimuth >= startAzimuth && azimuth < endAzimuth;
+		}
+		bool assignValue( double azimuth, double value, int i, int j, int k ){
+			if( isAligned( azimuth )){
+				grid( i, j, k ) = value;
+				return true;
+			}
+			return false;
+		}
 	};
 
 	// A HalfTrack is a half-circular band centered at the grid's center and arcing between N000E (north) and N180E (south)
@@ -1679,7 +1696,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 			double azimuthSpan = 180.0d / nSectors;
 			double currentStartAzimuth = 0.0;
 			double currentEndAzimuth = azimuthSpan;
-			for( int i = 0; i < nSectors; ++nSectors){
+			for( int i = 0; i < nSectors; ++i ){
 				Sector sector;
 				sector.startAzimuth = currentStartAzimuth;
 				sector.endAzimuth = currentEndAzimuth;
@@ -1692,10 +1709,16 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		bool isInside( double distance ){
 			return distance >= innerRadius && distance < outerRadius;
 		}
-		void assignValue( double distance, double azimuth, double value, int i, int j, int k ){
+		bool assignValue( double distance, double azimuth, double value, int i, int j, int k ){
 			if( isInside( distance ) ){
-				//// TODO: traverse all Sectors and make the assignment.
+				std::vector< Sector >::iterator itSector = sectors.begin();
+				for( ; itSector != sectors.end(); ++itSector ){
+					bool wasAssigned = (*itSector).assignValue( azimuth, value, i, j, k );
+					if( wasAssigned )
+						return true; //abort the search if a matching sector was found.
+				}
 			}
+			return false;
 		}
 	};
 
@@ -1737,20 +1760,36 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 	double gridCenterX = gridWidth/2;
 	double gridCenterY = gridHeight/2;
 	// double gridCenterZ = gridDepth/2; // distance criterion currently only in 2D.
-	for( int i = 0; i < gridInputData->M(); ++i ){
+	for( int i = 0; i < inputFFTreal.M(); ++i ){
 		double cellCenterX = cellWidth/2 + i * cellHeight;
-		for( int j = 0; j < gridInputData->N(); ++j ){
+		for( int j = 0; j < inputFFTreal.N(); ++j ){
 			double cellCenterY = cellHeight/2 + i * cellHeight;
-			for( int k = 0; k < gridInputData->K(); ++k ){
+			for( int k = 0; k < inputFFTreal.K(); ++k ){
 				// double cellCenterZ = cellThickness/2 + i * cellThickness; // distance criterion currently only in 2D.
 				double dX = cellCenterX - gridCenterX;
 				double dY = cellCenterY - gridCenterY;
 				// double dZ = cellCenterZ - gridCenterZ; // distance criterion currently only in 2D.
 				double distance = std::sqrt( dX*dX + dY*dY /*+ dZ*dZ*/ ); // distance criterion currently only in 2D.
-				//// TODO: Compute azimuth of cell center and call HalfTrack::assignValue().
+				double azimuth = ImageJockeyUtils::getAzimuth( cellCenterX, cellCenterY, gridCenterX, gridCenterY, true );
+				std::vector< HalfTrack >::iterator trackIt = tracks.begin();
+				for( ; trackIt != tracks.end(); ++trackIt ){
+					bool wasAssigned = (*trackIt).assignValue( distance, azimuth, inputFFTreal(i,j,k), i, j, k );
+					if( wasAssigned )
+						break; //abort the search if a matching sector in a matching track was found.
+				}
 			}
 		}
 	}
+
+	q3Dv->clearScene();
+	std::vector< HalfTrack >::iterator trackIt = tracks.begin();
+	for( ; trackIt != tracks.end(); ++trackIt ){
+		std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
+		for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
+			q3Dv->display( (*itSector).grid, (*itSector).grid.min(), (*itSector).grid.max() );
+		}
+	}
+
 }
 
 void VariographicDecompositionDialog::doVariographicDecomposition2( )
