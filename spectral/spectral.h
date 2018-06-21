@@ -245,6 +245,7 @@ array to_array(const Eigen::MatrixXd &m, index M, index N, index K);
 
 complex_array to_complex_array(const array &A);
 complex_array to_complex_array(const array &A, double scale);
+complex_array to_complex_array(const array &A, const array &B);
 
 array real(const complex_array &in);
 array imag(const complex_array &in);

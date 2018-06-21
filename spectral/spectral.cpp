@@ -1705,5 +1705,20 @@ std::pair<array, array> eig(const array &input)
 	return { to_array(eigenvectors), to_array(eigenvalues) };
 }
 
+complex_array to_complex_array(const array & A, const array & B)
+{
+	index M = A.M();
+	index N = A.N();
+	index K = A.K();
+	complex_array a(M, N, K);
+
+	for (index i = 0; i < A.size(); ++i) {
+		a(i)[0] = A(i);
+		a(i)[1] = B(i);
+	}
+
+	return a;
+}
+
 } // namespace spectral
 
