@@ -33,6 +33,9 @@ public:
     /** Constant used to convert degrees to radians. */
     static const long double PI_OVER_180;
 
+	/** Constant used to convert radians to degrees. */
+	static const long double _180_OVER_PI;
+
     /**
 	 * Perfoms a reliable way to compare floating-point values.
 	 * credit: Bruce Dawson
@@ -239,6 +242,16 @@ public:
         double stdev = std::sqrt(squaredSum / (double)values.size());
         variance = stdev * stdev;
     }
+
+	/**
+	 * Computes the azimuth, in degrees, of the given (x,y) location with respect to some other
+	 * location (centerX, centerY).  The azimuth returned follows the GSLib convention, or geologist's convention:
+	 * Zero azimuth points to north and increases clockwise.
+	 * @param halfAzimuth If true, instead of a 0-360 range, the azimuth resets to zero after N180E (south), which makes
+	 *                    antipodal points have the same half-azimuth values.
+	 * @note If the internal arctangent call results in infinity (very near or at the center) the returned azimuth value is zero.
+	 */
+	static double getAzimuth( double x, double y, double centerX, double centerY, bool halfAzimuth = false );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

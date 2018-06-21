@@ -26,6 +26,8 @@
 
 /*static*/const long double ImageJockeyUtils::PI_OVER_180( ImageJockeyUtils::PI / 180.0L );
 
+/*static*/const long double ImageJockeyUtils::_180_OVER_PI( 180.0L / ImageJockeyUtils::PI );
+
 ImageJockeyUtils::ImageJockeyUtils()
 {
 }
@@ -646,4 +648,16 @@ void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::arr
 	spectral::array Da = aDesign * a;
 	Da = Da / Da.euclideanLength(); //normalize the Da vector to remove scale effect (error would be proportional to the size of the fitted ellipse).
 	fitnessError = Da(0)*Da(0) + Da(1)*Da(1) + Da(2)*Da(2) + Da(3)*Da(3) + Da(4)*Da(4) + Da(5)*Da(5);
+}
+
+double ImageJockeyUtils::getAzimuth( double x, double y, double centerX, double centerY, bool halfAzimuth )
+{
+	double localX = x - centerX;
+	double localY = y - centerY;
+	double az = -(std::atan( localY / localX ) * _180_OVER_PI - 90.0);
+	if( ! std::isfinite( az ) )
+	   az = 0.0;
+	if( ! halfAzimuth && localX < 0.0 )
+	   az += 180.0;
+	return az;
 }
