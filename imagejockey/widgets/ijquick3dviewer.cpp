@@ -8,6 +8,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 
 #include "ijquick3dviewer.h"
 #include "ui_ijquick3dviewer.h"
+#include "../imagejockeyutils.h"
+#include "../../spectral/spectral.h"
 
 #include <QVTKOpenGLWidget.h>
 #include <vtkAxesActor.h>
@@ -150,6 +152,13 @@ void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, do
 	_renderer->ResetCamera();
 
 	_vtkwidget->GetRenderWindow()->Render();
+}
+
+void IJQuick3DViewer::display( const spectral::array & grid, double colorScaleMin, double colorScaleMax )
+{
+	vtkSmartPointer<vtkImageData> out = vtkSmartPointer<vtkImageData>::New();
+	ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, grid );
+	display( out, colorScaleMin, colorScaleMax );
 }
 
 void IJQuick3DViewer::clearScene()

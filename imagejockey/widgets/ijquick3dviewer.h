@@ -15,6 +15,9 @@ class vtkOrientationMarkerWidget;
 class vtkPolyData;
 class vtkImageData;
 class vtkActor;
+namespace spectral {
+	class array;
+}
 
 /**
  * The IJQuick3DViewer class allows quick inspection of 3D data (e.g. during debugging).
@@ -31,8 +34,11 @@ public:
 	/** Renders the given polytopes with the given color expressed as RGB values. */
 	void display( vtkPolyData* polyData, int r=255, int g=255, int b=255 );
 
-	/** Renders the regular grid.  Its values are mapped to a grayscale set between given values. */
+	/** Renders the passed regular grid.  Its values are mapped to a grayscale set between given values. */
 	void display( vtkImageData* imageData, double colorScaleMin, double colorScaleMax );
+
+	/** Renders the passed regular grid.  Its values are mapped to a grayscale set between given values. */
+	void display( const spectral::array& grid, double colorScaleMin, double colorScaleMax );
 
 	/** Removes the actor(s) currently being displayed (if any). */
 	void clearScene();
