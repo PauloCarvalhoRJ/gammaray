@@ -1638,21 +1638,28 @@ void VariographicDecompositionDialog::doSVDonData(const spectral::array* gridInp
 void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral::array * gridInputData,
 																  std::vector<spectral::array> & frequencyFactors)
 {
+	///////////////////////////////// ACESS GRID GEOMETRY ///////////////////////////
+
 	double cellWidth = 1.0;
 	double cellHeight = 1.0;
-	double cellThickness = 1.0;
+	// double cellThickness = 1.0; // distance criterion currently only in 2D.
 	int nTracks = 10;
-	double gridWidth = inputFFTreal.M() * cellWidth;
-	double gridHeight = inputFFTreal.N() * cellHeight;
-	double gridDepth = inputFFTreal.K() * cellThickness;
+	double gridWidth = gridInputData->M() * cellWidth;
+	double gridHeight = gridInputData->N() * cellHeight;
+	// double gridDepth = gridInputData.K() * cellThickness; // distance criterion currently only in 2D.
+	int nI = gridInputData->M();
+	int nJ = gridInputData->N();
+	int nK = gridInputData->K();
+
+	////////////////// DEFINE SOME STRUCTURES TO ORGANIZE CODE ///////////////////////
 
 	// A Sector is a division of a HalfTrack spanning some angles.
 	struct Sector{
 		double startAzimuth;
 		double endAzimuth;
 		spectral::array grid;
-		void makeGrid( int nI, int nJ, int nK ){
-			grid = spectral::array( nI, nJ, nK, 0.0d );
+		void makeGrid( int pnI, int pnJ, int pnK ){
+			grid = spectral::array( pnI, pnJ, pnK, 0.0d );
 		}
 	};
 
@@ -1665,7 +1672,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		double outerRadius;
 		int index;
 		std::vector< Sector > sectors;
-		void makeSectors(){
+		void makeSectors( int pnI, int pnJ, int pnK ){
 			int nSectors = 1;
 			if( index > 0 )
 				nSectors = 2 * (index+1); //innermost track = 1 sector, then 4, then 6, then 8, then 10...
@@ -1676,13 +1683,23 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 				Sector sector;
 				sector.startAzimuth = currentStartAzimuth;
 				sector.endAzimuth = currentEndAzimuth;
-				sector.makeGrid();
+				sector.makeGrid( pnI, pnJ, pnK );
 				currentStartAzimuth += azimuthSpan;
 				currentEndAzimuth += azimuthSpan;
 				sectors.push_back( sector );
 			}
 		}
+		bool isInside( double distance ){
+			return distance >= innerRadius && distance < outerRadius;
+		}
+		void assignValue( double distance, double azimuth, double value, int i, int j, int k ){
+			if( isInside( distance ) ){
+				//// TODO: traverse all Sectors and make the assignment.
+			}
+		}
 	};
+
+	///////////////////// BEGIN OF ALGORITHM ITSELF //////////////////////////////////
 
 	//Compute FFT of the input data
 	spectral::array inputFFTreal;
@@ -1709,7 +1726,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 			track.innerRadius = currentInnerRadius;
 			track.outerRadius = currentOuterRadius;
 			track.index = i;
-			track.makeSectors();
+			track.makeSectors( nI, nJ, nK );
 			tracks.push_back( track );
 			currentInnerRadius += trackWidth;
 			currentOuterRadius += trackWidth;
@@ -1719,18 +1736,18 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 	// Scan the Fourier image, assigning cell values to the tracks/sectors.
 	double gridCenterX = gridWidth/2;
 	double gridCenterY = gridHeight/2;
-	double gridCenterZ = gridDepth/2;
+	// double gridCenterZ = gridDepth/2; // distance criterion currently only in 2D.
 	for( int i = 0; i < gridInputData->M(); ++i ){
 		double cellCenterX = cellWidth/2 + i * cellHeight;
 		for( int j = 0; j < gridInputData->N(); ++j ){
 			double cellCenterY = cellHeight/2 + i * cellHeight;
 			for( int k = 0; k < gridInputData->K(); ++k ){
-				double cellCenterZ = cellThickness/2 + i * cellThickness;
+				// double cellCenterZ = cellThickness/2 + i * cellThickness; // distance criterion currently only in 2D.
 				double dX = cellCenterX - gridCenterX;
 				double dY = cellCenterY - gridCenterY;
-				double dZ = cellCenterZ - gridCenterZ;
-				double distance = std::sqrt( dX*dX + dY*dY + dZ*dZ );
-
+				// double dZ = cellCenterZ - gridCenterZ; // distance criterion currently only in 2D.
+				double distance = std::sqrt( dX*dX + dY*dY /*+ dZ*dZ*/ ); // distance criterion currently only in 2D.
+				//// TODO: Compute azimuth of cell center and call HalfTrack::assignValue().
 			}
 		}
 	}
