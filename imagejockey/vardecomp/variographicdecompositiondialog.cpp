@@ -1650,7 +1650,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 	double cellWidth = 1.0;
 	double cellHeight = 1.0;
 	// double cellThickness = 1.0; // distance criterion currently only in 2D.
-	int nTracks = 10;
+	int nTracks = 20;
 	double gridWidth = gridInputData->M() * cellWidth;
 	double gridHeight = gridInputData->N() * cellHeight;
 	// double gridDepth = gridInputData.K() * cellThickness; // distance criterion currently only in 2D.
@@ -1665,6 +1665,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		double startAzimuth;
 		double endAzimuth;
 		spectral::array grid;
+		bool wasTouched = false;
 		void makeGrid( int pnI, int pnJ, int pnK ){
 			grid = spectral::array( pnI, pnJ, pnK, 0.0d );
 		}
@@ -1674,6 +1675,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		bool assignValue( double azimuth, double value, int i, int j, int k ){
 			if( isAligned( azimuth )){
 				grid( i, j, k ) = value;
+				wasTouched = true;
 				return true;
 			}
 			return false;
@@ -1735,6 +1737,9 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		inputFFTimaginary = spectral::imag( inputFFT );
 	}
 
+	//Shift the Fourier image so that frequency zero is in the grid center.
+	inputFFTreal = spectral::shiftByHalf( inputFFTreal );
+
 	// Compute the track geometries.
 	std::vector< HalfTrack > tracks;
 	{
@@ -1755,8 +1760,6 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 			currentOuterRadius += trackWidth;
 		}
 	}
-
-	//////// TODO: DISCARD ALL-ZEROS SECTORS //////////////
 
 	// Scan the Fourier image, assigning cell values to the tracks/sectors.
 	double gridCenterX = gridWidth/2;
@@ -1783,13 +1786,55 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		}
 	}
 
-	q3Dv->clearScene();
-	std::vector< HalfTrack >::iterator trackIt = tracks.begin();
-	for( ; trackIt != tracks.end(); ++trackIt ){
-		std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
-		for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
-			q3Dv->display( (*itSector).grid, (*itSector).grid.min(), (*itSector).grid.max() );
-			QMessageBox::information( this, "jjj", "jjj" );
+	// Discard all-zeros factors ( resulted from sectors out of grid boundaries ).
+	{
+		std::vector< HalfTrack >::iterator trackIt = tracks.begin();
+		for( ; trackIt != tracks.end(); ++trackIt ){
+			std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
+			for( ; itSector != (*trackIt).sectors.end(); ){ // erase() already increments the iterator.
+				if( ! (*itSector).wasTouched )
+					itSector = (*trackIt).sectors.erase( itSector );
+				else
+					++itSector;
+			}
+		}
+	}
+
+	// De-shift all factors so they become compatible with reverse FFT.
+	{
+		std::vector< HalfTrack >::iterator trackIt = tracks.begin();
+		for( ; trackIt != tracks.end(); ++trackIt ){
+			std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
+			for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
+				(*itSector).grid = spectral::shiftByHalf( (*itSector).grid );
+			}
+		}
+	}
+
+	// Compute RFFT for all factors.
+	{
+		std::vector< HalfTrack >::iterator trackIt = tracks.begin();
+		for( ; trackIt != tracks.end(); ++trackIt ){
+			std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
+			for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
+				spectral::complex_array input = spectral::to_complex_array( (*itSector).grid, inputFFTimaginary );
+				spectral::array backtrans( nI, nJ, nK, 0.0d );
+				spectral::backward( backtrans, input );
+				(*itSector).grid = backtrans / static_cast<double>(nI * nJ * nK);
+			}
+		}
+	}
+
+
+	{
+		std::vector< HalfTrack >::iterator trackIt = tracks.begin();
+		for( ; trackIt != tracks.end(); ++trackIt ){
+			std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
+			for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
+				q3Dv->clearScene();
+				q3Dv->display( (*itSector).grid, (*itSector).grid.min(), (*itSector).grid.max() );
+				QMessageBox::information( this, "jjj", "jjj" );
+			}
 		}
 	}
 
