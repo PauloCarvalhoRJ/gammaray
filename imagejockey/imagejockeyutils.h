@@ -186,11 +186,14 @@ public:
      * @param ratio_variance Filled with the variance of the ellipses' semi-axes ratios.
      * @param angle_mean Filled with the mean of the ellipses' angles.
      * @param ratio_mean Filled with the mean of the ellipses' semi-axes ratios.
+	 * @param nSkipOutermost Do not fit ellipses to the n outermost polylines.  Set zero to fit ellipses to all poly lines.
+	 *                       This is useful to lower the influence of anisotropy too distant from the center of variographic maps.
      */
-    static void fitEllipses(const vtkSmartPointer<vtkPolyData>& polyData,
-                            vtkSmartPointer<vtkPolyData>& ellipses ,
-                            double &mean_error, double &max_error, double &sum_error,
-                            double &angle_variance, double &ratio_variance, double &angle_mean, double &ratio_mean);
+	static void fitEllipses(const vtkSmartPointer<vtkPolyData>& polyData,
+							vtkSmartPointer<vtkPolyData>& ellipses ,
+							double &mean_error, double &max_error, double &sum_error,
+							double &angle_variance, double &ratio_variance, double &angle_mean, double &ratio_mean,
+							int nSkipOutermost );
 
     /**
      * Computes the ellipse parameters from the factors of the ellipse implicit equation in the form

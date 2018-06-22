@@ -450,7 +450,8 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
                                    double &angle_variance,
                                    double &ratio_variance,
                                    double &angle_mean,
-                                   double &ratio_mean)
+								   double &ratio_mean,
+								   int nSkipOutermost )
 {
     // If there is no geometry, there is nothing to do.
     if ( polyData->GetNumberOfPoints() == 0 )
@@ -471,6 +472,9 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
     std::vector< double> ratios; //collects ellipse axes ratios.
 	int nEllipsesFit = 0;
 	for(int iPoly = 0; in_Lines->GetNextCell( vertexIdList ); ++iPoly ){
+
+		if( iPoly < nSkipOutermost )
+			continue;
 
 		// Collect the X and Y vertex coordinates of a poly line
         spectral::array aX( vertexIdList->GetNumberOfIds() );

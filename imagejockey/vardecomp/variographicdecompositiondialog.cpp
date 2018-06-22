@@ -193,7 +193,9 @@ double F2(const spectral::array &originalGrid,
          const std::vector<spectral::array> &fundamentalFactors,
          const bool addSparsityPenalty,
          const bool addOrthogonalityPenalty,
-         const double sparsityThreshold )
+		 const double sparsityThreshold,
+		 const int nSkipOutermost,
+		 const int nIsosurfs )
 {
 
 	// A mutex to create critical sections to avoid crashes in multithreaded calls.
@@ -317,7 +319,7 @@ double F2(const spectral::array &originalGrid,
 			vtkSmartPointer<vtkPolyData> poly;
 			{
 				poly = ImageJockeyUtils::computeIsosurfaces( geologicalFactorVarmapShifted,
-															 40,
+															 nIsosurfs,
 															 geologicalFactorVarmapShifted.min(),
 															 geologicalFactorVarmapShifted.max() );
 				// Get the isomap's bounding box.
@@ -369,7 +371,7 @@ double F2(const spectral::array &originalGrid,
 				vtkSmartPointer<vtkPolyData> ellipses;
 				double max_error, mean_error, sum_error;
                 double angle_variance, ratio_variance, angle_mean, ratio_mean;
-                ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error, angle_variance, ratio_variance, angle_mean, ratio_mean );
+				ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error, angle_variance, ratio_variance, angle_mean, ratio_mean, nSkipOutermost );
 				objectiveFunctionValue += sum_error;
                 angle_variance_mean += angle_variance;
                 ratio_variance_mean += ratio_variance;
@@ -485,6 +487,8 @@ void taskOnePartialDerivative2(
 							   const bool addSparsityPenalty,
 							   const bool addOrthogonalityPenalty,
                                const double sparsityThreshold,
+							   const int nSkipOutermost,
+							   const int nIsosurfs,
 							   spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
 							   ){
 	std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
@@ -497,9 +501,9 @@ void taskOnePartialDerivative2(
 		spectral::array vwFromLeft( vw );
 		vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
 		//Compute (numerically) the partial derivative with respect to one parameter.
-        (*gradient)(iParameter) = (F2( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold )
+		(*gradient)(iParameter) = (F2( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs )
 									 -
-                                   F2( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold ))
+								   F2( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs ))
 									 /
 								   ( 2 * epsilon );
 	}
@@ -1160,6 +1164,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
     bool addOrthogonalityPenalty = ui->chkEnableOrthogonalityPenalty->isChecked();
     double sparsityThreshold = ui->spinSparsityThreshold->value();
 	int nTracks = ui->spinNumberOfSpectrumTracks->value();
+	int nSkipOutermost = ui->spinSkipOuterNIsolinesEllipseFitting->value();
+	int nIsosurfs = ui->spinNumberOfIsolines->value();
 
     //-------------------------------------------------------------------------------------------------
     //-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -1367,9 +1373,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
             //Computes the “energy” of the current state (set of parameters).
             //The “energy” in this case is how different the image as given the parameters is with respect
             //the data grid, considered the reference image.
-			double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+			double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
             //Computes the “energy” of the neighboring state.
-			f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+			f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
             //Changes states stochastically.  There is a probability of acceptance of a more energetic state so
             //the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
             double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
@@ -1455,6 +1461,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 												addSparsityPenalty,
 												addOrthogonalityPenalty,
                                                 sparsityThreshold,
+												nSkipOutermost,
+												nIsosurfs,
 												&gradient);
 			}
 
@@ -1482,8 +1490,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 					if( new_vw.d_[i] > 1.0 )
 						new_vw.d_[i] = 1.0;
 				}
-				currentF = F2( *gridData, vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
-				nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold );
+				currentF = F2( *gridData, vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
+				nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
 				if( nextF < currentF ){
 					vw = new_vw;
 					break;
