@@ -9,6 +9,7 @@ With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 #include "spectral.h"
 #include <cmath>
 #include <Eigen/Dense>
+#include <complex>
 
 namespace spectral
 {
@@ -1718,6 +1719,37 @@ complex_array to_complex_array(const array & A, const array & B)
 	}
 
 	return a;
+}
+
+complex_array to_polar_form(const complex_array & in)
+{
+	std::complex<double> value;
+	index M = in.M();
+	index N = in.N();
+	index K = in.K();
+	complex_array out(M, N, K);
+	for (index i = 0; i < in.size(); ++i) {
+		value.real( in(i)[0] ); //real part
+		value.imag( in(i)[1] ); //imaginary part
+		out(i)[0] = std::abs( value ); //get magnitude
+		out(i)[1] = std::arg( value ); //get phase
+	}
+	return out;
+}
+
+complex_array to_rectangular_form(const complex_array & in)
+{
+	std::complex<double> value;
+	index M = in.M();
+	index N = in.N();
+	index K = in.K();
+	complex_array out(M, N, K);
+	for (index i = 0; i < in.size(); ++i) {
+		value = std::polar( in(i)[0], in(i)[1] );
+		out(i)[0] = value.real();
+		out(i)[1] = value.imag();
+	}
+	return out;
 }
 
 } // namespace spectral

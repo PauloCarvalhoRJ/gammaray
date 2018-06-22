@@ -300,5 +300,15 @@ array inv( const array &input );
  */
 std::pair< array, array > eig( const array &input );
 
+/** Converts a complex array (supposedly coming from a Fourier transform) that is in Cartesian form
+ * (real and imaginary parts) to polar form (magnitude and phase).
+ */
+complex_array to_polar_form(const complex_array & in );
+
+/** Converts a complex array (supposedly coming from a Fourier transform) that is in polar form
+ * (magnitude and phase) to Cartesian form (real and imaginary parts).
+ */
+complex_array to_rectangular_form(const complex_array & in );
+
 } // namepsace spectral
 
