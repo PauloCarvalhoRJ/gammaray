@@ -57,9 +57,12 @@ private:
 
 	/** Computes the fundamental factors for the given variable of the given grid using a Fourier image partitioning method
 	 * to factorize the input image into a series of additive images.
+	 * @param nTracks The greater, the more divided is the spectrum and the more fundamental frequency factors.  A good number
+	 *                ranges between 10 and 30.
 	 */
 	void doFourierPartitioningOnData(const spectral::array* gridInputData,
-									 std::vector<spectral::array> & frequencyFactors);
+									 std::vector<spectral::array> & frequencyFactors,
+									 int nTracks);
 
 	void doVariographicDecomposition2( bool useSVD );
 

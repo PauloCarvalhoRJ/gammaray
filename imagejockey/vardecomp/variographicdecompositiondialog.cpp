@@ -1159,6 +1159,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
     bool addSparsityPenalty = ui->chkEnableSparsityPenalty->isChecked();
     bool addOrthogonalityPenalty = ui->chkEnableOrthogonalityPenalty->isChecked();
     double sparsityThreshold = ui->spinSparsityThreshold->value();
+	int nTracks = ui->spinNumberOfSpectrumTracks->value();
 
     //-------------------------------------------------------------------------------------------------
     //-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -1188,7 +1189,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 			progressDialog.show();
 			QCoreApplication::processEvents();
 			spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
-			doFourierPartitioningOnData( gridInputData, fundamentalFactors );
+			doFourierPartitioningOnData( gridInputData, fundamentalFactors, nTracks );
 			delete gridInputData;
 			n = fundamentalFactors.size();
 		}
@@ -1636,7 +1637,8 @@ void VariographicDecompositionDialog::doSVDonData(const spectral::array* gridInp
 }
 
 void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral::array * gridInputData,
-																  std::vector<spectral::array> & frequencyFactors)
+																  std::vector<spectral::array> & frequencyFactors,
+																  int nTracks )
 {
 	///Visualizing the results on the fly is optional/////////////
 	IJQuick3DViewer q3Dv;
@@ -1648,7 +1650,6 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 	double cellWidth = 1.0;
 	double cellHeight = 1.0;
 	// double cellThickness = 1.0; // distance criterion currently only in 2D.
-	int nTracks = 10;
 	double gridWidth = gridInputData->M() * cellWidth;
 	double gridHeight = gridInputData->N() * cellHeight;
 	// double gridDepth = gridInputData.K() * cellThickness; // distance criterion currently only in 2D.
@@ -1788,15 +1789,19 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 	// Discard all-zeros factors ( resulted from sectors out of grid boundaries ).
 	{
 		std::vector< HalfTrack >::iterator trackIt = tracks.begin();
+		int totalTracks = 0;
 		for( ; trackIt != tracks.end(); ++trackIt ){
 			std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
 			for( ; itSector != (*trackIt).sectors.end(); ){ // erase() already increments the iterator.
 				if( ! (*itSector).wasTouched )
 					itSector = (*trackIt).sectors.erase( itSector );
-				else
+				else{
 					++itSector;
+					++totalTracks;
+				}
 			}
 		}
+		emit info( "VariographicDecompositionDialog::doFourierPartitioningOnData(): " + QString::number( totalTracks ) + " fundamental frequency factors." );
 	}
 
 	// De-shift all factors so they become compatible with reverse FFT.
