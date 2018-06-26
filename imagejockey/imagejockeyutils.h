@@ -178,7 +178,8 @@ public:
 											  int numberOfVertexesThreshold = 0);
 
     /** Fits ellipses to each poly line in the input poly data.  The ellipses are stored
-     * in another poly data object to be referenced in passed VTK smart pointer.
+	 * in another poly data object to be referenced in passed VTK smart pointer.  If the passed
+	 * pointer is null, no ellipses poly is generated and the function only returns the ellipses stats (faster execution).
 	 * @param mean_error Filled with the mean fitness error of all ellipses.
 	 * @param max_error Filled with the largest fitness error of all ellipses.
 	 * @param sum_error Filled with the sum of fitness errors of all ellipses.

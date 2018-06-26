@@ -505,24 +505,26 @@ void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
         ratios.push_back( semiMinorAxis / semiMajorAxis );
 
 		// Make the ellipse poly generator.
-        vtkSmartPointer< vtkEllipseArcSource > ellipseSource = vtkSmartPointer< vtkEllipseArcSource >::New();
-        ellipseSource->SetCenter( centerX, centerY, 0 );
-        ellipseSource->SetNormal( 0, 0, 1 );
-        ellipseSource->SetMajorRadiusVector( semiMajorAxis * std::cos( rotationAngle ),
-                                             semiMajorAxis * std::sin( rotationAngle ),
-                                             0 );
-        ellipseSource->SetSegmentAngle( 360 );
-        ellipseSource->SetRatio( semiMinorAxis / semiMajorAxis );
-        ellipseSource->Update();
+		if( ellipses ){
+			vtkSmartPointer< vtkEllipseArcSource > ellipseSource = vtkSmartPointer< vtkEllipseArcSource >::New();
+			ellipseSource->SetCenter( centerX, centerY, 0 );
+			ellipseSource->SetNormal( 0, 0, 1 );
+			ellipseSource->SetMajorRadiusVector( semiMajorAxis * std::cos( rotationAngle ),
+												 semiMajorAxis * std::sin( rotationAngle ),
+												 0 );
+			ellipseSource->SetSegmentAngle( 360 );
+			ellipseSource->SetRatio( semiMinorAxis / semiMajorAxis );
+			//ellipseSource->Update();
 
-		// Append the ellipse poly data (output of an algorithm) to the result poly data.
-        vtkSmartPointer< vtkAppendPolyData > appendFilter = vtkSmartPointer< vtkAppendPolyData >::New();
-        appendFilter->AddInputData( result );
-		appendFilter->AddInputConnection( ellipseSource->GetOutputPort() );
-        appendFilter->Update();
+			// Append the ellipse poly data (output of an algorithm) to the result poly data.
+			vtkSmartPointer< vtkAppendPolyData > appendFilter = vtkSmartPointer< vtkAppendPolyData >::New();
+			appendFilter->AddInputData( result );
+			appendFilter->AddInputConnection( ellipseSource->GetOutputPort() );
+			appendFilter->Update();
 
-        //result = result + ellipse.
-        result = appendFilter->GetOutput();
+			//result = result + ellipse.
+			result = appendFilter->GetOutput();
+		}
 
 		// Update the ellipse fit count.
 		++nEllipsesFit;

@@ -368,7 +368,7 @@ double F2(const spectral::array &originalGrid,
 			// Fit ellipses to them.
 			lck.lock(); // not all VTK algorithms are thread-safe, so put all VTK-using code in a critical zone just in case.
 			{
-				vtkSmartPointer<vtkPolyData> ellipses;
+				vtkSmartPointer<vtkPolyData> ellipses = vtkSmartPointer<vtkPolyData>::New(); //nullptr == disables display of ellipses == faster execution.
 				double max_error, mean_error, sum_error;
                 double angle_variance, ratio_variance, angle_mean, ratio_mean;
 				ImageJockeyUtils::fitEllipses( isos, ellipses, mean_error, max_error, sum_error, angle_variance, ratio_variance, angle_mean, ratio_mean, nSkipOutermost );
@@ -613,8 +613,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			progressDialog.show();
 			progressDialog.setLabelText("Converting FFT results to polar form...");
 			spectral::complex_array gridNormSquaredAndZeroPhase( nI, nJ, nK );
+			QCoreApplication::processEvents(); //let Qt repaint widgets
 			for(unsigned int k = 0; k < nK; ++k) {
-				QCoreApplication::processEvents(); //let Qt repaint widgets
 				for(unsigned int j = 0; j < nJ; ++j){
 					for(unsigned int i = 0; i < nI; ++i){
 						std::complex<double> value;
@@ -798,13 +798,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		progressDialog.setRange(0,0);
 		progressDialog.show();
 		progressDialog.setLabelText("Simulated Annealing in progress...");
+		QCoreApplication::processEvents();
 		double f_eNew = std::numeric_limits<double>::max();
 		double f_lowestEnergyFound = std::numeric_limits<double>::max();
 		spectral::array L_wOfLowestEnergyFound;
 		int k = 0;
 		for( ; k < i_kmax; ++k ){
 			emit info( "Commencing SA step #" + QString::number( k ) );
-			QCoreApplication::processEvents();
 			//Get current temperature.
 			double f_T = temperature( k );
 			//Quit if temperature is lower than the minimum annealing temperature.
@@ -864,13 +864,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 	progressDialog.setRange(0,0);
 	progressDialog.show();
 	progressDialog.setLabelText("Gradient Descent in progress...");
+	QCoreApplication::processEvents();
 	int iOptStep = 0;
 	spectral::array va;
 	for( ; iOptStep < maxNumberOfOptimizationSteps; ++iOptStep ){
 
 		emit info( "Commencing GD step #" + QString::number( iOptStep ) );
-
-		QCoreApplication::processEvents();
 
 		//Compute the vector of weights [a] = Adagger.B + (I-Adagger.A)[w] (see program manual for theory)
         {
@@ -989,10 +988,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 			progressDialog.setRange(0,0);
 			progressDialog.show();
 			progressDialog.setLabelText("Making the geological factors...");
+			QCoreApplication::processEvents();
 			for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
 				spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
 				for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
-					QCoreApplication::processEvents();
 					double weight = va.d_[ iGeoFactor * m + iSVDFactor ];
 					geologicalFactor += svdFactors[iSVDFactor] * weight;
 				}
@@ -1343,13 +1342,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
         progressDialog.setRange(0,0);
         progressDialog.show();
         progressDialog.setLabelText("Simulated Annealing in progress...");
-        double f_eNew = std::numeric_limits<double>::max();
+		double f_eNew = std::numeric_limits<double>::max();
         double f_lowestEnergyFound = std::numeric_limits<double>::max();
         spectral::array L_wOfLowestEnergyFound;
         int k = 0;
         for( ; k < i_kmax; ++k ){
             emit info( "Commencing SA step #" + QString::number( k ) );
-            QCoreApplication::processEvents();
             //Get current temperature.
             double f_T = temperature( k );
             //Quit if temperature is lower than the minimum annealing temperature.
@@ -1388,7 +1386,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
                     L_wOfLowestEnergyFound = spectral::array( L_wCurrent );
                 }
             }
-        }
+			if( ! (k % 10) ) //to avoid excess calls to processEvents.
+				QCoreApplication::processEvents();
+		}
         // The input data is no longer necessary.
         delete gridData;
         // Delivers the set of parameters near the global minimum (hopefully) for the Gradient Descent algorithm.
@@ -1415,7 +1415,6 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 
 		emit info( "Commencing GD step #" + QString::number( iOptStep ) );
 
-		QCoreApplication::processEvents();
 
 		//Compute the vector of weights [a] = Adagger.B + (I-Adagger.A)[w] (see program manual for theory)
 		{
@@ -1510,6 +1509,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 
 		emit info( "F2(k)/F2(k+1) ratio: " + QString::number( ratio ) );
 
+		if( ! ( iOptStep % 10) ) //to avoid excess calls to processEvents.
+			QCoreApplication::processEvents();
 	}
 	progressDialog.hide();
 
@@ -1538,11 +1539,11 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 			for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor){
 				spectral::array geologicalFactor( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
 				for( int iSVDFactor = 0; iSVDFactor < n; ++iSVDFactor){
-					QCoreApplication::processEvents();
 					double weight = va.d_[ iGeoFactor * m + iSVDFactor ];
 					geologicalFactor += fundamentalFactors[iSVDFactor] * weight;
 				}
 				geologicalFactors.push_back( std::move( geologicalFactor ) );
+				QCoreApplication::processEvents();
 			}
 		}
 
@@ -1633,10 +1634,9 @@ void VariographicDecompositionDialog::doSVDonData(const spectral::array* gridInp
 			QProgressDialog progressDialog;
 			progressDialog.setRange(0,0);
 			progressDialog.show();
+			progressDialog.setLabelText("Retrieving fundamental SVD factors...");
+			QCoreApplication::processEvents();
 			for (long i = 0; i < n; ++i) {
-				progressDialog.setLabelText("Retrieving fundamental SVD factor " + QString::number(i+1) +
-											" of " + QString::number(n) + "...");
-				QCoreApplication::processEvents();
 				spectral::array factor = svd.factor(i);
 				svdFactors.push_back( std::move( factor ) );
 			}
@@ -1847,7 +1847,6 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 			for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
 				q3Dv.clearScene();
 				q3Dv.display( (*itSector).grid, (*itSector).grid.min(), (*itSector).grid.max() );
-				QApplication::processEvents();
 			}
 		}
 	}
