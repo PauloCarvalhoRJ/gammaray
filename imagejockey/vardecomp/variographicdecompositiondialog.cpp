@@ -24,6 +24,10 @@
 
 std::mutex mutexObjectiveFunction;
 
+struct objectiveFunctionFactors{
+    double f1, f2, f3, f4, f5, f6, f7;
+};
+
 /** The objective function for the optimization process (SVD on varmap).
  * See complete theory in the program manual for in-depth explanation of the method's parameters below.
  * @param originalGrid  The grid with original data for comparison.
@@ -195,7 +199,9 @@ double F2(const spectral::array &originalGrid,
          const bool addOrthogonalityPenalty,
 		 const double sparsityThreshold,
 		 const int nSkipOutermost,
-		 const int nIsosurfs )
+         const int nIsosurfs,
+         const int nMinIsoVertexes,
+         const objectiveFunctionFactors& off )
 {
 
 	// A mutex to create critical sections to avoid crashes in multithreaded calls.
@@ -331,12 +337,12 @@ double F2(const spectral::array &originalGrid,
 				ImageJockeyUtils::removeOpenPolyLines( poly );
 
 				// Remove the non-concentric iscontours/isosurfaces.
-				ImageJockeyUtils::removeNonConcentricPolyLines( poly,
+                ImageJockeyUtils::removeNonConcentricPolyLines( poly,
 																(bbox[1]+bbox[0])/2,
 																(bbox[3]+bbox[2])/2,
 																(bbox[5]+bbox[4])/2,
 																 1.0,
-                                                                 15 );
+                                                                 nMinIsoVertexes );
 				///Visualizing the results on the fly is optional/////////////
 				q3Dv[i]->clearScene();
 				q3Dv[i]->display( poly, 0, 255, 255 );
@@ -427,9 +433,13 @@ double F2(const spectral::array &originalGrid,
     }
 
     // Finally, return the objective function value.
-	return objectiveFunctionValue *
-			sparsityPenalty * orthogonalityPenalty *
-			angle_variance_mean * ratio_variance_mean * (1.0/angle_mean_variance) * (1.0/ratio_mean_variance);
+    return  std::pow( objectiveFunctionValue,    off.f1 ) *
+            std::pow( sparsityPenalty,           off.f2 ) *
+            std::pow( orthogonalityPenalty,      off.f3 ) *
+            std::pow( angle_variance_mean,       off.f4 ) *
+            std::pow( ratio_variance_mean,       off.f5 ) *
+            std::pow( angle_mean_variance,       off.f6 ) *
+            std::pow( ratio_mean_variance,       off.f7 ) ;
 }
 
 /**
@@ -489,6 +499,8 @@ void taskOnePartialDerivative2(
                                const double sparsityThreshold,
 							   const int nSkipOutermost,
 							   const int nIsosurfs,
+                               const int nMinIsoVertexes,
+                               const objectiveFunctionFactors& off,
 							   spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
 							   ){
 	std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
@@ -501,9 +513,9 @@ void taskOnePartialDerivative2(
 		spectral::array vwFromLeft( vw );
 		vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
 		//Compute (numerically) the partial derivative with respect to one parameter.
-		(*gradient)(iParameter) = (F2( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs )
+        (*gradient)(iParameter) = (F2( *gridData, vwFromRight, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs, nMinIsoVertexes, off )
 									 -
-								   F2( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs ))
+                                   F2( *gridData, vwFromLeft, A, Adagger, B, I, m, svdFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs, nMinIsoVertexes, off ))
 									 /
 								   ( 2 * epsilon );
 	}
@@ -1165,6 +1177,17 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 	int nTracks = ui->spinNumberOfSpectrumTracks->value();
 	int nSkipOutermost = ui->spinSkipOuterNIsolinesEllipseFitting->value();
 	int nIsosurfs = ui->spinNumberOfIsolines->value();
+    int nMinIsoVertexes = ui->spinIsoMinVertexes->value();
+    objectiveFunctionFactors off;
+    {
+        off.f1 = ui->spinOJFactor_1->value();
+        off.f2 = ui->spinOJFactor_2->value();
+        off.f3 = ui->spinOJFactor_3->value();
+        off.f4 = ui->spinOJFactor_4->value();
+        off.f5 = ui->spinOJFactor_5->value();
+        off.f6 = ui->spinOJFactor_6->value();
+        off.f7 = ui->spinOJFactor_7->value();
+    }
 
     //-------------------------------------------------------------------------------------------------
     //-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -1371,9 +1394,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
             //Computes the “energy” of the current state (set of parameters).
             //The “energy” in this case is how different the image as given the parameters is with respect
             //the data grid, considered the reference image.
-			double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
+            double f_eCurrent = F2( *gridData, L_wCurrent, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs, nMinIsoVertexes, off );
             //Computes the “energy” of the neighboring state.
-			f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
+            f_eNew = F2( *gridData, L_wNew, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs, nMinIsoVertexes, off );
             //Changes states stochastically.  There is a probability of acceptance of a more energetic state so
             //the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
             double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
@@ -1462,6 +1485,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
                                                 sparsityThreshold,
 												nSkipOutermost,
 												nIsosurfs,
+                                                nMinIsoVertexes,
+                                                off,
 												&gradient);
 			}
 
@@ -1489,8 +1514,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 					if( new_vw.d_[i] > 1.0 )
 						new_vw.d_[i] = 1.0;
 				}
-				currentF = F2( *gridData, vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
-				nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs );
+                currentF = F2( *gridData, vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs, nMinIsoVertexes, off );
+                nextF = F2( *gridData, new_vw, A, Adagger, B, I, m, fundamentalFactors, addSparsityPenalty, addOrthogonalityPenalty, sparsityThreshold, nSkipOutermost, nIsosurfs, nMinIsoVertexes, off );
 				if( nextF < currentF ){
 					vw = new_vw;
 					break;
