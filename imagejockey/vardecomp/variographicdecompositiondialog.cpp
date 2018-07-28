@@ -1142,7 +1142,8 @@ void VariographicDecompositionDialog::displayGrids(const std::vector<spectral::a
 
 void VariographicDecompositionDialog::onSumOfFactorsWasComputed(spectral::array *gridData)
 {
-    emit saveArray( gridData );
+    IJAbstractCartesianGrid* grid = m_gridSelector->getSelectedGrid();
+    emit saveArray( gridData, grid );
 }
 
 void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD )

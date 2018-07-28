@@ -21,6 +21,7 @@ class PointSet;
 class VariogramModel;
 class UnivariateCategoryClassification;
 class SVDFactor;
+class IJAbstractCartesianGrid;
 
 class MainWindow : public QMainWindow
 {
@@ -179,6 +180,8 @@ private slots:
 	void onInfo( QString message );
 	void onWarning( QString message );
 	void onError( QString message );
+    void onSaveArrayAsNewVariableInCartesianGrid(spectral::array* array,
+                                                 IJAbstractCartesianGrid* gridWithGridSpecs );
 
 private:
     /**

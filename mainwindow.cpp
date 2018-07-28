@@ -2120,10 +2120,9 @@ void MainWindow::onVarigraphicDecomposition()
 	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
 	//calls the Image Jockey dialog
 	VariographicDecompositionDialog *vdd = new VariographicDecompositionDialog( std::move(grids), this);
-    //TODO: cannot use the slot below, since it depends on a previous right-click, which is not good.
-//    connect( vdd, SIGNAL(saveArray(spectral::array*)),
-//             this, SLOT(onSumOfFactorsWasComputed(spectral::array*)));
-	connect( vdd, SIGNAL(info(QString)),
+    connect( vdd, SIGNAL(saveArray(spectral::array*, IJAbstractCartesianGrid*)),
+             this, SLOT(onSaveArrayAsNewVariableInCartesianGrid(spectral::array*,IJAbstractCartesianGrid*)));
+    connect( vdd, SIGNAL(info(QString)),
 			 this, SLOT(onInfo(QString)));
 	connect( vdd, SIGNAL(warning(QString)),
 			 this, SLOT(onWarning(QString)));
@@ -2144,7 +2143,27 @@ void MainWindow::onWarning(QString message)
 
 void MainWindow::onError(QString message)
 {
-	Application::instance()->logError( message );
+    Application::instance()->logError( message );
+}
+
+void MainWindow::onSaveArrayAsNewVariableInCartesianGrid(spectral::array *array,
+                                                         IJAbstractCartesianGrid *gridWithGridSpecs)
+{
+    //propose a name for the new variable in the source grid
+    QString proposed_name;
+    proposed_name.append( "NewVariable" );
+
+    //open the renaming dialog
+    bool ok;
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New variable to save in " + gridWithGridSpecs->getGridName() +
+                                                      ":", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    gridWithGridSpecs->appendAsNewVariable( new_variable_name, *array );
 }
 
 void MainWindow::onCreateCategoryDefinition()

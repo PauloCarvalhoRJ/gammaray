@@ -30,7 +30,7 @@ public:
 							bool shiftByHalf );
 
 Q_SIGNALS:
-    void saveArray( spectral::array *gridData );
+    void saveArray( spectral::array *gridData, IJAbstractCartesianGrid* gridWithGridSpecs );
 	void error( QString message );
 	void warning( QString message );
 	void info( QString message );
