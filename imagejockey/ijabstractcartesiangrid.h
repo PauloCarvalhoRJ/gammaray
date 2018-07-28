@@ -26,7 +26,7 @@ public:
     double getDiagonalLength();
 
     /** Returns the rotation about the Z-axis in the grid's origin. */
-    virtual double getRotation() = 0;
+	virtual double getRotation() const = 0;
 
     //@{
     /** Getters for the spatial location of the center of the grid's box. */
@@ -38,15 +38,15 @@ public:
 
     //@{
     /** Getters for the grid parameters. */
-    virtual int getNI() = 0;
-    virtual int getNJ() = 0;
-    virtual int getNK() = 0;
-    virtual double getCellSizeI() = 0;
-    virtual double getCellSizeJ() = 0;
-    virtual double getCellSizeK() = 0;
-    virtual double getOriginX() = 0;
-    virtual double getOriginY() = 0;
-    virtual double getOriginZ() = 0;
+	virtual int getNI() const = 0;
+	virtual int getNJ() const = 0;
+	virtual int getNK() const = 0;
+	virtual double getCellSizeI() const = 0;
+	virtual double getCellSizeJ() const = 0;
+	virtual double getCellSizeK() const = 0;
+	virtual double getOriginX() const = 0;
+	virtual double getOriginY() const = 0;
+	virtual double getOriginZ() const = 0;
     //@}
 
     /** Returns the value of the variable given its index and the topological coordinate. */
@@ -81,7 +81,7 @@ public:
 	virtual void dataWillBeRequested() = 0;
 
     /** Returns the name of the grid. This is mainly used in presentation (e.g. text in widgets). */
-    virtual QString getGridName() = 0;
+	virtual QString getGridName() const = 0;
 
     /** Returns the icon of the grid. This is mainly used in presentation (e.g. icons in widgets). */
     virtual QIcon getGridIcon() = 0;
@@ -133,7 +133,7 @@ public:
      * @note If you use private spectral::array objects, do not return pointers to them as the returned objects are
      *       expected to be managed  by client code.  Create a new one or clone.
      */
-    virtual spectral::array* createSpectralArray( int variableIndex ) = 0;
+	virtual spectral::array* createSpectralArray( int variableIndex ) = 0;
 
     /** Creates a spectral::complex_array object from two variables of this Cartesian grid.
      * The client code is responsible for managing the memory occupied the object.

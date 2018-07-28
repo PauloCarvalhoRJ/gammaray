@@ -12,12 +12,14 @@
 
 /*static*/ QString IJGridViewerWidget::m_lastOpenedPath = "";
 
-IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent) :
+IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, bool showSaveButton, bool showDismissButton, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::IJGridViewerWidget),
     m_factor( nullptr ),
 	m_deleteFactorOnClose( deleteFactorOnClose ),
-	m_dataChanged( false )
+	m_dataChanged( false ),
+	m_showSaveButton( showSaveButton ),
+	m_showDismissButton( showDismissButton )
 {
     ui->setupUi(this);
 
@@ -38,8 +40,12 @@ IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, QWidget *parent
     connect( ui->spinSlice, SIGNAL(valueChanged(int)), this, SLOT(onSpinSliceChanged(int)));
 
     //Hide the dismiss button if this widget has a parent (not stand alone).
-    if( this->parentWidget() )
-        ui->frmBottom->hide();
+	if( ! m_showDismissButton )
+		ui->btnDismiss->hide();
+
+	//Hide the "Save" button accordingly to the respective flag.
+	if( ! m_showSaveButton )
+		ui->btnSave->hide();
 }
 
 IJGridViewerWidget::~IJGridViewerWidget()
@@ -112,7 +118,7 @@ void IJGridViewerWidget::setFactor(SVDFactor *factor)
 	ui->dblSpinColorScaleMin->setValue( min );
     ui->spinSlice->setMaximum( m_factor->getCurrentPlaneNumberOfSlices()-1 ); //1st == 0; last == total-1
     if( ui->cmbColorScale->currentIndex() == 1 )
-        adjustColorTableWidgets( 1 );
+		adjustColorTableWidgets( 1 );
 }
 
 void IJGridViewerWidget::onCmbColorScaleValueChanged(int index)
@@ -276,4 +282,9 @@ void IJGridViewerWidget::onImportSliceDataFromPNG()
 
 	//Set that the data was changed.
 	m_dataChanged = true;
+}
+
+void IJGridViewerWidget::onSave()
+{
+	emit save( m_factor );
 }

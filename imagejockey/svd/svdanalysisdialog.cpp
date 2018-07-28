@@ -37,7 +37,7 @@ SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
             this, SLOT(onFactorContextMenu(const QPoint &)));
 
     //add the grid plot widget to the right pane of the dialog
-    m_gridViewerWidget = new IJGridViewerWidget( false, ui->frmRightTop );
+	m_gridViewerWidget = new IJGridViewerWidget( false, false, false, ui->frmRightTop );
     ui->frmRightTop->layout()->addWidget( m_gridViewerWidget );
 
 }
@@ -265,7 +265,7 @@ void SVDAnalysisDialog::onPreview()
                                        exampleFactor->getCellSizeJ(),
                                        exampleFactor->getCellSizeK(),
                                        SVDFactor::getSVDFactorTreeSplitThreshold());
-    IJGridViewerWidget* wid = new IJGridViewerWidget( true );
+	IJGridViewerWidget* wid = new IJGridViewerWidget( true, true, true );
     factor->setCustomName( "Sum of selected factors" );
     wid->setFactor( factor );
     wid->show();
@@ -332,7 +332,7 @@ void SVDAnalysisDialog::onPreviewRFFT()
                                            SVDFactor::getSVDFactorTreeSplitThreshold());
 
     //Opens the viewer.
-    IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
     factorRFFT->setCustomName("Reverse FFT");
     ijgvw->setFactor( factorRFFT );
     ijgvw->show();
@@ -516,7 +516,7 @@ void SVDAnalysisDialog::onCustomAnalysis()
 	window->setAttribute(Qt::WA_DeleteOnClose);
 	QHBoxLayout* layout = new QHBoxLayout();
 	for( int i = 0; i < nFields; ++i ){
-		IJGridViewerWidget* wid = new IJGridViewerWidget( true );
+		IJGridViewerWidget* wid = new IJGridViewerWidget( true, true, true );
 		geoFactors[i]->setCustomName( "Geological factor #" + QString::number(i+1) );
 		wid->setFactor( geoFactors[i] );
 		layout->addWidget( wid );

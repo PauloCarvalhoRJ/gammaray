@@ -20,6 +20,7 @@ class Distribution;
 class ThresholdCDF;
 class CategoryPDF;
 class ProjectComponent;
+class IJAbstractCartesianGrid;
 
 /**
  * @brief The Project class holds all information about a geostats study.
@@ -205,6 +206,9 @@ public:
     /** Calls DataFile::freeLoadedData() on all objects of type DataFile (or of its subclasses) in the project.
      */
     void freeLoadedData();
+
+	/** Returns a collection with the Cartesian grids of the project. */
+	std::vector<IJAbstractCartesianGrid *> getAllCartesianGrids( );
 
 private:
     QDir* _project_directory;

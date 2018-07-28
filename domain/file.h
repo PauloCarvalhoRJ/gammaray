@@ -15,7 +15,7 @@ class File : public ProjectComponent
 public:
     File( QString path );
     /** Returns the file name without path. */
-    QString getFileName();
+	QString getFileName() const;
     /** Copies the file to given directory and
      * changes the _path member variable accordingly.
      */
@@ -102,7 +102,7 @@ protected:
 
     // ProjectComponent interface
 public:
-	virtual QString getName();
+	virtual QString getName() const;
     virtual QIcon getIcon() = 0;
 	virtual bool isFile();
 	virtual bool isAttribute();

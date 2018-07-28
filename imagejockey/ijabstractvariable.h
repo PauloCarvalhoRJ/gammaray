@@ -21,7 +21,7 @@ public:
     /** Returns the variable's index in the parent grid.
      * The first variable should have index zero.
      */
-    virtual int getIndexInParentGrid() = 0;
+	virtual int getIndexInParentGrid() const = 0;
 
 	/** Returns the name of the variable. */
 	virtual QString getVariableName() = 0;

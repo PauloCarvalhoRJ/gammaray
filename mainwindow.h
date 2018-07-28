@@ -21,6 +21,7 @@ class PointSet;
 class VariogramModel;
 class UnivariateCategoryClassification;
 class SVDFactor;
+class IJAbstractCartesianGrid;
 
 class MainWindow : public QMainWindow
 {
@@ -166,7 +167,8 @@ private slots:
     void onPreviewRFFTImageJockey(CartesianGrid *cgWithFFT,
                                   int indexOfVariableWithAmplitudes,
                                   int indexOfVariableWithPhases);
-    void onSVD();
+	void onSavePreviewRFFTImageJockey( const SVDFactor* previewGrid );
+	void onSVD();
     void onSumOfFactorsWasComputed(spectral::array *sumOfFactors); //called to save the sum of SVD factors in the dialog called in onSVD()
     void onCalculator();
     void onNewAttribute();
@@ -174,6 +176,12 @@ private slots:
     void onProjectGrids();
 	void onQuickViewerClosed( SVDFactor* factor, bool wasChanged );
 	void onCovarianceMap();
+	void onVarigraphicDecomposition();
+	void onInfo( QString message );
+	void onWarning( QString message );
+	void onError( QString message );
+    void onSaveArrayAsNewVariableInCartesianGrid(spectral::array* array,
+                                                 IJAbstractCartesianGrid* gridWithGridSpecs );
 
 private:
     /**

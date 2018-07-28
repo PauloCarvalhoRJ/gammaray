@@ -23,7 +23,7 @@ public:
     {
         return m_parent;
     }
-    virtual int getIndexInParentGrid()
+	virtual int getIndexInParentGrid() const
     {
         return 0; //SVDFactors have only one variable
     }
@@ -130,7 +130,7 @@ void SVDFactor::addChildFactor(SVDFactor * child)
     }
 }
 
-QString SVDFactor::getHierarchicalNumber()
+QString SVDFactor::getHierarchicalNumber() const
 {
 	QString result = QString::number( m_number );
 	if( ! isTopLevel() )
@@ -284,7 +284,7 @@ void SVDFactor::merge( SVDFactor * &other )
     other = nullptr;
 }
 
-double SVDFactor::getInfoContent()
+double SVDFactor::getInfoContent() const
 {
     if( isTopLevel() )
         return m_weight;
@@ -353,7 +353,7 @@ uint SVDFactor::getIndexOfChild(SVDFactor* child)
 	return -1;
 }
 
-bool SVDFactor::isRoot()
+bool SVDFactor::isRoot() const
 {
 	return ! m_parentFactor;
 }
@@ -363,7 +363,7 @@ void SVDFactor::setParentFactor(SVDFactor * parent)
 	m_parentFactor = parent;
 }
 
-bool SVDFactor::isTopLevel()
+bool SVDFactor::isTopLevel() const
 {
 	if( isRoot() )
 		return false;
@@ -467,7 +467,7 @@ uint SVDFactor::getChildCount()
 	return m_childFactors.size();
 }
 
-QString SVDFactor::getPresentationName()
+QString SVDFactor::getPresentationName() const
 {
     if( ! m_customName.isEmpty() )
         return m_customName;
@@ -678,17 +678,17 @@ long SVDFactor::appendAsNewVariable(const QString variableName, const spectral::
     return -1;
 }
 
-int SVDFactor::getNI()
+int SVDFactor::getNI() const
 {
     return m_factorData->M();
 }
 
-int SVDFactor::getNJ()
+int SVDFactor::getNJ() const
 {
     return m_factorData->N();
 }
 
-int SVDFactor::getNK()
+int SVDFactor::getNK() const
 {
     return m_factorData->K();
 }

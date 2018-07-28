@@ -17,16 +17,7 @@
    <property name="spacing">
     <number>0</number>
    </property>
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>0</number>
    </property>
    <item>
@@ -41,16 +32,7 @@
       <property name="spacing">
        <number>1</number>
       </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
+      <property name="margin">
        <number>0</number>
       </property>
       <item>
@@ -71,16 +53,7 @@
          <property name="spacing">
           <number>1</number>
          </property>
-         <property name="leftMargin">
-          <number>1</number>
-         </property>
-         <property name="topMargin">
-          <number>1</number>
-         </property>
-         <property name="rightMargin">
-          <number>1</number>
-         </property>
-         <property name="bottomMargin">
+         <property name="margin">
           <number>1</number>
          </property>
         </layout>
@@ -128,16 +101,7 @@
             <property name="spacing">
              <number>0</number>
             </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
+            <property name="margin">
              <number>0</number>
             </property>
             <item>
@@ -281,18 +245,16 @@
       <enum>QFrame::Raised</enum>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="leftMargin">
+      <property name="margin">
        <number>0</number>
       </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
+      <item>
+       <widget class="QPushButton" name="btnSave">
+        <property name="text">
+         <string>Save</string>
+        </property>
+       </widget>
+      </item>
       <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
@@ -345,8 +307,8 @@
    <slot>onExportSliceAsPNG()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>334</x>
-     <y>293</y>
+     <x>354</x>
+     <y>290</y>
     </hint>
     <hint type="destinationlabel">
      <x>371</x>
@@ -370,10 +332,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnSave</sender>
+   <signal>clicked()</signal>
+   <receiver>IJGridViewerWidget</receiver>
+   <slot>onSave()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>45</x>
+     <y>362</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-2</x>
+     <y>294</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onDismiss()</slot>
   <slot>onExportSliceAsPNG()</slot>
   <slot>onImportSliceDataFromPNG()</slot>
+  <slot>onSave()</slot>
  </slots>
 </ui>

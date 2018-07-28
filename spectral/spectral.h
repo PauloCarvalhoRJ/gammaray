@@ -2,6 +2,8 @@
 Spectral primitives
 
 (c) 2017, Pericles Lopes Machado
+
+With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 */
 
 #pragma once
@@ -101,6 +103,8 @@ struct array {
     array &operator+=(const array &other);
 
     array operator*( double scalar ) const;
+
+    array operator*( const array &other ) const;
 
     array operator/( double scalar ) const;
 
@@ -241,6 +245,7 @@ array to_array(const Eigen::MatrixXd &m, index M, index N, index K);
 
 complex_array to_complex_array(const array &A);
 complex_array to_complex_array(const array &A, double scale);
+complex_array to_complex_array(const array &A, const array &B);
 
 array real(const complex_array &in);
 array imag(const complex_array &in);
@@ -272,6 +277,38 @@ double dot( const array &one, const array &other );
  */
 double angle( const array &one, const array &other );
 
+/** Performs the Hadamard product, also known as Schur product or element-wise product.
+ * Both operands must have the same dimension and the result is another
+ * array with the same dimension of the operands. */
+array hadamard( const array &one, const array &other );
+
+/** Makes a new array by joining the passed column vectors in a container.
+ * All the input vectors must have the same number of elements.
+ * The resulting array will have n rows and m columns, where n is the number
+ * of elements in each of the column vectors and m is the number of column vectors.
+ */
+array joinColumnVectors(const std::vector<const array *>& columnVectors );
+
+/** Transposes the given array. */
+array transpose( const array &input );
+
+/** Inverts the given array. */
+array inv( const array &input );
+
+/** Returns the matrix with the eigenvectors as columns (first element in the returned pair) and
+ * the eigenvalues as a column-vector (second element) of the given matrix.
+ */
+std::pair< array, array > eig( const array &input );
+
+/** Converts a complex array (supposedly coming from a Fourier transform) that is in Cartesian form
+ * (real and imaginary parts) to polar form (magnitude and phase).
+ */
+complex_array to_polar_form(const complex_array & in );
+
+/** Converts a complex array (supposedly coming from a Fourier transform) that is in polar form
+ * (magnitude and phase) to Cartesian form (real and imaginary parts).
+ */
+complex_array to_rectangular_form(const complex_array & in );
 
 } // namepsace spectral
 

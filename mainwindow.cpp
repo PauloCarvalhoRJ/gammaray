@@ -72,6 +72,7 @@
 #include "imagejockey/svd/svdanalysisdialog.h"
 #include "calculator/calculatordialog.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
+#include "imagejockey/vardecomp/variographicdecompositiondialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -1728,7 +1729,44 @@ void MainWindow::onPreviewRFFTImageJockey( CartesianGrid* cgWithFFT,
     cgFFTtmp->writeToFS();
 
     //display the grid in real space (real part, GEO-EAS index == 1, first column in GEO-EAS file)
-    Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+	Util::viewGrid( cgFFTtmp->getAttributeFromGEOEASIndex(1), this );
+}
+
+void MainWindow::onSavePreviewRFFTImageJockey( const SVDFactor * previewGrid )
+{
+	//propose a name for the new grid to contain the preview image
+	QString proposed_name = previewGrid->getGridName() + ".dat";
+
+	//user enters the name for the new grid with FFT image
+	QString new_cg_name = QInputDialog::getText(this, "Name the new grid",
+											 "Name for the new grid:", QLineEdit::Normal,
+											 proposed_name );
+
+	//if the user canceled the input box
+	if ( new_cg_name.isEmpty() ){
+		//abort
+		return;
+	}
+
+	//make a tmp file path
+	QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+	//crate a new cartesian grid pointing to the tmp path
+	CartesianGrid * new_cg = new CartesianGrid( tmp_file_path );
+
+	//set the geometry info based on the original grid
+	new_cg->setInfoFromSVDFactor( previewGrid );
+
+	//add the SVDFactor's contents as new variable.
+	new_cg->appendAsNewVariable( new_cg_name, previewGrid->getFactorData() );
+
+	//save data to filesystem.
+	new_cg->writeToFS();
+
+	//import the saved file to the project
+	Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
+
+	Application::instance()->logInfo("Grid preview saved.");
 }
 
 void MainWindow::onSVD()
@@ -1798,7 +1836,7 @@ void MainWindow::onSVD()
     delete a;
 
     if( numberOfFactors > 0 ){
-        //show the SDV analysis dialog
+        //show the SVD analysis dialog
         SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
         connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
                  this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
@@ -1888,7 +1926,7 @@ void MainWindow::onQuickView()
 	m_attributesCurrentlyBeingViewed[ factor ] = _right_clicked_attribute;
 
 	//Opens the viewer.
-	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true );
+	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
 	factor->setCustomName( cg->getGridName() );
 	ijgvw->setFactor( factor );
 	connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), this, SLOT(onQuickViewerClosed(SVDFactor*,bool)) );
@@ -2073,7 +2111,59 @@ void MainWindow::onCovarianceMap()
     //delete the temporary Cartesian grid object.
     delete new_cg;
 
-    Application::instance()->logInfo("Quick varmap completed.");
+	Application::instance()->logInfo("Quick varmap completed.");
+}
+
+void MainWindow::onVarigraphicDecomposition()
+{
+	//get all the Cartesian grids in the project
+	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
+	//calls the Image Jockey dialog
+	VariographicDecompositionDialog *vdd = new VariographicDecompositionDialog( std::move(grids), this);
+    connect( vdd, SIGNAL(saveArray(spectral::array*, IJAbstractCartesianGrid*)),
+             this, SLOT(onSaveArrayAsNewVariableInCartesianGrid(spectral::array*,IJAbstractCartesianGrid*)));
+    connect( vdd, SIGNAL(info(QString)),
+			 this, SLOT(onInfo(QString)));
+	connect( vdd, SIGNAL(warning(QString)),
+			 this, SLOT(onWarning(QString)));
+	connect( vdd, SIGNAL(error(QString)),
+			 this, SLOT(onError(QString)));
+	vdd->show();
+}
+
+void MainWindow::onInfo(QString message)
+{
+	Application::instance()->logInfo( message );
+}
+
+void MainWindow::onWarning(QString message)
+{
+	Application::instance()->logWarn( message );
+}
+
+void MainWindow::onError(QString message)
+{
+    Application::instance()->logError( message );
+}
+
+void MainWindow::onSaveArrayAsNewVariableInCartesianGrid(spectral::array *array,
+                                                         IJAbstractCartesianGrid *gridWithGridSpecs)
+{
+    //propose a name for the new variable in the source grid
+    QString proposed_name;
+    proposed_name.append( "NewVariable" );
+
+    //open the renaming dialog
+    bool ok;
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New variable to save in " + gridWithGridSpecs->getGridName() +
+                                                      ":", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    gridWithGridSpecs->appendAsNewVariable( new_variable_name, *array );
 }
 
 void MainWindow::onCreateCategoryDefinition()
@@ -2473,21 +2563,12 @@ void MainWindow::openCokriging()
 void MainWindow::openImageJockey()
 {
     //get all the Cartesian grids in the project
-    ObjectGroup* dataFileGroup = Application::instance()->getProject()->getDataFilesGroup();
-    std::vector< ProjectComponent*> dataFiles;
-    dataFileGroup->getAllObjects( dataFiles );
-    std::vector< ProjectComponent*>::iterator it = dataFiles.begin();
-    std::vector< IJAbstractCartesianGrid* > grids;
-    for(; it != dataFiles.end(); ++it){
-        ProjectComponent* pc = *it;
-        if( pc->getTypeName() == "CARTESIANGRID" ){
-            grids.push_back( dynamic_cast<CartesianGrid*>(pc) );
-        }
-    }
-    //calls the Image Jockey dialog
+	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
+	//calls the Image Jockey dialog
     ImageJockeyDialog *ijd = new ImageJockeyDialog( grids, this );
     //ijd->show();
     ijd->showMaximized();
+	connect( ijd, SIGNAL(savePreviewAs(const SVDFactor*)), this, SLOT(onSavePreviewRFFTImageJockey(const SVDFactor*)) );
 }
 
 void MainWindow::openSGSIM()

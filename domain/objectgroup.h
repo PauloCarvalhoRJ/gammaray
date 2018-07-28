@@ -26,7 +26,7 @@ private:
 
     // ProjectComponent interface
 public:
-    QString getName();
+	QString getName() const;
     QIcon getIcon();
     void save(QTextStream *txt_stream);
     bool isFile();

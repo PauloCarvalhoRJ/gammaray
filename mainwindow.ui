@@ -19,16 +19,7 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="leftMargin">
-     <number>1</number>
-    </property>
-    <property name="topMargin">
-     <number>1</number>
-    </property>
-    <property name="rightMargin">
-     <number>1</number>
-    </property>
-    <property name="bottomMargin">
+    <property name="margin">
      <number>1</number>
     </property>
     <item>
@@ -53,16 +44,7 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
+        <property name="margin">
          <number>0</number>
         </property>
         <item>
@@ -102,16 +84,7 @@
            <property name="spacing">
             <number>0</number>
            </property>
-           <property name="leftMargin">
-            <number>0</number>
-           </property>
-           <property name="topMargin">
-            <number>0</number>
-           </property>
-           <property name="rightMargin">
-            <number>0</number>
-           </property>
-           <property name="bottomMargin">
+           <property name="margin">
             <number>0</number>
            </property>
            <item>
@@ -140,16 +113,7 @@
         <enum>QFrame::Sunken</enum>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
-        <property name="leftMargin">
-         <number>1</number>
-        </property>
-        <property name="topMargin">
-         <number>1</number>
-        </property>
-        <property name="rightMargin">
-         <number>1</number>
-        </property>
-        <property name="bottomMargin">
+        <property name="margin">
          <number>1</number>
         </property>
         <item>
@@ -168,16 +132,7 @@
             <property name="spacing">
              <number>0</number>
             </property>
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
+            <property name="margin">
              <number>0</number>
             </property>
            </layout>
@@ -196,16 +151,7 @@
             <number>1</number>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
-            <property name="leftMargin">
-             <number>0</number>
-            </property>
-            <property name="topMargin">
-             <number>0</number>
-            </property>
-            <property name="rightMargin">
-             <number>0</number>
-            </property>
-            <property name="bottomMargin">
+            <property name="margin">
              <number>0</number>
             </property>
             <item>
@@ -240,7 +186,7 @@
      <x>0</x>
      <y>0</y>
      <width>463</width>
-     <height>26</height>
+     <height>24</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -283,6 +229,7 @@
     </property>
     <addaction name="actionImage_Jockey"/>
     <addaction name="actionMachine_Learning"/>
+    <addaction name="actionVariographic_Decomposition"/>
    </widget>
    <widget class="QMenu" name="menuSimulation">
     <property name="enabled">
@@ -385,6 +332,11 @@
   <action name="actionMachine_Learning">
    <property name="text">
     <string>Machine Learning</string>
+   </property>
+  </action>
+  <action name="actionVariographic_Decomposition">
+   <property name="text">
+    <string>Variographic Decomposition...</string>
    </property>
   </action>
  </widget>
@@ -624,6 +576,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionVariographic_Decomposition</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onVarigraphicDecomposition()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -639,5 +607,6 @@
   <slot>openSGSIM()</slot>
   <slot>openCokrigingNewcokb3d()</slot>
   <slot>onMachineLearning()</slot>
+  <slot>onVarigraphicDecomposition()</slot>
  </slots>
 </ui>

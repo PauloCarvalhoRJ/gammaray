@@ -9,10 +9,24 @@
 #include <QProgressDialog>
 #include <QCoreApplication>
 #include <QDir>
+#include <vtkImageData.h>
+#include <vtkSmartPointer.h>
+#include <vtkPolyData.h>
+#include <vtkPolyDataToImageStencil.h>
+#include <vtkPointData.h>
+#include <vtkImageStencil.h>
+#include <vtkContourFilter.h>
+#include <vtkStripper.h>
+#include <vtkCleanPolyData.h>
+#include <vtkCenterOfMass.h>
+#include <vtkEllipseArcSource.h>
+#include <vtkAppendPolyData.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
 /*static*/const long double ImageJockeyUtils::PI_OVER_180( ImageJockeyUtils::PI / 180.0L );
+
+/*static*/const long double ImageJockeyUtils::_180_OVER_PI( 180.0L / ImageJockeyUtils::PI );
 
 ImageJockeyUtils::ImageJockeyUtils()
 {
@@ -207,5 +221,449 @@ QString ImageJockeyUtils::generateUniqueFilePathInDir(const QString directory, c
         QFile file(dir.absoluteFilePath(filename));
         if( ! file.exists() )
             return dir.absoluteFilePath(filename);
+	}
+}
+
+void ImageJockeyUtils::makeVTKImageDataFromSpectralArray(vtkImageData * out, const spectral::array & in)
+{
+	out->SetExtent(0, in.M()-1, 0, in.N()-1, 0, in.K()-1); //extent (indexes) of GammaRay grids start at i=0,j=0,k=0
+	out->AllocateScalars(VTK_DOUBLE, 1); //each cell will contain one double value.
+	int* extent = out->GetExtent();
+
+	for (int k = extent[4]; k <= extent[5]; ++k){
+		for (int j = extent[2]; j <= extent[3]; ++j){
+			for (int i = extent[0]; i <= extent[1]; ++i){
+				double* pixel = static_cast<double*>(out->GetScalarPointer(i,j,k));
+				pixel[0] = in( i, j, k );
+			}
+		}
     }
+}
+
+void ImageJockeyUtils::rasterize( spectral::array &out, vtkPolyData *in, double rX, double rY, double rZ )
+{
+    // Set grid cell sizes.
+    vtkSmartPointer<vtkImageData> image = vtkSmartPointer<vtkImageData>::New();
+    double bounds[6];
+    in->GetBounds(bounds);
+    double spacing[3]; // desired volume spacing
+    spacing[0] = rX;
+    spacing[1] = rY;
+    spacing[2] = rZ;
+    image->SetSpacing(spacing);
+
+    // Compute grid dimensions.
+    int dim[3];
+    for (int i = 0; i < 3; i++)
+		dim[i] = static_cast<int>( std::abs( std::ceil((bounds[i * 2 + 1] - bounds[i * 2]) / spacing[i]) ) );
+    image->SetDimensions(dim);
+    image->SetExtent(0, dim[0] - 1, 0, dim[1] - 1, 0, dim[2] - 1);
+
+    // Set grid origin.
+    double origin[3];
+    origin[0] = bounds[0] + spacing[0] / 2;
+    origin[1] = bounds[2] + spacing[1] / 2;
+    origin[2] = bounds[4] + spacing[2] / 2;
+    image->SetOrigin(origin);
+
+    // Paints all grid cells.
+    image->AllocateScalars( VTK_UNSIGNED_CHAR, 1 ); //doubles are not necessary to store in/out values
+    unsigned char inval = 255;
+    unsigned char outval = 0;
+    vtkIdType count = image->GetNumberOfPoints();
+    for (vtkIdType i = 0; i < count; ++i)
+        image->GetPointData()->GetScalars()->SetTuple1(i, inval);
+
+    // Make a vector geometry to raster image stencil.
+    vtkSmartPointer<vtkPolyDataToImageStencil> pol2stenc = vtkSmartPointer<vtkPolyDataToImageStencil>::New();
+    pol2stenc->SetInputData(in);
+    pol2stenc->SetOutputOrigin(origin);
+    pol2stenc->SetOutputSpacing(spacing);
+    pol2stenc->SetOutputWholeExtent(image->GetExtent());
+    pol2stenc->Update();
+
+    // Perform stencil (paints voxels outside the shape with another value).
+    vtkSmartPointer<vtkImageStencil> imgstenc = vtkSmartPointer<vtkImageStencil>::New();
+    imgstenc->SetInputData(image);
+    imgstenc->SetStencilConnection(pol2stenc->GetOutputPort());
+    imgstenc->ReverseStencilOff();
+    imgstenc->SetBackgroundValue(outval);
+    imgstenc->Update();
+
+    // Transfer results to spectral::array object.
+    out.set_size( dim[0], dim[1], dim[2] );
+    vtkImageData* outputImage = imgstenc->GetOutput();
+    for( int k = 0; k < dim[2]; ++k )
+        for( int j = 0; j < dim[1]; ++j )
+            for( int i = 0; i < dim[0]; ++i ){
+                double* cell = static_cast<double*>(outputImage->GetScalarPointer(i,j,k));
+                out(i, j, k) = *cell;
+			}
+}
+
+vtkSmartPointer<vtkPolyData> ImageJockeyUtils::computeIsosurfaces(const spectral::array & in,
+																  int nContours,
+																  double minValue,
+																  double maxValue)
+{
+	//Convert the grid into a VTK grid object.
+	vtkSmartPointer<vtkImageData> vtkVarmap = vtkSmartPointer<vtkImageData>::New();
+	ImageJockeyUtils::makeVTKImageDataFromSpectralArray( vtkVarmap, in );
+	//Create the varmap's isosurface(s).
+	vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
+	contourFilter->SetInputData( vtkVarmap );
+	contourFilter->GenerateValues( nContours, minValue, maxValue); // (numContours, rangeStart, rangeEnd)
+	contourFilter->Update();
+	//Get the isocontour/isosurface as polygonal data
+	vtkSmartPointer<vtkPolyData> poly = contourFilter->GetOutput();
+	//Copy it before the parent contour filter is destroyed.
+	vtkSmartPointer<vtkPolyData> polydataCopy = vtkSmartPointer<vtkPolyData>::New();
+	polydataCopy->DeepCopy(poly);
+	return polydataCopy;
+}
+
+void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> &polyDataToModify)
+{
+	// If there is no geometry, there is nothing to do.
+	if ( polyDataToModify->GetNumberOfPoints() == 0 )
+		return;
+
+    // Join the connected lines into polygonal lines.
+    vtkSmartPointer<vtkStripper> geometryJoiner = vtkSmartPointer<vtkStripper>::New();
+    geometryJoiner->SetInputData( polyDataToModify );
+    geometryJoiner->JoinContiguousSegmentsOn();
+    geometryJoiner->Update();
+
+    // Get the joined poly data object.
+    vtkSmartPointer<vtkPolyData> joinedPolyData = geometryJoiner->GetOutput();
+
+    // Get joined poly geometry data.
+    // TODO: to get the joined isosurfaces, it is necessary to call vtkPolyData::GetPolys().
+    vtkSmartPointer<vtkCellArray> in_Lines = joinedPolyData->GetLines();
+
+    // Make the final poly data sans open poly lines.
+    vtkSmartPointer<vtkPolyData> polyDataSansOpenLines = vtkSmartPointer<vtkPolyData>::New();
+
+    // Initially populate the final poly data with the same vertexes.
+    polyDataSansOpenLines->SetPoints( joinedPolyData->GetPoints() );
+
+    // Prepare a container of closed lines.
+    vtkSmartPointer<vtkCellArray> closedLines = vtkSmartPointer<vtkCellArray>::New();
+
+    // Traverse the joined the poly lines.
+    in_Lines->InitTraversal();
+    vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+    while( in_Lines->GetNextCell( vertexIdList ) ){
+        int initialVertexID = vertexIdList->GetId( 0 );
+        int finalVertexID = vertexIdList->GetId( vertexIdList->GetNumberOfIds()-1 );
+        // If the poly line is closed.
+        if( initialVertexID == finalVertexID )
+            // Adds the list of vertexes to the closed lines container.
+            closedLines->InsertNextCell( vertexIdList );
+    }
+
+    // Assign the closed lines to the final poly data.
+    polyDataSansOpenLines->SetLines( closedLines );
+
+    // Remove unused vertexes.
+    vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputData( polyDataSansOpenLines );
+    cleaner->Update();
+
+    // Replace the input poly data with the processed one without open poly lines.
+    polyDataToModify = cleaner->GetOutput();
+}
+
+void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData> &polyDataToModify,
+                                                    double centerX,
+                                                    double centerY,
+                                                    double centerZ,
+													double toleranceRadius,
+													int numberOfVertexesThreshold
+                                                    )
+{
+    // If there is no geometry, there is nothing to do.
+    if ( polyDataToModify->GetNumberOfPoints() == 0 )
+        return;
+
+    // Get poly lines.
+    // TODO: for surfaces (3D), it is necessary to call vtkPolyData::GetPolys().
+	vtkSmartPointer<vtkCellArray> in_Lines = vtkSmartPointer<vtkCellArray>::New();
+	in_Lines->Allocate( polyDataToModify->GetNumberOfLines() );
+	in_Lines->SetCells( polyDataToModify->GetNumberOfLines(), polyDataToModify->GetLines()->GetData() );
+
+    // Prepare the resulting poly data.
+    vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
+
+    // Initially set all the points in the result.
+    result->SetPoints( polyDataToModify->GetPoints() );
+
+	// Prepare a container of line definitions for the result.
+    vtkSmartPointer<vtkCellArray> linesForResult = vtkSmartPointer<vtkCellArray>::New();
+
+    // Traverse the input poly lines.
+    in_Lines->InitTraversal();
+    vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+	double vertexCoords[3];
+	while( in_Lines->GetNextCell( vertexIdList ) ){
+
+		// Compute the center of the poly line
+		double center[3] = {0.0, 0.0, 0.0};
+		for( int idVertex = 0; idVertex < vertexIdList->GetNumberOfIds(); ++idVertex ){
+			polyDataToModify->GetPoint( vertexIdList->GetId( idVertex ), vertexCoords );
+			center[0] += vertexCoords[0];
+			center[1] += vertexCoords[1];
+			center[2] += vertexCoords[2];
+		}
+		center[0] /= vertexIdList->GetNumberOfIds();
+		center[1] /= vertexIdList->GetNumberOfIds();
+		center[2] /= vertexIdList->GetNumberOfIds();
+
+        // Compute the distance to the point considered as "the" center.
+        double dx = centerX - center[0];
+        double dy = centerY - center[1];
+        double dz = centerZ - center[2];
+        double distance = std::sqrt( dx*dx + dy*dy + dz*dz );
+
+        // Assign the line definitions if they correspond to a concentric poly line.
+		if( distance <= toleranceRadius && vertexIdList->GetNumberOfIds() > numberOfVertexesThreshold )
+            linesForResult->InsertNextCell( vertexIdList );
+    }
+
+    // Set the poly lines considered concentric.
+    result->SetLines( linesForResult );
+
+    // Discard the unused vertexes in the result.
+    vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
+    cleaner->SetInputData( result );
+    cleaner->Update();
+
+    // Replace the input poly data with the poly data containing only concentric poly lines.
+    polyDataToModify = cleaner->GetOutput();
+}
+
+void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
+								   vtkSmartPointer<vtkPolyData> &ellipses,
+								   double &mean_error,
+								   double &max_error,
+                                   double &sum_error,
+                                   double &angle_variance,
+                                   double &ratio_variance,
+                                   double &angle_mean,
+								   double &ratio_mean,
+								   int nSkipOutermost )
+{
+    // If there is no geometry, there is nothing to do.
+    if ( polyData->GetNumberOfPoints() == 0 )
+        return;
+
+    // Get poly lines definitions.
+    vtkSmartPointer<vtkCellArray> in_Lines = polyData->GetLines();
+
+    // Prepare the result poly data.
+    vtkSmartPointer<vtkPolyData> result = vtkSmartPointer<vtkPolyData>::New();
+
+    // Traverse the input poly lines.
+    in_Lines->InitTraversal();
+    vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+	sum_error = 0.0;
+	max_error = 0.0;
+    std::vector< double > angles; //collects ellipse orientations.
+    std::vector< double> ratios; //collects ellipse axes ratios.
+	int nEllipsesFit = 0;
+	for(int iPoly = 0; in_Lines->GetNextCell( vertexIdList ); ++iPoly ){
+
+		if( iPoly < nSkipOutermost )
+			continue;
+
+		// Collect the X and Y vertex coordinates of a poly line
+        spectral::array aX( vertexIdList->GetNumberOfIds() );
+        spectral::array aY( vertexIdList->GetNumberOfIds() );
+        for( vtkIdType iVertex = 0; iVertex < vertexIdList->GetNumberOfIds(); ++iVertex ){
+            double vertex[3];
+            ///////NOTE: DO NOT CALL THIS METHOD FROM MULTIPLE THREADS.
+            polyData->GetPoint( vertexIdList->GetId( iVertex ), vertex );
+            ////////////////////////////////////////////////////////////
+            aX( iVertex ) = vertex[0];
+            aY( iVertex ) = vertex[1];
+        }
+
+		// Fit the ellipse (find the A...F factors of its implicit equation).
+        double A, B, C, D, E, F;
+		double error;
+        ImageJockeyUtils::ellipseFit( aX, aY, A, B, C, D, E, F, error );
+		sum_error += error;
+		max_error = std::max( max_error, error );
+
+        // Find the geometric parameters of the ellipse.
+        double semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY;
+		ImageJockeyUtils::getEllipseParametersFromImplicit2( A, B, C, D, E, F,
+                                                            semiMajorAxis, semiMinorAxis, rotationAngle, centerX, centerY );
+
+        // Collect ellipse data for ellipse stats.
+        angles.push_back( rotationAngle );
+        ratios.push_back( semiMinorAxis / semiMajorAxis );
+
+		// Make the ellipse poly generator.
+		if( ellipses ){
+			vtkSmartPointer< vtkEllipseArcSource > ellipseSource = vtkSmartPointer< vtkEllipseArcSource >::New();
+			ellipseSource->SetCenter( centerX, centerY, 0 );
+			ellipseSource->SetNormal( 0, 0, 1 );
+			ellipseSource->SetMajorRadiusVector( semiMajorAxis * std::cos( rotationAngle ),
+												 semiMajorAxis * std::sin( rotationAngle ),
+												 0 );
+			ellipseSource->SetSegmentAngle( 360 );
+			ellipseSource->SetRatio( semiMinorAxis / semiMajorAxis );
+			//ellipseSource->Update();
+
+			// Append the ellipse poly data (output of an algorithm) to the result poly data.
+			vtkSmartPointer< vtkAppendPolyData > appendFilter = vtkSmartPointer< vtkAppendPolyData >::New();
+			appendFilter->AddInputData( result );
+			appendFilter->AddInputConnection( ellipseSource->GetOutputPort() );
+			appendFilter->Update();
+
+			//result = result + ellipse.
+			result = appendFilter->GetOutput();
+		}
+
+		// Update the ellipse fit count.
+		++nEllipsesFit;
+	}
+
+	if( nEllipsesFit > 0 ) //One could simply use in_Lines->GetNumberOfCells(), but some ellipses may not be processed.
+		mean_error = sum_error / nEllipsesFit;
+
+    // Return the result poly data.
+    ellipses = result;
+
+    // Return the stats.
+    ImageJockeyUtils::getStats( angles, angle_variance, angle_mean );
+    ImageJockeyUtils::getStats( ratios, ratio_variance, ratio_mean );
+}
+
+void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, double C, double D, double E, double F,
+                                                        double &semiMajorAxis,
+                                                        double &semiMinorAxis,
+                                                        double &rotationAngle,
+                                                        double &centerX,
+                                                        double &centerY)
+{
+    // Input parameters: a, b, c, d, e, f
+    rotationAngle = std::atan(B / (A - C)) * 0.5; // rotation
+    double cos_phi = std::cos(rotationAngle);
+    double sin_phi = std::sin(rotationAngle);
+    centerX = (2 * C * D - B * E) / (B * B - 4 * A * C);
+    centerY = (2 * A * E - B * D) / (B * B - 4 * A * C);
+    //center = cv::Vec2d(u, v);        // center
+
+    // eliminate rotation and recalculate 6 parameters
+    double aa = A * cos_phi * cos_phi - B * cos_phi * sin_phi + C * sin_phi * sin_phi;
+	//double bb = 0;
+    double cc = A * sin_phi * sin_phi + B * cos_phi * sin_phi + C * cos_phi * cos_phi;
+	//double dd = D * cos_phi - E * sin_phi;
+	//double ee = D * sin_phi + E * cos_phi;
+    double ff = 1 + (D * D) / (4 * A) + (E * E) / (4 * C);
+
+    semiMajorAxis = std::sqrt(ff / aa);              // semi-major axis
+    semiMinorAxis = std::sqrt(ff / cc);              // semi-minor axis
+
+    if(semiMajorAxis < semiMinorAxis) {
+        double temp = semiMajorAxis;
+        semiMajorAxis = semiMinorAxis;
+        semiMinorAxis = temp;
+    }
+}
+
+void ImageJockeyUtils::getEllipseParametersFromImplicit2(double A, double B, double C, double D, double E, double F,
+														 double & semiMajorAxis, double & semiMinorAxis, double & rotationAngle, double & centerX, double & centerY)
+{
+	double determinant = B*B - 4*A*C;
+	double part1 = 2 * ( A*E*E + C*D*D - B*D*E + (determinant)*F );
+	double part2 = std::sqrt( (A-C)*(A-C) + B*B );
+	semiMajorAxis = -std::sqrt( part1 * (A+C + part2) ) / determinant;
+	semiMinorAxis = -std::sqrt( part1 * (A+C - part2) ) / determinant;
+	centerX = (2*C*D - B*E) / determinant;
+	centerY = (2*A*E - B*D) / determinant;
+	//determine the angle (of the ellipse's semi-major axis).
+	{
+		if( std::abs(B) < 0.00001){
+			if( A < C )
+				rotationAngle = 0;
+			else
+				rotationAngle = ImageJockeyUtils::PI / 2.0;
+		} else
+			rotationAngle = std::atan( ( C-A-part2 ) / B );
+	}
+}
+
+void ImageJockeyUtils::ellipseFit(const spectral::array &aX, const spectral::array &aY,
+								  double &A, double &B, double &C, double &D, double &E, double &F,
+								  double& fitnessError )
+{
+    spectral::array aXX = spectral::hadamard( aX, aX ); //Hadamard product == element-wise product.
+    spectral::array aXY = spectral::hadamard( aX, aY );
+    spectral::array aYY = spectral::hadamard( aY, aY );
+    spectral::array aOnes( aX.M(), 1.0 );
+
+    // Build design matrix (n x 6), where n is the number of X,Y samples.
+    spectral::array aDesign = spectral::joinColumnVectors( { &aXX, &aXY, &aYY, &aX, &aY, &aOnes } );
+
+    // Build scatter matrix.
+    // NOTE: Fitzgibbon et al (1996)'s Matlab implementation makes the scatter matrix as
+    //     S = D' * D
+    //     The ' operator is the transpose conjugate operator, which is different from
+    //     the transpose operator .'.  But for real numbers, ' and .' result in the same matrix.
+    //     The code below assumes all the elements are real numbers.
+    spectral::array aScatter = spectral::transpose( aDesign ) * aDesign;
+
+    // Build the 6x6 constraint matrix.
+	// All elements are initialized with zeros.
+    spectral::array aConstraint( (spectral::index)6, (spectral::index)6, (double)0.0 );
+	aConstraint(0, 2) = 2;
+	aConstraint(1, 1) = -1;
+	aConstraint(2, 0) = 2;
+
+    // Solve eigensystem.
+    spectral::array eigenvectors, eigenvalues;
+    std::tie( eigenvectors, eigenvalues ) = spectral::eig( spectral::inv( aScatter ) * aConstraint );
+
+    // Find the index of the positive eigenvalue.
+    int PosC = 0;
+    for( ; PosC < 6; ++PosC )
+        if( eigenvalues( PosC ) > 0 && std::isfinite( eigenvalues( PosC ) ) )
+            break;
+
+    // The PosC-th eigenvector contains the A...F factors, which are returned.
+    A = eigenvectors( 0, PosC );
+    B = eigenvectors( 1, PosC );
+    C = eigenvectors( 2, PosC );
+    D = eigenvectors( 3, PosC );
+    E = eigenvectors( 4, PosC );
+    F = eigenvectors( 5, PosC );
+
+	// ============ Paper's agorithm ends here. ===============
+
+	// ============= Commencing fitness error computation. ============
+
+	// Create the a vector-column with the A...F factors.
+	spectral::array a( (spectral::index)6, (double)0.0 );
+	a(0) = A; a(1) = B; a(2) = C; a(3) = D; a(4) = E; a(5) = F;
+
+	// Acoording to the paper, the objective is to minimize ||Da||^2, that is, the fitness error.
+	// D in the paper is the design matrix, or aDesign in this code.
+	spectral::array Da = aDesign * a;
+	Da = Da / Da.euclideanLength(); //normalize the Da vector to remove scale effect (error would be proportional to the size of the fitted ellipse).
+	fitnessError = Da(0)*Da(0) + Da(1)*Da(1) + Da(2)*Da(2) + Da(3)*Da(3) + Da(4)*Da(4) + Da(5)*Da(5);
+}
+
+double ImageJockeyUtils::getAzimuth( double x, double y, double centerX, double centerY, bool halfAzimuth )
+{
+	double localX = x - centerX;
+	double localY = y - centerY;
+	double az = -(std::atan( localY / localX ) * _180_OVER_PI - 90.0);
+	if( ! std::isfinite( az ) )
+	   az = 0.0;
+	if( ! halfAzimuth && localX < 0.0 )
+	   az += 180.0;
+	return az;
 }

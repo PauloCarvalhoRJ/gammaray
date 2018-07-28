@@ -8,6 +8,7 @@
 
 class GSLibParGrid;
 class GridCell;
+class SVDFactor;
 
 //third-party library eigen
 namespace spectral{
@@ -38,6 +39,10 @@ public:
      */
     void setInfoFromOtherCG( CartesianGrid* other_cg, bool copyCategoricalAttributesList = true );
 
+	/** Sets the cartesian grid metadata with the grid parameters of the passed grid object.
+	 */
+	void setInfoFromSVDFactor( const SVDFactor* factor );
+
     /**
      * Sets the cartesian grid metadata from the values in a grid paraemeter object.
      */
@@ -49,17 +54,17 @@ public:
 
     //@{
     /** Getters. */
-    double getX0(){ return _x0; }
-    double getY0(){ return _y0; }
-    double getZ0(){ return _z0; }
-    double getDX(){ return _dx; }
-    double getDY(){ return _dy; }
-    double getDZ(){ return _dz; }
-    uint getNX(){ return _nx; }
-    uint getNY(){ return _ny; }
-    uint getNZ(){ return _nz; }
-    double getRot(){ return _rot; }
-    uint getNReal(){ return _nreal; }
+	double getX0() const { return _x0; }
+	double getY0() const { return _y0; }
+	double getZ0() const { return _z0; }
+	double getDX() const { return _dx; }
+	double getDY() const { return _dy; }
+	double getDZ() const { return _dz; }
+	uint getNX() const { return _nx; }
+	uint getNY() const { return _ny; }
+	uint getNZ() const { return _nz; }
+	double getRot() const { return _rot; }
+	uint getNReal() const { return _nreal; }
     //@}
 
     /**
@@ -158,23 +163,23 @@ public:
 
 //IJAbstractCartesianGrid interface
 public:
-    virtual double getRotation();
-    virtual int getNI() { return getNX(); }
-    virtual int getNJ() { return getNY(); }
-    virtual int getNK() { return getNZ(); }
-    virtual double getCellSizeI() { return getDX(); }
-    virtual double getCellSizeJ() { return getDY(); }
-    virtual double getCellSizeK() { return getDZ(); }
-    virtual double getOriginX() { return getX0(); }
-    virtual double getOriginY() { return getY0(); }
-    virtual double getOriginZ() { return getZ0(); }
+	virtual double getRotation() const;
+	virtual int getNI() const { return getNX(); }
+	virtual int getNJ() const { return getNY(); }
+	virtual int getNK() const { return getNZ(); }
+	virtual double getCellSizeI() const { return getDX(); }
+	virtual double getCellSizeJ() const { return getDY(); }
+	virtual double getCellSizeK() const { return getDZ(); }
+	virtual double getOriginX() const { return getX0(); }
+	virtual double getOriginY() const { return getY0(); }
+	virtual double getOriginZ() const { return getZ0(); }
     virtual double getData( int variableIndex, int i, int j, int k );
     virtual bool isNoDataValue( double value );
     virtual double getDataAt( int dataColumn, double x, double y, double z );
     virtual double absMax( int column );
     virtual double absMin( int column );
 	virtual void dataWillBeRequested();
-    virtual QString getGridName();
+	virtual QString getGridName() const;
     virtual QIcon getGridIcon();
     virtual int getVariableIndexByName( QString variableName );
     virtual IJAbstractVariable* getVariableByName( QString variableName );
@@ -183,7 +188,7 @@ public:
     virtual void equalizeValues(QList<QPointF>& area, double delta_dB, int dataColumn, double dB_reference,
                         const QList<QPointF>& secondArea = QList<QPointF>());
     virtual void saveData();
-    virtual spectral::array* createSpectralArray( int nDataColumn );
+	virtual spectral::array* createSpectralArray( int nDataColumn );
     virtual spectral::complex_array* createSpectralComplexArray( int variableIndex1,
                                                                  int variableIndex2);
     virtual void clearLoadedData();

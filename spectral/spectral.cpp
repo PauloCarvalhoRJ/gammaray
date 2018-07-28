@@ -2,10 +2,14 @@
 Spectral primitives
 
 (c) 2017, Péricles Lopes Machado
+
+With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 */
 
 #include "spectral.h"
 #include <cmath>
+#include <Eigen/Dense>
+#include <complex>
 
 namespace spectral
 {
@@ -370,7 +374,14 @@ array array::operator*(double scalar) const
     array result( M_, N_, K_ );
     for (index i = 0; i < d_.size(); ++i)
         result.d_[i] = d_[i] * scalar;
-	return result;
+    return result;
+}
+
+array array::operator*(const array &other) const
+{
+    Eigen::MatrixXd tmpMe = to_2d( *this );
+    Eigen::MatrixXd tmpOther = to_2d( other );
+    return to_array( tmpMe * tmpOther );
 }
 
 array array::operator/(double scalar) const
@@ -1636,6 +1647,109 @@ double angle(const array & one, const array & other)
 	double argument = dot / mags_sqr;
 	argument = ( argument < -1.0 ? -1.0 : ( argument > 1.0 ? 1.0 : argument ) ); //avoids domain errors when calling acos()
 	return std::acos( argument );
+}
+
+array hadamard(const array &one, const array &other)
+{
+    array result( one.M(), one.N(), one.K() );
+    for( int i = 0; i < one.size(); ++i )
+        result.d_[i] = one.d_[i] * other.d_[i];
+    return result;
+}
+
+array joinColumnVectors(const std::vector<const array *> &columnVectors)
+{
+    // Convert the spectral::array's to Eigen matrices.
+    std::vector<Eigen::MatrixXd> columnVectorsAsEigenMatrices;
+    {
+        std::vector<const array *>::const_iterator it = columnVectors.cbegin();
+        for(; it != columnVectors.cend(); ++it){
+            columnVectorsAsEigenMatrices.push_back( spectral::to_2d(**it) );
+        }
+    }
+
+    // Instantiate the resulting matrix as Eigen matrix.
+    //  Use the size of the first vector to define the number of rows in the
+    //  resulting matrix.
+    Eigen::MatrixXd result( columnVectors[0]->M(), columnVectors.size() );
+
+    // Perform the join.
+    std::vector<Eigen::MatrixXd>::iterator it = columnVectorsAsEigenMatrices.begin();
+    for( int iCol = 0; it != columnVectorsAsEigenMatrices.cend(); ++it, ++iCol){
+        result.col( iCol ) << *it;
+    }
+
+    return spectral::to_array( result );
+}
+
+array transpose( const array &input )
+{
+    Eigen::MatrixXd temp = to_2d( input );
+    Eigen::MatrixXd tempT = temp.transpose();
+    return to_array( tempT );
+}
+
+array inv(const array &input)
+{
+    Eigen::MatrixXd temp = to_2d( input );
+    return to_array( temp.inverse() );
+}
+
+std::pair<array, array> eig(const array &input)
+{
+	Eigen::MatrixXd temp = to_2d( input );
+	Eigen::EigenSolver< Eigen::MatrixXd > eigensolver(temp);
+//	if (eigensolver.info() != Eigen::Success)
+//		abort();
+	Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors().real(); //EigenSolver yields complex matrices, even if the result are real.
+	Eigen::MatrixXd eigenvalues = eigensolver.eigenvalues().real();
+	return { to_array(eigenvectors), to_array(eigenvalues) };
+}
+
+complex_array to_complex_array(const array & A, const array & B)
+{
+	index M = A.M();
+	index N = A.N();
+	index K = A.K();
+	complex_array a(M, N, K);
+
+	for (index i = 0; i < A.size(); ++i) {
+		a(i)[0] = A(i);
+		a(i)[1] = B(i);
+	}
+
+	return a;
+}
+
+complex_array to_polar_form(const complex_array & in)
+{
+	std::complex<double> value;
+	index M = in.M();
+	index N = in.N();
+	index K = in.K();
+	complex_array out(M, N, K);
+	for (index i = 0; i < in.size(); ++i) {
+		value.real( in(i)[0] ); //real part
+		value.imag( in(i)[1] ); //imaginary part
+		out(i)[0] = std::abs( value ); //get magnitude
+		out(i)[1] = std::arg( value ); //get phase
+	}
+	return out;
+}
+
+complex_array to_rectangular_form(const complex_array & in)
+{
+	std::complex<double> value;
+	index M = in.M();
+	index N = in.N();
+	index K = in.K();
+	complex_array out(M, N, K);
+	for (index i = 0; i < in.size(); ++i) {
+		value = std::polar( in(i)[0], in(i)[1] );
+		out(i)[0] = value.real();
+		out(i)[1] = value.imag();
+	}
+	return out;
 }
 
 } // namespace spectral

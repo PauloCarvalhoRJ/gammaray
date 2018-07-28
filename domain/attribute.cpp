@@ -35,7 +35,7 @@ void Attribute::setCategorical(bool value)
 }
 
 
-QString Attribute::getName()
+QString Attribute::getName() const
 {
     return this->_name;
 }
@@ -121,7 +121,7 @@ IJAbstractCartesianGrid *Attribute::getParentGrid()
 	return nullptr;
 }
 
-int Attribute::getIndexInParentGrid()
+int Attribute::getIndexInParentGrid() const
 {
     return getAttributeGEOEASgivenIndex() - 1;
 }

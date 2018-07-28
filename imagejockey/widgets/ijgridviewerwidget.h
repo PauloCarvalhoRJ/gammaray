@@ -25,17 +25,24 @@ class IJGridViewerWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit IJGridViewerWidget( bool deleteFactorOnClose, QWidget *parent = 0);
+	explicit IJGridViewerWidget( bool deleteFactorOnClose, bool showSaveButton, bool showDismissButton, QWidget *parent = 0);
     ~IJGridViewerWidget();
     void setFactor(SVDFactor* factor );
 
 signals:
-	/** Triggered when the user closes the viewer.
+	/** This signal is triggered when the user closes the viewer.
 	 * @param factor Points to the factor passed in setFactor().
 	 * @param wasChanged If true, the user changed the data in the SVDFactor grid object.
 	 *        Client code may trap this signal to save possible changes made by the user.
 	 */
 	void closed( SVDFactor* factor, bool wasChanged );
+
+	/**
+	 * This signal is triggered when the user clicks on the "Save" button (if enabled).
+	 * Client code must not keep the passed pointer, since the object may be deleted upon
+	 * closing the dialog.
+	 */
+	void save( const SVDFactor* factor );
 
 private:
     Ui::IJGridViewerWidget *ui;
@@ -44,6 +51,8 @@ private:
     bool m_deleteFactorOnClose;
     static QString m_lastOpenedPath;
 	bool m_dataChanged;
+	bool m_showSaveButton;
+	bool m_showDismissButton;
     void forcePlotUpdate();
     void adjustColorTableWidgets( int cmbIndex );
 
@@ -63,6 +72,7 @@ private slots:
      * non-gray pixels result in error.
      */
     void onImportSliceDataFromPNG();
+	void onSave();
 };
 
 #endif // IJGRIDVIEWERWIDGET_H

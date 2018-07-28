@@ -21,7 +21,7 @@ class ProjectComponent
 public:
     ProjectComponent();
     virtual ~ProjectComponent();
-    virtual QString getName() = 0; //user-given name to identify the object
+	virtual QString getName() const = 0; //user-given name to identify the object
     virtual QString getPresentationName(); //text composition, by default equals getName(), but may include other information such as parameter index
     virtual QIcon getIcon() = 0;
     virtual bool isFile() = 0;

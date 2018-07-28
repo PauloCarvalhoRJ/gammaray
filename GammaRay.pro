@@ -177,7 +177,6 @@ SOURCES += main.cpp\
     spectral/svd.cpp \
     spectral/pca.cpp \
     spectral/spectral.cpp \
-    imagejockey/imagejockeysvdutils.cpp \
     algorithms/ialgorithmdatasource.cpp \
     algorithms/bootstrap.cpp \
     dialogs/machinelearningdialog.cpp \
@@ -213,7 +212,9 @@ SOURCES += main.cpp\
     calculator/calculatordialog.cpp \
     calculator/icalcproperty.cpp \
     calculator/calclinenumberarea.cpp \
-    calculator/calccodeeditor.cpp
+	calculator/calccodeeditor.cpp \
+	imagejockey/vardecomp/variographicdecompositiondialog.cpp \
+	imagejockey/widgets/ijquick3dviewer.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -365,7 +366,6 @@ HEADERS  += mainwindow.h \
     spectral/svd.h \
     spectral/pca.h \
     spectral/spectral.h \
-    imagejockey/imagejockeysvdutils.h \
     algorithms/ialgorithmdatasource.h \
     algorithms/bootstrap.h \
     dialogs/machinelearningdialog.h \
@@ -401,7 +401,9 @@ HEADERS  += mainwindow.h \
     calculator/calculatordialog.h \
     calculator/icalcproperty.h \
     calculator/calclinenumberarea.h \
-    calculator/calccodeeditor.h
+	calculator/calccodeeditor.h \
+	imagejockey/vardecomp/variographicdecompositiondialog.h \
+	imagejockey/widgets/ijquick3dviewer.h
 
 
 FORMS    += mainwindow.ui \
@@ -474,7 +476,9 @@ FORMS    += mainwindow.ui \
 	imagejockey/widgets/ijcartesiangridselector.ui \
         imagejockey/widgets/ijvariableselector.ui \
     imagejockey/widgets/ijgridviewerwidget.ui \
-    calculator/calculatordialog.ui
+	calculator/calculatordialog.ui \
+	imagejockey/vardecomp/variographicdecompositiondialog.ui \
+	imagejockey/widgets/ijquick3dviewer.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -529,7 +533,7 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                -lvtkImagingSources$$_VTK_VERSION_SUFFIX \
                -lvtkImagingCore$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersCore$$_VTK_VERSION_SUFFIX \
-			   -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
+                           -lvtkFiltersExtraction$$_VTK_VERSION_SUFFIX \
 			   -lvtkImagingFourier$$_VTK_VERSION_SUFFIX \
 			   -lvtkCommonMisc$$_VTK_VERSION_SUFFIX \
 			   -lvtkCommonComputationalGeometry$$_VTK_VERSION_SUFFIX \
@@ -546,7 +550,8 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkImagingGeneral$$_VTK_VERSION_SUFFIX \
 			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
-			   -lvtkalglib$$_VTK_VERSION_SUFFIX
+                           -lvtkalglib$$_VTK_VERSION_SUFFIX \
+                -lvtkImagingStencil$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
@@ -577,7 +582,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 4.3.3
+VERSION = 4.5
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

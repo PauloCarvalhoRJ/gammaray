@@ -5,12 +5,20 @@
 #include <cstdint>
 #include <QString>
 #include <QPointF>
+#include <vtkSmartPointer.h>
+#include <vector>
+#include <algorithm>
+#include <cmath>
+#include <numeric>
 #include "ijmatrix3x3.h"
 
 class IJSpatialLocation;
 class IJAbstractCartesianGrid;
+class vtkImageData;
+class vtkPolyData;
 
 namespace spectral {
+	struct array;
     struct complex_array;
 }
 
@@ -24,6 +32,9 @@ public:
 
     /** Constant used to convert degrees to radians. */
     static const long double PI_OVER_180;
+
+	/** Constant used to convert radians to degrees. */
+	static const long double _180_OVER_PI;
 
     /**
 	 * Perfoms a reliable way to compare floating-point values.
@@ -120,6 +131,131 @@ public:
      * Returns the complete path to it.  File extension must include the dot.
      */
     QString generateUniqueFilePathInDir(const QString directory, const QString file_extension);
+
+	/**
+	 * Populates a vtkImageData object with the data from a spectral::array object.
+	 * Client code must create the vtkImageData object beforehand with a call to
+	 * vtkSmartPointer<vtkImageData>::New(), for example.
+	 */
+	static void makeVTKImageDataFromSpectralArray( vtkImageData* out, const spectral::array& in );
+
+    /**
+     * Rasterizes the vector geometry (as a vtkPolyData) into a spectral::array grid object.
+     * The grid dimensions of the spectral::array object is set or re-set to acommodate the polygonal
+     * object's bounding box.
+     * The three r* parameters are resolutions at which the polygonal object will be rasterized.
+	 * 	Further reading : https://www.vtk.org/pipermail/vtkusers/2008-May/046477.html
+	 *	                  Hybrid/Testing/Tcl/TestImageStencilWithPolydata.tcl.
+	 *	                  I wouldn't advise using a generic filter like vtkSelectEnclosedPoints because it will be quite slow.
+	 *                    https://www.vtk.org/Wiki/VTK/Examples/Cxx/PolyData/PolyDataContourToImageData
+	 *                    https://www.vtk.org/Wiki/VTK/Examples/PolyData/PolyDataToImageData
+     */
+    static void rasterize(spectral::array& out, vtkPolyData *in , double rX, double rY, double rZ);
+
+	/**
+	 * Computes the isocontours/isosurfaces of the values in the passed grid.
+	 */
+	static vtkSmartPointer<vtkPolyData> computeIsosurfaces(const spectral::array& in,
+														   int nCountours,
+														   double minValue,
+														   double maxValue);
+
+    /** Keeps only the closed polyognals in the given polygonal object.
+     * After the call, the smart pointer passed refers to another new vtkPolyData object without open poly lines.
+     */
+    static void removeOpenPolyLines( vtkSmartPointer<vtkPolyData>& polyDataToModify );
+
+    /** Keeps only the polyognals whose center of mass is close to the passed coordinate.
+     * After the call, the smart pointer passed refers to another new vtkPolyData object without open poly lines.
+	 * @parameter numberOfVertexesThreshold The minimum number of vertexes for a polyine to be acceptable.
+	 *                                      Setting zero causes no rejection.
+     */
+	static void removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>& polyDataToModify,
+											  double centerX,
+											  double centerY,
+											  double centerZ,
+											  double toleranceRadius,
+											  int numberOfVertexesThreshold = 0);
+
+    /** Fits ellipses to each poly line in the input poly data.  The ellipses are stored
+	 * in another poly data object to be referenced in passed VTK smart pointer.  If the passed
+	 * pointer is null, no ellipses poly is generated and the function only returns the ellipses stats (faster execution).
+	 * @param mean_error Filled with the mean fitness error of all ellipses.
+	 * @param max_error Filled with the largest fitness error of all ellipses.
+	 * @param sum_error Filled with the sum of fitness errors of all ellipses.
+     * @param angle_variance Filled with the variance of the ellipses' angles.
+     * @param ratio_variance Filled with the variance of the ellipses' semi-axes ratios.
+     * @param angle_mean Filled with the mean of the ellipses' angles.
+     * @param ratio_mean Filled with the mean of the ellipses' semi-axes ratios.
+	 * @param nSkipOutermost Do not fit ellipses to the n outermost polylines.  Set zero to fit ellipses to all poly lines.
+	 *                       This is useful to lower the influence of anisotropy too distant from the center of variographic maps.
+     */
+	static void fitEllipses(const vtkSmartPointer<vtkPolyData>& polyData,
+							vtkSmartPointer<vtkPolyData>& ellipses ,
+							double &mean_error, double &max_error, double &sum_error,
+							double &angle_variance, double &ratio_variance, double &angle_mean, double &ratio_mean,
+							int nSkipOutermost );
+
+    /**
+     * Computes the ellipse parameters from the factors of the ellipse implicit equation in the form
+     * Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0, commonly yielded by ellipse-fitting algorithms.
+     * The parameters passed by reference are the output parameters.
+     *
+     * CREDIT: Ruobing Li http://miracle21.blogspot.com/2011/12/ellipse-fitting-and-parameter.html
+     */
+    static void getEllipseParametersFromImplicit(double A, double B, double C, double D, double E, double F,
+                                                  double& semiMajorAxis,
+                                                  double& semiMinorAxis,
+                                                  double& rotationAngle,
+                                                  double& centerX,
+                                                  double& centerY );
+
+	/** Does the same as getEllipseParametersFromImplicit() but with formulae taken from Wikipedia:
+	 * https://en.wikipedia.org/wiki/Ellipse (Ellipse as quadric)
+	 */
+	static void getEllipseParametersFromImplicit2(double A, double B, double C, double D, double E, double F,
+												  double& semiMajorAxis,
+												  double& semiMinorAxis,
+												  double& rotationAngle,
+												  double& centerX,
+												  double& centerY );
+
+    /**
+     * Fits an ellipse to a given set of spatial coordinates.  The parameters passed by reference are the
+     * output parameters.  The ellipse parameters are the factors of its implicit equation
+     * Ax^2 + Bxy + Cy^2 + Dx + Ey + F = 0.  Use the getEllipseParametersFromImplicit() method to obtain
+     * its geometric parameters such as semi-axes, center, etc.
+     * This function uses the direct least squares method proposed by Fitzgibbon et al (1996), which yields
+     * the fitted ellipse in a single step (non-iterative) and assures an ellipse quadric
+     * (e.g. not hyperbola, parabola, etc.) for bad data.
+	 * The fitness error (normalized) is also returned.
+     */
+	static void ellipseFit(const spectral::array& aX,
+							const spectral::array& aY,
+							double& A, double& B, double& C, double& D, double& E, double& F, double & fitnessError);
+
+    /**
+     * Computes the variance and mean of a collection of values of some type.
+     */
+    template <class T>
+    static void getStats( const std::vector<T>& values, double& variance, double& mean ){
+        mean = std::accumulate( values.begin(), values.end(), 0.0 ) / values.size();
+        std::vector<T> diff( values.size() );
+        std::transform( values.begin(), values.end(), diff.begin(), [mean](T x) { return x - mean; });
+        double squaredSum = std::inner_product( diff.begin(), diff.end(), diff.begin(), 0.0 );
+        double stdev = std::sqrt(squaredSum / (double)values.size());
+        variance = stdev * stdev;
+    }
+
+	/**
+	 * Computes the azimuth, in degrees, of the given (x,y) location with respect to some other
+	 * location (centerX, centerY).  The azimuth returned follows the GSLib convention, or geologist's convention:
+	 * Zero azimuth points to north and increases clockwise.
+	 * @param halfAzimuth If true, instead of a 0-360 range, the azimuth resets to zero after N180E (south), which makes
+	 *                    antipodal points have the same half-azimuth values.
+	 * @note If the internal arctangent call results in infinity (very near or at the center) the returned azimuth value is zero.
+	 */
+	static double getAzimuth( double x, double y, double centerX, double centerY, bool halfAzimuth = false );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

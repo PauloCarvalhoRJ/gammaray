@@ -8,7 +8,7 @@ File::File(QString path)
     this->_path = path;
 }
 
-QString File::getFileName()
+QString File::getFileName() const
 {
     QFile file( this->_path );
     QFileInfo fileInfo(file.fileName());
@@ -90,7 +90,7 @@ long File::getFileSize()
 }
 
 
-QString File::getName()
+QString File::getName() const
 {
     return this->getFileName();
 }
