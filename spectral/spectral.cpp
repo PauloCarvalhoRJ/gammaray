@@ -1646,7 +1646,7 @@ double angle(const array & one, const array & other)
 		return 0.0;
 	double argument = dot / mags_sqr;
 	argument = ( argument < -1.0 ? -1.0 : ( argument > 1.0 ? 1.0 : argument ) ); //avoids domain errors when calling acos()
-    return std::acos( argument );
+	return std::acos( argument );
 }
 
 array hadamard(const array &one, const array &other)

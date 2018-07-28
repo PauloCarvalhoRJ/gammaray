@@ -106,11 +106,11 @@ struct array {
 
     array operator*( const array &other ) const;
 
-	array operator/( double scalar ) const;
+    array operator/( double scalar ) const;
 
-	array operator-( double scalar ) const;
+    array operator-( double scalar ) const;
 
-	array operator-( const array &other ) const;
+    array operator-( const array &other ) const;
 
     virtual ~array();
 
