@@ -425,6 +425,11 @@ bool SVDFactor::setSlice(SVDFactor * slice)
 				default: this->dataIJK( i, j, m_currentSlice );
 			}
 		}
+
+    // It may be necessary to re-compute min/max.
+    m_isMaxValueDefined = false;
+    m_isMinValueDefined = false;
+
 	return true;
 }
 

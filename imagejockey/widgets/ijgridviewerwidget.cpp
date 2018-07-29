@@ -247,6 +247,16 @@ void IJGridViewerWidget::onImportSliceDataFromPNG()
     double max = m_factor->getMaxValue();
     double min = m_factor->getMinValue();
 
+    //If the grid is constant valued, it is not possible to get the scale.
+    //Then, scale max will be forced to be min + 1.0.
+    bool scaleWasForciblyChanged = false;
+    if( ImageJockeyUtils::almostEqual2sComplement( min, max, 1) ){
+        QMessageBox::warning( this, "Warning",
+          QString("Current grid is constant valued.  Imported values will be re-scaled from min to min + 1.0."));
+        max = min + 1.0;
+        scaleWasForciblyChanged = true;
+    }
+
     //Get the QImage object, so we can access individual pixel data.
     QImage image = pixmap.toImage();
 
@@ -276,6 +286,11 @@ void IJGridViewerWidget::onImportSliceDataFromPNG()
 
     //Discard the slice data.
     delete slice;
+
+    //If the scale was artificially changed, re-set the factor
+    //so the widgets change accordingly.
+    if( scaleWasForciblyChanged )
+        setFactor( m_factor );
 
 	//Update the plot.
 	forcePlotUpdate();
