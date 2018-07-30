@@ -4,6 +4,8 @@
 #include <vector>
 #include <cmath>
 #include "domain/application.h"
+#include "spectral/spectral.h"
+#include "spectral/svd.h"
 
 /** A generic N lines x M columns matrix template. */
 
@@ -40,7 +42,11 @@ public:
     /** Inverts this matrix. It is assumed that the matrix is square, no check in this regard is performed, though
      * there is a check for singularity (prints a message and aborts calculation.)
      */
-    void invert();
+	void invertWithGaussJordan();
+
+	/** Inverts this matrix with Singular Values Decomposition (works with non-square matrix).
+	 */
+	void invertWithSVD();
 
 private:
     /** Number of rows. */
@@ -60,8 +66,79 @@ MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue ) :
     _values( n*m, initValue )
 {}
 
+
 template <typename T>
-void MatrixNXM<T>::invert(){
+void MatrixNXM<T>::invertWithSVD(){
+	MatrixNXM<T> &a = *this;
+
+	//Make a spectral-compatible copy of this matrix.
+	spectral::array A( (spectral::index)a.getN(), (spectral::index)a.getM() );
+	for( int i = 0; i < a.getN(); ++i)
+		for( int j = 0; j < a.getM(); ++j)
+			A(i,j) = a(i,j);
+
+	//Get the U, Sigma and V* matrices from SVD on A.
+	spectral::SVD svd = spectral::svd( A );
+	spectral::array U = svd.U();
+	spectral::array Sigma = svd.S();
+	spectral::array V = svd.V(); //SVD yields V* already transposed, that is V, but to check, you must transpose V
+								 //to get A = U.Sigma.V*
+
+	//Make a full Sigma matrix (to be compatible with multiplication with the other matrices)
+	{
+		spectral::array SigmaTmp( (spectral::index)a.getN(), (spectral::index)a.getM() );
+		for( int i = 0; i < a.getN(); ++i)
+			SigmaTmp(i, i) = Sigma.d_[i];
+		Sigma = SigmaTmp;
+	}
+
+	//Make U*
+	//U contains only real numbers, thus U's transpose conjugate is its transpose.
+	spectral::array Ustar( U );
+	//transpose U to get U*
+	{
+		Eigen::MatrixXd tmp = spectral::to_2d( Ustar );
+		tmp.transposeInPlace();
+		Ustar = spectral::to_array( tmp );
+	}
+
+	//Make Sigmadagger (pseudoinverse of Sigma)
+	spectral::array SigmaDagger( Sigma );
+	{
+		//compute reciprocals of the non-zero elements in the main diagonal.
+		for( int i = 0; i < a.getN(); ++i){
+			double value = SigmaDagger(i, i);
+			//only absolute values greater than the machine epsilon are considered non-zero.
+			if( std::abs( value ) > std::numeric_limits<double>::epsilon() )
+				SigmaDagger( i, i ) = 1.0 / value;
+			else
+				SigmaDagger( i, i ) = 0.0;
+		}
+		//transpose
+		Eigen::MatrixXd tmp = spectral::to_2d( SigmaDagger );
+		tmp.transposeInPlace();
+		SigmaDagger = spectral::to_array( tmp );
+	}
+
+	//Make Adagger (pseudoinverse of A) by "reversing" the transform U.Sigma.V*,
+	//hence, Adagger = V.Sigmadagger.Ustar .
+	spectral::array Adagger;
+	{
+		Eigen::MatrixXd eigenV = spectral::to_2d( V );
+		Eigen::MatrixXd eigenSigmadagger = spectral::to_2d( SigmaDagger );
+		Eigen::MatrixXd eigenUstar = spectral::to_2d( Ustar );
+		Eigen::MatrixXd eigenAdagger = eigenV * eigenSigmadagger * eigenUstar;
+		Adagger = spectral::to_array( eigenAdagger );
+	}
+
+	//Return the result.
+	for( int i = 0; i < a.getN(); ++i)
+		for( int j = 0; j < a.getM(); ++j)
+			a(i,j) = Adagger(i,j);
+}
+
+template <typename T>
+void MatrixNXM<T>::invertWithGaussJordan(){
     /* This is a Gauss-Jordan method implemented from the code in Numerical Recipes, 3rd edition.
        It is intended to solve a linear system, but it was modified just perform invertion.
     */
