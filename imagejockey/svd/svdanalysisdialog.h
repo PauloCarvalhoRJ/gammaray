@@ -80,6 +80,7 @@ private slots:
 	void onUncheckSelected();
 	void onInvertCheckOfSelected();
 	void onCustomAnalysis();
+	void onSaveFactorData(const SVDFactor* factor);
 };
 
 #endif // SVDANALYSISDIALOG_H

@@ -516,9 +516,10 @@ void SVDAnalysisDialog::onCustomAnalysis()
 	window->setAttribute(Qt::WA_DeleteOnClose);
 	QHBoxLayout* layout = new QHBoxLayout();
 	for( int i = 0; i < nFields; ++i ){
-		IJGridViewerWidget* wid = new IJGridViewerWidget( true, true, true );
+		IJGridViewerWidget* wid = new IJGridViewerWidget( true, true, false );
 		geoFactors[i]->setCustomName( "Geological factor #" + QString::number(i+1) );
 		wid->setFactor( geoFactors[i] );
+		connect( wid, SIGNAL(save(const SVDFactor*)), this, SLOT(onSaveFactorData(const SVDFactor*)) );
 		layout->addWidget( wid );
 	}
 	window->setLayout( layout );
@@ -528,6 +529,12 @@ void SVDAnalysisDialog::onCustomAnalysis()
 //	for( int i = 0; i < nFields; ++i )
 //		delete geoFactors[i];
 
+}
+
+void SVDAnalysisDialog::onSaveFactorData(const SVDFactor * factor)
+{
+	spectral::array *sum = new spectral::array( factor->getFactorData() );
+	emit sumOfFactorsComputed( sum );
 }
 
 void SVDAnalysisDialog::saveTreeUIState()
