@@ -44,7 +44,7 @@ public:
      */
 	void invertWithGaussJordan();
 
-	/** Inverts this matrix with Singular Values Decomposition (works with non-square matrix).
+	/** Inverts this matrix with Singular Values Decomposition (works with non-square matrices).
 	 */
 	void invertWithSVD();
 
