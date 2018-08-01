@@ -6,6 +6,7 @@
 #include "geostatsutils.h"
 #include "ndvestimation.h"
 #include "util.h"
+#include "imagejockey/imagejockeyutils.h"
 
 enum class FlagState : char {
     NOT_SET = 0,
@@ -131,22 +132,23 @@ set_flag:               mask[ i + j*nI + k*nJ*nI ] = flagToSet;
     int nCopies = 0;
     int nTrivial = 0;
     int nKriging = 0;
+	int nIllConditioned = 0;
     for( uint k = 0; k <nK; ++k)
         for( uint j = 0; j <nJ; ++j){
-            emit setLabel("Running estimation:\n" + QString::number(nCopies) + " copies of values\n" +
-                          QString::number(nTrivial) + " trivial cases\n" +
-                          QString::number(nKriging) + " actual kriging operations. ");
+			emit setLabel("Running estimation:\n" + QString::number(nCopies) + " copies of values.\n" +
+						  QString::number(nTrivial) + " trivial cases.\n" +
+						  QString::number(nKriging) + " actual kriging operations (" + QString::number(nIllConditioned) + " ill-conditioned). " );
             emit progress( j * nI + k * nI * nJ );
-            for( uint i = 0; i <nI; ++i){
+			for( uint i = 0; i <nI; ++i){
                 double value = cg->dataIJK( atIndex, i, j, k );
                 if( cg->isNDV( value ) ){
                     //found an unvalued cell, call krige() only if we're sure we have at least one valued
                     //cell in the neighborhood.
                     if( mask[ i + j*nI + k*nJ*nI ] == FlagState::SET ){
-                        GridCell cell(cg, atIndex, i,j,k);
+						GridCell cell(cg, atIndex, i,j,k);
                         //estimate if at least one value exists in the neighborhood
                         ++nKriging;
-                        _results.push_back( krige( cell , _ndvEstimation->meanForSK(), hasNDV, NDV, variogramSill ) );
+						_results.push_back( krige( cell , _ndvEstimation->meanForSK(), hasNDV, NDV, variogramSill, nIllConditioned ) );
                     } else {
                         ++nTrivial;
                         _results.push_back( valueForNoValuesInNeighborhood );
@@ -166,7 +168,7 @@ set_flag:               mask[ i + j*nI + k*nJ*nI ] = flagToSet;
     _finished = true;
 }
 
-double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, double NDV, double variogramSill )
+double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, double NDV, double variogramSill, int& nIllConditioned )
 {
     double result = std::numeric_limits<double>::quiet_NaN();
 
@@ -184,7 +186,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
                                                            vCells);
 
     //if no sample was found, either...
-    if( vCells.empty() ){
+	if( vCells.empty() ){
         if( _ndvEstimation->useDefaultValue() )
             //...return a default value (e.g. a global mean or expected value).
             return _ndvEstimation->defaultValue();
@@ -193,28 +195,83 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
             return _ndvEstimation->ndv();
     }
 
-    //get the covariance matrix for the neighbors cell.
+	//get the covariance matrix for the neighbors cell.
     MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vCells,
                                                              _ndvEstimation->vmodel(),
                                                              variogramSill );
 
-    //invert the covariance matrix.
-    covMat.invert();
+	//get the gamma matrix (covariances between samples and estimation locations)
+	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel() );
 
-    //get the gamma matrix (covariances between sample and estimation locations)
-    MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel() );
+	//The eta (after greek letter eta) number is the threshold below which the eigenvalues are rounded off to zero
+	//The eta number and the value are both in Mohammadi et al (2016) paper (see complete reference further below).
+	double eta = 0.001;
 
-    //get the kriging weights vector: [w] = [Cov]^-1 * [gamma]
-    MatrixNXM<double> weightsSK = covMat * gammaMat;  //covMat is inverted
+	//test whether the covariance matrix is ill-conditioned (near-singular).
+	//an ill-conditioned matrix has a bad numerical invert.
+	bool is_cov_matrix_ill_conditioned = false;
+	int cov_matrix_rank = 0;
+	spectral::array eigenvectors, eigenvalues;
+	std::tie( eigenvectors, eigenvalues ) = spectral::eig( covMat.toSpectralArray() );
+	{
+		double smallestEigenValue = std::numeric_limits<double>::max();
+		double largestEigenValue = 0; //since the cov table is positive definite, the smallest value possible is zero.
+		for( int i = 0; i < eigenvalues.size(); ++i ){
+			double eigenvalue = eigenvalues(i);
+			//since the cov table is positive definite, there is no need to compute the absolute value.
+			if( eigenvalue < smallestEigenValue )
+				smallestEigenValue = eigenvalue;
+			if( eigenvalue > largestEigenValue )
+				largestEigenValue = eigenvalue;
+			if( eigenvalue > eta )
+				cov_matrix_rank = i;
+		}
+		++cov_matrix_rank;
+		double condition_number = largestEigenValue / smallestEigenValue;
+		if( condition_number > 10 ){
+			is_cov_matrix_ill_conditioned = true;
+			++nIllConditioned;
+		}
+	}
+
+	//make the kriging weights matrix (solve the kriging system).
+	MatrixNXM<double> weightsSK( vCells.size() );
+	if( is_cov_matrix_ill_conditioned ){
+		spectral::array weightsSKSpectral = weightsSK.toSpectralArray();
+		//make a spectral::array matrix from the data values (response values).
+		spectral::array y( vCells.size() );
+		{ //make the response-value (sample values) vector y.
+			std::multiset<GridCell>::iterator vit = vCells.begin();
+			for( int i = 0; vit != vCells.end(); ++vit, ++i )
+				y(i) = (*vit).readValueFromGrid() - meanSK;
+		}
+		//Compute the kriging weights with the Pseudoinverse Regularization proposed by Mohammadi et al (2016) - Equation 12.
+		// "An analytic comparison of regularization methods for Gaussian Processes" - https://arxiv.org/pdf/1602.00853.pdf
+		for( int i = 0; i < cov_matrix_rank; ++i) {
+			spectral::array eigenvector = eigenvectors.getVectorColumn( i );
+			spectral::array eigenvectorT = spectral::transpose( eigenvector );
+			weightsSKSpectral += ( (eigenvectorT * y) / eigenvalues(i) )(0) * eigenvector; //the (0) is to take the single matrix element as a scalar an not as an product-incompatible matrix.
+		}
+		weightsSK = MatrixNXM<double>( weightsSKSpectral );
+	} else { // if the cov matrix is well conditioned, the kriging weights are computed the traditional way.
+		//invert the covariance matrix.
+		covMat.invertWithGaussJordan();
+		//get the kriging weights vector: [w] = [Cov]^-1 * [gamma]
+		weightsSK = covMat * gammaMat;  //covMat is inverted
+	}
 
     //finally, compute the kriging
     if( _ndvEstimation->ktype() == KrigingType::SK ){
         //for SK mode
         result = meanSK;
-        std::multiset<GridCell>::iterator itSamples = vCells.begin();
-        for( uint i = 0; i < vCells.size(); ++i, ++itSamples){
-            result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
-        }
+		if( is_cov_matrix_ill_conditioned ){
+			result += (gammaMat.getTranspose() * weightsSK)(0,0); //(0,0) is to get the single element as a scalar and not as a matrix object.
+		} else {
+			std::multiset<GridCell>::iterator itSamples = vCells.begin();
+			for( uint i = 0; i < vCells.size(); ++i, ++itSamples){
+				result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
+			}
+		}
     } else {
         //for OK mode
         //compute the OK weights (follows the same rationale of SK)
@@ -223,7 +280,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
                                                                    _ndvEstimation->vmodel(),
                                                                    variogramSill,
                                                                    KrigingType::OK );
-        covMatOK.invert();
+		covMatOK.invertWithGaussJordan();
         MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel(), KrigingType::OK );
         MatrixNXM<double> weightsOK = covMatOK * gammaMatOK;  //covMat is inverted
         //Estimate the OK local mean (use OK weights)
