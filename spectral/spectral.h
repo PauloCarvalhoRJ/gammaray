@@ -112,6 +112,8 @@ struct array {
 
     array operator-( const array &other ) const;
 
+	array getVectorColumn( index j ) const;
+
     virtual ~array();
 
     double &operator()(index i);
@@ -150,6 +152,8 @@ struct array {
 };
 
 array operator-( double theValue, const array& theArray );
+
+array operator*( double theValue, const array& theArray );
 
 // fft 1D
 void foward(complex_array &out, double *in, index M);

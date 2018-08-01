@@ -405,7 +405,15 @@ array array::operator-(const array &other) const
     array result( M_, N_, K_ );
     for (index i = 0; i < d_.size(); ++i)
         result.d_[i] = d_[i] - other.d_[i];
-    return result;
+	return result;
+}
+
+array array::getVectorColumn(index j) const
+{
+	array result( M_ );
+	for (index i = 0; i < M_; ++i)
+		result(i) = (*this)(i, j);
+	return result;
 }
 
 array::~array() {}
@@ -1750,6 +1758,14 @@ complex_array to_rectangular_form(const complex_array & in)
 		out(i)[1] = value.imag();
 	}
 	return out;
+}
+
+array operator*(double theValue, const array & theArray)
+{
+	array result( theArray.M(), theArray.N(), theArray.K() );
+	for( int i = 0; i < theArray.size(); ++i )
+		result.d_[i] = theValue * theArray.d_[i];
+	return result;
 }
 
 } // namespace spectral
