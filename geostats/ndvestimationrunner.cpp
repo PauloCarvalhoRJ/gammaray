@@ -176,6 +176,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
     //to the target cell
     std::multiset<GridCell> vCells;
 
+	//collects the data samples (depend on the search neighborhood)
     GeostatsUtils::getValuedNeighborsTopoOrdered( cell,
                                                            _ndvEstimation->searchMaxNumSamples(),
                                                            _ndvEstimation->searchNumCols(),
@@ -195,12 +196,12 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
             return _ndvEstimation->ndv();
     }
 
-	//get the covariance matrix for the neighbors cell.
+	//get the matrix of the theoretical covariances between the data sample locations and themselves.
     MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vCells,
                                                              _ndvEstimation->vmodel(),
                                                              variogramSill );
 
-	//get the gamma matrix (covariances between samples and estimation locations)
+	//get the gamma matrix (theoretical covariances between sample locations and estimation location)
 	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel() );
 
 	//The eta (after greek letter eta) number is the threshold below which the eigenvalues are rounded off to zero
@@ -243,7 +244,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 		{ //make the response-value (sample values) vector y.
 			std::multiset<GridCell>::iterator vit = vCells.begin();
 			for( int i = 0; vit != vCells.end(); ++vit, ++i )
-				y(i) = (*vit).readValueFromGrid() - meanSK;
+				y(i) = (*vit).readValueFromGrid() - meanSK; //these values are actually the residuals with respect to the SK mean.
 		}
 		//Compute the kriging weights with the Pseudoinverse Regularization proposed by Mohammadi et al (2016) - Equation 12.
 		// "An analytic comparison of regularization methods for Gaussian Processes" - https://arxiv.org/pdf/1602.00853.pdf
@@ -265,8 +266,10 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
         //for SK mode
         result = meanSK;
 		if( is_cov_matrix_ill_conditioned ){
+			//see Mohammadi et al (2016) - Equation 13.
 			result += (gammaMat.getTranspose() * weightsSK)(0,0); //(0,0) is to get the single element as a scalar and not as a matrix object.
 		} else {
+			//computing SK the normal way.
 			std::multiset<GridCell>::iterator itSamples = vCells.begin();
 			for( uint i = 0; i < vCells.size(); ++i, ++itSamples){
 				result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
