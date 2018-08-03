@@ -98,6 +98,18 @@ void GSLib::runProgramAsync(const QString program_name,
         command = gslib_program;
     else
         command = program_name;
+
+	//test whether the executable exists (for some reason, some GSLib executables simply causes the program to hang if missing)
+	QString exePath = command;
+#ifdef Q_OS_WIN
+		exePath += ".exe";
+#endif
+	QFile exeFile( exePath );
+	if( ! ( exeFile.exists() ) ){
+		Application::instance()->logError("GSLib program not found or with permission denied: " + exePath);
+		return;
+	}
+
     if( !parFromStdIn )
         command.append(" \"").append( par_file_path ).append("\"");
 
