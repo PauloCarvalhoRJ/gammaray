@@ -188,7 +188,7 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
         int dim = samples.size();
         for( int i = 0; i < dim; ++i ){
             covMatrix( dim, i ) = 1.0; //last row with ones
-            covMatrix( i, dim ) = 1.0; //last columns with ones
+			covMatrix( i, dim ) = 1.0; //last column with ones
         }
         covMatrix( dim, dim ) = 0.0; //last element is zero
     }
