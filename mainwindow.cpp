@@ -766,7 +766,7 @@ void MainWindow::onPixelPlt()
 void MainWindow::onProbPlt()
 {
     //get input data file
-    DataFile* input_data_file = (DataFile*)_right_clicked_attribute->getContainingFile();
+    DataFile* input_data_file = dynamic_cast<DataFile*>(_right_clicked_attribute->getContainingFile());
 
     //load file data.
     input_data_file->loadData();
@@ -833,8 +833,8 @@ void MainWindow::onProbPlt()
 void MainWindow::onQpplt()
 {
     //get input data files
-    DataFile* input_data_fileX = (DataFile*)_right_clicked_attribute->getContainingFile();
-    DataFile* input_data_fileY = (DataFile*)_right_clicked_attribute2->getContainingFile();
+    DataFile* input_data_fileX = dynamic_cast<DataFile*>(_right_clicked_attribute->getContainingFile());
+    DataFile* input_data_fileY = dynamic_cast<DataFile*>(_right_clicked_attribute2->getContainingFile());
 
     //load file2 data.
     input_data_fileX->loadData();
@@ -957,7 +957,7 @@ void MainWindow::onDecluster()
 
 void MainWindow::onSetNDV()
 {
-    DataFile* data_file = (DataFile*)_right_clicked_file;
+    DataFile* data_file = dynamic_cast<DataFile*>(_right_clicked_file);
 
     bool ok;
     QString new_ndv = QInputDialog::getText(this, "Set no-data value",
@@ -1683,7 +1683,7 @@ void MainWindow::onMachineLearning()
 
 void MainWindow::onDeleteVariable()
 {
-    DataFile* dataFile = (DataFile*)_right_clicked_attribute->getContainingFile();
+    DataFile* dataFile = dynamic_cast<DataFile*>(_right_clicked_attribute->getContainingFile());
 
     QMessageBox msgBox;
     msgBox.setText("Delete " + _right_clicked_attribute->getName() + " from file " + dataFile->getName() + "?");
@@ -1877,7 +1877,7 @@ void MainWindow::onCalculator()
 {
     if( ! _right_clicked_file->isDataFile() )
         return;
-    DataFile *dataFile = (DataFile*)_right_clicked_file;
+    DataFile *dataFile = dynamic_cast<DataFile*>(_right_clicked_file);
     CalculatorDialog* cd = new CalculatorDialog( dataFile, this );
     cd->show();
 }
@@ -1898,7 +1898,7 @@ void MainWindow::onNewAttribute()
         return;
     }
 
-    DataFile *dataFile = (DataFile*)_right_clicked_file;
+    DataFile *dataFile = dynamic_cast<DataFile*>(_right_clicked_file);
     dataFile->loadData();
     dataFile->addEmptyDataColumn( new_var_name, dataFile->getDataLineCount() );
 	dataFile->writeToFS();
@@ -2208,7 +2208,7 @@ void MainWindow::onClassifyInto()
 void MainWindow::onPerformClassifyInto()
 {
     //Assumes the attribute's parent file is a DataFile
-    DataFile* df = (DataFile*)_right_clicked_attribute->getContainingFile();
+    DataFile* df = dynamic_cast<DataFile*>(_right_clicked_attribute->getContainingFile());
 
     //Get the target attribute GEO-EAS index in the data file
     uint index = df->getFieldGEOEASIndex( _right_clicked_attribute->getName() );

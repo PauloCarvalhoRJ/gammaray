@@ -4,6 +4,7 @@
 #include "../domain/application.h"
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
+#include "../domain/datafile.h"
 
 FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_not_set, QWidget *parent) :
     QWidget(parent),
@@ -92,7 +93,7 @@ void FileSelectorWidget::onSelection(int /*index*/)
                 m_File = (File*)varFile;
                 emit fileSelected( m_File );
                 if( m_File->isDataFile() )
-                    emit dataFileSelected( (DataFile*)m_File );
+                    emit dataFileSelected( dynamic_cast<DataFile*>(m_File) );
                 return;
             }
         }

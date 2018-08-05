@@ -51,7 +51,7 @@ SoftIndicatorCalibrationDialog::SoftIndicatorCalibrationDialog(Attribute *at, QW
     //get the Attribute's data file
     File *file = m_at->getContainingFile();
     if( file->isDataFile() ){
-        DataFile *dataFile = (DataFile*)file;
+        DataFile *dataFile = dynamic_cast<DataFile*>(file);
         //load the data
         dataFile->loadData();
         //create an array of doubles to store the Attribute's values
@@ -200,7 +200,7 @@ void SoftIndicatorCalibrationDialog::onPreview()
         PointSet* ps = new PointSet( fileWithSoftIndicators );
 
         //set the new point set metadata
-        ps->setInfo( 1, 2, 3, ((DataFile*)dataFile)->getNoDataValue() );
+        ps->setInfo( 1, 2, 3, (dynamic_cast<DataFile*>(dataFile))->getNoDataValue() );
 
         //get the number of direct children (assumed to be all fields found in the point set file)
         uint nFields = ps->getChildCount();
@@ -356,7 +356,7 @@ QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
         if( file->isDataFile() ){
 
             //////////////////////////Completes the results with any no-data-values that may exist in the data samples/////////////
-            DataFile *dataFile = (DataFile*)file;
+            DataFile *dataFile = dynamic_cast<DataFile*>(file);
             //load the data
             dataFile->loadData();
             // get the number of data samples

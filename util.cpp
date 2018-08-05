@@ -1684,7 +1684,7 @@ bool Util::viewHistogram(Attribute *at, QWidget *parent, bool modal)
 {
     //get input data file
     //the parent component of an attribute is a file
-    DataFile* input_data_file = (DataFile*)at->getContainingFile();
+    DataFile* input_data_file = dynamic_cast<DataFile*>(at->getContainingFile());
 
     //load file data.
     input_data_file->loadData();

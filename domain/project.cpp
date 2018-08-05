@@ -582,7 +582,7 @@ void Project::freeLoadedData()
             File * fileAspect = (File*)(*it);
             //... if it's a data file ...
             if( fileAspect->isDataFile() ){
-                DataFile* dataFileAspect = (DataFile*) fileAspect;
+                DataFile* dataFileAspect = dynamic_cast<DataFile*>( fileAspect );
                 //... frees its loaded data (if any).
                 dataFileAspect->freeLoadedData();
             }

@@ -124,7 +124,7 @@ void PostikDialog::onConfigureAndRun()
     }
 
     //if the user set a data file to better characterize the cumulative distribution (tabulated quantiles)...
-    DataFile *cg_dataForDist = (DataFile*)m_fileForDistSelector->getSelectedFile();
+    DataFile *cg_dataForDist = dynamic_cast<DataFile*>(m_fileForDistSelector->getSelectedFile());
     if( cg_dataForDist ){
         //the optional data to better inform the cumulative distribution
         m_gpf_postik->getParameter<GSLibParFile*>(6)->_path = cg_dataForDist->getPath();

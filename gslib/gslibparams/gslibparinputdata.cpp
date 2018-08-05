@@ -20,7 +20,7 @@ GSLibParInputData::~GSLibParInputData()
 
 void GSLibParInputData::set( Attribute *at )
 {
-    DataFile* data_file = (DataFile*)at->getContainingFile();
+    DataFile* data_file = dynamic_cast<DataFile*>(at->getContainingFile());
     data_file->loadData();
     uint var_index = data_file->getFieldGEOEASIndex( at->getName() );
     double data_min = data_file->min( var_index-1 );

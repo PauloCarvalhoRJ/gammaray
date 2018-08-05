@@ -123,7 +123,7 @@ void NScoreDialog::onHistogram()
     }
 
     //get the original data file.
-    DataFile* original_data_file = (DataFile*)m_attribute->getContainingFile();
+    DataFile* original_data_file = dynamic_cast<DataFile*>(m_attribute->getContainingFile());
 
     //determine whether it is a point set or grid
     bool isPointSet = ( original_data_file->getFileType() == "POINTSET" );
@@ -144,7 +144,7 @@ void NScoreDialog::onSave()
     }
 
     //get the original data file before n-score
-    DataFile* original_data_file = (DataFile*)m_attribute->getContainingFile();
+    DataFile* original_data_file = dynamic_cast<DataFile*>(m_attribute->getContainingFile());
 
     //determine whether the original data file is a point set or grid
     bool isPointSet = ( original_data_file->getFileType() == "POINTSET" );
