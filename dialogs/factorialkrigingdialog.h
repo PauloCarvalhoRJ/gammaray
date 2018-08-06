@@ -14,6 +14,8 @@ class VariableSelector;
 class GSLibParameterFile;
 class VariogramModel;
 class CartesianGrid;
+class FileSelectorWidget;
+class DataFile;
 
 class FactorialKrigingDialog : public QDialog
 {
@@ -29,8 +31,8 @@ private:
     CartesianGridSelector* m_cgSelector;
     CartesianGridSelector* m_cgSelectorSecondary;
     VariableSelector* m_cgSecondaryVariableSelector;
-    PointSetSelector* m_psSelector;
-    VariableSelector* m_PointSetVariableSelector;
+	FileSelectorWidget* m_dataSetSelector;
+	VariableSelector* m_DataSetVariableSelector;
     VariableSelector* m_PointSetSecondaryVariableSelector;
     CartesianGrid* m_cg_estimation;
     void preview();
@@ -45,6 +47,7 @@ private slots:
     void onSaveOrUpdateVModel();
     void onKt3dCompletes();
     void onVariogramChanged();
+	void onDataSetSelected(DataFile* dataFile);
 };
 
 #endif // FACTORIALKRIGINGDIALOG_H
