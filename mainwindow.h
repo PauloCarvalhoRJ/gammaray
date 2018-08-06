@@ -182,6 +182,7 @@ private slots:
 	void onError( QString message );
     void onSaveArrayAsNewVariableInCartesianGrid(spectral::array* array,
                                                  IJAbstractCartesianGrid* gridWithGridSpecs );
+	void onFactorialKriging();
 
 private:
     /**

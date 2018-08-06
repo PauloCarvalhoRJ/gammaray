@@ -63,6 +63,7 @@
 #include "dialogs/multivariogramdialog.h"
 #include "dialogs/sgsimdialog.h"
 #include "dialogs/machinelearningdialog.h"
+#include "dialogs/factorialkrigingdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -2065,8 +2066,6 @@ void MainWindow::onCovarianceMap()
 
     //The covariance at h=0 ends up in the corners of the grid, then
     //we shift the data so cov(0) is in the grid center
-    //this also normalizes the values (divide by number of cells)
-    uint n = nI*nJ*nK;
     std::vector< std::complex<double> > arrayShifted( nI * nJ * nK );
     for(uint k = 0; k < nK; ++k) {
         int k_shift = (k + nK/2) % nK;
@@ -2163,7 +2162,13 @@ void MainWindow::onSaveArrayAsNewVariableInCartesianGrid(spectral::array *array,
         return;
     }
 
-    gridWithGridSpecs->appendAsNewVariable( new_variable_name, *array );
+	gridWithGridSpecs->appendAsNewVariable( new_variable_name, *array );
+}
+
+void MainWindow::onFactorialKriging()
+{
+	FactorialKrigingDialog *fkd = new FactorialKrigingDialog( this );
+	fkd->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()
