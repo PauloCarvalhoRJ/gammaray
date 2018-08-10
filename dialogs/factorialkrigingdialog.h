@@ -35,6 +35,7 @@ private:
 	VariableSelector* m_DataSetVariableSelector;
     VariableSelector* m_PointSetSecondaryVariableSelector;
     CartesianGrid* m_cg_estimation;
+	GSLibParameterFile* m_gpfFK;
     void preview();
     /** Called when the user changes the variogram model, so the variogram parameters
      * in m_gpf_kt3d are read from the newly selected variogram model.*/

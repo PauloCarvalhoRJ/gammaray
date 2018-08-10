@@ -24,7 +24,8 @@
 FactorialKrigingDialog::FactorialKrigingDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::FactorialKrigingDialog),
-    m_cg_estimation( nullptr )
+	m_cg_estimation( nullptr ),
+	m_gpfFK( nullptr )
 {
     ui->setupUi(this);
 
@@ -69,6 +70,8 @@ FactorialKrigingDialog::FactorialKrigingDialog(QWidget *parent) :
 
 FactorialKrigingDialog::~FactorialKrigingDialog()
 {
+	if( m_gpfFK )
+		delete m_gpfFK;
     delete ui;
     Application::instance()->logInfo("FactorialKrigingDialog destroyed.");
 }
@@ -108,6 +111,19 @@ void FactorialKrigingDialog::onParameters()
 
     //get the selected grid with secondary data (if any)
     CartesianGrid* sec_data_grid = (CartesianGrid*)m_cgSelectorSecondary->getSelectedDataFile();
+
+	if( ! m_gpfFK ){
+		GSLibParameterFile* m_gpfFK = new GSLibParameterFile();
+		m_gpfFK->makeParamatersForFactorialKriging();
+
+		GSLibParametersDialog gpd( m_gpfFK );
+		int response = gpd.exec();
+
+		//if user didn't cancel the dialog
+		if( response == QDialog::Accepted ){
+
+		}
+	}
 
 }
 

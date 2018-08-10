@@ -376,7 +376,14 @@ void GSLibParameterFile::setGridParameters(CartesianGrid *cg)
 
 void GSLibParameterFile::addParameter(GSLibParType *param)
 {
-    _params.append( param );
+	_params.append( param );
+}
+
+void GSLibParameterFile::makeParamatersForFactorialKriging()
+{
+	this->_program_name = "Factorial Kriging algorithm";
+	GSLibParString* test = new GSLibParString("", "", "Test:");
+	_params.append( test );
 }
 
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){
