@@ -4,6 +4,8 @@
 #include <vector>
 #include <cmath>
 #include "domain/application.h"
+#include "spectral/spectral.h"
+#include "spectral/svd.h"
 
 /** A generic N lines x M columns matrix template. */
 
@@ -14,11 +16,14 @@ public:
     /** Constructor that initializes the matrix elements with a value. */
     MatrixNXM(unsigned int n, unsigned int m, T initValue = 0.0 );
 
+	/** Constructor that initializes the matrix from the values in a spectral::array object. */
+	MatrixNXM( const spectral::array& array );
+
     /** Returns the number of rows. */
-    T getN(){ return _n; }
+	T getN() const { return _n; }
 
     /** Returns the number of columns. */
-    T getM(){ return _m; }
+	T getM() const { return _m; }
 
     /** Operator () for l-value element access: e.g.: a(1,2) = 20.0; .
      * Due to performance concern, no range check is performed.
@@ -40,7 +45,17 @@ public:
     /** Inverts this matrix. It is assumed that the matrix is square, no check in this regard is performed, though
      * there is a check for singularity (prints a message and aborts calculation.)
      */
-    void invert();
+	void invertWithGaussJordan();
+
+	/** Inverts this matrix with Singular Values Decomposition (works with non-square matrices).
+	 */
+	void invertWithSVD();
+
+	/** Returns a new matrix that is a transpose of this matrix.*/
+	MatrixNXM<T> getTranspose( ) const;
+
+	/** Returns a spectral::array object equivalent to this matrix. */
+	spectral::array toSpectralArray() const;
 
 private:
     /** Number of rows. */
@@ -61,7 +76,88 @@ MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue ) :
 {}
 
 template <typename T>
-void MatrixNXM<T>::invert(){
+MatrixNXM<T>::MatrixNXM( const spectral::array& array ) :
+	_n( array.M() ), //yes, N is swapped with M indeed.
+	_m( array.N() ),
+	_values( _n*_m, 0.0 )
+{
+	for( int i = 0; i < _n; ++i )
+		for( int j = 0; j < _m; ++j )
+			(*this)(i,j) = array(i,j);
+}
+
+template <typename T>
+void MatrixNXM<T>::invertWithSVD(){
+	MatrixNXM<T> &a = *this;
+
+	//Make a spectral-compatible copy of this matrix.
+	spectral::array A( (spectral::index)a.getN(), (spectral::index)a.getM() );
+	for( int i = 0; i < a.getN(); ++i)
+		for( int j = 0; j < a.getM(); ++j)
+			A(i,j) = a(i,j);
+
+	//Get the U, Sigma and V* matrices from SVD on A.
+	spectral::SVD svd = spectral::svd( A );
+	spectral::array U = svd.U();
+	spectral::array Sigma = svd.S();
+	spectral::array V = svd.V(); //SVD yields V* already transposed, that is V, but to check, you must transpose V
+								 //to get A = U.Sigma.V*
+
+	//Make a full Sigma matrix (to be compatible with multiplication with the other matrices)
+	{
+		spectral::array SigmaTmp( (spectral::index)a.getN(), (spectral::index)a.getM() );
+		for( int i = 0; i < a.getN(); ++i)
+			SigmaTmp(i, i) = Sigma.d_[i];
+		Sigma = SigmaTmp;
+	}
+
+	//Make U*
+	//U contains only real numbers, thus U's transpose conjugate is its transpose.
+	spectral::array Ustar( U );
+	//transpose U to get U*
+	{
+		Eigen::MatrixXd tmp = spectral::to_2d( Ustar );
+		tmp.transposeInPlace();
+		Ustar = spectral::to_array( tmp );
+	}
+
+	//Make Sigmadagger (pseudoinverse of Sigma)
+	spectral::array SigmaDagger( Sigma );
+	{
+		//compute reciprocals of the non-zero elements in the main diagonal.
+		for( int i = 0; i < a.getN(); ++i){
+			double value = SigmaDagger(i, i);
+			//only absolute values greater than the machine epsilon are considered non-zero.
+			if( std::abs( value ) > std::numeric_limits<double>::epsilon() )
+				SigmaDagger( i, i ) = 1.0 / value;
+			else
+				SigmaDagger( i, i ) = 0.0;
+		}
+		//transpose
+		Eigen::MatrixXd tmp = spectral::to_2d( SigmaDagger );
+		tmp.transposeInPlace();
+		SigmaDagger = spectral::to_array( tmp );
+	}
+
+	//Make Adagger (pseudoinverse of A) by "reversing" the transform U.Sigma.V*,
+	//hence, Adagger = V.Sigmadagger.Ustar .
+	spectral::array Adagger;
+	{
+		Eigen::MatrixXd eigenV = spectral::to_2d( V );
+		Eigen::MatrixXd eigenSigmadagger = spectral::to_2d( SigmaDagger );
+		Eigen::MatrixXd eigenUstar = spectral::to_2d( Ustar );
+		Eigen::MatrixXd eigenAdagger = eigenV * eigenSigmadagger * eigenUstar;
+		Adagger = spectral::to_array( eigenAdagger );
+	}
+
+	//Return the result.
+	for( int i = 0; i < a.getN(); ++i)
+		for( int j = 0; j < a.getM(); ++j)
+			a(i,j) = Adagger(i,j);
+}
+
+template <typename T>
+void MatrixNXM<T>::invertWithGaussJordan(){
     /* This is a Gauss-Jordan method implemented from the code in Numerical Recipes, 3rd edition.
        It is intended to solve a linear system, but it was modified just perform invertion.
     */
@@ -117,7 +213,7 @@ void MatrixNXM<T>::invert(){
     }
 }
 
-//TODO: naive matrix multiplication, improve performance (e.g. parallel)
+//TODO: naive matrix multiplication, improve performance (e.g. parallel) or use spectral::'s classes/methods
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
    MatrixNXM<T>& a = *this;
@@ -129,5 +225,26 @@ MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
    return result;
 }
 
+
+template <typename T>
+spectral::array MatrixNXM<T>::toSpectralArray() const{
+	const MatrixNXM<T> &a = *this;
+	//Make a spectral-compatible copy of this matrix.
+	spectral::array A( (spectral::index)a.getN(), (spectral::index)a.getM() );
+	for( int i = 0; i < a.getN(); ++i)
+		for( int j = 0; j < a.getM(); ++j)
+			A(i,j) = a(i,j);
+	return A;
+}
+
+template <typename T>
+MatrixNXM<T> MatrixNXM<T>::getTranspose( ) const {
+   spectral::array a = spectral::transpose( (*this).toSpectralArray() );
+   MatrixNXM<T> result( a.M_, a.N_);
+   for(uint i = 0; i < a.M_; ++i)
+	   for(uint j = 0; j < a.N_; ++j)
+			result(i,j) = a(i,j);
+   return result;
+}
 
 #endif // MATRIXMXN_H

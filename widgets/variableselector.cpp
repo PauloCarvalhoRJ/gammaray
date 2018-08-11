@@ -41,9 +41,9 @@ QString VariableSelector::getSelectedVariableName()
 void VariableSelector::addVariable(Attribute *at)
 {
     if( ! m_dataFile )
-        m_dataFile = (DataFile*)at->getContainingFile();
+        m_dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
     else{
-        if( m_dataFile != (DataFile*)at->getContainingFile() ){
+        if( m_dataFile != dynamic_cast<DataFile*>(at->getContainingFile()) ){
             Application::instance()->logError("VariableSelector::addVariable(): attempt to add variables from different files.");
             return;
         }
@@ -93,7 +93,7 @@ void VariableSelector::onListVariables(DataFile *file)
     file->getAllObjects( all_contained_objects );
     std::vector<ProjectComponent*>::iterator it = all_contained_objects.begin();
     for(; it != all_contained_objects.end(); ++it){
-		ProjectComponent* pc = (ProjectComponent*)(*it);
+        ProjectComponent* pc = *it;
         if( pc->isAttribute() ){
 			ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
         }

@@ -4,6 +4,7 @@
 #include "../domain/application.h"
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
+#include "../domain/datafile.h"
 
 CartesianGridSelector::CartesianGridSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
@@ -42,8 +43,8 @@ void CartesianGridSelector::onSelection(int /*index*/)
         File* varFile = (File*)og->getChildByIndex( i );
         if( varFile->getFileType() == "CARTESIANGRID" ){
             if( varFile->getName() == ui->cmbGrids->currentText() ){
-                m_dataFile = (DataFile*)varFile;
-                emit cartesianGridSelected( (DataFile*)varFile );
+                m_dataFile = dynamic_cast<DataFile*>(varFile);
+                emit cartesianGridSelected( m_dataFile );
                 return;
             }
         }

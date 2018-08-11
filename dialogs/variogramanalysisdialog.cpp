@@ -133,7 +133,7 @@ void VariogramAnalysisDialog::onOpenVarMapParameters()
         //Construct an object composition based on the parameter file template for the gamv program.
         m_gpf_varmap = new GSLibParameterFile( "varmap" );
         //Get the data file (can be either point set or grid).
-        DataFile* input_data_file = (DataFile*)m_head->getContainingFile();
+        DataFile* input_data_file = dynamic_cast<DataFile*>(m_head->getContainingFile());
         //loads data in file.
         input_data_file->loadData();
         //get the variables indexes in parent data file
@@ -697,7 +697,7 @@ void VariogramAnalysisDialog::onSaveVariogramModel()
 void VariogramAnalysisDialog::onVarNReals()
 {
     //Get the data file (can be either point set or grid).
-    DataFile* input_data_file = (DataFile*)m_head->getContainingFile();
+    DataFile* input_data_file = dynamic_cast<DataFile*>(m_head->getContainingFile());
 
     //determine whether the data is regular (grid) or irregular (point cloud)
     bool is_irregular = (input_data_file->getFileType().compare("POINTSET") == 0);

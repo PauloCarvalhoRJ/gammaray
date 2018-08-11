@@ -4,6 +4,7 @@
 #include "../domain/application.h"
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
+#include "../domain/datafile.h"
 
 PointSetSelector::PointSetSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
@@ -42,7 +43,7 @@ void PointSetSelector::onSelection(int /*index*/)
         File* varFile = (File*)og->getChildByIndex( i );
         if( varFile->getFileType() == "POINTSET" ){
             if( varFile->getName() == ui->cmbGrids->currentText() ){
-                m_dataFile = (DataFile*)varFile;
+                m_dataFile = dynamic_cast<DataFile*>(varFile);
                 emit pointSetSelected( m_dataFile );
                 return;
             }

@@ -89,7 +89,7 @@ void BidistributionModelingDialog::onParameters()
         QString title = "Bidistr. model for " + m_atX->getContainingFile()->getName() + ": " + m_atX->getName() + " X " + m_atY->getName();
 
         //assumes that both variables are from the same data file
-        DataFile* data_file = (DataFile*)m_atX->getContainingFile();
+        DataFile* data_file = dynamic_cast<DataFile*>(m_atX->getContainingFile());
 
         //load the data
         data_file->loadData();

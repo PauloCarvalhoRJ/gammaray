@@ -188,7 +188,7 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
         int dim = samples.size();
         for( int i = 0; i < dim; ++i ){
             covMatrix( dim, i ) = 1.0; //last row with ones
-            covMatrix( i, dim ) = 1.0; //last columns with ones
+			covMatrix( i, dim ) = 1.0; //last column with ones
         }
         covMatrix( dim, dim ) = 0.0; //last element is zero
     }
@@ -262,8 +262,8 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
         //build the list as a set to get free ordering
         std::set<IJKDelta> *deltas = new std::set<IJKDelta>();
         for( int dk = 0; dk <= nSlicesAround/2; ++dk){
-            for( int dj = 0; dj <= nColsAround/2; ++dj ){
-                for( int di = 0; di <= nRowsAround/2; ++di){
+			for( int dj = 0; dj <= nRowsAround/2; ++dj ){
+				for( int di = 0; di <= nColsAround/2; ++di){
                     deltas->insert( IJKDelta( di, dj, dk) );
                 }
             }
@@ -278,8 +278,8 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
         std::copy(deltas->begin(), deltas->end(), std::back_inserter(*deltasV));
         //store the list in the cache for later reuse.
         IJKDeltasCache::cache.emplace( IJKDeltasCacheKey( nColsAround,
-                                                         nRowsAround,
-                                                         nSlicesAround ), deltasV );
+														  nRowsAround,
+														  nSlicesAround ), deltasV );
         //we don't need the std::set anymore
         delete deltas;
     }
@@ -303,8 +303,8 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
             int jj = indexes[iIndex]._j;
             int kk = indexes[iIndex]._k;
             //...if the index is within the grid limits...
-            if( ii >= 0 && ii < row_limit &&
-                jj >= 0 && jj < column_limit &&
+			if( ii >= 0 && ii < column_limit &&
+				jj >= 0 && jj < row_limit &&
                 kk >= 0 && kk < slice_limit ){
                 //...get the value corresponding to the cell index.
                 double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );

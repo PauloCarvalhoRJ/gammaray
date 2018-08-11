@@ -168,8 +168,8 @@ void MachineLearningDialog::runCARTClassify()
     int maxSplitsContinuous = gpf.getParameterByName<GSLibParInt*>("MaxSplitsContinuous")->_value;
 
     //Get the selected data files.
-    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
-    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+    DataFile* trainingDataFile = dynamic_cast<DataFile*>(m_trainingFileSelector->getSelectedFile());
+    DataFile* outputDataFile = dynamic_cast<DataFile*>(m_outputFileSelector->getSelectedFile());
 
     //load the data from filesystem.
     trainingDataFile->loadData();
@@ -230,8 +230,8 @@ void MachineLearningDialog::runCARTRegression()
     int maxSplitsContinuous = gpf.getParameterByName<GSLibParInt*>("MaxSplitsContinuous")->_value;
 
     //Get the selected data files.
-    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
-    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+    DataFile* trainingDataFile = dynamic_cast<DataFile*>( m_trainingFileSelector->getSelectedFile() );
+    DataFile* outputDataFile = dynamic_cast<DataFile*>( m_outputFileSelector->getSelectedFile() );
 
     //load the data from filesystem.
     trainingDataFile->loadData();
@@ -346,8 +346,8 @@ void MachineLearningDialog::runRandomForestClassify()
     }
 
     //Get the selected data files.
-    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
-    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+    DataFile* trainingDataFile = dynamic_cast<DataFile*>( m_trainingFileSelector->getSelectedFile() );
+    DataFile* outputDataFile = dynamic_cast<DataFile*>( m_outputFileSelector->getSelectedFile() );
 
     //load the data from filesystem.
     trainingDataFile->loadData();
@@ -444,8 +444,8 @@ void MachineLearningDialog::runRandomForestRegression()
     }
 
     //Get the selected data files.
-    DataFile* trainingDataFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
-    DataFile* outputDataFile = (DataFile*)m_outputFileSelector->getSelectedFile();
+    DataFile* trainingDataFile = dynamic_cast<DataFile*>(m_trainingFileSelector->getSelectedFile());
+    DataFile* outputDataFile = dynamic_cast<DataFile*>(m_outputFileSelector->getSelectedFile());
 
     //load the data from filesystem.
     trainingDataFile->loadData();
@@ -501,7 +501,7 @@ void MachineLearningDialog::runRandomForestRegression()
 
 bool MachineLearningDialog::isClassification()
 {
-    DataFile* trainingFile = (DataFile*)m_trainingFileSelector->getSelectedFile();
+    DataFile* trainingFile = dynamic_cast<DataFile*>(m_trainingFileSelector->getSelectedFile());
     if( trainingFile ){
         Attribute* at = trainingFile->getAttributeFromGEOEASIndex(
                     m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex() );
