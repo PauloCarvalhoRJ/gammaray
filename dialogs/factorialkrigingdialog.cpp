@@ -17,6 +17,7 @@
 #include "gslib/gslib.h"
 #include "util.h"
 #include "geostats/fkestimation.h"
+#include "geostats/searchstrategy.h"
 
 #include <QInputDialog>
 #include <QMessageBox>
@@ -318,7 +319,7 @@ void FactorialKrigingDialog::doFK()
 
     //run the estimation
     {
-        FKEstimation estimation( _at );
+        FKEstimation estimation;
         estimation.setSearchStrategy( &searchStrategy );
         estimation.setVariogramModel( m_vModelSelector->getSelectedVModel() );
         GSLibParOption* ktype_par = m_gpfFK->getParameter<GSLibParOption*>( 0 );

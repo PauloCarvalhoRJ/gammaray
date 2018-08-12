@@ -16,7 +16,7 @@ class FKEstimationRunner : public QObject
     Q_OBJECT
 
 public:
-    explicit FKEstimationRunner(FKEstimation* fkEstimation, Attribute* at, QObject *parent = 0);
+    explicit FKEstimationRunner(FKEstimation* fkEstimation, QObject *parent = 0);
 
     bool isFinished(){ return m_finished; }
 
@@ -31,16 +31,15 @@ public slots:
 
 private:
     bool m_finished;
-    Attribute* m_at;
     FKEstimation* m_fkEstimation;
     std::vector<double> m_results;
 
-    /** Perform factorial kriging in a single cell.
+    /** Perform factorial kriging in a single cell in the output grid.
+     * @param Object containing info about the cell such as parent grid, indexes, etc.
      * @param nIllConditioned its value is increased by the number of ill-conditioned kriging matrices encountered.
      * @param nFailed its value is increased by the number of kriging operations that failed (resulted in NaN or inifinity).
      */
-    double fk(GridCell cell , double meanSK, bool hasNDV, double NDV, double variogramSill,
-                 int& nIllConditioned, int & nFailed);
+    double fk(GridCell &cell, int& nIllConditioned, int & nFailed );
 
 };
 

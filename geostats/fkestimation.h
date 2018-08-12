@@ -18,19 +18,21 @@ public:
     //@{
     /** Factorial Kriging parameters. */
     void setSearchStrategy( const SearchStrategy* searchStrategy );
-    void setVariogramModel( const VariogramModel* variogramModel );
+    void setVariogramModel( VariogramModel* variogramModel );
     void setMeanForSimpleKriging( double meanSK );
     void setKrigingType( KrigingType ktype );
     void setInputVariable( Attribute* at_input );
     void setEstimationGrid( CartesianGrid* cg_estimation );
     //@}
 
+    CartesianGrid* getEstimationGrid(){ return m_cg_estimation; }
+
     /** Preforms the factorial kriging. Make sure all parameters have been set properly .*/
     std::vector<double> run();
 
 private:
     const SearchStrategy *m_searchStrategy;
-    const VariogramModel *m_variogramModel;
+    VariogramModel *m_variogramModel;
     double m_meanSK;
     KrigingType m_ktype;
     Attribute *m_at_input;

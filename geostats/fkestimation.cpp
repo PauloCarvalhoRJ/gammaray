@@ -2,8 +2,12 @@
 #include "geostats/searchstrategy.h"
 #include "domain/datafile.h"
 #include "domain/cartesiangrid.h"
+#include "domain/attribute.h"
+#include "fkestimationrunner.h"
 
+#include <QCoreApplication>
 #include <QProgressDialog>
+#include <QThread>
 
 FKEstimation::FKEstimation() :
     m_searchStrategy( nullptr ),
@@ -20,7 +24,7 @@ void FKEstimation::setSearchStrategy(const SearchStrategy *searchStrategy)
     m_searchStrategy = searchStrategy;
 }
 
-void FKEstimation::setVariogramModel(const VariogramModel *variogramModel)
+void FKEstimation::setVariogramModel(VariogramModel *variogramModel)
 {
     m_variogramModel = variogramModel;
 }
@@ -106,7 +110,7 @@ std::vector<double> FKEstimation::run()
     progressDialog.setValue( 0 );
     progressDialog.setMaximum( nI * nJ * nK );
     QThread* thread = new QThread();
-    FKEstimationRunner* runner = new FKEstimationRunner( this, _at );
+    FKEstimationRunner* runner = new FKEstimationRunner( this );
     runner->moveToThread(thread);
     runner->connect(thread, SIGNAL(finished()), runner, SLOT(deleteLater()));
     runner->connect(thread, SIGNAL(started()), runner, SLOT(doRun()));
