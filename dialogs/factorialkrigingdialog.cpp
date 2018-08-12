@@ -325,6 +325,8 @@ void FactorialKrigingDialog::doFK()
         estimation.setKrigingType( static_cast<KrigingType>( ktype_par->_selected_value ) );
         GSLibParDouble* skmean_par = m_gpfFK->getParameter<GSLibParDouble*>( 1 );
         estimation.setMeanForSimpleKriging( skmean_par->_value );
+        estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
+        estimation.setEstimationGrid( m_cg_estimation );
         std::vector<double> results = estimation.run();
     }
 

@@ -217,7 +217,8 @@ SOURCES += main.cpp\
 	imagejockey/widgets/ijquick3dviewer.cpp \
 	dialogs/factorialkrigingdialog.cpp \
     geostats/fkestimation.cpp \
-    geostats/searchstrategy.cpp
+    geostats/searchstrategy.cpp \
+    geostats/fkestimationrunner.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -409,7 +410,8 @@ HEADERS  += mainwindow.h \
 	imagejockey/widgets/ijquick3dviewer.h \
 	dialogs/factorialkrigingdialog.h \
     geostats/fkestimation.h \
-    geostats/searchstrategy.h
+    geostats/searchstrategy.h \
+    geostats/fkestimationrunner.h
 
 
 FORMS    += mainwindow.ui \
