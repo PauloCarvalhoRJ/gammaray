@@ -10,6 +10,7 @@
 #include "../../util.h"
 #include "gslibparamtypes.h"
 #include "../igslibparameterfinder.h"
+#include "geostats/geostatsutils.h"
 
 GSLibParameterFile::GSLibParameterFile(const QString program_name)
 {
@@ -59,8 +60,7 @@ GSLibParameterFile::GSLibParameterFile()
 
 GSLibParameterFile::~GSLibParameterFile()
 {
-    //TODO: I don't remember whether QList automatically deletes its objects upon its own
-    //deallocation
+    //TODO: Delete the objects in _params
 }
 
 void GSLibParameterFile::setDefaultValues()
@@ -382,8 +382,18 @@ void GSLibParameterFile::addParameter(GSLibParType *param)
 void GSLibParameterFile::makeParamatersForFactorialKriging()
 {
 	this->_program_name = "Factorial Kriging algorithm";
-	GSLibParString* test = new GSLibParString("", "", "Test:");
-	_params.append( test );
+
+    //------------kriging type: paramater 0--------------------------------
+    GSLibParOption* par_ktype = new GSLibParOption("", "", "Kriging type:");
+    par_ktype->addOption( static_cast<int>(KrigingType::SK), "Simple" );
+    par_ktype->addOption( static_cast<int>(KrigingType::OK), "Ordinary" );
+    par_ktype->_selected_value = static_cast<int>(KrigingType::OK);
+    _params.append( par_ktype );
+
+    //------------mean for simple kriging: paramater 1--------------------------------
+    GSLibParDouble* par_skmean = new GSLibParDouble("", "", "mean for SK:");
+    par_skmean->_value = 0.0;
+    _params.append( par_skmean );
 }
 
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){

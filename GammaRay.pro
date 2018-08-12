@@ -215,7 +215,9 @@ SOURCES += main.cpp\
 	calculator/calccodeeditor.cpp \
 	imagejockey/vardecomp/variographicdecompositiondialog.cpp \
 	imagejockey/widgets/ijquick3dviewer.cpp \
-	dialogs/factorialkrigingdialog.cpp
+	dialogs/factorialkrigingdialog.cpp \
+    geostats/fkestimation.cpp \
+    geostats/searchstrategy.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -405,7 +407,9 @@ HEADERS  += mainwindow.h \
 	calculator/calccodeeditor.h \
 	imagejockey/vardecomp/variographicdecompositiondialog.h \
 	imagejockey/widgets/ijquick3dviewer.h \
-	dialogs/factorialkrigingdialog.h
+	dialogs/factorialkrigingdialog.h \
+    geostats/fkestimation.h \
+    geostats/searchstrategy.h
 
 
 FORMS    += mainwindow.ui \

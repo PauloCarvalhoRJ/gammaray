@@ -16,6 +16,7 @@
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslib.h"
 #include "util.h"
+#include "geostats/fkestimation.h"
 
 #include <QInputDialog>
 #include <QMessageBox>
@@ -121,7 +122,8 @@ void FactorialKrigingDialog::onParameters()
 
 		//if user didn't cancel the dialog
 		if( response == QDialog::Accepted ){
-
+            //run factorial kriging.
+            doFK();
 		}
 	}
 
@@ -294,4 +296,36 @@ void FactorialKrigingDialog::updateVariogramParameters(VariogramModel *vm)
         par21_1->getParameter<GSLibParDouble*>(1)->_value = vm->get_a_hMin( ist );
         par21_1->getParameter<GSLibParDouble*>(2)->_value = vm->get_a_vert( ist );
     }
+}
+
+void FactorialKrigingDialog::doFK()
+{
+    // Define the estimation grid.
+    {
+        DataFile* input_data = static_cast<DataFile*>( this->m_dataSetSelector->getSelectedFile() );
+        //the estimation grid depends on input data type.
+
+        if( input_data->getFileType() == "CARTESIANGRID")
+            //If the input data is a grid, the estimation grid is itself.
+            m_cg_estimation = static_cast<CartesianGrid*>( input_data );
+        else
+            //If the input data is a pointset, the estimation grid is another grid selected by the user.
+            m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
+    }
+
+    //Build the search strategy object
+    SearchStrategy searchStrategy;
+
+    //run the estimation
+    {
+        FKEstimation estimation( _at );
+        estimation.setSearchStrategy( &searchStrategy );
+        estimation.setVariogramModel( m_vModelSelector->getSelectedVModel() );
+        GSLibParOption* ktype_par = m_gpfFK->getParameter<GSLibParOption*>( 0 );
+        estimation.setKrigingType( static_cast<KrigingType>( ktype_par->_selected_value ) );
+        GSLibParDouble* skmean_par = m_gpfFK->getParameter<GSLibParDouble*>( 1 );
+        estimation.setMeanForSimpleKriging( skmean_par->_value );
+        std::vector<double> results = estimation.run();
+    }
+
 }
