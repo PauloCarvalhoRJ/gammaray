@@ -1,14 +1,14 @@
 #ifndef GRIDCELL_H
 #define GRIDCELL_H
 
-#include "geostats/spatiallocation.h"
-#include "geostats/ijkindex.h"
+#include "datacell.h"
+#include "ijkindex.h"
 #include "domain/cartesiangrid.h"
 
 class CartesianGrid;
 
 /** Data structure containing information of a grid cell. */
-class GridCell
+class GridCell : public DataCell
 {
 public:
 
@@ -25,8 +25,8 @@ public:
      * @param j Topological coordinate (crossline/row)
      * @param k Topological coordinate (horizontal slice)
      */
-    inline GridCell( CartesianGrid* grid, int dataIndex, int i, int j, int k ) :
-        _grid(grid), _indexIJK(i,j,k), _dataIndex(dataIndex)
+	inline GridCell( CartesianGrid* grid, int dataIndex, int i, int j, int k ) : DataCell( dataIndex, grid ),
+		_grid(grid), _indexIJK(i,j,k)
     {
         _center._x = grid->getX0() + _indexIJK._i * grid->getDX();
         _center._y = grid->getY0() + _indexIJK._j * grid->getDY();
@@ -43,18 +43,11 @@ public:
         return _topoDistance;
     }
 
-//--------------------member variables---------------------
     /** The grid object this cell refers to. */
     CartesianGrid* _grid;
 
     /** Topological coordinates (i,j,k). */
     IJKIndex _indexIJK;
-
-    /** Spatial coordinates of the cell center. */
-    SpatialLocation _center;
-
-    /** Data index in multi-valued cells. */
-    int _dataIndex;
 
     /** Topological distance computed with computeTopoDistance(); */
     int _topoDistance;

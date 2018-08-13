@@ -4,8 +4,8 @@
 
 #include <cmath>
 
-GridCell::GridCell() :
-    _grid(nullptr), _indexIJK(0,0,0), _dataIndex(0)
+GridCell::GridCell() : DataCell( 0 ),
+	_grid(nullptr), _indexIJK(0,0,0)
 {
     _center._x = 0.0;
     _center._y = 0.0;
