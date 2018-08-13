@@ -218,7 +218,10 @@ SOURCES += main.cpp\
 	dialogs/factorialkrigingdialog.cpp \
     geostats/fkestimation.cpp \
     geostats/searchstrategy.cpp \
-    geostats/fkestimationrunner.cpp
+    geostats/fkestimationrunner.cpp \
+    geostats/datacell.cpp \
+    geostats/searchneighborhood.cpp \
+    geostats/searchellipsoid.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -411,7 +414,10 @@ HEADERS  += mainwindow.h \
 	dialogs/factorialkrigingdialog.h \
     geostats/fkestimation.h \
     geostats/searchstrategy.h \
-    geostats/fkestimationrunner.h
+    geostats/fkestimationrunner.h \
+    geostats/datacell.h \
+    geostats/searchneighborhood.h \
+    geostats/searchellipsoid.h
 
 
 FORMS    += mainwindow.ui \
