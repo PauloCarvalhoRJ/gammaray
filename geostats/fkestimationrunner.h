@@ -35,11 +35,11 @@ private:
     std::vector<double> m_results;
 
     /** Perform factorial kriging in a single cell in the output grid.
-     * @param Object containing info about the cell such as parent grid, indexes, etc.
-     * @param nIllConditioned its value is increased by the number of ill-conditioned kriging matrices encountered.
-     * @param nFailed its value is increased by the number of kriging operations that failed (resulted in NaN or inifinity).
+	 * @param estimationCell Object containing info about the cell such as parent grid, indexes, etc.
+	 * @param nIllConditioned Its value is increased by the number of ill-conditioned kriging matrices encountered.
+	 * @param nFailed Its value is increased by the number of kriging operations that failed (resulted in NaN or inifinity).
      */
-    double fk(GridCell &cell, int& nIllConditioned, int & nFailed );
+	double fk(GridCell &estimationCell, int& nIllConditioned, int & nFailed );
 
 };
 

@@ -35,8 +35,8 @@ void FKEstimationRunner::doRun()
                           QString::number(nFailed) + " failed). " );
             emit progress( j * nI + k * nI * nJ );
             for( uint i = 0; i <nI; ++i){
-                GridCell cell( estimationGrid, -1, i, j, k );
-                m_results.push_back( fk( cell, nIllConditioned, nFailed ) );
+				GridCell estimationCell( estimationGrid, -1, i, j, k );
+				m_results.push_back( fk( estimationCell, nIllConditioned, nFailed ) );
                 ++nKriging;
             }
         }
@@ -45,7 +45,11 @@ void FKEstimationRunner::doRun()
     m_finished = true;
 }
 
-double FKEstimationRunner::fk( GridCell& cell, int &nIllConditioned, int &nFailed )
+double FKEstimationRunner::fk( GridCell& estimationCell, int &nIllConditioned, int &nFailed )
 {
+	//collects samples from the input data set ordered by their distance with respect
+	//to the estimation cell.
+	std::multiset<DataCell> vSamples = m_fkEstimation->getSamples( estimationCell );
 
+	return -1.0;
 }

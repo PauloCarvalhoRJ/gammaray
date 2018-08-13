@@ -383,17 +383,24 @@ void GSLibParameterFile::makeParamatersForFactorialKriging()
 {
 	this->_program_name = "Factorial Kriging algorithm";
 
-    //------------kriging type: paramater 0--------------------------------
+	//------------kriging type: parameter 0--------------------------------
     GSLibParOption* par_ktype = new GSLibParOption("", "", "Kriging type:");
     par_ktype->addOption( static_cast<int>(KrigingType::SK), "Simple" );
     par_ktype->addOption( static_cast<int>(KrigingType::OK), "Ordinary" );
     par_ktype->_selected_value = static_cast<int>(KrigingType::OK);
     _params.append( par_ktype );
 
-    //------------mean for simple kriging: paramater 1--------------------------------
+	//------------mean for simple kriging: parameter 1--------------------------------
     GSLibParDouble* par_skmean = new GSLibParDouble("", "", "mean for SK:");
     par_skmean->_value = 0.0;
     _params.append( par_skmean );
+
+	//------------search ellipsoid radii: parameter 2--------------------------------
+	GSLibParMultiValuedFixed *par_search_ellip_radii = new GSLibParMultiValuedFixed("", "", "Search ellipsoid radii (hMax, hMin, hVert):");
+	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
+	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
+	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
+	_params.append( par_search_ellip_radii );
 }
 
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){

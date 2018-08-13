@@ -128,7 +128,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
 	return result;
 }
 
-QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint n, const SearchEllipsoid & searchEllipsoid)
+QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint n, const SearchNeighborhood & searchNeighborhood)
 {
 	QList<uint> result;
 
@@ -141,7 +141,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 
 	//Get the bounding box as a function of the search ellipsoid centered at the data cell.
 	double maxX, maxY, maxZ, minX, minY, minZ;
-	searchEllipsoid.getBBox( x, y, z, minX, minY, minZ, maxX, maxY, maxZ );
+	searchNeighborhood.getBBox( x, y, z, minX, minY, minZ, maxX, maxY, maxZ );
 	Box searchBB( Point3D( minX, minY, minZ ),
 				  Point3D( maxX, maxY, maxZ ));
 
@@ -161,7 +161,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 		if( iZ >= 0 )
 			zP = pointset->data( indexP, iZ );
 		//Test whether the point is actually inside the ellipsoid.
-		if( searchEllipsoid.isInside( x, y, z, xP, yP, zP ) ){
+		if( searchNeighborhood.isInside( x, y, z, xP, yP, zP ) ){
 			//Adds it to a local r-tree for the ensuing n-nearest search.
 			rtreeLocal.insert( *it );
 		}

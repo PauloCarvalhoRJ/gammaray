@@ -4,7 +4,7 @@
 #include <QList>
 
 class PointSet;
-class SearchEllipsoid;
+class SearchNeighborhood;
 class DataCell;
 
 /**
@@ -38,14 +38,14 @@ public:
     static QList<uint> getNearestWithin(uint index, uint n, double distance);
 
 	/**
-	 * Returns the indexes of the n-nearest points within the given ellipsoid
+	 * Returns the indexes of the n-nearest points within the given neighborhood
 	 * centered at given data cell (e.g. grid cell). The indexes are the point indexes
 	 * (file data lines) of the PointSet used fill the index.  May return
 	 * an empty list.
 	 */
-	static QList<uint> getNearestWithin( const DataCell& dataCell,
+	static QList<uint> getNearestWithin(const DataCell& dataCell,
 										 uint n,
-										 const SearchEllipsoid& searchEllipsoid );
+										 const SearchNeighborhood & searchNeighborhood );
 
 
     /** Clears the spatial index. */

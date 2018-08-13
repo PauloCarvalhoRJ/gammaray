@@ -18,6 +18,7 @@
 #include "util.h"
 #include "geostats/fkestimation.h"
 #include "geostats/searchstrategy.h"
+#include "geostats/searchellipsoid.h"
 
 #include <QInputDialog>
 #include <QMessageBox>
@@ -115,7 +116,7 @@ void FactorialKrigingDialog::onParameters()
     CartesianGrid* sec_data_grid = (CartesianGrid*)m_cgSelectorSecondary->getSelectedDataFile();
 
 	if( ! m_gpfFK ){
-		GSLibParameterFile* m_gpfFK = new GSLibParameterFile();
+		m_gpfFK = new GSLibParameterFile();
 		m_gpfFK->makeParamatersForFactorialKriging();
 
 		GSLibParametersDialog gpd( m_gpfFK );
@@ -315,7 +316,11 @@ void FactorialKrigingDialog::doFK()
     }
 
     //Build the search strategy object
-    SearchStrategy searchStrategy;
+	GSLibParMultiValuedFixed* search_ellip_radii_par = m_gpfFK->getParameter<GSLibParMultiValuedFixed*>( 2 );
+	double hMax = search_ellip_radii_par->getParameter<GSLibParDouble*>(0)->_value;
+	double hMin = search_ellip_radii_par->getParameter<GSLibParDouble*>(1)->_value;
+	double hVert = search_ellip_radii_par->getParameter<GSLibParDouble*>(2)->_value;
+	SearchStrategy searchStrategy( SearchEllipsoid( hMax, hMin, hVert ) );
 
     //run the estimation
     {

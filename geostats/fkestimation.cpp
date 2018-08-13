@@ -1,9 +1,13 @@
 #include "fkestimation.h"
-#include "geostats/searchstrategy.h"
+#include "searchstrategy.h"
 #include "domain/datafile.h"
 #include "domain/cartesiangrid.h"
+#include "domain/pointset.h"
 #include "domain/attribute.h"
 #include "fkestimationrunner.h"
+#include "datacell.h"
+#include "gridcell.h"
+#include "spatialindex/spatialindexpoints.h"
 
 #include <QCoreApplication>
 #include <QProgressDialog>
@@ -15,8 +19,15 @@ FKEstimation::FKEstimation() :
     m_meanSK( 0.0 ),
     m_ktype( KrigingType::OK ),
     m_at_input( nullptr ),
-    m_cg_estimation( nullptr )
+	m_cg_estimation( nullptr ),
+	m_spatialIndexPoints( new SpatialIndexPoints() ),
+	m_inputDataFile( nullptr )
 {
+}
+
+FKEstimation::~FKEstimation()
+{
+	delete m_spatialIndexPoints;
 }
 
 void FKEstimation::setSearchStrategy(const SearchStrategy *searchStrategy)
@@ -42,11 +53,38 @@ void FKEstimation::setKrigingType(KrigingType ktype)
 void FKEstimation::setInputVariable(Attribute *at_input)
 {
     m_at_input = at_input;
+	//Update the pointer to the data file;
+	m_inputDataFile = static_cast<DataFile*>( m_at_input->getContainingFile() );
+	//Build a spatial index according to the type of the data file.
+	if( m_inputDataFile->isRegular() ){
+		Application::instance()->logError( "FKEstimation::setInputVariable(): SPATIAL INDEX NOT IMPLEMENTED FOR REGULAR DATA SETS." );
+	} else {
+		PointSet* ps = static_cast<PointSet*>( m_inputDataFile );
+		m_spatialIndexPoints->fill( ps, 0.000001 );
+	}
 }
 
 void FKEstimation::setEstimationGrid(CartesianGrid *cg_estimation)
 {
-    m_cg_estimation = cg_estimation;
+	m_cg_estimation = cg_estimation;
+}
+
+std::multiset<DataCell> FKEstimation::getSamples(const GridCell & estimationCell )
+{
+	std::multiset<DataCell> result;
+	if( m_searchStrategy && m_at_input ){
+
+		if( m_inputDataFile->isRegular() ){
+			Application::instance()->logError( "FKEstimation::getSamples(): NOT IMPLEMENTED FOR REGULAR DATA SETS." );
+		} else {
+			m_searchStrategy->m
+			m_spatialIndexPoints->getNearestWithin( estimationCell, nb_samples, m_searchStrategy->m_searchNB );
+		}
+
+	} else {
+		Application::instance()->logError( "FKEstimation::getSamples(): sample search failed.  Search strategy and/or input data not set." );
+	}
+	return result;
 }
 
 std::vector<double> FKEstimation::run()

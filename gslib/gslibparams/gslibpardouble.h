@@ -10,7 +10,8 @@ class GSLibParDouble : public GSLibParType
 {
 public:
     GSLibParDouble(const QString name, const QString label, const QString description);
-    ~GSLibParDouble();
+	GSLibParDouble( double value );
+	~GSLibParDouble();
     double _value;
 
     // GSLibParType interface
