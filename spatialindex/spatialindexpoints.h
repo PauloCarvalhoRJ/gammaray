@@ -4,6 +4,8 @@
 #include <QList>
 
 class PointSet;
+class SearchEllipsoid;
+class DataCell;
 
 /**
  * This class exposes functionalities related to spatial indexes and queries with GammaRay objects.
@@ -27,13 +29,24 @@ public:
     static QList<uint> getNearest( uint index, uint n );
 
     /**
-     * Returns the indexes of the n-nearest points within the diven distance
+	 * Returns the indexes of the n-nearest points within the given distance
      * to the point given by its index. The indexes are the point indexes
      * (file data lines) of the PointSet used fill the index.  May return
      * an empty list.
      * @param distance The distance the returned points must be within.
      */
     static QList<uint> getNearestWithin(uint index, uint n, double distance);
+
+	/**
+	 * Returns the indexes of the n-nearest points within the given ellipsoid
+	 * centered at given data cell (e.g. grid cell). The indexes are the point indexes
+	 * (file data lines) of the PointSet used fill the index.  May return
+	 * an empty list.
+	 */
+	static QList<uint> getNearestWithin( const DataCell& dataCell,
+										 uint n,
+										 const SearchEllipsoid& searchEllipsoid );
+
 
     /** Clears the spatial index. */
     static void clear();

@@ -6,6 +6,8 @@
 
 #include "domain/pointset.h"
 #include "domain/application.h"
+#include "geostats/searchellipsoid.h"
+#include "geostats/datacell.h"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -123,7 +125,58 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
             result.push_back( nIndex );
         }
     }
-    return result;
+	return result;
+}
+
+QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint n, const SearchEllipsoid & searchEllipsoid)
+{
+	QList<uint> result;
+
+	//Get the location of the data cell.
+	double x = dataCell._center._x;
+	double y = dataCell._center._y;
+	double z = 0.0; //put 2D data in the z==0.0 plane
+	if( iZ >= 0 )
+		z = dataCell._center._z;
+
+	//Get the bounding box as a function of the search ellipsoid centered at the data cell.
+	double maxX, maxY, maxZ, minX, minY, minZ;
+	searchEllipsoid.getBBox( x, y, z, minX, minY, minZ, maxX, maxY, maxZ );
+	Box searchBB( Point3D( minX, minY, minZ ),
+				  Point3D( maxX, maxY, maxZ ));
+
+	//Get all the points within the bounding box of the search ellipsoid.
+	std::vector<Value> poinsInSearchBB;
+	rtree.query( bgi::intersects( searchBB ), std::back_inserter(poinsInSearchBB) );
+
+	//Traverse the result set.
+	std::vector<Value>::iterator it = poinsInSearchBB.begin();
+	bgi::rtree< Value, bgi::rstar<16,5,5,32> > rtreeLocal;
+	for(; it != poinsInSearchBB.end(); ++it){
+		uint indexP = (*it).second;
+		//get the location of the point in the result set.
+		double xP = pointset->data( indexP, iX );
+		double yP = pointset->data( indexP, iY );
+		double zP = 0.0; //put 2D data in the z==0.0 plane
+		if( iZ >= 0 )
+			zP = pointset->data( indexP, iZ );
+		//Test whether the point is actually inside the ellipsoid.
+		if( searchEllipsoid.isInside( x, y, z, xP, yP, zP ) ){
+			//Adds it to a local r-tree for the ensuing n-nearest search.
+			rtreeLocal.insert( *it );
+		}
+	}
+
+	//Get only the n-nearest of those found inside the ellipsoid.
+	std::vector<Value> resultFinal;
+	rtreeLocal.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(resultFinal));
+
+	//Collect the n-nearest point indexes found inside the ellipsoid.
+	it = resultFinal.begin();
+	for(; it != resultFinal.end(); ++it)
+		result.push_back( (*it).second );
+
+	return result;
 }
 
 void SpatialIndexPoints::clear()
