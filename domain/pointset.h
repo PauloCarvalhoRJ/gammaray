@@ -60,6 +60,7 @@ public:
      Returns a null pointer no such Attribute is found.*/
     Attribute* getVariableOfWeight( Attribute* weight );
     virtual void deleteVariable( uint columnToDelete );
+	virtual bool isRegular() { return false; }
 
     // File interface
 public:

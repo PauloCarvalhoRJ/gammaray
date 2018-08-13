@@ -147,6 +147,7 @@ public:
 	virtual bool isWeight( Attribute* /*at*/ ) { return false; }
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
     virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
+	virtual bool isRegular() { return true; }
 
 // File interface
 public:

@@ -298,6 +298,11 @@ public:
 	  */
 	void setData( uint line, uint column, double value );
 
+	/**
+	 * Returns whether this file is a regular data set (e.g. a Cartesian grid is a regular data set).
+	 */
+	virtual bool isRegular() = 0;
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
