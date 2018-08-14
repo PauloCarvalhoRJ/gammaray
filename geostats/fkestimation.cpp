@@ -38,6 +38,8 @@ void FKEstimation::setSearchStrategy(const SearchStrategy *searchStrategy)
 void FKEstimation::setVariogramModel(VariogramModel *variogramModel)
 {
     m_variogramModel = variogramModel;
+	//Take the opportunity to update the variogam sill value.
+	m_variogramSill = variogramModel->getSill();
 }
 
 void FKEstimation::setMeanForSimpleKriging(double meanSK)
@@ -61,6 +63,7 @@ void FKEstimation::setInputVariable(Attribute *at_input)
 	} else {
 		PointSet* ps = static_cast<PointSet*>( m_inputDataFile );
 		m_spatialIndexPoints->fill( ps, 0.000001 );
+		Application::instance()->logError( "Spatial index created for " + m_inputDataFile->getName() + " point set." );
 	}
 }
 

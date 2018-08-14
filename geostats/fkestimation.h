@@ -31,6 +31,8 @@ public:
 
     CartesianGrid* getEstimationGrid(){ return m_cg_estimation; }
 	Attribute* getInputVariable(){ return m_at_input; }
+	VariogramModel* getVariogramModel(){ return m_variogramModel; }
+	KrigingType getKrigingType(){ return m_ktype; }
 
 	/** Returns a container with the samples around the estimation cell to be used in the estimation.
 	 * The resulting collection depends on the SearchStrategy object set.  Returns an empty object if any
@@ -38,8 +40,14 @@ public:
 	 */
 	std::multiset<DataCell> getSamples(const GridCell & estimationCell );
 
-    /** Preforms the factorial kriging. Make sure all parameters have been set properly .*/
+	/** Performs the factorial kriging. Make sure all parameters have been set properly .*/
     std::vector<double> run();
+
+	/** Returns the no-data-value for the estimation grid. */
+	double ndvOfEstimationGrid(){ return m_NDV_of_output; }
+
+	/** Shortcut method to get the variogam model's sill. */
+	double getVariogramSill(){ return m_variogramSill; }
 
 private:
     const SearchStrategy *m_searchStrategy;
@@ -52,6 +60,7 @@ private:
     double m_NDV_of_output;
 	SpatialIndexPoints* m_spatialIndexPoints;
 	DataFile* m_inputDataFile;
+	double m_variogramSill;
 };
 
 #endif // FKESTIMATION_H

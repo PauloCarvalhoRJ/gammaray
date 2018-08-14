@@ -36,7 +36,8 @@ void FKEstimationRunner::doRun()
             emit progress( j * nI + k * nI * nJ );
             for( uint i = 0; i <nI; ++i){
 				GridCell estimationCell( estimationGrid, -1, i, j, k );
-				m_results.push_back( fk( estimationCell, nIllConditioned, nFailed ) );
+				//TODO: replace 0 (nugget) with user-specified structure number.
+				m_results.push_back( fk( estimationCell, 0, nIllConditioned, nFailed ) );
                 ++nKriging;
             }
         }
@@ -45,11 +46,39 @@ void FKEstimationRunner::doRun()
     m_finished = true;
 }
 
-double FKEstimationRunner::fk( GridCell& estimationCell, int &nIllConditioned, int &nFailed )
+double FKEstimationRunner::fk( GridCell& estimationCell, int nst, int &nIllConditioned, int &nFailed )
 {
 	//collects samples from the input data set ordered by their distance with respect
 	//to the estimation cell.
 	std::multiset<DataCell> vSamples = m_fkEstimation->getSamples( estimationCell );
+
+	//if no sample was found, either...
+	if( vSamples.empty() ){
+		//Return the no-data-value defined for the output dataset.
+		return m_fkEstimation->ndvOfEstimationGrid();
+	}
+
+	//get the matrix of the theoretical covariances between the data sample locations and themselves.
+	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
+	MatrixNXM<double> Czz = GeostatsUtils::makeCovMatrix( vSamples,
+														  m_fkEstimation->getVariogramModel(),
+														  m_fkEstimation->getVariogramSill(),
+														  m_fkEstimation->getKrigingType() );
+
+	//get the matrix with theoretical covariances between sample locations and estimation location.
+	MatrixNXM<double> Cyz = GeostatsUtils::makeGammaMatrix( vSamples,
+															estimationCell,
+															m_fkEstimation->getVariogramModel(),
+															m_fkEstimation->getKrigingType() );
+
+	//get the matrix of the theoretical covariances between the data sample locations and themselves
+	// of the structure targeted for FK analysis.
+	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
+	MatrixNXM<double> Cij = GeostatsUtils::makeCovMatrix( vSamples,
+														  m_fkEstimation->getVariogramModel(),
+														  m_fkEstimation->getVariogramSill(),
+														  m_fkEstimation->getKrigingType(),
+														  nst );
 
 	return -1.0;
 }

@@ -36,10 +36,11 @@ private:
 
     /** Perform factorial kriging in a single cell in the output grid.
 	 * @param estimationCell Object containing info about the cell such as parent grid, indexes, etc.
+	 * @param nst Number of the target structure in the variogram model (in the m_fkEstimaion object).
 	 * @param nIllConditioned Its value is increased by the number of ill-conditioned kriging matrices encountered.
 	 * @param nFailed Its value is increased by the number of kriging operations that failed (resulted in NaN or inifinity).
      */
-	double fk(GridCell &estimationCell, int& nIllConditioned, int & nFailed );
+	double fk(GridCell &estimationCell, int nst, int& nIllConditioned, int & nFailed );
 
 };
 

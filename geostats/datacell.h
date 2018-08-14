@@ -48,7 +48,7 @@ protected:
 };
 
 /**
- * This global non-member less-than operator enables the DayaCell class as key-able
+ * This global non-member less-than operator enables the DataCell class as key-able
  * in STL or STL-like ordered containers.
  */
 inline bool operator<(const DataCell &d1, const DataCell &d2){
