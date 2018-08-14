@@ -143,9 +143,10 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
 }
 
 MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
-                                               VariogramModel *variogramModel,
-                                               double variogramSill,
-                                               KrigingType kType)
+											   VariogramModel *variogramModel,
+											   double variogramSill,
+											   KrigingType kType,
+											   int nst)
 {
     //Define the dimension of cov matrix, which depends on kriging type
     int append = 0;
@@ -155,6 +156,13 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
     case KrigingType::OK:
         append = 1; break;
     }
+
+	//Switch to a single-structure variogram model if a structure number was specified.
+	VariogramModel singleStructVModel;
+	if( nst >= 0 ){
+		singleStructVModel = variogramModel->makeVModelFromSingleStructure( nst );
+		variogramModel = &singleStructVModel; //Beware that singleStructVModel goes out of scope when this method returns.
+	}
 
     //Create the cov matrix.
     MatrixNXM<double> covMatrix( samples.size() + append, samples.size() + append );
@@ -197,8 +205,10 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
 }
 
 MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCell> &samples,
-                                                 GridCell &estimationLocation,
-                                                 VariogramModel *variogramModel, KrigingType kType)
+												 GridCell &estimationLocation,
+												 VariogramModel *variogramModel,
+												 KrigingType kType,
+												 int nst)
 {
     int append = 0;
     switch( kType ){
@@ -207,6 +217,16 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCell> &sample
     case KrigingType::OK:
         append = 1; break;
     }
+
+	//save the variogram sill (for possible factorial kriging)
+	double variogramSill = variogramModel->getSill();
+
+	//Switch to a single-structure variogram model if a structure number was specified.
+	VariogramModel singleStructVModel;
+	if( nst >= 0 ){
+		singleStructVModel = variogramModel->makeVModelFromSingleStructure( nst );
+		variogramModel = &singleStructVModel; //Beware that singleStructVModel goes out of scope when this method returns.
+	}
 
     MatrixNXM<double> result( samples.size()+append, 1 );
 
@@ -217,7 +237,7 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCell> &sample
         //get semi-variance value
         double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, estimationLocation._center );
         //get covariance
-        result(i, 0) = variogramModel->getSill() - gamma;
+		result(i, 0) = variogramSill - gamma;
     }
 
     //prepare the matrix for an OK system, if this is the case.
