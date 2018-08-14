@@ -11,6 +11,9 @@ class SearchEllipsoid : public SearchNeighborhood
 public:
 	SearchEllipsoid(double hMax, double hMin, double hVert);
 
+	/** Move constructor. */
+	SearchEllipsoid( SearchEllipsoid&& right_hand_side );
+
 
 //SearchNeighborhood interface
 	virtual void getBBox( double centerX, double centerY, double centerZ,

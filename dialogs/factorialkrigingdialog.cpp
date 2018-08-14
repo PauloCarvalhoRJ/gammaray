@@ -315,21 +315,23 @@ void FactorialKrigingDialog::doFK()
             m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
     }
 
-    //Build the search strategy object
-	GSLibParMultiValuedFixed* search_ellip_radii_par = m_gpfFK->getParameter<GSLibParMultiValuedFixed*>( 2 );
+	//Build the search strategy object from the user-input values.
+	// See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
+	GSLibParMultiValuedFixed* search_ellip_radii_par = m_gpfFK->getParameter<GSLibParMultiValuedFixed*>( 3 );
 	double hMax = search_ellip_radii_par->getParameter<GSLibParDouble*>(0)->_value;
 	double hMin = search_ellip_radii_par->getParameter<GSLibParDouble*>(1)->_value;
 	double hVert = search_ellip_radii_par->getParameter<GSLibParDouble*>(2)->_value;
-	SearchStrategy searchStrategy( SearchEllipsoid( hMax, hMin, hVert ) );
+	uint nb_samples = m_gpfFK->getParameter<GSLibParUInt*>( 2 )->_value;
+	SearchStrategy searchStrategy( SearchEllipsoid(hMax, hMin, hVert), nb_samples );
 
     //run the estimation
     {
         FKEstimation estimation;
         estimation.setSearchStrategy( &searchStrategy );
         estimation.setVariogramModel( m_vModelSelector->getSelectedVModel() );
-        GSLibParOption* ktype_par = m_gpfFK->getParameter<GSLibParOption*>( 0 );
+		GSLibParOption* ktype_par = m_gpfFK->getParameter<GSLibParOption*>( 0 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
         estimation.setKrigingType( static_cast<KrigingType>( ktype_par->_selected_value ) );
-        GSLibParDouble* skmean_par = m_gpfFK->getParameter<GSLibParDouble*>( 1 );
+		GSLibParDouble* skmean_par = m_gpfFK->getParameter<GSLibParDouble*>( 1 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
         estimation.setMeanForSimpleKriging( skmean_par->_value );
         estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
         estimation.setEstimationGrid( m_cg_estimation );

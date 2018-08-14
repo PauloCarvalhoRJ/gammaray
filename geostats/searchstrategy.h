@@ -2,15 +2,15 @@
 #define SEARCHSTRATEGY_H
 
 #include "searchneighborhood.h"
-
-class SearchNeighborhood;
+#include <qglobal.h>
 
 /** This class models the sample search parameters common to geostatistics methods. */
 class SearchStrategy
 {
 public:
 	SearchStrategy( SearchNeighborhood&& nb, uint nb_samples );
-	SearchNeighborhood&& m_searchNB;
+
+	const SearchNeighborhood& m_searchNB;
 	uint m_nb_samples;
 };
 

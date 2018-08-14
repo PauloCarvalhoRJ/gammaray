@@ -395,12 +395,19 @@ void GSLibParameterFile::makeParamatersForFactorialKriging()
     par_skmean->_value = 0.0;
     _params.append( par_skmean );
 
-	//------------search ellipsoid radii: parameter 2--------------------------------
+	//------------mean for simple kriging: parameter 2--------------------------------
+	GSLibParUInt* par_nb_samples = new GSLibParUInt("", "", "Maximum number of samples:");
+	par_nb_samples->_value = 16;
+	_params.append( par_nb_samples );
+
+	//------------search ellipsoid radii: parameter 3--------------------------------
 	GSLibParMultiValuedFixed *par_search_ellip_radii = new GSLibParMultiValuedFixed("", "", "Search ellipsoid radii (hMax, hMin, hVert):");
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	_params.append( par_search_ellip_radii );
+
+
 }
 
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){

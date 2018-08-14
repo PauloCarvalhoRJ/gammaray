@@ -77,8 +77,7 @@ std::multiset<DataCell> FKEstimation::getSamples(const GridCell & estimationCell
 		if( m_inputDataFile->isRegular() ){
 			Application::instance()->logError( "FKEstimation::getSamples(): NOT IMPLEMENTED FOR REGULAR DATA SETS." );
 		} else {
-			m_searchStrategy->m
-			m_spatialIndexPoints->getNearestWithin( estimationCell, nb_samples, m_searchStrategy->m_searchNB );
+			m_spatialIndexPoints->getNearestWithin( estimationCell, m_searchStrategy->m_nb_samples, m_searchStrategy->m_searchNB );
 		}
 
 	} else {

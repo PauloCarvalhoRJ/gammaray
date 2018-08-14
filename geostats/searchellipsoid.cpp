@@ -1,7 +1,16 @@
 #include "searchellipsoid.h"
+#include <utility>
 
 SearchEllipsoid::SearchEllipsoid(double hMax, double hMin, double hVert) :
 	m_hMax( hMax ), m_hMin( hMin ), m_hVert( hVert )
+{
+}
+
+SearchEllipsoid::SearchEllipsoid(SearchEllipsoid && right_hand_side) :
+	SearchNeighborhood( std::move( right_hand_side ) ), //moves the base part of the object
+	m_hMax( right_hand_side.m_hMax ),
+	m_hMin( right_hand_side.m_hMin ),
+	m_hVert( right_hand_side.m_hVert )
 {
 }
 
