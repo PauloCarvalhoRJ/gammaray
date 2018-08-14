@@ -12,6 +12,12 @@ VariogramModel::VariogramModel(const QString path) : File( path ),
 {
 }
 
+VariogramModel::VariogramModel() : File( "NOFILE" ),
+	_forceReread(false)
+{
+
+}
+
 double VariogramModel::getSill()
 {
     if(_forceReread) readParameters();
@@ -108,7 +114,31 @@ double VariogramModel::get_max_vert()
         if( tmp > value )
             value = tmp;
     }
-    return value;
+	return value;
+}
+
+VariogramModel VariogramModel::makeVModelFromSingleStructure( int structure )
+{
+	VariogramModel result;
+	if( structure == 0 ){
+		result.m_Sill = m_Nugget; //sill of a nugget variogram.
+		result.m_nst = 0; //number of structures of a nugget variogram is always zero.
+		result.m_Nugget = m_Nugget;
+	}else{
+		int ist = structure-1;
+		result.m_Sill = m_cc[ist]; //sill of a single-structure variogram equals the contribution of its single structure.
+		result.m_Nugget = 0.0; //nugget of a single-structure variogram is zero.
+		result.m_nst = 1; //number of structures is always one.
+		result.m_it.push_back( m_it[ist] );
+		result.m_cc.push_back( m_cc[ist] );
+		result.m_a_hMax.push_back( m_a_hMax[ist] );
+		result.m_a_hMin.push_back( m_a_hMin[ist] );
+		result.m_a_vert.push_back( m_a_vert[ist] );
+		result.m_Azimuth.push_back( m_Azimuth[ist] );
+		result.m_Dip.push_back( m_Dip[ist] );
+		result.m_Roll.push_back( m_Roll[ist] );
+	}
+	return result;
 }
 
 
