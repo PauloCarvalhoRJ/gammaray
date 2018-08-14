@@ -79,10 +79,10 @@ public:
      * @param kType Kriging type.  If SK, then the matrix has only the covariances between
      *        the samples and the estimation location.  If OK, the matrix has an extra element == 1.0.
      */
-    static MatrixNXM<double> makeGammaMatrix(std::multiset<GridCell>& samples,
-                                             GridCell& estimationLocation,
-                                             VariogramModel *variogramModel,
-                                             KrigingType kType = KrigingType::SK);
+	static MatrixNXM<double> makeGammaMatrix(std::multiset<DataCell> & samples,
+											 GridCell& estimationLocation,
+											 VariogramModel *variogramModel,
+											 KrigingType kType = KrigingType::SK);
 
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.

@@ -190,6 +190,9 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
                                                            NDV,
                                                            vCells);
 
+	//Make a copy of the sample collection but with generic versions of the objects for the methods transparent to grid information.
+	std::multiset<DataCell> vDataCells( vCells.begin(), vCells.end() );
+
     //if no sample was found, either...
 	if( vCells.empty() ){
         if( _ndvEstimation->useDefaultValue() )
@@ -202,13 +205,12 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 
 	//get the matrix of the theoretical covariances between the data sample locations and themselves.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
-	std::multiset<DataCell> vDataCells( vCells.begin(), vCells.end() );
 	MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vDataCells,
                                                              _ndvEstimation->vmodel(),
                                                              variogramSill );
 
 	//get the gamma matrix (theoretical covariances between sample locations and estimation location)
-	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel() );
+	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vDataCells, cell, _ndvEstimation->vmodel() );
 
 	//The eta (after greek letter eta) number is the threshold below which the eigenvalues are rounded off to zero
 	//The eta number and the value are both in Mohammadi et al (2016) paper (see complete reference further below).
@@ -286,12 +288,11 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 
 		//get the OK gamma matrix (theoretical covariances between sample locations and estimation location)
 		//TODO: improve performance: Just append 1 to gammaMat.
-		MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vCells, cell, _ndvEstimation->vmodel(), KrigingType::OK );
+		MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vDataCells, cell, _ndvEstimation->vmodel(), KrigingType::OK );
 
 		//make the OK cov matrix (theoretical covariances between sample locations and themselves)
 		//TODO: improve performance: Just expand SK matrices with the 1.0s and 0.0s instead of computing new ones.
 		// TODO PERFORMANCE: the cov matrix needs only to be computed once.
-		std::multiset<DataCell> vDataCells( vCells.begin(), vCells.end() );
 		MatrixNXM<double> covMatOK = GeostatsUtils::makeCovMatrix( vDataCells,
                                                                    _ndvEstimation->vmodel(),
                                                                    variogramSill,

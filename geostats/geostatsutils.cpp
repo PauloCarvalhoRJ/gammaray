@@ -196,7 +196,7 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
     return covMatrix;
 }
 
-MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &samples,
+MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCell> &samples,
                                                  GridCell &estimationLocation,
                                                  VariogramModel *variogramModel, KrigingType kType)
 {
@@ -210,10 +210,10 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<GridCell> &sample
 
     MatrixNXM<double> result( samples.size()+append, 1 );
 
-    std::multiset<GridCell>::iterator rowsIt = samples.begin();
+	std::multiset<DataCell>::iterator rowsIt = samples.begin();
 
     for( int i = 0; rowsIt != samples.end(); ++rowsIt, ++i ){
-        GridCell rowCell = *rowsIt;
+		DataCell rowCell = *rowsIt;
         //get semi-variance value
         double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, estimationLocation._center );
         //get covariance
