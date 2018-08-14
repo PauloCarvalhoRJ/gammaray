@@ -6,6 +6,7 @@
 #include "domain/variogrammodel.h"
 #include <set>
 
+class DataCell;
 class GridCell;
 class SpatialLocation;
 
@@ -67,11 +68,11 @@ public:
      *        the samples.  If OK, the matrix has an extra row and column with 1.0s, except
      *        for the last element of both (the last element of matrix), with is zero.
      */
-    static MatrixNXM<double> makeCovMatrix(std::multiset<GridCell>& samples,
-                                           VariogramModel *variogramModel,
-                                           double variogramSill,
-                                           KrigingType kType = KrigingType::SK
-                                           );
+	static MatrixNXM<double> makeCovMatrix(std::multiset<DataCell> & samples,
+										   VariogramModel *variogramModel,
+										   double variogramSill,
+										   KrigingType kType = KrigingType::SK
+										   );
 
     /**
      * Creates a gamma matrix of the given set of samples against the estimation location cell.

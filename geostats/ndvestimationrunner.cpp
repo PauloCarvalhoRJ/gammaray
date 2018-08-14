@@ -202,7 +202,8 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 
 	//get the matrix of the theoretical covariances between the data sample locations and themselves.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
-    MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vCells,
+	std::multiset<DataCell> vDataCells( vCells.begin(), vCells.end() );
+	MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vDataCells,
                                                              _ndvEstimation->vmodel(),
                                                              variogramSill );
 
@@ -290,7 +291,8 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 		//make the OK cov matrix (theoretical covariances between sample locations and themselves)
 		//TODO: improve performance: Just expand SK matrices with the 1.0s and 0.0s instead of computing new ones.
 		// TODO PERFORMANCE: the cov matrix needs only to be computed once.
-		MatrixNXM<double> covMatOK = GeostatsUtils::makeCovMatrix( vCells,
+		std::multiset<DataCell> vDataCells( vCells.begin(), vCells.end() );
+		MatrixNXM<double> covMatOK = GeostatsUtils::makeCovMatrix( vDataCells,
                                                                    _ndvEstimation->vmodel(),
                                                                    variogramSill,
                                                                    KrigingType::OK );

@@ -142,7 +142,7 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
     return result;
 }
 
-MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
+MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
                                                VariogramModel *variogramModel,
                                                double variogramSill,
                                                KrigingType kType)
@@ -161,18 +161,18 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<GridCell> &samples,
 
     //convert the std::multiset into a std::vector for faster traversal
     //(memory locality and less pointer chasing)
-    std::vector<GridCell> samplesV;
+	std::vector<DataCell> samplesV;
     samplesV.reserve( samples.size() );
     std::copy(samples.begin(), samples.end(), std::back_inserter(samplesV));
 
     //For each sample.
-    std::vector<GridCell>::iterator rowsIt = samplesV.begin();
+	std::vector<DataCell>::iterator rowsIt = samplesV.begin();
     for( int i = 0; rowsIt != samplesV.end(); ++rowsIt, ++i ){
-        GridCell rowCell = *rowsIt;
+		DataCell rowCell = *rowsIt;
         //For each sample.
-        std::vector<GridCell>::iterator colsIt = samplesV.begin();
+		std::vector<DataCell>::iterator colsIt = samplesV.begin();
         for( int j = 0; colsIt != samplesV.end(); ++colsIt, ++j ){
-            GridCell colCell = *colsIt;
+			DataCell colCell = *colsIt;
             //get semi-variance value from the separation between two samples in a pair
             double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, colCell._center );
             //get covariance for the sample pair and assign it the corresponding element in the
