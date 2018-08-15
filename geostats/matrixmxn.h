@@ -57,6 +57,9 @@ public:
 	/** Returns a spectral::array object equivalent to this matrix. */
 	spectral::array toSpectralArray() const;
 
+	/** Matrix subtraction operator. It is assumed the operands are compatible (this._n == b._n && this._m == b._m).*/
+	MatrixNXM<T> operator-(const MatrixNXM<T>& b) const;
+
 private:
     /** Number of rows. */
     unsigned int _n;
@@ -246,5 +249,16 @@ MatrixNXM<T> MatrixNXM<T>::getTranspose( ) const {
 			result(i,j) = a(i,j);
    return result;
 }
+
+template <typename T>
+MatrixNXM<T> MatrixNXM<T>::operator-(const MatrixNXM<T>& b) const{
+	const MatrixNXM<T>& a = *this;
+	MatrixNXM<T> result( a._n, a._m );
+	for(uint i = 0; i < a._n; ++i)
+		for(uint j = 0; j < a._m; ++j)
+			result(i,j) += a(i,j) - b(i,j);
+	return result;
+}
+
 
 #endif // MATRIXMXN_H

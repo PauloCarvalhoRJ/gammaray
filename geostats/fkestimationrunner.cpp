@@ -36,8 +36,14 @@ void FKEstimationRunner::doRun()
             emit progress( j * nI + k * nI * nJ );
             for( uint i = 0; i <nI; ++i){
 				GridCell estimationCell( estimationGrid, -1, i, j, k );
+				double estimatedMean;
 				//TODO: replace 0 (nugget) with user-specified structure number.
-				m_results.push_back( fk( estimationCell, 0, nIllConditioned, nFailed ) );
+				m_results.push_back( fk( estimationCell,
+										 0,
+										 m_fkEstimation->getVariogramModel()->getNstWithNugget(),
+										 estimatedMean,
+										 nIllConditioned,
+										 nFailed ) );
                 ++nKriging;
             }
         }
@@ -46,11 +52,11 @@ void FKEstimationRunner::doRun()
     m_finished = true;
 }
 
-double FKEstimationRunner::fk( GridCell& estimationCell, int nst, int &nIllConditioned, int &nFailed )
+double FKEstimationRunner::fk( GridCell& estimationCell, int ist, int nst, double& estimatedMean, int &nIllConditioned, int &nFailed )
 {
 	//collects samples from the input data set ordered by their distance with respect
 	//to the estimation cell.
-	std::multiset<DataCell> vSamples = m_fkEstimation->getSamples( estimationCell );
+	std::multiset<DataCellPtr> vSamples = m_fkEstimation->getSamples( estimationCell );
 
 	//if no sample was found, either...
 	if( vSamples.empty() ){
@@ -58,12 +64,15 @@ double FKEstimationRunner::fk( GridCell& estimationCell, int nst, int &nIllCondi
 		return m_fkEstimation->ndvOfEstimationGrid();
 	}
 
-	//get the matrix of the theoretical covariances between the data sample locations and themselves.
+	//The matrix names follow the formulation presented by Ma et al. (2014) - Factorial kriging for multiscale modelling.
+
+	//get the inverse of the matrix of the theoretical covariances between the data sample locations and themselves.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
-	MatrixNXM<double> Czz = GeostatsUtils::makeCovMatrix( vSamples,
+	MatrixNXM<double> Czz_inv = GeostatsUtils::makeCovMatrix( vSamples,
 														  m_fkEstimation->getVariogramModel(),
 														  m_fkEstimation->getVariogramSill(),
 														  m_fkEstimation->getKrigingType() );
+	Czz_inv.invertWithGaussJordan();
 
 	//get the matrix with theoretical covariances between sample locations and estimation location.
 	MatrixNXM<double> Cyz = GeostatsUtils::makeGammaMatrix( vSamples,
@@ -71,14 +80,44 @@ double FKEstimationRunner::fk( GridCell& estimationCell, int nst, int &nIllCondi
 															m_fkEstimation->getVariogramModel(),
 															m_fkEstimation->getKrigingType() );
 
-	//get the matrix of the theoretical covariances between the data sample locations and themselves
+	//get the inverse of matrix of the theoretical covariances between the data sample locations and themselves
 	// of the structure targeted for FK analysis.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
-	MatrixNXM<double> Cij = GeostatsUtils::makeCovMatrix( vSamples,
+	MatrixNXM<double> Cij_inv = GeostatsUtils::makeCovMatrix( vSamples,
 														  m_fkEstimation->getVariogramModel(),
 														  m_fkEstimation->getVariogramSill(),
 														  m_fkEstimation->getKrigingType(),
-														  nst );
+														  ist );
+	Cij_inv.invertWithGaussJordan();
+
+	//get the n x k matrix of an "chosen analytical function p(x) for fitting the nonstationary component".
+	//Ma et al. (2014) don't give details of p(x).
+	//TODO PERFORMANCE: is P is invariant, then it needs to be computed only once.
+	MatrixNXM<double> P = GeostatsUtils::makePmatrixForFK( vSamples.size(), nst );
+
+	//Get P's transpose.
+	//TODO PERFORMANCE: is P is invariant, then Pt needs to be computed only once.
+	MatrixNXM<double> Pt = P.getTranspose();
+
+	//get the k x 1 matrix of an "chosen analytical function p(x) for fitting the nonstationary component".
+	//Ma et al. (2014) don't give details of p(x).
+	//TODO PERFORMANCE: is p is invariant, then it needs to be computed only once.
+	MatrixNXM<double> p = GeostatsUtils::makepMatrixForFK( nst );
+
+	//Compute the kriging weights for the zero-mean FK estimate.
+	MatrixNXM<double> Pt__x__Cij_inv__x__P_____inv = Pt * Cij_inv * P;
+	Pt__x__Cij_inv__x__P_____inv.invertWithGaussJordan();
+	MatrixNXM<double> Lambda_yi = Czz_inv * Cyz - Czz_inv * P * ( Pt__x__Cij_inv__x__P_____inv ) * Pt * Czz_inv * Cyz;
+
+	//Compute the kriging weights for the estimated mean.
+	MatrixNXM<double> Lambda_T = Czz_inv * P * ( Pt__x__Cij_inv__x__P_____inv ) * p;
+
+	//Estimate the mean.
+	estimatedMean = 0.0;
+	std::multiset<DataCellPtr>::iterator itSamples = vSamples.begin();
+	for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+		estimatedMean += Lambda_T(i,0) * (*itSamples)->readValueFromDataSet();
+	}
 
 	return -1.0;
 }

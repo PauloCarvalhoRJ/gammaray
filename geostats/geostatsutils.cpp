@@ -142,11 +142,11 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
     return result;
 }
 
-MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
+MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &samples,
 											   VariogramModel *variogramModel,
 											   double variogramSill,
 											   KrigingType kType,
-											   int nst)
+											   int ist)
 {
     //Define the dimension of cov matrix, which depends on kriging type
     int append = 0;
@@ -159,8 +159,8 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
 
 	//Switch to a single-structure variogram model if a structure number was specified.
 	VariogramModel singleStructVModel;
-	if( nst >= 0 ){
-		singleStructVModel = variogramModel->makeVModelFromSingleStructure( nst );
+	if( ist >= 0 ){
+		singleStructVModel = variogramModel->makeVModelFromSingleStructure( ist );
 		variogramModel = &singleStructVModel; //Beware that singleStructVModel goes out of scope when this method returns.
 	}
 
@@ -169,20 +169,20 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
 
     //convert the std::multiset into a std::vector for faster traversal
     //(memory locality and less pointer chasing)
-	std::vector<DataCell> samplesV;
+	std::vector<DataCellPtr> samplesV;
     samplesV.reserve( samples.size() );
     std::copy(samples.begin(), samples.end(), std::back_inserter(samplesV));
 
     //For each sample.
-	std::vector<DataCell>::iterator rowsIt = samplesV.begin();
+	std::vector<DataCellPtr>::iterator rowsIt = samplesV.begin();
     for( int i = 0; rowsIt != samplesV.end(); ++rowsIt, ++i ){
-		DataCell rowCell = *rowsIt;
+		DataCellPtr rowCell = *rowsIt;
         //For each sample.
-		std::vector<DataCell>::iterator colsIt = samplesV.begin();
+		std::vector<DataCellPtr>::iterator colsIt = samplesV.begin();
         for( int j = 0; colsIt != samplesV.end(); ++colsIt, ++j ){
-			DataCell colCell = *colsIt;
+			DataCellPtr colCell = *colsIt;
             //get semi-variance value from the separation between two samples in a pair
-            double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, colCell._center );
+			double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, colCell->_center );
             //get covariance for the sample pair and assign it the corresponding element in the
             //cov matrix
             covMatrix(i, j) = variogramSill - gamma;
@@ -204,11 +204,11 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCell> &samples,
     return covMatrix;
 }
 
-MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCell> &samples,
+MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCellPtr> &samples,
 												 GridCell &estimationLocation,
 												 VariogramModel *variogramModel,
 												 KrigingType kType,
-												 int nst)
+												 int ist)
 {
     int append = 0;
     switch( kType ){
@@ -223,19 +223,26 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCell> &sample
 
 	//Switch to a single-structure variogram model if a structure number was specified.
 	VariogramModel singleStructVModel;
-	if( nst >= 0 ){
-		singleStructVModel = variogramModel->makeVModelFromSingleStructure( nst );
+	if( ist >= 0 ){
+		singleStructVModel = variogramModel->makeVModelFromSingleStructure( ist );
 		variogramModel = &singleStructVModel; //Beware that singleStructVModel goes out of scope when this method returns.
 	}
 
+	//Create the gamma matrix.
     MatrixNXM<double> result( samples.size()+append, 1 );
 
-	std::multiset<DataCell>::iterator rowsIt = samples.begin();
+	//convert the std::multiset into a std::vector for faster traversal
+	//(memory locality and less pointer chasing)
+	std::vector<DataCellPtr> samplesV;
+	samplesV.reserve( samples.size() );
+	std::copy(samples.begin(), samples.end(), std::back_inserter(samplesV));
 
-    for( int i = 0; rowsIt != samples.end(); ++rowsIt, ++i ){
-		DataCell rowCell = *rowsIt;
+	//For each sample.
+	std::vector<DataCellPtr>::iterator rowsIt = samplesV.begin();
+	for( int i = 0; rowsIt != samplesV.end(); ++rowsIt, ++i ){
+		DataCellPtr rowCell = *rowsIt;
         //get semi-variance value
-        double gamma = GeostatsUtils::getGamma( variogramModel, rowCell._center, estimationLocation._center );
+		double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, estimationLocation._center );
         //get covariance
 		result(i, 0) = variogramSill - gamma;
     }
@@ -257,7 +264,7 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
                                                         int nSlicesAround,
                                                         bool hasNDV,
                                                         double NDV,
-                                                        std::multiset<GridCell> &list)
+														std::multiset<GridCellPtr> &list)
 {
     CartesianGrid* cg = cell._grid;
     if( ! cg ){
@@ -331,8 +338,8 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
                 //if the cell is valued... DataFile::hasNDV() is slow.
                 if( !hasNDV || !Util::almostEqual2sComplement( NDV, value, 1 ) ){
                     //...it is a valid neighbor.
-                    GridCell currentCell( cg, cell._dataIndex, ii, jj, kk );
-                    currentCell.computeTopoDistance( cell );
+					GridCellPtr currentCell( new GridCell( cg, cell._dataIndex, ii, jj, kk ) );
+					currentCell->computeTopoDistance( cell );
                     list.insert( currentCell );
                     //if the number of neighbors is reached...
                     if( list.size() == (unsigned)numberOfSamples )
@@ -341,5 +348,19 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
                 }
             }
         }
-    }
+	}
+}
+
+MatrixNXM<double> GeostatsUtils::makePmatrixForFK(int nsamples, int nst)
+{
+	//TODO: the authors in the paper didn't give details on how to build the P matrix.
+	MatrixNXM<double> matrix( nsamples, nst, 1.0 );
+	return matrix;
+}
+
+MatrixNXM<double> GeostatsUtils::makepMatrixForFK(int nst)
+{
+	//TODO: the authors in the paper didn't give details on how to build the p matrix.
+	MatrixNXM<double> matrix( nst, 1, 1.0 );
+	return matrix;
 }

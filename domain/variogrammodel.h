@@ -105,7 +105,12 @@ public:
 	 */
 	VariogramModel makeVModelFromSingleStructure( int structure );
 
-    bool forceReread() const;
+	/**
+	 * Returns the number of variogram structures, including the nugget effect.
+	 */
+	uint getNstWithNugget();
+
+	bool forceReread() const;
 
     /** Sets whether the getters call readParameters() automatically.
      * Setting true, getters ensture an updated read with respect to the file, but results in a slow execution.

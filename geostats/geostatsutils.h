@@ -4,10 +4,10 @@
 #include "matrix3x3.h"
 #include "matrixmxn.h"
 #include "domain/variogrammodel.h"
+#include "geostats/datacell.h"
+#include "geostats/gridcell.h"
 #include <set>
 
-class DataCell;
-class GridCell;
 class SpatialLocation;
 
 /*! Kriging type. */
@@ -70,7 +70,7 @@ public:
 	 * @param ist Specifies the number of the variographic structure (0 == nugget) for factorial kriging.
 	 *        The default -1 means all structures (exact kriging).
      */
-	static MatrixNXM<double> makeCovMatrix(std::multiset<DataCell> & samples,
+	static MatrixNXM<double> makeCovMatrix(std::multiset<DataCellPtr> & samples,
 										   VariogramModel *variogramModel,
 										   double variogramSill,
 										   KrigingType kType = KrigingType::SK,
@@ -83,7 +83,7 @@ public:
 	 * @param ist Specifies the number of the variographic structure (0 == nugget) for factorial kriging.
 	 *        The default -1 means all structures (exact kriging).
 	 */
-	static MatrixNXM<double> makeGammaMatrix(std::multiset<DataCell> & samples,
+	static MatrixNXM<double> makeGammaMatrix(std::multiset<DataCellPtr> & samples,
 											 GridCell& estimationLocation,
 											 VariogramModel *variogramModel,
 											 KrigingType kType = KrigingType::SK,
@@ -92,16 +92,18 @@ public:
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
      */
-    static void getValuedNeighborsTopoOrdered(GridCell &cell,
-                                                            int numberOfSamples,
-                                                            int nColsAround,
-                                                            int nRowsAround,
-                                                            int nSlicesAround,
-                                                            bool hasNDV,
-                                                            double NDV,
-                                                            std::multiset<GridCell>& list);
+	static void getValuedNeighborsTopoOrdered(GridCell &cell,
+															int numberOfSamples,
+															int nColsAround,
+															int nRowsAround,
+															int nSlicesAround,
+															bool hasNDV,
+															double NDV,
+															std::multiset<GridCellPtr> & list);
 	/** Creates the P matrix for Factorial Kriging.
 	 * see theory in Ma et al. (2014) - Factorial kriging for multiscale modelling.
+	 * @param nsamples Number of samples for the kriging operation.
+	 * @param nst Number of structures in the variogram ( TODO: check whether this includes the nugget effect ).
 	 */
 	static MatrixNXM<double> makePmatrixForFK( int nsamples, int nst );
 

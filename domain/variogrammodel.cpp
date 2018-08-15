@@ -141,6 +141,11 @@ VariogramModel VariogramModel::makeVModelFromSingleStructure( int structure )
 	return result;
 }
 
+uint VariogramModel::getNstWithNugget()
+{
+	return getNst()+1;
+}
+
 
 QIcon VariogramModel::getIcon()
 {

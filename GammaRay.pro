@@ -221,7 +221,8 @@ SOURCES += main.cpp\
     geostats/fkestimationrunner.cpp \
     geostats/datacell.cpp \
     geostats/searchneighborhood.cpp \
-    geostats/searchellipsoid.cpp
+    geostats/searchellipsoid.cpp \
+    geostats/pointsetcell.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -417,7 +418,8 @@ HEADERS  += mainwindow.h \
     geostats/fkestimationrunner.h \
     geostats/datacell.h \
     geostats/searchneighborhood.h \
-    geostats/searchellipsoid.h
+    geostats/searchellipsoid.h \
+    geostats/pointsetcell.h
 
 
 FORMS    += mainwindow.ui \

@@ -7,6 +7,7 @@
 #include "fkestimationrunner.h"
 #include "datacell.h"
 #include "gridcell.h"
+#include "pointsetcell.h"
 #include "spatialindex/spatialindexpoints.h"
 
 #include <QCoreApplication>
@@ -63,7 +64,7 @@ void FKEstimation::setInputVariable(Attribute *at_input)
 	} else {
 		PointSet* ps = static_cast<PointSet*>( m_inputDataFile );
 		m_spatialIndexPoints->fill( ps, 0.000001 );
-		Application::instance()->logError( "Spatial index created for " + m_inputDataFile->getName() + " point set." );
+		Application::instance()->logInfo( "Spatial index created for " + m_inputDataFile->getName() + " point set." );
 	}
 }
 
@@ -72,17 +73,19 @@ void FKEstimation::setEstimationGrid(CartesianGrid *cg_estimation)
 	m_cg_estimation = cg_estimation;
 }
 
-std::multiset<DataCell> FKEstimation::getSamples(const GridCell & estimationCell )
+std::multiset< DataCellPtr > FKEstimation::getSamples(const GridCell & estimationCell )
 {
-	std::multiset<DataCell> result;
+	std::multiset< DataCellPtr > result;
 	if( m_searchStrategy && m_at_input ){
 
 		if( m_inputDataFile->isRegular() ){
 			Application::instance()->logError( "FKEstimation::getSamples(): NOT IMPLEMENTED FOR REGULAR DATA SETS." );
-		} else {
-			m_spatialIndexPoints->getNearestWithin( estimationCell, m_searchStrategy->m_nb_samples, m_searchStrategy->m_searchNB );
+		} else { //TODO: this currently assumes the irregular data is a PointSet object.
+			QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, m_searchStrategy->m_nb_samples, m_searchStrategy->m_searchNB );
+			QList<uint>::iterator it = samplesIndexes.begin();
+			for( ; it != samplesIndexes.end(); ++it )
+				result.insert( DataCellPtr( new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ) ) );
 		}
-
 	} else {
 		Application::instance()->logError( "FKEstimation::getSamples(): sample search failed.  Search strategy and/or input data not set." );
 	}

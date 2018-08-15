@@ -178,7 +178,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 
     //collects valued n-neighbors ordered by their topological distance with respect
     //to the target cell
-    std::multiset<GridCell> vCells;
+	std::multiset<GridCellPtr> vCells;
 
 	//collects the data samples (depend on the search neighborhood)
     GeostatsUtils::getValuedNeighborsTopoOrdered( cell,
@@ -191,7 +191,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
                                                            vCells);
 
 	//Make a copy of the sample collection but with generic versions of the objects for the methods transparent to grid information.
-	std::multiset<DataCell> vDataCells( vCells.begin(), vCells.end() );
+	std::multiset<DataCellPtr> vDataCells( vCells.begin(), vCells.end() );
 
     //if no sample was found, either...
 	if( vCells.empty() ){
@@ -206,7 +206,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 	//get the matrix of the theoretical covariances between the data sample locations and themselves.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
 	MatrixNXM<double> covMat = GeostatsUtils::makeCovMatrix( vDataCells,
-                                                             _ndvEstimation->vmodel(),
+															 _ndvEstimation->vmodel(),
                                                              variogramSill );
 
 	//get the gamma matrix (theoretical covariances between sample locations and estimation location)
@@ -250,9 +250,9 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 		//make a spectral::array matrix from the data values (response values).
 		spectral::array y( vCells.size() );
 		{ //make the response-value (sample values) vector y.
-			std::multiset<GridCell>::iterator vit = vCells.begin();
+			std::multiset<GridCellPtr>::iterator vit = vCells.begin();
 			for( int i = 0; vit != vCells.end(); ++vit, ++i )
-				y(i) = (*vit).readValueFromGrid() - meanSK; //these values are actually the residuals with respect to the SK mean.
+				y(i) = (*vit)->readValueFromGrid() - meanSK; //these values are actually the residuals with respect to the SK mean.
 		}
 		//Compute the kriging weights with the Pseudoinverse Regularization proposed by Mohammadi et al (2016) - Equation 12.
 		// "An analytic comparison of regularization methods for Gaussian Processes" - https://arxiv.org/pdf/1602.00853.pdf
@@ -278,9 +278,9 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 			result += (gammaMat.getTranspose() * weightsSK)(0,0); //(0,0) is to get the single element as a scalar and not as a matrix object.
 		} else {
 			//computing SK the normal way.
-			std::multiset<GridCell>::iterator itSamples = vCells.begin();
+			std::multiset<GridCellPtr>::iterator itSamples = vCells.begin();
 			for( uint i = 0; i < vCells.size(); ++i, ++itSamples){
-				result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() - meanSK );
+				result += weightsSK(i,0) * ( (*itSamples)->readValueFromGrid() - meanSK );
 			}
 		}
     } else {
@@ -377,9 +377,9 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 
 		//Estimate the OK local mean (use OK weights)
 		double mOK = 0.0;
-		std::multiset<GridCell>::iterator itSamples = vCells.begin();
+		std::multiset<GridCellPtr>::iterator itSamples = vCells.begin();
 		for( int i = 0; i < weightsOK.getN()-1; ++i, ++itSamples){ //the last element in weightsOK is the Lagrangian (mu)
-			mOK += weightsOK(i,0) * (*itSamples).readValueFromGrid();
+			mOK += weightsOK(i,0) * (*itSamples)->readValueFromGrid();
 		}
 
 		// re-make the SK kriging weights matrix (solve the kriging system)
@@ -390,9 +390,9 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 			//make a spectral::array matrix from the data values (response values).
 			spectral::array y( vCells.size() );
 			{ //make the response-value (sample values) vector y.
-				std::multiset<GridCell>::iterator vit = vCells.begin();
+				std::multiset<GridCellPtr>::iterator vit = vCells.begin();
 				for( int i = 0; vit != vCells.end(); ++vit, ++i )
-					y(i) = (*vit).readValueFromGrid() - mOK; //these values are actually the residuals with respect to the SK mean.
+					y(i) = (*vit)->readValueFromGrid() - mOK; //these values are actually the residuals with respect to the SK mean.
 			}
 			//Compute the kriging weights with the Pseudoinverse Regularization proposed by Mohammadi et al (2016) - Equation 12.
 			// "An analytic comparison of regularization methods for Gaussian Processes" - https://arxiv.org/pdf/1602.00853.pdf
@@ -418,9 +418,9 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 			result += wmOK * mOK;
 		} else {
 			//computing kriging the normal way.
-			std::multiset<GridCell>::iterator itSamples = vCells.begin();
+			std::multiset<GridCellPtr>::iterator itSamples = vCells.begin();
 			for( uint i = 0; i < vCells.size(); ++i, ++itSamples){
-				result += weightsSK(i,0) * ( (*itSamples).readValueFromGrid() );
+				result += weightsSK(i,0) * ( (*itSamples)->readValueFromGrid() );
 			}
 			result += wmOK * mOK;
 		}

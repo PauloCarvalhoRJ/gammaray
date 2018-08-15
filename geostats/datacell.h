@@ -3,6 +3,7 @@
 
 #include "spatiallocation.h"
 #include <cmath>
+#include <memory>
 
 class DataFile;
 
@@ -36,6 +37,12 @@ public:
 	/** The distance computed in computeCartesianDistance(). */
 	double _cartesianDistance;
 
+	/** Returns the data value this cell refers to.
+	 * @note This should have been a pure virtual method, but it was not possible to
+	 *       make std::multiset<DataCell> objects.
+	 */
+	virtual double readValueFromDataSet() const = 0;
+
 protected:
 	inline DataCell( int dataIndex ) :
 		_dataIndex( dataIndex ),
@@ -47,12 +54,14 @@ protected:
 	{}
 };
 
+typedef std::shared_ptr<DataCell> DataCellPtr;
+
 /**
  * This global non-member less-than operator enables the DataCell class as key-able
  * in STL or STL-like ordered containers.
  */
-inline bool operator<(const DataCell &d1, const DataCell &d2){
-	return d1._cartesianDistance < d2._cartesianDistance;
+inline bool operator<(const DataCellPtr &d1, const DataCellPtr &d2){
+	return d1->_cartesianDistance < d2->_cartesianDistance;
 }
 
 

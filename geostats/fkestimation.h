@@ -2,6 +2,7 @@
 #define FKESTIMATION_H
 
 #include "geostatsutils.h"
+#include "datacell.h"
 
 class SearchStrategy;
 class VariogramModel;
@@ -9,7 +10,7 @@ class Attribute;
 class CartesianGrid;
 class DataCell;
 class SpatialIndexPoints;
-class DataFile;
+
 
 /** This class encpsulates the factorial kriging estimation.
  */
@@ -38,7 +39,7 @@ public:
 	 * The resulting collection depends on the SearchStrategy object set.  Returns an empty object if any
 	 * required parameter for the search to work (e.g. input data) is missing.
 	 */
-	std::multiset<DataCell> getSamples(const GridCell & estimationCell );
+	std::multiset< DataCellPtr > getSamples(const GridCell & estimationCell );
 
 	/** Performs the factorial kriging. Make sure all parameters have been set properly .*/
     std::vector<double> run();

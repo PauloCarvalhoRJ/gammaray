@@ -56,14 +56,21 @@ public:
      * It assumes all cell info are correct.
     */
     double readValueFromGrid() const;
+
+// DataCell	interface
+	virtual double readValueFromDataSet() const{
+		return readValueFromGrid();
+	}
 };
+
+typedef std::shared_ptr<GridCell> GridCellPtr;
 
 /**
  * This global non-member less-than operator enables the GridCell class as key-able
  * in STL or STL-like ordered containers.
  */
-inline bool operator<(const GridCell &e1, const GridCell &e2){
-    return e1._topoDistance < e2._topoDistance;
+inline bool operator<(const GridCellPtr &e1, const GridCellPtr &e2){
+	return e1->_topoDistance < e2->_topoDistance;
 }
 
 #endif // GRIDCELL_H
