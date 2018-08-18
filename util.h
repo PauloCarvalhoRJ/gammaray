@@ -564,6 +564,11 @@ public:
 
     /** Returns the filename (e.g. drillholes.txt) from a path. */
     static QString getFileName(QString path);
+
+    /**
+      * Returns the name of a variographic structure given its code following GSLib convention.
+      */
+    static QString getGSLibVariogramStructureName(uint it);
 };
 
 #endif // UTIL_H

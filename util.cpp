@@ -1819,3 +1819,15 @@ QString Util::getFileName(QString path)
     QFileInfo fileinfo( path );
     return fileinfo.fileName();
 }
+
+QString Util::getGSLibVariogramStructureName(uint it)
+{
+    switch(it){
+    case 1: return "Spherical";
+    case 2: return "Exponential";
+    case 3: return "Gaussian";
+    case 4: return "Power";
+    case 5: return "Hole effect";
+    default: return "UNKNOWN";
+    }
+}
