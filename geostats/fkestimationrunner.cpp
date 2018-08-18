@@ -52,7 +52,12 @@ void FKEstimationRunner::doRun()
     m_finished = true;
 }
 
-double FKEstimationRunner::fk( GridCell& estimationCell, int ist, int nst, double& estimatedMean, int &nIllConditioned, int &nFailed )
+double FKEstimationRunner::fk( GridCell& estimationCell,
+                               int ist,
+                               int nst,
+                               double& estimatedMean,
+                               int &nIllConditioned,
+                               int &nFailed )
 {
 	//collects samples from the input data set ordered by their distance with respect
 	//to the estimation cell.
@@ -64,7 +69,8 @@ double FKEstimationRunner::fk( GridCell& estimationCell, int ist, int nst, doubl
 		return m_fkEstimation->ndvOfEstimationGrid();
 	}
 
-	//The matrix names follow the formulation presented by Ma et al. (2014) - Factorial kriging for multiscale modelling.
+    //The matrix names follow the formulation presented by
+    //Ma et al. (2014) - Factorial kriging for multiscale modelling.
 
 	//get the inverse of the matrix of the theoretical covariances between the data sample locations and themselves.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
@@ -92,7 +98,7 @@ double FKEstimationRunner::fk( GridCell& estimationCell, int ist, int nst, doubl
 
 	//get the n x k matrix of an "chosen analytical function p(x) for fitting the nonstationary component".
 	//Ma et al. (2014) don't give details of p(x).
-	//TODO PERFORMANCE: is P is invariant, then it needs to be computed only once.
+    //TODO PERFORMANCE: if P is invariant, then it needs to be computed only once.
 	MatrixNXM<double> P = GeostatsUtils::makePmatrixForFK( vSamples.size(), nst );
 
 	//Get P's transpose.
@@ -104,13 +110,16 @@ double FKEstimationRunner::fk( GridCell& estimationCell, int ist, int nst, doubl
 	//TODO PERFORMANCE: is p is invariant, then it needs to be computed only once.
 	MatrixNXM<double> p = GeostatsUtils::makepMatrixForFK( nst );
 
-	//Compute the kriging weights for the zero-mean FK estimate.
-	MatrixNXM<double> Pt__x__Cij_inv__x__P_____inv = Pt * Cij_inv * P;
-	Pt__x__Cij_inv__x__P_____inv.invertWithGaussJordan();
-	MatrixNXM<double> Lambda_yi = Czz_inv * Cyz - Czz_inv * P * ( Pt__x__Cij_inv__x__P_____inv ) * Pt * Czz_inv * Cyz;
+    //Compute an intermediate product.
+    MatrixNXM<double> Pt__x__Cij_inv__x__P_____inv = Pt * Cij_inv * P;
+    Pt__x__Cij_inv__x__P_____inv.invertWithGaussJordan();
 
-	//Compute the kriging weights for the estimated mean.
-	MatrixNXM<double> Lambda_T = Czz_inv * P * ( Pt__x__Cij_inv__x__P_____inv ) * p;
+    //Compute the kriging weights for the estimated mean.
+    MatrixNXM<double> Lambda_T = Czz_inv * P * ( Pt__x__Cij_inv__x__P_____inv ) * p;
+
+    //Compute the kriging weights for the zero-mean FK estimate.
+    MatrixNXM<double> Lambda_yi =
+            Czz_inv * Cyz - Czz_inv * P * ( Pt__x__Cij_inv__x__P_____inv ) * Pt * Czz_inv * Cyz;
 
 	//Estimate the mean.
 	estimatedMean = 0.0;
@@ -119,5 +128,13 @@ double FKEstimationRunner::fk( GridCell& estimationCell, int ist, int nst, doubl
 		estimatedMean += Lambda_T(i,0) * (*itSamples)->readValueFromDataSet();
 	}
 
-	return -1.0;
+    //Estimate the factor.
+    double factor = 0.0;
+    itSamples = vSamples.begin();
+    for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+        factor += Lambda_yi(i,0) * ( (*itSamples)->readValueFromDataSet() - estimatedMean );
+    }
+
+    //Return the factor (and the estimated mean as an output paramater).
+    return factor;
 }

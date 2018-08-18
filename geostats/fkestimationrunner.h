@@ -35,13 +35,16 @@ private:
     std::vector<double> m_results;
 
     /** Perform factorial kriging in a single cell in the output grid.
-	 * This calculations follows the formulation presented by Ma et al. (2014) - "Factorial kriging for multiscale modelling".
+     * This calculations follows the formulation presented by Ma et al. (2014) - "Factorial kriging
+     * for multiscale modelling".
 	 * @param estimationCell Object containing info about the cell such as parent grid, indexes, etc.
 	 * @param ist Number of the target structure in the variogram model (in the m_fkEstimaion object).
-	 * @param nst Number of the structures in the variogram model (in the m_fkEstimaion object) (TODO: check whether this includes the nugget effect).
+     * @param nst Number of the structures in the variogram model (in the m_fkEstimaion object) (TODO: check
+     *            whether this includes the nugget effect).
 	 * @param estimatedMean The value of the estimated mean computed during FK estimation.
 	 * @param nIllConditioned Its value is increased by the number of ill-conditioned kriging matrices encountered.
-	 * @param nFailed Its value is increased by the number of kriging operations that failed (resulted in NaN or inifinity).
+     * @param nFailed Its value is increased by the number of kriging operations that failed (resulted in
+     *                NaN or inifinity).
      */
 	double fk(GridCell &estimationCell, int ist, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 
