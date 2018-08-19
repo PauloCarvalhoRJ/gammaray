@@ -28,12 +28,17 @@ public:
     void setKrigingType( KrigingType ktype );
     void setInputVariable( Attribute* at_input );
     void setEstimationGrid( CartesianGrid* cg_estimation );
+    void setFactorNumber( int factorNumber );
     //@}
 
+    //@{
+    /** Getters. */
     CartesianGrid* getEstimationGrid(){ return m_cg_estimation; }
 	Attribute* getInputVariable(){ return m_at_input; }
 	VariogramModel* getVariogramModel(){ return m_variogramModel; }
 	KrigingType getKrigingType(){ return m_ktype; }
+    int getFactorNumber(){ return m_factorNumber; }
+    //@}
 
 	/** Returns a container with the samples around the estimation cell to be used in the estimation.
 	 * The resulting collection depends on the SearchStrategy object set.  Returns an empty object if any
@@ -41,8 +46,10 @@ public:
 	 */
 	std::multiset< DataCellPtr > getSamples(const GridCell & estimationCell );
 
-	/** Performs the factorial kriging. Make sure all parameters have been set properly .*/
-    std::vector<double> run();
+    /** Performs the factorial kriging. Make sure all parameters have been set properly.
+     * @param factorNumber The number of factor to get: -1 (mean); 0 (nugget); 1 and onwards (each variographic structure).
+     */
+    std::vector<double> run(int factorNumber);
 
 	/** Returns the no-data-value for the estimation grid. */
 	double ndvOfEstimationGrid(){ return m_NDV_of_output; }
@@ -62,6 +69,7 @@ private:
 	SpatialIndexPoints* m_spatialIndexPoints;
 	DataFile* m_inputDataFile;
 	double m_variogramSill;
+    int m_factorNumber;
 };
 
 #endif // FKESTIMATION_H

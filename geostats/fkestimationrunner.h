@@ -20,7 +20,9 @@ public:
 
     bool isFinished(){ return m_finished; }
 
-    std::vector<double> getResults(){ return m_results; }
+    std::vector<double> getFactor(){ return m_factor; }
+
+    std::vector<double> getMeans(){ return m_means; }
 
 signals:
     void progress(int);
@@ -32,7 +34,8 @@ public slots:
 private:
     bool m_finished;
     FKEstimation* m_fkEstimation;
-    std::vector<double> m_results;
+    std::vector<double> m_factor;
+    std::vector<double> m_means;
 
     /** Perform factorial kriging in a single cell in the output grid.
      * This calculations follows the formulation presented by Ma et al. (2014) - "Factorial kriging

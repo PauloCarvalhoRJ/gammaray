@@ -143,7 +143,17 @@ VariogramModel VariogramModel::makeVModelFromSingleStructure( int structure )
 
 uint VariogramModel::getNstWithNugget()
 {
-	return getNst()+1;
+    return getNst()+1;
+}
+
+QString VariogramModel::getStructureDescription(int structure)
+{
+    QString desc = Util::getGSLibVariogramStructureName( static_cast<int>(m_it[structure]) ) + " ( ";
+    desc += QString::number( m_a_hMax[structure] ) + " x ";
+    desc += QString::number( m_a_hMin[structure] ) + " x ";
+    desc += QString::number( m_a_vert[structure] );
+    desc += " )";
+    return desc;
 }
 
 

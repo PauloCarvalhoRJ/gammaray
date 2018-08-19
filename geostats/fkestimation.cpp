@@ -22,7 +22,8 @@ FKEstimation::FKEstimation() :
     m_at_input( nullptr ),
 	m_cg_estimation( nullptr ),
 	m_spatialIndexPoints( new SpatialIndexPoints() ),
-	m_inputDataFile( nullptr )
+    m_inputDataFile( nullptr ),
+    m_factorNumber( 0 ) //0 == nugget effect.
 {
 }
 
@@ -70,7 +71,12 @@ void FKEstimation::setInputVariable(Attribute *at_input)
 
 void FKEstimation::setEstimationGrid(CartesianGrid *cg_estimation)
 {
-	m_cg_estimation = cg_estimation;
+    m_cg_estimation = cg_estimation;
+}
+
+void FKEstimation::setFactorNumber(int factorNumber)
+{
+    m_factorNumber = factorNumber;
 }
 
 std::multiset< DataCellPtr > FKEstimation::getSamples(const GridCell & estimationCell )
@@ -92,7 +98,7 @@ std::multiset< DataCellPtr > FKEstimation::getSamples(const GridCell & estimatio
 	return result;
 }
 
-std::vector<double> FKEstimation::run()
+std::vector<double> FKEstimation::run( int factorNumber )
 {
     if( ! m_variogramModel ){
         Application::instance()->logError("FKEstimation::run(): variogram model not specified. Aborted.", true);
@@ -173,8 +179,14 @@ std::vector<double> FKEstimation::run()
     Application::instance()->logWarningOn();
     Application::instance()->logErrorOn();
 
-    std::vector<double> results = runner->getResults();
+    //get the factor wanted by the user.
+    std::vector<double> results;
+    if( factorNumber == -1 )
+        results = runner->getMeans();
+    else
+        results = runner->getFactor();
 
+    //discard the worker object.
     delete runner;
 
     Application::instance()->logInfo("Factorial Kriging completed.");

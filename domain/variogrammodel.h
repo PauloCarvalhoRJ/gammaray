@@ -110,6 +110,9 @@ public:
 	 */
 	uint getNstWithNugget();
 
+    /** Returns a descriptive text for one of the variogram structures. */
+    QString getStructureDescription( int structure );
+
 	bool forceReread() const;
 
     /** Sets whether the getters call readParameters() automatically.

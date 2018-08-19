@@ -407,6 +407,12 @@ void GSLibParameterFile::makeParamatersForFactorialKriging()
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	_params.append( par_search_ellip_radii );
 
+    //------------Factor to get: parameter 4--------------------------------
+    GSLibParOption* par_factor = new GSLibParOption("", "", "Factor:");
+    par_factor->addOption( -1, "Mean (Factor 1)" );
+    par_factor->addOption( 0, "Nugget effect (Factor 2)" );
+    par_factor->_selected_value = -1;
+    _params.append( par_factor );
 
 }
 

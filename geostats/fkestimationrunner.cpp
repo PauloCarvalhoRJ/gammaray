@@ -20,8 +20,10 @@ void FKEstimationRunner::doRun()
     uint nK = estimationGrid->getNZ();
 
     //prepare the vector with the results (to not overwrite the original data)
-    m_results.clear();
-    m_results.reserve( nI * nJ * nK );
+    m_factor.clear();
+    m_factor.reserve( nI * nJ * nK );
+    m_means.clear();
+    m_means.reserve( nI * nJ * nK );
 
     //for all grid cells
     int nKriging = 0;
@@ -37,13 +39,16 @@ void FKEstimationRunner::doRun()
             for( uint i = 0; i <nI; ++i){
 				GridCell estimationCell( estimationGrid, -1, i, j, k );
 				double estimatedMean;
-				//TODO: replace 0 (nugget) with user-specified structure number.
-				m_results.push_back( fk( estimationCell,
-										 0,
+                int ist = m_fkEstimation->getFactorNumber();
+                if( ist == -1 ) //factor number can be -1 (mean), which is not a valid variographic structure number
+                    ist = 0;
+                m_factor.push_back( fk( estimationCell,
+                                         m_fkEstimation->getFactorNumber(),
 										 m_fkEstimation->getVariogramModel()->getNstWithNugget(),
 										 estimatedMean,
 										 nIllConditioned,
 										 nFailed ) );
+                m_means.push_back( estimatedMean );
                 ++nKriging;
             }
         }

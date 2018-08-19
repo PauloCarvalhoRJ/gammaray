@@ -119,6 +119,16 @@ void FactorialKrigingDialog::onParameters()
 		m_gpfFK = new GSLibParameterFile();
 		m_gpfFK->makeParamatersForFactorialKriging();
 
+        //update the available factor options.
+        GSLibParOption* factor_par = m_gpfFK->getParameter<GSLibParOption*>( 4 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
+        factor_par->_options.clear();
+        factor_par->addOption( -1, "Mean (Factor 1)" );
+        factor_par->addOption( 0, "Nugget effect (Factor 2)" );
+        for( int ist = 0;  ist < variogram->getNst(); ++ist){
+            factor_par->addOption( ist+1, variogram->getStructureDescription( ist ) +
+                                   "(Factor " + QString::number(3+ist) + ")" );
+        }
+
 		GSLibParametersDialog gpd( m_gpfFK );
 		int response = gpd.exec();
 
@@ -302,18 +312,39 @@ void FactorialKrigingDialog::updateVariogramParameters(VariogramModel *vm)
 
 void FactorialKrigingDialog::doFK()
 {
-    // Define the estimation grid.
-    {
-        DataFile* input_data = static_cast<DataFile*>( this->m_dataSetSelector->getSelectedFile() );
-        //the estimation grid depends on input data type.
+    //Get the factor number (-1 = mean, 0 = nugget, 1 and onwards = the variogram structures).
+    int factor_number =  (m_gpfFK->getParameter<GSLibParOption*>( 4 ))->_selected_value;
 
-        if( input_data->getFileType() == "CARTESIANGRID")
-            //If the input data is a grid, the estimation grid is itself.
-            m_cg_estimation = static_cast<CartesianGrid*>( input_data );
-        else
-            //If the input data is a pointset, the estimation grid is another grid selected by the user.
-            m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
+    //propose a name for the new variable to contain the choosen factor.
+    QString factorName;
+    VariogramModel* vModel = m_vModelSelector->getSelectedVModel();
+    switch( factor_number ){
+    case -1: factorName = "mean"; break;
+    case 0: factorName = "nugget"; break;
+    default: factorName = vModel->getStructureDescription( factor_number - 1 );
     }
+    QString proposed_name = m_DataSetVariableSelector->getSelectedVariableName() + "_FK_" + factorName;
+
+    //user enters the name for the new variable with the desired factor.
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "Name for the variable with estimates:", QLineEdit::Normal,
+                                             proposed_name );
+
+    //if the user canceled the input box
+    if ( new_variable_name.isEmpty() ){
+        //abort
+        return;
+    }
+
+    // Define the estimation grid.
+    //the estimation grid depends on input data type.
+    DataFile* input_data = static_cast<DataFile*>( this->m_dataSetSelector->getSelectedFile() );
+    if( input_data->getFileType() == "CARTESIANGRID")
+        //If the input data is a grid, the estimation grid is itself.
+        m_cg_estimation = static_cast<CartesianGrid*>( input_data );
+    else
+        //If the input data is a pointset, the estimation grid is another grid selected by the user.
+        m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
 
 	//Build the search strategy object from the user-input values.
 	// See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
@@ -325,6 +356,7 @@ void FactorialKrigingDialog::doFK()
 	SearchStrategy searchStrategy( SearchEllipsoid(hMax, hMin, hVert), nb_samples );
 
     //run the estimation
+    std::vector<double> results;
     {
         FKEstimation estimation;
         estimation.setSearchStrategy( &searchStrategy );
@@ -335,7 +367,10 @@ void FactorialKrigingDialog::doFK()
         estimation.setMeanForSimpleKriging( skmean_par->_value );
         estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
         estimation.setEstimationGrid( m_cg_estimation );
-        std::vector<double> results = estimation.run();
+        estimation.setFactorNumber( factor_number );
+        results = estimation.run( factor_number );
     }
 
+    //add the new data column.
+    m_cg_estimation->addNewDataColumn( new_variable_name, results );
 }
