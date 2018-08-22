@@ -140,6 +140,19 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
         factor += Lambda_yi(i,0) * ( (*itSamples)->readValueFromDataSet() - estimatedMean );
     }
 
+	//rarely, kriging may fail with a NaN or infinity value.
+	//guard the output against such failures.
+	if( std::isnan(factor) || !std::isfinite(factor) ){
+		++nFailed;
+		double failValue = m_fkEstimation->ndvOfEstimationGrid();
+		Application::instance()->logWarn( "FKEstimationRunner::fk(): at least one kriging operation failed (resulted in NaN or infinity).  Returning " +
+										  QString::number(failValue) + " to protect the output data file." );
+		factor = failValue;
+	}
+	if( std::isnan(estimatedMean) || !std::isfinite(estimatedMean) ){
+		estimatedMean = m_fkEstimation->ndvOfEstimationGrid();
+	}
+
     //Return the factor (and the estimated mean as an output paramater).
     return factor;
 }
