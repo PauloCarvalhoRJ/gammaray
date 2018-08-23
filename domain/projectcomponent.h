@@ -5,12 +5,10 @@
 #include <QIcon>
 #include <vector>
 
-#include "viewer3d/view3dbuilders.h"
-#include "viewer3d/view3dviewdata.h"
-
 class QTextStream;
 class View3DConfigWidget;
 class View3DWidget;
+class View3DViewData;
 
 /**
  * @brief The ProjectComponent class models any part of a project such as data files, variograms, training images,

@@ -6,6 +6,7 @@
 #include <vtkAlgorithmOutput.h>
 #include <vtkInformation.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
+#include <vtkExtractGrid.h>
 
 V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(
         CartesianGrid *cartesianGrid,

@@ -1,8 +1,11 @@
 #include "view3dcolortables.h"
 
+#include <vtkLookupTable.h>
 #include <vtkColorTransferFunction.h>
 
 #include "domain/application.h"
+
+
 
 View3dColorTables::View3dColorTables()
 {

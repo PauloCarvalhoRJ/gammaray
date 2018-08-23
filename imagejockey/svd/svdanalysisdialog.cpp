@@ -11,6 +11,7 @@
 #include "../widgets/ijgridviewerwidget.h"
 #include "../imagejockeyutils.h"
 #include "../imagejockeydialog.h"
+#include "svdfactor.h"
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),

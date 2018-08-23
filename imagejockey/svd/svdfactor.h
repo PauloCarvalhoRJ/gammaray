@@ -5,7 +5,6 @@
 #include <QIcon>
 #include "../ijabstractcartesiangrid.h"
 
-//third-party library Eigen
 namespace spectral{
    class array;
    class complex_array;

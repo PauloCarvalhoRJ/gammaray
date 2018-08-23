@@ -2,6 +2,8 @@
 #include "ui_v3dcfgwidforattributeinmapcartesiangrid.h"
 #include "util.h"
 #include <vtkLogLookupTable.h>
+#include <vtkExtractGrid.h>
+#include <vtkDataSetMapper.h>
 
 V3DCfgWidForAttributeInMapCartesianGrid::V3DCfgWidForAttributeInMapCartesianGrid(
         CartesianGrid */*cartesianGrid*/,

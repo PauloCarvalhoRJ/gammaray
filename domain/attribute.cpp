@@ -4,6 +4,7 @@
 #include "util.h"
 #include "viewer3d/view3dconfigwidgetsbuilder.h"
 #include "cartesiangrid.h"
+#include "viewer3d/view3dbuilders.h"
 
 Attribute::Attribute(QString name, int index_in_file, bool categorical) :
     IJAbstractVariable(), ICalcProperty()

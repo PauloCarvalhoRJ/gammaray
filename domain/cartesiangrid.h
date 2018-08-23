@@ -2,15 +2,14 @@
 #define CARTESIANGRID_H
 
 #include "datafile.h"
-#include "geostats/spatiallocation.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include <set>
 
 class GSLibParGrid;
 class GridCell;
 class SVDFactor;
+class SpatialLocation;
 
-//third-party library eigen
 namespace spectral{
    class array;
 }

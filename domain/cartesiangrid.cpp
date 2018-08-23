@@ -6,6 +6,9 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "geostats/gridcell.h"
 #include "imagejockey/svd/svdfactor.h"
+#include "viewer3d/view3dviewdata.h"
+#include "viewer3d/view3dbuilders.h"
+#include "domain/application.h"
 
 #include "spectral/spectral.h" //eigen third party library
 

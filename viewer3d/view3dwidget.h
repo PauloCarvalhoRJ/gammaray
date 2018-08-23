@@ -4,9 +4,10 @@
 #include <QWidget>
 
 #include <QMap>
-#include <vtkActor.h>
-#include <vtkOrientationMarkerWidget.h>
 #include <vtkSmartPointer.h>
+
+class vtkActor;
+class vtkOrientationMarkerWidget;
 
 #include "view3dlistrecord.h"
 #include "view3dviewdata.h"
@@ -22,6 +23,7 @@ class QVTKOpenGLWidget;
 class QListWidgetItem;
 class View3DConfigWidget;
 class View3DVerticalExaggerationWidget;
+class vtkRenderer;
 
 class View3DWidget : public QWidget
 {

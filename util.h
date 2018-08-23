@@ -1,6 +1,5 @@
 ﻿#ifndef UTIL_H
 #define UTIL_H
-#include "array3d.h"
 #include <QColor>
 #include <QIcon>
 #include <QList>
