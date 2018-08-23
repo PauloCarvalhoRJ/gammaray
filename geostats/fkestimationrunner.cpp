@@ -6,8 +6,15 @@
 FKEstimationRunner::FKEstimationRunner(FKEstimation *fkEstimation, QObject *parent) :
     QObject(parent),
     m_finished( false ),
-    m_fkEstimation( fkEstimation )
+	m_fkEstimation( fkEstimation ),
+	m_singleStructVModel( nullptr )
 {
+}
+
+FKEstimationRunner::~FKEstimationRunner()
+{
+	if( m_singleStructVModel )
+		delete m_singleStructVModel;
 }
 
 void FKEstimationRunner::doRun()
@@ -25,6 +32,17 @@ void FKEstimationRunner::doRun()
     m_means.clear();
     m_means.reserve( nI * nJ * nK );
 
+	//factor number can be -1 (mean), which is not a valid variographic structure number.
+	int ist = m_fkEstimation->getFactorNumber();
+	if( ist == -1 )
+		ist = 0; //set nugget as default
+
+	//make the single-structure variogram model.
+	//Switch to a single-structure variogram model if a structure number was specified.
+	if( m_singleStructVModel )
+		delete m_singleStructVModel;
+	m_singleStructVModel = new VariogramModel( m_fkEstimation->getVariogramModel()->makeVModelFromSingleStructure( ist ) );
+
     //for all grid cells
     int nKriging = 0;
     int nIllConditioned = 0;
@@ -39,11 +57,7 @@ void FKEstimationRunner::doRun()
             for( uint i = 0; i <nI; ++i){
 				GridCell estimationCell( estimationGrid, -1, i, j, k );
 				double estimatedMean;
-                int ist = m_fkEstimation->getFactorNumber();
-                if( ist == -1 ) //factor number can be -1 (mean), which is not a valid variographic structure number
-                    ist = 0;
                 m_factor.push_back( fk( estimationCell,
-                                         m_fkEstimation->getFactorNumber(),
 										 m_fkEstimation->getVariogramModel()->getNstWithNugget(),
 										 estimatedMean,
 										 nIllConditioned,
@@ -58,7 +72,6 @@ void FKEstimationRunner::doRun()
 }
 
 double FKEstimationRunner::fk( GridCell& estimationCell,
-                               int ist,
                                int nst,
                                double& estimatedMean,
                                int &nIllConditioned,
@@ -95,10 +108,9 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 	// of the structure targeted for FK analysis.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
 	MatrixNXM<double> Cij_inv = GeostatsUtils::makeCovMatrix( vSamples,
-														  m_fkEstimation->getVariogramModel(),
+														  m_singleStructVModel,
 														  m_fkEstimation->getVariogramSill(),
-														  m_fkEstimation->getKrigingType(),
-														  ist );
+														  m_fkEstimation->getKrigingType() );
 	Cij_inv.invertWithGaussJordan();
 
 	//get the n x k matrix of an "chosen analytical function p(x) for fitting the nonstationary component".

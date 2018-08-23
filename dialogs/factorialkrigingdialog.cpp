@@ -112,31 +112,28 @@ void FactorialKrigingDialog::onParameters()
         return;
     }
 
-    //get the selected grid with secondary data (if any)
-    CartesianGrid* sec_data_grid = (CartesianGrid*)m_cgSelectorSecondary->getSelectedDataFile();
-
 	if( ! m_gpfFK ){
 		m_gpfFK = new GSLibParameterFile();
 		m_gpfFK->makeParamatersForFactorialKriging();
+	}
 
-        //update the available factor options.
-        GSLibParOption* factor_par = m_gpfFK->getParameter<GSLibParOption*>( 4 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
-        factor_par->_options.clear();
-        factor_par->addOption( -1, "Mean (Factor 1)" );
-        factor_par->addOption( 0, "Nugget effect (Factor 2)" );
-        for( int ist = 0;  ist < variogram->getNst(); ++ist){
-            factor_par->addOption( ist+1, variogram->getStructureDescription( ist ) +
-                                   "(Factor " + QString::number(3+ist) + ")" );
-        }
+	//update the available factor options.
+	GSLibParOption* factor_par = m_gpfFK->getParameter<GSLibParOption*>( 4 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
+	factor_par->_options.clear();
+	factor_par->addOption( -1, "Mean (Factor 1)" );
+	factor_par->addOption( 0, "Nugget effect (Factor 2)" );
+	for( int ist = 0;  ist < variogram->getNst(); ++ist){
+		factor_par->addOption( ist+1, variogram->getStructureDescription( ist ) +
+							   "(Factor " + QString::number(3+ist) + ")" );
+	}
 
-		GSLibParametersDialog gpd( m_gpfFK );
-		int response = gpd.exec();
+	GSLibParametersDialog gpd( m_gpfFK );
+	int response = gpd.exec();
 
-		//if user didn't cancel the dialog
-		if( response == QDialog::Accepted ){
-            //run factorial kriging.
-            doFK();
-		}
+	//if user didn't cancel the dialog
+	if( response == QDialog::Accepted ){
+		//run factorial kriging.
+		doFK();
 	}
 
 }

@@ -145,8 +145,7 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
 MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &samples,
 											   VariogramModel *variogramModel,
 											   double variogramSill,
-											   KrigingType kType,
-											   int ist)
+											   KrigingType kType)
 {
     //Define the dimension of cov matrix, which depends on kriging type
     int append = 0;
@@ -156,13 +155,6 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &sampl
     case KrigingType::OK:
         append = 1; break;
     }
-
-	//Switch to a single-structure variogram model if a structure number was specified.
-	VariogramModel singleStructVModel;
-	if( ist >= 0 ){
-		singleStructVModel = variogramModel->makeVModelFromSingleStructure( ist );
-		variogramModel = &singleStructVModel; //Beware that singleStructVModel goes out of scope when this method returns.
-	}
 
     //Create the cov matrix.
     MatrixNXM<double> covMatrix( samples.size() + append, samples.size() + append );
@@ -207,8 +199,7 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &sampl
 MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCellPtr> &samples,
 												 GridCell &estimationLocation,
 												 VariogramModel *variogramModel,
-												 KrigingType kType,
-												 int ist)
+												 KrigingType kType)
 {
     int append = 0;
     switch( kType ){
@@ -220,13 +211,6 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCellPtr> &sam
 
 	//save the variogram sill (for possible factorial kriging)
 	double variogramSill = variogramModel->getSill();
-
-	//Switch to a single-structure variogram model if a structure number was specified.
-	VariogramModel singleStructVModel;
-	if( ist >= 0 ){
-		singleStructVModel = variogramModel->makeVModelFromSingleStructure( ist );
-		variogramModel = &singleStructVModel; //Beware that singleStructVModel goes out of scope when this method returns.
-	}
 
 	//Create the gamma matrix.
     MatrixNXM<double> result( samples.size()+append, 1 );

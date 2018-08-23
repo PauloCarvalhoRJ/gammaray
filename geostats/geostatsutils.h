@@ -67,27 +67,21 @@ public:
      * @param kType Kriging type.  If SK, then the matrix has only the covariances between
      *        the samples.  If OK, the matrix has an extra row and column with 1.0s, except
      *        for the last element of both (the last element of matrix), with is zero.
-	 * @param ist Specifies the number of the variographic structure (0 == nugget) for factorial kriging.
-	 *        The default -1 means all structures (exact kriging).
      */
 	static MatrixNXM<double> makeCovMatrix(std::multiset<DataCellPtr> & samples,
 										   VariogramModel *variogramModel,
 										   double variogramSill,
-										   KrigingType kType = KrigingType::SK,
-										   int ist = -1);
+										   KrigingType kType = KrigingType::SK);
 
     /**
      * Creates a gamma matrix of the given set of samples against the estimation location cell.
      * @param kType Kriging type.  If SK, then the matrix has only the covariances between
      *        the samples and the estimation location.  If OK, the matrix has an extra element == 1.0.
-	 * @param ist Specifies the number of the variographic structure (0 == nugget) for factorial kriging.
-	 *        The default -1 means all structures (exact kriging).
 	 */
 	static MatrixNXM<double> makeGammaMatrix(std::multiset<DataCellPtr> & samples,
 											 GridCell& estimationLocation,
 											 VariogramModel *variogramModel,
-											 KrigingType kType = KrigingType::SK,
-											 int ist = -1);
+											 KrigingType kType = KrigingType::SK);
 
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
