@@ -60,6 +60,9 @@ public:
 	/** Matrix subtraction operator. It is assumed the operands are compatible (this._n == b._n && this._m == b._m).*/
 	MatrixNXM<T> operator-(const MatrixNXM<T>& b) const;
 
+	/** Prints the matrix contents to std::out. Useful for debugging. */
+	void print() const;
+
 private:
     /** Number of rows. */
     unsigned int _n;
@@ -260,5 +263,10 @@ MatrixNXM<T> MatrixNXM<T>::operator-(const MatrixNXM<T>& b) const{
 	return result;
 }
 
+template <typename T>
+void MatrixNXM<T>::print() const{
+	spectral::array a = toSpectralArray();
+	spectral::print( a );
+}
 
 #endif // MATRIXMXN_H
