@@ -915,7 +915,7 @@ int DataFile::addNewDataColumn(const QString columnName,
     std::vector<double>::const_iterator itColumn = values.cbegin();
     std::vector<std::vector<double>>::iterator itData = _data.begin();
     // hopefully both iterators end at the same time
-    for (; itColumn != values.cend(), itData != _data.end(); ++itColumn, ++itData)
+	for (; itColumn != values.cend(), itColumn != values.end() && itData != _data.end(); ++itColumn, ++itData)
         (*itData).push_back(*itColumn);
 
     // If the transfer was not completed (the input vector is too short), fill the
