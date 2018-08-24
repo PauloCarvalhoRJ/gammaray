@@ -18,6 +18,9 @@ public:
 
     /** Returns the distance between origin and this location in the XY plane. */
     double norm2D();
+
+	/** Prints the contents to std::cout.  Useful for debugging. */
+	void print();
 };
 
 #endif // SPATIALLOCATION_H
