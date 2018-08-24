@@ -1639,7 +1639,7 @@ QString Util::humanReadable(double value)
     //buffer string for formatting the output (QString's sptrintf doesn't honor field size)
     char buffer[50];
     //define base unit to change suffix (could be 1024 for ISO bytes (iB), for instance)
-    double unit = 1000.0d;
+	double unit = 1000.0;
     //return the plain value if it doesn't require a multiplier suffix (small values)
     if (value <= unit){
         std::sprintf(buffer, "%.1f", value);

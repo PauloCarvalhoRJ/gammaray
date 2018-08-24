@@ -57,7 +57,7 @@ QList<QPointF> Spectrogram1DParameters::getAreaOfInfluence(double centerFrequenc
     QList<QPointF> result;
 
     //convert the azimuth into a trigonometric angle in radians
-    double azimuthp = -_azimuth - 90.0d ;
+	double azimuthp = -_azimuth - 90.0 ;
     double angleRadians = ( azimuthp ) * ImageJockeyUtils::PI_OVER_180;
 
     // Center frequency and azimuth can by regarded as the radius and angle of polar coordinate in a 2D spectrogram.
@@ -67,7 +67,7 @@ QList<QPointF> Spectrogram1DParameters::getAreaOfInfluence(double centerFrequenc
 
     //define a non-rotated rectangle (zero azimuth) centered at origin with width (east-west size) corresponding
     //to the bandwidth and with length (north-south size) corresponding to the frequency span.
-    double halfFreqSpan = frequencySpan / 2.0d;
+	double halfFreqSpan = frequencySpan / 2.0;
     result.push_back( QPointF( - _bandWidth,   halfFreqSpan ) );
     result.push_back( QPointF(   _bandWidth,   halfFreqSpan ) );
     result.push_back( QPointF(   _bandWidth, - halfFreqSpan ) );
@@ -120,9 +120,9 @@ void Spectrogram1DParameters::updateGeometry()
     double gridExtent = endRadius();
     double radiusp = radius();
     double bandw = bandWidth();
-    double ySect = bandw * std::tan( ImageJockeyUtils::PI/2.0d -
+	double ySect = bandw * std::tan( ImageJockeyUtils::PI/2.0 -
                                      azimuthTolerance() * ImageJockeyUtils::PI_OVER_180 ); //90deg - azimuth
-    double azimuthp = -azimuth() - 90.0d;
+	double azimuthp = -azimuth() - 90.0;
 
     //==========================SET BAND 1=======================================
 

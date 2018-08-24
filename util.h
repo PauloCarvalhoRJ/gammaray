@@ -14,7 +14,7 @@
 
 // The usual value of 10.0 for scaling in decibel (dB).
 // The value of 20.0 (2*10) is usually for power measurements (square law).
-#define DECIBEL_SCALE_FACTOR 10.0d
+#define DECIBEL_SCALE_FACTOR 10.0
 
 class QWidget;
 class QPlainTextEdit;

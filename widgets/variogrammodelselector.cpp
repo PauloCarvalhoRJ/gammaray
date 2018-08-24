@@ -7,8 +7,8 @@
 
 VariogramModelSelector::VariogramModelSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
-    m_HasNotSetItem( show_not_set ),
-    ui(new Ui::VariogramModelSelector)
+	ui(new Ui::VariogramModelSelector),
+	m_HasNotSetItem( show_not_set )
 {
     ui->setupUi(this);
     updateList();

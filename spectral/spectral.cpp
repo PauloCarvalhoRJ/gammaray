@@ -36,7 +36,7 @@ complex_array::complex_array(index M, index N, index K)
     d_ = (fftw_complex *)fftw_malloc(sizeof(fftw_complex) * N * M * K);
 }
 
-complex_array::complex_array(fftw_array_raw d) : d_(d), size_(0) {}
+complex_array::complex_array(fftw_array_raw d) : size_(0), d_(d)  {}
 
 complex_array::complex_array(const complex_array &other)
 {
@@ -53,7 +53,7 @@ complex_array::complex_array(const complex_array &other)
 }
 
 complex_array::complex_array(complex_array &&other)
-    : M_(other.M_), N_(other.N_), K_(other.K_), d_(other.d_), ndim_(other.ndim_)
+	: ndim_(other.ndim_), M_(other.M_), N_(other.N_), K_(other.K_), d_(other.d_)
 {
     other.d_ = nullptr;
     other = nullptr;
@@ -312,13 +312,13 @@ array::array(const array &other) : d_(other.M_ * other.N_ * other.K_, 0)
 }
 
 array::array(array &&other)
-    : M_(other.M_), N_(other.N_), K_(other.K_), ndim_(other.ndim_),
-      d_(std::move(other.d_))
+	: d_(std::move(other.d_)), ndim_(other.ndim_), M_(other.M_), N_(other.N_), K_(other.K_)
+
 {
 }
 
 array::array(const Eigen::MatrixXd &m)
-    : M_(m.rows()), N_(m.cols()), K_(1), d_(m.rows() * m.cols())
+	: d_(m.rows() * m.cols()), M_(m.rows()), N_(m.cols()), K_(1)
 {
     if (M_ < 1)
         M_ = 1;
@@ -355,14 +355,14 @@ array &array::operator=(const array &other)
     N_ = other.N_;
     K_ = other.K_;
     d_.resize(other.d_.size());
-    for (index i = 0; i < other.d_.size(); ++i)
+	for (size_t i = 0; i < other.d_.size(); ++i)
         d_[i] = other.d_[i];
     return *this;
 }
 
 array &array::operator+=(const array &other)
 {
-    for (index i = 0; i < other.d_.size(); ++i) {
+	for (size_t i = 0; i < other.d_.size(); ++i) {
         d_[i] += other.d_[i];
     }
 
@@ -372,7 +372,7 @@ array &array::operator+=(const array &other)
 array array::operator*(double scalar) const
 {
     array result( M_, N_, K_ );
-    for (index i = 0; i < d_.size(); ++i)
+	for (size_t i = 0; i < d_.size(); ++i)
         result.d_[i] = d_[i] * scalar;
     return result;
 }
@@ -387,7 +387,7 @@ array array::operator*(const array &other) const
 array array::operator/(double scalar) const
 {
 	array result( M_, N_, K_ );
-	for (index i = 0; i < d_.size(); ++i)
+	for (size_t i = 0; i < d_.size(); ++i)
 		result.d_[i] = d_[i] / scalar;
 	return result;
 }
@@ -395,7 +395,7 @@ array array::operator/(double scalar) const
 array array::operator-(double scalar) const
 {
 	array result( M_, N_, K_ );
-	for (index i = 0; i < d_.size(); ++i)
+	for (size_t i = 0; i < d_.size(); ++i)
 		result.d_[i] = d_[i] - scalar;
 	return result;
 }
@@ -403,7 +403,7 @@ array array::operator-(double scalar) const
 array array::operator-(const array &other) const
 {
     array result( M_, N_, K_ );
-    for (index i = 0; i < d_.size(); ++i)
+	for (size_t i = 0; i < d_.size(); ++i)
         result.d_[i] = d_[i] - other.d_[i];
 	return result;
 }
@@ -612,11 +612,11 @@ void conv1d(std::vector<double> &out, const std::vector<double> &a,
     std::vector<double> ina(K, 0.0), inb(K, 0.0);
     complex_array A, B;
 
-    for (index i = 0; i < a.size(); ++i) {
+	for (size_t i = 0; i < a.size(); ++i) {
         ina[i] = (std::isinf(a[i]) || std::isnan(a[i])) ? 0 : a[i];
     }
 
-    for (index i = 0; i < b.size(); ++i) {
+	for (size_t i = 0; i < b.size(); ++i) {
         inb[i] = (std::isinf(b[i]) || std::isnan(b[i])) ? 0 : b[i];
     }
 
@@ -626,12 +626,12 @@ void conv1d(std::vector<double> &out, const std::vector<double> &a,
     complex_array C(A.size());
     C.dot(A, B);
 
-    if (out.size() != K)
+	if ((index)out.size() != K)
         out.resize(K);
 
     backward(out, C, K);
 
-    for (index i = 0; i < out.size(); ++i) {
+	for (size_t i = 0; i < out.size(); ++i) {
         out[i] /= K;
     }
 }
@@ -745,12 +745,12 @@ void covariance1d(std::vector<double> &out, std::vector<double> &np,
     std::vector<double> ina(K, 0.0), inb(K, 0.0), npa(K, 0.0), npb(K, 0.0);
     complex_array A, B, NPA, NPB;
 
-    for (index i = 0; i < a.size(); ++i) {
+	for (size_t i = 0; i < a.size(); ++i) {
         npa[i] = (std::isinf(a[i]) || std::isnan(a[i])) ? 0.0 : 1;
         ina[i] = (std::isinf(a[i]) || std::isnan(a[i])) ? 0.0 : a[i];
     }
 
-    for (index i = 0; i < b.size(); ++i) {
+	for (size_t i = 0; i < b.size(); ++i) {
         npb[i] = (std::isinf(b[i]) || std::isnan(b[i])) ? 0.0 : 1;
         inb[i] = (std::isinf(b[i]) || std::isnan(b[i])) ? 0.0 : b[i];
     }
@@ -765,15 +765,15 @@ void covariance1d(std::vector<double> &out, std::vector<double> &np,
     NP.dot_conj(NPB, NPA);
     C.dot_conj(B, A);
 
-    if (out.size() != K)
+	if ((index)out.size() != K)
         out.resize(K);
-    if (np.size() != K)
+	if ((index)np.size() != K)
         np.resize(K);
 
     backward(np, NP, K);
     backward(out, C, K);
 
-    for (index i = 0; i < out.size(); ++i) {
+	for (size_t i = 0; i < out.size(); ++i) {
         out[i] /= K;
         np[i] /= K;
         out[i] /= np[i];
@@ -789,7 +789,7 @@ void covariance1d(std::vector<double> &out, std::vector<double> &np,
         backward(ma, MA, K);
         backward(mb, MB, K);
 
-        for (index i = 0; i < out.size(); ++i) {
+		for (size_t i = 0; i < out.size(); ++i) {
             ma[i] /= K;
             mb[i] /= K;
             out[i] -= (ma[i] / np[i]) * (mb[i] / np[i]);
@@ -973,20 +973,20 @@ void covariance1d_naive(std::vector<double> &out, std::vector<double> &np,
 {
     index K = a.size() + b.size() - 1;
 
-    if (out.size() != K)
+	if ((index)out.size() != K)
         out.resize(K);
-    if (np.size() != K)
+	if ((index)np.size() != K)
         np.resize(K);
 
     std::vector<double> ma(K), mb(K);
 
-    for (index k = 0; k < b.size(); ++k) {
+	for (size_t k = 0; k < b.size(); ++k) {
         out[k] = 0;
         np[k] = 0;
         ma[k] = 0;
         mb[k] = 0;
 
-        for (index j = 0; j < a.size(); ++j) {
+		for (size_t j = 0; j < a.size(); ++j) {
             if (k + j < b.size()) {
                 out[k] += a[j] * b[k + j];
                 ma[k] += a[j];
@@ -996,13 +996,13 @@ void covariance1d_naive(std::vector<double> &out, std::vector<double> &np,
         }
     }
 
-    for (index l = K - 1; l >= b.size(); --l) {
+	for (size_t l = K - 1; l >= b.size(); --l) {
         out[l] = 0;
         np[l] = 0;
         ma[l] = 0;
         mb[l] = 0;
 
-        for (index j = 0; j < b.size(); ++j) {
+		for (size_t j = 0; j < b.size(); ++j) {
             if (K - l + j < a.size()) {
                 out[l] += a[K - l + j] * b[j];
                 ma[l] += a[K - l + j];
@@ -1012,12 +1012,12 @@ void covariance1d_naive(std::vector<double> &out, std::vector<double> &np,
         }
     }
 
-    for (index i = 0; i < out.size(); ++i) {
+	for (size_t i = 0; i < out.size(); ++i) {
         out[i] /= np[i];
     }
 
     if (!centered) {
-        for (index i = 0; i < out.size(); ++i) {
+		for (size_t i = 0; i < out.size(); ++i) {
             out[i] -= (ma[i] / np[i]) * (mb[i] / np[i]);
         }
     }
@@ -1173,14 +1173,16 @@ void covariance3d_naive(array &out, array &np, const array &a, const array &b,
 void conv1d_naive(std::vector<double> &out, const std::vector<double> &a,
                   const std::vector<double> &b)
 {
-    index K = a.size() + b.size() - 1;
+	assert( a.size() + b.size() > 0 );
 
-    if (out.size() != K)
+	size_t K = a.size() + b.size() - 1;
+
+	if (out.size() != K)
         out.resize(K);
 
-    for (index k = 0; k < K; ++k) {
+	for (size_t k = 0; k < K; ++k) {
         out[k] = 0;
-        for (index j = 0; j <= k; ++j) {
+		for (size_t j = 0; j <= k; ++j) {
             out[k] += ((j < a.size()) && (k - j < b.size())) ? a[j] * b[k - j] : 0.0;
         }
     }
@@ -1449,8 +1451,8 @@ double mse(const array &A, const array &B)
 
 array to_array(const Eigen::MatrixXd &m)
 {
-    auto r = m.rows();
-    auto c = m.cols();
+	size_t r = m.rows();
+	size_t c = m.cols();
 
     array M(r, c, 1, 0);
 
@@ -1465,9 +1467,9 @@ array to_array(const Eigen::MatrixXd &m)
 
 Eigen::MatrixXd to_2d(const array &A)
 {
-    auto M = A.M();
-    auto N = A.N();
-    auto K = A.K();
+	size_t M = A.M();
+	size_t N = A.N();
+	size_t K = A.K();
 
     if (M < 1)
         M = 1;
@@ -1476,8 +1478,8 @@ Eigen::MatrixXd to_2d(const array &A)
     if (K < 1)
         K = 1;
 
-    auto m = M;
-    auto n = N * K;
+	size_t m = M;
+	size_t n = N * K;
 
     Eigen::MatrixXd a(m, n);
 
@@ -1518,8 +1520,8 @@ double absolute_error(const array &A, const array &B)
 
 array to_array(const Eigen::MatrixXd &m, index M, index N, index K)
 {
-    auto r = m.rows();
-    auto c = m.cols();
+	size_t r = m.rows();
+	size_t c = m.cols();
 
     array a(M, N, K, 0);
 
@@ -1598,9 +1600,9 @@ void print(const array & A)
 
 array shiftByHalf(const array &in)
 {
-    int nI = in.M();
-    int nJ = in.N();
-    int nK = in.K();
+	size_t nI = in.M();
+	size_t nJ = in.N();
+	size_t nK = in.K();
     array result( (index)nI, (index)nJ, (index)nK );
     for (size_t i = 0; i < nI; ++i) {
         int i_shift = (i + nI/2) % nI;
