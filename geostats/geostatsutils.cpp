@@ -75,18 +75,17 @@ double GeostatsUtils::getH(double x0, double y0, double z0,
 
 double GeostatsUtils::getGamma(VariogramStructureType permissiveModel, double h, double range, double contribution)
 {
-    double h_over_a = h/range;
+	double h_over_a = h/range;
     switch( permissiveModel ){
     case VariogramStructureType::SPHERIC:
         if( h > range )
             return contribution;
-        return contribution * ( 1.5*h_over_a - 0.5*(h_over_a*h_over_a*h_over_a) );
+		return contribution * ( 1.5*h_over_a - 0.5*(h_over_a*h_over_a*h_over_a) );
     case VariogramStructureType::EXPONENTIAL:
         if( Util::almostEqual2sComplement( h, 0.0, 1 ) )
             return 0.0;
         return contribution * ( 1.0 - std::exp(-3.0 * h_over_a) );
     case VariogramStructureType::GAUSSIAN:
-        h_over_a = h/range;
         if( Util::almostEqual2sComplement( h, 0.0, 1 ) )
             return 0.0;
         return contribution * ( 1.0 - std::exp(-9.0*(h_over_a*h_over_a)) );
@@ -111,6 +110,8 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
     double result = model->getNugget();
     int nst = model->getNst();
 
+	double h;
+
     for( int i = 0; i < nst; ++i){
         Matrix3X3<double> anisoTransform;
         //improving performance by saving the aniso transforms in a cache, assuming the anisotropy
@@ -125,9 +126,11 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
         }
 
         //get the separation corrected by anisotropy
-        double h = GeostatsUtils::getH( locA._x, locA._y, locA._z,
+		h = GeostatsUtils::getH( locA._x, locA._y, locA._z,
                                         locB._x, locB._y, locB._z,
                                         anisoTransform );
+
+		TODO_MAYBE_ITS_NECESSARY_TO_GET_RANGE_ANISO_TRANSFORMED;
 
         result += GeostatsUtils::getGamma( model->getIt(i),
                                            h,
@@ -175,10 +178,10 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &sampl
 			DataCellPtr colCell = *colsIt;
             //get semi-variance value from the separation between two samples in a pair
 			double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, colCell->_center );
-            //get covariance for the sample pair and assign it the corresponding element in the
+			//get covariance for the sample pair and assign it the corresponding element in the
             //cov matrix
             covMatrix(i, j) = variogramSill - gamma;
-        }
+		}
     }
 
     //prepare the cov matrix for an OK system, if this is the case.
