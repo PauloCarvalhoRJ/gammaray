@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <QByteArray>
+#include <vector>
 
 class Project;
 class MainWindow;

@@ -117,8 +117,6 @@ IJAbstractCartesianGrid *Attribute::getParentGrid()
     File* file = getContainingFile();
     if( file->getFileType() == "CARTESIANGRID" )
 		return dynamic_cast<CartesianGrid*>(file);
-    else
-        return nullptr;
 	return nullptr;
 }
 
