@@ -11,33 +11,16 @@ greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 TARGET = GammaRay
 TEMPLATE = app
 
-CONFIG( release, debug|release ) {
-	DESTDIR = ../GammaRay_release/dist
-	OBJECTS_DIR = ../GammaRay_release/obj
-	MOC_DIR = ../GammaRay_release/moc
-	RCC_DIR = ../GammaRay_release/rcc
-	UI_DIR = ../GammaRay_release/ui
-} else {
-	DESTDIR = ../GammaRay_debug/dist
-	OBJECTS_DIR = ../GammaRay_debug/obj
-	MOC_DIR = ../GammaRay_debug/moc
-	RCC_DIR = ../GammaRay_debug/rcc
-	UI_DIR = ../GammaRay_debug/ui
-}
-CONFIG += c++11
+include(GammaRay.pri)
 
-#This prevents "string table overflow" errors when compiling .cpp's that include exprtk.hpp in debug mode
-QMAKE_CXXFLAGS_DEBUG += -O1
+#for the separate calculator scripting library
+LIBPATH += $$DESTDIR
+LIBS += -lCalcScripting1
 
-#QMAKE_CXXFLAGS += -m64
-
-#The use of LTO (link-time optimization) should be able to reduce link time with MinGW64,
-#but it seems there is an unsolved bug in this compiler:
-#https://stackoverflow.com/questions/32221221/mingw-x64-windows-plugin-needed-to-handle-lto-object
-#https://bugs.archlinux.org/task/53859
-#After all, it seems LTO didn't help improving linking time.
-#QMAKE_CXXFLAGS += -flto -fno-use-linker-plugin
-#QMAKE_LFLAGS += -flto -fno-use-linker-plugin
+#necessary for compiling svd.cpp in debug mode.
+QMAKE_CXXFLAGS_DEBUG += -Wa,-mbig-obj
+#Don't know why -Wa,-mbig-obj sticks... removing it for release mode.
+QMAKE_CXXFLAGS_RELEASE -= -Wa,-mbig-obj
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -215,10 +198,7 @@ SOURCES += main.cpp\
 	imagejockey/widgets/ijvariableselector.cpp \
     imagejockey/widgets/grcompass.cpp \
     imagejockey/widgets/ijgridviewerwidget.cpp \
-    calculator/calcscripting.cpp \
-    calculator/icalcpropertycollection.cpp \
     calculator/calculatordialog.cpp \
-    calculator/icalcproperty.cpp \
     calculator/calclinenumberarea.cpp \
 	calculator/calccodeeditor.cpp \
 	imagejockey/vardecomp/variographicdecompositiondialog.cpp \

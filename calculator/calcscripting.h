@@ -3,6 +3,8 @@
 
 #include <QString>
 
+#include "libCalcScriptingDefs.h"
+
 //ATTENTION: Compile in a 64-bit tool set since exprtk.hpp is too large resulting in
 //           "too many section" excpetion with MinGW 32-bit.  Also it is necessary
 //           to enable the -Wa,-mbig-obj for MinGW or /bigobj for MSVC.
@@ -13,7 +15,7 @@ class ICalcPropertyCollection;
 /**
  * @brief The Scripting class encapsulates the scripting engine (currently the ExprTK header library).
  */
-class CalcScripting
+class CALCSCRIPT_LIB_COMMON_DLLSPEC CalcScripting
 {
 public:
 
