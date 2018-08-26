@@ -31,6 +31,14 @@ QMAKE_CXXFLAGS_DEBUG += -O1
 
 #QMAKE_CXXFLAGS += -m64
 
+#The use of LTO (link-time optimization) should be able to reduce link time with MinGW64,
+#but it seems there is an unsolved bug in this compiler:
+#https://stackoverflow.com/questions/32221221/mingw-x64-windows-plugin-needed-to-handle-lto-object
+#https://bugs.archlinux.org/task/53859
+#After all, it seems LTO didn't help improving linking time.
+#QMAKE_CXXFLAGS += -flto -fno-use-linker-plugin
+#QMAKE_LFLAGS += -flto -fno-use-linker-plugin
+
 SOURCES += main.cpp\
         mainwindow.cpp \
     domain/project.cpp \
