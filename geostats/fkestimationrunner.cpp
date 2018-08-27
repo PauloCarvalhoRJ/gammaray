@@ -98,6 +98,14 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 														  m_fkEstimation->getKrigingType() );
 	Czz_inv.invertWithGaussJordan();
 
+	///TODO REMOVE THIS AFTER TESTING
+	MatrixNXM<double> Czz = GeostatsUtils::makeCovMatrix( vSamples,
+														  m_fkEstimation->getVariogramModel(),
+														  m_fkEstimation->getVariogramSill(),
+														  m_fkEstimation->getKrigingType() );
+	Czz.print();
+	////////////////////////////////
+
 	//get the matrix with theoretical covariances between sample locations and estimation location.
 	MatrixNXM<double> Cyz = GeostatsUtils::makeGammaMatrix( vSamples,
 															estimationCell,

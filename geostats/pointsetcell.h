@@ -20,11 +20,11 @@ public:
 	inline PointSetCell( PointSet* pointSet, int dataIndex, int sampleIndex )  : DataCell( dataIndex, pointSet ),
 		m_pointSet(pointSet), m_sampleIndex( sampleIndex )
 	{
-		_center._x = pointSet->data( dataIndex, pointSet->getXindex() );
-		_center._y = pointSet->data( dataIndex, pointSet->getYindex() );
+		_center._x = pointSet->data( sampleIndex, pointSet->getXindex()-1 );
+		_center._y = pointSet->data( sampleIndex, pointSet->getYindex()-1 );
 		_center._z = 0.0;
 		if( pointSet->is3D() )
-			_center._z = pointSet->data( dataIndex, pointSet->getZindex() );
+			_center._z = pointSet->data( sampleIndex, pointSet->getZindex()-1 );
 	}
 
 	// DataCell	interface

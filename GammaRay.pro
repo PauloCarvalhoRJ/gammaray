@@ -27,7 +27,7 @@ CONFIG( release, debug|release ) {
 CONFIG += c++11
 
 #This prevents "string table overflow" errors when compiling .cpp's that include exprtk.hpp in debug mode
-QMAKE_CXXFLAGS_DEBUG += -O1
+#QMAKE_CXXFLAGS_DEBUG += -O1
 
 #QMAKE_CXXFLAGS += -m64
 
