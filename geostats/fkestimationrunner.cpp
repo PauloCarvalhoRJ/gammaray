@@ -2,6 +2,7 @@
 #include "fkestimation.h"
 #include "domain/cartesiangrid.h"
 #include "gridcell.h"
+#include "domain/application.h"
 
 FKEstimationRunner::FKEstimationRunner(FKEstimation *fkEstimation, QObject *parent) :
     QObject(parent),

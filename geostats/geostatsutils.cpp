@@ -131,7 +131,7 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
                                         locB._x, locB._y, locB._z,
                                         anisoTransform );
 
-		TODO_MAYBE_ITS_NECESSARY_TO_GET_RANGE_ANISO_TRANSFORMED;
+        //TODO_MAYBE_ITS_NECESSARY_TO_GET_RANGE_ANISO_TRANSFORMED;
 
         result += GeostatsUtils::getGamma( model->getIt(i),
                                            h,

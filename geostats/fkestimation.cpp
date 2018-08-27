@@ -4,6 +4,7 @@
 #include "domain/cartesiangrid.h"
 #include "domain/pointset.h"
 #include "domain/attribute.h"
+#include "domain/application.h"
 #include "fkestimationrunner.h"
 #include "datacell.h"
 #include "gridcell.h"

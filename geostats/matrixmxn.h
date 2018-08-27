@@ -95,27 +95,6 @@ MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
 }
 
 template <typename T>
-spectral::array MatrixNXM<T>::toSpectralArray() const{
-	const MatrixNXM<T> &a = *this;
-	//Make a spectral-compatible copy of this matrix.
-	spectral::array A( (spectral::index)a.getN(), (spectral::index)a.getM() );
-	for( int i = 0; i < a.getN(); ++i)
-		for( int j = 0; j < a.getM(); ++j)
-			A(i,j) = a(i,j);
-	return A;
-}
-
-template <typename T>
-MatrixNXM<T> MatrixNXM<T>::getTranspose( ) const {
-   spectral::array a = spectral::transpose( (*this).toSpectralArray() );
-   MatrixNXM<T> result( a.M_, a.N_);
-   for(uint i = 0; i < a.M_; ++i)
-	   for(uint j = 0; j < a.N_; ++j)
-			result(i,j) = a(i,j);
-   return result;
-}
-
-template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator-(const MatrixNXM<T>& b) const{
 	const MatrixNXM<T>& a = *this;
 	MatrixNXM<T> result( a._n, a._m );
@@ -125,10 +104,5 @@ MatrixNXM<T> MatrixNXM<T>::operator-(const MatrixNXM<T>& b) const{
 	return result;
 }
 
-template <typename T>
-void MatrixNXM<T>::print() const{
-	spectral::array a = toSpectralArray();
-	spectral::print( a );
-}
 
 #endif // MATRIXMXN_H

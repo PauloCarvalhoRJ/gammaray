@@ -165,4 +165,10 @@ MatrixNXM<double> MatrixNXM<double>::getTranspose( ) const {
    return result;
 }
 
+template <>
+void MatrixNXM<double>::print() const{
+    spectral::array a = toSpectralArray();
+    spectral::print( a );
+}
+
 //============================= SPECIALIZATIONS FOR FLOAT (NONE YET) =============================================
