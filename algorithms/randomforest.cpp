@@ -208,7 +208,7 @@ void RandomForest::regress(long rowIdOutput, int dependentVariableColumnID, Data
         DecisionTree *tree = *itTree;
 
         //regress the data using one decision tree
-        DataValue mean(0.0d);
+		DataValue mean(0.0);
         double percent;
         tree->regress( rowIdOutput, dependentVariableColumnID, mean, percent );
 
@@ -220,7 +220,7 @@ void RandomForest::regress(long rowIdOutput, int dependentVariableColumnID, Data
 
     //compute the weighted mean
     long count = estimatesFound.size();
-    DataValue total( 0.0d );
+	DataValue total( 0.0 );
     for( long iEstimate = 0; iEstimate < count; ++iEstimate ){
         total = total + estimatesFound[iEstimate] * percentsFound[iEstimate];
     }

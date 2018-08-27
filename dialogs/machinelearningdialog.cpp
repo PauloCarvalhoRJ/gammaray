@@ -258,7 +258,7 @@ void MachineLearningDialog::runCARTRegression()
     percentages.reserve( outputRowCount );
     for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
         //regress the data
-        DataValue mean( 0.0d );
+		DataValue mean( 0.0 );
         double percent;
         CARTalgorithm.regress(  outputRow,
                                 m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
@@ -479,8 +479,8 @@ void MachineLearningDialog::runRandomForestRegression()
     for( long outputRow = 0; outputRow < outputRowCount; ++outputRow){
         //estimate the data
         //First value is the class and the second is uncertainty
-        DataValue mean( 0.0d );
-        DataValue variance( 0.0d );
+		DataValue mean( 0.0 );
+		DataValue variance( 0.0 );
         RF.regress( outputRow,
                     m_trainingDependentVariableSelector->getSelectedVariableGEOEASIndex()-1,
                     mean,

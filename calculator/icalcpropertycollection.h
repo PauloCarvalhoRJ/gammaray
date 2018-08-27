@@ -3,13 +3,15 @@
 
 #include <QString>
 
+#include "libCalcScriptingDefs.h"
+
 class ICalcProperty;
 
 /**
  * The ICalcPropertyCollection interface should be implemented by classes to be usable in the Calculator.
  * ICalcPropertyCollection represents tabular data, that is, properties as columns with equal number of values each.
  */
-class ICalcPropertyCollection
+class CALCSCRIPT_LIB_COMMON_DLLSPEC ICalcPropertyCollection
 {
 public:
     ICalcPropertyCollection();

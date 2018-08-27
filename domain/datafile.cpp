@@ -231,7 +231,7 @@ double DataFile::maxAbs(uint column)
             "DataFile::maxAbs(): Data not loaded. Unspecified value was returned.");
     double ndv = this->getNoDataValue().toDouble();
     bool has_ndv = this->hasNoDataValue();
-    double result = 0.0d;
+	double result = 0.0;
     for (uint i = 0; i < _data.size(); ++i) {
         double value = data(i, column);
         if (std::abs<double>(value) > result

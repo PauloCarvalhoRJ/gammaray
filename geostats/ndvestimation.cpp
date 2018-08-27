@@ -2,6 +2,7 @@
 
 #include "domain/cartesiangrid.h"
 #include "domain/attribute.h"
+#include "domain/application.h"
 #include "gridcell.h"
 #include "ndvestimationrunner.h"
 #include <limits>

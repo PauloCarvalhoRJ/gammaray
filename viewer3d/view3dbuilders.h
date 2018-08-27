@@ -1,9 +1,6 @@
 #ifndef VIEW3DBUILDERS_H
 #define VIEW3DBUILDERS_H
 
-#include <vtkSmartPointer.h>
-#include <vtkActor.h>
-#include <vtkImageActor.h>
 #include "view3dviewdata.h"
 
 class ProjectComponent;

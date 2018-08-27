@@ -178,7 +178,7 @@ void ImageJockeyDialog::onUpdateGridPlot(IJAbstractVariable *var)
     //that some unpredicted signal/slot chaining causes unpredicted behavior
     double dBmin = m_gridPlot->getScaleMinValue();
     double dBmax = m_gridPlot->getScaleMaxValue();
-    double dBstep = (dBmax-dBmin) / 360.0d; //dividing the span into units per wheel degree
+	double dBstep = (dBmax-dBmin) / 360.0; //dividing the span into units per wheel degree
 
     //setup the color scale wheel widgets
     m_wheelColorMax->setMaximum( dBmax );
@@ -196,38 +196,38 @@ void ImageJockeyDialog::onUpdateGridPlot(IJAbstractVariable *var)
     cg->dataWillBeRequested();
     double dataAbsMin = cg->absMin( variableIndex );
     double dataAbsMax = cg->absMax( variableIndex );
-    double dataAbsStep = (dataAbsMax - dataAbsMin) / 360.0d; //dividing the span into units per wheel degree
+	double dataAbsStep = (dataAbsMax - dataAbsMin) / 360.0; //dividing the span into units per wheel degree
     m_wheelColorDecibelReference->setMaximum( dataAbsMax );
     m_wheelColorDecibelReference->setMinimum( dataAbsMin );
     m_wheelColorDecibelReference->setSingleStep( dataAbsStep );
-    m_wheelColorDecibelReference->setValue( (dataAbsMax + dataAbsMin) / 2.0d ); //set the 0dB reference in the middle
+	m_wheelColorDecibelReference->setValue( (dataAbsMax + dataAbsMin) / 2.0 ); //set the 0dB reference in the middle
 
     //setup the 1D spectrogram calculation band controls
     double gridDiagLength = cg->getDiagonalLength();
-    m_bandwidthControl->setMaximum( gridDiagLength / 10.0d );
-    m_bandwidthControl->setMinimum( 0.0d );
-    m_bandwidthControl->setValue( m_bandwidthControl->maximum() / 2.0d );
-    m_bandwidthControl->setSingleStep( m_bandwidthControl->maximum() / 360.0d );
-    m_radiusControl->setMaximum( gridDiagLength / 2.0d );
-    m_radiusControl->setMinimum( 0.0d );
-    m_radiusControl->setValue( 0.0d );
-    m_radiusControl->setSingleStep( m_radiusControl->maximum() / 360.0d );
-    m_azimthTolControl->setMinimum( 10.0d ); //10 degrees
-    m_azimthTolControl->setMaximum( 90.0d ); //90 degrees
-    m_azimthTolControl->setValue( 45.0d );
-    m_azimthTolControl->setSingleStep( (m_azimthTolControl->maximum()-m_azimthTolControl->minimum()) / 360.0d );
-    m_azimuthCompass->setValue( 0.0d ); //N000E (north)
+	m_bandwidthControl->setMaximum( gridDiagLength / 10.0 );
+	m_bandwidthControl->setMinimum( 0.0 );
+	m_bandwidthControl->setValue( m_bandwidthControl->maximum() / 2.0 );
+	m_bandwidthControl->setSingleStep( m_bandwidthControl->maximum() / 360.0 );
+	m_radiusControl->setMaximum( gridDiagLength / 2.0 );
+	m_radiusControl->setMinimum( 0.0 );
+	m_radiusControl->setValue( 0.0 );
+	m_radiusControl->setSingleStep( m_radiusControl->maximum() / 360.0 );
+	m_azimthTolControl->setMinimum( 10.0 ); //10 degrees
+	m_azimthTolControl->setMaximum( 90.0 ); //90 degrees
+	m_azimthTolControl->setValue( 45.0 );
+	m_azimthTolControl->setSingleStep( (m_azimthTolControl->maximum()-m_azimthTolControl->minimum()) / 360.0 );
+	m_azimuthCompass->setValue( 0.0 ); //N000E (north)
 
     //the length of a half band for the 1D spectrogram calculation is half the diagonal of the grid
     //this ensures total grid coverage regardless of azimuth choice
-    m_spectrogram1Dparams->setEndRadius( gridDiagLength / 2.0d );
+	m_spectrogram1Dparams->setEndRadius( gridDiagLength / 2.0 );
 	m_spectrogram1Dparams->setRefCenter( cg->getCenterLocation() );
 
     //set the attribute for the 1D spectrogram plot
     m_spectrogram1Dplot->setVariable( var );
 
     //assuming Fourier image symmetry, the frequency limits range between 0.0 (DC) and half grid size
-    m_equalizerWidget->setFrequencyLimits(0.0d, gridDiagLength / 2.0d);
+	m_equalizerWidget->setFrequencyLimits(0.0, gridDiagLength / 2.0);
 
     //Perturb the splitter to force a redraw.
     //TODO: find out a more elegant way to make the Qwt Plot redraw (replot() is not working in setAttribute())

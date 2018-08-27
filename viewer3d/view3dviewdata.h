@@ -2,11 +2,13 @@
 #define VIEW3DVIEWDATA_H
 
 #include <vtkSmartPointer.h>
-#include <vtkProp.h>
-#include <vtkStructuredGridClip.h>
-#include <vtkExtractGrid.h>
-#include <vtkDataSetMapper.h>
-#include <vtkThreshold.h>
+
+class vtkProp;
+class vtkStructuredGridClip;
+class vtkExtractGrid;
+class vtkDataSetMapper;
+class vtkThreshold;
+
 
 /** This class is just a data structure to hold objects and info related to 3D visualization of a domain object.
  * E.g.: the vtkActor built for it.

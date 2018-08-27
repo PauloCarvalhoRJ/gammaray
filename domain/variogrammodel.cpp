@@ -3,6 +3,7 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "domain/application.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "util.h"

@@ -6,6 +6,9 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "geostats/gridcell.h"
 #include "imagejockey/svd/svdfactor.h"
+#include "viewer3d/view3dviewdata.h"
+#include "viewer3d/view3dbuilders.h"
+#include "domain/application.h"
 
 #include "spectral/spectral.h" //eigen third party library
 
@@ -235,8 +238,8 @@ std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPar
     for( uint k = 0; k < _nz; ++k)
         for( uint j = 0; j < _ny; ++j)
             for( uint i = 0; i < _nx; ++i){
-                double real = 0.0d;
-                double im = 0.0d;
+				double real = 0.0;
+				double im = 0.0;
                 if( indexColumRealPart >= 0 )
                     real = dataIJK( indexColumRealPart, i, j, k);
                 if( indexColumImaginaryPart >= 0 )
@@ -413,9 +416,9 @@ SpatialLocation CartesianGrid::getCenter()
         result._z = errorValue;
         return result;
     }
-    double x0 = _x0 - _dx / 2.0d;
-    double y0 = _y0 - _dy / 2.0d;
-    double z0 = _z0 - _dz / 2.0d;
+	double x0 = _x0 - _dx / 2.0;
+	double y0 = _y0 - _dy / 2.0;
+	double z0 = _z0 - _dz / 2.0;
     double xf = x0 + _dx * _nx;
     double yf = y0 + _dy * _ny;
     double zf = z0 + _dz * _nz;
@@ -490,7 +493,7 @@ void CartesianGrid::equalizeValues(QList<QPointF> &area, double delta_dB, int da
                     // apply adjustment in dB
                     value_dB += delta_dB;
                     // attenuate/amplify the absolute value
-                    value = std::pow( 10.0d, value_dB / DECIBEL_SCALE_FACTOR ) * dB_reference;
+					value = std::pow( 10.0, value_dB / DECIBEL_SCALE_FACTOR ) * dB_reference;
                     // add negative sign if the original value was negative
                     if( isNegative )
                         value = -value;

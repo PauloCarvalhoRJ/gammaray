@@ -2,6 +2,7 @@
 
 #include "gridcell.h"
 #include "domain/cartesiangrid.h"
+#include "domain/application.h"
 #include "spatiallocation.h"
 #include "ijkdelta.h"
 #include "util.h"

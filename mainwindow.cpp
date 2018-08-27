@@ -74,6 +74,8 @@
 #include "calculator/calculatordialog.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "imagejockey/vardecomp/variographicdecompositiondialog.h"
+#include "imagejockey/svd/svdfactor.h"
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),

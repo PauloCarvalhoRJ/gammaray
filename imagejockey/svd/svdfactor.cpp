@@ -404,8 +404,8 @@ void SVDFactor::setDataIJK(uint i, uint j, uint k, double value)
 
 bool SVDFactor::setSlice(SVDFactor * slice)
 {
-	if( slice->getNI() != getCurrentPlaneNX() ||
-		slice->getNJ() != getCurrentPlaneNY() ){
+	if( slice->getNI() != (int)getCurrentPlaneNX() ||
+		slice->getNJ() != (int)getCurrentPlaneNY() ){
 		QMessageBox::critical( nullptr, "Error", QString("SVDFactor::setSlice(): passed grid does not fit in the current slice."));
 		return false;
 	}

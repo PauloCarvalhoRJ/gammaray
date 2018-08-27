@@ -2,11 +2,13 @@
 
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
+#include "domain/application.h"
 #include "gridcell.h"
 #include "geostatsutils.h"
 #include "ndvestimation.h"
 #include "util.h"
 #include "imagejockey/imagejockeyutils.h"
+#include "spectral/spectral.h"
 
 enum class FlagState : char {
     NOT_SET = 0,

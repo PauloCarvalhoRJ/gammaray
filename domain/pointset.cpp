@@ -10,6 +10,9 @@
 #include "weight.h"
 #include "util.h"
 #include <limits>
+#include "viewer3d/view3dviewdata.h"
+#include "viewer3d/view3dbuilders.h"
+
 
 PointSet::PointSet( QString path ) : DataFile( path )
 {

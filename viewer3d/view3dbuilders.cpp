@@ -7,6 +7,9 @@
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
 
+#include <vtkSmartPointer.h>
+#include <vtkActor.h>
+#include <vtkImageActor.h>
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
 #include <vtkPolyData.h>

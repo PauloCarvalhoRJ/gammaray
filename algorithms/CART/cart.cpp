@@ -98,7 +98,7 @@ double CART::getGiniImpurity(const std::vector<long> &rowIDs, int columnIndex) c
     //get the number of rows
     long numberOfRows = rowIDs.size();
     //assumes total impurity
-    double factor = 1.0d;
+	double factor = 1.0;
     //for each pair DataValue/count
     std::vector<std::pair<DataValue, long> >::iterator it = valuesCounts.begin();
     for(; it != valuesCounts.end(); ++it){

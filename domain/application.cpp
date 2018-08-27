@@ -1,5 +1,7 @@
 #include "application.h"
 #include "project.h"
+#include "mainwindow.h"
+
 #include <QDir>
 #include <QSettings>
 #include <QMessageBox>

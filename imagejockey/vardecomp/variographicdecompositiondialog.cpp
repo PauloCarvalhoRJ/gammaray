@@ -144,7 +144,7 @@ double F(const spectral::array &originalGrid,
 		//make the vectors of weights for each geological factor
 		std::vector<spectral::array*> vectors;
 		spectral::array* currentVector = new spectral::array();
-		for( int i = 0; i < va.d_.size(); ++i){
+		for( size_t i = 0; i < va.d_.size(); ++i){
 			if( currentVector->size() < n )
 				currentVector->d_.push_back( va.d_[i] );
 			else{
@@ -153,8 +153,8 @@ double F(const spectral::array &originalGrid,
 			}
 		}
 		//compute the penalty
-		for( int i = 0; i < vectors.size()-1; ++i ){
-			for( int j = i+1; j < vectors.size(); ++j ){
+		for( size_t i = 0; i < vectors.size()-1; ++i ){
+			for( size_t j = i+1; j < vectors.size(); ++j ){
 				spectral::array* vectorA = vectors[i];
 				spectral::array* vectorB = vectors[j];
 				double angle = spectral::angle( *vectorA, *vectorB );
@@ -164,7 +164,7 @@ double F(const spectral::array &originalGrid,
 		}
 		orthogonalityPenalty = 1.0 - orthogonalityPenalty/1.571; //1.571 radians ~ 90 degrees
 		//cleanup the vectors
-		for( int i = 0; i < vectors.size(); ++i )
+		for( size_t i = 0; i < vectors.size(); ++i )
 			delete vectors[i];
 	}
 
@@ -282,9 +282,9 @@ double F2(const spectral::array &originalGrid,
 			spectral::array gridVarmap( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
 			{
 				spectral::complex_array gridNormSquaredAndZeroPhase( nI, nJ, nK );
-				for(unsigned int k = 0; k < nK; ++k) {
-					for(unsigned int j = 0; j < nJ; ++j){
-						for(unsigned int i = 0; i < nI; ++i){
+				for(int k = 0; k < nK; ++k) {
+					for(int j = 0; j < nJ; ++j){
+						for(int i = 0; i < nI; ++i){
 							std::complex<double> value;
 							//the scan order of fftw follows is the opposite of the GSLib convention
 							int idx = k + nK * (j + nJ * i );
@@ -408,7 +408,7 @@ double F2(const spectral::array &originalGrid,
         //make the vectors of weights for each geological factor
         std::vector<spectral::array*> vectors;
         spectral::array* currentVector = new spectral::array();
-        for( int i = 0; i < va.d_.size(); ++i){
+		for( size_t i = 0; i < va.d_.size(); ++i){
             if( currentVector->size() < n )
                 currentVector->d_.push_back( va.d_[i] );
             else{
@@ -417,8 +417,8 @@ double F2(const spectral::array &originalGrid,
             }
         }
         //compute the penalty
-        for( int i = 0; i < vectors.size()-1; ++i ){
-            for( int j = i+1; j < vectors.size(); ++j ){
+		for( size_t i = 0; i < vectors.size()-1; ++i ){
+			for( size_t j = i+1; j < vectors.size(); ++j ){
                 spectral::array* vectorA = vectors[i];
                 spectral::array* vectorB = vectors[j];
                 double angle = spectral::angle( *vectorA, *vectorB );
@@ -428,7 +428,7 @@ double F2(const spectral::array &originalGrid,
         }
         orthogonalityPenalty = 1.0 - orthogonalityPenalty/1.571; //1.571 radians ~ 90 degrees
         //cleanup the vectors
-        for( int i = 0; i < vectors.size(); ++i )
+		for( size_t i = 0; i < vectors.size(); ++i )
             delete vectors[i];
     }
 

@@ -5,8 +5,6 @@
 #include "ijkindex.h"
 #include "domain/cartesiangrid.h"
 
-class CartesianGrid;
-
 /** Data structure containing information of a grid cell. */
 class GridCell : public DataCell
 {

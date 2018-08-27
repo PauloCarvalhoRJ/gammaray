@@ -80,12 +80,12 @@ struct complex_array {
     index N() const { return N_; }
     index K() const { return K_; }
 
-    fftw_array_raw d_ = nullptr;
-    index ndim_ = 1;
     index size_ = 0;
-    index M_ = 1;
+	index ndim_ = 1;
+	index M_ = 1;
     index N_ = 1;
     index K_ = 1;
+	fftw_array_raw d_ = nullptr;
 };
 
 struct array {

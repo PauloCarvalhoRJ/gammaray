@@ -5,7 +5,12 @@
 #include <QModelIndex>
 #include <QModelIndexList>
 #include <vector>
-#include "svdfactor.h"
+
+namespace spectral {
+	class array;
+}
+
+class SVDFactor;
 
 /**
  * @brief The SVDFactorTree class is a collection of an SVD decomposition hierarchy (SVD factors can be decomposed into
