@@ -14,6 +14,7 @@
 #include <QCoreApplication>
 #include <QProgressDialog>
 #include <QThread>
+#include <iostream>
 
 FKEstimation::FKEstimation() :
     m_searchStrategy( nullptr ),
@@ -33,7 +34,7 @@ FKEstimation::~FKEstimation()
 	delete m_spatialIndexPoints;
 }
 
-void FKEstimation::setSearchStrategy(const SearchStrategy *searchStrategy)
+void FKEstimation::setSearchStrategy(SearchStrategyPtr searchStrategy)
 {
     m_searchStrategy = searchStrategy;
 }
@@ -88,8 +89,8 @@ std::multiset< DataCellPtr > FKEstimation::getSamples(const GridCell & estimatio
 		if( m_inputDataFile->isRegular() ){
 			Application::instance()->logError( "FKEstimation::getSamples(): NOT IMPLEMENTED FOR REGULAR DATA SETS." );
 		} else { //TODO: this currently assumes the irregular data is a PointSet object.
-			QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, m_searchStrategy->m_nb_samples, m_searchStrategy->m_searchNB );
-			QList<uint>::iterator it = samplesIndexes.begin();
+            QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, m_searchStrategy->m_nb_samples, *(m_searchStrategy->m_searchNB) );
+            QList<uint>::iterator it = samplesIndexes.begin();
 			for( ; it != samplesIndexes.end(); ++it ){
 				DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
 				result.insert( p );

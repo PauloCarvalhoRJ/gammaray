@@ -44,7 +44,7 @@ public:
      *  (e.g. spheric) to get the covariance for the kriging equations.  This function transform the world coordinates
      * so to reduce the anisotropy to an isotropic case, the you can use getGama() to get the covariance value.
      */
-    static double getH( double x0, double y0, double z0,
+    static double getH(double x0, double y0, double z0,
                         double x1, double y1, double z1,
                         Matrix3X3<double> &anisoTransform );
 

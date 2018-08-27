@@ -1,5 +1,6 @@
 #include "searchellipsoid.h"
 #include <utility>
+#include <iostream>
 
 SearchEllipsoid::SearchEllipsoid(double hMax, double hMin, double hVert) :
 	m_hMax( hMax ), m_hMin( hMin ), m_hVert( hVert )
@@ -18,7 +19,7 @@ void SearchEllipsoid::getBBox(double centerX, double centerY, double centerZ,
 							  double & minX, double & minY, double & minZ,
 							  double & maxX, double & maxY, double & maxZ) const
 {
-	//Without azimuth, it is assumed zero.  By convention zero azimuth is north, this hMax points to north (Y axis).
+    //Without azimuth, it is assumed zero.  By convention zero azimuth is north, this hMax points to north (Y axis).
 	maxY = centerY + m_hMax;
 	minY = centerY - m_hMax;
 	maxX = centerX + m_hMin;

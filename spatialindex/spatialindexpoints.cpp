@@ -141,15 +141,15 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 
 	//Get the bounding box as a function of the search ellipsoid centered at the data cell.
 	double maxX, maxY, maxZ, minX, minY, minZ;
-	searchNeighborhood.getBBox( x, y, z, minX, minY, minZ, maxX, maxY, maxZ );
-	Box searchBB( Point3D( minX, minY, minZ ),
+    searchNeighborhood.getBBox( x, y, z, minX, minY, minZ, maxX, maxY, maxZ );
+    Box searchBB( Point3D( minX, minY, minZ ),
 				  Point3D( maxX, maxY, maxZ ));
 
 	//Get all the points within the bounding box of the search ellipsoid.
 	std::vector<Value> poinsInSearchBB;
-	rtree.query( bgi::intersects( searchBB ), std::back_inserter(poinsInSearchBB) );
+    rtree.query( bgi::intersects( searchBB ), std::back_inserter(poinsInSearchBB) );
 
-	//Traverse the result set.
+    //Traverse the result set.
 	std::vector<Value>::iterator it = poinsInSearchBB.begin();
 	bgi::rtree< Value, bgi::rstar<16,5,5,32> > rtreeLocal;
 	for(; it != poinsInSearchBB.end(); ++it){

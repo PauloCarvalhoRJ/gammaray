@@ -3,8 +3,8 @@
 
 #include "geostatsutils.h"
 #include "datacell.h"
+#include "searchstrategy.h"
 
-class SearchStrategy;
 class VariogramModel;
 class Attribute;
 class CartesianGrid;
@@ -22,7 +22,7 @@ public:
 
     //@{
 	/** Set the Factorial Kriging parameters. */
-    void setSearchStrategy( const SearchStrategy* searchStrategy );
+    void setSearchStrategy(SearchStrategyPtr searchStrategy );
     void setVariogramModel( VariogramModel* variogramModel );
     void setMeanForSimpleKriging( double meanSK );
     void setKrigingType( KrigingType ktype );
@@ -58,7 +58,7 @@ public:
 	double getVariogramSill(){ return m_variogramSill; }
 
 private:
-    const SearchStrategy *m_searchStrategy;
+    SearchStrategyPtr m_searchStrategy;
     VariogramModel *m_variogramModel;
     double m_meanSK;
     KrigingType m_ktype;

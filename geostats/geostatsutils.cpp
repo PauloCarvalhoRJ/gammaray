@@ -10,6 +10,7 @@
 
 #include <cmath>
 #include <limits>
+#include <iostream>
 
 //the aniso transforms only change if variogram model changes
 struct AnisoCache{
@@ -111,9 +112,10 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
     double result = model->getNugget();
     int nst = model->getNst();
 
-	double h;
+    double h;
 
     for( int i = 0; i < nst; ++i){
+
         Matrix3X3<double> anisoTransform;
         //improving performance by saving the aniso transforms in a cache, assuming the anisotropy
         //      is the same in all locations.
@@ -128,10 +130,8 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
 
         //get the separation corrected by anisotropy
 		h = GeostatsUtils::getH( locA._x, locA._y, locA._z,
-                                        locB._x, locB._y, locB._z,
-                                        anisoTransform );
-
-        //TODO_MAYBE_ITS_NECESSARY_TO_GET_RANGE_ANISO_TRANSFORMED;
+                                 locB._x, locB._y, locB._z,
+                                 anisoTransform );
 
         result += GeostatsUtils::getGamma( model->getIt(i),
                                            h,

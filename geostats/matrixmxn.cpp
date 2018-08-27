@@ -99,7 +99,7 @@ void MatrixNXM<double>::invertWithGaussJordan(){
 	double big, dum, pivinv;
 	std::vector<int> indxc(n), indxr(n), ipiv(n); //index bookkeeping vectors
 
-	icol = irow = -1; //get rid of compiler warning (uninitialized variables)
+    icol = irow = 0; //get rid of compiler warning (uninitialized variables)
 
 	ipiv.assign(n, 0);
 	for ( i=0; i<n; ++i) {

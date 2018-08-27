@@ -350,13 +350,13 @@ void FactorialKrigingDialog::doFK()
 	double hMin = search_ellip_radii_par->getParameter<GSLibParDouble*>(1)->_value;
 	double hVert = search_ellip_radii_par->getParameter<GSLibParDouble*>(2)->_value;
 	uint nb_samples = m_gpfFK->getParameter<GSLibParUInt*>( 2 )->_value;
-	SearchStrategy searchStrategy( SearchEllipsoid(hMax, hMin, hVert), nb_samples );
+    SearchStrategyPtr searchStrategy( new SearchStrategy( SearchNeighborhoodPtr(new SearchEllipsoid(hMax, hMin, hVert)), nb_samples ) );
 
     //run the estimation
     std::vector<double> results;
     {
         FKEstimation estimation;
-        estimation.setSearchStrategy( &searchStrategy );
+        estimation.setSearchStrategy( searchStrategy );
         estimation.setVariogramModel( m_vModelSelector->getSelectedVModel() );
 		GSLibParOption* ktype_par = m_gpfFK->getParameter<GSLibParOption*>( 0 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
         estimation.setKrigingType( static_cast<KrigingType>( ktype_par->_selected_value ) );

@@ -78,11 +78,12 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
                                int &nIllConditioned,
                                int &nFailed )
 {
-	//collects samples from the input data set ordered by their distance with respect
+    //collects samples from the input data set ordered by their distance with respect
 	//to the estimation cell.
+    TODO_THE_CELLS_BELOW_ARE_WITHOUT_THEIR_DISTANCES_COMPUTED;
 	std::multiset<DataCellPtr> vSamples = m_fkEstimation->getSamples( estimationCell );
 
-	//if no sample was found, either...
+    //if no sample was found, either...
 	if( vSamples.empty() ){
 		//Return the no-data-value defined for the output dataset.
 		return m_fkEstimation->ndvOfEstimationGrid();
@@ -93,25 +94,18 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 
 	//get the inverse of the matrix of the theoretical covariances between the data sample locations and themselves.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
-	MatrixNXM<double> Czz_inv = GeostatsUtils::makeCovMatrix( vSamples,
+    MatrixNXM<double> Czz_inv = GeostatsUtils::makeCovMatrix( vSamples,
 														  m_fkEstimation->getVariogramModel(),
 														  m_fkEstimation->getVariogramSill(),
 														  m_fkEstimation->getKrigingType() );
-	Czz_inv.invertWithGaussJordan();
-
-	///TODO REMOVE THIS AFTER TESTING
-	MatrixNXM<double> Czz = GeostatsUtils::makeCovMatrix( vSamples,
-														  m_fkEstimation->getVariogramModel(),
-														  m_fkEstimation->getVariogramSill(),
-														  m_fkEstimation->getKrigingType() );
-	Czz.print();
-	////////////////////////////////
+    Czz_inv.invertWithGaussJordan();
 
 	//get the matrix with theoretical covariances between sample locations and estimation location.
 	MatrixNXM<double> Cyz = GeostatsUtils::makeGammaMatrix( vSamples,
 															estimationCell,
 															m_fkEstimation->getVariogramModel(),
 															m_fkEstimation->getKrigingType() );
+    Cyz.print();
 
 	//get the inverse of matrix of the theoretical covariances between the data sample locations and themselves
 	// of the structure targeted for FK analysis.
@@ -122,7 +116,7 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 														  m_fkEstimation->getKrigingType() );
 	Cij_inv.invertWithGaussJordan();
 
-	//get the n x k matrix of an "chosen analytical function p(x) for fitting the nonstationary component".
+    //get the n x k matrix of an "chosen analytical function p(x) for fitting the nonstationary component".
 	//Ma et al. (2014) don't give details of p(x).
     //TODO PERFORMANCE: if P is invariant, then it needs to be computed only once.
 	MatrixNXM<double> P = GeostatsUtils::makePmatrixForFK( vSamples.size(), nst );

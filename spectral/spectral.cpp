@@ -1709,8 +1709,7 @@ std::pair<array, array> eig(const array &input)
 {
 	Eigen::MatrixXd temp = to_2d( input );
 	Eigen::EigenSolver< Eigen::MatrixXd > eigensolver(temp);
-//	if (eigensolver.info() != Eigen::Success)
-//		abort();
+    assert (eigensolver.info() == Eigen::Success && "Eigen solver failed.  Check input matrix elements for NaN's or infinities." );
 	Eigen::MatrixXd eigenvectors = eigensolver.eigenvectors().real(); //EigenSolver yields complex matrices, even if the result are real.
 	Eigen::MatrixXd eigenvalues = eigensolver.eigenvalues().real();
 	return { to_array(eigenvectors), to_array(eigenvalues) };
