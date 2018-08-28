@@ -63,12 +63,16 @@ public:
 
 typedef std::shared_ptr<GridCell> GridCellPtr;
 
-/**
- * This global non-member less-than operator enables the GridCell class as key-able
- * in STL or STL-like ordered containers.
- */
-inline bool operator<(const GridCellPtr &e1, const GridCellPtr &e2){
-	return e1->_topoDistance < e2->_topoDistance;
-}
+/** The GridCellPtr comparator class. */
+struct GridCellPtrComparator
+{
+	bool operator()(const GridCellPtr &d1, const GridCellPtr &d2) const {
+		return d1->_topoDistance < d2->_topoDistance;
+	}
+};
+
+/** An ordered container by the GridCell's topological distance. */
+typedef std::multiset<GridCellPtr, GridCellPtrComparator> GridCellPtrMultiset;
+
 
 #endif // GRIDCELL_H
