@@ -93,6 +93,7 @@ void MatrixNXM<double>::invertWithGaussJordan(){
 	   It is intended to solve a linear system, but it was modified just perform invertion.
 	*/
 	MatrixNXM<double> &a = *this;
+	assert( a._m == a._n && "MatrixNXM<double> MatrixNXM<double>::invertWithGaussJordan(): matrix is not square.  Use invertWithSVD() instead." );
 	// the independent terms (right-hand side) vector is created with dummy values,
 	// since we're not interested in solving a system.
 	int i, icol, irow, j, k, l , ll, n = a.getN();

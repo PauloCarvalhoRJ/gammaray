@@ -4,6 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <qglobal.h> //for uint
+#include <cassert>
 
 namespace spectral {
 	class array;
@@ -61,6 +62,9 @@ public:
 	/** Matrix subtraction operator. It is assumed the operands are compatible (this._n == b._n && this._m == b._m).*/
 	MatrixNXM<T> operator-(const MatrixNXM<T>& b) const;
 
+	/** Zeroes all elements of the matrix and sets the elements in the main diagonal to one. */
+	void setIdentity();
+
 	/** Prints the matrix contents to std::out. Useful for debugging. */
 	void print() const;
 
@@ -86,6 +90,7 @@ MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue ) :
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
    MatrixNXM<T>& a = *this;
+   assert( a._m == b._n && "MatrixNXM<T> MatrixNXM<T>::operator*: operands are matrices incompatible for multiplication." );
    MatrixNXM<T> result( a._n, b._m );
    for(uint i = 0; i < a._n; ++i)
        for(uint j = 0; j < b._m; ++j)
@@ -97,11 +102,23 @@ MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator-(const MatrixNXM<T>& b) const{
 	const MatrixNXM<T>& a = *this;
+	assert( a._m == b._m && a._n == b._n && "MatrixNXM<T> MatrixNXM<T>::operator-: operands are matrices incompatible for subtraction." );
 	MatrixNXM<T> result( a._n, a._m );
 	for(uint i = 0; i < a._n; ++i)
 		for(uint j = 0; j < a._m; ++j)
 			result(i,j) += a(i,j) - b(i,j);
 	return result;
+}
+
+template <typename T>
+void MatrixNXM<T>::setIdentity() {
+	MatrixNXM<T>& a = *this;
+	for(uint i = 0; i < a._n; ++i)
+		for(uint j = 0; j < a._m; ++j)
+			if( i == j )
+				a(i,j) = 1.0;
+			else
+				a(i,j) = 0.0;
 }
 
 

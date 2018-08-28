@@ -42,9 +42,10 @@ public:
 
 	/** Returns a container with the samples around the estimation cell to be used in the estimation.
 	 * The resulting collection depends on the SearchStrategy object set.  Returns an empty object if any
-	 * required parameter for the search to work (e.g. input data) is missing.
+	 * required parameter for the search to work (e.g. input data) is missing.  The data cells are ordered
+	 * by their distance to the passed estimation cell.
 	 */
-	std::multiset< DataCellPtr > getSamples(const GridCell & estimationCell );
+	DataCellPtrMultiset getSamples(const GridCell & estimationCell );
 
     /** Performs the factorial kriging. Make sure all parameters have been set properly.
      * @param factorNumber The number of factor to get: -1 (mean); 0 (nugget); 1 and onwards (each variographic structure).

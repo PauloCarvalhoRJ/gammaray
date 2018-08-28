@@ -67,21 +67,29 @@ public:
      * @param kType Kriging type.  If SK, then the matrix has only the covariances between
      *        the samples.  If OK, the matrix has an extra row and column with 1.0s, except
      *        for the last element of both (the last element of matrix), with is zero.
+	 * @param returnGamma If true, the elements are variogram values (increases with distance).  The
+	 *        default (false) makes the elements be correlogram values (decreases with
+	 *        distance).  The variogram sill value is ignored if this parameter is true.
      */
-	static MatrixNXM<double> makeCovMatrix(std::multiset<DataCellPtr> & samples,
+	static MatrixNXM<double> makeCovMatrix(DataCellPtrMultiset & samples,
 										   VariogramModel *variogramModel,
 										   double variogramSill,
-										   KrigingType kType = KrigingType::SK);
+										   KrigingType kType = KrigingType::SK,
+										   bool returnGamma = false);
 
     /**
      * Creates a gamma matrix of the given set of samples against the estimation location cell.
      * @param kType Kriging type.  If SK, then the matrix has only the covariances between
      *        the samples and the estimation location.  If OK, the matrix has an extra element == 1.0.
+	 * @param returnGamma If true, the elements are variogram values (increases with distance).  The
+	 *        default (false) makes the elements be correlogram values (decreases with
+	 *        distance).  The variogram sill value is ignored if this parameter is true.
 	 */
-	static MatrixNXM<double> makeGammaMatrix(std::multiset<DataCellPtr> & samples,
+	static MatrixNXM<double> makeGammaMatrix(DataCellPtrMultiset & samples,
 											 GridCell& estimationLocation,
 											 VariogramModel *variogramModel,
-											 KrigingType kType = KrigingType::SK);
+											 KrigingType kType = KrigingType::SK,
+											 bool returnGamma = false);
 
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
@@ -93,18 +101,20 @@ public:
 															int nSlicesAround,
 															bool hasNDV,
 															double NDV,
-															std::multiset<GridCellPtr> & list);
+															GridCellPtrMultiset & list);
 	/** Creates the P matrix for Factorial Kriging.
 	 * see theory in Ma et al. (2014) - Factorial kriging for multiscale modelling.
 	 * @param nsamples Number of samples for the kriging operation.
 	 * @param nst Number of structures in the variogram ( TODO: check whether this includes the nugget effect ).
+	 * @param kType Kriging type.  Must match the kType used to call makeCovMatrix() and makeGammaMatrix() so the
+	 *        returned matrix is multiplication compatible with the other matrices in the kriging system.
 	 */
-	static MatrixNXM<double> makePmatrixForFK( int nsamples, int nst );
+	static MatrixNXM<double> makePmatrixForFK(int nsamples, int nst, KrigingType kType );
 
 	/** Creates the p matrix for Factorial Kriging.
 	 * see theory in Ma et al. (2014) - Factorial kriging for multiscale modelling.
 	 */
-	static MatrixNXM<double> makepMatrixForFK( int nst );
+	static MatrixNXM<double> makepMatrixForFK(int nst);
 };
 
 #endif // GEOSTATSUTILS_H

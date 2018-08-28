@@ -146,10 +146,11 @@ double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, Spa
     return result;
 }
 
-MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &samples,
+MatrixNXM<double> GeostatsUtils::makeCovMatrix(DataCellPtrMultiset &samples,
 											   VariogramModel *variogramModel,
 											   double variogramSill,
-											   KrigingType kType)
+											   KrigingType kType,
+											   bool returnGamma )
 {
     //Define the dimension of cov matrix, which depends on kriging type
     int append = 0;
@@ -179,9 +180,12 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &sampl
 			DataCellPtr colCell = *colsIt;
             //get semi-variance value from the separation between two samples in a pair
 			double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, colCell->_center );
-			//get covariance for the sample pair and assign it the corresponding element in the
-            //cov matrix
-            covMatrix(i, j) = variogramSill - gamma;
+			if( returnGamma )
+				covMatrix(i, j) = gamma;
+			else
+				//get covariance for the sample pair and assign it the corresponding element in the
+				//cov matrix
+				covMatrix(i, j) = variogramSill - gamma;
 		}
     }
 
@@ -200,10 +204,11 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(std::multiset<DataCellPtr> &sampl
     return covMatrix;
 }
 
-MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCellPtr> &samples,
+MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
 												 GridCell &estimationLocation,
 												 VariogramModel *variogramModel,
-												 KrigingType kType)
+												 KrigingType kType,
+												 bool returnGamma)
 {
     int append = 0;
     switch( kType ){
@@ -232,7 +237,10 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(std::multiset<DataCellPtr> &sam
         //get semi-variance value
 		double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, estimationLocation._center );
         //get covariance
-		result(i, 0) = variogramSill - gamma;
+		if( returnGamma )
+			result(i, 0) = gamma;
+		else
+			result(i, 0) = variogramSill - gamma;
     }
 
     //prepare the matrix for an OK system, if this is the case.
@@ -252,7 +260,7 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
                                                         int nSlicesAround,
                                                         bool hasNDV,
                                                         double NDV,
-														std::multiset<GridCellPtr> &list)
+														GridCellPtrMultiset &list)
 {
     CartesianGrid* cg = cell._grid;
     if( ! cg ){
@@ -339,14 +347,18 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
 	}
 }
 
-MatrixNXM<double> GeostatsUtils::makePmatrixForFK(int nsamples, int nst)
+MatrixNXM<double> GeostatsUtils::makePmatrixForFK(int nsamples, int nst, KrigingType kType )
 {
+	int append = 0;
+	if( kType  == KrigingType::OK )
+		++append;
 	//TODO: the authors in the paper didn't give details on how to build the P matrix.
-	MatrixNXM<double> matrix( nsamples, nst, 1.0 );
+	MatrixNXM<double> matrix( nsamples + append, nst, 1.0 );
+	matrix.setIdentity();
 	return matrix;
 }
 
-MatrixNXM<double> GeostatsUtils::makepMatrixForFK(int nst)
+MatrixNXM<double> GeostatsUtils::makepMatrixForFK(int nst )
 {
 	//TODO: the authors in the paper didn't give details on how to build the p matrix.
 	MatrixNXM<double> matrix( nst, 1, 1.0 );

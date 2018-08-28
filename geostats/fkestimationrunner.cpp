@@ -80,8 +80,7 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 {
     //collects samples from the input data set ordered by their distance with respect
 	//to the estimation cell.
-    TODO_THE_CELLS_BELOW_ARE_WITHOUT_THEIR_DISTANCES_COMPUTED;
-	std::multiset<DataCellPtr> vSamples = m_fkEstimation->getSamples( estimationCell );
+	DataCellPtrMultiset vSamples = m_fkEstimation->getSamples( estimationCell );
 
     //if no sample was found, either...
 	if( vSamples.empty() ){
@@ -97,29 +96,31 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
     MatrixNXM<double> Czz_inv = GeostatsUtils::makeCovMatrix( vSamples,
 														  m_fkEstimation->getVariogramModel(),
 														  m_fkEstimation->getVariogramSill(),
-														  m_fkEstimation->getKrigingType() );
+														  m_fkEstimation->getKrigingType(),
+														  true );
     Czz_inv.invertWithGaussJordan();
 
 	//get the matrix with theoretical covariances between sample locations and estimation location.
 	MatrixNXM<double> Cyz = GeostatsUtils::makeGammaMatrix( vSamples,
 															estimationCell,
 															m_fkEstimation->getVariogramModel(),
-															m_fkEstimation->getKrigingType() );
-    Cyz.print();
+															m_fkEstimation->getKrigingType(),
+															true );
 
 	//get the inverse of matrix of the theoretical covariances between the data sample locations and themselves
 	// of the structure targeted for FK analysis.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
 	MatrixNXM<double> Cij_inv = GeostatsUtils::makeCovMatrix( vSamples,
 														  m_singleStructVModel,
-														  m_fkEstimation->getVariogramSill(),
-														  m_fkEstimation->getKrigingType() );
+														  m_singleStructVModel->getSill(),
+														  m_fkEstimation->getKrigingType(),
+														  true );
 	Cij_inv.invertWithGaussJordan();
 
     //get the n x k matrix of an "chosen analytical function p(x) for fitting the nonstationary component".
 	//Ma et al. (2014) don't give details of p(x).
     //TODO PERFORMANCE: if P is invariant, then it needs to be computed only once.
-	MatrixNXM<double> P = GeostatsUtils::makePmatrixForFK( vSamples.size(), nst );
+	MatrixNXM<double> P = GeostatsUtils::makePmatrixForFK( vSamples.size(), nst, m_fkEstimation->getKrigingType() );
 
 	//Get P's transpose.
 	//TODO PERFORMANCE: is P is invariant, then Pt needs to be computed only once.

@@ -4,6 +4,8 @@
 #include "spatiallocation.h"
 #include <cmath>
 #include <memory>
+#include <iostream>
+#include <set>
 
 class DataFile;
 
@@ -26,7 +28,7 @@ public:
 	/** Computes the Cartesian distance from the given cell.
 	 * The result is also stored in _cartesianDistance member variable.
 	 */
-	inline double computeCartesianDistance( DataCell &fromCell ){
+	inline double computeCartesianDistance( const DataCell &fromCell ){
 		double dx = std::abs( _center._x - fromCell._center._x );
 		double dy = std::abs( _center._y - fromCell._center._y );
 		double dz = std::abs( _center._z - fromCell._center._z );
@@ -56,13 +58,16 @@ protected:
 
 typedef std::shared_ptr<DataCell> DataCellPtr;
 
-/**
- * This global non-member less-than operator enables the DataCell class as key-able
- * in STL or STL-like ordered containers.
- */
-inline bool operator<(const DataCellPtr &d1, const DataCellPtr &d2){
-	return d1->_cartesianDistance < d2->_cartesianDistance;
-}
+/** The DataCellPtr comparator class. */
+struct DataCellPtrComparator
+{
+	bool operator()(const DataCellPtr &d1, const DataCellPtr &d2) const {
+		return d1->_cartesianDistance < d2->_cartesianDistance;
+	}
+};
+
+/** An ordered container by the DataCell's Cartesian distance. */
+typedef std::multiset<DataCellPtr, DataCellPtrComparator> DataCellPtrMultiset;
 
 
 #endif // DATACELL_H

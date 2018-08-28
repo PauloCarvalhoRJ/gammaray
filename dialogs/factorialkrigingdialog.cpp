@@ -122,7 +122,7 @@ void FactorialKrigingDialog::onParameters()
 	factor_par->_options.clear();
 	factor_par->addOption( -1, "Mean (Factor 1)" );
 	factor_par->addOption( 0, "Nugget effect (Factor 2)" );
-	for( int ist = 0;  ist < variogram->getNst(); ++ist){
+	for( uint ist = 0;  ist < variogram->getNst(); ++ist){
 		factor_par->addOption( ist+1, variogram->getStructureDescription( ist ) +
 							   "(Factor " + QString::number(3+ist) + ")" );
 	}

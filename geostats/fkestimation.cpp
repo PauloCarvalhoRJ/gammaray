@@ -81,9 +81,9 @@ void FKEstimation::setFactorNumber(int factorNumber)
     m_factorNumber = factorNumber;
 }
 
-std::multiset< DataCellPtr > FKEstimation::getSamples(const GridCell & estimationCell )
+DataCellPtrMultiset FKEstimation::getSamples(const GridCell & estimationCell )
 {
-	std::multiset< DataCellPtr > result;
+	DataCellPtrMultiset result;
 	if( m_searchStrategy && m_at_input ){
 
 		if( m_inputDataFile->isRegular() ){
@@ -93,6 +93,7 @@ std::multiset< DataCellPtr > FKEstimation::getSamples(const GridCell & estimatio
             QList<uint>::iterator it = samplesIndexes.begin();
 			for( ; it != samplesIndexes.end(); ++it ){
 				DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
+				p->computeCartesianDistance( estimationCell );
 				result.insert( p );
 			}
 		}
