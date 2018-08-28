@@ -7,7 +7,10 @@ include(GammaRay.pri)
 #This prevents "string table overflow" errors when compiling .cpp's that include exprtk.hpp in debug mode
 QMAKE_CXXFLAGS_DEBUG += -O1
 
-QMAKE_CXXFLAGS += -Wa,-mbig-obj
+win32 {
+	#Currently not a recognized (or possibly not necessary) option in GCC 4.8 (Linux)
+	QMAKE_CXXFLAGS += -Wa,-mbig-obj
+}
 
 SOURCES += calculator/calcscripting.cpp \
            calculator/icalcproperty.cpp \

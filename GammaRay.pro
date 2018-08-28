@@ -13,14 +13,22 @@ TEMPLATE = app
 
 include(GammaRay.pri)
 
-#for the separate calculator scripting library built with libCalcScripting.pro
+#========for the separate calculator scripting library built with libCalcScripting.pro========
 LIBPATH += $$DESTDIR
-LIBS += -lCalcScripting1
+CALCSCRIPTING_LIB_NAME = CalcScripting
+win32{
+	CALCSCRIPTING_LIB_NAME = CalcScripting1
+}
+LIBS += -l$$CALCSCRIPTING_LIB_NAME
+#============================================================================================
 
-#necessary for compiling svd.cpp in debug mode.
-QMAKE_CXXFLAGS_DEBUG += -Wa,-mbig-obj
-#Don't know why -Wa,-mbig-obj sticks... removing it for release mode.
-QMAKE_CXXFLAGS_RELEASE -= -Wa,-mbig-obj
+win32 {
+	#-Wa,-mbig-obj not currently supported (or possibly not necessary) by GCC 4.8 (Linus)
+	#necessary for compiling svd.cpp in debug mode.
+	QMAKE_CXXFLAGS_DEBUG += -Wa,-mbig-obj
+	#Don't know why -Wa,-mbig-obj sticks... removing it for release mode.
+	QMAKE_CXXFLAGS_RELEASE -= -Wa,-mbig-obj
+}
 
 SOURCES += main.cpp\
         mainwindow.cpp \
