@@ -58,7 +58,7 @@ void FKEstimationRunner::doRun()
             for( uint i = 0; i <nI; ++i){
 				GridCell estimationCell( estimationGrid, -1, i, j, k );
 				double estimatedMean;
-                m_factor.push_back( fk( estimationCell,
+				m_factor.push_back( fkDeutsch( estimationCell,
 										 m_fkEstimation->getVariogramModel()->getNstWithNugget(),
 										 estimatedMean,
 										 nIllConditioned,
@@ -78,7 +78,9 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
                                int &nIllConditioned,
                                int &nFailed )
 {
-    //collects samples from the input data set ordered by their distance with respect
+	Q_UNUSED(nIllConditioned);
+
+	//collects samples from the input data set ordered by their distance with respect
 	//to the estimation cell.
 	DataCellPtrMultiset vSamples = m_fkEstimation->getSamples( estimationCell );
 
@@ -104,6 +106,7 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 	MatrixNXM<double> Cyz = GeostatsUtils::makeGammaMatrix( vSamples,
 															estimationCell,
 															m_fkEstimation->getVariogramModel(),
+															m_fkEstimation->getVariogramSill(),
 															m_fkEstimation->getKrigingType(),
 															true );
 
@@ -132,6 +135,7 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 	MatrixNXM<double> p = GeostatsUtils::makepMatrixForFK( nst );
 
     //Compute an intermediate product.
+	//TODO: there's something wrong with P and p.  The paper is not explicit with regards to how to build them...
     MatrixNXM<double> Pt__x__Cij_inv__x__P_____inv = Pt * Cij_inv * P;
     Pt__x__Cij_inv__x__P_____inv.invertWithGaussJordan();
 
@@ -170,5 +174,167 @@ double FKEstimationRunner::fk( GridCell& estimationCell,
 	}
 
     //Return the factor (and the estimated mean as an output paramater).
-    return factor;
+	return factor;
+}
+
+double FKEstimationRunner::fkDeutsch(GridCell & estimationCell, int nst, double & estimatedMean, int & nIllConditioned, int & nFailed)
+{
+	Q_UNUSED(nst);
+	Q_UNUSED(nIllConditioned);
+
+	double factor;
+
+	//collects samples from the input data set ordered by their distance with respect
+	//to the estimation cell.
+	DataCellPtrMultiset vSamples = m_fkEstimation->getSamples( estimationCell );
+
+	//if no sample was found, either...
+	if( vSamples.empty() ){
+		//Return the no-data-value defined for the output dataset.
+		return m_fkEstimation->ndvOfEstimationGrid();
+	}
+
+	//get the matrix of the theoretical covariances between the data sample locations and themselves.
+	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
+	MatrixNXM<double> covMat_inv = GeostatsUtils::makeCovMatrix( vSamples,
+															 m_singleStructVModel,
+															 m_fkEstimation->getVariogramModel()->getSill(),
+															 m_fkEstimation->getKrigingType() );
+	covMat_inv.invertWithGaussJordan();
+
+	//get the gamma matrix (theoretical covariances between sample locations and estimation location)
+	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vSamples,
+																 estimationCell,
+																 m_singleStructVModel,
+																 m_fkEstimation->getVariogramModel()->getSill(),
+																 m_fkEstimation->getKrigingType() );
+
+	//get the kriging weights vector: [w] = [Cov]^-1 * [gamma]
+	MatrixNXM<double> weightsSK( covMat_inv * gammaMat );
+
+	//finally, compute the kriging
+	if( m_fkEstimation->getKrigingType() == KrigingType::SK ){
+		//for SK mode
+		double meanSK = m_fkEstimation->getMeanForSimpleKriging();
+		factor = meanSK;
+		//computing SK the normal way.
+		DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+			factor += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() - meanSK );
+		}
+		estimatedMean = meanSK;
+	} else {
+		//for OK mode
+
+		//get the OK gamma matrix (theoretical covariances between sample locations and estimation location)
+		//TODO: improve performance: Just append 1 to gammaMat.
+		MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vSamples,
+																	   estimationCell,
+																	   m_singleStructVModel,
+																	   m_fkEstimation->getVariogramModel()->getSill(),
+																	   KrigingType::OK );
+
+		//make the OK cov matrix (theoretical covariances between sample locations and themselves)
+		//TODO: improve performance: Just expand SK matrices with the 1.0s and 0.0s instead of computing new ones.
+		// TODO PERFORMANCE: the cov matrix needs only to be computed once.
+		MatrixNXM<double> covMatOK_inv = GeostatsUtils::makeCovMatrix( vSamples,
+																	   m_singleStructVModel,
+																	   m_fkEstimation->getVariogramModel()->getSill(),
+																	   KrigingType::OK );
+		covMatOK_inv.invertWithGaussJordan();
+
+		//make the OK kriging weights matrix (solve the ordinary kriging system).
+		//compute the OK weights the normal way (follows the same rationale of SK)
+		MatrixNXM<double> weightsOK( covMatOK_inv * gammaMatOK );
+
+		//Correct OK weights according to Deutsch (1995) - "Correcting for negative weights in ordinary kriging"
+		{
+			// Compute means of: a) covariances between the estimation location and locations with neg weights.
+			//                   b) absolute values of negative weights.
+			double mean_of_abs_value_of_neg_weights = 0.0;
+			double mean_of_cov_between_neg_weights_and_est_location = 0.0;
+			int n_neg_weights = 0;
+			for( int i = 0; i < weightsOK.getN()-1; ++i ){ //N-1 is to not "correct" the lagrangean (the last element in the weights matrix).
+				if( weightsOK(i,0) < 0.0 ){
+					mean_of_abs_value_of_neg_weights += std::abs( weightsOK(i,0) );
+					mean_of_cov_between_neg_weights_and_est_location += gammaMatOK(i,0);
+					++n_neg_weights;
+				}
+			}
+			if( n_neg_weights ){
+				MatrixNXM<double> weightsOKcorrected = weightsOK;
+				mean_of_abs_value_of_neg_weights /= n_neg_weights;
+				mean_of_cov_between_neg_weights_and_est_location /= n_neg_weights;
+
+				// Zero off negative and small positive weights.
+				for( int i = 0; i < weightsOKcorrected.getN()-1; ++i ){
+					if( weightsOKcorrected(i,0) < 0.0 )
+						weightsOKcorrected(i,0) = 0.0;
+					else if( weightsOKcorrected(i,0) > 0.0 ){
+						double cov = gammaMatOK(i,0);
+						double weight = weightsOKcorrected(i,0);
+						if( cov < mean_of_cov_between_neg_weights_and_est_location &&
+							weight < mean_of_abs_value_of_neg_weights )
+							weightsOKcorrected(i,0) = 0.0;
+					}
+				}
+				// Re-standardize weights so they sum up to 1.0 again.
+				double sum_from_i_to_end = 0.0;
+				for( int a = 0; a < weightsOKcorrected.getN()-1; ++a )
+					sum_from_i_to_end += weightsOKcorrected(a, 0);
+				for( int i = 0; i < weightsOKcorrected.getN()-1; ++i ){
+					if( sum_from_i_to_end > 0.0 )
+						weightsOKcorrected(i, 0) /= sum_from_i_to_end;
+					else
+						weightsOKcorrected(i, 0) = 0.0;
+				}
+				// Replace the original weights with the corrected ones.
+				weightsOK = weightsOKcorrected;
+				//Check
+				double sum = 0.0;
+				for( int i = 0; i < weightsOK.getN()-1; ++i )
+					sum += weightsOK(i, 0);
+				if( sum < 0.0001 )
+					return m_fkEstimation->ndvOfEstimationGrid();
+			}
+		}
+
+		//Estimate the OK local mean (use OK weights)
+		double mOK = 0.0;
+		DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+		for( int i = 0; i < weightsOK.getN()-1; ++i, ++itSamples){ //the last element in weightsOK is the Lagrangian (mu)
+			mOK += weightsOK(i,0) * (*itSamples)->readValueFromDataSet();
+		}
+
+		//compute the kriging weight for the local OK mean (use SK weights)
+		double wmOK = 1.0;
+		for( int i = 0; i < weightsSK.getN(); ++i){
+			wmOK -= weightsSK(i,0);   //TODO: somehow only when the OK mean weight is 1.0, results are good.
+		}
+
+		//krige (with SK weights plus the OK mean (with OK mean weight))
+		factor = 0.0;
+		//computing kriging the normal way.
+		itSamples = vSamples.begin();
+		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+			factor += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() );
+		}
+		factor += wmOK * mOK;
+		estimatedMean = wmOK * mOK;
+	}
+
+	//rarely, kriging may fail with a NaN or infinity value.
+	//guard the output against such failures.
+	if( std::isnan(factor) || !std::isfinite(factor) ){
+		++nFailed;
+		double failValue = m_fkEstimation->ndvOfEstimationGrid();
+		Application::instance()->logWarn( "FKEstimationRunner::fkDeutsch(): at least one kriging operation failed (resulted in NaN or infinity).  Returning " +
+										  QString::number(failValue) + " to protect the output data file." );
+		factor = failValue;
+	}
+	if( std::isnan(estimatedMean) || !std::isfinite(estimatedMean) ){
+		estimatedMean = m_fkEstimation->ndvOfEstimationGrid();
+	}
+
+	return factor;
 }

@@ -53,6 +53,7 @@ private:
      */
 	double fk(GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 
+	double fkDeutsch(GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 };
 
 #endif // FKESTIMATIONRUNNER_H
