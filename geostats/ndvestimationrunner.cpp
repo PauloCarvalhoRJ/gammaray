@@ -212,7 +212,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
                                                              variogramSill );
 
 	//get the gamma matrix (theoretical covariances between sample locations and estimation location)
-	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vDataCells, cell, _ndvEstimation->vmodel() );
+	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vDataCells, cell, _ndvEstimation->vmodel(), variogramSill );
 
 	//The eta (after greek letter eta) number is the threshold below which the eigenvalues are rounded off to zero
 	//The eta number and the value are both in Mohammadi et al (2016) paper (see complete reference further below).
@@ -290,7 +290,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 
 		//get the OK gamma matrix (theoretical covariances between sample locations and estimation location)
 		//TODO: improve performance: Just append 1 to gammaMat.
-		MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vDataCells, cell, _ndvEstimation->vmodel(), KrigingType::OK );
+		MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vDataCells, cell, _ndvEstimation->vmodel(), variogramSill, KrigingType::OK );
 
 		//make the OK cov matrix (theoretical covariances between sample locations and themselves)
 		//TODO: improve performance: Just expand SK matrices with the 1.0s and 0.0s instead of computing new ones.

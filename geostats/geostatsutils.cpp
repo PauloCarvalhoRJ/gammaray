@@ -207,6 +207,7 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(DataCellPtrMultiset &samples,
 MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
 												 GridCell &estimationLocation,
 												 VariogramModel *variogramModel,
+												 double variogramSill,
 												 KrigingType kType,
 												 bool returnGamma)
 {
@@ -217,9 +218,6 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
     case KrigingType::OK:
         append = 1; break;
     }
-
-	//save the variogram sill (for possible factorial kriging)
-	double variogramSill = variogramModel->getSill();
 
 	//Create the gamma matrix.
     MatrixNXM<double> result( samples.size()+append, 1 );

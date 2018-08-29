@@ -88,6 +88,7 @@ public:
 	static MatrixNXM<double> makeGammaMatrix(DataCellPtrMultiset & samples,
 											 GridCell& estimationLocation,
 											 VariogramModel *variogramModel,
+											 double variogramSill,
 											 KrigingType kType = KrigingType::SK,
 											 bool returnGamma = false);
 
