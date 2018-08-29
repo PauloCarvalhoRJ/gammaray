@@ -32,8 +32,8 @@ bool SearchEllipsoid::isInside(double centerX, double centerY, double centerZ,
 							   double x, double y, double z) const
 {
 	//Without azimuth, it is assumed zero.  By convention zero azimuth is north, this hMax points to north (Y axis).
-	double dx = x - centerX;
-	double dy = y - centerY;
-	double dz = z - centerZ;
-	return dx*dx/m_hMin + dy*dy/m_hMax + dz*dz/m_hVert <= 1.0;
+	double dx = (x - centerX)/m_hMin;
+	double dy = (y - centerY)/m_hMax;
+	double dz = (z - centerZ)/m_hVert;
+	return dx*dx + dy*dy + dz*dz <= 1.0;
 }
