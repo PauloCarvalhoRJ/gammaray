@@ -29,17 +29,11 @@ private:
     Ui::FactorialKrigingDialog *ui;
     VariogramModelSelector* m_vModelSelector;
     CartesianGridSelector* m_cgSelector;
-    CartesianGridSelector* m_cgSelectorSecondary;
-    VariableSelector* m_cgSecondaryVariableSelector;
 	FileSelectorWidget* m_dataSetSelector;
 	VariableSelector* m_DataSetVariableSelector;
-    VariableSelector* m_PointSetSecondaryVariableSelector;
     CartesianGrid* m_cg_estimation;
 	GSLibParameterFile* m_gpfFK;
     void preview();
-    /** Called when the user changes the variogram model, so the variogram parameters
-     * in m_gpf_kt3d are read from the newly selected variogram model.*/
-    void updateVariogramParameters(VariogramModel *vm );
     void doFK();
 
 private slots:

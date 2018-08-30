@@ -233,16 +233,6 @@ void FactorialKrigingDialog::onKt3dCompletes()
 
 void FactorialKrigingDialog::onVariogramChanged()
 {
-	if( ! m_cg_estimation )
-        return;
-    //get the newly selected variogram model
-    VariogramModel* variogram = m_vModelSelector->getSelectedVModel();
-    if( ! variogram ){
-        return;
-    }
-    //read the variogram paramters of the newly selected variogram model.
-    updateVariogramParameters( variogram );
-	Application::instance()->logInfo("NOTE: The user selected a variogram model. Re-reading the variogram parameters.");
 }
 
 void FactorialKrigingDialog::onDataSetSelected(DataFile * dataFile)
@@ -278,33 +268,6 @@ void FactorialKrigingDialog::preview()
 
     //open the plot dialog
     Util::viewGrid( est_var, this );
-}
-
-void FactorialKrigingDialog::updateVariogramParameters(VariogramModel *vm)
-{
-    //set the variogram number of structures and nugget effect variance contribution
-	GSLibParMultiValuedFixed *par20 = nullptr;
-    par20->getParameter<GSLibParUInt*>(0)->_value = vm->getNst(); //nst
-    par20->getParameter<GSLibParDouble*>(1)->_value = vm->getNugget(); //nugget effect contribution
-
-    //make the necessary copies of variogram structures
-	GSLibParRepeat *par21 = nullptr; //repeat nst-times
-    par21->setCount( par20->getParameter<GSLibParUInt*>(0)->_value );
-
-    //set each variogram structure parameters
-    for( uint ist = 0; ist < par20->getParameter<GSLibParUInt*>(0)->_value; ++ist)
-    {
-        GSLibParMultiValuedFixed *par21_0 = par21->getParameter<GSLibParMultiValuedFixed*>(ist, 0);
-        par21_0->getParameter<GSLibParOption*>(0)->_selected_value = (uint)vm->getIt( ist );
-        par21_0->getParameter<GSLibParDouble*>(1)->_value = vm->getCC( ist );
-        par21_0->getParameter<GSLibParDouble*>(2)->_value = vm->getAzimuth( ist );
-        par21_0->getParameter<GSLibParDouble*>(3)->_value = vm->getDip( ist );
-        par21_0->getParameter<GSLibParDouble*>(4)->_value = vm->getRoll( ist );
-        GSLibParMultiValuedFixed *par21_1 = par21->getParameter<GSLibParMultiValuedFixed*>(ist, 1);
-        par21_1->getParameter<GSLibParDouble*>(0)->_value = vm->get_a_hMax( ist );
-        par21_1->getParameter<GSLibParDouble*>(1)->_value = vm->get_a_hMin( ist );
-        par21_1->getParameter<GSLibParDouble*>(2)->_value = vm->get_a_vert( ist );
-    }
 }
 
 void FactorialKrigingDialog::doFK()
