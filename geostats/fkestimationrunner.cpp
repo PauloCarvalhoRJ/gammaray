@@ -43,6 +43,11 @@ void FKEstimationRunner::doRun()
 	if( m_singleStructVModel )
 		delete m_singleStructVModel;
 	m_singleStructVModel = new VariogramModel( m_fkEstimation->getVariogramModel()->makeVModelFromSingleStructure( ist ) );
+	m_singleStructVModel->setForceReread( false ); //disable reread from file improves performance.
+
+	//Disable automatic re-read from file for the selected variogram model.  This improves performance.
+	m_fkEstimation->getVariogramModel()->readParameters(); //first, make sure the parameters are updated.
+	m_fkEstimation->getVariogramModel()->setForceReread( false );
 
     //for all grid cells
     int nKriging = 0;
@@ -68,7 +73,10 @@ void FKEstimationRunner::doRun()
             }
         }
 
-    //inform the calling thread the computation has finished.
+	//Re-enable automatic re-read from file for the selected variogram model.
+	m_fkEstimation->getVariogramModel()->setForceReread( true );
+
+	//inform the calling thread the computation has finished.
     m_finished = true;
 }
 
@@ -191,14 +199,17 @@ double FKEstimationRunner::fkDeutsch(GridCell & estimationCell, int nst, double 
 	//if no sample was found, either...
 	if( vSamples.empty() ){
 		//Return the no-data-value defined for the output dataset.
+		estimatedMean = m_fkEstimation->ndvOfEstimationGrid();
 		return m_fkEstimation->ndvOfEstimationGrid();
 	}
+
+	double sill = m_fkEstimation->getVariogramModel()->getSill();
 
 	//get the matrix of the theoretical covariances between the data sample locations and themselves.
 	// TODO PERFORMANCE: the cov matrix needs only to be computed once.
 	MatrixNXM<double> covMat_inv = GeostatsUtils::makeCovMatrix( vSamples,
 															 m_singleStructVModel,
-															 m_fkEstimation->getVariogramModel()->getSill(),
+															 sill,
 															 m_fkEstimation->getKrigingType() );
 	covMat_inv.invertWithGaussJordan();
 
@@ -206,7 +217,7 @@ double FKEstimationRunner::fkDeutsch(GridCell & estimationCell, int nst, double 
 	MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vSamples,
 																 estimationCell,
 																 m_singleStructVModel,
-																 m_fkEstimation->getVariogramModel()->getSill(),
+																 sill,
 																 m_fkEstimation->getKrigingType() );
 
 	//get the kriging weights vector: [w] = [Cov]^-1 * [gamma]
@@ -230,7 +241,7 @@ double FKEstimationRunner::fkDeutsch(GridCell & estimationCell, int nst, double 
 		//TODO: improve performance: Just append 1 to gammaMat.
 		MatrixNXM<double> gammaMatOK = GeostatsUtils::makeGammaMatrix( vSamples,
 																	   estimationCell,
-																	   m_singleStructVModel,
+																	   m_fkEstimation->getVariogramModel(),
 																	   m_fkEstimation->getVariogramModel()->getSill(),
 																	   KrigingType::OK );
 
@@ -238,7 +249,7 @@ double FKEstimationRunner::fkDeutsch(GridCell & estimationCell, int nst, double 
 		//TODO: improve performance: Just expand SK matrices with the 1.0s and 0.0s instead of computing new ones.
 		// TODO PERFORMANCE: the cov matrix needs only to be computed once.
 		MatrixNXM<double> covMatOK_inv = GeostatsUtils::makeCovMatrix( vSamples,
-																	   m_singleStructVModel,
+																	   m_fkEstimation->getVariogramModel(),
 																	   m_fkEstimation->getVariogramModel()->getSill(),
 																	   KrigingType::OK );
 		covMatOK_inv.invertWithGaussJordan();
@@ -308,18 +319,18 @@ double FKEstimationRunner::fkDeutsch(GridCell & estimationCell, int nst, double 
 
 		//compute the kriging weight for the local OK mean (use SK weights)
 		double wmOK = 1.0;
-		for( int i = 0; i < weightsSK.getN(); ++i){
-			wmOK -= weightsSK(i,0);   //TODO: somehow only when the OK mean weight is 1.0, results are good.
-		}
+//		for( int i = 0; i < weightsSK.getN(); ++i){
+//			wmOK -= weightsSK(i,0);   //TODO: somehow only when the OK mean weight is 1.0, results are good.
+//		}
 
 		//krige (with SK weights plus the OK mean (with OK mean weight))
 		factor = 0.0;
 		//computing kriging the normal way.
 		itSamples = vSamples.begin();
 		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
-			factor += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() );
+			factor += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() - mOK );
 		}
-		factor += wmOK * mOK;
+		//factor += wmOK * mOK;
 		estimatedMean = wmOK * mOK;
 	}
 

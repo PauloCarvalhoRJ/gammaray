@@ -62,7 +62,7 @@ typedef std::shared_ptr<DataCell> DataCellPtr;
 struct DataCellPtrComparator
 {
 	bool operator()(const DataCellPtr &d1, const DataCellPtr &d2) const {
-		return d1->_cartesianDistance < d2->_cartesianDistance;
+		return d1->_cartesianDistance > d2->_cartesianDistance;
 	}
 };
 
