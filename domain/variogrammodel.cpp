@@ -157,6 +157,11 @@ QString VariogramModel::getStructureDescription(int structure)
     return desc;
 }
 
+bool VariogramModel::isPureNugget()
+{
+    return getNst() == 0;
+}
+
 
 QIcon VariogramModel::getIcon()
 {

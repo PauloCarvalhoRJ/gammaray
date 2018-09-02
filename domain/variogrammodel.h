@@ -113,6 +113,9 @@ public:
     /** Returns a descriptive text for one of the variogram structures. */
     QString getStructureDescription( int structure );
 
+    /** Returns whether this variogram model is a pure nugget model. */
+    bool isPureNugget();
+
 	bool forceReread() const;
 
     /** Sets whether the getters call readParameters() automatically.
