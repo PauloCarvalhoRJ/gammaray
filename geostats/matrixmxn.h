@@ -90,7 +90,7 @@ MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue ) :
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
    MatrixNXM<T>& a = *this;
-   assert( a._m == b._n && "MatrixNXM<T> MatrixNXM<T>::operator*: operands are matrices incompatible for multiplication." );
+   assert( a._m == b._n && "MatrixNXM<T> MatrixNXM<T>::operator*(): operands are matrices incompatible for multiplication." );
    MatrixNXM<T> result( a._n, b._m );
    for(uint i = 0; i < a._n; ++i)
        for(uint j = 0; j < b._m; ++j)
@@ -102,7 +102,7 @@ MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator-(const MatrixNXM<T>& b) const{
 	const MatrixNXM<T>& a = *this;
-	assert( a._m == b._m && a._n == b._n && "MatrixNXM<T> MatrixNXM<T>::operator-: operands are matrices incompatible for subtraction." );
+    assert( a._m == b._m && a._n == b._n && "MatrixNXM<T> MatrixNXM<T>::operator-(): operands are matrices incompatible for subtraction." );
 	MatrixNXM<T> result( a._n, a._m );
 	for(uint i = 0; i < a._n; ++i)
 		for(uint j = 0; j < a._m; ++j)

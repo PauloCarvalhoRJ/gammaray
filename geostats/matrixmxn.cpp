@@ -124,7 +124,7 @@ void MatrixNXM<double>::invertWithGaussJordan(){
 		indxr[i] = irow;
 		indxc[i] = icol;
 		if ( a(icol, icol) == 0.0 ){
-			Application::instance()->logError("MatrixNXM<double>::invertWithGaussJordan(): Singular matrix.  Operation aborted.  Matrix values inconsistent.");
+            Application::instance()->logError("MatrixNXM<double>::invertWithGaussJordan(): Singular matrix.  Operation aborted.  Resulting matrix inconsistent.");
 			return;
 		}
 		pivinv = 1.0 / a(icol,icol);

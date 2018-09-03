@@ -53,7 +53,13 @@ private:
      */
 	double fk(GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 
+    /** Does the same as fk(), but according to Prof. Clayton von Deutch papers on FK. */
 	double fkDeutsch(GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
+
+    /** Does the same as fk(), but according to formulation at
+     * https://www.biomedware.com/files/documentation/spacestat/Statistics/Kriging/Types_of_Kriging.htm
+     */
+    double fkBioMedware( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 };
 
 #endif // FKESTIMATIONRUNNER_H

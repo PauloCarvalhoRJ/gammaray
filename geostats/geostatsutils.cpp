@@ -161,6 +161,13 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(DataCellPtrMultiset &samples,
         append = 1; break;
     }
 
+    //Special treatment for a pure random noise variogram (pure nugget)
+    //for the pure noise variogram, we impose that all weights sum to zero,
+    //so there is a Lagrangian multiplier like with OK, but not with weights
+    //summing to one.
+    if( variogramModel->isPureNugget() )
+        append = 1;
+
     //Create the cov matrix.
     MatrixNXM<double> covMatrix( samples.size() + append, samples.size() + append );
 
@@ -180,6 +187,10 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(DataCellPtrMultiset &samples,
 			DataCellPtr colCell = *colsIt;
             //get semi-variance value from the separation between two samples in a pair
 			double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, colCell->_center );
+            //to remove singularity...
+            //TODO: this needs to be verified.
+            if( variogramModel->isPureNugget() && i != j )
+                gamma = 0.0;
 			if( returnGamma )
 				covMatrix(i, j) = gamma;
 			else
@@ -201,6 +212,16 @@ MatrixNXM<double> GeostatsUtils::makeCovMatrix(DataCellPtrMultiset &samples,
         covMatrix( dim, dim ) = 0.0; //last element is zero
     }
 
+    //The pure noise case
+    if( variogramModel->isPureNugget() ){
+        int dim = samples.size();
+        for( int i = 0; i < dim; ++i ){
+            covMatrix( dim, i ) = 1.0; //last row with 1's, like OK
+            covMatrix( i, dim ) = 1.0; //last column with 1's, like OK
+        }
+        covMatrix( dim, dim ) = 0.0; //last element is zero, like OK
+    }
+
     return covMatrix;
 }
 
@@ -219,6 +240,13 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
         append = 1; break;
     }
 
+    //Special treatment for a pure random noise variogram (pure nugget)
+    //for the pure noise variogram, we impose that all weights sum to zero,
+    //so there is a Lagrangian multiplier like with OK, but not with weights
+    //summing to one.
+    if( variogramModel->isPureNugget() )
+        append = 1;
+
 	//Create the gamma matrix.
     MatrixNXM<double> result( samples.size()+append, 1 );
 
@@ -233,7 +261,7 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
 	for( int i = 0; rowsIt != samplesV.end(); ++rowsIt, ++i ){
 		DataCellPtr rowCell = *rowsIt;
         //get semi-variance value
-		double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, estimationLocation._center );
+        double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, estimationLocation._center );
         //get covariance
 		if( returnGamma )
 			result(i, 0) = gamma;
@@ -246,6 +274,12 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
     case KrigingType::SK: break;
     case KrigingType::OK:
         result( samples.size(), 0 ) = 1.0; //last element is one
+    }
+
+    //The pure noise case
+    if( variogramModel->isPureNugget() ){
+        result( samples.size(), 0 ) = 0.0; //last element is 0, differently from OK,
+                                           //to force the sum of weights be 0.0 and not 1.0
     }
 
     return result;
