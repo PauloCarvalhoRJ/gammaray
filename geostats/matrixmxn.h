@@ -121,5 +121,14 @@ void MatrixNXM<T>::setIdentity() {
 				a(i,j) = 0.0;
 }
 
+template <typename T>
+MatrixNXM<T> operator*(double scalar, const MatrixNXM<T>& b) {
+   MatrixNXM<T> result( b.getN(), b.getM() );
+   for(uint i = 0; i < b.getN(); ++i)
+	   for(uint j = 0; j < b.getM(); ++j)
+		   result(i,j) = scalar * b(i,j);
+   return result;
+}
+
 
 #endif // MATRIXMXN_H

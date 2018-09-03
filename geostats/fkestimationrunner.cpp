@@ -589,6 +589,56 @@ double FKEstimationRunner::fkGeophysics(GridCell & estimationCell, int nst, doub
 	//*************************OFK***************************************
 	} else {
 
+		//get the covariance matrix (theoretical full covariances between the data sample locations and themselves.)
+		MatrixNXM<double> CZZ_inv = GeostatsUtils::makeCovMatrix( vSamples,
+																 m_fkEstimation->getVariogramModel(),
+																 m_fkEstimation->getVariogramModel()->getSill(),
+																 KrigingType::SK,
+																 true ); //using semivariogram per Deutsch
+		CZZ_inv.invertWithGaussJordan();
+
+		//get the gamma matrix (theoretical partial covariances between sample locations and estimation location)
+		MatrixNXM<double> CY = GeostatsUtils::makeGammaMatrix( vSamples,
+																	 estimationCell,
+																	 m_singleStructVModel,
+																	 m_singleStructVModel->getSill(),
+																	 KrigingType::SK,
+																	 true ); //using semivariogram per Deutsch
+
+		//Make a vector-column of ones and its transpose.
+		MatrixNXM<double> e( vSamples.size(), 1, 1.0 );
+		MatrixNXM<double> e_t = e.getTranspose();
+
+		//Get a compatible identity matrix.
+		MatrixNXM<double> I( vSamples.size(), vSamples.size() );
+		I.setIdentity();
+
+		//get the kriging weights vector: [w] = [Cov]^-1 * [gamma] (solve the kriging system)
+		//the sum of these weights is zero.
+		MatrixNXM<double> et_x_CXX_inv_x_e____inv( e_t * CZZ_inv * e );
+		et_x_CXX_inv_x_e____inv(0, 0) = 1 / et_x_CXX_inv_x_e____inv(0, 0);
+		MatrixNXM<double> weightsFactor( ( CY.getTranspose() * CZZ_inv * ( I - et_x_CXX_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) ).getTranspose() );
+
+		//Apply the weights (estimate).
+		factor = 0.0;
+		DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+			factor += weightsFactor(i,0) * ( (*itSamples)->readValueFromDataSet() );
+		}
+
+		//Estimating the mean
+		{
+			//Getting OK weights to estimate the neighborhood mean.
+			MatrixNXM<double> weightsMean( ( et_x_CXX_inv_x_e____inv(0,0) * e_t * CZZ_inv ).getTranspose() );
+
+			//Apply the OK weights (estimate the mean).
+			estimatedMean = 0.0;
+			DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+			for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+				estimatedMean += weightsMean(i,0) * ( (*itSamples)->readValueFromDataSet() );
+			}
+		}
+
 	}
 
 	//rarely, kriging may fail with a NaN or infinity value.

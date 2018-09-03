@@ -63,6 +63,7 @@ private:
 
 	/** Does the same as fk(), but according to formulation at
 	 * https://pubs.geoscienceworld.org/geophysics/article/82/2/G35/520853/data-analysis-of-potential-field-methods-using
+	 * Data analysis of potential field methods using geostatistics - Shamsipour et al, 2017
 	 */
 	double fkGeophysics( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 };
