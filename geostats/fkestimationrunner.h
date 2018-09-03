@@ -60,6 +60,11 @@ private:
      * https://www.biomedware.com/files/documentation/spacestat/Statistics/Kriging/Types_of_Kriging.htm
      */
     double fkBioMedware( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
+
+	/** Does the same as fk(), but according to formulation at
+	 * https://pubs.geoscienceworld.org/geophysics/article/82/2/G35/520853/data-analysis-of-potential-field-methods-using
+	 */
+	double fkGeophysics( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 };
 
 #endif // FKESTIMATIONRUNNER_H

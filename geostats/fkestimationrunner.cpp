@@ -63,7 +63,7 @@ void FKEstimationRunner::doRun()
             for( uint i = 0; i <nI; ++i){
 				GridCell estimationCell( estimationGrid, -1, i, j, k );
 				double estimatedMean;
-                m_factor.push_back( fkBioMedware( estimationCell,
+				m_factor.push_back( fkGeophysics( estimationCell,
 										 m_fkEstimation->getVariogramModel()->getNstWithNugget(),
 										 estimatedMean,
 										 nIllConditioned,
@@ -336,7 +336,7 @@ double FKEstimationRunner::fkDeutsch(GridCell & estimationCell, int nst, double 
 		itSamples = vSamples.begin();
 		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
 			factor += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() - mOK );
-            std::cout << weightsSK(i,0) << " * ( " << (*itSamples)->readValueFromDataSet() << " - " << mOK << " ) =+ " << factor << std::endl;
+			//std::cout << weightsSK(i,0) << " * ( " << (*itSamples)->readValueFromDataSet() << " - " << mOK << " ) =+ " << factor << std::endl;
         }
 
         //return the estimated mean
@@ -531,4 +531,78 @@ double FKEstimationRunner::fkBioMedware(GridCell &estimationCell, int nst, doubl
 
     return factor;
 
+}
+
+double FKEstimationRunner::fkGeophysics(GridCell & estimationCell, int nst, double & estimatedMean, int & nIllConditioned, int & nFailed)
+{
+	Q_UNUSED(nst);
+	Q_UNUSED(nIllConditioned);
+
+	double factor;
+
+	//collects samples from the input data set ordered by their distance with respect
+	//to the estimation cell.
+	DataCellPtrMultiset vSamples = m_fkEstimation->getSamples( estimationCell );
+
+	//if no sample was found.
+	if( vSamples.empty() ){
+		//Return the no-data-value defined for the output dataset.
+		estimatedMean = m_fkEstimation->ndvOfEstimationGrid();
+		return m_fkEstimation->ndvOfEstimationGrid();
+	}
+
+	//*************************SFK***************************************
+	if( m_fkEstimation->getKrigingType() == KrigingType::SK ){
+
+		//Get the user-supplied simple kriging mean.
+		double mSK = m_fkEstimation->getMeanForSimpleKriging();
+
+		//get the covariance matrix (theoretical full covariances between the data sample locations and themselves.)
+		MatrixNXM<double> covMat_inv = GeostatsUtils::makeCovMatrix( vSamples,
+																 m_fkEstimation->getVariogramModel(),
+																 m_fkEstimation->getVariogramModel()->getSill(),
+																 KrigingType::SK,
+																 true ); //using semivariogram per Deutsch
+		covMat_inv.invertWithGaussJordan();
+
+		//get the gamma matrix (theoretical partial covariances between sample locations and estimation location)
+		MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vSamples,
+																	 estimationCell,
+																	 m_singleStructVModel,
+																	 m_singleStructVModel->getSill(),
+																	 KrigingType::SK,
+																	 true ); //using semivariogram per Deutsch
+
+		//get the kriging weights vector: [w] = [Cov]^-1 * [gamma] (solve the kriging system)
+		MatrixNXM<double> weightsSK( covMat_inv * gammaMat );
+
+		//Apply the weights (estimate).
+		factor = 0.0;
+		DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+			factor += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() - mSK );
+		}
+
+		//The "estimated" mean is simply the user-given global constant mean.
+		estimatedMean = mSK;
+
+	//*************************OFK***************************************
+	} else {
+
+	}
+
+	//rarely, kriging may fail with a NaN or infinity value.
+	//guard the output against such failures.
+	if( std::isnan(factor) || !std::isfinite(factor) ){
+		++nFailed;
+		double failValue = m_fkEstimation->ndvOfEstimationGrid();
+		Application::instance()->logWarn( "FKEstimationRunner::fkDeutsch(): at least one kriging operation failed (resulted in NaN or infinity).  Returning " +
+										  QString::number(failValue) + " to protect the output data file." );
+		factor = failValue;
+	}
+	if( std::isnan(estimatedMean) || !std::isfinite(estimatedMean) ){
+		estimatedMean = m_fkEstimation->ndvOfEstimationGrid();
+	}
+
+	return factor;
 }
