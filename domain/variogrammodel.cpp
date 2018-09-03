@@ -240,8 +240,26 @@ void VariogramModel::readParameters()
         m_a_hMax.append( par4_1->getParameter<GSLibParDouble*>(0)->_value );
         m_a_hMin.append( par4_1->getParameter<GSLibParDouble*>(1)->_value );
         m_a_vert.append( par4_1->getParameter<GSLibParDouble*>(2)->_value );
-    }
+	}
 }
+
+VariogramModel VariogramModel::makeVModelWithoutNugget()
+{
+	VariogramModel result;
+	result.m_Sill = m_Sill - m_Nugget;
+	result.m_Nugget = 0.0;
+	result.m_nst = m_nst; //number of structures is the same, since nugget does not comput as one actual structure.
+	result.m_it = m_it;
+	result.m_cc = m_cc;
+	result.m_a_hMax = m_a_hMax;
+	result.m_a_hMin = m_a_hMin;
+	result.m_a_vert = m_a_vert;
+	result.m_Azimuth = m_Azimuth;
+	result.m_Dip = m_Dip;
+	result.m_Roll = m_Roll;
+	return result;
+}
+
 bool VariogramModel::forceReread() const
 {
     return _forceReread;

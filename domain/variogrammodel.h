@@ -129,6 +129,10 @@ public:
     /** Reads the variogram model parameters from file. */
     void readParameters();
 
+	/** Returns a VariogramModel object from one all its structures but without the nugget effect.
+	 */
+	VariogramModel makeVModelWithoutNugget( );
+
 // File interface
 public:
     QString getFileType(){ return "VMODEL"; }
