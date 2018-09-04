@@ -106,7 +106,7 @@ double GeostatsUtils::getGamma(VariogramStructureType permissiveModel, double h,
     return std::numeric_limits<double>::quiet_NaN();
 }
 
-double GeostatsUtils::getGamma(VariogramModel *model, SpatialLocation &locA, SpatialLocation &locB)
+double GeostatsUtils::getGamma(VariogramModel *model, const SpatialLocation &locA, const SpatialLocation &locB)
 {
     //lesser bottleneck
     double result = model->getNugget();
@@ -230,7 +230,8 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
 												 VariogramModel *variogramModel,
 												 double variogramSill,
 												 KrigingType kType,
-												 bool returnGamma)
+												 bool returnGamma,
+												 double epsilon )
 {
     int append = 0;
     switch( kType ){
@@ -261,7 +262,7 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
 	for( int i = 0; rowsIt != samplesV.end(); ++rowsIt, ++i ){
 		DataCellPtr rowCell = *rowsIt;
         //get semi-variance value
-        double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, estimationLocation._center );
+		double gamma = GeostatsUtils::getGamma( variogramModel, rowCell->_center, estimationLocation._center + epsilon );
         //get covariance
 		if( returnGamma )
 			result(i, 0) = gamma;

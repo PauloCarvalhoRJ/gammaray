@@ -21,6 +21,8 @@ public:
 
 	/** Prints the contents to std::cout.  Useful for debugging. */
 	void print();
+
+	SpatialLocation operator+( double a ) const;
 };
 
 #endif // SPATIALLOCATION_H

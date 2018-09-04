@@ -60,7 +60,7 @@ public:
      * Returns the total covariance according to a variogram model between two locations.
      * Includes the nugget effet contribution, if any.
      */
-    static double getGamma(VariogramModel* model, SpatialLocation &locA, SpatialLocation &locB );
+	static double getGamma(VariogramModel* model, const SpatialLocation& locA, const SpatialLocation& locB );
 
     /**
      * Creates a covariance matrix for the given set of samples.
@@ -84,13 +84,16 @@ public:
 	 * @param returnGamma If true, the elements are variogram values (increases with distance).  The
 	 *        default (false) makes the elements be correlogram values (decreases with
 	 *        distance).  The variogram sill value is ignored if this parameter is true.
+	 * @param epsilon A small value to shift the estimation location a bit.  This trick is used to avoid
+	 *        numerical instabilities in certain operations.  Normally this should be zero.
 	 */
 	static MatrixNXM<double> makeGammaMatrix(DataCellPtrMultiset & samples,
 											 GridCell& estimationLocation,
 											 VariogramModel *variogramModel,
 											 double variogramSill,
 											 KrigingType kType = KrigingType::SK,
-											 bool returnGamma = false);
+											 bool returnGamma = false,
+											 double epsilon = 0.0 );
 
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.

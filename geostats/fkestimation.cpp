@@ -103,7 +103,7 @@ DataCellPtrMultiset FKEstimation::getSamples(const GridCell & estimationCell )
 	return result;
 }
 
-std::vector<double> FKEstimation::run( int factorNumber )
+std::vector<double> FKEstimation::run( )
 {
     if( ! m_variogramModel ){
         Application::instance()->logError("FKEstimation::run(): variogram model not specified. Aborted.", true);
@@ -186,7 +186,7 @@ std::vector<double> FKEstimation::run( int factorNumber )
 
     //get the factor wanted by the user.
     std::vector<double> results;
-    if( factorNumber == -1 )
+	if( m_factorNumber == -1 )
         results = runner->getMeans();
     else
         results = runner->getFactor();

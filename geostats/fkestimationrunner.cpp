@@ -45,6 +45,13 @@ void FKEstimationRunner::doRun()
 	m_singleStructVModel = new VariogramModel( m_fkEstimation->getVariogramModel()->makeVModelFromSingleStructure( ist ) );
 	m_singleStructVModel->setForceReread( false ); //disable reread from file improves performance.
 
+	//if the fator desired is nugget, then the approach is to estimate all structures less the nugget
+	if( m_singleStructVModel->isPureNugget() ){
+		delete m_singleStructVModel;
+		m_singleStructVModel = new VariogramModel( m_fkEstimation->getVariogramModel()->makeVModelWithoutNugget() );
+		m_singleStructVModel->setForceReread( false ); //disable reread from file improves performance.
+	}
+
 	//Disable automatic re-read from file for the selected variogram model.  This improves performance.
 	m_fkEstimation->getVariogramModel()->readParameters(); //first, make sure the parameters are updated.
 	m_fkEstimation->getVariogramModel()->setForceReread( false );
@@ -566,21 +573,46 @@ double FKEstimationRunner::fkGeophysics(GridCell & estimationCell, int nst, doub
 		covMat_inv.invertWithGaussJordan();
 
 		//get the gamma matrix (theoretical partial covariances between sample locations and estimation location)
-		MatrixNXM<double> gammaMat = GeostatsUtils::makeGammaMatrix( vSamples,
-																	 estimationCell,
-																	 m_singleStructVModel,
-																	 m_singleStructVModel->getSill(),
-																	 KrigingType::SK,
-																	 true ); //using semivariogram per Deutsch
+		MatrixNXM<double> gammaMatSFK = GeostatsUtils::makeGammaMatrix( vSamples,
+																		estimationCell,
+																		m_singleStructVModel,
+																		m_singleStructVModel->getSill(),
+																		KrigingType::SK,
+																		true ); //using semivariogram per Deutsch
 
 		//get the kriging weights vector: [w] = [Cov]^-1 * [gamma] (solve the kriging system)
-		MatrixNXM<double> weightsSK( covMat_inv * gammaMat );
+		MatrixNXM<double> weightsSFK( covMat_inv * gammaMatSFK );
 
 		//Apply the weights (estimate).
-		factor = 0.0;
+		factor = 0.0; //the mean is a separate factor.
 		DataCellPtrMultiset::iterator itSamples = vSamples.begin();
 		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
-			factor += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() - mSK );
+			factor += weightsSFK(i,0) * ( (*itSamples)->readValueFromDataSet() - mSK );
+		}
+
+		//if the user opted for the nugget effect, the procedure is different:
+		//FK is used to compute all non-nugget factors, including the mean.
+		//Then, nugget factor is the difference between an exact kriging (SK) and FK
+		//with the nugget-less variogram.
+		if( m_fkEstimation->getFactorNumber() == 0 ){
+			//The gamma matrix for exact SK.
+			MatrixNXM<double> gammaMatSK = GeostatsUtils::makeGammaMatrix( vSamples,
+																		   estimationCell,
+																		   m_fkEstimation->getVariogramModel(),
+																		   m_fkEstimation->getVariogramModel()->getSill(),
+																		   KrigingType::SK,
+																		   true ); //using semivariogram per Deutsch
+			//The kriging weights for exact SK.
+			MatrixNXM<double> weightsSK( covMat_inv * gammaMatSK );
+			//Apply the SK weights (estimate).
+			double SK_estimate = 0.0;
+			DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+			for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+				SK_estimate += weightsSK(i,0) * ( (*itSamples)->readValueFromDataSet() - mSK );
+			}
+			//subtract the exact kriging estimate from the FK will all factors sans nugget ( previously computed with
+			// the m_singleStructVModel variogram) to get the nugget component.
+			factor = SK_estimate - factor;
 		}
 
 		//The "estimated" mean is simply the user-given global constant mean.
@@ -615,21 +647,56 @@ double FKEstimationRunner::fkGeophysics(GridCell & estimationCell, int nst, doub
 
 		//get the kriging weights vector: [w] = [Cov]^-1 * [gamma] (solve the kriging system)
 		//the sum of these weights is zero.
-		MatrixNXM<double> et_x_CXX_inv_x_e____inv( e_t * CZZ_inv * e );
-		et_x_CXX_inv_x_e____inv(0, 0) = 1 / et_x_CXX_inv_x_e____inv(0, 0);
-		MatrixNXM<double> weightsFactor( ( CY.getTranspose() * CZZ_inv * ( I - et_x_CXX_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) ).getTranspose() );
+		MatrixNXM<double> et_x_CZZ_inv_x_e____inv( e_t * CZZ_inv * e );
+		et_x_CZZ_inv_x_e____inv(0, 0) = 1 / et_x_CZZ_inv_x_e____inv(0, 0);
 
-		//Apply the weights (estimate).
-		factor = 0.0;
-		DataCellPtrMultiset::iterator itSamples = vSamples.begin();
-		for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
-			factor += weightsFactor(i,0) * ( (*itSamples)->readValueFromDataSet() );
+
+		//To estimate non-nugget factors.
+		if( m_fkEstimation->getFactorNumber() != 0 ){
+			MatrixNXM<double> weightsFactor( ( CY.getTranspose() * CZZ_inv * ( I - et_x_CZZ_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) ).getTranspose() );
+
+			//Apply the weights (estimate).
+			factor = 0.0;
+			DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+			for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+				factor += weightsFactor(i,0) * ( (*itSamples)->readValueFromDataSet() );
+			}
+		//To estimate the nugget factor (apply location shift trick)
+		} else {
+			//Make a full gamma matrix with estimation location slightly shifted.
+			MatrixNXM<double> CAA_t = GeostatsUtils::makeGammaMatrix( vSamples,
+																	estimationCell,
+																	m_fkEstimation->getVariogramModel(),
+																	m_fkEstimation->getVariogramModel()->getSill(),
+																	KrigingType::SK,
+																	true,  //using semivariogram per Deutsch
+																	0.1).getTranspose();
+			//Get the weights for shifted location.
+			MatrixNXM<double> weightsNugget(  ( CAA_t * CZZ_inv * ( I - et_x_CZZ_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) +
+												(et_x_CZZ_inv_x_e____inv(0,0) * e_t * CZZ_inv) ).getTranspose()  );
+			//get a full matrix.
+			MatrixNXM<double> gammaNugget = GeostatsUtils::makeGammaMatrix( vSamples,
+																		 estimationCell,
+																		 m_fkEstimation->getVariogramModel(),
+																		 m_fkEstimation->getVariogramModel()->getSill(),
+																		 KrigingType::SK,
+																		 true ); //using semivariogram per Deutsch
+			//Get normal procedure weights.
+			//MatrixNXM<double> weightsFactor( ( gammaNugget.getTranspose() * CZZ_inv * ( I - et_x_CZZ_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) ).getTranspose() );
+			MatrixNXM<double> weightsFactor(  ( gammaNugget.getTranspose() * CZZ_inv * ( I - et_x_CZZ_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) +
+												(et_x_CZZ_inv_x_e____inv(0,0) * e_t * CZZ_inv) ).getTranspose()  );
+			//Apply the weights (estimate).
+			factor = 0.0;
+			DataCellPtrMultiset::iterator itSamples = vSamples.begin();
+			for( uint i = 0; i < vSamples.size(); ++i, ++itSamples){
+				factor += ( weightsNugget(i,0) - weightsFactor(i,0) ) * ( (*itSamples)->readValueFromDataSet() );
+			}
 		}
 
 		//Estimating the mean
 		{
 			//Getting OK weights to estimate the neighborhood mean.
-			MatrixNXM<double> weightsMean( ( et_x_CXX_inv_x_e____inv(0,0) * e_t * CZZ_inv ).getTranspose() );
+			MatrixNXM<double> weightsMean( ( et_x_CZZ_inv_x_e____inv(0,0) * e_t * CZZ_inv ).getTranspose() );
 
 			//Apply the OK weights (estimate the mean).
 			estimatedMean = 0.0;
@@ -638,7 +705,6 @@ double FKEstimationRunner::fkGeophysics(GridCell & estimationCell, int nst, doub
 				estimatedMean += weightsMean(i,0) * ( (*itSamples)->readValueFromDataSet() );
 			}
 		}
-
 	}
 
 	//rarely, kriging may fail with a NaN or infinity value.

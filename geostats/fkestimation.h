@@ -51,7 +51,7 @@ public:
     /** Performs the factorial kriging. Make sure all parameters have been set properly.
      * @param factorNumber The number of factor to get: -1 (mean); 0 (nugget); 1 and onwards (each variographic structure).
      */
-    std::vector<double> run(int factorNumber);
+	std::vector<double> run( );
 
 	/** Returns the no-data-value for the estimation grid. */
 	double ndvOfEstimationGrid(){ return m_NDV_of_output; }

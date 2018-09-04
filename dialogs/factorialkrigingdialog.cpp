@@ -251,7 +251,7 @@ void FactorialKrigingDialog::preview()
     if( m_cg_estimation )
         delete m_cg_estimation;
 
-    //get the tmp file path created by kte3d with the estimates and kriging variances
+	//get the tmp file path created by kt3d with the estimates and kriging variances
 	QString grid_file_path = "NOFILE";
 
     //create a new grid object corresponding to the file created by kt3d
@@ -283,7 +283,13 @@ void FactorialKrigingDialog::doFK()
     case 0: factorName = "nugget"; break;
     default: factorName = vModel->getStructureDescription( factor_number - 1 );
     }
-    QString proposed_name = m_DataSetVariableSelector->getSelectedVariableName() + "_FK_" + factorName;
+	QString kTypeName;
+	switch ( static_cast<KrigingType>(m_gpfFK->getParameter<GSLibParOption*>( 0 )->_selected_value) ) {
+	case KrigingType::OK: kTypeName = "OFK"; break;
+	case KrigingType::SK: kTypeName = "SFK"; break;
+	default: kTypeName = "FK";
+	}
+	QString proposed_name = m_DataSetVariableSelector->getSelectedVariableName() + "_" + kTypeName + "_" + factorName;
 
     //user enters the name for the new variable with the desired factor.
     QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
@@ -328,7 +334,7 @@ void FactorialKrigingDialog::doFK()
         estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
         estimation.setEstimationGrid( m_cg_estimation );
         estimation.setFactorNumber( factor_number );
-        results = estimation.run( factor_number );
+		results = estimation.run( );
     }
 
     //add the new data column.
