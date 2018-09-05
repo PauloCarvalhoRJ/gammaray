@@ -9,10 +9,12 @@
 class SearchStrategy
 {
 public:
-    SearchStrategy( SearchNeighborhoodPtr nb, uint nb_samples );
+	/** @param minDistanceBetweenSamples Set zero to not impose a minimum distance between samples. */
+	SearchStrategy( SearchNeighborhoodPtr nb, uint nb_samples, double minDistanceBetweenSamples );
 
     SearchNeighborhoodPtr m_searchNB;
 	uint m_nb_samples;
+	double m_minDistanceBetweenSamples;
 };
 
 typedef std::shared_ptr<SearchStrategy> SearchStrategyPtr;

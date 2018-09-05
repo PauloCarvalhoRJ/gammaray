@@ -153,8 +153,17 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
 {
 	QList<uint> result;
 
+	//get the desired number of samples.
 	uint n = searchStrategy.m_nb_samples;
+
+	//get the search neighboorhood (e.g. an ellipsoid).
 	const SearchNeighborhood& searchNeighborhood = *(searchStrategy.m_searchNB);
+
+	//get the minimum distance between samples. (0.0 == not used)
+	double minDist = searchStrategy.m_minDistanceBetweenSamples;
+
+	//set a flag to avoid computing distances unnecessarily (performance reason).
+	bool useMinDist = minDist > 0.0;
 
 	//Get the location of the data cell.
 	double x = dataCell._center._x;
@@ -176,6 +185,8 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
     //Traverse the result set.
 	std::vector<Value>::iterator it = poinsInSearchBB.begin();
 	bgi::rtree< Value, bgi::rstar<16,5,5,32> > rtreeLocal;
+	std::vector<Value> resultMinDist;
+	resultMinDist.reserve( 1 );
 	for(; it != poinsInSearchBB.end(); ++it){
 		uint indexP = (*it).second;
 		//get the location of the point in the result set.
@@ -184,7 +195,29 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
 		double zP = g_dataFile->getDataSpatialLocation( indexP, CartesianCoord::Z );
 		//Test whether the point is actually inside the ellipsoid.
 		if( searchNeighborhood.isInside( x, y, z, xP, yP, zP ) ){
-			//Adds it to a local r-tree for the ensuing n-nearest search.
+			//if it necessary to impose a minimum distance between samples...
+			if( useMinDist ){
+				//...and if there is at least a sample already collected...
+				if( ! rtreeLocal.empty() ){
+					//...then query the local r-tree for the closest sample to the current sample so far.
+					rtreeLocal.query(bgi::nearest(Point3D(xP, yP, zP), 1), std::back_inserter(resultMinDist));
+					//get the location of the closest sample already collected.
+					uint indexClosestP = resultMinDist[0].second;
+					double xClosestP = g_dataFile->getDataSpatialLocation( indexClosestP, CartesianCoord::X );
+					double yClosestP = g_dataFile->getDataSpatialLocation( indexClosestP, CartesianCoord::Y );
+					double zClosestP = g_dataFile->getDataSpatialLocation( indexClosestP, CartesianCoord::Z );
+					//reset the vector used to collect the nearest sample already collected
+					resultMinDist.clear();
+					//compute the distance between the current sample and the nearest sample collected
+					double dist = boost::geometry::distance( Point3D(xP, yP, zP), Point3D(xClosestP, yClosestP, zClosestP) );
+					//if the current sample is closer to a sample previously collected than allowed...
+					if( dist < minDist ){
+						//...skip to the next sample (current sample is not collected).
+						continue;
+					}
+				}
+			}
+			//Adds the current sample to a local r-tree for the ensuing n-nearest search.
 			rtreeLocal.insert( *it );
 		}
 	}

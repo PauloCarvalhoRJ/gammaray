@@ -29,7 +29,6 @@ public:
     void setInputVariable( Attribute* at_input );
     void setEstimationGrid( CartesianGrid* cg_estimation );
     void setFactorNumber( int factorNumber );
-	void setMinDistanceBetweenSamples( double minDistanceBetweenSamples );
 	//@}
 
     //@{
@@ -40,7 +39,6 @@ public:
 	KrigingType getKrigingType(){ return m_ktype; }
     int getFactorNumber(){ return m_factorNumber; }
 	double getMeanForSimpleKriging(){ return m_meanSK; }
-	double getMinDistanceBetweenSamples() const;
 	//@}
 
 	/** Returns a container with the samples around the estimation cell to be used in the estimation.
@@ -74,7 +72,6 @@ private:
 	DataFile* m_inputDataFile;
 	double m_variogramSill;
     int m_factorNumber;
-	double m_minDistanceBetweenSamples;
 };
 
 #endif // FKESTIMATION_H

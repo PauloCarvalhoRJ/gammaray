@@ -209,13 +209,4 @@ std::vector<double> FKEstimation::run( )
 
     return results;
 }
-double FKEstimation::getMinDistanceBetweenSamples() const
-{
-	return m_minDistanceBetweenSamples;
-}
-
-void FKEstimation::setMinDistanceBetweenSamples(double minDistanceBetweenSamples)
-{
-	m_minDistanceBetweenSamples = minDistanceBetweenSamples;
-}
 
