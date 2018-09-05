@@ -61,6 +61,8 @@ public:
     Attribute* getVariableOfWeight( Attribute* weight );
     virtual void deleteVariable( uint columnToDelete );
 	virtual bool isRegular() { return false; }
+	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
+	virtual bool isTridimensional();
 
     // File interface
 public:

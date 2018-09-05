@@ -122,7 +122,14 @@ public:
     bool XYZtoIJK( double x, double y, double z,
                    uint& i,   uint& j,   uint& k );
 
-    /** Sets the number of realizations.
+	/**
+	 * Returns, via output variables (z, y and z), the XYZ coordinates corresponding to a IJK topological coordinate.
+	 * The returned coordinate is that of the center of the cell.
+	 */
+	void IJKtoXYZ( uint i,    uint j,    uint k,
+				   double& x, double& y, double& z );
+
+	/** Sets the number of realizations.
      * This is declarative only.  No check is performed whether there are actually the number of
      * realizations informed.
      */
@@ -147,6 +154,8 @@ public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
     virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 	virtual bool isRegular() { return true; }
+	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
+	virtual bool isTridimensional();
 
 // File interface
 public:

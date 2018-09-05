@@ -4,6 +4,7 @@
 #include <QList>
 
 class PointSet;
+class CartesianGrid;
 class SearchNeighborhood;
 class DataCell;
 
@@ -21,7 +22,12 @@ public:
      */
     static void fill( PointSet* ps, double tolerance );
 
-    /**
+	/** Fills the index with the CartesianGrid cells (bulk load).
+	 * It erases any previously indexed points.
+	 */
+	static void fill( CartesianGrid* cg );
+
+	/**
      * Returns the indexes of the n-nearest points to the point given by its index.
      * The indexes are the point indexes (file data lines) of the PointSet used fill
      * the index.

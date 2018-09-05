@@ -8,6 +8,7 @@
 #include "domain/application.h"
 #include "geostats/searchellipsoid.h"
 #include "geostats/datacell.h"
+#include "domain/cartesiangrid.h"
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -20,22 +21,13 @@ typedef std::pair<Box, size_t> Value;
 // WARNING: incorrect R-Tree parameter may lead to crashes with element insertions
 bgi::rtree< Value, bgi::rstar<16,5,5,32> > rtree;
 
-//the query pointset
-PointSet* pointset = nullptr;
+//the query data file
+DataFile* dataFile = nullptr;
 
-//the GEO-EAS columns of the X, Y, Z variables of the point set file
-int iX;
-int iY;
-int iZ;
-
-void setPointSet( PointSet* ps ){
-    pointset = ps;
+void setDataFile( DataFile* df ){
+	dataFile = df;
     //loads the PointSet data.
-    ps->loadData();
-    //get the GEO-EAS indexes -1 for the X, Y and Z coordinates
-    iX = ps->getXindex() - 1;
-    iY = ps->getYindex() - 1;
-    iZ = ps->getZindex() - 1;
+	df->loadData();
 }
 
 SpatialIndexPoints::SpatialIndexPoints()
@@ -48,23 +40,48 @@ void SpatialIndexPoints::fill(PointSet *ps, double tolerance)
     //first clear the index.
     clear();
 
-    setPointSet( ps );
+	setDataFile( ps );
 
     //for each data line...
     uint totlines = ps->getDataLineCount();
     for( uint iLine = 0; iLine < totlines; ++iLine){
         //...make a Point3D for the index
-        double x = ps->data( iLine, iX );
-        double y = ps->data( iLine, iY );
-        double z = 0.0; //put 2D data in the z==0.0 plane
-        if( iZ >= 0 )
-            z = ps->data( iLine, iZ );
+		double x = ps->getDataSpatialLocation( iLine, CartesianCoord::X );
+		double y = ps->getDataSpatialLocation( iLine, CartesianCoord::Y );
+		double z = ps->getDataSpatialLocation( iLine, CartesianCoord::Z );
         //make a bounding box around the point.
         Box box( Point3D(x-tolerance, y-tolerance, z-tolerance),
                  Point3D(x+tolerance, y+tolerance, z+tolerance));
         //insert the box representing the point into the spatial index.
         rtree.insert( std::make_pair(box, iLine) );
-    }
+	}
+}
+
+void SpatialIndexPoints::fill(CartesianGrid * cg)
+{
+	//first clear the index.
+	clear();
+
+	setDataFile( cg );
+
+	//the search tolerance is half of cell sizes.
+	double tX = cg->getDX() / 2;
+	double tY = cg->getDY() / 2;
+	double tZ = cg->getDZ() / 2;
+
+	//for each data line...
+	uint totlines = cg->getDataLineCount();
+	for( uint iLine = 0; iLine < totlines; ++iLine){
+		//...make a Point3D for the index
+		double x = cg->getDataSpatialLocation( iLine, CartesianCoord::X );
+		double y = cg->getDataSpatialLocation( iLine, CartesianCoord::Y );
+		double z = cg->getDataSpatialLocation( iLine, CartesianCoord::Z );
+		//make a bounding box around the point.
+		Box box( Point3D(x-tX, y-tY, z-tZ),
+				 Point3D(x+tX, y+tY, z+tZ) );
+		//insert the box representing the point into the spatial index.
+		rtree.insert( std::make_pair(box, iLine) );
+	}
 }
 
 QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
@@ -72,11 +89,9 @@ QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
     QList<uint> result;
 
     //get the location of the point.
-    double x = pointset->data( index, iX );
-    double y = pointset->data( index, iY );
-    double z = 0.0; //put 2D data in the z==0.0 plane
-    if( iZ >= 0 )
-        z = pointset->data( index, iZ );
+	double x = dataFile->getDataSpatialLocation( index, CartesianCoord::X );
+	double y = dataFile->getDataSpatialLocation( index, CartesianCoord::Y );
+	double z = dataFile->getDataSpatialLocation( index, CartesianCoord::Z );
 
     // find n nearest values to a point
     std::vector<Value> result_n;
@@ -99,11 +114,9 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
     QList<uint> result;
 
     //get the location of the query point.
-    double qx = pointset->data( index, iX );
-    double qy = pointset->data( index, iY );
-    double qz = 0.0; //put 2D data in the z==0.0 plane
-    if( iZ >= 0 )
-        qz = pointset->data( index, iZ );
+	double qx = dataFile->getDataSpatialLocation( index, CartesianCoord::X );
+	double qy = dataFile->getDataSpatialLocation( index, CartesianCoord::Y );
+	double qz = dataFile->getDataSpatialLocation( index, CartesianCoord::Z );
     Point3D qPoint(qx, qy, qz);
 
     //get the n-nearest points
@@ -114,11 +127,9 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
     for(; it != nearestSamples.end(); ++it){
         //get the location of a near point.
         uint nIndex = *it;
-        double nx = pointset->data( nIndex, iX );
-        double ny = pointset->data( nIndex, iY );
-        double nz = 0.0; //put 2D data in the z==0.0 plane
-        if( iZ >= 0 )
-            nz = pointset->data( nIndex, iZ );
+		double nx = dataFile->getDataSpatialLocation( nIndex, CartesianCoord::X );
+		double ny = dataFile->getDataSpatialLocation( nIndex, CartesianCoord::Y );
+		double nz = dataFile->getDataSpatialLocation( nIndex, CartesianCoord::Z );
         //compute the distance between the query point and a nearest point
         double dist = boost::geometry::distance( qPoint, Point3D(nx, ny, nz) );
         if( dist < distance ){
@@ -136,7 +147,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 	double x = dataCell._center._x;
 	double y = dataCell._center._y;
 	double z = 0.0; //put 2D data in the z==0.0 plane
-	if( iZ >= 0 )
+	if( dataFile->isTridimensional() )
 		z = dataCell._center._z;
 
 	//Get the bounding box as a function of the search ellipsoid centered at the data cell.
@@ -155,11 +166,9 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 	for(; it != poinsInSearchBB.end(); ++it){
 		uint indexP = (*it).second;
 		//get the location of the point in the result set.
-		double xP = pointset->data( indexP, iX );
-		double yP = pointset->data( indexP, iY );
-		double zP = 0.0; //put 2D data in the z==0.0 plane
-		if( iZ >= 0 )
-			zP = pointset->data( indexP, iZ );
+		double xP = dataFile->getDataSpatialLocation( indexP, CartesianCoord::X );
+		double yP = dataFile->getDataSpatialLocation( indexP, CartesianCoord::Y );
+		double zP = dataFile->getDataSpatialLocation( indexP, CartesianCoord::Z );
 		//Test whether the point is actually inside the ellipsoid.
 		if( searchNeighborhood.isInside( x, y, z, xP, yP, zP ) ){
 			//Adds it to a local r-tree for the ensuing n-nearest search.
@@ -182,5 +191,5 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 void SpatialIndexPoints::clear()
 {
     rtree.clear();
-    pointset = nullptr;
+	dataFile = nullptr;
 }

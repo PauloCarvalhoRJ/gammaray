@@ -532,7 +532,17 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
     if( /*i < 0 ||*/ i >= _nx || /*j < 0 ||*/ j >= _ny || /*k < 0 ||*/ k >= _nz ){
         return false;
     }
-    return true;
+	return true;
+}
+
+void CartesianGrid::IJKtoXYZ(uint i, uint j, uint k, double &x, double &y, double &z)
+{
+	x = _x0 + _dx / 2 + _dx * i;
+	y = _y0 + _dy / 2 + _dy * j;
+	if( _nz > 1 )
+		z = _z0 + _dz / 2 + _dz * k;
+	else
+		z = 0.0; //2D grids are positioned at Z=0.0 by convention
 }
 
 void CartesianGrid::setNReal(uint n)
@@ -757,5 +767,23 @@ void CartesianGrid::setOrigin(double x0, double y0, double z0)
 {
     _x0 = x0;
     _y0 = y0;
-    _z0 = z0;
+	_z0 = z0;
+}
+
+double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
+{
+	uint i, j, k;
+	double x, y, z;
+	indexToIJK( line, i, j, k );
+	IJKtoXYZ( i, j, k, x, y, z);
+	switch ( whichCoord ) {
+	case CartesianCoord::X: return x;
+	case CartesianCoord::Y: return y;
+	case CartesianCoord::Z: return z;
+	}
+}
+
+bool CartesianGrid::isTridimensional()
+{
+	return _nz > 1;
 }

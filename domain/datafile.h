@@ -14,6 +14,12 @@ class UnivariateCategoryClassification;
 class CategoryDefinition;
 class IAlgorithmDataSource;
 
+enum class CartesianCoord : int {
+	X,
+	Y,
+	Z
+};
+
 /**
  * @brief The DataFile class is the base class of all project components that are
  *  files with scientific data, namely Point Set and Cartesian Grid.
@@ -302,6 +308,14 @@ public:
 	 * Returns whether this file is a regular data set (e.g. a Cartesian grid is a regular data set).
 	 */
 	virtual bool isRegular() = 0;
+
+	/**
+	 * Returns one of the spatial coordinates (x, y or z) of the data value given its line number.
+	 */
+	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) = 0;
+
+	/** Returns whether this data set is tridimensional. */
+	virtual bool isTridimensional() = 0;
 
 //File interface
 	virtual void deleteFromFS();

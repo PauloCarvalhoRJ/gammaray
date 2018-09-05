@@ -145,7 +145,25 @@ void PointSet::deleteVariable(uint columnToDelete)
     _wgt_var_pairs.swap(temp);
 
     //call superclass' deleteVariable() to do the rest of the job
-    DataFile::deleteVariable( columnToDelete );
+	DataFile::deleteVariable( columnToDelete );
+}
+
+double PointSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
+{
+	switch ( whichCoord ) {
+	case CartesianCoord::X: return data( line, _x_field_index - 1 ); //x,y,z is in data file directly
+	case CartesianCoord::Y: return data( line, _y_field_index - 1 ); //x,y,z is in data file directly
+	case CartesianCoord::Z:
+		if( isTridimensional() )
+			return data( line, _z_field_index - 1 ); //x,y,z is in data file directly
+		else
+			return 0.0; //returns z=0.0 for datasets in 2D.
+	}
+}
+
+bool PointSet::isTridimensional()
+{
+	return is3D();
 }
 
 void PointSet::setInfoFromMetadataFile()
