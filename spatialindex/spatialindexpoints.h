@@ -15,6 +15,7 @@ class SpatialIndexPoints
 {
 public:
     SpatialIndexPoints();
+	virtual ~SpatialIndexPoints();
 
     /** Fills the index with the PointSet points (bulk load).
      * It erases any previously indexed points.

@@ -19,20 +19,29 @@ typedef std::pair<Box, size_t> Value;
 
 // create the R* variant of the rtree
 // WARNING: incorrect R-Tree parameter may lead to crashes with element insertions
-bgi::rtree< Value, bgi::rstar<16,5,5,32> > rtree;
+bgi::rtree< Value, bgi::rstar<16,5,5,32> > g_rtree;
 
 //the query data file
-DataFile* dataFile = nullptr;
+DataFile* g_dataFile = nullptr;
 
 void setDataFile( DataFile* df ){
-	dataFile = df;
+	g_dataFile = df;
     //loads the PointSet data.
 	df->loadData();
 }
 
+//A guard against simulatneous use of the spatial index.
+bool g_spatialIndexBeingUsed = false;
+
 SpatialIndexPoints::SpatialIndexPoints()
 {
+	assert( ! g_spatialIndexBeingUsed && "Spatial index being used elsewhere.  Make sure instances of SpatialIndexPoints are being destroyed immediately after use." );
+	g_spatialIndexBeingUsed = true;
+}
 
+SpatialIndexPoints::~SpatialIndexPoints()
+{
+	g_spatialIndexBeingUsed = false;
 }
 
 void SpatialIndexPoints::fill(PointSet *ps, double tolerance)
@@ -53,7 +62,7 @@ void SpatialIndexPoints::fill(PointSet *ps, double tolerance)
         Box box( Point3D(x-tolerance, y-tolerance, z-tolerance),
                  Point3D(x+tolerance, y+tolerance, z+tolerance));
         //insert the box representing the point into the spatial index.
-        rtree.insert( std::make_pair(box, iLine) );
+		g_rtree.insert( std::make_pair(box, iLine) );
 	}
 }
 
@@ -80,7 +89,7 @@ void SpatialIndexPoints::fill(CartesianGrid * cg)
 		Box box( Point3D(x-tX, y-tY, z-tZ),
 				 Point3D(x+tX, y+tY, z+tZ) );
 		//insert the box representing the point into the spatial index.
-		rtree.insert( std::make_pair(box, iLine) );
+		g_rtree.insert( std::make_pair(box, iLine) );
 	}
 }
 
@@ -89,13 +98,13 @@ QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
     QList<uint> result;
 
     //get the location of the point.
-	double x = dataFile->getDataSpatialLocation( index, CartesianCoord::X );
-	double y = dataFile->getDataSpatialLocation( index, CartesianCoord::Y );
-	double z = dataFile->getDataSpatialLocation( index, CartesianCoord::Z );
+	double x = g_dataFile->getDataSpatialLocation( index, CartesianCoord::X );
+	double y = g_dataFile->getDataSpatialLocation( index, CartesianCoord::Y );
+	double z = g_dataFile->getDataSpatialLocation( index, CartesianCoord::Z );
 
     // find n nearest values to a point
     std::vector<Value> result_n;
-    rtree.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(result_n));
+	g_rtree.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(result_n));
 
     // collect the point indexes
     std::vector<Value>::iterator it = result_n.begin();
@@ -114,9 +123,9 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
     QList<uint> result;
 
     //get the location of the query point.
-	double qx = dataFile->getDataSpatialLocation( index, CartesianCoord::X );
-	double qy = dataFile->getDataSpatialLocation( index, CartesianCoord::Y );
-	double qz = dataFile->getDataSpatialLocation( index, CartesianCoord::Z );
+	double qx = g_dataFile->getDataSpatialLocation( index, CartesianCoord::X );
+	double qy = g_dataFile->getDataSpatialLocation( index, CartesianCoord::Y );
+	double qz = g_dataFile->getDataSpatialLocation( index, CartesianCoord::Z );
     Point3D qPoint(qx, qy, qz);
 
     //get the n-nearest points
@@ -127,9 +136,9 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
     for(; it != nearestSamples.end(); ++it){
         //get the location of a near point.
         uint nIndex = *it;
-		double nx = dataFile->getDataSpatialLocation( nIndex, CartesianCoord::X );
-		double ny = dataFile->getDataSpatialLocation( nIndex, CartesianCoord::Y );
-		double nz = dataFile->getDataSpatialLocation( nIndex, CartesianCoord::Z );
+		double nx = g_dataFile->getDataSpatialLocation( nIndex, CartesianCoord::X );
+		double ny = g_dataFile->getDataSpatialLocation( nIndex, CartesianCoord::Y );
+		double nz = g_dataFile->getDataSpatialLocation( nIndex, CartesianCoord::Z );
         //compute the distance between the query point and a nearest point
         double dist = boost::geometry::distance( qPoint, Point3D(nx, ny, nz) );
         if( dist < distance ){
@@ -147,7 +156,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 	double x = dataCell._center._x;
 	double y = dataCell._center._y;
 	double z = 0.0; //put 2D data in the z==0.0 plane
-	if( dataFile->isTridimensional() )
+	if( g_dataFile->isTridimensional() )
 		z = dataCell._center._z;
 
 	//Get the bounding box as a function of the search ellipsoid centered at the data cell.
@@ -158,7 +167,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 
 	//Get all the points within the bounding box of the search ellipsoid.
 	std::vector<Value> poinsInSearchBB;
-    rtree.query( bgi::intersects( searchBB ), std::back_inserter(poinsInSearchBB) );
+	g_rtree.query( bgi::intersects( searchBB ), std::back_inserter(poinsInSearchBB) );
 
     //Traverse the result set.
 	std::vector<Value>::iterator it = poinsInSearchBB.begin();
@@ -166,9 +175,9 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 	for(; it != poinsInSearchBB.end(); ++it){
 		uint indexP = (*it).second;
 		//get the location of the point in the result set.
-		double xP = dataFile->getDataSpatialLocation( indexP, CartesianCoord::X );
-		double yP = dataFile->getDataSpatialLocation( indexP, CartesianCoord::Y );
-		double zP = dataFile->getDataSpatialLocation( indexP, CartesianCoord::Z );
+		double xP = g_dataFile->getDataSpatialLocation( indexP, CartesianCoord::X );
+		double yP = g_dataFile->getDataSpatialLocation( indexP, CartesianCoord::Y );
+		double zP = g_dataFile->getDataSpatialLocation( indexP, CartesianCoord::Z );
 		//Test whether the point is actually inside the ellipsoid.
 		if( searchNeighborhood.isInside( x, y, z, xP, yP, zP ) ){
 			//Adds it to a local r-tree for the ensuing n-nearest search.
@@ -190,6 +199,6 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint 
 
 void SpatialIndexPoints::clear()
 {
-    rtree.clear();
-	dataFile = nullptr;
+	g_rtree.clear();
+	g_dataFile = nullptr;
 }
