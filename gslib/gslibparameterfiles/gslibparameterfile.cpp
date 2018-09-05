@@ -414,6 +414,10 @@ void GSLibParameterFile::makeParamatersForFactorialKriging()
     par_factor->_selected_value = -1;
     _params.append( par_factor );
 
+	//------------Minimum distance between samples: parameter 5--------------------------------
+	GSLibParDouble* par_minDistance = new GSLibParDouble("", "", "Min. distance between samples (0 == not used):");
+	par_minDistance->_value = 0.0;
+	_params.append( par_minDistance );
 }
 
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){

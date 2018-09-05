@@ -8,6 +8,7 @@
 #include "domain/application.h"
 #include "geostats/searchellipsoid.h"
 #include "geostats/datacell.h"
+#include "geostats/searchstrategy.h"
 #include "domain/cartesiangrid.h"
 
 namespace bg = boost::geometry;
@@ -148,9 +149,12 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
 	return result;
 }
 
-QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, uint n, const SearchNeighborhood & searchNeighborhood)
+QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const SearchStrategy & searchStrategy)
 {
 	QList<uint> result;
+
+	uint n = searchStrategy.m_nb_samples;
+	const SearchNeighborhood& searchNeighborhood = *(searchStrategy.m_searchNB);
 
 	//Get the location of the data cell.
 	double x = dataCell._center._x;

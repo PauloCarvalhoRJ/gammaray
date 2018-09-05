@@ -63,7 +63,9 @@ void FKEstimation::setInputVariable(Attribute *at_input)
 	m_inputDataFile = static_cast<DataFile*>( m_at_input->getContainingFile() );
 	//Build a spatial index according to the type of the data file.
 	if( m_inputDataFile->isRegular() ){
-		Application::instance()->logError( "FKEstimation::setInputVariable(): SPATIAL INDEX NOT IMPLEMENTED FOR REGULAR DATA SETS." );
+		CartesianGrid* cg = static_cast<CartesianGrid*>( m_inputDataFile );
+		m_spatialIndexPoints->fill( cg );
+		Application::instance()->logInfo( "Spatial index created for " + m_inputDataFile->getName() + " regular grid." );
 	} else {
 		PointSet* ps = static_cast<PointSet*>( m_inputDataFile );
 		m_spatialIndexPoints->fill( ps, 0.000001 );
@@ -87,9 +89,18 @@ DataCellPtrMultiset FKEstimation::getSamples(const GridCell & estimationCell )
 	if( m_searchStrategy && m_at_input ){
 
 		if( m_inputDataFile->isRegular() ){
-			Application::instance()->logError( "FKEstimation::getSamples(): NOT IMPLEMENTED FOR REGULAR DATA SETS." );
+			QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
+			QList<uint>::iterator it = samplesIndexes.begin();
+			for( ; it != samplesIndexes.end(); ++it ){
+				CartesianGrid* cg = static_cast<CartesianGrid*>( m_inputDataFile );
+				uint i, j, k;
+				cg->indexToIJK( *it, i, j, k );
+				DataCellPtr p(new GridCell( cg, m_at_input->getAttributeGEOEASgivenIndex()-1, i, j, k ));
+				p->computeCartesianDistance( estimationCell );
+				result.insert( p );
+			}
 		} else { //TODO: this currently assumes the irregular data is a PointSet object.
-            QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, m_searchStrategy->m_nb_samples, *(m_searchStrategy->m_searchNB) );
+			QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
             QList<uint>::iterator it = samplesIndexes.begin();
 			for( ; it != samplesIndexes.end(); ++it ){
 				DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
@@ -198,3 +209,13 @@ std::vector<double> FKEstimation::run( )
 
     return results;
 }
+double FKEstimation::getMinDistanceBetweenSamples() const
+{
+	return m_minDistanceBetweenSamples;
+}
+
+void FKEstimation::setMinDistanceBetweenSamples(double minDistanceBetweenSamples)
+{
+	m_minDistanceBetweenSamples = minDistanceBetweenSamples;
+}
+

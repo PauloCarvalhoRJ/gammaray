@@ -5,8 +5,8 @@
 
 class PointSet;
 class CartesianGrid;
-class SearchNeighborhood;
 class DataCell;
+class SearchStrategy;
 
 /**
  * This class exposes functionalities related to spatial indexes and queries with GammaRay objects.
@@ -30,13 +30,13 @@ public:
 
 	/**
      * Returns the indexes of the n-nearest points to the point given by its index.
-     * The indexes are the point indexes (file data lines) of the PointSet used fill
+	 * The indexes are the data record indexes (file data lines) of the DataFile used to fill
      * the index.
      */
     static QList<uint> getNearest( uint index, uint n );
 
     /**
-	 * Returns the indexes of the n-nearest points within the given distance
+	 * Returns the data line indexes of the n-nearest points within the given distance
      * to the point given by its index. The indexes are the point indexes
      * (file data lines) of the PointSet used fill the index.  May return
      * an empty list.
@@ -45,14 +45,13 @@ public:
     static QList<uint> getNearestWithin(uint index, uint n, double distance);
 
 	/**
-	 * Returns the indexes of the n-nearest points within the given neighborhood
+	 * Returns the data line indexes of the n-nearest points within the given neighborhood
 	 * centered at given data cell (e.g. grid cell). The indexes are the point indexes
 	 * (file data lines) of the PointSet used fill the index.  May return
 	 * an empty list.
 	 */
 	static QList<uint> getNearestWithin(const DataCell& dataCell,
-										 uint n,
-										 const SearchNeighborhood & searchNeighborhood );
+										const SearchStrategy & searchStrategy );
 
 
     /** Clears the spatial index. */

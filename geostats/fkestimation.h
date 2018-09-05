@@ -22,14 +22,15 @@ public:
 
     //@{
 	/** Set the Factorial Kriging parameters. */
-    void setSearchStrategy(SearchStrategyPtr searchStrategy );
+	void setSearchStrategy( SearchStrategyPtr searchStrategy );
     void setVariogramModel( VariogramModel* variogramModel );
     void setMeanForSimpleKriging( double meanSK );
     void setKrigingType( KrigingType ktype );
     void setInputVariable( Attribute* at_input );
     void setEstimationGrid( CartesianGrid* cg_estimation );
     void setFactorNumber( int factorNumber );
-    //@}
+	void setMinDistanceBetweenSamples( double minDistanceBetweenSamples );
+	//@}
 
     //@{
     /** Getters. */
@@ -39,7 +40,8 @@ public:
 	KrigingType getKrigingType(){ return m_ktype; }
     int getFactorNumber(){ return m_factorNumber; }
 	double getMeanForSimpleKriging(){ return m_meanSK; }
-    //@}
+	double getMinDistanceBetweenSamples() const;
+	//@}
 
 	/** Returns a container with the samples around the estimation cell to be used in the estimation.
 	 * The resulting collection depends on the SearchStrategy object set.  Returns an empty object if any
@@ -60,10 +62,10 @@ public:
 	double getVariogramSill(){ return m_variogramSill; }
 
 private:
-    SearchStrategyPtr m_searchStrategy;
-    VariogramModel *m_variogramModel;
-    double m_meanSK;
-    KrigingType m_ktype;
+	SearchStrategyPtr m_searchStrategy;
+	VariogramModel *m_variogramModel;
+	double m_meanSK;
+	KrigingType m_ktype;
     Attribute *m_at_input;
     CartesianGrid* m_cg_estimation;
     double m_NDV_of_input;
@@ -72,6 +74,7 @@ private:
 	DataFile* m_inputDataFile;
 	double m_variogramSill;
     int m_factorNumber;
+	double m_minDistanceBetweenSamples;
 };
 
 #endif // FKESTIMATION_H

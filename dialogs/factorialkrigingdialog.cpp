@@ -334,6 +334,7 @@ void FactorialKrigingDialog::doFK()
         estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
         estimation.setEstimationGrid( m_cg_estimation );
         estimation.setFactorNumber( factor_number );
+		estimation.setMinDistanceBetweenSamples( m_gpfFK->getParameter<GSLibParDouble*>( 5 ) ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
 		results = estimation.run( );
     }
 
