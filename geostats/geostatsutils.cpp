@@ -54,7 +54,7 @@ Matrix3X3<double> GeostatsUtils::getAnisoTransform(double aSemiMajor,
     return       S * Troll * Tpitch * Tyaw;
 }
 
-void GeostatsUtils::transform(Matrix3X3<double> &t, double &a1, double &a2, double &a3)
+void GeostatsUtils::transform(const Matrix3X3<double> &t, double &a1, double &a2, double &a3)
 {
     double temp_a1 = t._a11 * a1 + t._a12 * a2 + t._a13 * a3;
     double temp_a2 = t._a21 * a1 + t._a22 * a2 + t._a23 * a3;

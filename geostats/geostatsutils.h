@@ -37,7 +37,7 @@ public:
                                                 double azimuth, double dip, double roll );
 
     /** Transforms the 3x1 vector-column (a1, a2, a3) with the given 3x3 matrix. */
-    static void transform( Matrix3X3<double>& t, double& a1, double& a2, double& a3 );
+	static void transform(const Matrix3X3<double> & t, double& a1, double& a2, double& a3 );
 
     /** Returns a value for h (separation) given an anisotropy transform (obtained with getAnisoTranform() with
      * the aniso ellipsoid parameters) between two locations.  The h value is then entered into a variogram model

@@ -2,14 +2,15 @@
 #define SEARCHELLIPSOID_H
 
 #include "searchneighborhood.h"
+#include "geostatsutils.h"
 
 /** This class represents a search neighborhood in the shape of an ellipsoid.
- *   TODO: add support for rotation angles (azimuth, dip and roll).
  */
 class SearchEllipsoid : public SearchNeighborhood
 {
 public:
-	SearchEllipsoid(double hMax, double hMin, double hVert);
+	SearchEllipsoid(double hMax, double hMin, double hVert,
+					double azimuth, double dip, double roll );
 
 	/** Move constructor. */
 	SearchEllipsoid( SearchEllipsoid&& right_hand_side );
@@ -24,6 +25,12 @@ public:
 
 
 	double m_hMax, m_hMin, m_hVert;
+	double m_azimuth, m_dip, m_roll;
+
+protected:
+	Matrix3X3<double> m_rotationTransform;
+
+	void setRotationTransform();
 };
 
 #endif // SEARCHELLIPSOID_H

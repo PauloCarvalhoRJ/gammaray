@@ -407,14 +407,21 @@ void GSLibParameterFile::makeParamatersForFactorialKriging()
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	_params.append( par_search_ellip_radii );
 
-    //------------Factor to get: parameter 4--------------------------------
+	//------------search ellipsoid angles: parameter 4--------------------------------
+	GSLibParMultiValuedFixed *par_search_ellip_angles = new GSLibParMultiValuedFixed("", "", "Search ellipsoid angles (azimuth, dip, roll):");
+	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
+	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
+	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
+	_params.append( par_search_ellip_angles );
+
+	//------------Factor to get: parameter 5--------------------------------
     GSLibParOption* par_factor = new GSLibParOption("", "", "Factor:");
     par_factor->addOption( -1, "Mean (Factor 1)" );
     par_factor->addOption( 0, "Nugget effect (Factor 2)" );
     par_factor->_selected_value = -1;
     _params.append( par_factor );
 
-	//------------Minimum distance between samples: parameter 5--------------------------------
+	//------------Minimum distance between samples: parameter 6--------------------------------
 	GSLibParDouble* par_minDistance = new GSLibParDouble("", "", "Min. distance between samples (0 == not used):");
 	par_minDistance->_value = 0.0;
 	_params.append( par_minDistance );
