@@ -395,33 +395,38 @@ void GSLibParameterFile::makeParamatersForFactorialKriging()
     par_skmean->_value = 0.0;
     _params.append( par_skmean );
 
-	//------------mean for simple kriging: parameter 2--------------------------------
+    //------------max number of samples: parameter 2--------------------------------
 	GSLibParUInt* par_nb_samples = new GSLibParUInt("", "", "Maximum number of samples:");
 	par_nb_samples->_value = 16;
 	_params.append( par_nb_samples );
 
-	//------------search ellipsoid radii: parameter 3--------------------------------
+    //------------max number of samples: parameter 3--------------------------------
+    GSLibParUInt* par_min_nb_samples = new GSLibParUInt("", "", "Minimum number of samples:");
+    par_min_nb_samples->_value = 4;
+    _params.append( par_min_nb_samples );
+
+    //------------search ellipsoid radii: parameter 4--------------------------------
 	GSLibParMultiValuedFixed *par_search_ellip_radii = new GSLibParMultiValuedFixed("", "", "Search ellipsoid radii (hMax, hMin, hVert):");
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
 	_params.append( par_search_ellip_radii );
 
-	//------------search ellipsoid angles: parameter 4--------------------------------
+    //------------search ellipsoid angles: parameter 5--------------------------------
 	GSLibParMultiValuedFixed *par_search_ellip_angles = new GSLibParMultiValuedFixed("", "", "Search ellipsoid angles (azimuth, dip, roll):");
 	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
 	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
 	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
 	_params.append( par_search_ellip_angles );
 
-	//------------Factor to get: parameter 5--------------------------------
+    //------------Factor to get: parameter 6--------------------------------
     GSLibParOption* par_factor = new GSLibParOption("", "", "Factor:");
     par_factor->addOption( -1, "Mean (Factor 1)" );
     par_factor->addOption( 0, "Nugget effect (Factor 2)" );
     par_factor->_selected_value = -1;
     _params.append( par_factor );
 
-	//------------Minimum distance between samples: parameter 6--------------------------------
+    //------------Minimum distance between samples: parameter 7--------------------------------
 	GSLibParDouble* par_minDistance = new GSLibParDouble("", "", "Min. distance between samples (0 == not used):");
 	par_minDistance->_value = 0.0;
 	_params.append( par_minDistance );

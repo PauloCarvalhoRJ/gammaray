@@ -25,7 +25,8 @@ FKEstimation::FKEstimation() :
 	m_cg_estimation( nullptr ),
 	m_spatialIndexPoints( new SpatialIndexPoints() ),
     m_inputDataFile( nullptr ),
-    m_factorNumber( 0 ) //0 == nugget effect.
+    m_factorNumber( 0 ), //0 == nugget effect.
+    m_minNumberOfSamples( 0 )
 {
 }
 
@@ -209,4 +210,14 @@ std::vector<double> FKEstimation::run( )
 
     return results;
 }
+int FKEstimation::getMinNumberOfSamples() const
+{
+    return m_minNumberOfSamples;
+}
+
+void FKEstimation::setMinNumberOfSamples(int minNumberOfSamples)
+{
+    m_minNumberOfSamples = minNumberOfSamples;
+}
+
 
