@@ -1,7 +1,8 @@
 #ifndef MATRIX3X3_H
 #define MATRIX3X3_H
 
-/** A 3x3 matrix template. */
+/** A 3x3 matrix template. This class contains matrix operations hardcoded for 3 x 3 matrices, which are
+ * supposedly better optimized by the compiler than generic matrix algorithms.*/
 
 template <class T>
 class Matrix3X3
@@ -39,6 +40,34 @@ public:
        return m3;
     }
 
+    /** Returns the determinant of the matrix. */
+    double det(){
+        return _a11 * ( _a22 * _a33 - _a32 * _a23 ) -
+               _a12 * ( _a21 * _a33 - _a23 * _a31 ) +
+               _a13 * ( _a21 * _a32 - _a22 * _a31 );
+    }
+
+    /** Inverts this matrix. */
+    void invert(){
+        double determinant = det();
+
+        double invdet = 1 / determinant;
+
+        //store the results in temporary variables to avoid aliasing.
+        double a11 = ( _a22 * _a33 - _a32 * _a23 ) * invdet;
+        double a12 = ( _a13 * _a32 - _a12 * _a33 ) * invdet;
+        double a13 = ( _a12 * _a23 - _a13 * _a22 ) * invdet;
+        double a21 = ( _a23 * _a31 - _a21 * _a33 ) * invdet;
+        double a22 = ( _a11 * _a33 - _a13 * _a31 ) * invdet;
+        double a23 = ( _a21 * _a13 - _a11 * _a23 ) * invdet;
+        double a31 = ( _a21 * _a32 - _a31 * _a22 ) * invdet;
+        double a32 = ( _a31 * _a12 - _a11 * _a32 ) * invdet;
+        double a33 = ( _a11 * _a22 - _a21 * _a12 ) * invdet;
+
+        _a11 = a11; _a12 = a12; _a13 = a13;
+        _a21 = a21; _a22 = a22; _a23 = a23;
+        _a31 = a31; _a32 = a32; _a33 = a33;
+    }
 
     T _a11; T _a12; T _a13;
     T _a21; T _a22; T _a23;
