@@ -38,7 +38,7 @@ public:
     /**
 	 * Returns the data line indexes of the n-nearest points within the given distance
      * to the point given by its index. The indexes are the point indexes
-     * (file data lines) of the PointSet used fill the index.  May return
+     * (file data lines) of the DataFile used fill the index.  May return
      * an empty list.
      * @param distance The distance the returned points must be within.
      */
@@ -47,7 +47,7 @@ public:
 	/**
 	 * Returns the data line indexes of the n-nearest points within the given neighborhood
 	 * centered at given data cell (e.g. grid cell). The indexes are the point indexes
-	 * (file data lines) of the PointSet used fill the index.  May return
+     * (file data lines) of the DataFile used fill the index.  May return
 	 * an empty list.
 	 */
 	static QList<uint> getNearestWithin(const DataCell& dataCell,

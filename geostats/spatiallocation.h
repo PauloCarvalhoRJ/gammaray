@@ -1,6 +1,8 @@
 #ifndef SPATIALLOCATION_H
 #define SPATIALLOCATION_H
 
+#include <memory>
+
 /** A location in space.  Essentially a structure to group x, y and z spatial coordinates. */
 class SpatialLocation
 {
@@ -8,6 +10,9 @@ public:
 
     /** Initializes the location at ( 0.0, 0.0, 0.0 ) */
     SpatialLocation();
+
+    /** Initializes the location at the given coordinates. */
+    SpatialLocation( double x, double y, double z );
 
     double _x;
     double _y;
@@ -24,5 +29,7 @@ public:
 
 	SpatialLocation operator+( double a ) const;
 };
+
+typedef std::shared_ptr<SpatialLocation> SpatialLocationPtr;
 
 #endif // SPATIALLOCATION_H

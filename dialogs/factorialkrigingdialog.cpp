@@ -118,7 +118,7 @@ void FactorialKrigingDialog::onParameters()
 	}
 
 	//update the available factor options.
-    GSLibParOption* factor_par = m_gpfFK->getParameter<GSLibParOption*>( 6 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
+    GSLibParOption* factor_par = m_gpfFK->getParameter<GSLibParOption*>( 7 ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
 	factor_par->_options.clear();
 	factor_par->addOption( -1, "Mean (Factor 1)" );
 	factor_par->addOption( 0, "Nugget effect (Factor 2)" );
@@ -273,7 +273,7 @@ void FactorialKrigingDialog::preview()
 void FactorialKrigingDialog::doFK()
 {
     //Get the factor number (-1 = mean, 0 = nugget, 1 and onwards = the variogram structures).
-    int factor_number =  (m_gpfFK->getParameter<GSLibParOption*>( 6 ))->_selected_value;
+    int factor_number =  (m_gpfFK->getParameter<GSLibParOption*>( 7 ))->_selected_value;
 
     //propose a name for the new variable to contain the choosen factor.
     QString factorName;
@@ -312,7 +312,7 @@ void FactorialKrigingDialog::doFK()
         //If the input data is a pointset, the estimation grid is another grid selected by the user.
         m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
 
-	//Build the search strategy object from the user-input values.
+    //Build the search strategy and search neighborhood objects from the user-input values.
 	// See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
     GSLibParMultiValuedFixed* search_ellip_radii_par = m_gpfFK->getParameter<GSLibParMultiValuedFixed*>( 4 );
 	double hMax    =  search_ellip_radii_par->getParameter<GSLibParDouble*>(0)->_value;
@@ -320,13 +320,23 @@ void FactorialKrigingDialog::doFK()
 	double hVert   =  search_ellip_radii_par->getParameter<GSLibParDouble*>(2)->_value;
     GSLibParMultiValuedFixed* search_ellip_angles_par = m_gpfFK->getParameter<GSLibParMultiValuedFixed*>( 5 );
 	double azimuth = search_ellip_angles_par->getParameter<GSLibParDouble*>(0)->_value;
-	double dip     = search_ellip_angles_par->getParameter<GSLibParDouble*>(1)->_value;
+    double dip     = search_ellip_angles_par->getParameter<GSLibParDouble*>(1)->_value;
 	double roll    = search_ellip_angles_par->getParameter<GSLibParDouble*>(2)->_value;
 	uint nb_samples = m_gpfFK->getParameter<GSLibParUInt*>( 2 )->_value;
-	SearchStrategyPtr searchStrategy( new SearchStrategy( SearchNeighborhoodPtr(new SearchEllipsoid(hMax, hMin, hVert, azimuth, dip, roll)),
+    GSLibParMultiValuedFixed *par_search_ellip_sectors = m_gpfFK->getParameter<GSLibParMultiValuedFixed*>( 6 );
+    uint numberOfSectors = par_search_ellip_sectors->getParameter<GSLibParUInt*>( 0 )->_value;
+    uint minSamplesPerSector = par_search_ellip_sectors->getParameter<GSLibParUInt*>( 1 )->_value;
+    uint maxSamplesPerSector = par_search_ellip_sectors->getParameter<GSLibParUInt*>( 2 )->_value;
+    SearchNeighborhoodPtr searchNeighborhood(
+                new SearchEllipsoid(hMax, hMin, hVert,
+                                    azimuth, dip, roll,
+                                    numberOfSectors, minSamplesPerSector, maxSamplesPerSector
+                                    )
+                );
+    SearchStrategyPtr searchStrategy( new SearchStrategy( searchNeighborhood,
 														  nb_samples,
-                                                          m_gpfFK->getParameter<GSLibParDouble*>( 7 )->_value // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
-														  ) );
+                                                          m_gpfFK->getParameter<GSLibParDouble*>( 8 )->_value, // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
+                                                          m_gpfFK->getParameter<GSLibParUInt*>( 3 )->_value) ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
 
     //run the estimation
     std::vector<double> results;
@@ -340,7 +350,6 @@ void FactorialKrigingDialog::doFK()
         estimation.setMeanForSimpleKriging( skmean_par->_value );
         estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
         estimation.setEstimationGrid( m_cg_estimation );
-        estimation.setMinNumberOfSamples( m_gpfFK->getParameter<GSLibParUInt*>( 3 )->_value ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
         estimation.setFactorNumber( factor_number );
 		results = estimation.run( );
     }

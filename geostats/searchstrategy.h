@@ -15,6 +15,10 @@ public:
                     double minDistanceBetweenSamples,
                     uint minNumberOfSamples);
 
+    /** Returns whether the search strategy's search neighborhood has some additional spatial filtering
+     * other than the simple n-nearest points (e.g. octant/sector search). */
+    virtual bool NBhasSpatialFiltering() const { return m_searchNB->hasSpatialFiltering(); }
+
     SearchNeighborhoodPtr m_searchNB;
 	uint m_nb_samples;
 	double m_minDistanceBetweenSamples;

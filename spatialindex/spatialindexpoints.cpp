@@ -172,19 +172,22 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
 	if( g_dataFile->isTridimensional() )
 		z = dataCell._center._z;
 
-	//Get the bounding box as a function of the search ellipsoid centered at the data cell.
+    //Get the bounding box as a function of the search neighborhood centered at the data cell.
 	double maxX, maxY, maxZ, minX, minY, minZ;
     searchNeighborhood.getBBox( x, y, z, minX, minY, minZ, maxX, maxY, maxZ );
     Box searchBB( Point3D( minX, minY, minZ ),
 				  Point3D( maxX, maxY, maxZ ));
 
-	//Get all the points within the bounding box of the search ellipsoid.
+    //Get all the points within the bounding box of the search neighborhood.
+    //This step improves performance because the actual inside/outside test of the search
+    //neighborhood implementation may be slow.
 	std::vector<Value> poinsInSearchBB;
 	g_rtree.query( bgi::intersects( searchBB ), std::back_inserter(poinsInSearchBB) );
 
-    //Traverse the result set.
+    //Get all the samples actually inside the search neighborhood.
 	std::vector<Value>::iterator it = poinsInSearchBB.begin();
-	bgi::rtree< Value, bgi::rstar<16,5,5,32> > rtreeLocal;
+    typedef bgi::rtree< Value, bgi::rstar<16,5,5,32> > RTreeLocal;
+    RTreeLocal rtreeLocal;
 	std::vector<Value> resultMinDist;
 	resultMinDist.reserve( 1 );
 	for(; it != poinsInSearchBB.end(); ++it){
@@ -222,14 +225,33 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
 		}
 	}
 
-	//Get only the n-nearest of those found inside the ellipsoid.
+    //The search strategy may need to perform spatial filtering of samples.
+    if( searchStrategy.NBhasSpatialFiltering() ){
+        //Copy all sample locations found inside the neighborhood to a vector.
+        std::vector<SpatialLocationPtr> locationsToFilter;
+        locationsToFilter.reserve( rtreeLocal.size() );
+        for ( RTreeLocal::const_iterator it = rtreeLocal.begin() ; it != rtreeLocal.end() ; ++it ){
+            //Get sample's location given the index stored in the r-tree.
+            double x = g_dataFile->getDataSpatialLocation( (*it).second, CartesianCoord::X );
+            double y = g_dataFile->getDataSpatialLocation( (*it).second, CartesianCoord::Y );
+            double z = g_dataFile->getDataSpatialLocation( (*it).second, CartesianCoord::Z );
+            locationsToFilter.push_back( SpatialLocationPtr( new SpatialLocation( x, y, z ) ) );
+        }
+        STOPPED_HERE;
+    }
+
+    //Get only the n-nearest of those found inside the neighborhood.
 	std::vector<Value> resultFinal;
 	rtreeLocal.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(resultFinal));
 
-	//Collect the n-nearest point indexes found inside the ellipsoid.
-	it = resultFinal.begin();
-	for(; it != resultFinal.end(); ++it)
-		result.push_back( (*it).second );
+    //If the number of samples found is greater than or equal the minimum number of samples
+    //set in search strategy...
+    if( resultFinal.size() >= searchStrategy.m_minNumberOfSamples ) {
+        //...Collect the n-nearest point indexes found inside the ellipsoid.
+        it = resultFinal.begin();
+        for(; it != resultFinal.end(); ++it)
+            result.push_back( (*it).second );
+    }
 
 	return result;
 }

@@ -2,10 +2,12 @@
 #include <utility>
 #include <iostream>
 
-SearchEllipsoid::SearchEllipsoid( double hMax, double hMin, double hVert,
-								  double azimuth, double dip, double roll ) :
+SearchEllipsoid::SearchEllipsoid(double hMax, double hMin, double hVert,
+                                  double azimuth, double dip, double roll ,
+                                  uint numberOfSectors, uint minSamplesPerSector, uint maxSamplesPerSector) :
 	m_hMax( hMax ), m_hMin( hMin ), m_hVert( hVert ),
-	m_azimuth( azimuth ), m_dip( dip ), m_roll( roll )
+    m_azimuth( azimuth ), m_dip( dip ), m_roll( roll ),
+    m_numberOfSectors( numberOfSectors), m_minSamplesPerSector( minSamplesPerSector), m_maxSamplesPerSector( maxSamplesPerSector )
 {
 	setRotationTransform();
 }
@@ -139,7 +141,12 @@ bool SearchEllipsoid::isInside( double centerX, double centerY, double centerZ,
 	double dx = localX/m_hMin;
 	double dy = localY/m_hMax;
 	double dz = localZ/m_hVert;
-	return dx*dx + dy*dy + dz*dz <= 1.0;
+    return dx*dx + dy*dy + dz*dz <= 1.0;
+}
+
+void SearchEllipsoid::performSpatialFilter(std::vector<SpatialLocationPtr> &samplesLocations) const
+{
+
 }
 
 void SearchEllipsoid::setRotationTransform()

@@ -7,6 +7,11 @@ SpatialLocation::SpatialLocation() :
 {
 }
 
+SpatialLocation::SpatialLocation(double x, double y, double z) :
+     _x(x), _y(y), _z(z)
+{
+}
+
 double SpatialLocation::crossProduct2D(const SpatialLocation &otherLocation)
 {
     return _x*otherLocation._y - _y*otherLocation._x;

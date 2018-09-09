@@ -88,9 +88,12 @@ DataCellPtrMultiset FKEstimation::getSamples(const GridCell & estimationCell )
 	DataCellPtrMultiset result;
 	if( m_searchStrategy && m_at_input ){
 
-		if( m_inputDataFile->isRegular() ){
-			QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
-			QList<uint>::iterator it = samplesIndexes.begin();
+        //Fetch the indexes of the samples to be used in the estimation.
+        QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
+        QList<uint>::iterator it = samplesIndexes.begin();
+
+        //Create and return the sample objects, which depend on the type of the input file.
+        if( m_inputDataFile->isRegular() ){ //TODO: this currently assumes the regular data is a CartesianGrid object.
 			for( ; it != samplesIndexes.end(); ++it ){
 				CartesianGrid* cg = static_cast<CartesianGrid*>( m_inputDataFile );
 				uint i, j, k;
@@ -100,14 +103,13 @@ DataCellPtrMultiset FKEstimation::getSamples(const GridCell & estimationCell )
 				result.insert( p );
 			}
 		} else { //TODO: this currently assumes the irregular data is a PointSet object.
-			QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
-            QList<uint>::iterator it = samplesIndexes.begin();
 			for( ; it != samplesIndexes.end(); ++it ){
 				DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
 				p->computeCartesianDistance( estimationCell );
 				result.insert( p );
 			}
 		}
+
 	} else {
 		Application::instance()->logError( "FKEstimation::getSamples(): sample search failed.  Search strategy and/or input data not set." );
 	}
