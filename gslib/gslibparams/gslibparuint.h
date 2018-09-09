@@ -10,6 +10,7 @@ class GSLibParUInt : public GSLibParType
 {
 public:
     GSLibParUInt(const QString name, const QString label, const QString description);
+    GSLibParUInt( uint initValue );
     uint _value;
 
     // GSLibParType interface
