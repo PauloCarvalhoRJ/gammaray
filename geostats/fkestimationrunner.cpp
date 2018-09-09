@@ -562,7 +562,7 @@ double FKEstimationRunner::fkGeophysics(GridCell & estimationCell, int nst, doub
 	DataCellPtrMultiset vSamples = m_fkEstimation->getSamples( estimationCell );
 
     //if the number of samples found is zero or is less than set by the user...
-    if( vSamples.empty() || vSamples.size() < static_cast<uint>(m_fkEstimation->getMinNumberOfSamples()) ){
+    if( vSamples.empty() || vSamples.size() < m_fkEstimation->getSearchStrategy()->m_minNumberOfSamples ){
         //...Return the no-data-value defined for the output dataset.
 		estimatedMean = m_fkEstimation->ndvOfEstimationGrid();
 		return m_fkEstimation->ndvOfEstimationGrid();

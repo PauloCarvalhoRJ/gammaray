@@ -29,18 +29,17 @@ public:
     void setInputVariable( Attribute* at_input );
     void setEstimationGrid( CartesianGrid* cg_estimation );
     void setFactorNumber( int factorNumber );
-    void setMinNumberOfSamples(int getMinNumberOfSamples);
     //@}
 
     //@{
     /** Getters. */
+    SearchStrategyPtr getSearchStrategy(){ return m_searchStrategy; }
     CartesianGrid* getEstimationGrid(){ return m_cg_estimation; }
 	Attribute* getInputVariable(){ return m_at_input; }
 	VariogramModel* getVariogramModel(){ return m_variogramModel; }
 	KrigingType getKrigingType(){ return m_ktype; }
     int getFactorNumber(){ return m_factorNumber; }
 	double getMeanForSimpleKriging(){ return m_meanSK; }
-    int getMinNumberOfSamples() const;
     //@}
 
 	/** Returns a container with the samples around the estimation cell to be used in the estimation.
@@ -74,7 +73,6 @@ private:
 	DataFile* m_inputDataFile;
 	double m_variogramSill;
     int m_factorNumber;
-    int m_minNumberOfSamples;
 };
 
 #endif // FKESTIMATION_H
