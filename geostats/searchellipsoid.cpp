@@ -1,13 +1,25 @@
 #include "searchellipsoid.h"
+#include "imagejockey/imagejockeyutils.h"
+#include "searchstrategy.h"
 #include <utility>
 #include <iostream>
 
+typedef std::pair<IndexedSpatialLocationPtr, double> IndexedSpatialLocationPtr_and_Distance_Pair;
+
+struct IndexedSpatialLocationPtrSorter {
+  bool operator() (const IndexedSpatialLocationPtr_and_Distance_Pair& a,
+				   const IndexedSpatialLocationPtr_and_Distance_Pair& b) {
+	  return a.second < b.second ; //the second member is the distance
+  }
+} indexedSpatialLocationPtrSorter;
+
+
 SearchEllipsoid::SearchEllipsoid(double hMax, double hMin, double hVert,
-                                  double azimuth, double dip, double roll ,
-                                  uint numberOfSectors, uint minSamplesPerSector, uint maxSamplesPerSector) :
+								  double azimuth, double dip, double roll ,
+								  uint numberOfSectors, uint minSamplesPerSector, uint maxSamplesPerSector) :
 	m_hMax( hMax ), m_hMin( hMin ), m_hVert( hVert ),
     m_azimuth( azimuth ), m_dip( dip ), m_roll( roll ),
-    m_numberOfSectors( numberOfSectors), m_minSamplesPerSector( minSamplesPerSector), m_maxSamplesPerSector( maxSamplesPerSector )
+	m_numberOfSectors( numberOfSectors), m_minSamplesPerSector( minSamplesPerSector), m_maxSamplesPerSector( maxSamplesPerSector )
 {
 	setRotationTransform();
 }
@@ -19,7 +31,10 @@ SearchEllipsoid::SearchEllipsoid(SearchEllipsoid && right_hand_side) :
 	m_hVert( right_hand_side.m_hVert ),
 	m_azimuth( right_hand_side.m_azimuth ),
 	m_dip( right_hand_side.m_dip ),
-	m_roll( right_hand_side.m_roll )
+	m_roll( right_hand_side.m_roll ),
+	m_numberOfSectors( right_hand_side.m_numberOfSectors ),
+	m_minSamplesPerSector( right_hand_side.m_numberOfSectors ),
+	m_maxSamplesPerSector( right_hand_side.m_numberOfSectors )
 {
 	setRotationTransform();
 }
@@ -144,8 +159,70 @@ bool SearchEllipsoid::isInside( double centerX, double centerY, double centerZ,
     return dx*dx + dy*dy + dz*dz <= 1.0;
 }
 
-void SearchEllipsoid::performSpatialFilter(std::vector<SpatialLocationPtr> &samplesLocations) const
+void SearchEllipsoid::performSpatialFilter(double centerX, double centerY, double centerZ,
+										   std::vector<IndexedSpatialLocationPtr>& samplesLocations,
+										   const SearchStrategy & parentSearchStrategy) const
 {
+	Q_UNUSED( centerZ );
+	//Create the azimuth bins.
+	std::vector< std::vector<IndexedSpatialLocationPtr_and_Distance_Pair> > bins( m_numberOfSectors );
+	//Compute the azimth span (it is the same for all the bins).
+	double azimuthSpan = 360.0 / m_numberOfSectors;
+	//For each sample location.
+	{
+		std::vector<IndexedSpatialLocationPtr>::iterator it = samplesLocations.begin();
+		for( ; it != samplesLocations.end(); ++it ){
+			IndexedSpatialLocationPtr sampleLocation = *it;
+			//Get its azimuth with respect to the reference location.
+			double azimuth = ImageJockeyUtils::getAzimuth( sampleLocation->_x, sampleLocation->_y, centerX, centerY );
+			//Compute the index of the bin corresponding to the azimuth.
+			int binIndex = static_cast<int>(azimuth) / static_cast<int>(azimuthSpan); //integer division
+			//Compute the distance between the location and the reference location
+			double dx = sampleLocation->_x - centerX;
+			double dy = sampleLocation->_y - centerY;
+			double dz = sampleLocation->_z - centerZ;
+			double distance = std::sqrt( dx*dx + dy*dy + dz*dz );
+			//assign the location (with the distance to the reference location)  to its bin.
+			bins[binIndex].emplace_back( sampleLocation, distance );
+		}
+	}
+	//empties the list in preparation for returning the samples.
+	samplesLocations.clear();
+	//For each bin
+	{
+		std::vector< std::vector<IndexedSpatialLocationPtr_and_Distance_Pair> >::iterator it = bins.begin();
+		for( ; it != bins.end(); ++it ){
+			//get a reference to a bin
+			std::vector<IndexedSpatialLocationPtr_and_Distance_Pair>& bin = *it;
+			//if the number of elements falls short of the minimum per sector, even for one bin...
+			if( m_minSamplesPerSector && bin.size() < m_minSamplesPerSector ){
+				//...empties the list and abort (search failed).
+				samplesLocations.clear();
+				return;
+			}
+			//sort it by distance
+			std::sort( bin.begin(), bin.end(), indexedSpatialLocationPtrSorter );
+		}
+	}
+	//Get the n-closest locations of each bin.
+	for( int nthElement = 0; nthElement < m_maxSamplesPerSector; ++nthElement ){
+		//Cycle through each bin
+		std::vector< std::vector<IndexedSpatialLocationPtr_and_Distance_Pair> >::iterator it = bins.begin();
+		for( ; it != bins.end(); ++it ){
+			//get a reference to the bin
+			std::vector<IndexedSpatialLocationPtr_and_Distance_Pair>& bin = *it;
+			//if the bin's size is greater than the element of the turn...
+			if( nthElement < bin.size() ){
+				//get the nth location of the bin
+				IndexedSpatialLocationPtr location = bin[nthElement].first;
+				//puts it in the input list
+				samplesLocations.push_back( location );
+				//it not necessary to continue if the maximum number of samples has been reached
+				if( samplesLocations.size() == parentSearchStrategy.m_nb_samples )
+					return;
+			}
+		}
+	}
 
 }
 

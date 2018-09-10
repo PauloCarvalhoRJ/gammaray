@@ -218,7 +218,8 @@ SOURCES += main.cpp\
     geostats/datacell.cpp \
     geostats/searchneighborhood.cpp \
     geostats/searchellipsoid.cpp \
-    geostats/pointsetcell.cpp
+    geostats/pointsetcell.cpp \
+    geostats/indexedspatiallocation.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -415,7 +416,8 @@ HEADERS  += mainwindow.h \
     geostats/datacell.h \
     geostats/searchneighborhood.h \
     geostats/searchellipsoid.h \
-    geostats/pointsetcell.h
+    geostats/pointsetcell.h \
+    geostats/indexedspatiallocation.h
 
 
 FORMS    += mainwindow.ui \

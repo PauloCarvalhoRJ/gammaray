@@ -151,6 +151,8 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
 
 QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const SearchStrategy & searchStrategy)
 {
+	//TODO: Possible Refactoring: some of the logic in here may in fact belong to the SearchStrategy class.
+
 	QList<uint> result;
 
 	//get the desired number of samples.
@@ -225,19 +227,21 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
 		}
 	}
 
-    //The search strategy may need to perform spatial filtering of samples.
+	//The search strategy may need to perform spatial filtering (e.g. octant/sector search) of the samples found
+	//in the search neighborhood.
     if( searchStrategy.NBhasSpatialFiltering() ){
         //Copy all sample locations found inside the neighborhood to a vector.
-        std::vector<SpatialLocationPtr> locationsToFilter;
+		std::vector<IndexedSpatialLocationPtr> locationsToFilter;
         locationsToFilter.reserve( rtreeLocal.size() );
         for ( RTreeLocal::const_iterator it = rtreeLocal.begin() ; it != rtreeLocal.end() ; ++it ){
             //Get sample's location given the index stored in the r-tree.
             double x = g_dataFile->getDataSpatialLocation( (*it).second, CartesianCoord::X );
             double y = g_dataFile->getDataSpatialLocation( (*it).second, CartesianCoord::Y );
             double z = g_dataFile->getDataSpatialLocation( (*it).second, CartesianCoord::Z );
-            locationsToFilter.push_back( SpatialLocationPtr( new SpatialLocation( x, y, z ) ) );
+			locationsToFilter.push_back( IndexedSpatialLocationPtr( new IndexedSpatialLocation( x, y, z, (*it).second ) ) );
         }
-        STOPPED_HERE;
+		//Perform spatial filter with respect to the center of the current estimation cell.
+		searchStrategy.m_searchNB->performSpatialFilter( x, y, z, locationsToFilter, searchStrategy );
     }
 
     //Get only the n-nearest of those found inside the neighborhood.

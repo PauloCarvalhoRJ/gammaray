@@ -3,7 +3,9 @@
 
 #include <memory>
 #include <vector>
-#include "spatiallocation.h"
+#include "indexedspatiallocation.h"
+
+class SearchStrategy;
 
 /** This class represents a generic search neighborhood. */
 class SearchNeighborhood
@@ -27,10 +29,14 @@ public:
     virtual bool hasSpatialFiltering() const = 0;
 
     /**
-     * Spatially filters the samples locations in the passed vector (e.g. octant/sector search).
+	 * Spatially filters the samples locations in the passed vector (e.g. octant/sector search).
      * The result are the locations that remain in the passed vector itself.
+	 * The filtering occurs with the neighborhood centered at the given position.
+	 * @param parentSearchStrategy The search strategy being used in the context where this method is being called.
      */
-    virtual void performSpatialFilter( std::vector< SpatialLocationPtr >& samplesLocations ) const = 0;
+	virtual void performSpatialFilter( double centerX, double centerY, double centerZ,
+									   std::vector< IndexedSpatialLocationPtr >& samplesLocations,
+									   const SearchStrategy& parentSearchStrategy ) const = 0;
 };
 
 typedef std::shared_ptr<SearchNeighborhood> SearchNeighborhoodPtr;
