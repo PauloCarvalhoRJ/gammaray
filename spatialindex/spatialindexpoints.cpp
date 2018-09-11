@@ -229,7 +229,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
 
 	//The search strategy may need to perform spatial filtering (e.g. octant/sector search) of the samples found
 	//in the search neighborhood.
-    if( searchStrategy.NBhasSpatialFiltering() ){
+	if( searchStrategy.NBhasSpatialFiltering() ){
         //Copy all sample locations found inside the neighborhood to a vector.
 		std::vector<IndexedSpatialLocationPtr> locationsToFilter;
         locationsToFilter.reserve( rtreeLocal.size() );
@@ -242,20 +242,24 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
         }
 		//Perform spatial filter with respect to the center of the current estimation cell.
 		searchStrategy.m_searchNB->performSpatialFilter( x, y, z, locationsToFilter, searchStrategy );
-    }
+		//...Collect the indexes of the samples spatially filtered.
+		std::vector<IndexedSpatialLocationPtr>::iterator it = locationsToFilter.begin();
+		for(; it != locationsToFilter.end(); ++it)
+			result.push_back( (*it)->_index );
+	//Otherwise, simply get the n-nearest of those found inside the neighborhood.
+	} else {
+		std::vector<Value> resultNNearest;
+		rtreeLocal.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(resultNNearest));
+		//If the number of n-neares samples found is greater than or equal the minimum number of samples
+		//set in search strategy...
+		if( resultNNearest.size() >= searchStrategy.m_minNumberOfSamples ) {
+			//...Collect the n-nearest point indexes found inside the ellipsoid.
+			it = resultNNearest.begin();
+			for(; it != resultNNearest.end(); ++it)
+				result.push_back( (*it).second );
+		}
+	}
 
-    //Get only the n-nearest of those found inside the neighborhood.
-	std::vector<Value> resultFinal;
-	rtreeLocal.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(resultFinal));
-
-    //If the number of samples found is greater than or equal the minimum number of samples
-    //set in search strategy...
-    if( resultFinal.size() >= searchStrategy.m_minNumberOfSamples ) {
-        //...Collect the n-nearest point indexes found inside the ellipsoid.
-        it = resultFinal.begin();
-        for(; it != resultFinal.end(); ++it)
-            result.push_back( (*it).second );
-    }
 
 	return result;
 }
