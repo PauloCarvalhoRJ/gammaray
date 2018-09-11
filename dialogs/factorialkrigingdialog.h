@@ -32,16 +32,17 @@ private:
 	FileSelectorWidget* m_dataSetSelector;
 	VariableSelector* m_DataSetVariableSelector;
     CartesianGrid* m_cg_estimation;
+	CartesianGrid* m_cg_preview;
 	GSLibParameterFile* m_gpfFK;
-    void preview();
+	QString m_varName;
+	std::vector<double> m_results;
+	void preview();
     void doFK();
 
 private slots:
     void onParameters();
-    void onSave( bool estimates = true );
+	void onSave( );
     void onSaveEstimates();
-    void onSaveOrUpdateVModel();
-    void onKt3dCompletes();
     void onVariogramChanged();
 	void onDataSetSelected(DataFile* dataFile);
 };

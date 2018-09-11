@@ -28,6 +28,7 @@ FactorialKrigingDialog::FactorialKrigingDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::FactorialKrigingDialog),
 	m_cg_estimation( nullptr ),
+	m_cg_preview( nullptr ),
 	m_gpfFK( nullptr )
 {
     ui->setupUi(this);
@@ -65,7 +66,6 @@ FactorialKrigingDialog::FactorialKrigingDialog(QWidget *parent) :
 	if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
         ui->btnParameters->setIcon( QIcon(":icons32/setting32") );
         ui->btnSave->setIcon( QIcon(":icons32/save32") );
-        ui->btnSaveOrUpdateVModel->setIcon( QIcon(":icons32/save32") );
     }
 
     adjustSize();
@@ -75,6 +75,8 @@ FactorialKrigingDialog::~FactorialKrigingDialog()
 {
 	if( m_gpfFK )
 		delete m_gpfFK;
+	if( m_cg_preview )
+		delete m_cg_preview;
     delete ui;
     Application::instance()->logInfo("FactorialKrigingDialog destroyed.");
 }
@@ -138,7 +140,7 @@ void FactorialKrigingDialog::onParameters()
 
 }
 
-void FactorialKrigingDialog::onSave(bool estimates)
+void FactorialKrigingDialog::onSave()
 {
     //TODO: this onSave() method (or the functions it calls) crashed once.
 	if( ! m_cg_estimation ){
@@ -146,89 +148,24 @@ void FactorialKrigingDialog::onSave(bool estimates)
         return;
     }
 
-    //get the selected estimation grid
-    CartesianGrid* estimation_grid = (CartesianGrid*)m_cgSelector->getSelectedDataFile();
-    if( ! estimation_grid ){
-        QMessageBox::critical( this, "Error", "Please, select an estimation grid.");
-        return;
-    }
+	//user enters the name for the new variable with the desired factor.
+	QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+											 "Name for the variable with estimates:", QLineEdit::Normal,
+											 m_varName );
 
-    //suggest a name to the user
-	QString proposed_name( m_DataSetVariableSelector->getSelectedVariableName() );
-    proposed_name = proposed_name.append( ( estimates ? "_ESTIMATES" : "_KVARIANCES" ) );
+	//if the user canceled the input box
+	if ( new_variable_name.isEmpty() ){
+		//abort
+		return;
+	}
 
-    //presents a dialog so the user can change the suggested name.
-    bool ok;
-    QString what = ( estimates ? "estimates" : "kriging variances" );
-    QString new_var_name = QInputDialog::getText(this, "Name the " + what + " variable",
-                                             "New variable name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
-    if (ok && !new_var_name.isEmpty()){
-        //the estimates are normally the first variable in the resulting grid
-        Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( ( estimates ? 1 : 2 ) );
-        //add the estimates or variances to the selected estimation grid
-        estimation_grid->addGEOEASColumn( values, new_var_name );
-    }
+	//add the new data column to the estimation grid selected by the user.
+	m_cg_estimation->addNewDataColumn( new_variable_name, m_results );
 }
 
 void FactorialKrigingDialog::onSaveEstimates()
 {
-    this->onSave( true );
-}
-
-void FactorialKrigingDialog::onSaveOrUpdateVModel()
-{
-	if( ! m_cg_estimation ){
-        QMessageBox::critical( this, "Error", "Please, run the estimation at least once.");
-        return;
-    }
-
-    //get the selected variogram model
-    VariogramModel* variogram = m_vModelSelector->getSelectedVModel();
-
-    //propose a name for the file
-    QString proposed_name;
-    if( ! variogram )
-        proposed_name = "variogram.vmodel"; //suggest a default name if the user de-selected the variogram model.
-    else
-        proposed_name = variogram->getName();
-
-    //open the file rename dialog
-    bool ok;
-    QString new_var_model_name = QInputDialog::getText(this, "Name variogram model file",
-                                             "Variogram model file name (existing name = overwrites):", QLineEdit::Normal,
-                                             proposed_name, &ok);
-    if (ok && !new_var_model_name.isEmpty()){
-        Project *project = Application::instance()->getProject();
-        if( project->fileExists( new_var_model_name ) ){
-            QMessageBox::StandardButton reply;
-            reply = QMessageBox::question( this, "Confirm operation", "Overwrite " + variogram->getName() + "?", \
-                                           QMessageBox::Yes | QMessageBox::No );
-            if( reply == QMessageBox::Yes ){
-                //Overwrites the existing variogram model file (vmodel parameter file)
-                QString var_model_file_path = variogram->getPath();
-				//m_gpf_kt3d->saveVariogramModel( var_model_file_path );
-            }
-        } else { //save a new variogram model
-            //Generate the parameter file in the tmp directory as if we were about to run vmodel
-            QString var_model_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
-			//m_gpf_kt3d->saveVariogramModel( var_model_file_path );
-            //import the vmodel parameter file as a new variogram model object.
-            project->importVariogramModel( var_model_file_path, new_var_model_name );
-            //update the variogram model combobox
-            m_vModelSelector->updateList();
-            //change variogram selection to the newly saved model.
-            m_vModelSelector->selectVariogram( new_var_model_name );
-        }
-    }
-}
-
-void FactorialKrigingDialog::onKt3dCompletes()
-{
-    //frees all signal connections to the GSLib singleton.
-    GSLib::instance()->disconnect();
-
-    preview();
+	this->onSave( );
 }
 
 void FactorialKrigingDialog::onVariogramChanged()
@@ -248,26 +185,6 @@ void FactorialKrigingDialog::onDataSetSelected(DataFile * dataFile)
 
 void FactorialKrigingDialog::preview()
 {
-    if( m_cg_estimation )
-        delete m_cg_estimation;
-
-	//get the tmp file path created by kt3d with the estimates and kriging variances
-	QString grid_file_path = "NOFILE";
-
-    //create a new grid object corresponding to the file created by kt3d
-    m_cg_estimation = new CartesianGrid( grid_file_path );
-
-    //set the grid geometry info.
-	//m_cg_estimation->setInfoFromGridParameter( m_gpf_kt3d->getParameter<GSLibParGrid*>(9) );
-
-    //kt3d usually uses -999 as no-data-value.
-    m_cg_estimation->setNoDataValue( "-999" );
-
-    //get the variable with the estimation values (normally the first)
-    Attribute* est_var = (Attribute*)m_cg_estimation->getChildByIndex( 0 );
-
-    //open the plot dialog
-    Util::viewGrid( est_var, this );
 }
 
 void FactorialKrigingDialog::doFK()
@@ -276,31 +193,23 @@ void FactorialKrigingDialog::doFK()
     int factor_number =  (m_gpfFK->getParameter<GSLibParOption*>( 7 ))->_selected_value;
 
     //propose a name for the new variable to contain the choosen factor.
-    QString factorName;
-    VariogramModel* vModel = m_vModelSelector->getSelectedVModel();
-    switch( factor_number ){
-    case -1: factorName = "mean"; break;
-    case 0: factorName = "nugget"; break;
-    default: factorName = vModel->getStructureDescription( factor_number - 1 );
-    }
+	QString factorName;
+	VariogramModel* vModel = m_vModelSelector->getSelectedVModel();
+	switch( factor_number ){
+	case -1: factorName = "mean"; break;
+	case 0: factorName = "nugget"; break;
+	default: factorName = vModel->getStructureDescription( factor_number - 1 );
+	}
 	QString kTypeName;
 	switch ( static_cast<KrigingType>(m_gpfFK->getParameter<GSLibParOption*>( 0 )->_selected_value) ) {
 	case KrigingType::OK: kTypeName = "OFK"; break;
 	case KrigingType::SK: kTypeName = "SFK"; break;
 	default: kTypeName = "FK";
 	}
-	QString proposed_name = m_DataSetVariableSelector->getSelectedVariableName() + "_" + kTypeName + "_" + factorName;
-
-    //user enters the name for the new variable with the desired factor.
-    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
-                                             "Name for the variable with estimates:", QLineEdit::Normal,
-                                             proposed_name );
-
-    //if the user canceled the input box
-    if ( new_variable_name.isEmpty() ){
-        //abort
-        return;
-    }
+	QString tmp_name = m_DataSetVariableSelector->getSelectedVariableName() + "_" + kTypeName + "_" + factorName;
+	tmp_name = tmp_name.replace('(', '_');
+	tmp_name = tmp_name.replace(')', '_');
+	m_varName = tmp_name;
 
     // Define the estimation grid.
     //the estimation grid depends on input data type.
@@ -339,7 +248,7 @@ void FactorialKrigingDialog::doFK()
                                                           m_gpfFK->getParameter<GSLibParUInt*>( 3 )->_value) ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
 
     //run the estimation
-    std::vector<double> results;
+	m_results.clear();
     {
         FKEstimation estimation;
         estimation.setSearchStrategy( searchStrategy );
@@ -351,9 +260,37 @@ void FactorialKrigingDialog::doFK()
         estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
         estimation.setEstimationGrid( m_cg_estimation );
         estimation.setFactorNumber( factor_number );
-		results = estimation.run( );
+		m_results = estimation.run( );
     }
 
-    //add the new data column.
-    m_cg_estimation->addNewDataColumn( new_variable_name, results );
+	//preview the results
+	{
+		if( m_cg_preview )
+			delete m_cg_preview;
+
+		//get the tmp file path for the estimates
+		QString grid_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+		//create a new grid object corresponding to the file to be saved
+		m_cg_preview = new CartesianGrid( grid_file_path );
+
+		//set the grid geometry info.
+		m_cg_preview->setInfoFromOtherCG( m_cg_estimation );
+
+		//create the physical GEO-EAS grid file with one column.
+		Util::createGEOEAScheckerboardGrid( m_cg_preview, grid_file_path );
+
+		//calling this again to update the variable collection, now that we have a physical file
+		m_cg_preview->setInfoFromOtherCG( m_cg_estimation );
+
+		//append a column with the results
+		m_cg_preview->addNewDataColumn( m_varName, m_results );
+
+		//get the variable with the estimation values (the second column)
+		Attribute* est_var = (Attribute*)m_cg_preview->getChildByIndex( 1 );
+
+		//open the plot dialog
+		Util::viewGrid( est_var, this );
+	}
+
 }
