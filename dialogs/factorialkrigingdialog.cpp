@@ -48,7 +48,7 @@ FactorialKrigingDialog::FactorialKrigingDialog(QWidget *parent) :
     ui->frmGrid->layout()->addWidget( m_cgSelector );
 
 	//The list with existing data sets in the project.
-	m_dataSetSelector = new FileSelectorWidget( FileSelectorType::DataFiles, true );
+	m_dataSetSelector = new FileSelectorWidget( FileSelectorType::DataFiles );
 	ui->frmData->layout()->addWidget( m_dataSetSelector );
 	connect( m_dataSetSelector, SIGNAL(dataFileSelected(DataFile*)),
 			 this, SLOT(onDataSetSelected(DataFile*)) );
@@ -175,13 +175,13 @@ void FactorialKrigingDialog::onVariogramChanged()
 
 void FactorialKrigingDialog::onDataSetSelected(DataFile * dataFile)
 {
-	if( dataFile ){
-		if( dataFile->getFileType() == "CARTESIANGRID" )
-			ui->frmGrid->hide();
-		else
-			ui->frmGrid->show();
-	} else
-		ui->frmGrid->hide();
+//	if( dataFile ){
+//		if( dataFile->getFileType() == "CARTESIANGRID" )
+//			ui->frmGrid->hide();
+//		else
+//			ui->frmGrid->show();
+//	} else
+//		ui->frmGrid->hide();
 }
 
 void FactorialKrigingDialog::onMapNSamples()
@@ -282,15 +282,8 @@ void FactorialKrigingDialog::doFK()
 	tmp_name = tmp_name.replace(')', '_');
 	m_varName = tmp_name;
 
-    // Define the estimation grid.
-    //the estimation grid depends on input data type.
-    DataFile* input_data = static_cast<DataFile*>( this->m_dataSetSelector->getSelectedFile() );
-    if( input_data->getFileType() == "CARTESIANGRID")
-        //If the input data is a grid, the estimation grid is itself.
-        m_cg_estimation = static_cast<CartesianGrid*>( input_data );
-    else
-        //If the input data is a pointset, the estimation grid is another grid selected by the user.
-        m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
+	// Get the estimation grid.
+	m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
 
     //Build the search strategy and search neighborhood objects from the user-input values.
 	// See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
