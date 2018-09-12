@@ -37,6 +37,7 @@ private:
 	GSLibParameterFile* m_gpfFK;
 	QString m_varName;
 	std::vector<double> m_results;
+	std::vector<double> m_vNSamplesAsDoubles;
 	void preview();
     void doFK();
 
@@ -46,6 +47,8 @@ private slots:
     void onSaveEstimates();
     void onVariogramChanged();
 	void onDataSetSelected(DataFile* dataFile);
+	void onMapNSamples();
+	void onHistoNSamples();
 };
 
 #endif // FACTORIALKRIGINGDIALOG_H

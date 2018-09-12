@@ -184,6 +184,76 @@ void FactorialKrigingDialog::onDataSetSelected(DataFile * dataFile)
 		ui->frmGrid->hide();
 }
 
+void FactorialKrigingDialog::onMapNSamples()
+{
+	if( m_vNSamplesAsDoubles.empty() ){
+		Application::instance()->logError("FactorialKrigingDialog::onMapNSamples(): no results.  Execute FK at least once.");
+		return;
+	}
+
+	if( m_cg_nSamples )
+		delete m_cg_nSamples;
+
+	//get the tmp file path for the estimates
+	QString grid_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+	//create a new grid object corresponding to the file to be saved
+	m_cg_nSamples = new CartesianGrid( grid_file_path );
+
+	//set the grid geometry info.
+	m_cg_nSamples->setInfoFromOtherCG( m_cg_estimation );
+
+	//create the physical GEO-EAS grid file with one column.
+	Util::createGEOEAScheckerboardGrid( m_cg_nSamples, grid_file_path );
+
+	//calling this again to update the variable collection, now that we have a physical file
+	m_cg_nSamples->setInfoFromOtherCG( m_cg_estimation );
+
+	//append a column with the numbers of samples
+	m_cg_nSamples->addNewDataColumn( "Number of samples", m_vNSamplesAsDoubles );
+
+	//get the variable with the number of samples (the second column)
+	Attribute* nSamples_var = (Attribute*)m_cg_nSamples->getChildByIndex( 1 );
+
+	//open the plot dialog
+	Util::viewGrid( nSamples_var, this );
+}
+
+void FactorialKrigingDialog::onHistoNSamples()
+{
+	if( m_vNSamplesAsDoubles.empty() ){
+		Application::instance()->logError("FactorialKrigingDialog::onHistoNSamples(): no results.  Execute FK at least once.");
+		return;
+	}
+
+	if( m_cg_nSamples )
+		delete m_cg_nSamples;
+
+	//get the tmp file path for the estimates
+	QString grid_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+	//create a new grid object corresponding to the file to be saved
+	m_cg_nSamples = new CartesianGrid( grid_file_path );
+
+	//set the grid geometry info.
+	m_cg_nSamples->setInfoFromOtherCG( m_cg_estimation );
+
+	//create the physical GEO-EAS grid file with one column.
+	Util::createGEOEAScheckerboardGrid( m_cg_nSamples, grid_file_path );
+
+	//calling this again to update the variable collection, now that we have a physical file
+	m_cg_nSamples->setInfoFromOtherCG( m_cg_estimation );
+
+	//append a column with the numbers of samples
+	m_cg_nSamples->addNewDataColumn( "Number of samples", m_vNSamplesAsDoubles );
+
+	//get the variable with the number of samples (the second column)
+	Attribute* nSamples_var = (Attribute*)m_cg_nSamples->getChildByIndex( 1 );
+
+	//show the histogram of the number of samples
+	Util::viewHistogram( nSamples_var, this );
+}
+
 void FactorialKrigingDialog::preview()
 {
 }
@@ -250,7 +320,7 @@ void FactorialKrigingDialog::doFK()
 
     //run the estimation
 	m_results.clear();
-	std::vector< double > vNSamplesAsDoubles;
+	m_vNSamplesAsDoubles.clear();
     {
         FKEstimation estimation;
         estimation.setSearchStrategy( searchStrategy );
@@ -265,7 +335,7 @@ void FactorialKrigingDialog::doFK()
 		m_results = estimation.run( );
 		//get the numbers of sample used in the estimations
 		std::vector< uint > vNSamplesAsUints = estimation.getNumberOfSamples();
-		std::copy( vNSamplesAsUints.begin(), vNSamplesAsUints.end(), std::back_inserter( vNSamplesAsDoubles ) );
+		std::copy( vNSamplesAsUints.begin(), vNSamplesAsUints.end(), std::back_inserter( m_vNSamplesAsDoubles ) );
     }
 
 	//preview the results
@@ -298,36 +368,4 @@ void FactorialKrigingDialog::doFK()
 		Util::viewGrid( est_var, this );
 	}
 
-	//show the number of samples used in each estimation location
-	{
-		if( m_cg_nSamples )
-			delete m_cg_nSamples;
-
-		//get the tmp file path for the estimates
-		QString grid_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
-
-		//create a new grid object corresponding to the file to be saved
-		m_cg_nSamples = new CartesianGrid( grid_file_path );
-
-		//set the grid geometry info.
-		m_cg_nSamples->setInfoFromOtherCG( m_cg_estimation );
-
-		//create the physical GEO-EAS grid file with one column.
-		Util::createGEOEAScheckerboardGrid( m_cg_nSamples, grid_file_path );
-
-		//calling this again to update the variable collection, now that we have a physical file
-		m_cg_nSamples->setInfoFromOtherCG( m_cg_estimation );
-
-		//append a column with the numbers of samples
-		m_cg_nSamples->addNewDataColumn( "Number of samples", vNSamplesAsDoubles );
-
-		//get the variable with the number of samples (the second column)
-		Attribute* nSamples_var = (Attribute*)m_cg_nSamples->getChildByIndex( 1 );
-
-		//open the plot dialog
-		Util::viewGrid( nSamples_var, this );
-
-		//show the histogram of the number of samples
-		Util::viewHistogram( nSamples_var, this );
-	}
 }

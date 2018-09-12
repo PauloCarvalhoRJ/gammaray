@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>526</width>
-    <height>300</height>
+    <width>529</width>
+    <height>337</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -134,7 +134,7 @@
       <string>Actions</string>
      </property>
      <layout class="QGridLayout" name="gridLayout">
-      <item row="1" column="1">
+      <item row="3" column="1">
        <widget class="QPushButton" name="btnSave">
         <property name="text">
          <string/>
@@ -172,7 +172,7 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
+      <item row="3" column="0">
        <widget class="QLabel" name="label_7">
         <property name="sizePolicy">
          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
@@ -181,7 +181,43 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>3) Save estimates:</string>
+         <string>5) Save estimates:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="label_3">
+        <property name="text">
+         <string>3) Map of number of samples:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="btnShowNSamplesMap">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/icons32/faciesmap32</normaloff>:/icons32/faciesmap32</iconset>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="label_6">
+        <property name="text">
+         <string>4) Histogram of number of samples:</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="btnHistogramNSamples">
+        <property name="text">
+         <string/>
+        </property>
+        <property name="icon">
+         <iconset resource="../resources.qrc">
+          <normaloff>:/icons32/histo32</normaloff>:/icons32/histo32</iconset>
         </property>
        </widget>
       </item>
@@ -270,8 +306,8 @@
    <slot>onSaveEstimates()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>505</x>
-     <y>223</y>
+     <x>508</x>
+     <y>279</y>
     </hint>
     <hint type="destinationlabel">
      <x>480</x>
@@ -279,12 +315,43 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnShowNSamplesMap</sender>
+   <signal>clicked()</signal>
+   <receiver>FactorialKrigingDialog</receiver>
+   <slot>onMapNSamples()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>494</x>
+     <y>208</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>524</x>
+     <y>219</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnHistogramNSamples</sender>
+   <signal>clicked()</signal>
+   <receiver>FactorialKrigingDialog</receiver>
+   <slot>onHistoNSamples()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>490</x>
+     <y>241</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>524</x>
+     <y>258</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onParameters()</slot>
-  <slot>onXValidation()</slot>
-  <slot>onSaveOrUpdateVModel()</slot>
   <slot>onSaveEstimates()</slot>
-  <slot>onSaveKVariances()</slot>
+  <slot>onMapNSamples()</slot>
+  <slot>onHistoNSamples()</slot>
  </slots>
 </ui>
