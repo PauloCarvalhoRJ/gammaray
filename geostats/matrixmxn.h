@@ -71,6 +71,9 @@ public:
 	/** Matrix addition operator. It is assumed the operands are compatible (this._n == b._n && this._m == b._m).*/
 	MatrixNXM<T> operator+(const MatrixNXM<T>& b) const;
 
+	/** Returns whether this matrix is actually a single value (1x1). */
+	bool is1x1() const { return _n == 1 && _m == 2; }
+
 private:
     /** Number of rows. */
     unsigned int _n;

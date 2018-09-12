@@ -283,6 +283,11 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
 //                                           //to force the sum of weights be 0.0 and not 1.0
 //    }
 
+	//If the matrix has only one element and it is zero, add a small value to prevent
+	//singularities in kriging systems that use only one sample.
+	if( result.is1x1() && result(0,0) == 0.0 )
+		result(0,0) = 0.001;
+
     return result;
 }
 
