@@ -204,6 +204,9 @@ std::vector<double> FKEstimation::run( )
     else
         results = runner->getFactor();
 
+	//get the number of samples map
+	m_numberOfSamples = runner->getNSamples();
+
     //discard the worker object.
     delete runner;
 

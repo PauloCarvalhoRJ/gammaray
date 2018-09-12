@@ -60,6 +60,11 @@ public:
 	/** Shortcut method to get the variogam model's sill. */
 	double getVariogramSill(){ return m_variogramSill; }
 
+	/** Returns a reference to the number of samples that informed each estimation in the results vector
+	 * returned by run().
+	 */
+	std::vector< uint >& getNumberOfSamples(){ return m_numberOfSamples; }
+
 private:
     SearchStrategyPtr m_searchStrategy;
     VariogramModel *m_variogramModel;
@@ -73,6 +78,7 @@ private:
 	DataFile* m_inputDataFile;
 	double m_variogramSill;
     int m_factorNumber;
+	std::vector< uint > m_numberOfSamples;
 };
 
 #endif // FKESTIMATION_H

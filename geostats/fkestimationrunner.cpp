@@ -27,11 +27,13 @@ void FKEstimationRunner::doRun()
     uint nJ = estimationGrid->getNY();
     uint nK = estimationGrid->getNZ();
 
-    //prepare the vector with the results (to not overwrite the original data)
+	//prepare the vectors with the results (to not overwrite the original data)
     m_factor.clear();
     m_factor.reserve( nI * nJ * nK );
     m_means.clear();
     m_means.reserve( nI * nJ * nK );
+	m_nSamples.clear();
+	m_nSamples.reserve( nI * nJ * nK );
 
 	//factor number can be -1 (mean), which is not a valid variographic structure number.
 	int ist = m_fkEstimation->getFactorNumber();
@@ -58,24 +60,23 @@ void FKEstimationRunner::doRun()
 
     //for all grid cells
     int nKriging = 0;
-    int nIllConditioned = 0;
     int nFailed = 0;
     for( uint k = 0; k <nK; ++k){
         for( uint j = 0; j <nJ; ++j){
             emit setLabel("Running FK:\n" +
                           QString::number(nKriging) + " kriging operations (" +
-                          QString::number(nIllConditioned) + " ill-conditioned, " +
                           QString::number(nFailed) + " failed). " );
             emit progress( j * nI + k * nI * nJ );
             for( uint i = 0; i <nI; ++i){
 				GridCell estimationCell( estimationGrid, -1, i, j, k );
 				double estimatedMean;
-				m_factor.push_back( fk( estimationCell,
-										 m_fkEstimation->getVariogramModel()->getNstWithNugget(),
+				uint nSamples;
+				m_factor.push_back( fk(  estimationCell,
 										 estimatedMean,
-										 nIllConditioned,
+										 nSamples,
 										 nFailed ) );
                 m_means.push_back( estimatedMean );
+				m_nSamples.push_back( nSamples );
                 ++nKriging;
             }
         }
@@ -88,11 +89,8 @@ void FKEstimationRunner::doRun()
     m_finished = true;
 }
 
-double FKEstimationRunner::fk(GridCell & estimationCell, int nst, double & estimatedMean, int & nIllConditioned, int & nFailed)
+double FKEstimationRunner::fk(GridCell & estimationCell, double& estimatedMean, uint& nSamples, int& nFailed)
 {
-	Q_UNUSED(nst);
-	Q_UNUSED(nIllConditioned);
-
 	double factor;
 
 	//Compute an adequate epsilon for the nugget factor estimation: about 10% of the grid cell size.
@@ -108,6 +106,9 @@ double FKEstimationRunner::fk(GridCell & estimationCell, int nst, double & estim
 	//collects samples from the input data set ordered by their distance with respect
 	//to the estimation cell.
 	DataCellPtrMultiset vSamples = m_fkEstimation->getSamples( estimationCell );
+
+	//register the number of samples to be used in the estimation.
+	nSamples = vSamples.size();
 
     //if no samples was returned found...
     if( vSamples.empty() ){
@@ -249,7 +250,7 @@ double FKEstimationRunner::fk(GridCell & estimationCell, int nst, double & estim
 																		 m_fkEstimation->getVariogramModel()->getSill(),
 																		 KrigingType::SK,
 																		 true ); //using semivariogram per Deutsch
-			//Get normal procedure weights.
+			//Get weights (without location shift).
 			//MatrixNXM<double> weightsFactor( ( gammaNugget.getTranspose() * CZZ_inv * ( I - et_x_CZZ_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) ).getTranspose() );
 			MatrixNXM<double> weightsFactor(  ( gammaNugget.getTranspose() * CZZ_inv * ( I - et_x_CZZ_inv_x_e____inv(0,0) * e * e_t * CZZ_inv ) +
 												(et_x_CZZ_inv_x_e____inv(0,0) * e_t * CZZ_inv) ).getTranspose()  );

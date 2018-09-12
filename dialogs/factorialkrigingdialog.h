@@ -33,6 +33,7 @@ private:
 	VariableSelector* m_DataSetVariableSelector;
     CartesianGrid* m_cg_estimation;
 	CartesianGrid* m_cg_preview;
+	CartesianGrid* m_cg_nSamples;
 	GSLibParameterFile* m_gpfFK;
 	QString m_varName;
 	std::vector<double> m_results;

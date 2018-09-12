@@ -26,6 +26,8 @@ public:
 
     std::vector<double> getMeans(){ return m_means; }
 
+	std::vector<uint> getNSamples(){ return m_nSamples; }
+
 signals:
     void progress(int);
     void setLabel(QString);
@@ -38,6 +40,7 @@ private:
     FKEstimation* m_fkEstimation;
     std::vector<double> m_factor;
     std::vector<double> m_means;
+	std::vector<uint> m_nSamples;
 	VariogramModel* m_singleStructVModel;
 
 	/** Perform factorial kriging in a single cell in the output grid according to the formulation at
@@ -45,13 +48,12 @@ private:
 	 * Data analysis of potential field methods using geostatistics - Shamsipour et al, 2017
 	 *
 	 * @param estimationCell Object containing info about the cell such as parent grid, indexes, etc.
-	 * @param nst Number of the structures in the variogram model (in the m_fkEstimaion object).
 	 * @param estimatedMean The value of the estimated mean computed during FK estimation.
-	 * @param nIllConditioned Its value is increased by the number of ill-conditioned kriging matrices encountered.
+	 * @param nSamples The number of samples used to inform the estimation.
 	 * @param nFailed Its value is increased by the number of kriging operations that failed (resulted in
 	 *                NaN or inifinity).
 	 */
-	double fk( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
+	double fk(GridCell &estimationCell, double& estimatedMean, uint& nSamples, int& nFailed );
 };
 
 #endif // FKESTIMATIONRUNNER_H
