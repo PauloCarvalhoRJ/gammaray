@@ -40,32 +40,18 @@ private:
     std::vector<double> m_means;
 	VariogramModel* m_singleStructVModel;
 
-    /** Perform factorial kriging in a single cell in the output grid.
-     * This calculations follows the formulation presented by Ma et al. (2014) - "Factorial kriging
-     * for multiscale modelling".
-	 * @param estimationCell Object containing info about the cell such as parent grid, indexes, etc.
-     * @param nst Number of the structures in the variogram model (in the m_fkEstimaion object) (TODO: check
-     *            whether this includes the nugget effect).
-	 * @param estimatedMean The value of the estimated mean computed during FK estimation.
-	 * @param nIllConditioned Its value is increased by the number of ill-conditioned kriging matrices encountered.
-     * @param nFailed Its value is increased by the number of kriging operations that failed (resulted in
-     *                NaN or inifinity).
-     */
-	double fk(GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
-
-	/** Does the same as fk(), but according to Prof. Clayton von Deutsch papers on FK. */
-	double fkDeutsch(GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
-
-    /** Does the same as fk(), but according to formulation at
-     * https://www.biomedware.com/files/documentation/spacestat/Statistics/Kriging/Types_of_Kriging.htm
-     */
-    double fkBioMedware( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
-
-	/** Does the same as fk(), but according to formulation at
+	/** Perform factorial kriging in a single cell in the output grid according to the formulation at
 	 * https://pubs.geoscienceworld.org/geophysics/article/82/2/G35/520853/data-analysis-of-potential-field-methods-using
 	 * Data analysis of potential field methods using geostatistics - Shamsipour et al, 2017
+	 *
+	 * @param estimationCell Object containing info about the cell such as parent grid, indexes, etc.
+	 * @param nst Number of the structures in the variogram model (in the m_fkEstimaion object).
+	 * @param estimatedMean The value of the estimated mean computed during FK estimation.
+	 * @param nIllConditioned Its value is increased by the number of ill-conditioned kriging matrices encountered.
+	 * @param nFailed Its value is increased by the number of kriging operations that failed (resulted in
+	 *                NaN or inifinity).
 	 */
-	double fkGeophysics( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
+	double fk( GridCell &estimationCell, int nst, double& estimatedMean, int& nIllConditioned, int & nFailed );
 };
 
 #endif // FKESTIMATIONRUNNER_H
