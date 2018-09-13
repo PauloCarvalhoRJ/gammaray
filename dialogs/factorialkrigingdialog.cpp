@@ -277,10 +277,7 @@ void FactorialKrigingDialog::doFK()
 	case KrigingType::SK: kTypeName = "SFK"; break;
 	default: kTypeName = "FK";
 	}
-	QString tmp_name = m_DataSetVariableSelector->getSelectedVariableName() + "_" + kTypeName + "_" + factorName;
-	tmp_name = tmp_name.replace('(', '_');
-	tmp_name = tmp_name.replace(')', '_');
-	m_varName = tmp_name;
+	m_varName = m_DataSetVariableSelector->getSelectedVariableName() + "_" + kTypeName + "_" + factorName;
 
 	// Get the estimation grid.
 	m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
