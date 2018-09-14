@@ -44,14 +44,20 @@ public:
     /** Matrix multiplication operator. It is assumed the operands are compatible (this._m == b._n).*/
     MatrixNXM<T> operator*(const MatrixNXM<T>& b);
 
-    /** Inverts this matrix. It is assumed that the matrix is square, no check in this regard is performed, though
+	/** Inverts this matrix directly. It is assumed that the matrix is square, no check in this regard is performed, though
      * there is a check for singularity (prints a message and aborts calculation.)
+	 * This is more efficient for smaller matrices.
      */
 	void invertWithGaussJordan();
 
 	/** Inverts this matrix with Singular Values Decomposition (works with non-square matrices).
 	 */
 	void invertWithSVD();
+
+	/** Inverts this matrix with Eigen API.
+	 * Because of matrix conversions, this works best for larger matrices.
+	 */
+	void invertWithEigen();
 
 	/** Returns a new matrix that is a transpose of this matrix.*/
 	MatrixNXM<T> getTranspose( ) const;
@@ -91,19 +97,6 @@ MatrixNXM<T>::MatrixNXM(unsigned int n, unsigned int m, T initValue ) :
     _m(m),
     _values( n*m, initValue )
 {}
-
-//TODO: naive matrix multiplication, improve performance (e.g. parallel) or use spectral::'s classes/methods
-template <typename T>
-MatrixNXM<T> MatrixNXM<T>::operator*(const MatrixNXM<T>& b) {
-   MatrixNXM<T>& a = *this;
-   assert( a._m == b._n && "MatrixNXM<T> MatrixNXM<T>::operator*(): operands are matrices incompatible for multiplication." );
-   MatrixNXM<T> result( a._n, b._m );
-   for(uint i = 0; i < a._n; ++i)
-       for(uint j = 0; j < b._m; ++j)
-           for(uint k = 0; k < a._m; ++k) //a._m (number of cols) is supposed to be == b._n (number of rows)
-               result(i,j) += a(i,k) * b(k,j);
-   return result;
-}
 
 template <typename T>
 MatrixNXM<T> MatrixNXM<T>::operator-(const MatrixNXM<T>& b) const{

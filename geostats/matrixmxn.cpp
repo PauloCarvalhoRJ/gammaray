@@ -2,6 +2,8 @@
 #include "spectral/spectral.h"
 #include "spectral/svd.h"
 #include "domain/application.h"
+#include <Eigen/Core>
+#include <Eigen/LU>
 
 //============================= SPECIALIZATIONS FOR DOUBLE =============================================
 
@@ -84,6 +86,28 @@ void MatrixNXM<double>::invertWithSVD(){
 	for( int i = 0; i < a.getN(); ++i)
 		for( int j = 0; j < a.getM(); ++j)
 			a(i,j) = Adagger(i,j);
+}
+
+template<>
+void MatrixNXM<double>::invertWithEigen()
+{
+	MatrixNXM<double> &a = *this;
+	assert( a._m == a._n && "MatrixNXM<double> MatrixNXM<double>::invertWithEigen(): matrix is not square.  Use invertWithSVD() instead." );
+
+	//Convert this to Eigen matrix.
+	Eigen::MatrixXd A( _n, _m );
+	for (size_t i = 0; i < _n; ++i)
+		for (size_t j = 0; j < _m; ++j)
+			A(i, j) = a(i, j);
+
+	//Invert. Hopefully it is faster than the direct multiplication between GammaRat matrices with invertWithGaussJordan().
+	const Eigen::MatrixXd& C = A.inverse();
+
+	//Convert restult back to this matrix.
+	for(uint i = 0; i < C.rows(); ++i)
+		for(uint j = 0; j < C.cols(); ++j)
+			a(i,j) = C(i,j);
+
 }
 
 
@@ -170,6 +194,48 @@ template <>
 void MatrixNXM<double>::print() const{
     spectral::array a = toSpectralArray();
     spectral::print( a );
+}
+
+//TODO: naive matrix multiplication, improve performance (e.g. parallel) or use spectral::'s classes/methods
+//template <>
+//MatrixNXM<double> MatrixNXM<double>::operator*(const MatrixNXM<double>& b) {
+//   MatrixNXM<double>& a = *this;
+//   assert( a._m == b._n && "MatrixNXM<T> MatrixNXM<T>::operator*(): operands are matrices incompatible for multiplication." );
+//   MatrixNXM<double> result( a._n, b._m );
+//   for(uint i = 0; i < a._n; ++i)
+//	   for(uint j = 0; j < b._m; ++j)
+//		   for(uint k = 0; k < a._m; ++k) //a._m (number of cols) is supposed to be == b._n (number of rows)
+//			   result(i,j) += a(i,k) * b(k,j);
+//   return result;
+//}
+
+template <>
+MatrixNXM<double> MatrixNXM<double>::operator*(const MatrixNXM<double>& b) {
+   MatrixNXM<double>& a = *this;
+   assert( a._m == b._n && "MatrixNXM<T> MatrixNXM<T>::operator*(): operands are matrices incompatible for multiplication." );
+
+   //Convert LHS operand (this) to Eigen matrix.
+   Eigen::MatrixXd A( _n, _m );
+   for (size_t i = 0; i < _n; ++i)
+	   for (size_t j = 0; j < _m; ++j)
+		   A(i, j) = a(i, j);
+
+   //Convert RHS operand (the other) to Eigen matrix.
+   Eigen::MatrixXd B( b._n , b._m );
+   for (size_t i = 0; i < b._n; ++i)
+	   for (size_t j = 0; j < b._m; ++j)
+		   B(i, j) = b(i, j);
+
+   //Multiply. Hopefully it is faster than the naive direct multiplication between GammaRat matrices.
+   const Eigen::MatrixXd& C = A * B;
+
+   //Convert restult back to GammaRay matrix.
+   MatrixNXM<double> result( C.rows(), C.cols() );
+   for(uint i = 0; i < C.rows(); ++i)
+	   for(uint j = 0; j < C.cols(); ++j)
+		   result(i,j) = C(i,j);
+
+	return result;
 }
 
 //============================= SPECIALIZATIONS FOR FLOAT (NONE YET) =============================================

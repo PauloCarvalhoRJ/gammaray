@@ -129,7 +129,7 @@ double FKEstimationRunner::fk(GridCell & estimationCell, double& estimatedMean, 
 																 m_fkEstimation->getVariogramModel()->getSill(),
 																 KrigingType::SK,
 																 true ); //using semivariogram per Deutsch
-		covMat_inv.invertWithGaussJordan();
+		covMat_inv.invertWithEigen();
 
 		if( m_fkEstimation->getFactorNumber() != 0 ){
 			//get the gamma matrix (theoretical partial covariances between sample locations and estimation location)
@@ -196,7 +196,7 @@ double FKEstimationRunner::fk(GridCell & estimationCell, double& estimatedMean, 
 																 m_fkEstimation->getVariogramModel()->getSill(),
 																 KrigingType::SK,
 																 true ); //using semivariogram per Deutsch
-		CZZ_inv.invertWithGaussJordan();
+		CZZ_inv.invertWithEigen();
 
 		//get the gamma matrix (theoretical partial covariances between sample locations and estimation location)
 		MatrixNXM<double> CY = GeostatsUtils::makeGammaMatrix( vSamples,
