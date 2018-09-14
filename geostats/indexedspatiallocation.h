@@ -2,6 +2,7 @@
 #define INDEXEDSPATIALLOCATION_H
 
 #include "spatiallocation.h"
+#include <qglobal.h>
 
 /** The same as SpatialLocation, but with an extra field, index, used when the location is
  * can also be localized by an index or id (e.g. of a vector or database).
