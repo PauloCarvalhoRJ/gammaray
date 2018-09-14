@@ -327,7 +327,7 @@ public:
     virtual int getCalcPropertyCount(){ return getChildCount(); }
     virtual ICalcProperty *getCalcProperty(int index);
 	virtual int getCalcRecordCount(){ return getDataLineCount(); }
-	virtual double getCalcValue( int iVar, int iRecord ) { return data( iRecord, iVar ); }
+	virtual double getCalcValue( int iVar, int iRecord );
 	virtual void setCalcValue( int iVar, int iRecord, double value );
 	virtual void computationCompleted(){ writeToFS(); }
 	virtual void computationWillStart(){ loadData(); }

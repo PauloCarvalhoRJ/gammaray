@@ -512,6 +512,15 @@ ICalcProperty *DataFile::getCalcProperty(int index)
 	return dynamic_cast<ICalcProperty*>( (Attribute*)getChildByIndex(index) );
 }
 
+double DataFile::getCalcValue(int iVar, int iRecord)
+{
+	double value = data( iRecord, iVar );
+	//If a value is unvalid, convert it to a NaN for the calculator.
+	if( isNDV( value ) )
+		value = std::numeric_limits<double>::quiet_NaN();
+	return value;
+}
+
 void DataFile::setCalcValue(int iVar, int iRecord, double value)
 {
     if( std::isnan(value) ) {
