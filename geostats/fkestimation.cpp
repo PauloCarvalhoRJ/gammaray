@@ -210,6 +210,11 @@ std::vector<double> FKEstimation::run( )
     //discard the worker object.
     delete runner;
 
+    //discard the thread object.
+    thread->quit();
+    thread->wait();
+    delete thread;
+
     Application::instance()->logInfo("Factorial Kriging completed.");
 
     return results;

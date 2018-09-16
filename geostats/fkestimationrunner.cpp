@@ -33,7 +33,7 @@ void FKEstimationRunner::doRun()
     m_means.clear();
     m_means.reserve( nI * nJ * nK );
 	m_nSamples.clear();
-	m_nSamples.reserve( nI * nJ * nK );
+    m_nSamples.reserve( nI * nJ * nK );
 
 	//factor number can be -1 (mean), which is not a valid variographic structure number.
 	int ist = m_fkEstimation->getFactorNumber();
@@ -68,13 +68,13 @@ void FKEstimationRunner::doRun()
                           QString::number(nFailed) + " failed). " );
             emit progress( j * nI + k * nI * nJ );
             for( uint i = 0; i <nI; ++i){
-				GridCell estimationCell( estimationGrid, -1, i, j, k );
+                GridCell estimationCell( estimationGrid, -1, i, j, k );
 				double estimatedMean;
 				uint nSamples;
-				m_factor.push_back( fk(  estimationCell,
-										 estimatedMean,
-										 nSamples,
-										 nFailed ) );
+                m_factor.push_back( fk(  estimationCell,
+                                         estimatedMean,
+                                         nSamples,
+                                         nFailed ) );
                 m_means.push_back( estimatedMean );
 				m_nSamples.push_back( nSamples );
                 ++nKriging;
@@ -283,7 +283,7 @@ double FKEstimationRunner::fk(GridCell & estimationCell, double& estimatedMean, 
 	if( std::isnan(factor) || !std::isfinite(factor) ){
 		++nFailed;
 		double failValue = m_fkEstimation->ndvOfEstimationGrid();
-		Application::instance()->logWarn( "FKEstimationRunner::fkDeutsch(): at least one kriging operation failed (resulted in NaN or infinity).  Returning " +
+        Application::instance()->logWarn( "FKEstimationRunner::fk(): at least one kriging operation failed (resulted in NaN or infinity).  Returning " +
 										  QString::number(failValue) + " to protect the output data file." );
 		factor = failValue;
 	}

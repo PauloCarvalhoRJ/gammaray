@@ -43,6 +43,8 @@ SpatialIndexPoints::SpatialIndexPoints()
 SpatialIndexPoints::~SpatialIndexPoints()
 {
 	g_spatialIndexBeingUsed = false;
+    //clears the global variable with the index after usage
+    clear();
 }
 
 void SpatialIndexPoints::fill(PointSet *ps, double tolerance)
