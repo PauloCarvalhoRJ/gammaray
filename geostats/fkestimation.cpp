@@ -211,9 +211,13 @@ std::vector<double> FKEstimation::run( )
     delete runner;
 
     //discard the thread object.
-    thread->quit();
-    thread->wait();
-    delete thread;
+	//TODO: this currently causes a crash in Linux due to a bug in Qt described here:
+	//      https://bugreports.qt.io/browse/QTBUG-48256
+	// WARNING: if you enable this, please, test FK under Linux to check whether that bug
+	//          was finally solved.  Latest attempt (failed): 2018-09-17. Qt version: 5.9.1
+///    thread->quit();
+///    thread->wait();
+///    delete thread;
 
     Application::instance()->logInfo("Factorial Kriging completed.");
 
