@@ -58,7 +58,8 @@ void VariableRemover::doRemove()
            //treat the data lines until EOF
            } else {
                //tokenize the data record
-               QStringList values = Util::fastSplit( line );
+			   QStringList values;
+			   Util::fastSplit( line, values );
                //remove the value corresponding to the column to be removed
                values.removeAt( _columnToDelete );
                //output the remaining values

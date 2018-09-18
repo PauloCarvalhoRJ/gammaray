@@ -489,7 +489,7 @@ public:
     /** Split function specialized to tokenize data lines of GEO-EAS files.
      *  @note This is not a generic tokenizer, so do not use for other applications.
      */
-    static QStringList fastSplit(const QString lineGEOEAS);
+	static void fastSplit(const QString lineGEOEAS, QStringList& list);
 
     /** Computes 3D FFT (forward or reverse) for an array of values.  The result will be
      * stored in the input array.

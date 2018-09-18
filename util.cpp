@@ -1478,10 +1478,9 @@ void Util::fft2D(int n1, int n2, std::vector< std::complex<double> > &cp, FFTCom
 */
 }
 
-QStringList Util::fastSplit(const QString lineGEOEAS)
+void Util::fastSplit(const QString lineGEOEAS, QStringList & list)
 {
-    QStringList result;
-    char token[100]; //100 characters is more than enough for a double in a text file.
+	char token[100]; //100 characters is more than enough for a double in a text file.
     int iTokenChar = 0;
     int nchar = lineGEOEAS.length();
     char currentChar;
@@ -1497,7 +1496,7 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
             default:  //found a separator char (could be anything other than valid number characters)
                 token[ iTokenChar ] = 0; //append null char
                 if( iTokenChar > 0 ) //if token is not empty
-                    result.push_back( token ); //adds the token to the string list
+					list.push_back( token ); //adds the token to the string list
                 iTokenChar = 0; //resets the token char counter
         }
     }
@@ -1505,10 +1504,8 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     //it is possible that the last token finishes the line
     if( iTokenChar > 0 ){ //if token is not empty
         token[ iTokenChar ] = 0; //append null char
-        result.push_back( token ); //adds the token to the string list
+		list.push_back( token ); //adds the token to the string list
     }
-
-    return result;
 }
 
 void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values,
