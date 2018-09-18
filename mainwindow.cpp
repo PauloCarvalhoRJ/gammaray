@@ -763,7 +763,9 @@ void MainWindow::onPixelPlt()
         //... get the associated category definition
         cd = cg->getCategoryDefinition( _right_clicked_attribute );
     }
-    Util::viewGrid( _right_clicked_attribute, this, false, cd );
+	CartesianGrid *cg = (CartesianGrid*)_right_clicked_attribute->getContainingFile();
+	cg->loadData();
+//	Util::viewGrid( _right_clicked_attribute, this, false, cd );
 }
 
 void MainWindow::onProbPlt()
@@ -1272,13 +1274,14 @@ void MainWindow::onLookForDuplicates()
                                              0.001, 0.0, 1000.0, 3, &ok);
     if( ok ){
         PointSet* ps = (PointSet*)_right_clicked_file;
-        SpatialIndexPoints::fill( ps, tolerance );
+		SpatialIndexPoints sip;
+		sip.fill( ps, tolerance );
         uint totFileDataLines = ps->getDataLineCount();
         uint headerLineCount = Util::getHeaderLineCount( ps->getPath() );
         Application::instance()->logInfo( "=======BEGIN OF REPORT============" );
         QStringList messages;
         for( uint iFileDataLine = 0; iFileDataLine < totFileDataLines; ++iFileDataLine){
-            QList<uint> nearSamples = SpatialIndexPoints::getNearestWithin( iFileDataLine, 5, distance);
+			QList<uint> nearSamples = sip.getNearestWithin( iFileDataLine, 5, distance);
             QList<uint>::iterator it = nearSamples.begin();
             for(; it != nearSamples.end(); ++it){
                 uint lineNumber1 = iFileDataLine + 1 + headerLineCount;
