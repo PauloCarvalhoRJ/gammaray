@@ -35,18 +35,17 @@
 #include <vtkImageData.h>
 #include <vtkImageFFT.h>
 #include <vtkImageRFFT.h>
+#include <QProgressDialog>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
-#include <QProgressDialog>
 #endif
 #ifdef Q_OS_LINUX
   #include <stdlib.h>
   #include <stdio.h>
   #include <string.h>
-#include <QProgressDialog>
 #endif
 #ifdef Q_OS_MAC
   #include <mach/mach.h>
