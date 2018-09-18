@@ -16,7 +16,7 @@
 struct AnisoCache{
     VariogramModel* vModel;
     std::vector<Matrix3X3<double>> anisoTransforms;
-} anisoCache;
+} g_anisoCache;
 
 GeostatsUtils::GeostatsUtils()
 {
@@ -119,13 +119,15 @@ double GeostatsUtils::getGamma(VariogramModel *model, const SpatialLocation &loc
         Matrix3X3<double> anisoTransform;
         //improving performance by saving the aniso transforms in a cache, assuming the anisotropy
         //      is the same in all locations.
-        if( anisoCache.vModel != model){
+		if( g_anisoCache.vModel != model){
+			if( i == 0 ) //making sure the cache doesn't grow indefinitely
+				g_anisoCache.anisoTransforms.clear();
             anisoTransform = GeostatsUtils::getAnisoTransform(
                         model->get_a_hMax(i), model->get_a_hMin(i), model->get_a_vert(i),
                         model->getAzimuth(i), model->getDip(i), model->getRoll(i));
-            anisoCache.anisoTransforms.push_back( anisoTransform );
+			g_anisoCache.anisoTransforms.push_back( anisoTransform );
         } else {
-            anisoTransform = anisoCache.anisoTransforms[i];
+			anisoTransform = g_anisoCache.anisoTransforms[i];
         }
 
         //get the separation corrected by anisotropy
@@ -141,7 +143,7 @@ double GeostatsUtils::getGamma(VariogramModel *model, const SpatialLocation &loc
 
     //sets the cache's key (variogram model pointer) so we know whether we can reuse the aniso transforms
     //saved in the cache
-    anisoCache.vModel = model;
+	g_anisoCache.vModel = model;
 
     return result;
 }

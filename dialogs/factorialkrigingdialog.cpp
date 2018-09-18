@@ -84,7 +84,6 @@ FactorialKrigingDialog::~FactorialKrigingDialog()
 
 void FactorialKrigingDialog::onParameters()
 {
-
     //-------------------------gather estimation info-----------------------------
 
     //get the selected input file
@@ -300,16 +299,18 @@ void FactorialKrigingDialog::doFK()
     uint numberOfSectors = par_search_ellip_sectors->getParameter<GSLibParUInt*>( 0 )->_value;
     uint minSamplesPerSector = par_search_ellip_sectors->getParameter<GSLibParUInt*>( 1 )->_value;
     uint maxSamplesPerSector = par_search_ellip_sectors->getParameter<GSLibParUInt*>( 2 )->_value;
-    SearchNeighborhoodPtr searchNeighborhood(
+	SearchNeighborhoodPtr searchNeighborhood(
                 new SearchEllipsoid(hMax, hMin, hVert,
                                     azimuth, dip, roll,
                                     numberOfSectors, minSamplesPerSector, maxSamplesPerSector
                                     )
                 );
-    SearchStrategyPtr searchStrategy( new SearchStrategy( searchNeighborhood,
+	SearchStrategyPtr searchStrategy( new SearchStrategy( searchNeighborhood,
 														  nb_samples,
                                                           m_gpfFK->getParameter<GSLibParDouble*>( 8 )->_value, // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
                                                           m_gpfFK->getParameter<GSLibParUInt*>( 3 )->_value) ); // See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
+
+
 
     //run the estimation
 	m_results.clear();
