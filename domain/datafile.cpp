@@ -145,6 +145,7 @@ void DataFile::loadData()
 
     // make sure _data is empty
     _data.clear();
+	std::vector< std::vector<double> >().swap(_data); //clear() may not actually free memory
 
     // data load takes place in another thread, so we can show and update a progress bar
     //////////////////////////////////
@@ -165,7 +166,7 @@ void DataFile::loadData()
     dl->connect(thread, SIGNAL(finished()), dl, SLOT(deleteLater()));
     dl->connect(thread, SIGNAL(started()), dl, SLOT(doLoad()));
     dl->connect(dl, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
-    thread->start();
+	thread->start();
     /////////////////////////////////
 
     // wait for the data load to finish
@@ -798,7 +799,11 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc,
     this->updateMetaDataFile();
 }
 
-void DataFile::freeLoadedData() { _data.clear(); }
+void DataFile::freeLoadedData() {
+	_data.clear();
+	//clear() does not guarantee memory is actually freed.
+	std::vector< std::vector<double> >().swap( _data );
+}
 
 void DataFile::setDataPage(long firstDataLine, long lastDataLine)
 {
