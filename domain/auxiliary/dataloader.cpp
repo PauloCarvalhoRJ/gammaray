@@ -37,6 +37,10 @@ void DataLoader::doLoad() { /* do what you need and emit progress signal */
 
 	uint iDataLineParsed = 0;
 
+	uint nPushesBack = 0;
+
+	uint nPopsBack = 0;
+
 	for (int i = 0; !in.atEnd(); ++i)
     {
        //read file line by line
@@ -88,11 +92,13 @@ void DataLoader::doLoad() { /* do what you need and emit progress signal */
 				   bool ok = true;
 				   double value = (*it).toDouble( &ok );
 				   if( !ok ){
-					   Application::instance()->logError( QString("DataFile::loadData(): error in data file (line ").append(QString::number(i)).append("): cannot convert ").append( *it ).append(" to double.") );
+					   Application::instance()->logError( QString("DataLoader::doLoad(): error in data file (line ").append(QString::number(i)).append("): cannot convert ").append( *it ).append(" to double.") );
 				   }
 				   //making sure there is room for the new data.
-				   if( iDataLineParsed == _data.size() )
+				   if( iDataLineParsed == _data.size() ){
+					   ++nPushesBack;
 					   _data.push_back( std::vector<double>( n_vars, -424242.0 ) );
+				   }
 				   //store the value in the data array.
 				   _data[iDataLineParsed][j] = value;
 			   }
@@ -105,8 +111,16 @@ void DataLoader::doLoad() { /* do what you need and emit progress signal */
     }
 
 	//remove possibly excess of data in pre-allocation of _data
-	while( iDataLineParsed < _data.size() )
+	while( iDataLineParsed < _data.size() ){
+		++nPopsBack;
 		_data.pop_back();
+	}
+
+	if( nPushesBack )
+		Application::instance()->logInfo( QString("DataLoader::doLoad(): data array adjustment resulted in ").append(QString::number(nPushesBack)).append(" push(es)-back.") );
+
+	if( nPopsBack )
+		Application::instance()->logInfo( QString("DataLoader::doLoad(): data array adjustment resulted in ").append(QString::number(nPopsBack)).append(" pop(s)-back.") );
 
     _finished = true;
 }

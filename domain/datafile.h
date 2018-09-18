@@ -342,7 +342,7 @@ protected:
      * Outer vector are rows of data.
      * Inner vector are values in a row of data.
      */
-    std::vector< std::vector<double> > _data;
+	std::vector< std::vector<double> > _data;
 
     /** The no-data value specified by the user. */
     QString _no_data_value;
