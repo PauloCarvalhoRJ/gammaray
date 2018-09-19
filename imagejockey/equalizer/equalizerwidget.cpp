@@ -10,8 +10,8 @@
 EqualizerWidget::EqualizerWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::EqualizerWidget),
-    m_frequencyWindowBegin(0.0d),
-    m_frequencyWindowEnd(1000.0d)
+	m_frequencyWindowBegin(0.0),
+	m_frequencyWindowEnd(1000.0)
 {
     ui->setupUi(this);
 
@@ -149,7 +149,7 @@ void EqualizerWidget::updateSlidersCentralFrequencies()
     double delta = m_frequencyWindowEnd - m_frequencyWindowBegin;
     double step = delta / nfreq;
     for( int i = 0; i < nfreq; ++i){
-        double centralFrequency = m_frequencyWindowBegin + step/2.0d + step * i;
+		double centralFrequency = m_frequencyWindowBegin + step/2.0 + step * i;
         EqualizerSlider* slider = m_sliders[i];
         slider->setCentralFrequency( centralFrequency );
     }

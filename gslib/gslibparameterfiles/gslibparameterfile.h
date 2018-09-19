@@ -123,6 +123,15 @@ public:
      */
     void addParameter( GSLibParType* param );
 
+	/**
+	 * Populates this parameter set to work with Factorial Kriging.  This is not a GSLib program.
+	 * This is not saved nor populated from a GSLib parameter file.  Instead, a parameter set
+	 * populated for FK is a convenient way to create a parameter dialog for the FK internal
+	 * implementation.  This reuses code insead if creating a new dialog in Qt Designer full of
+	 * parameters from scratch along with all the associated set/get glue code.
+	 */
+	void makeParamatersForFactorialKriging();
+
 public: //-------static functions---------------
     /**
       *  Generates all parameter file templates that may be missing in the given directory.

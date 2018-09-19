@@ -1,5 +1,6 @@
 #include "projectcomponent.h"
 #include "viewer3d/view3dconfigwidgetsbuilder.h"
+#include "viewer3d/view3dbuilders.h"
 
 ProjectComponent::ProjectComponent()
 {

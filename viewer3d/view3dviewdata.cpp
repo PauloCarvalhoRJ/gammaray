@@ -1,6 +1,11 @@
 #include "view3dviewdata.h"
 
 #include <vtkActor.h>
+#include <vtkProp.h>
+#include <vtkStructuredGridClip.h>
+#include <vtkExtractGrid.h>
+#include <vtkDataSetMapper.h>
+#include <vtkThreshold.h>
 
 View3DViewData::View3DViewData() :
     actor( vtkSmartPointer<vtkActor>::New() ),

@@ -10,6 +10,7 @@
 #include "../../util.h"
 #include "gslibparamtypes.h"
 #include "../igslibparameterfinder.h"
+#include "geostats/geostatsutils.h"
 
 GSLibParameterFile::GSLibParameterFile(const QString program_name)
 {
@@ -59,8 +60,7 @@ GSLibParameterFile::GSLibParameterFile()
 
 GSLibParameterFile::~GSLibParameterFile()
 {
-    //TODO: I don't remember whether QList automatically deletes its objects upon its own
-    //deallocation
+    //TODO: Delete the objects in _params
 }
 
 void GSLibParameterFile::setDefaultValues()
@@ -376,7 +376,67 @@ void GSLibParameterFile::setGridParameters(CartesianGrid *cg)
 
 void GSLibParameterFile::addParameter(GSLibParType *param)
 {
-    _params.append( param );
+	_params.append( param );
+}
+
+void GSLibParameterFile::makeParamatersForFactorialKriging()
+{
+	this->_program_name = "Factorial Kriging algorithm";
+
+	//------------kriging type: parameter 0--------------------------------
+    GSLibParOption* par_ktype = new GSLibParOption("", "", "Kriging type:");
+    par_ktype->addOption( static_cast<int>(KrigingType::SK), "Simple" );
+    par_ktype->addOption( static_cast<int>(KrigingType::OK), "Ordinary" );
+    par_ktype->_selected_value = static_cast<int>(KrigingType::OK);
+    _params.append( par_ktype );
+
+	//------------mean for simple kriging: parameter 1--------------------------------
+    GSLibParDouble* par_skmean = new GSLibParDouble("", "", "mean for SK:");
+    par_skmean->_value = 0.0;
+    _params.append( par_skmean );
+
+    //------------max number of samples: parameter 2--------------------------------
+	GSLibParUInt* par_nb_samples = new GSLibParUInt("", "", "Maximum number of samples:");
+	par_nb_samples->_value = 16;
+	_params.append( par_nb_samples );
+
+    //------------max number of samples: parameter 3--------------------------------
+    GSLibParUInt* par_min_nb_samples = new GSLibParUInt("", "", "Minimum number of samples:");
+    par_min_nb_samples->_value = 4;
+    _params.append( par_min_nb_samples );
+
+    //------------search ellipsoid radii: parameter 4--------------------------------
+	GSLibParMultiValuedFixed *par_search_ellip_radii = new GSLibParMultiValuedFixed("", "", "Search ellipsoid radii (hMax, hMin, hVert):");
+	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
+	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
+	par_search_ellip_radii->_parameters.append( new GSLibParDouble( 1.0 ) );
+	_params.append( par_search_ellip_radii );
+
+    //------------search ellipsoid angles: parameter 5--------------------------------
+	GSLibParMultiValuedFixed *par_search_ellip_angles = new GSLibParMultiValuedFixed("", "", "Search ellipsoid angles (azimuth, dip, roll):");
+	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
+	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
+	par_search_ellip_angles->_parameters.append( new GSLibParDouble( 0.0 ) );
+	_params.append( par_search_ellip_angles );
+
+    //------------divide search ellipsoid into sectors: parameter 6--------------------------------
+    GSLibParMultiValuedFixed *par_search_ellip_sectors = new GSLibParMultiValuedFixed("", "", "Search ellip. sectors: (num., min. per sec., max. per sec.):");
+    par_search_ellip_sectors->_parameters.append( new GSLibParUInt( 1 ) );
+    par_search_ellip_sectors->_parameters.append( new GSLibParUInt( 1 ) );
+    par_search_ellip_sectors->_parameters.append( new GSLibParUInt( 2 ) );
+    _params.append( par_search_ellip_sectors );
+
+    //------------Factor to get: parameter 7--------------------------------
+    GSLibParOption* par_factor = new GSLibParOption("", "", "Factor:");
+    par_factor->addOption( -1, "Mean (Factor 1)" );
+    par_factor->addOption( 0, "Nugget effect (Factor 2)" );
+    par_factor->_selected_value = -1;
+    _params.append( par_factor );
+
+    //------------Minimum distance between samples: parameter 8--------------------------------
+	GSLibParDouble* par_minDistance = new GSLibParDouble("", "", "Min. distance between samples (0 == not used):");
+	par_minDistance->_value = 0.0;
+	_params.append( par_minDistance );
 }
 
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){

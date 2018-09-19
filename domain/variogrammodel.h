@@ -23,7 +23,10 @@ class VariogramModel : public File
 public:
     VariogramModel( const QString path );
 
-    /**
+	/** Constructor for file-less variogram models. */
+	VariogramModel( );
+
+	/**
      * Returns the total variance expressed by the variogram model.
      * It is the sum of nugget effect and the variance contributions
      * of each nested variogram structure.
@@ -96,7 +99,24 @@ public:
     /** Returns the highest vertical axis range amongst the nested structures. */
     double get_max_vert();
 
-    bool forceReread() const;
+	/** Returns a VariogramModel object from one of its structures.
+	 * @note IMPORTANT: differently from the other methods that take a structure index.
+	 *                  Zero index here corresponds to the nugget effect.
+	 */
+	VariogramModel makeVModelFromSingleStructure( int structure );
+
+	/**
+	 * Returns the number of variogram structures, including the nugget effect.
+	 */
+	uint getNstWithNugget();
+
+    /** Returns a descriptive text for one of the variogram structures. */
+    QString getStructureDescription( int structure );
+
+    /** Returns whether this variogram model is a pure nugget model. */
+    bool isPureNugget();
+
+	bool forceReread() const;
 
     /** Sets whether the getters call readParameters() automatically.
      * Setting true, getters ensture an updated read with respect to the file, but results in a slow execution.
@@ -108,6 +128,10 @@ public:
 
     /** Reads the variogram model parameters from file. */
     void readParameters();
+
+	/** Returns a VariogramModel object from one all its structures but without the nugget effect.
+	 */
+	VariogramModel makeVModelWithoutNugget( );
 
 // File interface
 public:

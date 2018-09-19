@@ -548,6 +548,8 @@ void ImageJockeyUtils::getEllipseParametersFromImplicit(double A, double B, doub
                                                         double &centerX,
                                                         double &centerY)
 {
+	Q_UNUSED( F );
+
     // Input parameters: a, b, c, d, e, f
     rotationAngle = std::atan(B / (A - C)) * 0.5; // rotation
     double cos_phi = std::cos(rotationAngle);

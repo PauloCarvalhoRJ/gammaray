@@ -11,25 +11,24 @@ greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 TARGET = GammaRay
 TEMPLATE = app
 
-CONFIG( release, debug|release ) {
-	DESTDIR = ../GammaRay_release/dist
-	OBJECTS_DIR = ../GammaRay_release/obj
-	MOC_DIR = ../GammaRay_release/moc
-	RCC_DIR = ../GammaRay_release/rcc
-	UI_DIR = ../GammaRay_release/ui
-} else {
-	DESTDIR = ../GammaRay_debug/dist
-	OBJECTS_DIR = ../GammaRay_debug/obj
-	MOC_DIR = ../GammaRay_debug/moc
-	RCC_DIR = ../GammaRay_debug/rcc
-	UI_DIR = ../GammaRay_debug/ui
+include(GammaRay.pri)
+
+#========for the separate calculator scripting library built with libCalcScripting.pro========
+LIBPATH += $$DESTDIR
+CALCSCRIPTING_LIB_NAME = CalcScripting
+win32{
+	CALCSCRIPTING_LIB_NAME = CalcScripting1
 }
-CONFIG += c++11
+LIBS += -l$$CALCSCRIPTING_LIB_NAME
+#============================================================================================
 
-#This prevents "string table overflow" errors when compiling .cpp's that include exprtk.hpp in debug mode
-QMAKE_CXXFLAGS_DEBUG += -O1
-
-#QMAKE_CXXFLAGS += -m64
+win32 {
+	#-Wa,-mbig-obj not currently supported (or possibly not necessary) by GCC 4.8 (Linus)
+	#necessary for compiling svd.cpp in debug mode.
+	QMAKE_CXXFLAGS_DEBUG += -Wa,-mbig-obj
+	#Don't know why -Wa,-mbig-obj sticks... removing it for release mode.
+	QMAKE_CXXFLAGS_RELEASE -= -Wa,-mbig-obj
+}
 
 SOURCES += main.cpp\
         mainwindow.cpp \
@@ -207,14 +206,20 @@ SOURCES += main.cpp\
 	imagejockey/widgets/ijvariableselector.cpp \
     imagejockey/widgets/grcompass.cpp \
     imagejockey/widgets/ijgridviewerwidget.cpp \
-    calculator/calcscripting.cpp \
-    calculator/icalcpropertycollection.cpp \
     calculator/calculatordialog.cpp \
-    calculator/icalcproperty.cpp \
     calculator/calclinenumberarea.cpp \
 	calculator/calccodeeditor.cpp \
 	imagejockey/vardecomp/variographicdecompositiondialog.cpp \
-	imagejockey/widgets/ijquick3dviewer.cpp
+	imagejockey/widgets/ijquick3dviewer.cpp \
+	dialogs/factorialkrigingdialog.cpp \
+    geostats/fkestimation.cpp \
+    geostats/searchstrategy.cpp \
+    geostats/fkestimationrunner.cpp \
+    geostats/datacell.cpp \
+    geostats/searchneighborhood.cpp \
+    geostats/searchellipsoid.cpp \
+    geostats/pointsetcell.cpp \
+    geostats/indexedspatiallocation.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -403,7 +408,16 @@ HEADERS  += mainwindow.h \
     calculator/calclinenumberarea.h \
 	calculator/calccodeeditor.h \
 	imagejockey/vardecomp/variographicdecompositiondialog.h \
-	imagejockey/widgets/ijquick3dviewer.h
+	imagejockey/widgets/ijquick3dviewer.h \
+	dialogs/factorialkrigingdialog.h \
+    geostats/fkestimation.h \
+    geostats/searchstrategy.h \
+    geostats/fkestimationrunner.h \
+    geostats/datacell.h \
+    geostats/searchneighborhood.h \
+    geostats/searchellipsoid.h \
+    geostats/pointsetcell.h \
+    geostats/indexedspatiallocation.h
 
 
 FORMS    += mainwindow.ui \
@@ -478,7 +492,8 @@ FORMS    += mainwindow.ui \
     imagejockey/widgets/ijgridviewerwidget.ui \
 	calculator/calculatordialog.ui \
 	imagejockey/vardecomp/variographicdecompositiondialog.ui \
-	imagejockey/widgets/ijquick3dviewer.ui
+	imagejockey/widgets/ijquick3dviewer.ui \
+	dialogs/factorialkrigingdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -582,7 +597,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 4.5.1
+VERSION = 4.7
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

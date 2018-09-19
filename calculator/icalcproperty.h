@@ -4,10 +4,12 @@
 #include <QString>
 #include <QIcon>
 
+#include "libCalcScriptingDefs.h"
+
 /**
  * The ICalcProperty class represents a variable or attribute, a series of values.
  */
-class ICalcProperty
+class CALCSCRIPT_LIB_COMMON_DLLSPEC ICalcProperty
 {
 public:
     ICalcProperty();

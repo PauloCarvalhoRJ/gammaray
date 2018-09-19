@@ -5,6 +5,7 @@
 #include "widgets/widgetgslibparinputdata.h"
 #include "../../domain/attribute.h"
 #include "../../domain/datafile.h"
+#include "../gslibparams/gslibparvarweight.h"
 
 GSLibParInputData::GSLibParInputData()
     : GSLibParType( "InputData", "Input data", "Input data" ),

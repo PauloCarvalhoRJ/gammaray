@@ -3,6 +3,7 @@
 #include <QFileInfo>
 #include <QTextStream>
 
+#include "domain/application.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "util.h"
@@ -10,6 +11,12 @@
 VariogramModel::VariogramModel(const QString path) : File( path ),
     _forceReread (true)
 {
+}
+
+VariogramModel::VariogramModel() : File( "NOFILE" ),
+	_forceReread(false)
+{
+
 }
 
 double VariogramModel::getSill()
@@ -108,7 +115,51 @@ double VariogramModel::get_max_vert()
         if( tmp > value )
             value = tmp;
     }
-    return value;
+	return value;
+}
+
+VariogramModel VariogramModel::makeVModelFromSingleStructure( int structure )
+{
+	VariogramModel result;
+	if( structure == 0 ){
+		result.m_Sill = m_Nugget; //sill of a nugget variogram.
+		result.m_nst = 0; //number of structures of a nugget variogram is always zero.
+		result.m_Nugget = m_Nugget;
+	}else{
+		int ist = structure-1;
+		result.m_Sill = m_cc[ist]; //sill of a single-structure variogram equals the contribution of its single structure.
+		result.m_Nugget = 0.0; //nugget of a single-structure variogram is zero.
+		result.m_nst = 1; //number of structures is always one.
+		result.m_it.push_back( m_it[ist] );
+		result.m_cc.push_back( m_cc[ist] );
+		result.m_a_hMax.push_back( m_a_hMax[ist] );
+		result.m_a_hMin.push_back( m_a_hMin[ist] );
+		result.m_a_vert.push_back( m_a_vert[ist] );
+		result.m_Azimuth.push_back( m_Azimuth[ist] );
+		result.m_Dip.push_back( m_Dip[ist] );
+		result.m_Roll.push_back( m_Roll[ist] );
+	}
+	return result;
+}
+
+uint VariogramModel::getNstWithNugget()
+{
+    return getNst()+1;
+}
+
+QString VariogramModel::getStructureDescription(int structure)
+{
+    QString desc = Util::getGSLibVariogramStructureName( static_cast<int>(m_it[structure]) ) + " ( ";
+    desc += QString::number( m_a_hMax[structure] ) + " x ";
+    desc += QString::number( m_a_hMin[structure] ) + " x ";
+    desc += QString::number( m_a_vert[structure] );
+    desc += " )";
+    return desc;
+}
+
+bool VariogramModel::isPureNugget()
+{
+    return getNst() == 0;
 }
 
 
@@ -189,8 +240,26 @@ void VariogramModel::readParameters()
         m_a_hMax.append( par4_1->getParameter<GSLibParDouble*>(0)->_value );
         m_a_hMin.append( par4_1->getParameter<GSLibParDouble*>(1)->_value );
         m_a_vert.append( par4_1->getParameter<GSLibParDouble*>(2)->_value );
-    }
+	}
 }
+
+VariogramModel VariogramModel::makeVModelWithoutNugget()
+{
+	VariogramModel result;
+	result.m_Sill = m_Sill - m_Nugget;
+	result.m_Nugget = 0.0;
+	result.m_nst = m_nst; //number of structures is the same, since nugget does not comput as one actual structure.
+	result.m_it = m_it;
+	result.m_cc = m_cc;
+	result.m_a_hMax = m_a_hMax;
+	result.m_a_hMin = m_a_hMin;
+	result.m_a_vert = m_a_vert;
+	result.m_Azimuth = m_Azimuth;
+	result.m_Dip = m_Dip;
+	result.m_Roll = m_Roll;
+	return result;
+}
+
 bool VariogramModel::forceReread() const
 {
     return _forceReread;

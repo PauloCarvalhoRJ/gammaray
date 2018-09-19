@@ -1,6 +1,5 @@
 ﻿#ifndef UTIL_H
 #define UTIL_H
-#include "array3d.h"
 #include <QColor>
 #include <QIcon>
 #include <QList>
@@ -15,7 +14,7 @@
 
 // The usual value of 10.0 for scaling in decibel (dB).
 // The value of 20.0 (2*10) is usually for power measurements (square law).
-#define DECIBEL_SCALE_FACTOR 10.0d
+#define DECIBEL_SCALE_FACTOR 10.0
 
 class QWidget;
 class QPlainTextEdit;
@@ -147,6 +146,17 @@ public:
      */
     inline static bool almostEqual2sComplement(double A, double B, int maxUlps)
     {
+        //TODO: replace the reinterpret_cast with an union:
+        //typedef union
+        // {
+        //    int64_t i64;
+        //    double dbl;
+        //  } U64;
+        //
+        //  U64 in;
+        //  in.dbl = ...;
+        //  int64_t v = in.i64; //convert double's raw bytes into an integer value.
+
         // Make sure maxUlps is non-negative and small enough that the
         // default NAN won't compare as equal to anything.
         //<cassert>'s assert doesn't accept longs
@@ -479,7 +489,7 @@ public:
     /** Split function specialized to tokenize data lines of GEO-EAS files.
      *  @note This is not a generic tokenizer, so do not use for other applications.
      */
-    static QStringList fastSplit(const QString lineGEOEAS);
+	static void fastSplit(const QString lineGEOEAS, QStringList& list);
 
     /** Computes 3D FFT (forward or reverse) for an array of values.  The result will be
      * stored in the input array.
@@ -564,6 +574,11 @@ public:
 
     /** Returns the filename (e.g. drillholes.txt) from a path. */
     static QString getFileName(QString path);
+
+    /**
+      * Returns the name of a variographic structure given its code following GSLib convention.
+      */
+    static QString getGSLibVariogramStructureName(uint it);
 };
 
 #endif // UTIL_H

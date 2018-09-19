@@ -5,6 +5,7 @@
 #include "widgetgslibparmultivaluedvariable.h"
 #include "widgetgslibparfile.h"
 #include "widgetgslibparvmodel.h"
+#include "domain/application.h"
 #include <QPainter>
 
 WidgetGSLibParRepeat::WidgetGSLibParRepeat(QWidget *parent) :

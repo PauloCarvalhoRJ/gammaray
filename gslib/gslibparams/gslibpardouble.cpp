@@ -8,10 +8,15 @@ GSLibParDouble::GSLibParDouble(const QString name, const QString label, const QS
 {
 }
 
-GSLibParDouble::~GSLibParDouble()
+GSLibParDouble::GSLibParDouble( double value ) :
+	GSLibParType("", "", ""),
+	_value( value )
 {
 }
 
+GSLibParDouble::~GSLibParDouble()
+{
+}
 
 void GSLibParDouble::save(QTextStream *out)
 {

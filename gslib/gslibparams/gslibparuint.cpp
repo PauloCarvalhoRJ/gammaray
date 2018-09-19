@@ -7,6 +7,11 @@ GSLibParUInt::GSLibParUInt(const QString name, const QString label, const QStrin
 {
 }
 
+GSLibParUInt::GSLibParUInt(uint initValue) :
+    GSLibParType("", "", ""),
+    _value( initValue )
+{
+}
 
 void GSLibParUInt::save(QTextStream *out)
 {

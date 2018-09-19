@@ -11,6 +11,7 @@
 #include "../widgets/ijgridviewerwidget.h"
 #include "../imagejockeyutils.h"
 #include "../imagejockeydialog.h"
+#include "svdfactor.h"
 
 SVDAnalysisDialog::SVDAnalysisDialog(QWidget *parent) :
     QDialog(parent),
@@ -465,7 +466,7 @@ void SVDAnalysisDialog::onCustomAnalysis()
 		QFile file( fileName );
 		file.open( QFile::ReadOnly | QFile::Text );
 		QTextStream in(&file);
-		for (int i = 0; !in.atEnd() && i < selectedFactors.size() ; ++i)
+		for (uint i = 0; !in.atEnd() && i < selectedFactors.size() ; ++i)
 		{
 			QString line = in.readLine();
 			QStringList fields = line.split(QRegExp("[\\s]"), QString::SplitBehavior::SkipEmptyParts);
@@ -495,7 +496,7 @@ void SVDAnalysisDialog::onCustomAnalysis()
 		double dx = exampleFactor->getCellSizeI();
 		double dy = exampleFactor->getCellSizeJ();
 		double dz = exampleFactor->getCellSizeK();
-		for( int i = 0; i < nFields; ++i ){
+		for( uint i = 0; i < nFields; ++i ){
 			spectral::array zeros( (spectral::index) nI, (spectral::index)nJ, (spectral::index)nK );
 			geoFactors[i] = new SVDFactor( std::move(zeros), i+1, 1.0, x0, y0, z0, dx, dy, dz, 0.0 );
 		}
@@ -515,7 +516,7 @@ void SVDAnalysisDialog::onCustomAnalysis()
 	window->setWindowTitle("Geological factors");
 	window->setAttribute(Qt::WA_DeleteOnClose);
 	QHBoxLayout* layout = new QHBoxLayout();
-	for( int i = 0; i < nFields; ++i ){
+	for( uint i = 0; i < nFields; ++i ){
 		IJGridViewerWidget* wid = new IJGridViewerWidget( true, true, false );
 		geoFactors[i]->setCustomName( "Geological factor #" + QString::number(i+1) );
 		wid->setFactor( geoFactors[i] );

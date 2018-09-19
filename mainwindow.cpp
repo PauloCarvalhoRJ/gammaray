@@ -63,6 +63,7 @@
 #include "dialogs/multivariogramdialog.h"
 #include "dialogs/sgsimdialog.h"
 #include "dialogs/machinelearningdialog.h"
+#include "dialogs/factorialkrigingdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -73,6 +74,8 @@
 #include "calculator/calculatordialog.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "imagejockey/vardecomp/variographicdecompositiondialog.h"
+#include "imagejockey/svd/svdfactor.h"
+
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -760,7 +763,7 @@ void MainWindow::onPixelPlt()
         //... get the associated category definition
         cd = cg->getCategoryDefinition( _right_clicked_attribute );
     }
-    Util::viewGrid( _right_clicked_attribute, this, false, cd );
+	Util::viewGrid( _right_clicked_attribute, this, false, cd );
 }
 
 void MainWindow::onProbPlt()
@@ -1269,13 +1272,14 @@ void MainWindow::onLookForDuplicates()
                                              0.001, 0.0, 1000.0, 3, &ok);
     if( ok ){
         PointSet* ps = (PointSet*)_right_clicked_file;
-        SpatialIndexPoints::fill( ps, tolerance );
+		SpatialIndexPoints sip;
+		sip.fill( ps, tolerance );
         uint totFileDataLines = ps->getDataLineCount();
         uint headerLineCount = Util::getHeaderLineCount( ps->getPath() );
         Application::instance()->logInfo( "=======BEGIN OF REPORT============" );
         QStringList messages;
         for( uint iFileDataLine = 0; iFileDataLine < totFileDataLines; ++iFileDataLine){
-            QList<uint> nearSamples = SpatialIndexPoints::getNearestWithin( iFileDataLine, 5, distance);
+			QList<uint> nearSamples = sip.getNearestWithin( iFileDataLine, 5, distance);
             QList<uint>::iterator it = nearSamples.begin();
             for(; it != nearSamples.end(); ++it){
                 uint lineNumber1 = iFileDataLine + 1 + headerLineCount;
@@ -2065,8 +2069,6 @@ void MainWindow::onCovarianceMap()
 
     //The covariance at h=0 ends up in the corners of the grid, then
     //we shift the data so cov(0) is in the grid center
-    //this also normalizes the values (divide by number of cells)
-    uint n = nI*nJ*nK;
     std::vector< std::complex<double> > arrayShifted( nI * nJ * nK );
     for(uint k = 0; k < nK; ++k) {
         int k_shift = (k + nK/2) % nK;
@@ -2163,7 +2165,13 @@ void MainWindow::onSaveArrayAsNewVariableInCartesianGrid(spectral::array *array,
         return;
     }
 
-    gridWithGridSpecs->appendAsNewVariable( new_variable_name, *array );
+	gridWithGridSpecs->appendAsNewVariable( new_variable_name, *array );
+}
+
+void MainWindow::onFactorialKriging()
+{
+	FactorialKrigingDialog *fkd = new FactorialKrigingDialog( this );
+	fkd->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()

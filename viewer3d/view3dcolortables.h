@@ -2,8 +2,9 @@
 #define VIEW3DCOLORTABLES_H
 
 #include <vtkSmartPointer.h>
-#include <vtkLookupTable.h>
 #include <QString>
+
+class vtkLookupTable;
 
 /*! The available color tables. */
 enum class ColorTable : uint {

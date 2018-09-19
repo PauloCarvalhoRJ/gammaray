@@ -35,18 +35,17 @@
 #include <vtkImageData.h>
 #include <vtkImageFFT.h>
 #include <vtkImageRFFT.h>
+#include <QProgressDialog>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
-#include <QProgressDialog>
 #endif
 #ifdef Q_OS_LINUX
   #include <stdlib.h>
   #include <stdio.h>
   #include <string.h>
-#include <QProgressDialog>
 #endif
 #ifdef Q_OS_MAC
   #include <mach/mach.h>
@@ -1001,10 +1000,10 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "4.5" << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" <<
-                      "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" <<
-                      "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5"  << "1.4" <<
-                      "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions  << "4.5.1" << "4.5" << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" <<
+                      "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" <<
+                      "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" <<
+                      "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -1478,10 +1477,9 @@ void Util::fft2D(int n1, int n2, std::vector< std::complex<double> > &cp, FFTCom
 */
 }
 
-QStringList Util::fastSplit(const QString lineGEOEAS)
+void Util::fastSplit(const QString lineGEOEAS, QStringList & list)
 {
-    QStringList result;
-    char token[100]; //100 characters is more than enough for a double in a text file.
+	char token[100]; //100 characters is more than enough for a double in a text file.
     int iTokenChar = 0;
     int nchar = lineGEOEAS.length();
     char currentChar;
@@ -1497,7 +1495,7 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
             default:  //found a separator char (could be anything other than valid number characters)
                 token[ iTokenChar ] = 0; //append null char
                 if( iTokenChar > 0 ) //if token is not empty
-                    result.push_back( token ); //adds the token to the string list
+					list.push_back( token ); //adds the token to the string list
                 iTokenChar = 0; //resets the token char counter
         }
     }
@@ -1505,10 +1503,8 @@ QStringList Util::fastSplit(const QString lineGEOEAS)
     //it is possible that the last token finishes the line
     if( iTokenChar > 0 ){ //if token is not empty
         token[ iTokenChar ] = 0; //append null char
-        result.push_back( token ); //adds the token to the string list
+		list.push_back( token ); //adds the token to the string list
     }
-
-    return result;
 }
 
 void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values,
@@ -1639,7 +1635,7 @@ QString Util::humanReadable(double value)
     //buffer string for formatting the output (QString's sptrintf doesn't honor field size)
     char buffer[50];
     //define base unit to change suffix (could be 1024 for ISO bytes (iB), for instance)
-    double unit = 1000.0d;
+	double unit = 1000.0;
     //return the plain value if it doesn't require a multiplier suffix (small values)
     if (value <= unit){
         std::sprintf(buffer, "%.1f", value);
@@ -1818,4 +1814,16 @@ QString Util::getFileName(QString path)
 {
     QFileInfo fileinfo( path );
     return fileinfo.fileName();
+}
+
+QString Util::getGSLibVariogramStructureName(uint it)
+{
+    switch(it){
+    case 1: return "Spherical";
+    case 2: return "Exponential";
+    case 3: return "Gaussian";
+    case 4: return "Power";
+    case 5: return "Hole effect";
+    default: return "UNKNOWN";
+    }
 }

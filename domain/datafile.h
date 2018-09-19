@@ -14,6 +14,12 @@ class UnivariateCategoryClassification;
 class CategoryDefinition;
 class IAlgorithmDataSource;
 
+enum class CartesianCoord : int {
+	X,
+	Y,
+	Z
+};
+
 /**
  * @brief The DataFile class is the base class of all project components that are
  *  files with scientific data, namely Point Set and Cartesian Grid.
@@ -298,6 +304,19 @@ public:
 	  */
 	void setData( uint line, uint column, double value );
 
+	/**
+	 * Returns whether this file is a regular data set (e.g. a Cartesian grid is a regular data set).
+	 */
+	virtual bool isRegular() = 0;
+
+	/**
+	 * Returns one of the spatial coordinates (x, y or z) of the data value given its line number.
+	 */
+	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) = 0;
+
+	/** Returns whether this data set is tridimensional. */
+	virtual bool isTridimensional() = 0;
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
@@ -308,7 +327,7 @@ public:
     virtual int getCalcPropertyCount(){ return getChildCount(); }
     virtual ICalcProperty *getCalcProperty(int index);
 	virtual int getCalcRecordCount(){ return getDataLineCount(); }
-	virtual double getCalcValue( int iVar, int iRecord ) { return data( iRecord, iVar ); }
+	virtual double getCalcValue( int iVar, int iRecord );
 	virtual void setCalcValue( int iVar, int iRecord, double value );
 	virtual void computationCompleted(){ writeToFS(); }
 	virtual void computationWillStart(){ loadData(); }
@@ -323,7 +342,7 @@ protected:
      * Outer vector are rows of data.
      * Inner vector are values in a row of data.
      */
-    std::vector< std::vector<double> > _data;
+	std::vector< std::vector<double> > _data;
 
     /** The no-data value specified by the user. */
     QString _no_data_value;

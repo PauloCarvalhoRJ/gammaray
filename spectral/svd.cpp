@@ -34,7 +34,7 @@ size_t SVD::n_factors() { return S_.M(); }
 
 void SVD::factor(array &f, size_t i)
 {
-    if (i < S_.M()) {
+	if ((index)i < S_.M()) {
         Eigen::MatrixXd u = to_2d(U_);
 
         Eigen::MatrixXd s = Eigen::MatrixXd::Zero(M_, N_ * K_);
@@ -67,8 +67,8 @@ array SVD::factor(size_t start, size_t end)
 {
     array f(M_, N_, K_, 0);
 
-    for (size_t i = start; i < end; ++i) {
-        if (i < S_.M()) {
+	for (size_t i = start; i < end; ++i) {
+		if ((index)i < S_.M()) {
             factor(f, i);
         }
     }
@@ -89,10 +89,10 @@ array SVD::pca()
         }
     }
 
-    for (index i = 0; i < M_; ++i) {
+	for (size_t i = 0; i < M_; ++i) {
         index idx = 0;
-        for (index j = 0; j < N_; ++j) {
-            for (index k = 0; k < K_; ++k) {
+		for (size_t j = 0; j < N_; ++j) {
+			for (size_t k = 0; k < K_; ++k) {
                 p(i, j, k) = rhs(i, idx);
                 ++idx;
             }
@@ -116,13 +116,13 @@ array SVD::factor_weights()
 {
     double T = 0;
 
-    for (size_t i = 0; i < S_.M(); ++i) {
+	for (index i = 0; i < S_.M(); ++i) {
         T += S_(i);
     }
 
     array w(S_.M(), 1, 1, 0);
 
-    for (size_t i = 0; i < S_.M(); ++i) {
+	for (index i = 0; i < S_.M(); ++i) {
         w(i) = S_(i) / T;
     }
 

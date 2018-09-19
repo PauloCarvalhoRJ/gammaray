@@ -219,6 +219,7 @@
     <addaction name="actionIK_Post_processing"/>
     <addaction name="actionCokriging"/>
     <addaction name="actionCokriging_newcokb3d"/>
+    <addaction name="actionFactorial_Kriging"/>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="enabled">
@@ -337,6 +338,11 @@
   <action name="actionVariographic_Decomposition">
    <property name="text">
     <string>Variographic Decomposition...</string>
+   </property>
+  </action>
+  <action name="actionFactorial_Kriging">
+   <property name="text">
+    <string>Factorial Kriging</string>
    </property>
   </action>
  </widget>
@@ -592,6 +598,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionFactorial_Kriging</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onFactorialKriging()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -608,5 +630,6 @@
   <slot>openCokrigingNewcokb3d()</slot>
   <slot>onMachineLearning()</slot>
   <slot>onVarigraphicDecomposition()</slot>
+  <slot>onFactorialKriging()</slot>
  </slots>
 </ui>

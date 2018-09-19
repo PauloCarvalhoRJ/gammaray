@@ -1,7 +1,6 @@
 #ifndef GSLIBPARREPEAT_H
 #define GSLIBPARREPEAT_H
 #include "gslibpartype.h"
-#include "../../domain/application.h"
 #include <QList>
 
 /**

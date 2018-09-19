@@ -145,6 +145,7 @@ void DataFile::loadData()
 
     // make sure _data is empty
     _data.clear();
+	std::vector< std::vector<double> >().swap(_data); //clear() may not actually free memory
 
     // data load takes place in another thread, so we can show and update a progress bar
     //////////////////////////////////
@@ -165,7 +166,7 @@ void DataFile::loadData()
     dl->connect(thread, SIGNAL(finished()), dl, SLOT(deleteLater()));
     dl->connect(thread, SIGNAL(started()), dl, SLOT(doLoad()));
     dl->connect(dl, SIGNAL(progress(int)), &progressDialog, SLOT(setValue(int)));
-    thread->start();
+	thread->start();
     /////////////////////////////////
 
     // wait for the data load to finish
@@ -231,7 +232,7 @@ double DataFile::maxAbs(uint column)
             "DataFile::maxAbs(): Data not loaded. Unspecified value was returned.");
     double ndv = this->getNoDataValue().toDouble();
     bool has_ndv = this->hasNoDataValue();
-    double result = 0.0d;
+	double result = 0.0;
     for (uint i = 0; i < _data.size(); ++i) {
         double value = data(i, column);
         if (std::abs<double>(value) > result
@@ -512,6 +513,15 @@ ICalcProperty *DataFile::getCalcProperty(int index)
 	return dynamic_cast<ICalcProperty*>( (Attribute*)getChildByIndex(index) );
 }
 
+double DataFile::getCalcValue(int iVar, int iRecord)
+{
+	double value = data( iRecord, iVar );
+	//If a value is unvalid, convert it to a NaN for the calculator.
+	if( isNDV( value ) )
+		value = std::numeric_limits<double>::quiet_NaN();
+	return value;
+}
+
 void DataFile::setCalcValue(int iVar, int iRecord, double value)
 {
     if( std::isnan(value) ) {
@@ -789,7 +799,11 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc,
     this->updateMetaDataFile();
 }
 
-void DataFile::freeLoadedData() { _data.clear(); }
+void DataFile::freeLoadedData() {
+	_data.clear();
+	//clear() does not guarantee memory is actually freed.
+	std::vector< std::vector<double> >().swap( _data );
+}
 
 void DataFile::setDataPage(long firstDataLine, long lastDataLine)
 {
@@ -915,7 +929,7 @@ int DataFile::addNewDataColumn(const QString columnName,
     std::vector<double>::const_iterator itColumn = values.cbegin();
     std::vector<std::vector<double>>::iterator itData = _data.begin();
     // hopefully both iterators end at the same time
-    for (; itColumn != values.cend(), itData != _data.end(); ++itColumn, ++itData)
+	for (; itColumn != values.cend(), itColumn != values.end() && itData != _data.end(); ++itColumn, ++itData)
         (*itData).push_back(*itColumn);
 
     // If the transfer was not completed (the input vector is too short), fill the

@@ -305,7 +305,7 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
     curve->setSymbol( new QwtSymbol( QwtSymbol::Ellipse,
         Qt::gray, c, QSize( 8, 8 ) ) );
 
-    size_t nPoints = 11;
+	const size_t nPoints = 11;
     double x[nPoints];
     double y[nPoints];
 

@@ -3,11 +3,11 @@
 
 #include "gslibpartype.h"
 #include "gslibparfile.h"
-#include "gslibparvarweight.h"
 #include "gslibparlimitsdouble.h"
 #include <QList>
 
 class Attribute;
+class GSLibParVarWeight;
 
 /**
  * @brief The GSLibParInputData class represents the following set of parameters found in many par files:

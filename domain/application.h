@@ -3,9 +3,10 @@
 
 #include <QString>
 #include <QByteArray>
-#include "mainwindow.h"
+#include <vector>
 
 class Project;
+class MainWindow;
 
 /**
  * @brief The Application class holds application state, including global variables and OS registry settings.
