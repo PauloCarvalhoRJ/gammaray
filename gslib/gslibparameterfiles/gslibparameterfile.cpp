@@ -119,6 +119,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForPostsim();
     } else if ( this->_program_name == "newcokb3d" ){
         this->setDefaultValuesForNewcokb3d();
+    } else if ( this->_program_name == "sisim" ){
+        this->setDefaultValuesForSisim();
     } else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
@@ -2087,6 +2089,146 @@ void GSLibParameterFile::setDefaultValuesForNewcokb3d()
     }
 }
 
+void GSLibParameterFile::setDefaultValuesForSisim()
+{
+    //SISIM mode: 1=continuous(cdf), 0=categorical(pdf)
+    getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    //number thresholds/categories
+    getParameter<GSLibParUInt*>(1)->_value = 3;
+    //   thresholds / categories, which is a <double+>
+    GSLibParMultiValuedVariable *par2 = getParameter<GSLibParMultiValuedVariable*>(2);
+    par2->assure( 3 );
+    par2->getParameter<GSLibParDouble*>(0)->_value = 10.0;
+    par2->getParameter<GSLibParDouble*>(1)->_value = 15.0;
+    par2->getParameter<GSLibParDouble*>(2)->_value = 20.0;
+    //   global cdf / pdf, which is a <double+>
+    GSLibParMultiValuedVariable *par3 = getParameter<GSLibParMultiValuedVariable*>(3);
+    par3->assure( 3 );
+    par3->getParameter<GSLibParDouble*>(0)->_value = 0.17;
+    par3->getParameter<GSLibParDouble*>(1)->_value = 0.32;
+    par3->getParameter<GSLibParDouble*>(2)->_value = 0.80;
+    //file with data
+    getParameter<GSLibParFile*>(4)->_path = "nofile.dat";
+    //   columns for X,Y,Z, and variable
+    GSLibParMultiValuedFixed *par5 = this->getParameter<GSLibParMultiValuedFixed*>(5);
+    par5->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par5->getParameter<GSLibParUInt*>(1)->_value = 2;
+    par5->getParameter<GSLibParUInt*>(2)->_value = 0;
+    par5->getParameter<GSLibParUInt*>(3)->_value = 3;
+    //file with soft indicator input
+    getParameter<GSLibParFile*>(6)->_path = "softIK.dat";
+    //columns for X,Y,Z, and indicators
+    GSLibParMultiValuedFixed *par7 = this->getParameter<GSLibParMultiValuedFixed*>(7);
+    par7->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par7->getParameter<GSLibParUInt*>(1)->_value = 2;
+    par7->getParameter<GSLibParUInt*>(2)->_value = 0;
+    { // the indicator column indexes, which are a <uint+>
+        GSLibParMultiValuedVariable* par7_3 = par7->getParameter<GSLibParMultiValuedVariable*>(3);
+        par7_3->assure( 3 );
+        par7_3->getParameter<GSLibParUInt*>(0)->_value = 3;
+        par7_3->getParameter<GSLibParUInt*>(1)->_value = 4;
+        par7_3->getParameter<GSLibParUInt*>(2)->_value = 5;
+    }
+    //   Markov-Bayes simulation (0=no,1=yes)
+    getParameter<GSLibParOption*>(8)->_selected_value = 0;
+    //      calibration B(z) values, which is a <double+>
+    GSLibParMultiValuedVariable *par9 = getParameter<GSLibParMultiValuedVariable*>(9);
+    par9->assure( 3 );
+    par9->getParameter<GSLibParDouble*>(0)->_value = 0.61;
+    par9->getParameter<GSLibParDouble*>(1)->_value = 0.54;
+    par9->getParameter<GSLibParDouble*>(2)->_value = 0.56;
+    //trimming limits
+    GSLibParMultiValuedFixed *par10 = getParameter<GSLibParMultiValuedFixed*>(10);
+    par10->getParameter<GSLibParDouble*>(0)->_value = -998.0;
+    par10->getParameter<GSLibParDouble*>(1)->_value = 1e12;
+    //minimum (zmin) and maximum (zmax) data value
+    GSLibParMultiValuedFixed *par11 = getParameter<GSLibParMultiValuedFixed*>(11);
+    par11->getParameter<GSLibParDouble*>(0)->_value = 5.0;
+    par11->getParameter<GSLibParDouble*>(1)->_value = 25.0;
+    //   lower tail option and parameter
+    GSLibParMultiValuedFixed *par12 = getParameter<GSLibParMultiValuedFixed*>(12);
+    par12->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par12->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+    //   middle option and parameter
+    GSLibParMultiValuedFixed *par13 = getParameter<GSLibParMultiValuedFixed*>(13);
+    par13->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par13->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+    //      upper tail option and parameter
+    GSLibParMultiValuedFixed *par14 = getParameter<GSLibParMultiValuedFixed*>(14);
+    par14->getParameter<GSLibParOption*>(0)->_selected_value = 1;
+    par14->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+    //   file with tabulated values (for the interp. quantiles mentioned in parameters 12-14)
+    getParameter<GSLibParFile*>(15)->_path = "quantiles.dat";
+    //      columns for variable, weight
+    GSLibParMultiValuedFixed *par16 = getParameter<GSLibParMultiValuedFixed*>(16);
+    par16->getParameter<GSLibParUInt*>(0)->_value = 5.0;
+    par16->getParameter<GSLibParUInt*>(1)->_value = 25.0;
+    //debugging level: 0,1,2,3
+    getParameter<GSLibParOption*>(17)->_selected_value = 0;
+    //file for debugging output
+    getParameter<GSLibParFile*>(18)->_path = "debug.txt";
+    //file for simulation output
+    getParameter<GSLibParFile*>(19)->_path = "realizations.dat";
+    //number of realizations
+    getParameter<GSLibParUInt*>(20)->_value = 1;
+    //grid parameters
+    GSLibParGrid* par21 = getParameter<GSLibParGrid*>(21);
+    par21->_specs_x->getParameter<GSLibParUInt*>(0)->_value = 10; //nx
+    par21->_specs_x->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min x
+    par21->_specs_x->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size x
+    par21->_specs_y->getParameter<GSLibParUInt*>(0)->_value = 10; //ny
+    par21->_specs_y->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min y
+    par21->_specs_y->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size y
+    par21->_specs_z->getParameter<GSLibParUInt*>(0)->_value = 1; //nz
+    par21->_specs_z->getParameter<GSLibParDouble*>(1)->_value = 0.0; //min z
+    par21->_specs_z->getParameter<GSLibParDouble*>(2)->_value = 1.0; //cell size z
+    //random number seed
+    getParameter<GSLibParUInt*>(22)->_value = 69069;
+    //maximum original data  for each kriging
+    getParameter<GSLibParUInt*>(23)->_value = 12;
+    //maximum previous nodes for each kriging
+    getParameter<GSLibParUInt*>(24)->_value = 12;
+    //maximum soft indicator nodes for kriging
+    getParameter<GSLibParUInt*>(25)->_value = 1;
+    //assign data to nodes? (0=no,1=yes)
+    getParameter<GSLibParOption*>(26)->_selected_value = 1;
+    //multiple grid search? (0=no,1=yes), number of grids
+    GSLibParMultiValuedFixed *par27 = getParameter<GSLibParMultiValuedFixed*>(27);
+    par27->getParameter<GSLibParOption*>(0)->_selected_value = 0;
+    par27->getParameter<GSLibParUInt*>(1)->_value = 3;
+    //maximum per octant (0=not used)
+    getParameter<GSLibParUInt*>(28)->_value = 0;
+    //maximum search radii
+    GSLibParMultiValuedFixed *par29 = getParameter<GSLibParMultiValuedFixed*>(29);
+    par29->getParameter<GSLibParDouble*>(0)->_value = 1.0;
+    par29->getParameter<GSLibParDouble*>(1)->_value = 1.0;
+    par29->getParameter<GSLibParDouble*>(2)->_value = 1.0;
+    //angles for search ellipsoid
+    GSLibParMultiValuedFixed *par30 = getParameter<GSLibParMultiValuedFixed*>(30);
+    par30->getParameter<GSLibParDouble*>(0)->_value = 0.0;
+    par30->getParameter<GSLibParDouble*>(1)->_value = 0.0;
+    par30->getParameter<GSLibParDouble*>(2)->_value = 0.0;
+    //size of covariance lookup table
+    GSLibParMultiValuedFixed *par31 = getParameter<GSLibParMultiValuedFixed*>(31);
+    par31->getParameter<GSLibParUInt*>(0)->_value = 51;
+    par31->getParameter<GSLibParUInt*>(1)->_value = 51;
+    par31->getParameter<GSLibParUInt*>(2)->_value = 11;
+    //IK mode: 0=full, 1=median  and cutoff for the median mode
+    GSLibParMultiValuedFixed *par32 = getParameter<GSLibParMultiValuedFixed*>(32);
+    par32->getParameter<GSLibParOption*>(0)->_selected_value = 0;
+    par32->getParameter<GSLibParUInt*>(1)->_value = 0.0;
+    //Kriging type: 0=SK, 1=OK
+    getParameter<GSLibParOption*>(33)->_selected_value = 0;
+    //Variogram models for each threshold/category of one variogram model if IK is in median mode.
+    GSLibParRepeat *par34 = getParameter<GSLibParRepeat*>(34);
+    par34->setCount( 3 );
+    for(uint i = 0; i < 3; ++i ){
+        //variogram model
+        GSLibParVModel *par34_i = par34->getParameter<GSLibParVModel*>(i, 0);
+        par34_i->makeDefault();
+    }
+}
+
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
 {
     GSLibParMultiValuedVariable *mvv = new GSLibParMultiValuedVariable( parameter );
@@ -2883,6 +3025,54 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         out << "<repeat [nvar]>\n";
         out << "   <uint> <uint>                                      -variable indexes (e.g. 1 ).\n";
         out << "   <vmodel>                                           -variogram model.\n";
+    }
+    par_file.close();
+
+    par_file_path = dir.absoluteFilePath("sisim.par.tpl");
+    par_file.setFileName( par_file_path );
+    if( !par_file.exists() ){
+        par_file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&par_file);
+        out << "                  Parameters for SISIM\n";
+        out << "                  ************************\n";
+        out << '\n';
+        out << "START OF PARAMETERS\n";
+        out << "<option [1:continuous][0:categorical]>                                                        -1=continuous(cdf), 0=categorical(pdf)\n";
+        out << "<uint (ncat)>                                                                                 -number thresholds/categories\n";
+        out << "<double+>                                                                                     -   thresholds / categories\n";
+        out << "<double+>                                                                                     -   global cdf / pdf\n";
+        out << "<file>                                                                                        -file with data\n";
+        out << "<uint> <uint> <uint> <uint>                                                                   -   columns for X,Y,Z, and variable\n";
+        out << "<file>                                                                                        -file with soft indicator input\n";
+        out << "<uint> <uint> <uint> <uint+>                                                                  -   columns for X,Y,Z, and indicators\n";
+        out << "<option [0:no][1:yes]>                                                                        -   Markov-Bayes simulation (0=no,1=yes)\n";
+        out << "<double+>                                                                                     -      calibration B(z) values\n";
+        out << "<double> <double>                                                                             -trimming limits\n";
+        out << "<double> <double>                                                                             -minimum (zmin) and maximum (zmax) data value\n";
+        out << "<option [1:lin. to zmin][2:pow. to zmin][3:lin. quantiles]> <double>                          -   lower tail option and parameter\n";
+        out << "<option [1:linear][2:power to par.][3:lin. quantiles]> <double>                               -   middle     option and parameter\n";
+        out << "<option [1:lin. to zmax][2:pow. to zmax][3:lin. quantiles][4:hyperb. to zmax]> <double>       -   upper tail option and parameter\n";
+        out << "<file>                                                                                        -   file with tabulated values (for the interp. quantiles)\n";
+        out << "<uint> <uint>                                                                                 -      columns for variable, weight\n";
+        out << "<option [0:0][1:1][2:2][3:3]>                                                                 -debugging level: 0,1,2,3\n";
+        out << "<file>                                                                                        -file for debugging output\n";
+        out << "<file>                                                                                        -file for simulation output\n";
+        out << "<uint>                                                                                        -number of realizations\n";
+        out << "<grid>                                                                                        -nx,xmn,xsiz; ny,ymn,ysiz; nz,zmn,zsiz\n";
+        out << "<uint>                                                                                        -random number seed\n";
+        out << "<uint>                                                                                        -maximum original data  for each kriging\n";
+        out << "<uint>                                                                                        -maximum previous nodes for each kriging\n";
+        out << "<uint>                                                                                        -maximum soft indicator nodes for kriging\n";
+        out << "<option [1:yes][0:no]>                                                                        -assign data to nodes? (0=no,1=yes)\n";
+        out << "<option [0:no][1:yes]> <uint>                                                                 -multiple grid search? (0=no,1=yes),num\n";
+        out << "<uint>                                                                                        -maximum per octant    (0=not used)\n";
+        out << "<double> <double> <double>                                                                    -maximum search radii\n";
+        out << "<double> <double> <double>                                                                    -angles for search ellipsoid\n";
+        out << "<uint> <uint> <uint>                                                                          -size of covariance lookup table\n";
+        out << "<option [0:full][1:median]> <double>                                                          -IK mode: 0=full, 1=median (cutoff)\n";
+        out << "<option [0:SK][1:OK]>                                                                         -K. type: 0=SK, 1=OK\n";
+        out << "<repeat>\n";
+        out << "   <vmodel>                                                                                   -variogram model for one threshold or category.\n";
     }
     par_file.close();
 }

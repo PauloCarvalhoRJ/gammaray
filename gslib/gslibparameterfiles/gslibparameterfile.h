@@ -285,6 +285,10 @@ private:
       * Called by setDefaultValues if _program_name is "newcokb3d".
       */
     void setDefaultValuesForNewcokb3d();
+    /**
+      * Called by setDefaultValues if _program_name is "sisim".
+      */
+    void setDefaultValuesForSisim();
 
     /**
      * Wraps the given GSLib parameter type in a GSLibParMultivaluedVariable container object,
