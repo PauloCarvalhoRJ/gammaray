@@ -21,6 +21,7 @@ public:
     ~SisimDialog();
 
 private:
+    ///--------------GUI member variables---------------------
     Ui::SisimDialog *ui;
     PointSetSelector* m_InputPointSetFileSelector;
     VariableSelector* m_InputVariableSelector;
@@ -31,6 +32,10 @@ private:
     WidgetGSLibParGrid* m_gridParametersWidget;
     CartesianGridSelector* m_gridCopySpecsSelector;
     QList<VariogramModelSelector*> m_variogramSelectors;
+    ///---------------data member variables--------------------
+    IKVariableType m_varType;
+    GSLibParameterFile* m_gpf_sisim;
+    ///--------------private methods----------------------------
     void addVariogramSelector();
 
 private Q_SLOTS:
