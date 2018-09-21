@@ -11,9 +11,13 @@
 #include "domain/thresholdcdf.h"
 #include "domain/application.h"
 #include "domain/project.h"
+#include "domain/cartesiangrid.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/widgets/gslibparamwidgets.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
+#include "gslib/gslibparametersdialog.h"
+#include "gslib/gslib.h"
+#include "util.h"
 
 #include <QMessageBox>
 
@@ -21,7 +25,8 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SisimDialog),
     m_varType( varType ),
-    m_gpf_sisim( nullptr )
+    m_gpf_sisim( nullptr ),
+    m_cg_simulation( nullptr )
 {
     ui->setupUi(this);
 
@@ -124,6 +129,46 @@ void SisimDialog::addVariogramSelector()
     m_variogramSelectors.append( vms );
 }
 
+void SisimDialog::preview()
+{
+    if( m_cg_simulation )
+        delete m_cg_simulation;
+
+    //get the tmp file path created by sisim with the realizations
+    QString grid_file_path = m_gpf_sisim->getParameter<GSLibParFile*>(19)->_path;
+
+    //create a new grid object corresponding to the file created by sgsim
+    m_cg_simulation = new CartesianGrid( grid_file_path );
+
+    //set the grid geometry info.
+    m_cg_simulation->setInfoFromGridParameter( m_gpf_sisim->getParameter<GSLibParGrid*>(21) );
+
+    //sisim usually uses -99 as no-data-value. (TODO: this needs to be checked)
+    m_cg_simulation->setNoDataValue( "-99" );
+
+    //the number of realizations.
+    m_cg_simulation->setNReal( m_gpf_sisim->getParameter<GSLibParUInt*>(20)->_value );
+
+    if( m_cg_simulation->getChildCount() < 1 ){
+        QMessageBox::critical( this, "Error", "SISIM yielded a file without data.  It is possible that SISIM crashed.  Check the message panel.  Aborted.");
+        return;
+    }
+
+    //get the variable with the simulated values (normally the first)
+    Attribute* sim_var = (Attribute*)m_cg_simulation->getChildByIndex( 0 );
+
+    //open the plot dialog
+    Util::viewGrid( sim_var, this );
+
+    //enable the action buttons that depend on completion of sisim.
+    ui->btnRealizationHistogram->setEnabled( true );
+    ui->btnEnsembleHistogram->setEnabled( true );
+    ui->btnEnsembleVariogram->setEnabled( true );
+    ui->btnSaveRealizations->setEnabled( true );
+    ui->btnPostsim->setEnabled( true );
+
+}
+
 void SisimDialog::onUpdateSoftIndicatorVariablesSelectors()
 {
     //clears the current soft indicator variable selectors
@@ -203,6 +248,7 @@ void SisimDialog::onConfigureAndRun()
     }
 
     //get min and max of variable
+    inputPointSet->loadData();
     double data_min = inputPointSet->min( m_InputVariableSelector->getSelectedVariableGEOEASIndex()-1 );
     double data_max = inputPointSet->max( m_InputVariableSelector->getSelectedVariableGEOEASIndex()-1 );
     data_min -= fabs( data_min/100.0 );
@@ -345,4 +391,31 @@ void SisimDialog::onConfigureAndRun()
             par34_0->setFromVariogramModel( vmodel );
         }
     }
+
+    //----------------------------prepare and execute sisim--------------------------------
+    //show the sgiim parameters
+    GSLibParametersDialog gsd( m_gpf_sisim, this );
+    int result = gsd.exec();
+
+    //if user didn't cancel the dialog
+    if( result == QDialog::Accepted ){
+        //Generate the parameter file
+        QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
+        m_gpf_sisim->save( par_file_path );
+
+        //to be notified when sisim completes.
+        connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onSisimCompletes()) );
+
+        //run sgsim program asynchronously
+        Application::instance()->logInfo("Starting sisim program...");
+        GSLib::instance()->runProgramAsync( "sisim", par_file_path );
+    }
+}
+
+void SisimDialog::onSisimCompletes()
+{
+    //frees all signal connections to the GSLib singleton.
+    GSLib::instance()->disconnect();
+
+    preview();
 }

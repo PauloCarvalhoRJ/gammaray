@@ -35,14 +35,17 @@ private:
     ///---------------data member variables--------------------
     IKVariableType m_varType;
     GSLibParameterFile* m_gpf_sisim;
+    CartesianGrid* m_cg_simulation;
     ///--------------private methods----------------------------
     void addVariogramSelector();
+    void preview();
 
 private Q_SLOTS:
     void onUpdateSoftIndicatorVariablesSelectors();
     void onUpdateVariogramSelectors();
     void onGridCopySpectsSelected( DataFile* grid );
     void onConfigureAndRun();
+    void onSisimCompletes();
 };
 
 #endif // SISIMDIALOG_H
