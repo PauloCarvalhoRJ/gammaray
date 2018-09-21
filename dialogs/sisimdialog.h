@@ -2,7 +2,11 @@
 #define SISIMDIALOG_H
 
 #include <QDialog>
-#include "indicatorkrigingdialog.h" //for IKVariableType enum
+#include "indicatorkrigingdialog.h"
+
+class GSLibParGrid;
+class WidgetGSLibParGrid;
+class DataFile;
 
 namespace Ui {
 class SisimDialog;
@@ -18,6 +22,22 @@ public:
 
 private:
     Ui::SisimDialog *ui;
+    PointSetSelector* m_InputPointSetFileSelector;
+    VariableSelector* m_InputVariableSelector;
+    PointSetSelector* m_SoftPointSetSelector;
+    QList<VariableSelector*> m_SoftIndicatorVariablesSelectors;
+    FileSelectorWidget* m_DensityFunctionSelector;
+    GSLibParGrid* m_parGrid;
+    WidgetGSLibParGrid* m_gridParametersWidget;
+    CartesianGridSelector* m_gridCopySpecsSelector;
+    QList<VariogramModelSelector*> m_variogramSelectors;
+    void addVariogramSelector();
+
+private Q_SLOTS:
+    void onUpdateSoftIndicatorVariablesSelectors();
+    void onUpdateVariogramSelectors();
+    void onGridCopySpectsSelected( DataFile* grid );
+    void onConfigureAndRun();
 };
 
 #endif // SISIMDIALOG_H

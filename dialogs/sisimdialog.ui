@@ -51,7 +51,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QFrame" name="frmInputData">
+      <widget class="QFrame" name="frmInput">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -95,7 +95,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QFrame" name="frmCdfPdf">
+      <widget class="QFrame" name="frmDistribution">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -570,8 +570,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>185</x>
-     <y>217</y>
+     <x>390</x>
+     <y>444</y>
     </hint>
     <hint type="destinationlabel">
      <x>386</x>
@@ -579,5 +579,57 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>radioFullIK</sender>
+   <signal>clicked()</signal>
+   <receiver>SisimDialog</receiver>
+   <slot>onUpdateVariogramSelectors()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>79</x>
+     <y>315</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>116</x>
+     <y>290</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>radioMedianIK</sender>
+   <signal>clicked()</signal>
+   <receiver>SisimDialog</receiver>
+   <slot>onUpdateVariogramSelectors()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>437</x>
+     <y>311</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>521</x>
+     <y>290</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnConfigAndRun</sender>
+   <signal>clicked()</signal>
+   <receiver>SisimDialog</receiver>
+   <slot>onConfigureAndRun()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>43</x>
+     <y>400</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>5</x>
+     <y>400</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>onUpdateVariogramSelectors()</slot>
+  <slot>onConfigureAndRun()</slot>
+ </slots>
 </ui>
