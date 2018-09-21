@@ -19,7 +19,16 @@
   </property>
   <widget class="QWidget" name="centralWidget">
    <layout class="QHBoxLayout" name="horizontalLayout">
-    <property name="margin">
+    <property name="leftMargin">
+     <number>1</number>
+    </property>
+    <property name="topMargin">
+     <number>1</number>
+    </property>
+    <property name="rightMargin">
+     <number>1</number>
+    </property>
+    <property name="bottomMargin">
      <number>1</number>
     </property>
     <item>
@@ -44,7 +53,16 @@
         <property name="spacing">
          <number>0</number>
         </property>
-        <property name="margin">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
          <number>0</number>
         </property>
         <item>
@@ -84,7 +102,16 @@
            <property name="spacing">
             <number>0</number>
            </property>
-           <property name="margin">
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
             <number>0</number>
            </property>
            <item>
@@ -113,7 +140,16 @@
         <enum>QFrame::Sunken</enum>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_3">
-        <property name="margin">
+        <property name="leftMargin">
+         <number>1</number>
+        </property>
+        <property name="topMargin">
+         <number>1</number>
+        </property>
+        <property name="rightMargin">
+         <number>1</number>
+        </property>
+        <property name="bottomMargin">
          <number>1</number>
         </property>
         <item>
@@ -132,7 +168,16 @@
             <property name="spacing">
              <number>0</number>
             </property>
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
            </layout>
@@ -151,7 +196,16 @@
             <number>1</number>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_4">
-            <property name="margin">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
              <number>0</number>
             </property>
             <item>
@@ -186,7 +240,7 @@
      <x>0</x>
      <y>0</y>
      <width>463</width>
-     <height>24</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -240,6 +294,8 @@
      <string>Simulation</string>
     </property>
     <addaction name="actionSGSIM"/>
+    <addaction name="actionSequential_Indicator_Simulation_continuous"/>
+    <addaction name="actionSequential_Indicator_Simulation_categorical"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEstimation"/>
@@ -321,8 +377,11 @@
    </property>
   </action>
   <action name="actionSGSIM">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
-    <string>SGSIM</string>
+    <string>Sequential Gaussian Simulation</string>
    </property>
   </action>
   <action name="actionCokriging_newcokb3d">
@@ -343,6 +402,16 @@
   <action name="actionFactorial_Kriging">
    <property name="text">
     <string>Factorial Kriging</string>
+   </property>
+  </action>
+  <action name="actionSequential_Indicator_Simulation_continuous">
+   <property name="text">
+    <string>Sequential Indicator Simulation (continuous)</string>
+   </property>
+  </action>
+  <action name="actionSequential_Indicator_Simulation_categorical">
+   <property name="text">
+    <string>Sequential Indicator Simulation (categorical)</string>
    </property>
   </action>
  </widget>
@@ -614,6 +683,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionSequential_Indicator_Simulation_continuous</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onSISIMContinuous()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionSequential_Indicator_Simulation_categorical</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onSISIMCategorical()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -631,5 +732,7 @@
   <slot>onMachineLearning()</slot>
   <slot>onVarigraphicDecomposition()</slot>
   <slot>onFactorialKriging()</slot>
+  <slot>onSISIMContinuous()</slot>
+  <slot>onSISIMCategorical()</slot>
  </slots>
 </ui>

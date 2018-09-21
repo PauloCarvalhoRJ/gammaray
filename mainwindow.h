@@ -183,6 +183,8 @@ private slots:
     void onSaveArrayAsNewVariableInCartesianGrid(spectral::array* array,
                                                  IJAbstractCartesianGrid* gridWithGridSpecs );
 	void onFactorialKriging();
+    void onSISIMContinuous();
+    void onSISIMCategorical();
 
 private:
     /**
