@@ -46,6 +46,8 @@ private Q_SLOTS:
     void onGridCopySpectsSelected( DataFile* grid );
     void onConfigureAndRun();
     void onSisimCompletes();
+    void onRealizationHistogram();
+    void onEnsembleHistogram();
 };
 
 #endif // SISIMDIALOG_H

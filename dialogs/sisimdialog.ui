@@ -627,9 +627,43 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnRealizationHistogram</sender>
+   <signal>clicked()</signal>
+   <receiver>SisimDialog</receiver>
+   <slot>onRealizationHistogram()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>144</x>
+     <y>399</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>3</x>
+     <y>378</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnEnsembleHistogram</sender>
+   <signal>clicked()</signal>
+   <receiver>SisimDialog</receiver>
+   <slot>onEnsembleHistogram()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>229</x>
+     <y>401</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>2</x>
+     <y>365</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onUpdateVariogramSelectors()</slot>
   <slot>onConfigureAndRun()</slot>
+  <slot>onRealizationHistogram()</slot>
+  <slot>onEnsembleHistogram()</slot>
  </slots>
 </ui>
