@@ -36,6 +36,7 @@ private:
     IKVariableType m_varType;
     GSLibParameterFile* m_gpf_sisim;
     CartesianGrid* m_cg_simulation;
+    GSLibParameterFile* m_gpf_gam;
     ///--------------private methods----------------------------
     void addVariogramSelector();
     void preview();
@@ -48,6 +49,8 @@ private Q_SLOTS:
     void onSisimCompletes();
     void onRealizationHistogram();
     void onEnsembleHistogram();
+    void onEnsembleVariogram();
+    void onSaveEnsemble();
 };
 
 #endif // SISIMDIALOG_H

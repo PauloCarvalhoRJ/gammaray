@@ -659,11 +659,45 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnEnsembleVariogram</sender>
+   <signal>clicked()</signal>
+   <receiver>SisimDialog</receiver>
+   <slot>onEnsembleVariogram()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>319</x>
+     <y>395</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>702</x>
+     <y>365</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSaveRealizations</sender>
+   <signal>clicked()</signal>
+   <receiver>SisimDialog</receiver>
+   <slot>onSaveEnsemble()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>414</x>
+     <y>396</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>703</x>
+     <y>403</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onUpdateVariogramSelectors()</slot>
   <slot>onConfigureAndRun()</slot>
   <slot>onRealizationHistogram()</slot>
   <slot>onEnsembleHistogram()</slot>
+  <slot>onEnsembleVariogram()</slot>
+  <slot>onSaveEnsemble()</slot>
  </slots>
 </ui>

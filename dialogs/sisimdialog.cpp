@@ -6,6 +6,7 @@
 #include "widgets/cartesiangridselector.h"
 #include "widgets/variogrammodelselector.h"
 #include "dialogs/displayplotdialog.h"
+#include "dialogs/variograminputdialog.h"
 #include "domain/file.h"
 #include "domain/pointset.h"
 #include "domain/categorypdf.h"
@@ -14,6 +15,7 @@
 #include "domain/project.h"
 #include "domain/cartesiangrid.h"
 #include "domain/attribute.h"
+#include "domain/variogrammodel.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/widgets/gslibparamwidgets.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
@@ -29,7 +31,8 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
     ui(new Ui::SisimDialog),
     m_varType( varType ),
     m_gpf_sisim( nullptr ),
-    m_cg_simulation( nullptr )
+    m_cg_simulation( nullptr ),
+    m_gpf_gam( nullptr )
 {
     ui->setupUi(this);
 
@@ -140,7 +143,7 @@ void SisimDialog::preview()
     //get the tmp file path created by sisim with the realizations
     QString grid_file_path = m_gpf_sisim->getParameter<GSLibParFile*>(19)->_path;
 
-    //create a new grid object corresponding to the file created by sgsim
+    //create a new grid object corresponding to the file created by sisim
     m_cg_simulation = new CartesianGrid( grid_file_path );
 
     //set the grid geometry info.
@@ -421,7 +424,7 @@ void SisimDialog::onConfigureAndRun()
         //to be notified when sisim completes.
         connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onSisimCompletes()) );
 
-        //run sgsim program asynchronously
+        //run sisim program asynchronously
         Application::instance()->logInfo("Starting sisim program...");
         GSLib::instance()->runProgramAsync( "sisim", par_file_path );
     }
@@ -583,4 +586,292 @@ void SisimDialog::onEnsembleHistogram()
     DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(10)->_path, title, gpf, this);
     dpd->show(); //show() makes dialog modalless
 
+}
+
+void SisimDialog::onEnsembleVariogram()
+{
+    //get the input variable's variogram model (it is not one of the indicator variograms)
+    QString inputVariableName = m_InputVariableSelector->getSelectedVariableName();
+    VariogramInputDialog vid( this );
+    vid.setCaption( "Enter variogram of " + inputVariableName + ". It is not one of the indicator variograms.");
+    int resultVid = vid.exec();
+    VariogramModel* variogramModelInputVariable = nullptr;
+    if( resultVid == QDialog::Accepted ){
+        variogramModelInputVariable = vid.getSelectedVariogramModel();
+        if( ! variogramModelInputVariable ){
+            Application::instance()->logError("SisimDialog::onEnsembleVariogram(): null variogram model.  Aborted.");
+            return;
+        }
+    } else {
+        return; //Abort
+    }
+
+    //get the number of realizations
+    uint nReals = m_cg_simulation->getNReal();
+
+    //-------------------------------------------------------------------------------------------
+    //-----------1) Run gam on each realization--------------------------------------------------
+    //-------------------------------------------------------------------------------------------
+
+    //if the parameter file object was not constructed
+    if( ! m_gpf_gam ){
+
+        //Construct an object composition based on the parameter file template for the gam program.
+        m_gpf_gam = new GSLibParameterFile( "gam" );
+
+        //get input data file
+        //the parent component of an attribute is a file
+        CartesianGrid* input_data_file = m_cg_simulation;
+
+        //loads data from file.
+        input_data_file->loadData();
+
+        //get the variable index in parent data file (always 1 in the case of simulations)
+        uint var_index = 1;
+
+        //Set default values so we need to change less parameters and let
+        //the user change the others as one may see fit.
+        m_gpf_gam->setDefaultValues();
+
+        //get the max and min of the selected variable(s)
+        double data_min = input_data_file->min( var_index-1 );
+        double data_max = input_data_file->max( var_index-1 );
+
+        //----------------set the minimum required gam paramaters-----------------------
+        //input file
+        m_gpf_gam->getParameter<GSLibParFile*>(0)->_path = input_data_file->getPath();
+
+        //variable to compute variogram for
+        GSLibParMultiValuedFixed *par1 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(1);
+        par1->getParameter<GSLibParUInt*>(0)->_value = 1; //number of variables
+        GSLibParMultiValuedVariable *par1_1 = par1->getParameter<GSLibParMultiValuedVariable*>(1);
+        par1_1->getParameter<GSLibParUInt*>(0)->_value = var_index;
+
+        //trimming limits
+        GSLibParMultiValuedFixed *par2 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(2);
+        par2->getParameter<GSLibParDouble*>(0)->_value = data_min;
+        par2->getParameter<GSLibParDouble*>(1)->_value = data_max;
+
+        //output file with experimental variogram values
+        m_gpf_gam->getParameter<GSLibParFile*>(3)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+
+        //grid definition parameters
+        GSLibParGrid* par5 = m_gpf_gam->getParameter<GSLibParGrid*>(5);
+        par5->_specs_x->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getNX(); //nx
+        par5->_specs_x->getParameter<GSLibParDouble*>(1)->_value = input_data_file->getX0(); //min x
+        par5->_specs_x->getParameter<GSLibParDouble*>(2)->_value = input_data_file->getDX(); //cell size x
+        par5->_specs_y->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getNY(); //ny
+        par5->_specs_y->getParameter<GSLibParDouble*>(1)->_value = input_data_file->getY0(); //min y
+        par5->_specs_y->getParameter<GSLibParDouble*>(2)->_value = input_data_file->getDY(); //cell size y
+        par5->_specs_z->getParameter<GSLibParUInt*>(0)->_value = input_data_file->getNZ(); //nz
+        par5->_specs_z->getParameter<GSLibParDouble*>(1)->_value = input_data_file->getZ0(); //min z
+        par5->_specs_z->getParameter<GSLibParDouble*>(2)->_value = input_data_file->getDZ(); //cell size z
+
+    }
+    //--------------------------------------------------------------------------------
+
+    //show the parameter dialog so the user can adjust other settings before running gam
+    GSLibParametersDialog gslibpardiag( m_gpf_gam );
+    int result = gslibpardiag.exec();
+    std::vector<QString> expVarFilePaths;
+    if( result == QDialog::Accepted ){
+        //save the realization number setting for the variogram modeling workflow
+        int oldNReal = m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value;
+        //for each realization number...
+        for( uint iRealNum = 0 ; iRealNum < nReals; ++iRealNum ){
+            //...change the realization number parameter for gam
+            m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = iRealNum + 1;
+            //...set an output file with experimental variogram values
+            m_gpf_gam->getParameter<GSLibParFile*>(3)->_path =
+                    Application::instance()->getProject()->generateUniqueTmpFilePath("out");
+            expVarFilePaths.push_back( m_gpf_gam->getParameter<GSLibParFile*>(3)->_path );
+            //...Generate the parameter file
+            QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+            m_gpf_gam->save( par_file_path );
+            //...run gam program
+            Application::instance()->logInfo("Starting gam program for realization " +
+                                             QString::number(iRealNum + 1) + "...");
+            GSLib::instance()->runProgram( "gam", par_file_path );
+        }
+        //restore the realization number setting for the variogram modeling workflow
+        m_gpf_gam->getParameter<GSLibParUInt*>(4)->_value = oldNReal;
+    }
+
+    //---------------------------------------------------------------------------------------------------------------
+    //-------------------------- 2) Run vmodel to generate the variogram model (reference)---------------------------
+    //---------------------------------------------------------------------------------------------------------------
+
+    //these are useful to compute lag, azimuth and dip from gam regular grid parameters
+    double xsize = 1.0;
+    double ysize = 1.0;
+    double zsize = 1.0;
+    if( m_gpf_gam )
+    {
+        GSLibParGrid* par5 = m_gpf_gam->getParameter<GSLibParGrid*>(5);
+        xsize = par5->_specs_x->getParameter<GSLibParDouble*>(2)->_value; //cell size x
+        ysize = par5->_specs_y->getParameter<GSLibParDouble*>(2)->_value; //cell size y
+        zsize = par5->_specs_z->getParameter<GSLibParDouble*>(2)->_value; //cell size z
+    }
+
+    //Construct an object composition based on the parameter file template for the vmodel program.
+    GSLibParameterFile gpf_vmodel = GSLibParameterFile( "vmodel" );
+    //Set default values so we need to change less parameters and let
+    //the user change the others as one may see fit.
+    gpf_vmodel.setDefaultValues();
+
+    //fills the variogram model paramaters.
+    gpf_vmodel.setValuesFromParFile( variogramModelInputVariable->getPath() );
+
+    //output variography data for vargplt
+    gpf_vmodel.getParameter<GSLibParFile*>(0)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("var");
+
+    //match the number of lags and azimuths with that set for the gam on the realizations
+    GSLibParMultiValuedFixed *gam_par6 = m_gpf_gam->getParameter<GSLibParMultiValuedFixed*>(6);
+    GSLibParMultiValuedFixed *par1 = gpf_vmodel.getParameter<GSLibParMultiValuedFixed*>(1);
+    par1->getParameter<GSLibParUInt*>(0)->_value = gam_par6->getParameter<GSLibParUInt*>(0)->_value; //ndir
+    par1->getParameter<GSLibParUInt*>(1)->_value = gam_par6->getParameter<GSLibParUInt*>(1)->_value;
+
+    //get the number of directions
+    uint ndir = gam_par6->getParameter<GSLibParUInt*>(0)->_value;
+
+    //compute azimuth and dip from the grid cell dimensions and steps set in gam
+    GSLibParRepeat *gam_par7 = m_gpf_gam->getParameter<GSLibParRepeat*>(7); //repeat ndir-times
+    QList<double> azimuths;
+    QList<double> dips;
+    QList<double> lags;
+    for(uint i = 0; i < ndir; ++i)
+    {
+        GSLibParMultiValuedFixed *par7_0 = gam_par7->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        int xstep = par7_0->getParameter<GSLibParInt*>(0)->_value;
+        int ystep = par7_0->getParameter<GSLibParInt*>(1)->_value;
+        int zstep = par7_0->getParameter<GSLibParInt*>(2)->_value;
+        azimuths.append( Util::getAzimuth( xsize, ysize, xstep, ystep ) );
+        dips.append( Util::getDip(xsize, ysize, zsize, xstep, ystep, zstep) );
+        double xlag = xstep * xsize;
+        double ylag = ystep * ysize;
+        double zlag = zstep * zsize;
+        double lag = std::sqrt( xlag*xlag + ylag*ylag + zlag*zlag );
+        lags.append( lag );
+    }
+
+    //match the azimuths, dips and lags with those of the gam
+    GSLibParRepeat *par2 = gpf_vmodel.getParameter<GSLibParRepeat*>(2); //repeat ndir-times
+    par2->setCount( ndir );
+    for( uint i = 0; i < ndir; ++i)
+    {
+        GSLibParMultiValuedFixed *par2_0 = par2->getParameter<GSLibParMultiValuedFixed*>(i, 0);
+        par2_0->getParameter<GSLibParDouble*>(0)->_value = azimuths[i];
+        par2_0->getParameter<GSLibParDouble*>(1)->_value = dips[i];
+        par2_0->getParameter<GSLibParDouble*>(2)->_value = lags[i];
+    }
+
+    //Generate the vmodel parameter file
+    QString vmodel_par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    gpf_vmodel.save( vmodel_par_file_path );
+    //run vmodel program )
+    Application::instance()->logInfo("Starting vmodel program...");
+    GSLib::instance()->runProgram( "vmodel", vmodel_par_file_path );
+
+    //-------------------------------------------------------------------------------------------
+    //-------------------------- 3) Run vargplt to show the variograms---------------------------
+    //-------------------------------------------------------------------------------------------
+
+    //make a GLSib parameter object if it wasn't done yet.
+    GSLibParameterFile gpf = GSLibParameterFile( "vargplt" );
+
+    //Set default values so we need to change less parameters and let
+    //the user change the others as one may see fit.
+    gpf.setDefaultValues();
+
+    //make plot/window title
+    QString title = m_InputPointSetFileSelector->getSelectedDataFile()->getName() + "/" +
+            m_InputVariableSelector->getSelectedVariableName() + ": SISIM";
+
+    //--------------------set some parameter values-----------------------
+
+    //postscript file
+    gpf.getParameter<GSLibParFile*>(0)->_path =
+            Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+    //number of curves
+    gpf.getParameter<GSLibParUInt*>(1)->_value = nReals + 1; // nvarios (realizations + variogram model)
+
+    //plot title
+    gpf.getParameter<GSLibParString*>(5)->_value = title;
+
+    //suggest display settings for each variogram curve
+    GSLibParRepeat *par6 = gpf.getParameter<GSLibParRepeat*>(6); //repeat nvarios-times
+    par6->setCount( nReals + 1 ); //the realizations plus the variogram model (reference)
+    //the realization curves
+    for(uint iReal = 0; iReal < nReals; ++iReal){
+        par6->getParameter<GSLibParFile*>(iReal, 0)->_path = expVarFilePaths[iReal];
+        GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(iReal, 1);
+        par6_0_1->getParameter<GSLibParUInt*>(0)->_value = 1;
+        par6_0_1->getParameter<GSLibParUInt*>(1)->_value = 0;
+        par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 0;
+        par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 1;
+        par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = 1;
+    }
+    par6->getParameter<GSLibParFile*>(nReals, 0)->_path = gpf_vmodel.getParameter<GSLibParFile*>(0)->_path;
+    GSLibParMultiValuedFixed *par6_0_1 = par6->getParameter<GSLibParMultiValuedFixed*>(nReals, 1);
+    par6_0_1->getParameter<GSLibParUInt*>(0)->_value = 1;
+    par6_0_1->getParameter<GSLibParUInt*>(1)->_value = 0;
+    par6_0_1->getParameter<GSLibParOption*>(2)->_selected_value = 1;
+    par6_0_1->getParameter<GSLibParOption*>(3)->_selected_value = 0;
+    par6_0_1->getParameter<GSLibParColor*>(4)->_color_code = 10;
+    //the variogram model curve
+
+
+    //----------------------display plot------------------------------------------------------------
+
+    //Generate the parameter file
+    QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("par");
+    gpf.save( par_file_path );
+
+    //run vargplt program
+    Application::instance()->logInfo("Starting vargplt program...");
+    GSLib::instance()->runProgram( "vargplt", par_file_path );
+
+    //display the plot output
+    DisplayPlotDialog *dpd = new DisplayPlotDialog(gpf.getParameter<GSLibParFile*>(0)->_path,
+                                                   gpf.getParameter<GSLibParString*>(5)->_value,
+                                                   gpf,
+                                                   this);
+    dpd->show();
+
+
+}
+
+void SisimDialog::onSaveEnsemble()
+{
+    bool ok;
+    //propose a name based on the point set name.
+    QString proposed_name( m_InputVariableSelector->getSelectedVariableName() + "_SISIM" );
+    proposed_name.append( ".grid" );
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid file",
+                                             "New grid file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_cg_name.isEmpty()){
+
+        if( m_varType == IKVariableType::CATEGORICAL ){
+            //get the selected p.d.f. file
+            CategoryPDF *pdf = (CategoryPDF *)m_DensityFunctionSelector->getSelectedFile();
+            //get the category definition
+            CategoryDefinition* cd = pdf->getCategoryDefinition();
+            //Get the simulated values
+            std::vector< double > values = m_cg_simulation->getDataColumn(0);
+            //Duplicate it as a new column with the categorical definition
+            m_cg_simulation->addNewDataColumn( m_InputVariableSelector->getSelectedVariableName(),
+                                               values,
+                                               cd);
+            //write to file
+            m_cg_simulation->saveData();
+            //remove the first column not linked to a categorical definition
+            m_cg_simulation->deleteVariable(0);
+        }
+
+        //import the newly created grid file as a project item
+        Application::instance()->getProject()->importCartesianGrid( m_cg_simulation, new_cg_name );
+    }
 }
