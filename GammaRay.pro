@@ -220,7 +220,8 @@ SOURCES += main.cpp\
     geostats/searchellipsoid.cpp \
     geostats/pointsetcell.cpp \
     geostats/indexedspatiallocation.cpp \
-    dialogs/sisimdialog.cpp
+    dialogs/sisimdialog.cpp \
+    dialogs/variograminputdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -419,7 +420,8 @@ HEADERS  += mainwindow.h \
     geostats/searchellipsoid.h \
     geostats/pointsetcell.h \
     geostats/indexedspatiallocation.h \
-    dialogs/sisimdialog.h
+    dialogs/sisimdialog.h \
+    dialogs/variograminputdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -496,7 +498,8 @@ FORMS    += mainwindow.ui \
 	imagejockey/vardecomp/variographicdecompositiondialog.ui \
 	imagejockey/widgets/ijquick3dviewer.ui \
 	dialogs/factorialkrigingdialog.ui \
-    dialogs/sisimdialog.ui
+    dialogs/sisimdialog.ui \
+    dialogs/variograminputdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
