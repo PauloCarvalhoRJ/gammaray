@@ -32,7 +32,9 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
     m_varType( varType ),
     m_gpf_sisim( nullptr ),
     m_cg_simulation( nullptr ),
-    m_gpf_gam( nullptr )
+	m_gpf_gam( nullptr ),
+	m_gpf_postsim( nullptr ),
+	m_cg_postsim( nullptr )
 {
     ui->setupUi(this);
 
@@ -185,6 +187,33 @@ void SisimDialog::preview()
     ui->btnSaveRealizations->setEnabled( true );
     ui->btnPostsim->setEnabled( true );
 
+}
+
+void SisimDialog::previewPostsim()
+{
+	if( m_cg_postsim )
+		delete m_cg_postsim;
+
+	//get the tmp file path created by sgsim with the realizations
+	QString grid_file_path = m_gpf_postsim->getParameter<GSLibParFile*>(4)->_path;
+
+	//create a new grid object corresponding to the file created by sgsim
+	m_cg_postsim = new CartesianGrid( grid_file_path );
+
+	//set the grid geometry info.
+	m_cg_postsim->setInfoFromGridParameter( m_gpf_sisim->getParameter<GSLibParGrid*>(21) );
+
+	//postsim usually uses -999 as no-data-value.
+	m_cg_postsim->setNoDataValue( "-999.0" );
+
+	//Display all variables found in the post-processed grid
+	for( uint iVar = 0; iVar < m_cg_postsim->getDataColumnCount(); ++iVar){
+		Attribute* est_var = (Attribute*)m_cg_postsim->getChildByIndex( iVar );
+		Util::viewGrid( est_var, this );
+	}
+
+	//enable the save postsim results button.
+	ui->btnSavePostsim->setEnabled( true );
 }
 
 void SisimDialog::onUpdateSoftIndicatorVariablesSelectors()
@@ -873,5 +902,82 @@ void SisimDialog::onSaveEnsemble()
 
         //import the newly created grid file as a project item
         Application::instance()->getProject()->importCartesianGrid( m_cg_simulation, new_cg_name );
-    }
+	}
+}
+
+void SisimDialog::onPostsim()
+{
+	//load the data in grid
+	m_cg_simulation->loadData();
+
+	//get the maximum and minimun of simulated values
+	double data_min = m_cg_simulation->min( 0 );
+	double data_max = m_cg_simulation->max( 0 );
+	data_min -= std::fabs( data_min / 100.0 );
+	data_max += std::fabs( data_max / 100.0 );
+
+	//create the parameters object if not created
+	if( ! m_gpf_postsim ){
+		m_gpf_postsim = new GSLibParameterFile("postsim");
+		//file for output array(s)
+		m_gpf_postsim->getParameter<GSLibParFile*>(4)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+	}
+
+	//file with simulated realizations
+	m_gpf_postsim->getParameter<GSLibParFile*>(0)->_path = m_cg_simulation->getPath();
+	//   number of realizations
+	m_gpf_postsim->getParameter<GSLibParUInt*>(1)->_value = m_cg_simulation->getNReal();
+	//   trimming limits
+	GSLibParMultiValuedFixed* par2 = m_gpf_postsim->getParameter<GSLibParMultiValuedFixed*>(2);
+	par2->getParameter<GSLibParDouble*>(0)->_value = data_min;
+	par2->getParameter<GSLibParDouble*>(1)->_value = data_max;
+	//nx, ny, nz
+	GSLibParMultiValuedFixed* par3 = m_gpf_postsim->getParameter<GSLibParMultiValuedFixed*>(3);
+	par3->getParameter<GSLibParUInt*>(0)->_value = m_cg_simulation->getNX();
+	par3->getParameter<GSLibParUInt*>(1)->_value = m_cg_simulation->getNY();
+	par3->getParameter<GSLibParUInt*>(2)->_value = m_cg_simulation->getNZ();
+
+	//show the postsim parameters
+	GSLibParametersDialog gsd( m_gpf_postsim, this );
+	int result = gsd.exec();
+
+	//if user didn't cancel the dialog
+	if( result == QDialog::Accepted ){
+		//Generate the parameter file
+		QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
+		m_gpf_postsim->save( par_file_path );
+
+		//run postsim program asynchronously
+		Application::instance()->logInfo("Starting postsim program...");
+		GSLib::instance()->runProgram( "postsim", par_file_path );
+
+		previewPostsim();
+	}
+}
+
+void SisimDialog::onSavePostsim()
+{
+	bool ok;
+
+	//part of the suggested name for the grid depends on the post-processed product type
+	GSLibParMultiValuedFixed* postsim_par5 = m_gpf_postsim->getParameter<GSLibParMultiValuedFixed*>(5);
+	QString postsimType;
+	switch( postsim_par5->getParameter<GSLibParOption*>(0)->_selected_value ){
+	case 1: postsimType = "EType"; break;
+	case 2: postsimType = "ProbMeanAb" + QString::number(postsim_par5->getParameter<GSLibParDouble*>(1)->_value); break;
+	case 3: postsimType = "P" + QString::number(postsim_par5->getParameter<GSLibParDouble*>(1)->_value * 100); break;
+	case 4: postsimType = "SymmProbIntervFor" + QString::number(postsim_par5->getParameter<GSLibParDouble*>(1)->_value);
+	}
+
+	//propose a name based the postsim product selected by the user.
+	QString proposed_name( m_InputVariableSelector->getSelectedVariableName() + "_SISIM_" + postsimType );
+	proposed_name.append( ".grid" );
+	QString new_cg_name = QInputDialog::getText(this, "Name the new grid file",
+											 "New grid file name:", QLineEdit::Normal,
+											 proposed_name, &ok);
+
+	if (ok && !new_cg_name.isEmpty()){
+		//import the newly created grid file as a project item
+		Application::instance()->getProject()->importCartesianGrid( m_cg_postsim, new_cg_name );
+	}
 }

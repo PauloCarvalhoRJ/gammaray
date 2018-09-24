@@ -37,9 +37,12 @@ private:
     GSLibParameterFile* m_gpf_sisim;
     CartesianGrid* m_cg_simulation;
     GSLibParameterFile* m_gpf_gam;
+	GSLibParameterFile* m_gpf_postsim;
+	CartesianGrid* m_cg_postsim;
     ///--------------private methods----------------------------
     void addVariogramSelector();
     void preview();
+	void previewPostsim();
 
 private Q_SLOTS:
     void onUpdateSoftIndicatorVariablesSelectors();
@@ -51,6 +54,8 @@ private Q_SLOTS:
     void onEnsembleHistogram();
     void onEnsembleVariogram();
     void onSaveEnsemble();
+	void onPostsim();
+	void onSavePostsim();
 };
 
 #endif // SISIMDIALOG_H
