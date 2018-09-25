@@ -326,7 +326,7 @@ void SisimDialog::onConfigureAndRun()
         m_gpf_sisim->getParameter<GSLibParOption*>(0)->_selected_value = 0;
 
     //number thresholds/categories
-    m_gpf_sisim->getParameter<GSLibParUInt*>(1)->_value = nThresholdsOrCategories;
+	m_gpf_sisim->getParameter<GSLibParUInt*>(1)->_value = nThresholdsOrCategories;
 
     //   thresholds / categories, which is a <double+>
     GSLibParMultiValuedVariable *par2 = m_gpf_sisim->getParameter<GSLibParMultiValuedVariable*>(2);
@@ -424,12 +424,21 @@ void SisimDialog::onConfigureAndRun()
     //Variogram models for each threshold/category of one variogram model if IK is in median mode.
     GSLibParRepeat *par34 = m_gpf_sisim->getParameter<GSLibParRepeat*>(34);
     if( ui->radioMedianIK->isChecked() ){
-        par34->setCount( 1 );
-        GSLibParVModel *par34_0 = par34->getParameter<GSLibParVModel*>(0, 0);
-        VariogramModelSelector* vms = m_variogramSelectors.at( 0 );
-        VariogramModel *vmodel = vms->getSelectedVModel();
-        par34_0->setFromVariogramModel( vmodel );
-    } else {
+//		par34->setCount( 1 );
+//		GSLibParVModel *par34_0 = par34->getParameter<GSLibParVModel*>(0, 0);
+//		VariogramModelSelector* vms = m_variogramSelectors.at( 0 );
+//		VariogramModel *vmodel = vms->getSelectedVModel();
+//		par34_0->setFromVariogramModel( vmodel );
+		// SISIM should expect only one variogram for mIK... anyway, we repeat the same
+		// variogram for all thresholds...
+		par34->setCount( nThresholdsOrCategories );
+		for( uint i = 0; i < nThresholdsOrCategories; ++i){
+			GSLibParVModel *par34_0 = par34->getParameter<GSLibParVModel*>(i, 0);
+			VariogramModelSelector* vms = m_variogramSelectors.at( 0 );
+			VariogramModel *vmodel = vms->getSelectedVModel();
+			par34_0->setFromVariogramModel( vmodel );
+		}
+	} else {
         par34->setCount( nThresholdsOrCategories );
         for( uint i = 0; i < nThresholdsOrCategories; ++i){
             GSLibParVModel *par34_0 = par34->getParameter<GSLibParVModel*>(i, 0);
