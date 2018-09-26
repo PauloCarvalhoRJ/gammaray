@@ -286,15 +286,23 @@ private:
       */
     void setDefaultValuesForNewcokb3d();
     /**
-      * Called by setDefaultValues if _program_name is "sisim".
+      * Called by setDefaultValues if _program_name is "sisim", "sism_gs" or "sisim_lm".
       */
-    void setDefaultValuesForSisim();
+    void setDefaultValuesForSisim( QString sisimProgramName );
 
     /**
      * Wraps the given GSLib parameter type in a GSLibParMultivaluedVariable container object,
      * instead of directly adding it to the given parameter list.
      */
     void addAsMultiValued(QList<GSLibParType*>* params, GSLibParType *parameter );
+
+    /**
+     * Called in generateParameterFileTemplates() to generate the parts in common with the
+     * three SISIM programs (sisim, sisim_gs and sisim_lm).
+     * @param programName Either "sisim", "sisim_gs" or "sisim_lm".
+     */
+    static void generateParameterFileTemplatesSISIMCommons( QTextStream& out,
+                                                            QString programName );
 };
 
 

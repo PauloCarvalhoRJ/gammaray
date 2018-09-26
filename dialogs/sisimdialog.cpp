@@ -29,6 +29,7 @@
 SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SisimDialog),
+    m_SoftDataSetSelector( nullptr ),
     m_varType( varType ),
     m_gpf_sisim( nullptr ),
     m_cg_simulation( nullptr ),
@@ -71,14 +72,6 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
     m_InputPointSetFileSelector->onSelection( 0 );
     m_InputPointSetFileSelector->setSizePolicy( QSizePolicy::Policy::Expanding, QSizePolicy::Policy::Preferred );
 
-    //----------------------------------Soft Data UI------------------------------------------
-
-    //The list with existing point sets in the project for the soft indicators.
-    m_SoftPointSetSelector = new PointSetSelector( true );
-    ui->frmSoftIndicatorFile->layout()->addWidget( m_SoftPointSetSelector );
-    connect( m_SoftPointSetSelector, SIGNAL(pointSetSelected(DataFile*)),
-             this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
-
     //---------------------------------Distribution Function UI------------------------------------
 
     //The list with existing c.d.f./p.d.f. files in the project.
@@ -91,6 +84,10 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
              this, SLOT(onUpdateVariogramSelectors()) );
     connect( m_DensityFunctionSelector, SIGNAL(fileSelected(File*)),
              this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
+
+    //----------------------------------Soft Data UI------------------------------------------
+
+    configureSoftDataUI();
 
     //---------------------------- Grid parameters UI-----------------------------------------
 
@@ -142,20 +139,31 @@ void SisimDialog::preview()
     if( m_cg_simulation )
         delete m_cg_simulation;
 
+    QString sisimProgram = ui->cmbProgram->currentText();
+
+    ///////// Set an offset to account for differences in parameter count between the different sisim programs/////////////////////
+    int offset = 0;
+    if( sisimProgram == "sisim" )
+        offset = 0;
+    else if ( sisimProgram == "sisim_gs" )
+        offset = -1;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
     //get the tmp file path created by sisim with the realizations
-    QString grid_file_path = m_gpf_sisim->getParameter<GSLibParFile*>(19)->_path;
+    QString grid_file_path = m_gpf_sisim->getParameter<GSLibParFile*>(19 + offset)->_path;
 
     //create a new grid object corresponding to the file created by sisim
     m_cg_simulation = new CartesianGrid( grid_file_path );
 
     //set the grid geometry info.
-    m_cg_simulation->setInfoFromGridParameter( m_gpf_sisim->getParameter<GSLibParGrid*>(21) );
+    m_cg_simulation->setInfoFromGridParameter( m_gpf_sisim->getParameter<GSLibParGrid*>(21 + offset) );
 
     //sisim usually uses -99 as no-data-value. (TODO: this needs to be checked)
     m_cg_simulation->setNoDataValue( "-99" );
 
     //the number of realizations.
-    m_cg_simulation->setNReal( m_gpf_sisim->getParameter<GSLibParUInt*>(20)->_value );
+    m_cg_simulation->setNReal( m_gpf_sisim->getParameter<GSLibParUInt*>(20 + offset)->_value );
 
     if( m_cg_simulation->getChildCount() < 1 ){
         QMessageBox::critical( this, "Error", "SISIM yielded a file without data.  It is possible that SISIM crashed.  Check the message panel.  Aborted.");
@@ -194,6 +202,16 @@ void SisimDialog::previewPostsim()
 	if( m_cg_postsim )
 		delete m_cg_postsim;
 
+    QString sisimProgram = ui->cmbProgram->currentText();
+
+    ///////// Set an offset to account for differences in parameter count between the different sisim programs/////////////////////
+    int offset = 0;
+    if( sisimProgram == "sisim" )
+        offset = 0;
+    else if ( sisimProgram == "sisim_gs" )
+        offset = -1;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 	//get the tmp file path created by sgsim with the realizations
 	QString grid_file_path = m_gpf_postsim->getParameter<GSLibParFile*>(4)->_path;
 
@@ -201,7 +219,7 @@ void SisimDialog::previewPostsim()
 	m_cg_postsim = new CartesianGrid( grid_file_path );
 
 	//set the grid geometry info.
-	m_cg_postsim->setInfoFromGridParameter( m_gpf_sisim->getParameter<GSLibParGrid*>(21) );
+    m_cg_postsim->setInfoFromGridParameter( m_gpf_sisim->getParameter<GSLibParGrid*>(21 + offset) );
 
 	//postsim usually uses -999 as no-data-value.
 	m_cg_postsim->setNoDataValue( "-999.0" );
@@ -213,7 +231,33 @@ void SisimDialog::previewPostsim()
 	}
 
 	//enable the save postsim results button.
-	ui->btnSavePostsim->setEnabled( true );
+    ui->btnSavePostsim->setEnabled( true );
+}
+
+void SisimDialog::configureSoftDataUI()
+{
+    QString sisimProgram = ui->cmbProgram->currentText();
+
+    if( m_SoftDataSetSelector )
+        delete m_SoftDataSetSelector;
+
+    //The list with existing data sets in the project for the soft indicators.
+    if( sisimProgram == "sisim" ){
+        m_SoftDataSetSelector = new FileSelectorWidget( FileSelectorType::PointSets, true );
+        ui->frmSoftIndicatorFile->layout()->addWidget( m_SoftDataSetSelector );
+        connect( m_SoftDataSetSelector, SIGNAL(dataFileSelected(DataFile*)),
+                 this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
+    } else if( sisimProgram == "sisim_gs" ){
+        //The soft data is mandatory for sisim_gs
+        m_SoftDataSetSelector = new FileSelectorWidget( FileSelectorType::CartesianGrids, false );
+        ui->frmSoftIndicatorFile->layout()->addWidget( m_SoftDataSetSelector );
+        connect( m_SoftDataSetSelector, SIGNAL(dataFileSelected(DataFile*)),
+                 this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
+    }
+
+    //call this slot to show the soft indicator variables selectors.
+    onUpdateSoftIndicatorVariablesSelectors();
+
 }
 
 void SisimDialog::onUpdateSoftIndicatorVariablesSelectors()
@@ -234,11 +278,10 @@ void SisimDialog::onUpdateSoftIndicatorVariablesSelectors()
         for( int i = 0; i < tot; ++i){
             VariableSelector* vs = new VariableSelector();
             ui->frmSoftIndicatorVariables->layout()->addWidget( vs );
-            vs->onListVariables( m_SoftPointSetSelector->getSelectedDataFile() );
+            vs->onListVariables( static_cast<DataFile*>(m_SoftDataSetSelector->getSelectedFile()) );
             m_SoftIndicatorVariablesSelectors.append( vs );
         }
     }
-
 }
 
 void SisimDialog::onUpdateVariogramSelectors()
@@ -279,6 +322,8 @@ void SisimDialog::onConfigureAndRun()
     bool firstRun = false;
 
     //---------------------- Initial checks and data to configure simulation-----------------------
+    //get the name of the SISIM program the user wants.
+    QString sisimProgram = ui->cmbProgram->currentText();
 
     //get the selected p.d.f./c.d.f. file
     File *distribution = m_DensityFunctionSelector->getSelectedFile();
@@ -311,7 +356,7 @@ void SisimDialog::onConfigureAndRun()
     //-----------------------------set sisim parameters---------------------------
     if( ! m_gpf_sisim ){
         //create the parameters object
-        m_gpf_sisim = new GSLibParameterFile("sisim");
+        m_gpf_sisim = new GSLibParameterFile( sisimProgram );
 
         //set the default values, so we need to set fewer parameters here
         m_gpf_sisim->setDefaultValues();
@@ -362,48 +407,79 @@ void SisimDialog::onConfigureAndRun()
     par5->getParameter<GSLibParUInt*>(2)->_value = inputPointSet->getZindex();
     par5->getParameter<GSLibParUInt*>(3)->_value = varIndex;
 
-    //the soft indicator file is surely a PointSet object
-    PointSet *psSoftData = (PointSet*)m_SoftPointSetSelector->getSelectedDataFile();
-    if( psSoftData ){
-        //file with soft indicator input
-        m_gpf_sisim->getParameter<GSLibParFile*>(6)->_path = psSoftData->getPath();
-        //columns for X,Y,Z, and indicators
-        GSLibParMultiValuedFixed *par7 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(7);
-        par7->getParameter<GSLibParUInt*>(0)->_value = psSoftData->getXindex();
-        par7->getParameter<GSLibParUInt*>(1)->_value = psSoftData->getYindex();
-        par7->getParameter<GSLibParUInt*>(2)->_value = psSoftData->getZindex();
-        GSLibParMultiValuedVariable* par7_3 = par7->getParameter<GSLibParMultiValuedVariable*>(3);
-        par7_3->setSize( nThresholdsOrCategories );
-        for( uint i = 0; i < nThresholdsOrCategories; ++i ){ // the indicator column indexes, which are a <uint+>
-            par7_3->getParameter<GSLibParUInt*>(i)->_value =
-                    m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
+    //the soft indicator file
+    if( sisimProgram == "sisim" ){
+        //for sisim, it is a point set file
+        PointSet *psSoftData = static_cast<PointSet*>( m_SoftDataSetSelector->getSelectedFile() );
+        if( psSoftData ){
+            //file with soft indicator input
+            m_gpf_sisim->getParameter<GSLibParFile*>(6)->_path = psSoftData->getPath();
+            //columns for X,Y,Z, and indicators
+            GSLibParMultiValuedFixed *par7 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(7);
+            par7->getParameter<GSLibParUInt*>(0)->_value = psSoftData->getXindex();
+            par7->getParameter<GSLibParUInt*>(1)->_value = psSoftData->getYindex();
+            par7->getParameter<GSLibParUInt*>(2)->_value = psSoftData->getZindex();
+            GSLibParMultiValuedVariable* par7_3 = par7->getParameter<GSLibParMultiValuedVariable*>(3);
+            par7_3->setSize( nThresholdsOrCategories );
+            for( uint i = 0; i < nThresholdsOrCategories; ++i ){ // the indicator column indexes, which are a <uint+>
+                par7_3->getParameter<GSLibParUInt*>(i)->_value =
+                        m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
+            }
         }
-        //      calibration B(z) values, which is a <double+>
-        GSLibParMultiValuedVariable *par9 = m_gpf_sisim->getParameter<GSLibParMultiValuedVariable*>(9);
+    } else if ( sisimProgram == "sisim_gs" ){
+        //for sisim_gs, it is a cartesian file
+        CartesianGrid *cgSoftData = static_cast<CartesianGrid*>( m_SoftDataSetSelector->getSelectedFile() );
+        if( cgSoftData ){
+            //file with soft indicator input
+            m_gpf_sisim->getParameter<GSLibParFile*>(6)->_path = cgSoftData->getPath();
+            //for sisim_gs, the soft indicator file is a grid file
+            GSLibParMultiValuedVariable *par7 = m_gpf_sisim->getParameter<GSLibParMultiValuedVariable*>(7);
+            par7->setSize( nThresholdsOrCategories );
+            for( uint i = 0; i < nThresholdsOrCategories; ++i ){ // the indicator column indexes, which are a <uint+>
+                par7->getParameter<GSLibParUInt*>(i)->_value =
+                        m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
+            }
+        }
+    }
+
+    ///////// Set an offset to account for differences in parameter count between the different sisim programs/////////////////////
+    int offset = 0;
+    if( sisimProgram == "sisim" )
+        offset = 0;
+    else if ( sisimProgram == "sisim_gs" )
+        offset = -1;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    if( sisimProgram == "sisim"){
+        //      calibration B(z) values, which is a <double+> (only for sisim)
+        GSLibParMultiValuedVariable *par9 = m_gpf_sisim->getParameter<GSLibParMultiValuedVariable*>(9 + offset);
         par9->setSize( nThresholdsOrCategories );
+    } else if( sisimProgram == "sisim_gs" ){
+        //file with calibration table (only for sisim_gs)
+        m_gpf_sisim->getParameter<GSLibParFile*>(9 + offset)->_path = "nofile.dat";
     }
 
     //trimming limits
     if( firstRun ){
-        GSLibParMultiValuedFixed *par10 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(10);
+        GSLibParMultiValuedFixed *par10 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(10 + offset);
         par10->getParameter<GSLibParDouble*>(0)->_value = data_min;
         par10->getParameter<GSLibParDouble*>(1)->_value = data_max;
     }
 
     //minimum (zmin) and maximum (zmax) data value
     if( firstRun ){
-        GSLibParMultiValuedFixed *par11 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(11);
+        GSLibParMultiValuedFixed *par11 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(11 + offset);
         par11->getParameter<GSLibParDouble*>(0)->_value = data_min;
         par11->getParameter<GSLibParDouble*>(1)->_value = data_max;
     }
 
     //file for simulation output
     if( firstRun )
-        m_gpf_sisim->getParameter<GSLibParFile*>(19)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+        m_gpf_sisim->getParameter<GSLibParFile*>(19 + offset)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
 
     //grid parameters
     m_gridParametersWidget->updateValue( m_parGrid );
-    GSLibParGrid* par21 = m_gpf_sisim->getParameter<GSLibParGrid*>(21);
+    GSLibParGrid* par21 = m_gpf_sisim->getParameter<GSLibParGrid*>(21 + offset);
     par21->_specs_x->getParameter<GSLibParUInt*>(0)->_value = m_parGrid->getNX(); //nx
     par21->_specs_x->getParameter<GSLibParDouble*>(1)->_value = m_parGrid->getX0(); //min x
     par21->_specs_x->getParameter<GSLibParDouble*>(2)->_value = m_parGrid->getDX(); //cell size x
@@ -415,14 +491,14 @@ void SisimDialog::onConfigureAndRun()
     par21->_specs_z->getParameter<GSLibParDouble*>(2)->_value = m_parGrid->getDZ(); //cell size z
 
     //IK mode: 0=full, 1=median  and cutoff for the median mode
-    GSLibParMultiValuedFixed *par32 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(32);
+    GSLibParMultiValuedFixed *par32 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(32 + offset);
     if( ui->radioFullIK->isChecked() )
         par32->getParameter<GSLibParOption*>(0)->_selected_value = 0;
     else
         par32->getParameter<GSLibParOption*>(0)->_selected_value = 1;
 
     //Variogram models for each threshold/category of one variogram model if IK is in median mode.
-    GSLibParRepeat *par34 = m_gpf_sisim->getParameter<GSLibParRepeat*>(34);
+    GSLibParRepeat *par34 = m_gpf_sisim->getParameter<GSLibParRepeat*>(34 + offset);
     if( ui->radioMedianIK->isChecked() ){
 //		par34->setCount( 1 );
 //		GSLibParVModel *par34_0 = par34->getParameter<GSLibParVModel*>(0, 0);
@@ -449,7 +525,7 @@ void SisimDialog::onConfigureAndRun()
     }
 
     //----------------------------prepare and execute sisim--------------------------------
-    //show the sgiim parameters
+    //show the sisim parameters
     GSLibParametersDialog gsd( m_gpf_sisim, this );
     int result = gsd.exec();
 
@@ -463,8 +539,8 @@ void SisimDialog::onConfigureAndRun()
         connect( GSLib::instance(), SIGNAL(programFinished()), this, SLOT(onSisimCompletes()) );
 
         //run sisim program asynchronously
-        Application::instance()->logInfo("Starting sisim program...");
-        GSLib::instance()->runProgramAsync( "sisim", par_file_path );
+        Application::instance()->logInfo("Starting " + sisimProgram + " program...");
+        GSLib::instance()->runProgramAsync( sisimProgram, par_file_path );
     }
 }
 
@@ -535,6 +611,16 @@ void SisimDialog::onRealizationHistogram()
 
 void SisimDialog::onEnsembleHistogram()
 {
+    QString sisimProgram = ui->cmbProgram->currentText();
+
+    ///////// Set an offset to account for differences in parameter count between the different sisim programs/////////////////////
+    int offset = 0;
+    if( sisimProgram == "sisim" )
+        offset = 0;
+    else if ( sisimProgram == "sisim_gs" )
+        offset = -1;
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     //get simulation data
     CartesianGrid* gridRealizations = m_cg_simulation;
     Attribute* realizationsAttribute = m_cg_simulation->getAttributeFromGEOEASIndex(1);
@@ -565,7 +651,7 @@ void SisimDialog::onEnsembleHistogram()
     par3->getParameter<GSLibParUInt*>(1)->_value = 0;
 
     //file with distributions to check (file with the realizations)
-    gpf.getParameter<GSLibParFile*>(4)->_path = m_gpf_sisim->getParameter<GSLibParFile*>(19)->_path;
+    gpf.getParameter<GSLibParFile*>(4)->_path = m_gpf_sisim->getParameter<GSLibParFile*>(19 + offset)->_path;
 
     //   columns for variable and weight
     GSLibParMultiValuedFixed* par5 = gpf.getParameter<GSLibParMultiValuedFixed*>(5);
@@ -575,7 +661,7 @@ void SisimDialog::onEnsembleHistogram()
     //   start and finish histograms (usually 1 and nreal)
     GSLibParMultiValuedFixed* par7 = gpf.getParameter<GSLibParMultiValuedFixed*>(7);
     par7->getParameter<GSLibParUInt*>(0)->_value = 1;
-    par7->getParameter<GSLibParUInt*>(1)->_value = m_gpf_sisim->getParameter<GSLibParUInt*>(20)->_value ;
+    par7->getParameter<GSLibParUInt*>(1)->_value = m_gpf_sisim->getParameter<GSLibParUInt*>(20 + offset)->_value ;
 
     //   nx, ny, nz
     GSLibParMultiValuedFixed* par8 = gpf.getParameter<GSLibParMultiValuedFixed*>(8);
@@ -988,5 +1074,16 @@ void SisimDialog::onSavePostsim()
 	if (ok && !new_cg_name.isEmpty()){
 		//import the newly created grid file as a project item
 		Application::instance()->getProject()->importCartesianGrid( m_cg_postsim, new_cg_name );
-	}
+    }
+}
+
+void SisimDialog::onSisimProgramChanged(QString)
+{
+    configureSoftDataUI();
+    //destroy the current object pointed by m_gpf_sisim and reset the pointer
+    //this will force onConfigureAndRun() to build a new one with a different set of parameters.
+    if( m_gpf_sisim )
+        delete m_gpf_sisim;
+    m_gpf_sisim = nullptr;
+
 }

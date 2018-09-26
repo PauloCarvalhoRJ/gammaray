@@ -16,8 +16,10 @@ enum class FileSelectorType : uint {
     PDFs,                /*!< Only category p.d.f. files can be selected. */
     DataFiles,           /*!< Data files can be selected. */
     CategoryDefinitions, /*!< Categorical definition files can be selected. */
-    CDsAndCDFs,           /*!< Categorical definition and threshold c.d.f. files can be selected. */
-    CDsCDFsandPDFs       /*!< Categorical definition, threshold c.d.f. and category p.d.f. files can be selected. */
+    CDsAndCDFs,          /*!< Categorical definition and threshold c.d.f. files can be selected. */
+    CDsCDFsandPDFs,      /*!< Categorical definition, threshold c.d.f. and category p.d.f. files can be selected. */
+    PointSets,           /*!< Data files of point set type can be selected. */
+    CartesianGrids       /*!< Data files of Cartesian grid type can be selected. */
 };
 
 /**

@@ -24,8 +24,11 @@ private:
     ///--------------GUI member variables---------------------
     Ui::SisimDialog *ui;
     PointSetSelector* m_InputPointSetFileSelector;
+
+
+
     VariableSelector* m_InputVariableSelector;
-    PointSetSelector* m_SoftPointSetSelector;
+    FileSelectorWidget* m_SoftDataSetSelector;
     QList<VariableSelector*> m_SoftIndicatorVariablesSelectors;
     FileSelectorWidget* m_DensityFunctionSelector;
     GSLibParGrid* m_parGrid;
@@ -43,6 +46,7 @@ private:
     void addVariogramSelector();
     void preview();
 	void previewPostsim();
+    void configureSoftDataUI();
 
 private Q_SLOTS:
     void onUpdateSoftIndicatorVariablesSelectors();
@@ -56,6 +60,7 @@ private Q_SLOTS:
     void onSaveEnsemble();
 	void onPostsim();
 	void onSavePostsim();
+    void onSisimProgramChanged(QString);
 };
 
 #endif // SISIMDIALOG_H
