@@ -425,9 +425,11 @@ void SisimDialog::onConfigureAndRun()
                 par7_3->getParameter<GSLibParUInt*>(i)->_value =
                         m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
             }
-        }
+		} else {
+			m_gpf_sisim->getParameter<GSLibParFile*>(6)->_path = "NO_DATA_FILE";
+		}
     } else if ( sisimProgram == "sisim_gs" ){
-        //for sisim_gs, it is a cartesian file
+		//for sisim_gs, it is a cartesian file (this file is mandatory in sisim_gs)
         CartesianGrid *cgSoftData = static_cast<CartesianGrid*>( m_SoftDataSetSelector->getSelectedFile() );
         if( cgSoftData ){
             //file with soft indicator input
