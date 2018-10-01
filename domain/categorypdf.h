@@ -32,6 +32,7 @@ public:
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
     bool isDataFile(){ return false; }
+	bool isDistribution(){ return false; } //Athough a PDF is technically a distribution, it doesn't inherit Distribution
 
 private:
     CategoryDefinition *m_categoryDefinition;

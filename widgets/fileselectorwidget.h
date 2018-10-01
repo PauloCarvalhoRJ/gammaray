@@ -9,6 +9,7 @@ class FileSelectorWidget;
 
 class File;
 class DataFile;
+class Distribution;
 
 /*! The file types to list. */
 enum class FileSelectorType : uint {
@@ -47,6 +48,9 @@ signals:
 
     /** Signal emited along with fileSelected(File*) if the selected file is a data file. */
     void dataFileSelected( DataFile* dataFile );
+
+	/** Signal emited along with fileSelected(File*) if the selected file is a distribution. */
+	void distributionSelected( Distribution* dataFile );
 
 private:
     Ui::FileSelectorWidget *ui;
