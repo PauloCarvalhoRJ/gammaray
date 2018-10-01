@@ -48,6 +48,17 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
                 ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }
     }
+
+	//adds files from the Distributions Group of type according to the types specified in m_filesOfTypes
+	if( m_filesOfTypes == FileSelectorType::Bidistributions ){
+		og = project->getDistributionsGroup();
+		for( int i = 0; i < og->getChildCount(); ++i){
+			File* varFile = (File*)og->getChildByIndex( i );
+			bool toAdd = ( ( m_filesOfTypes == FileSelectorType::Bidistributions && varFile->getFileType() == "BIDIST" ) );
+			if( toAdd )
+				ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
+		}
+	}
 }
 
 FileSelectorWidget::~FileSelectorWidget()
