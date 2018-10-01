@@ -123,7 +123,9 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForSisim( "sisim" );
     } else if ( this->_program_name == "sisim_gs" ){
         this->setDefaultValuesForSisim( "sisim_gs" );
-    } else {
+	} else if ( this->_program_name == "bicalib" ){
+		this->setDefaultValuesForBicalib();
+	} else {
         QString msg("ERROR in setDefaultValues(): unsupported GSLib program: ");
         msg.append( this->_program_name );
         Application::instance()->logError( msg );
@@ -2249,7 +2251,48 @@ void GSLibParameterFile::setDefaultValuesForSisim(QString sisimProgramName)
         //variogram model
         GSLibParVModel *par34_i = par34->getParameter<GSLibParVModel*>(i, 0);
         par34_i->makeDefault();
-    }
+	}
+}
+
+void GSLibParameterFile::setDefaultValuesForBicalib()
+{
+	//-file with secondary data
+	getParameter<GSLibParFile*>(0)->_path = "NOFILE";
+	//-   column for secondary variable
+	getParameter<GSLibParUInt*>(1)->_value = 3;
+	//-file with calibration scatterplot
+	getParameter<GSLibParFile*>(2)->_path = "NOFILE";
+	//-   columns of pri, sec, and weight
+	GSLibParMultiValuedFixed *par3 = getParameter<GSLibParMultiValuedFixed*>(3);
+	par3->getParameter<GSLibParUInt*>(0)->_value = 1;
+	par3->getParameter<GSLibParUInt*>(1)->_value = 2;
+	par3->getParameter<GSLibParUInt*>(2)->_value = 3;
+	//-   trimming limits
+	GSLibParMultiValuedFixed *par4 = getParameter<GSLibParMultiValuedFixed*>(4);
+	par4->getParameter<GSLibParDouble*>(0)->_value = -1e21;
+	par4->getParameter<GSLibParDouble*>(1)->_value = 1e21;
+	//-file for output data / distributions
+	getParameter<GSLibParFile*>(5)->_path = "NOFILE";
+	//-file for output calibration (SISIM)
+	getParameter<GSLibParFile*>(6)->_path = "NOFILE";
+	//-file for calibration report
+	getParameter<GSLibParFile*>(7)->_path = "NOFILE";
+	//-number of thresholds on primary
+	getParameter<GSLibParUInt*>(8)->_value = 3;
+	//-   thresholds on primary
+	GSLibParMultiValuedVariable *par9 = getParameter<GSLibParMultiValuedVariable*>(9);
+	par9->setSize( 3 );
+	par9->getParameter<GSLibParDouble*>(0)->_value = 15.0;
+	par9->getParameter<GSLibParDouble*>(1)->_value = 25.0;
+	par9->getParameter<GSLibParDouble*>(2)->_value = 35.0;
+	//-number of thresholds on secondary
+	getParameter<GSLibParUInt*>(10)->_value = 3;
+	//-   thresholds on secondary
+	GSLibParMultiValuedVariable *par11 = getParameter<GSLibParMultiValuedVariable*>(11);
+	par11->setSize( 3 );
+	par11->getParameter<GSLibParDouble*>(0)->_value = 150.0;
+	par11->getParameter<GSLibParDouble*>(1)->_value = 250.0;
+	par11->getParameter<GSLibParDouble*>(2)->_value = 350.0;
 }
 
 void GSLibParameterFile::addAsMultiValued(QList<GSLibParType *> *params, GSLibParType *parameter)
@@ -3068,6 +3111,30 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
         generateParameterFileTemplatesSISIMCommons( out, "sisim_gs" );
     }
     par_file.close();
+
+	par_file_path = dir.absoluteFilePath("bicalib.par.tpl");
+	par_file.setFileName( par_file_path );
+	if( !par_file.exists() ){
+		par_file.open( QFile::WriteOnly | QFile::Text );
+		QTextStream out(&par_file);
+		out << "                  Parameters for BICALIB\n";
+		out << "                  ************************\n";
+		out << '\n';
+		out << "START OF PARAMETERS\n";
+		out << "<file>                 -file with secondary data\n";
+		out << "<uint>                 -   column for secondary variable\n";
+		out << "<file>                 -file with calibration scatterplot\n";
+		out << "<uint> <uint> <uint>   -   columns of pri, sec, and weight\n";
+		out << "<double> <double>      -   trimming limits\n";
+		out << "<file>                 -file for output data / distributions\n";
+		out << "<file>                 -file for output calibration (SISIM)\n";
+		out << "<file>                 -file for calibration report\n";
+		out << "<uint>                 -number of thresholds on primary\n";
+		out << "<double+>              -   thresholds on primary\n";
+		out << "<uint>                 -number of thresholds on secondary\n";
+		out << "<double+>              -   thresholds on secondary\n";
+	}
+	par_file.close();
 }
 
 void GSLibParameterFile::generateParameterFileTemplatesSISIMCommons(QTextStream &out,

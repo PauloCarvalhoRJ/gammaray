@@ -289,6 +289,10 @@ private:
       * Called by setDefaultValues if _program_name is "sisim", "sism_gs" or "sisim_lm".
       */
     void setDefaultValuesForSisim( QString sisimProgramName );
+	/**
+	  * Called by setDefaultValues if _program_name is "bicalib".
+	  */
+	void setDefaultValuesForBicalib( );
 
     /**
      * Wraps the given GSLib parameter type in a GSLibParMultivaluedVariable container object,
