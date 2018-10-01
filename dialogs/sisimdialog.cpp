@@ -5,6 +5,7 @@
 #include "widgets/fileselectorwidget.h"
 #include "widgets/cartesiangridselector.h"
 #include "widgets/variogrammodelselector.h"
+#include "widgets/distributionfieldselector.h"
 #include "dialogs/displayplotdialog.h"
 #include "dialogs/variograminputdialog.h"
 #include "domain/file.h"
@@ -35,7 +36,12 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
     m_cg_simulation( nullptr ),
 	m_gpf_gam( nullptr ),
 	m_gpf_postsim( nullptr ),
-	m_cg_postsim( nullptr )
+	m_cg_postsim( nullptr ),
+	m_DensityFunctionSecondarySelector( nullptr ),
+	m_BidistributionSelector( nullptr ),
+	m_BidistPrimaryValuesFieldSelector( nullptr ),
+	m_BidistSecondaryValuesFieldSelector( nullptr ),
+	m_BidistProbabilitiesFieldSelector( nullptr )
 {
     ui->setupUi(this);
 
@@ -48,11 +54,13 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
         this->setWindowTitle( windowTitle() + "continuous variable." );
         ui->lblIKVarType->setText("<html><head/><body><p><span style=\" font-weight:600; color:#0000ff;\">CONTINUOUS</span></p></body></html>");
         ui->lblDistributionFile->setText("Threshold c.d.f. file:");
+		ui->lblDistrFileSecondary->setText("Threshold c.d.f. file for secondary:");
     } else {
         this->setWindowTitle( windowTitle() + "categorical variable." );
         ui->lblIKVarType->setText("<html><head/><body><p><span style=\" font-weight:600; color:#0000ff;\">CATEGORICAL</span></p></body></html>");
         ui->lblDistributionFile->setText("Category p.d.f. file:");
-    }
+		ui->lblDistrFileSecondary->setText("Category p.d.f. file for secondary:");
+	}
 
     //-----------------------------------Input Data UI----------------------------------------
 
@@ -240,6 +248,43 @@ void SisimDialog::configureSoftDataUI()
 
     if( m_SoftDataSetSelector )
         delete m_SoftDataSetSelector;
+	if( m_DensityFunctionSecondarySelector )
+		delete m_DensityFunctionSecondarySelector;
+
+
+	//For sisim_gs: the bidistribution file and its field selectors
+	{
+		if( ! m_BidistributionSelector ){
+			m_BidistributionSelector = new FileSelectorWidget( FileSelectorType::Bidistributions ) ;
+			ui->frmBidistribution->layout()->addWidget( m_BidistributionSelector );
+		}
+		if( ! m_BidistPrimaryValuesFieldSelector ){
+			m_BidistPrimaryValuesFieldSelector = new DistributionFieldSelector( Roles::DistributionColumnRole::VALUE );
+			ui->frmBidistPrimaryField->layout()->addWidget( m_BidistPrimaryValuesFieldSelector );
+			connect( m_BidistributionSelector, SIGNAL(distributionSelected(Distribution*)),
+					 m_BidistPrimaryValuesFieldSelector, SLOT(onListFields(Distribution*)) );
+		}
+		if( ! m_BidistSecondaryValuesFieldSelector ){
+			m_BidistSecondaryValuesFieldSelector = new DistributionFieldSelector( Roles::DistributionColumnRole::VALUE );
+			ui->frmBidistSecondaryField->layout()->addWidget( m_BidistSecondaryValuesFieldSelector );
+			connect( m_BidistributionSelector, SIGNAL(distributionSelected(Distribution*)),
+					 m_BidistSecondaryValuesFieldSelector, SLOT(onListFields(Distribution*)) );
+		}
+		if( ! m_BidistProbabilitiesFieldSelector){
+			m_BidistProbabilitiesFieldSelector = new DistributionFieldSelector( Roles::DistributionColumnRole::PVALUE );
+			ui->frmBidistProbabilities->layout()->addWidget( m_BidistProbabilitiesFieldSelector );
+			connect( m_BidistributionSelector, SIGNAL(distributionSelected(Distribution*)),
+					 m_BidistProbabilitiesFieldSelector, SLOT(onListFields(Distribution*)) );
+		}
+		//call this slot to update the field selectors.
+		m_BidistributionSelector->onSelection( 0 );
+	}
+
+	if( m_varType == IKVariableType::CONTINUOUS )
+		m_DensityFunctionSecondarySelector = new FileSelectorWidget( FileSelectorType::CDFs );
+	else
+		m_DensityFunctionSecondarySelector = new FileSelectorWidget( FileSelectorType::PDFs );
+	ui->frmDistrSecondaryData->layout()->addWidget( m_DensityFunctionSecondarySelector );
 
     //The list with existing data sets in the project for the soft indicators.
     if( sisimProgram == "sisim" ){
@@ -247,41 +292,64 @@ void SisimDialog::configureSoftDataUI()
         ui->frmSoftIndicatorFile->layout()->addWidget( m_SoftDataSetSelector );
         connect( m_SoftDataSetSelector, SIGNAL(dataFileSelected(DataFile*)),
                  this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
-    } else if( sisimProgram == "sisim_gs" ){
+		ui->lblSecondaryDataFile->setText("Soft indicator file:");
+		ui->lblSecondaryDataVariables->setText("Soft indicator variables:");
+		ui->lblDistrFileSecondary->hide();
+		ui->frmDistrSecondaryData->hide();
+		ui->lblBidistribution->hide();
+		ui->frmBidistribution->hide();
+		ui->frmBidistFields->hide();
+	} else if( sisimProgram == "sisim_gs" ){
         //The soft data is mandatory for sisim_gs
         m_SoftDataSetSelector = new FileSelectorWidget( FileSelectorType::CartesianGrids, false );
         ui->frmSoftIndicatorFile->layout()->addWidget( m_SoftDataSetSelector );
         connect( m_SoftDataSetSelector, SIGNAL(dataFileSelected(DataFile*)),
                  this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
-    }
+		ui->lblSecondaryDataFile->setText("Grid with secondary data:");
+		ui->lblSecondaryDataVariables->setText("Secondary variable:");
+		ui->lblDistrFileSecondary->show();
+		ui->frmDistrSecondaryData->show();
+		ui->lblBidistribution->show();
+		ui->frmBidistribution->show();
+		ui->frmBidistFields->show();
+	}
 
     //call this slot to show the soft indicator variables selectors.
     onUpdateSoftIndicatorVariablesSelectors();
-
 }
 
 void SisimDialog::onUpdateSoftIndicatorVariablesSelectors()
 {
-    //clears the current soft indicator variable selectors
+	QString sisimProgram = ui->cmbProgram->currentText();
+
+	//clears the current soft indicator variable selectors
     while( ! m_SoftIndicatorVariablesSelectors.isEmpty() ){
         VariableSelector* vs = m_SoftIndicatorVariablesSelectors.takeLast();
         ui->frmSoftIndicatorVariables->layout()->removeWidget( vs );
         vs->setParent( nullptr );
         delete vs;
     }
+
     //It is necessary to specify one soft indicator variable per c.d.f./p.d.f threshold/category
     //get the c.d.f./p.d.f. value pairs
-    File* file = m_DensityFunctionSelector->getSelectedFile();
-    if( file ){
-        file->readFromFS();
-        int tot = file->getContentsCount();
-        for( int i = 0; i < tot; ++i){
-            VariableSelector* vs = new VariableSelector();
-            ui->frmSoftIndicatorVariables->layout()->addWidget( vs );
-            vs->onListVariables( static_cast<DataFile*>(m_SoftDataSetSelector->getSelectedFile()) );
-            m_SoftIndicatorVariablesSelectors.append( vs );
-        }
-    }
+	if( sisimProgram == "sisim" ){
+		File* file = m_DensityFunctionSelector->getSelectedFile();
+		if( file ){
+			file->readFromFS();
+			int tot = file->getContentsCount();
+			for( int i = 0; i < tot; ++i){
+				VariableSelector* vs = new VariableSelector();
+				ui->frmSoftIndicatorVariables->layout()->addWidget( vs );
+				vs->onListVariables( static_cast<DataFile*>(m_SoftDataSetSelector->getSelectedFile()) );
+				m_SoftIndicatorVariablesSelectors.append( vs );
+			}
+		}
+	} else if ( sisimProgram == "sisim_gs" ){ // sisim_gs requires the secondary variable directly and not converted into soft indicators
+		VariableSelector* vs = new VariableSelector();
+		ui->frmSoftIndicatorVariables->layout()->addWidget( vs );
+		vs->onListVariables( static_cast<DataFile*>(m_SoftDataSetSelector->getSelectedFile()) );
+		m_SoftIndicatorVariablesSelectors.append( vs );
+	}
 }
 
 void SisimDialog::onUpdateVariogramSelectors()
@@ -332,6 +400,13 @@ void SisimDialog::onConfigureAndRun()
         return;
     }
 
+	//get the selected p.d.f./c.d.f. file for the secondary (for sisim_gs)
+	File *distributionSecondary = m_DensityFunctionSecondarySelector->getSelectedFile();
+	if( sisimProgram == "sisim_gs" && ! distributionSecondary ){
+		QMessageBox::critical( this, "Error", "Please, select a c.d.f./p.d.f. file for the secondary variable.");
+		return;
+	}
+
     //get the selected point set data file
     PointSet *inputPointSet = (PointSet*)m_InputPointSetFileSelector->getSelectedDataFile();
     if( ! inputPointSet ){
@@ -346,6 +421,19 @@ void SisimDialog::onConfigureAndRun()
     data_min -= fabs( data_min/100.0 );
     data_max += fabs( data_max/100.0 );
 
+	//get min and max of secondary variable (for sisim_gs)
+	double secData_min = std::numeric_limits<double>::max();
+	double secData_max = std::numeric_limits<double>::min();
+	if( sisimProgram == "sisim_gs" ){
+		DataFile* secondaryDataFile = static_cast<DataFile*>( m_SoftDataSetSelector->getSelectedFile() );
+		if( secondaryDataFile ){
+			secData_min = secondaryDataFile->min( m_SoftIndicatorVariablesSelectors[0]->getSelectedVariableGEOEASIndex()-1 );
+			secData_max = secondaryDataFile->max( m_SoftIndicatorVariablesSelectors[0]->getSelectedVariableGEOEASIndex()-1 );
+			secData_min -= fabs( secData_min/100.0 );
+			secData_max += fabs( secData_max/100.0 );
+		}
+	}
+
     //ValuePairs class implements getContentsCount() to return the number of pairs,
     //which is the number of thresholds/categories.
     uint nThresholdsOrCategories = distribution->getContentsCount();
@@ -353,7 +441,62 @@ void SisimDialog::onConfigureAndRun()
     //The GEO-EAS index (first == 1)
     int varIndex = m_InputVariableSelector->getSelectedVariableGEOEASIndex();
 
-    //-----------------------------set sisim parameters---------------------------
+	//-----------------------------for sisim_gs it is necessary to run bicalib beforehand-----------
+	if( sisimProgram == "sisim_gs" ){
+		GSLibParameterFile gpfBicalib( "bicalib" );
+		gpfBicalib.setDefaultValues();
+		//-file with secondary data
+		gpfBicalib.getParameter<GSLibParFile*>(0)->_path = m_SoftDataSetSelector->getSelectedFile()->getPath();
+		//-   column for secondary variable
+		gpfBicalib.getParameter<GSLibParUInt*>(1)->_value = m_SoftIndicatorVariablesSelectors[0]->getSelectedVariableGEOEASIndex(); //for sisim_gs, only the secondary (not its soft indicators) is selectable
+		//-file with calibration scatterplot
+		gpfBicalib.getParameter<GSLibParFile*>(2)->_path = m_BidistributionSelector->getSelectedFile()->getPath();
+		//-   columns of pri, sec, and weight
+		GSLibParMultiValuedFixed *par3 = gpfBicalib.getParameter<GSLibParMultiValuedFixed*>(3);
+		par3->getParameter<GSLibParUInt*>(0)->_value = m_BidistPrimaryValuesFieldSelector->getSelectedFieldGEOEASIndex();
+		par3->getParameter<GSLibParUInt*>(1)->_value = m_BidistSecondaryValuesFieldSelector->getSelectedFieldGEOEASIndex();
+		par3->getParameter<GSLibParUInt*>(2)->_value = m_BidistProbabilitiesFieldSelector->getSelectedFieldGEOEASIndex();
+		//-   trimming limits
+		GSLibParMultiValuedFixed *par4 = gpfBicalib.getParameter<GSLibParMultiValuedFixed*>(4);
+		par4->getParameter<GSLibParDouble*>(0)->_value = std::min( data_min, secData_min );
+		par4->getParameter<GSLibParDouble*>(1)->_value = std::max( data_max, secData_max );
+		//-file for output data / distributions
+		gpfBicalib.getParameter<GSLibParFile*>(5)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( ".dat" );
+		//-file for output calibration (SISIM)
+		gpfBicalib.getParameter<GSLibParFile*>(6)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( ".calib" );
+		//-file for calibration report
+		gpfBicalib.getParameter<GSLibParFile*>(7)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( ".rpt" );
+		//-number of thresholds on primary
+		gpfBicalib.getParameter<GSLibParUInt*>(8)->_value = nThresholdsOrCategories;
+		//-   thresholds on primary
+		GSLibParMultiValuedVariable *par9 = gpfBicalib.getParameter<GSLibParMultiValuedVariable*>(9);
+		par9->setSize( nThresholdsOrCategories );
+		for( uint i = 0; i < nThresholdsOrCategories; ++i )
+			if( m_varType == IKVariableType::CATEGORICAL ){
+				CategoryPDF *pdf = (CategoryPDF*)distribution;
+				par9->getParameter<GSLibParDouble*>(i)->_value = pdf->get1stValue(i);
+			} else {
+				ThresholdCDF *cdf = (ThresholdCDF*)distribution;
+				par9->getParameter<GSLibParDouble*>(i)->_value = cdf->get1stValue(i);
+			}
+		//-number of thresholds on secondary
+		uint nThresholdsOrCategoriesForSecondary = distributionSecondary->getContentsCount();
+		gpfBicalib.getParameter<GSLibParUInt*>(10)->_value = nThresholdsOrCategoriesForSecondary;
+		//-   thresholds on secondary
+		GSLibParMultiValuedVariable *par11 = gpfBicalib.getParameter<GSLibParMultiValuedVariable*>(11);
+		par11->setSize( nThresholdsOrCategoriesForSecondary );
+		for( uint i = 0; i < nThresholdsOrCategoriesForSecondary; ++i )
+			if( m_varType == IKVariableType::CATEGORICAL ){
+				CategoryPDF *pdf = (CategoryPDF*)distribution;
+				par11->getParameter<GSLibParDouble*>(i)->_value = pdf->get1stValue(i);
+			} else {
+				ThresholdCDF *cdf = (ThresholdCDF*)distribution;
+				par11->getParameter<GSLibParDouble*>(i)->_value = cdf->get1stValue(i);
+			}
+	}
+
+
+	//-----------------------------set sisim parameters-------------------------------------
     if( ! m_gpf_sisim ){
         //create the parameters object
         m_gpf_sisim = new GSLibParameterFile( sisimProgram );

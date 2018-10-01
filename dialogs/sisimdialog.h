@@ -7,6 +7,7 @@
 class GSLibParGrid;
 class WidgetGSLibParGrid;
 class DataFile;
+class DistributionFieldSelector;
 
 namespace Ui {
 class SisimDialog;
@@ -24,9 +25,6 @@ private:
     ///--------------GUI member variables---------------------
     Ui::SisimDialog *ui;
     PointSetSelector* m_InputPointSetFileSelector;
-
-
-
     VariableSelector* m_InputVariableSelector;
     FileSelectorWidget* m_SoftDataSetSelector;
     QList<VariableSelector*> m_SoftIndicatorVariablesSelectors;
@@ -35,7 +33,12 @@ private:
     WidgetGSLibParGrid* m_gridParametersWidget;
     CartesianGridSelector* m_gridCopySpecsSelector;
     QList<VariogramModelSelector*> m_variogramSelectors;
-    ///---------------data member variables--------------------
+	FileSelectorWidget* m_DensityFunctionSecondarySelector;
+	FileSelectorWidget* m_BidistributionSelector;
+	DistributionFieldSelector* m_BidistPrimaryValuesFieldSelector;
+	DistributionFieldSelector* m_BidistSecondaryValuesFieldSelector;
+	DistributionFieldSelector* m_BidistProbabilitiesFieldSelector;
+	///---------------data member variables--------------------
     IKVariableType m_varType;
     GSLibParameterFile* m_gpf_sisim;
     CartesianGrid* m_cg_simulation;
