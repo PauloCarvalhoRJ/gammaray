@@ -24,6 +24,7 @@
 #include "gslib/gslib.h"
 #include "util.h"
 
+#include <QFileInfo>
 #include <QInputDialog>
 #include <QMessageBox>
 
@@ -60,6 +61,7 @@ SisimDialog::SisimDialog(IKVariableType varType, QWidget *parent) :
         ui->lblIKVarType->setText("<html><head/><body><p><span style=\" font-weight:600; color:#0000ff;\">CATEGORICAL</span></p></body></html>");
         ui->lblDistributionFile->setText("Category p.d.f. file:");
 		ui->lblDistrFileSecondary->setText("Category p.d.f. file for secondary:");
+		ui->cmbProgram->removeItem(1); // sisim_gs does not make sense for categorical variables
 	}
 
     //-----------------------------------Input Data UI----------------------------------------
@@ -416,9 +418,9 @@ void SisimDialog::onConfigureAndRun()
 
     //get min and max of variable
     inputPointSet->loadData();
-    double data_min = inputPointSet->min( m_InputVariableSelector->getSelectedVariableGEOEASIndex()-1 );
+	double data_min = inputPointSet->min( m_InputVariableSelector->getSelectedVariableGEOEASIndex()-1 );
     double data_max = inputPointSet->max( m_InputVariableSelector->getSelectedVariableGEOEASIndex()-1 );
-    data_min -= fabs( data_min/100.0 );
+	data_min -= fabs( data_min/100.0 );
     data_max += fabs( data_max/100.0 );
 
 	//get min and max of secondary variable (for sisim_gs)
@@ -442,6 +444,7 @@ void SisimDialog::onConfigureAndRun()
     int varIndex = m_InputVariableSelector->getSelectedVariableGEOEASIndex();
 
 	//-----------------------------for sisim_gs it is necessary to run bicalib beforehand-----------
+	QString pathOfFileWithCalibrationTable;
 	if( sisimProgram == "sisim_gs" ){
 		GSLibParameterFile gpfBicalib( "bicalib" );
 		gpfBicalib.setDefaultValues();
@@ -461,11 +464,12 @@ void SisimDialog::onConfigureAndRun()
 		par4->getParameter<GSLibParDouble*>(0)->_value = std::min( data_min, secData_min );
 		par4->getParameter<GSLibParDouble*>(1)->_value = std::max( data_max, secData_max );
 		//-file for output data / distributions
-		gpfBicalib.getParameter<GSLibParFile*>(5)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( ".dat" );
+		gpfBicalib.getParameter<GSLibParFile*>(5)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "dat" );
 		//-file for output calibration (SISIM)
-		gpfBicalib.getParameter<GSLibParFile*>(6)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( ".calib" );
+		gpfBicalib.getParameter<GSLibParFile*>(6)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "calib" );
+		pathOfFileWithCalibrationTable = gpfBicalib.getParameter<GSLibParFile*>(6)->_path;
 		//-file for calibration report
-		gpfBicalib.getParameter<GSLibParFile*>(7)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( ".rpt" );
+		gpfBicalib.getParameter<GSLibParFile*>(7)->_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "rpt" );
 		//-number of thresholds on primary
 		gpfBicalib.getParameter<GSLibParUInt*>(8)->_value = nThresholdsOrCategories;
 		//-   thresholds on primary
@@ -493,8 +497,19 @@ void SisimDialog::onConfigureAndRun()
 				ThresholdCDF *cdf = (ThresholdCDF*)distribution;
 				par11->getParameter<GSLibParDouble*>(i)->_value = cdf->get1stValue(i);
 			}
+		//Generate the parameter file
+		QString par_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath( "par" );
+		gpfBicalib.save( par_file_path );
+		//run bicalib program
+		Application::instance()->logInfo("Starting bicalib program...");
+		GSLib::instance()->runProgram( "bicalib", par_file_path );
+		//verify whether the required output was generated.
+		QFile file( pathOfFileWithCalibrationTable );
+		if( ! file.exists() ){
+			QMessageBox::critical( this, "Error", "Calibration file not found.  Probably bicalib execution failed.  Check the messages panel for bicalib output.");
+			return;
+		}
 	}
-
 
 	//-----------------------------set sisim parameters-------------------------------------
     if( ! m_gpf_sisim ){
@@ -577,13 +592,10 @@ void SisimDialog::onConfigureAndRun()
         if( cgSoftData ){
             //file with soft indicator input
             m_gpf_sisim->getParameter<GSLibParFile*>(6)->_path = cgSoftData->getPath();
-            //for sisim_gs, the soft indicator file is a grid file
+			//for sisim_gs, the soft indicator file is a grid file and uses the secondary variable directly
             GSLibParMultiValuedVariable *par7 = m_gpf_sisim->getParameter<GSLibParMultiValuedVariable*>(7);
-            par7->setSize( nThresholdsOrCategories );
-            for( uint i = 0; i < nThresholdsOrCategories; ++i ){ // the indicator column indexes, which are a <uint+>
-                par7->getParameter<GSLibParUInt*>(i)->_value =
-                        m_SoftIndicatorVariablesSelectors[i]->getSelectedVariableGEOEASIndex();
-            }
+			par7->setSize( 1 );
+			par7->getParameter<GSLibParUInt*>(0)->_value = m_SoftIndicatorVariablesSelectors[0]->getSelectedVariableGEOEASIndex();
         }
     }
 
@@ -601,20 +613,20 @@ void SisimDialog::onConfigureAndRun()
         par9->setSize( nThresholdsOrCategories );
     } else if( sisimProgram == "sisim_gs" ){
         //file with calibration table (only for sisim_gs)
-        m_gpf_sisim->getParameter<GSLibParFile*>(9 + offset)->_path = "nofile.dat";
+		m_gpf_sisim->getParameter<GSLibParFile*>(9 + offset)->_path = pathOfFileWithCalibrationTable;
     }
 
     //trimming limits
     if( firstRun ){
         GSLibParMultiValuedFixed *par10 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(10 + offset);
-        par10->getParameter<GSLibParDouble*>(0)->_value = data_min;
+		par10->getParameter<GSLibParDouble*>(0)->_value = data_min;
         par10->getParameter<GSLibParDouble*>(1)->_value = data_max;
     }
 
     //minimum (zmin) and maximum (zmax) data value
     if( firstRun ){
         GSLibParMultiValuedFixed *par11 = m_gpf_sisim->getParameter<GSLibParMultiValuedFixed*>(11 + offset);
-        par11->getParameter<GSLibParDouble*>(0)->_value = data_min;
+		par11->getParameter<GSLibParDouble*>(0)->_value = data_min;
         par11->getParameter<GSLibParDouble*>(1)->_value = data_max;
     }
 
@@ -660,14 +672,15 @@ void SisimDialog::onConfigureAndRun()
 			par34_0->setFromVariogramModel( vmodel );
 		}
 	} else {
-        par34->setCount( nThresholdsOrCategories );
+		par34->setCount( nThresholdsOrCategories );
         for( uint i = 0; i < nThresholdsOrCategories; ++i){
             GSLibParVModel *par34_0 = par34->getParameter<GSLibParVModel*>(i, 0);
             VariogramModelSelector* vms = m_variogramSelectors.at( i );
             VariogramModel *vmodel = vms->getSelectedVModel();
             par34_0->setFromVariogramModel( vmodel );
+			break;
         }
-    }
+	}
 
     //----------------------------prepare and execute sisim--------------------------------
     //show the sisim parameters
