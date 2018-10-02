@@ -157,7 +157,9 @@ void SisimDialog::preview()
         offset = 0;
     else if ( sisimProgram == "sisim_gs" )
         offset = -1;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else if ( sisimProgram == "sisim_lm" )
+		offset = -3;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
     //get the tmp file path created by sisim with the realizations
@@ -176,7 +178,7 @@ void SisimDialog::preview()
     m_cg_simulation->setNReal( m_gpf_sisim->getParameter<GSLibParUInt*>(20 + offset)->_value );
 
     if( m_cg_simulation->getChildCount() < 1 ){
-        QMessageBox::critical( this, "Error", "SISIM yielded a file without data.  It is possible that SISIM crashed.  Check the message panel.  Aborted.");
+		QMessageBox::critical( this, "Error", sisimProgram + " yielded a file without data.  It is possible that " + sisimProgram + " crashed.  Check the message panel.  Aborted.");
         return;
     }
 
@@ -220,7 +222,9 @@ void SisimDialog::previewPostsim()
         offset = 0;
     else if ( sisimProgram == "sisim_gs" )
         offset = -1;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else if ( sisimProgram == "sisim_lm" )
+		offset = -3;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	//get the tmp file path created by sgsim with the realizations
 	QString grid_file_path = m_gpf_postsim->getParameter<GSLibParFile*>(4)->_path;
@@ -314,6 +318,19 @@ void SisimDialog::configureSoftDataUI()
 		ui->lblBidistribution->show();
 		ui->frmBidistribution->show();
 		ui->frmBidistFields->show();
+	} else if( sisimProgram == "sisim_lm" ){
+		//The secondary data is mandatory for sisim_lm
+		m_SoftDataSetSelector = new FileSelectorWidget( FileSelectorType::CartesianGrids, false );
+		ui->frmSoftIndicatorFile->layout()->addWidget( m_SoftDataSetSelector );
+		connect( m_SoftDataSetSelector, SIGNAL(dataFileSelected(DataFile*)),
+				 this, SLOT(onUpdateSoftIndicatorVariablesSelectors()) );
+		ui->lblSecondaryDataFile->setText("Grid with means (soft indicators):");
+		ui->lblSecondaryDataVariables->hide();
+		ui->lblDistrFileSecondary->hide();
+		ui->frmDistrSecondaryData->hide();
+		ui->lblBidistribution->hide();
+		ui->frmBidistribution->hide();
+		ui->frmBidistFields->hide();
 	}
 
     //call this slot to show the soft indicator variables selectors.
@@ -352,6 +369,7 @@ void SisimDialog::onUpdateSoftIndicatorVariablesSelectors()
 		vs->onListVariables( static_cast<DataFile*>(m_SoftDataSetSelector->getSelectedFile()) );
 		m_SoftIndicatorVariablesSelectors.append( vs );
 	}
+	// sisim_lm does not require to set the secondary data variables
 }
 
 void SisimDialog::onUpdateVariogramSelectors()
@@ -597,7 +615,15 @@ void SisimDialog::onConfigureAndRun()
 			par7->setSize( 1 );
 			par7->getParameter<GSLibParUInt*>(0)->_value = m_SoftIndicatorVariablesSelectors[0]->getSelectedVariableGEOEASIndex();
         }
-    }
+	} else if ( sisimProgram == "sisim_lm" ){
+		//for sisim_lm, it is a cartesian file (this file is mandatory in sisim_lm)
+		CartesianGrid *cgSoftData = static_cast<CartesianGrid*>( m_SoftDataSetSelector->getSelectedFile() );
+		if( cgSoftData ){
+			//file with soft indicator input
+			m_gpf_sisim->getParameter<GSLibParFile*>(6)->_path = cgSoftData->getPath();
+			//for sisim_lm, the soft indicator file is a grid file and no secondary variable is specified
+		}
+	}
 
     ///////// Set an offset to account for differences in parameter count between the different sisim programs/////////////////////
     int offset = 0;
@@ -605,7 +631,9 @@ void SisimDialog::onConfigureAndRun()
         offset = 0;
     else if ( sisimProgram == "sisim_gs" )
         offset = -1;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else if ( sisimProgram == "sisim_lm" )
+		offset = -3;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     if( sisimProgram == "sisim"){
         //      calibration B(z) values, which is a <double+> (only for sisim)
@@ -654,6 +682,11 @@ void SisimDialog::onConfigureAndRun()
     else
         par32->getParameter<GSLibParOption*>(0)->_selected_value = 1;
 
+	///////// Adjust offset to account for one less parameter yet for sisim_lm (kriging type)/////////////////////
+	if ( sisimProgram == "sisim_lm" )
+		offset = -4;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
     //Variogram models for each threshold/category of one variogram model if IK is in median mode.
     GSLibParRepeat *par34 = m_gpf_sisim->getParameter<GSLibParRepeat*>(34 + offset);
     if( ui->radioMedianIK->isChecked() ){
@@ -678,11 +711,10 @@ void SisimDialog::onConfigureAndRun()
             VariogramModelSelector* vms = m_variogramSelectors.at( i );
             VariogramModel *vmodel = vms->getSelectedVModel();
             par34_0->setFromVariogramModel( vmodel );
-			break;
         }
 	}
 
-    //----------------------------prepare and execute sisim--------------------------------
+	//----------------------------prepare and execute the SISIM program (sisim, sisim_gs or sisim_lm)--------------------------------
     //show the sisim parameters
     GSLibParametersDialog gsd( m_gpf_sisim, this );
     int result = gsd.exec();
@@ -777,7 +809,9 @@ void SisimDialog::onEnsembleHistogram()
         offset = 0;
     else if ( sisimProgram == "sisim_gs" )
         offset = -1;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else if ( sisimProgram == "sisim_lm" )
+		offset = -3;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //get simulation data
     CartesianGrid* gridRealizations = m_cg_simulation;

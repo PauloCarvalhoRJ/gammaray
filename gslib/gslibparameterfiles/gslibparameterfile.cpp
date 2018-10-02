@@ -123,6 +123,8 @@ void GSLibParameterFile::setDefaultValues()
         this->setDefaultValuesForSisim( "sisim" );
     } else if ( this->_program_name == "sisim_gs" ){
         this->setDefaultValuesForSisim( "sisim_gs" );
+	} else if ( this->_program_name == "sisim_lm" ){
+		this->setDefaultValuesForSisim( "sisim_lm" );
 	} else if ( this->_program_name == "bicalib" ){
 		this->setDefaultValuesForBicalib();
 	} else {
@@ -2119,7 +2121,7 @@ void GSLibParameterFile::setDefaultValuesForSisim(QString sisimProgramName)
     par5->getParameter<GSLibParUInt*>(1)->_value = 2;
     par5->getParameter<GSLibParUInt*>(2)->_value = 0;
     par5->getParameter<GSLibParUInt*>(3)->_value = 3;
-    //file with soft indicator input (point set for sisim and grid for sisim_gs)
+	//file with soft indicator input (point set for sisim and grid for sisim_gs and a gridded mean for sisim_lm)
     getParameter<GSLibParFile*>(6)->_path = "softIK.dat";
     //columns for X,Y,Z (if sisim) and indicators
     if( sisimProgramName == "sisim" ){
@@ -2150,7 +2152,9 @@ void GSLibParameterFile::setDefaultValuesForSisim(QString sisimProgramName)
         offset = 0;
     else if ( sisimProgramName == "sisim_gs" )
         offset = -1;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	else if ( sisimProgramName == "sisim_lm" )
+		offset = -3;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     if( sisimProgramName == "sisim"){
         //      calibration B(z) values, which is a <double+>
         GSLibParMultiValuedVariable *par9 = getParameter<GSLibParMultiValuedVariable*>(9 + offset);
@@ -2242,9 +2246,14 @@ void GSLibParameterFile::setDefaultValuesForSisim(QString sisimProgramName)
     GSLibParMultiValuedFixed *par32 = getParameter<GSLibParMultiValuedFixed*>(32 + offset);
     par32->getParameter<GSLibParOption*>(0)->_selected_value = 0;
     par32->getParameter<GSLibParUInt*>(1)->_value = 0.0;
-    //Kriging type: 0=SK, 1=OK
-    getParameter<GSLibParOption*>(33 + offset)->_selected_value = 0;
-    //Variogram models for each threshold/category of one variogram model if IK is in median mode.
+	//Kriging type: 0=SK, 1=OK (sisim_lm works with locally varying mean)
+	if( sisimProgramName == "sisim" || sisimProgramName == "sisim_hs" )
+		getParameter<GSLibParOption*>(33 + offset)->_selected_value = 0;
+	///////// adjust the offset to account for one parameter less yet in the sisim_lm program/////////////////////
+	if ( sisimProgramName == "sisim_lm" )
+		offset = -4;
+	///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	//Variogram models for each threshold/category of one variogram model if IK is in median mode.
     GSLibParRepeat *par34 = getParameter<GSLibParRepeat*>(34 + offset);
     par34->setCount( 3 );
     for(uint i = 0; i < 3; ++i ){
@@ -3112,6 +3121,15 @@ void GSLibParameterFile::generateParameterFileTemplates(const QString directory_
     }
     par_file.close();
 
+	par_file_path = dir.absoluteFilePath("sisim_lm.par.tpl");
+	par_file.setFileName( par_file_path );
+	if( !par_file.exists() ){
+		par_file.open( QFile::WriteOnly | QFile::Text );
+		QTextStream out(&par_file);
+		generateParameterFileTemplatesSISIMCommons( out, "sisim_lm" );
+	}
+	par_file.close();
+
 	par_file_path = dir.absoluteFilePath("bicalib.par.tpl");
 	par_file.setFileName( par_file_path );
 	if( !par_file.exists() ){
@@ -3161,7 +3179,10 @@ void GSLibParameterFile::generateParameterFileTemplatesSISIMCommons(QTextStream 
         out << "<uint+>                                                                                       -   colums with soft indicators\n";
         out << "<file>                                                                                        -file with calibration table\n";
     }
-    out << "<double> <double>                                                                             -trimming limits\n";
+	if( programName == "sisim_lm" ){
+		out << "<file>                                                                                        -file with gridded indicator prior mean\n";
+	}
+	out << "<double> <double>                                                                             -trimming limits\n";
     out << "<double> <double>                                                                             -minimum (zmin) and maximum (zmax) data value\n";
     out << "<option [1:lin. to zmin][2:pow. to zmin][3:lin. quantiles]> <double>                          -   lower tail option and parameter\n";
     out << "<option [1:linear][2:power to par.][3:lin. quantiles]> <double>                               -   middle     option and parameter\n";
@@ -3184,7 +3205,9 @@ void GSLibParameterFile::generateParameterFileTemplatesSISIMCommons(QTextStream 
     out << "<double> <double> <double>                                                                    -angles for search ellipsoid\n";
     out << "<uint> <uint> <uint>                                                                          -size of covariance lookup table\n";
     out << "<option [0:full][1:median]> <double>                                                          -IK mode: 0=full, 1=median (cutoff)\n";
-    out << "<option [0:SK][1:OK]>                                                                         -K. type: 0=SK, 1=OK\n";
+	if( programName == "sisim" || programName == "sisim_gs" ){
+		out << "<option [0:SK][1:OK]>                                                                         -K. type: 0=SK, 1=OK\n";
+	}
     out << "<repeat>\n";
     out << "   <vmodel>                                                                                   -variogram model for one threshold or category.\n";
 }
