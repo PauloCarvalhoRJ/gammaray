@@ -21,6 +21,9 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
     if( m_HasNotSetItem )
         ui->cmbFile->addItem( "NOT SET" );
 
+	//////////////    ATTENTION: WHENEVER A NEW GROUP IS USED HERE,          /////////////
+	//////////////  YOU NEED TO UPDATE the other methods in this class.  /////////////////
+
     //adds files from the Resource Files Group of type according to the types specified in m_filesOfTypes
     ObjectGroup* og = project->getResourcesGroup();
     for( int i = 0; i < og->getChildCount(); ++i){
@@ -71,10 +74,11 @@ File *FileSelectorWidget::getSelectedFile()
 {
     Project* project = Application::instance()->getProject();
 
-    const uint nogs = 2;
+	const uint nogs = 3;
     ObjectGroup* ogs[nogs] = {project->getResourcesGroup(),
-                              project->getDataFilesGroup()
-                             };
+							  project->getDataFilesGroup(),
+							  project->getDistributionsGroup()
+							 };
 
     for( uint j = 0; j < nogs; ++j){
         ObjectGroup* og = ogs[j];
@@ -98,8 +102,6 @@ void FileSelectorWidget::onSelection(int /*index*/)
     m_File = nullptr;
     Project* project = Application::instance()->getProject();
 
-	//ATTENTION: WHENEVER A NEW GROUP IS USED IN THE CONSTRUCTOR,
-	//           YOU NEED TO UPDATE THIS NUMBER AND THE ARRAY BELOW.
 	const uint nogs = 3;
     ObjectGroup* ogs[nogs] = {project->getResourcesGroup(),
 							  project->getDataFilesGroup(),
