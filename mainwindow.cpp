@@ -623,7 +623,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             //determine the destination CartesianGrid of the projection operation
             CartesianGrid* cg = nullptr;
-            cg = static_cast<CartesianGrid*>( file );
+			cg = dynamic_cast<CartesianGrid*>( file );
             //if user selected an attribute and a grid
             if( at && cg ){
                 //determine the origin grid.
