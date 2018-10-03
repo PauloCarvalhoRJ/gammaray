@@ -1018,12 +1018,19 @@ void MainWindow::onGetPoints()
     GSLib::instance()->runProgram( "getpoints", par_file_path );
     Application::instance()->logInfo("getpoints completed.");
 
+	//check whether the generated file actually exists
+	QFile tmpFile( gpf.getParameter<GSLibParFile*>(5)->_path );
+	if( ! tmpFile.exists()  ){
+		Application::instance()->logError( "MainWindow::onGetPoints(): the output file was not generated or is not accessible. Operation canceled. Check the messages panel.", true );
+		return;
+	}
+
     //call rename to trim trailing spaces that getpoints leaves in varable names
-    Util::renameGEOEASvariable( gpf.getParameter<GSLibParFile*>(5)->_path, "aaaaaaaaaaa", "aaaaaaaaaaa");
+	Util::renameGEOEASvariable( gpf.getParameter<GSLibParFile*>(5)->_path, "aaaaaaaaaaa", "aaaaaaaaaaa");
 
     //update the point set file with the new file with the collocated variables transfered
     //from the cartesian grid.
-    point_set->replacePhysicalFile( gpf.getParameter<GSLibParFile*>(5)->_path );
+	point_set->replacePhysicalFile( gpf.getParameter<GSLibParFile*>(5)->_path );
 }
 
 void MainWindow::onNScore()
