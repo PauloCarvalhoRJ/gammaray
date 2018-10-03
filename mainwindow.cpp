@@ -625,7 +625,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             CartesianGrid* cg = nullptr;
 			cg = dynamic_cast<CartesianGrid*>( file );
             //if user selected an attribute and a grid
-            if( at && cg ){
+			if( at && cg && at->getContainingFile() != file ){
                 //determine the origin grid.
                 CartesianGrid* cgOrig = nullptr;
                 File* parentFileOfSelectedAttribute = at->getContainingFile();
