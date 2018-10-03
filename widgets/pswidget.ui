@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>483</width>
-    <height>352</height>
+    <height>368</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,16 +17,7 @@
    <property name="spacing">
     <number>0</number>
    </property>
-   <property name="leftMargin">
-    <number>0</number>
-   </property>
-   <property name="topMargin">
-    <number>0</number>
-   </property>
-   <property name="rightMargin">
-    <number>0</number>
-   </property>
-   <property name="bottomMargin">
+   <property name="margin">
     <number>0</number>
    </property>
    <item>
@@ -39,24 +30,15 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>435</width>
-        <height>350</height>
+        <width>431</width>
+        <height>364</height>
        </rect>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout_2">
        <property name="spacing">
         <number>0</number>
        </property>
-       <property name="leftMargin">
-        <number>0</number>
-       </property>
-       <property name="topMargin">
-        <number>0</number>
-       </property>
-       <property name="rightMargin">
-        <number>0</number>
-       </property>
-       <property name="bottomMargin">
+       <property name="margin">
         <number>0</number>
        </property>
       </layout>
@@ -75,7 +57,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/zoomin</normaloff>:/icons/zoomin</iconset>
         </property>
        </widget>
@@ -89,7 +71,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/zoomout</normaloff>:/icons/zoomout</iconset>
         </property>
        </widget>
@@ -103,7 +85,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/80dpi</normaloff>:/icons/80dpi</iconset>
         </property>
        </widget>
@@ -117,7 +99,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/150dpi</normaloff>:/icons/150dpi</iconset>
         </property>
        </widget>
@@ -131,7 +113,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/300dpi</normaloff>:/icons/300dpi</iconset>
         </property>
        </widget>
@@ -145,7 +127,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/600dpi</normaloff>:/icons/600dpi</iconset>
         </property>
        </widget>
@@ -159,7 +141,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/snapshot</normaloff>:/icons/snapshot</iconset>
         </property>
        </widget>
@@ -173,7 +155,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/crosshairs16</normaloff>:/icons/crosshairs16</iconset>
         </property>
        </widget>
@@ -187,7 +169,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
         </property>
        </widget>
@@ -201,7 +183,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
         </property>
        </widget>
@@ -225,7 +207,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>

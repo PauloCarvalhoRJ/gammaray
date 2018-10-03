@@ -68,7 +68,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="resources.qrc">
+        <iconset resource="../resources.qrc">
          <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
        </property>
       </widget>
@@ -86,7 +86,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="resources.qrc">
+        <iconset resource="../resources.qrc">
          <normaloff>:/icons/bclosed</normaloff>:/icons/bclosed</iconset>
        </property>
       </widget>
@@ -100,7 +100,7 @@
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="resources.qrc">
+        <iconset resource="../resources.qrc">
          <normaloff>:/icons/bopen</normaloff>:/icons/bopen</iconset>
        </property>
       </widget>
@@ -125,16 +125,7 @@
      <property name="spacing">
       <number>1</number>
      </property>
-     <property name="leftMargin">
-      <number>1</number>
-     </property>
-     <property name="topMargin">
-      <number>1</number>
-     </property>
-     <property name="rightMargin">
-      <number>1</number>
-     </property>
-     <property name="bottomMargin">
+     <property name="margin">
       <number>1</number>
      </property>
      <item>
@@ -142,16 +133,7 @@
        <property name="spacing">
         <number>1</number>
        </property>
-       <property name="leftMargin">
-        <number>1</number>
-       </property>
-       <property name="topMargin">
-        <number>1</number>
-       </property>
-       <property name="rightMargin">
-        <number>1</number>
-       </property>
-       <property name="bottomMargin">
+       <property name="margin">
         <number>1</number>
        </property>
        <item>
@@ -225,7 +207,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>

@@ -20,7 +20,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="resources.qrc">:/icons/logo32</pixmap>
+      <pixmap resource="../resources.qrc">:/icons/logo32</pixmap>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -52,7 +52,7 @@
       <string/>
      </property>
      <property name="pixmap">
-      <pixmap resource="resources.qrc">:/icons/ccbysa_sm</pixmap>
+      <pixmap resource="../resources.qrc">:/icons/ccbysa_sm</pixmap>
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
@@ -75,6 +75,7 @@
   </layout>
  </widget>
  <resources>
+  <include location="../resources.qrc"/>
   <include location="resources.qrc"/>
  </resources>
  <connections>
