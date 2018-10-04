@@ -137,3 +137,18 @@ void GridFile::setColumnData(uint dataColumn, spectral::array & array)
 	//update the project tree in the main window.
 	Application::instance()->refreshProjectTree();
 }
+
+double GridFile::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
+{
+	uint i, j, k;
+	indexToIJK( iRecord, i, j, k );
+	i += dI;
+	j += dJ;
+	k += dK;
+	if( i >= m_nI || j >= m_nJ || k >= m_nK ) //unsigned ints become huge if converted from negative integers
+		return std::numeric_limits<double>::quiet_NaN();
+	double value = dataIJK( iVar, i, j, k );
+	if( isNDV( value ) )
+		value = std::numeric_limits<double>::quiet_NaN();
+	return value;
+}

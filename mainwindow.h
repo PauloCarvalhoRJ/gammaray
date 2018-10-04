@@ -183,6 +183,7 @@ private slots:
     void onSaveArrayAsNewVariableInCartesianGrid(spectral::array* array,
                                                  IJAbstractCartesianGrid* gridWithGridSpecs );
 	void onFactorialKriging();
+	void onCreateGeoGridFromBaseAndTop();
 
 private:
     /**

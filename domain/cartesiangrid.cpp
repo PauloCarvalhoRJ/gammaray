@@ -621,20 +621,6 @@ void CartesianGrid::getSpatialAndTopologicalCoordinates(int iRecord, double & x,
 	z = _z0 + k * _dz;
 }
 
-double CartesianGrid::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
-{
-	uint i, j, k;
-	indexToIJK( iRecord, i, j, k );
-	i += dI;
-	j += dJ;
-	k += dK;
-	if( i >= m_nI || j >= m_nJ || k >= m_nK ) //unsigned ints become huge if converted from negative integers
-		return std::numeric_limits<double>::quiet_NaN();
-    double value = dataIJK( iVar, i, j, k );
-    if( isNDV( value ) )
-        value = std::numeric_limits<double>::quiet_NaN();
-    return value;
-}
 
 void CartesianGrid::setOrigin(double x0, double y0, double z0)
 {
@@ -653,6 +639,7 @@ double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoor
 	case CartesianCoord::X: return x;
 	case CartesianCoord::Y: return y;
 	case CartesianCoord::Z: return z;
+	default: return x;
 	}
 }
 

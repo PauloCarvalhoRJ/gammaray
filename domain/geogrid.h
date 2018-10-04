@@ -1,7 +1,7 @@
 #ifndef GEOGRID_H
 #define GEOGRID_H
 
-#include "datafile.h"
+#include "gridfile.h"
 
 class CartesianGrid;
 
@@ -55,11 +55,19 @@ typedef std::shared_ptr< CellDefRecord > CellDefRecordPtr;
 
 /////////////////////////////////////////////////  The GeoGrid class ///////////////////////////////////////////////////////////
 
-class GeoGrid : public DataFile
+class GeoGrid : public GridFile
 {
 
 public:
-	GeoGrid();
+
+	/** Constructor of a grid already saved. **/
+	GeoGrid( QString path );
+
+	/** The simplest geometry initializing constructor.  Creates its geometry from top and base values
+	 * of a map (2D CartesianGrid).
+	 * @param nHorizonSlices The number of cell layers between top and base.  Minimum is 1.
+	 */
+	GeoGrid( QString path, Attribute* atTop, Attribute* atBase, uint nHorizonSlices );
 
 
 //DataFile interface
@@ -89,13 +97,10 @@ public:
 // ICalcPropertyCollection interface
 public:
 	virtual void getSpatialAndTopologicalCoordinates(int iRecord, double& x, double& y, double& z, int& i, int& j, int& k );
-	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 
 private:
-	CartesianGrid* m_cgPart;
 	std::vector< VertexRecordPtr > m_vertexesPart;
 	std::vector< CellDefRecordPtr > m_cellDefsPart;
-
 };
 
 #endif // GEOGRID_H

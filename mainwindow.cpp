@@ -540,7 +540,11 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 menu_caption_rfft += "mag. = " + _right_clicked_attribute->getName();
                 menu_caption_rfft += "; phase = " + _right_clicked_attribute2->getName();
                 _projectContextMenu->addAction(menu_caption_rfft, this, SLOT(onRFFT()));
-            }
+				QString menu_caption_geobase = "Create GeoGrid: ";
+				menu_caption_geobase += "top = " + _right_clicked_attribute->getName();
+				menu_caption_geobase += "; base = " + _right_clicked_attribute2->getName();
+				_projectContextMenu->addAction(menu_caption_geobase, this, SLOT(onCreateGeoGridFromBaseAndTop()));
+			}
         }
         //if both objects are variables and have different parent files,
         if( index1.isValid() && index2.isValid() &&
@@ -2172,6 +2176,11 @@ void MainWindow::onFactorialKriging()
 {
 	FactorialKrigingDialog *fkd = new FactorialKrigingDialog( this );
 	fkd->show();
+}
+
+void MainWindow::onCreateGeoGridFromBaseAndTop()
+{
+
 }
 
 void MainWindow::onCreateCategoryDefinition()
