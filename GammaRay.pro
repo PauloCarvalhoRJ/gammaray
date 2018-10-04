@@ -220,7 +220,8 @@ SOURCES += main.cpp\
     geostats/searchellipsoid.cpp \
     geostats/pointsetcell.cpp \
     geostats/indexedspatiallocation.cpp \
-    domain/geogrid.cpp
+    domain/geogrid.cpp \
+    domain/gridfile.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -419,7 +420,8 @@ HEADERS  += mainwindow.h \
     geostats/searchellipsoid.h \
     geostats/pointsetcell.h \
     geostats/indexedspatiallocation.h \
-    domain/geogrid.h
+    domain/geogrid.h \
+    domain/gridfile.h
 
 
 FORMS    += mainwindow.ui \

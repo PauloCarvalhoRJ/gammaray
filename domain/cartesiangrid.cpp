@@ -17,16 +17,16 @@
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/scoped_array.hpp>
 
-CartesianGrid::CartesianGrid( QString path )  : DataFile( path ), IJAbstractCartesianGrid()
+CartesianGrid::CartesianGrid( QString path )  : GridFile( path ), IJAbstractCartesianGrid()
 {
     this->_dx = 0.0;
     this->_dy = 0.0;
     this->_dz = 0.0;
     this->_no_data_value = "";
-    this->_nreal = 0;
-    this->_nx = 0;
-    this->_ny = 0;
-    this->_nz = 0;
+	this->m_nreal = 0;
+	this->m_nI = 0;
+	this->m_nJ = 0;
+	this->m_nK = 0;
     this->_rot = 0.0;
     this->_x0 = 0.0;
     this->_y0 = 0.0;
@@ -44,10 +44,10 @@ void CartesianGrid::setInfo(double x0, double y0, double z0,
     this->_dy = dy;
     this->_dz = dz;
     this->_no_data_value = no_data_value;
-    this->_nreal = nreal;
-    this->_nx = nx;
-    this->_ny = ny;
-    this->_nz = nz;
+	this->m_nreal = nreal;
+	this->m_nI = nx;
+	this->m_nJ = ny;
+	this->m_nK = nz;
     this->_rot = rot;
     this->_x0 = x0;
     this->_y0 = y0;
@@ -220,34 +220,8 @@ void CartesianGrid::setInfoFromGridParameter(GSLibParGrid *pg)
 
 void CartesianGrid::setCellGeometry(int nx, int ny, int nz, double dx, double dy, double dz)
 {
-    this->setInfo( _x0, _y0, _z0, dx, dy, dz, nx, ny, nz, _rot, _nreal,
+	this->setInfo( _x0, _y0, _z0, dx, dy, dz, nx, ny, nz, _rot, m_nreal,
                    _no_data_value, _nsvar_var_trn, _categorical_attributes);
-}
-
-void CartesianGrid::setDataIJK(uint column, uint i, uint j, uint k, double value)
-{
-    //TODO: verify any data update flags (specially in DataFile class)
-    uint dataRow = i + j*_nx + k*_ny*_nx;
-    _data[dataRow][column] = value;
-}
-
-std::vector<std::complex<double> > CartesianGrid::getArray(int indexColumRealPart, int indexColumImaginaryPart)
-{
-    std::vector< std::complex<double> > result( _nx * _ny * _nz ); //[_nx][_ny][_nz]
-
-    for( uint k = 0; k < _nz; ++k)
-        for( uint j = 0; j < _ny; ++j)
-            for( uint i = 0; i < _nx; ++i){
-				double real = 0.0;
-				double im = 0.0;
-                if( indexColumRealPart >= 0 )
-                    real = dataIJK( indexColumRealPart, i, j, k);
-                if( indexColumImaginaryPart >= 0 )
-                    im = dataIJK( indexColumImaginaryPart, i, j, k);
-                result[i + j*_nx + k*_ny*_nx] = std::complex<double>(real, im);
-            }
-
-    return result;
 }
 
 std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, int rateJ, int rateK,
@@ -255,16 +229,16 @@ std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, i
 {
     std::vector< std::vector<double> > result;
 
-    uint totDataLinesPerRealization = _nx * _ny * _nz;
+	uint totDataLinesPerRealization = m_nI * m_nJ * m_nK;
 
     //load just the first line to get the number of columns (assuming the file is right)
     setDataPage( 0, 0 );
     uint nDataColumns = getDataColumnCount();
 
-    result.reserve( _nreal * (_nx/rateI) * (_ny/rateJ) * (_nz/rateK) * nDataColumns );
+	result.reserve( m_nreal * (m_nI/rateI) * (m_nJ/rateJ) * (m_nK/rateK) * nDataColumns );
 
     //for each realization (at least one)
-    for( uint r = 0; r < _nreal; ++r ){
+	for( uint r = 0; r < m_nreal; ++r ){
         //compute the first and last data lines to load (does not need to load everything at once)
         ulong firstDataLine = r * totDataLinesPerRealization;
         ulong lastDataLine = firstDataLine + totDataLinesPerRealization - 1;
@@ -273,11 +247,11 @@ std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, i
         loadData();
         //perform the resampling for a realization
         finalNK = 0;
-        for( uint k = 0; k < _nz; k += rateK, ++finalNK ){
+		for( uint k = 0; k < m_nK; k += rateK, ++finalNK ){
             finalNJ = 0;
-            for( uint j = 0; j < _ny; j += rateJ, ++finalNJ ){
+			for( uint j = 0; j < m_nJ; j += rateJ, ++finalNJ ){
                 finalNI = 0;
-                for( uint i = 0; i < _nx; i += rateI, ++finalNI ){
+				for( uint i = 0; i < m_nI; i += rateI, ++finalNI ){
                     std::vector<double> dataLine;
                     dataLine.reserve( nDataColumns );
                     for( uint d = 0; d < nDataColumns; ++d){
@@ -295,33 +269,6 @@ std::vector<std::vector<double> > CartesianGrid::getResampledValues(int rateI, i
     return result;
 }
 
-double CartesianGrid::valueAt(uint dataColumn, double x, double y, double z, bool logOnError )
-{
-    uint i, j, k;
-    if( ! XYZtoIJK( x, y, z, i, j, k ) ){
-        if( logOnError )
-            Application::instance()->logError("CartesianGrid::valueAt(): conversion from grid coordinates to spatial coordinates failed.  Returning NDV or NaN.");
-        if( this->hasNoDataValue() )
-            return getNoDataValueAsDouble();
-        else
-            return std::numeric_limits<double>::quiet_NaN();
-    }
-
-    //get the value
-    return this->dataIJK( dataColumn, i, j, k);
-}
-
-void CartesianGrid::setDataPageToRealization(uint nreal)
-{
-    if( nreal >= _nreal ){
-        Application::instance()->logError("CartesianGrid::setDataPageToRealization(): invalid realization number: " +
-                                          QString::number( nreal ) + " (max. == " + QString::number( _nreal ) + "). Nothing done.");
-        return;
-    }
-    ulong firstLine = nreal * _nx * _ny * _nz;
-    ulong lastLine = (nreal+1) * _nx * _ny * _nz - 1; //the interval in DataFile::setDataPage() is inclusive.
-    setDataPage( firstLine, lastLine );
-}
 
 double CartesianGrid::getRotation() const
 {
@@ -419,9 +366,9 @@ SpatialLocation CartesianGrid::getCenter()
 	double x0 = _x0 - _dx / 2.0;
 	double y0 = _y0 - _dy / 2.0;
 	double z0 = _z0 - _dz / 2.0;
-    double xf = x0 + _dx * _nx;
-    double yf = y0 + _dy * _ny;
-    double zf = z0 + _dz * _nz;
+	double xf = x0 + _dx * m_nI;
+	double yf = y0 + _dy * m_nJ;
+	double zf = z0 + _dz * m_nK;
     result._x = (xf + x0) / 2.0;
     result._y = (yf + y0) / 2.0;
     result._z = (zf + z0) / 2.0;
@@ -525,11 +472,11 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
     i = (x - xWest) / _dx;
     j = (y - ySouth) / _dy;
     k = 0;
-    if( _nz > 1 )
+	if( m_nK > 1 )
         k = (z - zBottom) / _dz;
 
     //check whether the location is outside the grid
-    if( /*i < 0 ||*/ i >= _nx || /*j < 0 ||*/ j >= _ny || /*k < 0 ||*/ k >= _nz ){
+	if( /*i < 0 ||*/ i >= m_nI || /*j < 0 ||*/ j >= m_nJ || /*k < 0 ||*/ k >= m_nK ){
         return false;
     }
 	return true;
@@ -539,15 +486,10 @@ void CartesianGrid::IJKtoXYZ(uint i, uint j, uint k, double &x, double &y, doubl
 {
 	x = _x0 + _dx / 2 + _dx * i;
 	y = _y0 + _dy / 2 + _dy * j;
-	if( _nz > 1 )
+	if( m_nK > 1 )
 		z = _z0 + _dz / 2 + _dz * k;
 	else
 		z = 0.0; //2D grids are positioned at Z=0.0 by convention
-}
-
-void CartesianGrid::setNReal(uint n)
-{
-    _nreal = n;
 }
 
 bool CartesianGrid::canHaveMetaData()
@@ -570,14 +512,14 @@ void CartesianGrid::updateMetaDataFile()
     out << "X0:" << QString::number( this->_x0, 'g', 12) << '\n';
     out << "Y0:" << QString::number( this->_y0, 'g', 12) << '\n';
     out << "Z0:" << QString::number( this->_z0, 'g', 12) << '\n';
-    out << "NX:" << this->_nx << '\n';
-    out << "NY:" << this->_ny << '\n';
-    out << "NZ:" << this->_nz << '\n';
+	out << "NX:" << this->m_nI << '\n';
+	out << "NY:" << this->m_nJ << '\n';
+	out << "NZ:" << this->m_nK << '\n';
     out << "DX:" << this->_dx << '\n';
     out << "DY:" << this->_dy << '\n';
     out << "DZ:" << this->_dz << '\n';
     out << "ROT:" << this->_rot << '\n';
-    out << "NREAL:" << this->_nreal << '\n';
+	out << "NREAL:" << this->m_nreal << '\n';
     out << "NDV:" << this->_no_data_value << '\n';
     QMapIterator<uint, QPair<uint,QString> > j( this->_nsvar_var_trn );
     while (j.hasNext()) {
@@ -593,8 +535,8 @@ void CartesianGrid::updateMetaDataFile()
 
 QIcon CartesianGrid::getIcon()
 {
-    if( _nreal == 1){
-        if(_nz == 1){
+	if( m_nreal == 1){
+		if(m_nK == 1){
             if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
                 return QIcon(":icons/cartesiangrid16");
             else
@@ -606,7 +548,7 @@ QIcon CartesianGrid::getIcon()
                 return QIcon(":icons32/cg3D32");
         }
     } else {
-        if(_nz == 1){
+		if(m_nK == 1){
             return QIcon(":icons32/cartesiangridN32");
         }else{
             return QIcon(":icons32/cartesiangrid_3DN_32");
@@ -628,11 +570,11 @@ View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
 
 spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
 {
-    spectral::array* data = new spectral::array( _nx, _ny, _nz, 0.0 );
+	spectral::array* data = new spectral::array( m_nI, m_nJ, m_nK, 0.0 );
     long idx = 0;
-    for (ulong i = 0; i < _nx; ++i) {
-        for (ulong j = 0; j < _ny; ++j) {
-            for (ulong k = 0; k < _nz; ++k) {
+	for (ulong i = 0; i < m_nI; ++i) {
+		for (ulong j = 0; j < m_nJ; ++j) {
+			for (ulong k = 0; k < m_nK; ++k) {
                 double value = dataIJK(nDataColumn, i, j, k);
                 if( ! isNDV( value ) )
                     data->d_[idx] = value ;
@@ -647,11 +589,11 @@ spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
 
 spectral::complex_array *CartesianGrid::createSpectralComplexArray(int variableIndex1, int variableIndex2)
 {
-    spectral::complex_array* data = new spectral::complex_array( _nx, _ny, _nz );
+	spectral::complex_array* data = new spectral::complex_array( m_nI, m_nJ, m_nK );
     long idx = 0;
-    for (ulong i = 0; i < _nx; ++i) {
-        for (ulong j = 0; j < _ny; ++j) {
-            for (ulong k = 0; k < _nz; ++k) {
+	for (ulong i = 0; i < m_nI; ++i) {
+		for (ulong j = 0; j < m_nJ; ++j) {
+			for (ulong k = 0; k < m_nK; ++k) {
                 data->d_[idx][0] = dataIJK(variableIndex1, i, j, k);
                 data->d_[idx][1] = dataIJK(variableIndex2, i, j, k);
                 ++idx;
@@ -686,81 +628,12 @@ double CartesianGrid::getNeighborValue(int iRecord, int iVar, int dI, int dJ, in
 	i += dI;
 	j += dJ;
 	k += dK;
-	if( i >= _nx || j >= _ny || k >= _nz ) //unsigned ints become huge if converted from negative integers
+	if( i >= m_nI || j >= m_nJ || k >= m_nK ) //unsigned ints become huge if converted from negative integers
 		return std::numeric_limits<double>::quiet_NaN();
     double value = dataIJK( iVar, i, j, k );
     if( isNDV( value ) )
         value = std::numeric_limits<double>::quiet_NaN();
     return value;
-}
-
-long CartesianGrid::append(const QString columnName, const spectral::array &array)
-{
-    long index = addEmptyDataColumn( columnName, _nx * _ny * _nz );
-
-    ulong idx = 0;
-    for (ulong i = 0; i < _nx; ++i) {
-        for (ulong j = 0; j < _ny; ++j) {
-            for (ulong k = 0; k < _nz; ++k) {
-                double value = array.d_[idx];
-                setDataIJK( index, i, j, k, value );
-                ++idx;
-            }
-        }
-    }
-
-    if( idx != _nx * _ny * _nz )
-        Application::instance()->logError("CartesianGrid::append(): mismatch between number of data values added and Cartesian grid cell count.");
-
-    writeToFS();
-
-    //update the project tree in the main window.
-    Application::instance()->refreshProjectTree();
-
-	return index;
-}
-
-void CartesianGrid::indexToIJK(uint index, uint & i, uint & j, uint & k)
-{
-	uint val = index;
-	uint nynx = _ny * _nx;
-	k = val / nynx;
-	val -= (k*nynx);
-	j = val / _nx;
-	i = val % _nx;
-}
-
-void CartesianGrid::setColumnData(uint dataColumn, spectral::array & array)
-{
-	loadData();
-
-	double NDV;
-	if( hasNoDataValue() )
-		NDV = getNoDataValueAsDouble();
-	else
-		NDV = -99999.0;
-
-	//data replacement loop
-	ulong idx = 0;
-	for (ulong i = 0; i < _nx; ++i) {
-		for (ulong j = 0; j < _ny; ++j) {
-			for (ulong k = 0; k < _nz; ++k) {
-				double value = array.d_[idx];
-				if( std::isnan( value ) )
-					value = NDV;
-				setDataIJK( dataColumn, i, j, k, value );
-				++idx;
-			}
-		}
-	}
-
-	if( idx != _nx * _ny * _nz )
-		Application::instance()->logError("CartesianGrid::setColumnData(): mismatch between number of data values added and Cartesian grid cell count.");
-
-	writeToFS();
-
-	//update the project tree in the main window.
-    Application::instance()->refreshProjectTree();
 }
 
 void CartesianGrid::setOrigin(double x0, double y0, double z0)
@@ -785,5 +658,5 @@ double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoor
 
 bool CartesianGrid::isTridimensional()
 {
-	return _nz > 1;
+	return m_nK > 1;
 }

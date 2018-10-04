@@ -1,7 +1,7 @@
 #ifndef CARTESIANGRID_H
 #define CARTESIANGRID_H
 
-#include "datafile.h"
+#include "gridfile.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include <set>
 
@@ -10,11 +10,8 @@ class GridCell;
 class SVDFactor;
 class SpatialLocation;
 
-namespace spectral{
-   class array;
-}
 
-class CartesianGrid : public DataFile, public IJAbstractCartesianGrid
+class CartesianGrid : public GridFile, public IJAbstractCartesianGrid
 {
 public:
     CartesianGrid( QString path );
@@ -59,32 +56,12 @@ public:
 	double getDX() const { return _dx; }
 	double getDY() const { return _dy; }
 	double getDZ() const { return _dz; }
-	uint getNX() const { return _nx; }
-	uint getNY() const { return _ny; }
-	uint getNZ() const { return _nz; }
+	uint getNX() const { return m_nI; }
+	uint getNY() const { return m_nJ; }
+	uint getNZ() const { return m_nK; }
 	double getRot() const { return _rot; }
-	uint getNReal() const { return _nreal; }
+	uint getNReal() const { return m_nreal; }
     //@}
-
-    /**
-     * Returns a value from the data column (0 = 1st column) given a grid topological coordinate (IJK).
-     * @param i must be between 0 and NX-1.
-     * @param j must be between 0 and NY-1.
-     * @param k must be between 0 and NZ-1.
-     */
-    inline double dataIJK(uint column, uint i, uint j, uint k){
-        uint dataRow = i + j*_nx + k*_ny*_nx;
-        return data( dataRow, column );
-    }
-
-    /** Creates a vector of complex numbers with the values taken from data columns.
-     *  Specify -1 to omit a column, which causes the repective part to be filled with zeros.
-     *  getArray(-1,-1) returns an array filled with zeroes.  The dimension of the array is that
-     *  of the Cartesian grid (getNX(), getNY(), getNZ()).
-     *  @param indexColumRealPart Column index (starting with 0) with the values for the real part.
-     *  @param indexColumRealPart Column index (starting with 0) with the values for the imaginary part.
-     */
-    std::vector< std::complex<double> > getArray( int indexColumRealPart, int indexColumImaginaryPart = -1 );
 
     /** Returns a data array skipping elements in the original data.
      *  Passing rates 1,1,1 results in a simple copy.
@@ -95,59 +72,19 @@ public:
     std::vector< std::vector<double> > getResampledValues(int rateI, int rateJ, int rateK ,
                                                           int &finalNI, int &finalNJ, int &finalNK);
 
-    /** Returns the value of the variable (given by its zero-based index) at the given spatial location.
-     *  The function returns the value of grid cell that contains the given location.  The z coordinate is ignored
-     * if the grid is 2D.
-     * Make sure you load the desired realization with DataFile::setDataPage(), otherwise the value of the first
-     * realization will be returned.
-     * @param logOnError Enables error logging.  Enabling this might cause overflow error if called frequently
-     *        with invalid coordinates, which is common when called from framework callbacks (e.g. grid rendering)
-     */
-    double valueAt(uint dataColumn, double x, double y, double z, bool logOnError = false);
-
-    /**
-     * Make a call to DataFile::setDataPage() such that only the given realization number is loaded into memory.
-     * First realization is number 0 (zero).  To restore the default behavior (load entire data), call
-     * DataFile::setDataPageToAll().
-     */
-    void setDataPageToRealization( uint nreal );
-
-    /** Returns the grid's center. */
-    SpatialLocation getCenter();
-
-    /**
-     * Returns, via output variables (i,j and k), the IJK coordinates corresponding to a XYZ spatial coordinate.
-     * Returns false if the spatial coordinate lies outside the grid.
-     */
-    bool XYZtoIJK( double x, double y, double z,
-                   uint& i,   uint& j,   uint& k );
-
-	/**
-	 * Returns, via output variables (z, y and z), the XYZ coordinates corresponding to a IJK topological coordinate.
-	 * The returned coordinate is that of the center of the cell.
-	 */
-	void IJKtoXYZ( uint i,    uint j,    uint k,
-				   double& x, double& y, double& z );
-
-	/** Sets the number of realizations.
-     * This is declarative only.  No check is performed whether there are actually the number of
-     * realizations informed.
-     */
-    void setNReal( uint n );
-
-    /** Adds de contents of the given data array as new column to this Cartesian grid. */
-    long append( const QString columnName, const spectral::array& array );
-
-	/** Converts a data row index into topological coordinates (output parameters). */
-	void indexToIJK(uint index, uint & i, uint & j, uint & k );
-
-	/** Replaces the data in the column with the data in passed data array. */
-	void setColumnData( uint dataColumn, spectral::array& array );
 
     /** Translates the grid to the given origin. */
     void setOrigin( double x0, double y0, double z0 );
 
-    //DataFile interface
+//GridFile interface
+	virtual bool XYZtoIJK( double x, double y, double z,
+						   uint& i,   uint& j,   uint& k );
+	virtual SpatialLocation getCenter();
+	virtual void IJKtoXYZ( uint i,    uint j,    uint k,
+						   double& x, double& y, double& z );
+
+
+//DataFile interface
 public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
 	virtual bool isWeight( Attribute* /*at*/ ) { return false; }
@@ -210,15 +147,7 @@ public:
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;
-    uint _nx, _ny, _nz, _nreal;
 
-    /**
-     * Sets a value in the data column (0 = 1st column) given a grid topological coordinate (IJK).
-     * @param i must be between 0 and NX-1.
-     * @param j must be between 0 and NY-1.
-     * @param k must be between 0 and NZ-1.
-     */
-    void setDataIJK( uint column, uint i, uint j, uint k, double value );
 };
 
 #endif // CARTESIANGRID_H
