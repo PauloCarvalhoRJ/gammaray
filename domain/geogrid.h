@@ -55,6 +55,8 @@ typedef std::shared_ptr< CellDefRecord > CellDefRecordPtr;
 
 /////////////////////////////////////////////////  The GeoGrid class ///////////////////////////////////////////////////////////
 
+/** The GeoGrid is an irregular structured grid.  See the program manual for more in-depth
+ * details of the GeoGrid and how it can be used with GSLib programs designed for redgular Cartesian grids.*/
 class GeoGrid : public GridFile
 {
 
@@ -69,6 +71,11 @@ public:
 	 */
 	GeoGrid( QString path, Attribute* atTop, Attribute* atBase, uint nHorizonSlices );
 
+
+//GridFile interface
+	virtual void IJKtoXYZ( uint i,    uint j,    uint k,
+						   double& x, double& y, double& z );
+	virtual SpatialLocation getCenter();
 
 //DataFile interface
 public:
@@ -102,5 +109,7 @@ private:
 	std::vector< VertexRecordPtr > m_vertexesPart;
 	std::vector< CellDefRecordPtr > m_cellDefsPart;
 };
+
+typedef std::shared_ptr<GeoGrid> GeoGridPtr;
 
 #endif // GEOGRID_H

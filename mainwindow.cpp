@@ -50,6 +50,7 @@
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
+#include "domain/geogrid.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -2180,7 +2181,16 @@ void MainWindow::onFactorialKriging()
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
+	//open the renaming dialog
+	bool ok;
+	QString new_file_name = QInputDialog::getText(this, "Name the new grid file",
+											 "New file name:", QLineEdit::Normal, "", &ok);
+	if( ! ok )
+		return;
 
+	QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
+
+	GeoGridPtr geoGrid( new GeoGrid( new_file_path, _right_clicked_attribute, _right_clicked_attribute2 ) );
 }
 
 void MainWindow::onCreateCategoryDefinition()

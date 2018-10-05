@@ -64,10 +64,13 @@ GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHori
 	//allocate the cell definition list
 	m_cellDefsPart.reserve( nCells );
 
+	//assign vertexes id's to the cells
 	for( uint k = 0; k < nKCells; ++k ){
 		for( uint j = 0; j < nJCells; ++j ){
 			for( uint i = 0; i < nICells; ++i ){
 				CellDefRecordPtr cellDef( new CellDefRecord() );
+				//see Doxygen of CellDefRecordPtr in geogrid.h for a diagram of vertex arrangement in space
+				// and how they form the edges and faces of the visual representation of the cell.
 				cellDef->vId[0] = ( k + 0 ) * nJVertexes * nIVertexes + ( j + 0 ) * nIVertexes + ( i + 0 );
 				cellDef->vId[1] = ( k + 0 ) * nJVertexes * nIVertexes + ( j + 0 ) * nIVertexes + ( i + 1 );
 				cellDef->vId[2] = ( k + 0 ) * nJVertexes * nIVertexes + ( j + 1 ) * nIVertexes + ( i + 1 );
@@ -76,9 +79,50 @@ GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHori
 				cellDef->vId[5] = ( k + 1 ) * nJVertexes * nIVertexes + ( j + 0 ) * nIVertexes + ( i + 1 );
 				cellDef->vId[6] = ( k + 1 ) * nJVertexes * nIVertexes + ( j + 1 ) * nIVertexes + ( i + 1 );
 				cellDef->vId[7] = ( k + 1 ) * nJVertexes * nIVertexes + ( j + 1 ) * nIVertexes + ( i + 0 );
+				m_cellDefsPart.push_back( cellDef );
 			}
 		}
 	}
+}
+
+void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z)
+{
+	uint cellIndex = k * m_nJ * m_nI + j * m_nI + i;
+	CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndex );
+	x = ( m_vertexesPart.at( cellDef->vId[0] )->X +
+		  m_vertexesPart.at( cellDef->vId[1] )->X +
+		  m_vertexesPart.at( cellDef->vId[2] )->X +
+		  m_vertexesPart.at( cellDef->vId[3] )->X +
+		  m_vertexesPart.at( cellDef->vId[4] )->X +
+		  m_vertexesPart.at( cellDef->vId[5] )->X +
+		  m_vertexesPart.at( cellDef->vId[6] )->X +
+		  m_vertexesPart.at( cellDef->vId[7] )->X ) / 8 ;
+	y = ( m_vertexesPart.at( cellDef->vId[0] )->Y +
+		  m_vertexesPart.at( cellDef->vId[1] )->Y +
+		  m_vertexesPart.at( cellDef->vId[2] )->Y +
+		  m_vertexesPart.at( cellDef->vId[3] )->Y +
+		  m_vertexesPart.at( cellDef->vId[4] )->Y +
+		  m_vertexesPart.at( cellDef->vId[5] )->Y +
+		  m_vertexesPart.at( cellDef->vId[6] )->Y +
+		  m_vertexesPart.at( cellDef->vId[7] )->Y ) / 8 ;
+	z = ( m_vertexesPart.at( cellDef->vId[0] )->Z +
+		  m_vertexesPart.at( cellDef->vId[1] )->Z +
+		  m_vertexesPart.at( cellDef->vId[2] )->Z +
+		  m_vertexesPart.at( cellDef->vId[3] )->Z +
+		  m_vertexesPart.at( cellDef->vId[4] )->Z +
+		  m_vertexesPart.at( cellDef->vId[5] )->Z +
+		  m_vertexesPart.at( cellDef->vId[6] )->Z +
+		  m_vertexesPart.at( cellDef->vId[7] )->Z ) / 8 ;
+}
+
+SpatialLocation GeoGrid::getCenter()
+{
+	//TODO: maybe we can compute centre once and cache it to avoid repetive
+	// cell center calculations
+	double meanX = 0.0;
+	double meanY = 0.0;
+	double meanZ = 0.0;
+	STOPPED_HERE;
 }
 
 double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
