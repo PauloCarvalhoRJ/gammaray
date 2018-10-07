@@ -9,6 +9,7 @@ class FileSelectorWidget;
 
 class File;
 class DataFile;
+class Distribution;
 
 /*! The file types to list. */
 enum class FileSelectorType : uint {
@@ -16,8 +17,11 @@ enum class FileSelectorType : uint {
     PDFs,                /*!< Only category p.d.f. files can be selected. */
     DataFiles,           /*!< Data files can be selected. */
     CategoryDefinitions, /*!< Categorical definition files can be selected. */
-    CDsAndCDFs,           /*!< Categorical definition and threshold c.d.f. files can be selected. */
-    CDsCDFsandPDFs       /*!< Categorical definition, threshold c.d.f. and category p.d.f. files can be selected. */
+    CDsAndCDFs,          /*!< Categorical definition and threshold c.d.f. files can be selected. */
+    CDsCDFsandPDFs,      /*!< Categorical definition, threshold c.d.f. and category p.d.f. files can be selected. */
+    PointSets,           /*!< Data files of point set type can be selected. */
+	CartesianGrids,      /*!< Data files of Cartesian grid type can be selected. */
+	Bidistributions      /*!< Bidistributions can be selected. */
 };
 
 /**
@@ -44,6 +48,9 @@ signals:
 
     /** Signal emited along with fileSelected(File*) if the selected file is a data file. */
     void dataFileSelected( DataFile* dataFile );
+
+	/** Signal emited along with fileSelected(File*) if the selected file is a distribution. */
+	void distributionSelected( Distribution* dataFile );
 
 private:
     Ui::FileSelectorWidget *ui;

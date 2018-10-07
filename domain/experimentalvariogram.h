@@ -30,6 +30,8 @@ public:
     virtual bool canHaveMetaData(){ return true; }
     virtual void updateMetaDataFile();
     bool isDataFile(){ return false; }
+	bool isDistribution(){ return false; }
+
 
 // ProjectComponent interface
 public:

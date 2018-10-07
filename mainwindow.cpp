@@ -64,6 +64,7 @@
 #include "dialogs/sgsimdialog.h"
 #include "dialogs/machinelearningdialog.h"
 #include "dialogs/factorialkrigingdialog.h"
+#include "dialogs/sisimdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -2178,7 +2179,19 @@ void MainWindow::onSaveArrayAsNewVariableInCartesianGrid(spectral::array *array,
 void MainWindow::onFactorialKriging()
 {
 	FactorialKrigingDialog *fkd = new FactorialKrigingDialog( this );
-	fkd->show();
+    fkd->show();
+}
+
+void MainWindow::onSISIMContinuous()
+{
+    SisimDialog* sisimd = new SisimDialog( IKVariableType::CONTINUOUS, this );
+    sisimd->show();
+}
+
+void MainWindow::onSISIMCategorical()
+{
+    SisimDialog* sisimd = new SisimDialog( IKVariableType::CATEGORICAL, this );
+    sisimd->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()

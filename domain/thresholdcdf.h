@@ -22,6 +22,7 @@ public:
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
     bool isDataFile(){ return false; }
+	bool isDistribution(){ return false; } //Although a CDF is technically a distribution, it doesn't inherit Distribution
 };
 
 #endif // THRESHOLDCDF_H

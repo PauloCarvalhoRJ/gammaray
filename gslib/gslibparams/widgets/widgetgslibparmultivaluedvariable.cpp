@@ -158,12 +158,20 @@ void WidgetGSLibParMultiValuedVariable::updateValue(GSLibParMultiValuedVariable 
 
 void WidgetGSLibParMultiValuedVariable::onBtnAddClicked(bool)
 {
+    //TODO: Add support for atomic types that can compose a GSLibParMultiValuedVariable here.
     if( this->_gslib_parameter_type_name == "int" ){
-        this->_widgets.append( new WidgetGSLibParInt( ) );
-        ui->frmFields->layout()->addWidget( this->_widgets.back() );
+        WidgetGSLibParInt* widget = new WidgetGSLibParInt( );
+        widget->fillFields(0);
+        this->_widgets.append( widget );
+        ui->frmFields->layout()->addWidget( widget );
     }else if( this->_gslib_parameter_type_name == "uint" ){
         WidgetGSLibParUInt* widget = new WidgetGSLibParUInt( );
         widget->fillFields(0, "");
+        this->_widgets.append( widget );
+        ui->frmFields->layout()->addWidget( widget );
+    }else if( this->_gslib_parameter_type_name == "double" ){
+        WidgetGSLibParDouble* widget = new WidgetGSLibParDouble( );
+        widget->fillFields(0.0, "");
         this->_widgets.append( widget );
         ui->frmFields->layout()->addWidget( widget );
     }else

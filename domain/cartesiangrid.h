@@ -163,6 +163,7 @@ public:
 	virtual QString getFileType();
 	virtual void updateMetaDataFile();
 	virtual bool isDataFile(){ return true; }
+	bool isDistribution(){ return false; }
 
 // ProjectComponent interface
 public:

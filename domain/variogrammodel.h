@@ -139,6 +139,7 @@ public:
     virtual bool canHaveMetaData(){ return false; }
     virtual void updateMetaDataFile(){;}
     bool isDataFile(){ return false; }
+	bool isDistribution(){ return false; }
 
 // ProjectComponent interface
 public:
