@@ -89,7 +89,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons32/setting32</normaloff>:/icons32/setting32</iconset>
         </property>
        </widget>
@@ -120,7 +120,7 @@
          <string/>
         </property>
         <property name="icon">
-         <iconset resource="resources.qrc">
+         <iconset resource="../resources.qrc">
           <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
         </property>
        </widget>
@@ -176,7 +176,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
