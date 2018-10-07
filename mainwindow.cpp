@@ -488,13 +488,13 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
                 _projectContextMenu->addAction("Normal score...", this, SLOT(onNScore()));
                 _projectContextMenu->addAction("Model a distribution...", this, SLOT(onDistrModel()));
-            }
+				_projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
+			}
             if( parent_file->getFileType().compare("POINTSET") == 0 ){
                 makeMenuClassifyInto();
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
-                _projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
