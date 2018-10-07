@@ -64,6 +64,7 @@
 #include "dialogs/sgsimdialog.h"
 #include "dialogs/machinelearningdialog.h"
 #include "dialogs/factorialkrigingdialog.h"
+#include "dialogs/sisimdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -488,13 +489,13 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
                 _projectContextMenu->addAction("Normal score...", this, SLOT(onNScore()));
                 _projectContextMenu->addAction("Model a distribution...", this, SLOT(onDistrModel()));
-            }
+				_projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
+			}
             if( parent_file->getFileType().compare("POINTSET") == 0 ){
                 makeMenuClassifyInto();
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
-                _projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
@@ -623,9 +624,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             //determine the destination CartesianGrid of the projection operation
             CartesianGrid* cg = nullptr;
-            cg = static_cast<CartesianGrid*>( file );
+			cg = dynamic_cast<CartesianGrid*>( file );
             //if user selected an attribute and a grid
-            if( at && cg ){
+			if( at && cg && at->getContainingFile() != file ){
                 //determine the origin grid.
                 CartesianGrid* cgOrig = nullptr;
                 File* parentFileOfSelectedAttribute = at->getContainingFile();
@@ -1018,12 +1019,19 @@ void MainWindow::onGetPoints()
     GSLib::instance()->runProgram( "getpoints", par_file_path );
     Application::instance()->logInfo("getpoints completed.");
 
+	//check whether the generated file actually exists
+	QFile tmpFile( gpf.getParameter<GSLibParFile*>(5)->_path );
+	if( ! tmpFile.exists()  ){
+		Application::instance()->logError( "MainWindow::onGetPoints(): the output file was not generated or is not accessible. Operation canceled. Check the messages panel.", true );
+		return;
+	}
+
     //call rename to trim trailing spaces that getpoints leaves in varable names
-    Util::renameGEOEASvariable( gpf.getParameter<GSLibParFile*>(5)->_path, "aaaaaaaaaaa", "aaaaaaaaaaa");
+	Util::renameGEOEASvariable( gpf.getParameter<GSLibParFile*>(5)->_path, "aaaaaaaaaaa", "aaaaaaaaaaa");
 
     //update the point set file with the new file with the collocated variables transfered
     //from the cartesian grid.
-    point_set->replacePhysicalFile( gpf.getParameter<GSLibParFile*>(5)->_path );
+	point_set->replacePhysicalFile( gpf.getParameter<GSLibParFile*>(5)->_path );
 }
 
 void MainWindow::onNScore()
@@ -2171,7 +2179,19 @@ void MainWindow::onSaveArrayAsNewVariableInCartesianGrid(spectral::array *array,
 void MainWindow::onFactorialKriging()
 {
 	FactorialKrigingDialog *fkd = new FactorialKrigingDialog( this );
-	fkd->show();
+    fkd->show();
+}
+
+void MainWindow::onSISIMContinuous()
+{
+    SisimDialog* sisimd = new SisimDialog( IKVariableType::CONTINUOUS, this );
+    sisimd->show();
+}
+
+void MainWindow::onSISIMCategorical()
+{
+    SisimDialog* sisimd = new SisimDialog( IKVariableType::CATEGORICAL, this );
+    sisimd->show();
 }
 
 void MainWindow::onCreateCategoryDefinition()

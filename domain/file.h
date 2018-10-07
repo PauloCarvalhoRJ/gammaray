@@ -97,6 +97,11 @@ public:
       */
     virtual long getFileSize();
 
+	/**
+	  *  Returns whether this file as a distribution.
+	  */
+	virtual bool isDistribution() = 0;
+
 protected:
     QString _path;
 

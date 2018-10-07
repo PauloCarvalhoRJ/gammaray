@@ -24,6 +24,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkSmartPointer.h>
 #include <vtkSphereSource.h>
 #include <vtkTransform.h>
+#include <vtkFXAAOptions.h>
 
 #include "domain/application.h"
 #include "domain/project.h"
@@ -75,8 +76,13 @@ View3DWidget::View3DWidget(QWidget *parent)
     _renderer->SetBackground(0.9, 0.9, 1);
     _renderer->SetBackground2(0.5, 0.5, 1);
 
-    // enable antialiasing
-    _renderer->SetUseFXAA( true );
+    // enable antialiasing (fast approximate method)
+    _renderer->UseFXAAOn();
+
+    // configure the FXAA antialiasing
+    vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
+    fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
+    //fxaaOptions->SetSubpixelContrastThreshold(1/2.0);
 
     //    renderer->AddActor( sphereActor );  // VTK TEST CODE
     //    vtkRenderWindow* renwin = vtkRenderWindow::New();

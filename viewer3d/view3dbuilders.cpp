@@ -255,8 +255,8 @@ View3DViewData View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesian
     plane->SetXResolution( nX );
     plane->SetYResolution( nY );
     plane->SetOrigin( X0frame, Y0frame, 0.0 );
-    plane->SetPoint1( X0 + nX * dX, Y0frame, 0.0);
-    plane->SetPoint2( X0frame, Y0 + nY * dY, 0.0);
+    plane->SetPoint1( X0frame + nX * dX, Y0frame, 0.0);
+    plane->SetPoint2( X0frame, Y0frame + nY * dY, 0.0);
     plane->Update();
 
     //apply the transform (rotation) to the plane
@@ -274,6 +274,12 @@ View3DViewData View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesian
     // Finally, create and return the actor
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
+
+    // Show grid geometry as a wireframe
+    actor->GetProperty()->EdgeVisibilityOn();
+    actor->GetProperty()->BackfaceCullingOn();
+    actor->GetProperty()->FrontfaceCullingOn();
+
     return View3DViewData(actor);
 }
 
@@ -675,7 +681,11 @@ View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianG
     vtkSmartPointer<vtkActor> actor =
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
+
+    // Show grid geometry as a wireframe
     actor->GetProperty()->EdgeVisibilityOn();
+    actor->GetProperty()->SetRepresentationToWireframe();
+
     return View3DViewData(actor);
 }
 

@@ -5,6 +5,7 @@
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
 #include "../domain/datafile.h"
+#include "../domain/distribution.h"
 
 FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_not_set, QWidget *parent) :
     QWidget(parent),
@@ -19,6 +20,9 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
 
     if( m_HasNotSetItem )
         ui->cmbFile->addItem( "NOT SET" );
+
+	//////////////    ATTENTION: WHENEVER A NEW GROUP IS USED HERE,          /////////////
+	//////////////  YOU NEED TO UPDATE the other methods in this class.  /////////////////
 
     //adds files from the Resource Files Group of type according to the types specified in m_filesOfTypes
     ObjectGroup* og = project->getResourcesGroup();
@@ -35,13 +39,30 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
     }
 
     //adds files from the Data Files Group of type according to the types specified in m_filesOfTypes
-    if( m_filesOfTypes == FileSelectorType::DataFiles ){
+    if( m_filesOfTypes == FileSelectorType::DataFiles ||
+        m_filesOfTypes == FileSelectorType::CartesianGrids ||
+        m_filesOfTypes == FileSelectorType::PointSets ){
         og = project->getDataFilesGroup();
         for( int i = 0; i < og->getChildCount(); ++i){
             File* varFile = (File*)og->getChildByIndex( i );
-            ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
+            bool toAdd = ( m_filesOfTypes == FileSelectorType::DataFiles ) ||
+                         ( m_filesOfTypes == FileSelectorType::PointSets && varFile->getFileType() == "POINTSET" ) ||
+                         ( m_filesOfTypes == FileSelectorType::CartesianGrids && varFile->getFileType() == "CARTESIANGRID" );
+            if( toAdd )
+                ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }
     }
+
+	//adds files from the Distributions Group of type according to the types specified in m_filesOfTypes
+	if( m_filesOfTypes == FileSelectorType::Bidistributions ){
+		og = project->getDistributionsGroup();
+		for( int i = 0; i < og->getChildCount(); ++i){
+			File* varFile = (File*)og->getChildByIndex( i );
+			bool toAdd = ( ( m_filesOfTypes == FileSelectorType::Bidistributions && varFile->getFileType() == "BIDIST" ) );
+			if( toAdd )
+				ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
+		}
+	}
 }
 
 FileSelectorWidget::~FileSelectorWidget()
@@ -53,10 +74,11 @@ File *FileSelectorWidget::getSelectedFile()
 {
     Project* project = Application::instance()->getProject();
 
-    const uint nogs = 2;
+	const uint nogs = 3;
     ObjectGroup* ogs[nogs] = {project->getResourcesGroup(),
-                              project->getDataFilesGroup()
-                             };
+							  project->getDataFilesGroup(),
+							  project->getDistributionsGroup()
+							 };
 
     for( uint j = 0; j < nogs; ++j){
         ObjectGroup* og = ogs[j];
@@ -80,9 +102,10 @@ void FileSelectorWidget::onSelection(int /*index*/)
     m_File = nullptr;
     Project* project = Application::instance()->getProject();
 
-    const uint nogs = 2;
+	const uint nogs = 3;
     ObjectGroup* ogs[nogs] = {project->getResourcesGroup(),
-                              project->getDataFilesGroup()
+							  project->getDataFilesGroup(),
+							  project->getDistributionsGroup()
                              };
 
     for( uint j = 0; j < nogs; ++j){
@@ -94,11 +117,14 @@ void FileSelectorWidget::onSelection(int /*index*/)
                 emit fileSelected( m_File );
                 if( m_File->isDataFile() )
                     emit dataFileSelected( dynamic_cast<DataFile*>(m_File) );
-                return;
+				if( m_File->isDistribution() )
+					emit distributionSelected( dynamic_cast<Distribution*>(m_File) );
+				return;
             }
         }
     }
     //the user may select "NOT SET", so emit signal with null pointer.
     emit fileSelected( nullptr );
     emit dataFileSelected( nullptr );
+	emit distributionSelected( nullptr );
 }

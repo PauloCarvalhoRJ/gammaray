@@ -45,16 +45,7 @@
      <property name="spacing">
       <number>15</number>
      </property>
-     <property name="leftMargin">
-      <number>30</number>
-     </property>
-     <property name="topMargin">
-      <number>30</number>
-     </property>
-     <property name="rightMargin">
-      <number>30</number>
-     </property>
-     <property name="bottomMargin">
+     <property name="margin">
       <number>30</number>
      </property>
      <item>
@@ -87,7 +78,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/icons/setting16</normaloff>:/icons/setting16</iconset>
          </property>
         </widget>
@@ -118,7 +109,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/icons/summary16</normaloff>:/icons/summary16</iconset>
          </property>
         </widget>
@@ -132,7 +123,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/icons/histo16</normaloff>:/icons/histo16</iconset>
          </property>
         </widget>
@@ -146,7 +137,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/icons/locmap16</normaloff>:/icons/locmap16</iconset>
          </property>
         </widget>
@@ -177,7 +168,7 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset resource="resources.qrc">
+          <iconset resource="../resources.qrc">
            <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
          </property>
         </widget>
@@ -226,7 +217,7 @@
   </layout>
  </widget>
  <resources>
-  <include location="resources.qrc"/>
+  <include location="../resources.qrc"/>
  </resources>
  <connections>
   <connection>
