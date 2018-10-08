@@ -2,11 +2,22 @@
 #define SPATIALINDEX_H
 
 #include <QList>
+#include <vector>
+#include <boost/geometry.hpp>
+#include <boost/geometry/index/rtree.hpp>
 
 class PointSet;
 class CartesianGrid;
 class DataCell;
 class SearchStrategy;
+class DataFile;
+
+namespace bg = boost::geometry;
+namespace bgi = boost::geometry::index;
+typedef bg::model::point<double, 3, bg::cs::cartesian> Point3D;
+typedef bg::model::box<Point3D> Box;
+typedef std::pair<Box, size_t> Value;
+
 
 /**
  * This class exposes functionalities related to spatial indexes and queries with GammaRay objects.
@@ -57,6 +68,16 @@ public:
     /** Clears the spatial index. */
 	void clear();
 
+private:
+	void setDataFile( DataFile* df );
+
+	/** The R* variant of the rtree
+	* WARNING: incorrect R-Tree parameter may lead to crashes with element insertions
+	*/
+	bgi::rtree< Value, bgi::rstar<16,5,5,32> > m_rtree; //TODO: make these parameters variable (passed in the constructor?)
+
+	/** The data file which is being indexed. */
+	DataFile* m_dataFile;
 };
 
 #endif // SPATIALINDEX_H
