@@ -6,6 +6,7 @@
 #include "geostats/datacell.h"
 #include "geostats/searchstrategy.h"
 #include "domain/cartesiangrid.h"
+#include "domain/geogrid.h"
 
 #include <cassert>
 
@@ -76,6 +77,27 @@ void SpatialIndexPoints::fill(CartesianGrid * cg)
 	}
 }
 
+void SpatialIndexPoints::fill(GeoGrid * gg)
+{
+	//first clear the index.
+	clear();
+
+	setDataFile( gg );
+
+	//for each data line...
+	uint totlines = gg->getDataLineCount();
+	for( uint iLine = 0; iLine < totlines; ++iLine){
+		//get the cell's bounding box (each line corresponds to a cell)
+		double minX, minY, minZ, maxX, maxY, maxZ;
+		gg->getBoundingBox( iLine, minX, minY, minZ, maxX, maxY, maxZ );
+		//make the bounding box object
+		Box box( Point3D(minX, minY, minZ),
+				 Point3D(maxX, maxY, maxZ) );
+		//insert the box representing the point into the spatial index.
+		m_rtree.insert( std::make_pair(box, iLine) );
+	}
+}
+
 QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
 {
 	assert( m_dataFile && "SpatialIndexPoints::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
@@ -100,7 +122,27 @@ QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
     }
 
     //return the point indexes
-    return result;
+	return result;
+}
+
+QList<uint> SpatialIndexPoints::getNearest(double x, double y, double z, uint n)
+{
+	assert( m_dataFile && "SpatialIndexPoints::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
+
+	QList<uint> result;
+
+	// find n nearest values to a point
+	std::vector<Value> result_n;
+	m_rtree.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(result_n));
+
+	// collect the point indexes
+	std::vector<Value>::iterator it = result_n.begin();
+	for(; it != result_n.end(); ++it){
+		result.push_back( (*it).second );
+	}
+
+	//return the point indexes
+	return result;
 }
 
 QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double distance )
@@ -255,4 +297,9 @@ void SpatialIndexPoints::clear()
 {
 	m_rtree.clear();
 	m_dataFile = nullptr;
+}
+
+bool SpatialIndexPoints::isEmpty()
+{
+	return m_rtree.empty();
 }

@@ -2188,9 +2188,17 @@ void MainWindow::onCreateGeoGridFromBaseAndTop()
 	if( ! ok )
 		return;
 
+	//ask the user for the number of horizon slices.
+	int nHSlices = QInputDialog::getInt(this, "User input requested",
+					  "Number of horizon slices:", 1, 1, 500000, 1,
+					   &ok);
+	if(!ok) return;
+
 	QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
 
-	GeoGridPtr geoGrid( new GeoGrid( new_file_path, _right_clicked_attribute, _right_clicked_attribute2 ) );
+	GeoGrid* geoGrid = new GeoGrid( new_file_path, _right_clicked_attribute, _right_clicked_attribute2, nHSlices );
+
+	Application::instance()->getProject()->addDataFile( geoGrid );
 }
 
 void MainWindow::onCreateCategoryDefinition()

@@ -3,17 +3,84 @@
 #include "viewer3d/view3dbuilders.h"
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
+#include "spatialindex/spatialindexpoints.h"
 
 #include <QFile>
 #include <QTextStream>
 
 #include <cassert>
 
-GeoGrid::GeoGrid( QString path ) : GridFile( path )
+
+///================== private classes for computational geometry (TODO: make these public)==========================
+
+class Vector3D {
+public:
+	double x, y, z;
+
+	Vector3D operator-(Vector3D p) const {
+		return Vector3D{x - p.x, y - p.y, z - p.z};
+	}
+
+	Vector3D cross(Vector3D p) const {
+		return Vector3D{
+			y * p.z - p.y * z,
+					z * p.x - p.z * x,
+					x * p.y - p.x * y
+		};
+	}
+
+	double dot(Vector3D p) const {
+		return x * p.x + y * p.y + z * p.z;
+	}
+
+	double norm() const {
+		return std::sqrt(x*x + y*y + z*z);
+	}
+};
+
+//make a point type with the same structure of the vector for clarity
+typedef Vector3D Vertex3D;
+
+class Face3D {
+public:
+	Face3D() : v(4){} //making the face with 4 vertexes by default
+
+	std::vector<Vertex3D> v;
+
+	Vector3D normal() const {
+		assert(v.size() > 2);
+		Vector3D dir1 = v[1] - v[0];
+		Vector3D dir2 = v[2] - v[0];
+		Vector3D n  = dir1.cross(dir2);
+		double d = n.norm();
+		return Vector3D{n.x / d, n.y / d, n.z / d};
+	}
+};
+
+//this assumes the polyhedron is convex and the faces are all counter-clockwise
+bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs ) {
+	double bound = -1e-15; // use -1e-15 to exclude boundaries
+	for (const Face3D& f : fs) {
+		Vector3D p2f = f.v[0] - p;       // any point of f cloud be used
+		double d = p2f.dot( f.normal() );
+		d /= p2f.norm();                 // for numeric stability
+		if ( d < bound )
+			return false;
+	}
+	return true;
+}
+
+///===================================================The GeoGrid implementation=====================================
+
+GeoGrid::GeoGrid( QString path ) :
+	GridFile( path ),
+	m_spatialIndex( new SpatialIndexPoints() )
 {
 }
 
-GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHorizonSlices) : GridFile( path )
+GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHorizonSlices) :
+	GridFile( path ),
+	m_spatialIndex( new SpatialIndexPoints() )
 {
 	CartesianGrid *cgTop = dynamic_cast<CartesianGrid*>( atTop->getContainingFile() );
 	CartesianGrid *cgBase = dynamic_cast<CartesianGrid*>( atBase->getContainingFile() );
@@ -85,6 +152,29 @@ GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHori
 	}
 }
 
+void GeoGrid::getBoundingBox(uint cellIndex,
+							 double & minX, double & minY, double & minZ,
+							 double & maxX, double & maxY, double & maxZ )
+{
+	//initialize the results to ensure the returned extrema are those of the cell.
+	minX = minY = minZ = std::numeric_limits<double>::max();
+	maxX = maxY = maxZ = std::numeric_limits<double>::min();
+	//Get the cell
+	CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndex );
+	//for each of the eight vertexes of the cell
+	for( uint i = 0; i < 8; ++i ){
+		//Get the vertex
+		VertexRecordPtr vertex = m_vertexesPart.at( cellDef->vId[i] );
+		//set the max's and min's
+		minX = std::min( minX, vertex->X );
+		minY = std::min( minY, vertex->Y );
+		minZ = std::min( minZ, vertex->Z );
+		maxX = std::max( maxX, vertex->X );
+		maxY = std::max( maxY, vertex->Y );
+		maxZ = std::max( maxZ, vertex->Z );
+	}
+}
+
 void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z)
 {
 	uint cellIndex = k * m_nJ * m_nI + j * m_nI + i;
@@ -117,12 +207,94 @@ void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & 
 
 SpatialLocation GeoGrid::getCenter()
 {
-	//TODO: maybe we can compute centre once and cache it to avoid repetive
+	//TODO: Performance: maybe we can compute the center once and cache it to avoid repetive
 	// cell center calculations
 	double meanX = 0.0;
 	double meanY = 0.0;
 	double meanZ = 0.0;
-	STOPPED_HERE;
+	for( uint k = 0; k > m_nK; ++k )
+		for( uint j = 0; j > m_nJ; ++j )
+			for( uint i = 0; i > m_nI; ++i ){
+				double x, y, z;
+				IJKtoXYZ( i, j, k, x, y, z );
+				meanX += x;
+				meanY += y;
+				meanZ += z;
+			}
+	int nCells = m_nI * m_nJ * m_nK;
+	return SpatialLocation( meanX / nCells, meanY / nCells, meanZ / nCells );
+}
+
+bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k )
+{
+	if( m_spatialIndex->isEmpty() )
+		m_spatialIndex->fill( this );
+
+	//Get the nearest cell.
+	QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 1 );
+
+	//if the spatial search failed, assumes it fell outside the grid
+	if( cellIndexes.empty() )
+		return false;
+
+	//get the cell geometry definition (vertexes' indexes).
+	CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndexes[0] );
+
+	//the test location
+	Vertex3D p{ x, y, z };
+
+	//get the vertex data of the cell
+	VertexRecordPtr vd[8];
+	vd[0] = m_vertexesPart.at( cellDef->vId[0] );
+	vd[1] = m_vertexesPart.at( cellDef->vId[1] );
+	vd[2] = m_vertexesPart.at( cellDef->vId[2] );
+	vd[3] = m_vertexesPart.at( cellDef->vId[3] );
+	vd[4] = m_vertexesPart.at( cellDef->vId[4] );
+	vd[5] = m_vertexesPart.at( cellDef->vId[5] );
+	vd[6] = m_vertexesPart.at( cellDef->vId[6] );
+	vd[7] = m_vertexesPart.at( cellDef->vId[7] );
+
+	//------------make the six face geometries------------
+	std::vector<Face3D> fs( 6 );
+	fs[0].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+	fs[0].v[1] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+	fs[0].v[2] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+	fs[0].v[3] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+
+	fs[1].v[0] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+	fs[1].v[1] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+	fs[1].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+	fs[1].v[3] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+
+	fs[2].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+	fs[2].v[1] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+	fs[2].v[2] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+	fs[2].v[3] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+
+	fs[3].v[0] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+	fs[3].v[1] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+	fs[3].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+	fs[3].v[3] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+
+	fs[4].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+	fs[4].v[1] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+	fs[4].v[2] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+	fs[4].v[3] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+
+	fs[5].v[0] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+	fs[5].v[1] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+	fs[5].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+	fs[5].v[3] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+	//----------------------------------------------------
+
+	//test whether x,y,z is actually inside the cell.
+	bool testInside = isInside( p, fs );
+	if( ! testInside )
+		return false;
+
+	//return the indexes (via output parameters) and true to indicate success
+	this->indexToIJK( cellIndexes[0], i, j, k );
+	return true;
 }
 
 double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)

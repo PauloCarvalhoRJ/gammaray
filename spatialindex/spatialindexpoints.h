@@ -11,6 +11,7 @@ class CartesianGrid;
 class DataCell;
 class SearchStrategy;
 class DataFile;
+class GeoGrid;
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -21,6 +22,7 @@ typedef std::pair<Box, size_t> Value;
 
 /**
  * This class exposes functionalities related to spatial indexes and queries with GammaRay objects.
+ * Despite the "Points" in the name, this class became a generic spatial index.
  */
 class SpatialIndexPoints
 {
@@ -39,12 +41,24 @@ public:
 	 */
 	void fill( CartesianGrid* cg );
 
+	/** Fills the index with the GeoGrid cells (bulk load).
+	 * It erases any previously indexed points.
+	 */
+	void fill( GeoGrid* gg );
+
 	/**
      * Returns the indexes of the n-nearest points to the point given by its index.
 	 * The indexes are the data record indexes (file data lines) of the DataFile used to fill
      * the index.
      */
 	QList<uint> getNearest( uint index, uint n );
+
+	/**
+	 * Returns the indexes of the n-nearest points to a point in space.
+	 * The indexes are the data record indexes (file data lines) of the DataFile used to fill
+	 * the index.
+	 */
+	QList<uint> getNearest( double x, double y, double z, uint n );
 
     /**
 	 * Returns the data line indexes of the n-nearest points within the given distance
@@ -67,6 +81,9 @@ public:
 
     /** Clears the spatial index. */
 	void clear();
+
+	/** Returns whether the spatial index has not been built. */
+	bool isEmpty();
 
 private:
 	void setDataFile( DataFile* df );

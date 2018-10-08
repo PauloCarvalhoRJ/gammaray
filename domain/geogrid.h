@@ -4,6 +4,7 @@
 #include "gridfile.h"
 
 class CartesianGrid;
+class SpatialIndexPoints;
 
 /** The data record holding the spatial position of a vertex.
  * It's id is the index in the m_vertexes container.
@@ -71,11 +72,19 @@ public:
 	 */
 	GeoGrid( QString path, Attribute* atTop, Attribute* atBase, uint nHorizonSlices );
 
+	/**
+	 * Returns (via output parameters) the bounding box of a cell given its cell index.
+	 */
+	void getBoundingBox(uint cellIndex,
+						 double& minX, double& minY, double& minZ,
+						 double& maxX, double& maxY, double& maxZ );
+
 
 //GridFile interface
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,
 						   double& x, double& y, double& z );
 	virtual SpatialLocation getCenter();
+	virtual bool XYZtoIJK( double x, double y, double z, uint &i, uint &j, uint &k );
 
 //DataFile interface
 public:
@@ -108,6 +117,7 @@ public:
 private:
 	std::vector< VertexRecordPtr > m_vertexesPart;
 	std::vector< CellDefRecordPtr > m_cellDefsPart;
+	std::unique_ptr< SpatialIndexPoints > m_spatialIndex;
 };
 
 typedef std::shared_ptr<GeoGrid> GeoGridPtr;
