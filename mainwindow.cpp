@@ -2194,11 +2194,23 @@ void MainWindow::onCreateGeoGridFromBaseAndTop()
 					   &ok);
 	if(!ok) return;
 
+	//make the path for the file.
 	QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
 
+	//create the grid object
 	GeoGrid* geoGrid = new GeoGrid( new_file_path, _right_clicked_attribute, _right_clicked_attribute2, nHSlices );
 
-	Application::instance()->getProject()->addDataFile( geoGrid );
+	//the necessary steps to register the new object as a project member.
+	{
+		//save data to file system
+		geoGrid->writeToFS();
+		//save its metadata file
+		geoGrid->updateMetaDataFile();
+		//attach it to the project tree
+		Application::instance()->getProject()->addDataFile( geoGrid );
+		//show the newly created object in main window's project tree
+		Application::instance()->refreshProjectTree();
+	}
 }
 
 void MainWindow::onCreateCategoryDefinition()

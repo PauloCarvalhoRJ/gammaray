@@ -63,11 +63,12 @@ class GeoGrid : public GridFile
 
 public:
 
-	/** Constructor of a grid already saved. **/
+	/** Constructor of an empty GeoGrid (no data, no mesh). **/
 	GeoGrid( QString path );
 
 	/** The simplest geometry initializing constructor.  Creates its geometry from top and base values
 	 * of a map (2D CartesianGrid).
+	 * @param path The file path where the data file (GEO-EAS cartesian grid data file) will be saved
 	 * @param nHorizonSlices The number of cell layers between top and base.  Minimum is 1.
 	 */
 	GeoGrid( QString path, Attribute* atTop, Attribute* atBase, uint nHorizonSlices );
@@ -78,6 +79,32 @@ public:
 	void getBoundingBox(uint cellIndex,
 						 double& minX, double& minY, double& minZ,
 						 double& maxX, double& maxY, double& maxZ );
+
+	/** Returns the path to the file that stores the geometry data, that is,
+	 * the contents of the m_vertexesPart and m_cellDefsPart members.
+	 */
+	QString getMeshFilePath();
+
+	/**
+	 * Saves the geometry data to file system.
+	 */
+	void saveMesh();
+
+	/**
+	 * Loads the grid's mesh.
+	 */
+	void loadMesh();
+
+	/** Sets GeoGrid metadata from the accompaining .md file, if it exists.
+	 Nothing happens if the metadata file does not exist.  If it exists, it calls
+	 #setInfo() with the metadata read from the .md file.*/
+	void setInfoFromMetadataFile();
+
+	/** Sets GeoGrid metadata.  It also populates the file's attribute collection. */
+	void setInfo( int nI, int nJ, int nK,
+				  int nreal, const QString no_data_value,
+				  QMap<uint, QPair<uint, QString> > nvar_var_trn_triads,
+				  const QList<QPair<uint, QString> > &categorical_attributes);
 
 
 //GridFile interface
@@ -103,6 +130,7 @@ public:
 	virtual QString getFileType();
 	virtual void updateMetaDataFile();
 	virtual bool isDataFile(){ return true; }
+	virtual void writeToFS();
 
 // ProjectComponent interface
 public:
@@ -115,9 +143,18 @@ public:
 	virtual void getSpatialAndTopologicalCoordinates(int iRecord, double& x, double& y, double& z, int& i, int& j, int& k );
 
 private:
+	//--------------mesh data-----------------------
 	std::vector< VertexRecordPtr > m_vertexesPart;
 	std::vector< CellDefRecordPtr > m_cellDefsPart;
+	//----------------------------------------------
 	std::unique_ptr< SpatialIndexPoints > m_spatialIndex;
+
+	/**
+	 * Stores the file timestamp in the last call to loadMesh().
+	 * This time is used to detect whether there is a change in the mesh file, to prevent
+	 * unnecessary data reloads.
+	 */
+	QDateTime m_lastModifiedDateTimeLastMeshLoad;
 };
 
 typedef std::shared_ptr<GeoGrid> GeoGridPtr;

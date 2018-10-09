@@ -221,7 +221,8 @@ SOURCES += main.cpp\
     geostats/pointsetcell.cpp \
     geostats/indexedspatiallocation.cpp \
     domain/geogrid.cpp \
-    domain/gridfile.cpp
+    domain/gridfile.cpp \
+    domain/auxiliary/meshloader.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -421,7 +422,8 @@ HEADERS  += mainwindow.h \
     geostats/pointsetcell.h \
     geostats/indexedspatiallocation.h \
     domain/geogrid.h \
-    domain/gridfile.h
+    domain/gridfile.h \
+    domain/auxiliary/meshloader.h
 
 
 FORMS    += mainwindow.ui \
