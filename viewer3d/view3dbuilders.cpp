@@ -838,33 +838,35 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
 
 View3DViewData View3DBuilders::buildForGeoGridMesh( GeoGrid * geoGrid, View3DWidget * widget3D )
 {
-	geoGrid->loadMesh();
+	Q_UNUSED( widget3D );
 
+	// Create a VTK container with the points (mesh vertexes)
 	vtkSmartPointer< vtkPoints > hexaPoints = vtkSmartPointer< vtkPoints >::New();
-	hexaPoints->SetNumberOfPoints( 8 );
-	hexaPoints->InsertPoint(0, 0, 0, 0);
-	hexaPoints->InsertPoint(1, 1, 0, 0);
-	hexaPoints->InsertPoint(2, 1, 1, 0);
-	hexaPoints->InsertPoint(3, 0, 1, 0);
-	hexaPoints->InsertPoint(4, 0, 0, 1);
-	hexaPoints->InsertPoint(5, 1, 0, 1);
-	hexaPoints->InsertPoint(6, 1, 1, 1);
-	hexaPoints->InsertPoint(7, 0, 1, 1);
+	hexaPoints->SetNumberOfPoints( geoGrid->getMeshNumberOfVertexes() );
+	for( int i = 0;  i < hexaPoints->GetNumberOfPoints(); ++i ){
+		double x, y, z;
+		geoGrid->getMeshVertexLocation( i, x, y, z );
+		hexaPoints->InsertPoint(i, x, y, z);
+	}
 
-	vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
-	hexa->GetPointIds()->SetId(0, 0);
-	hexa->GetPointIds()->SetId(1, 1);
-	hexa->GetPointIds()->SetId(2, 2);
-	hexa->GetPointIds()->SetId(3, 3);
-	hexa->GetPointIds()->SetId(4, 4);
-	hexa->GetPointIds()->SetId(5, 5);
-	hexa->GetPointIds()->SetId(6, 6);
-	hexa->GetPointIds()->SetId(7, 7);
-
-	// Create an unstructured grid (allow faults, erosions, etc.)
+	// Create a VTK unstructured grid object (allows faults, erosions, and other geologic discordances )
 	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
-	unstructuredGrid->Allocate(1, 1);
-	unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
+	uint nCells = geoGrid->getMeshNumberOfCells();
+	unstructuredGrid->Allocate( nCells );
+	for( uint i = 0; i < nCells; ++i ) {
+		uint vIds[8];
+		geoGrid->getMeshCellDefinition( i, vIds );
+		vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+		hexa->GetPointIds()->SetId(0, vIds[0]);
+		hexa->GetPointIds()->SetId(1, vIds[1]);
+		hexa->GetPointIds()->SetId(2, vIds[2]);
+		hexa->GetPointIds()->SetId(3, vIds[3]);
+		hexa->GetPointIds()->SetId(4, vIds[4]);
+		hexa->GetPointIds()->SetId(5, vIds[5]);
+		hexa->GetPointIds()->SetId(6, vIds[6]);
+		hexa->GetPointIds()->SetId(7, vIds[7]);
+		unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
+	}
 	unstructuredGrid->SetPoints(hexaPoints);
 
 	// Create a mapper and actor

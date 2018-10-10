@@ -106,6 +106,17 @@ public:
 				  QMap<uint, QPair<uint, QString> > nvar_var_trn_triads,
 				  const QList<QPair<uint, QString> > &categorical_attributes);
 
+	/** Returns the number of vertexes in the GeoGrid's mesh. */
+	uint getMeshNumberOfVertexes();
+
+	/** Returns, via output parameters, the coordinates of a mesh vertex given its id (index). */
+	void getMeshVertexLocation( uint index, double& x, double& y, double& z );
+
+	/** Returns the number of cells in the GeoGrid's mesh. */
+	uint getMeshNumberOfCells();
+
+	/** Returns, via output parameters, the indexes of mesh vertexes of a cell given its id (index). */
+	void getMeshCellDefinition( uint index, uint (&vIds)[8] );
 
 //GridFile interface
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,

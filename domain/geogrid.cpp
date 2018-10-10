@@ -248,10 +248,10 @@ void GeoGrid::saveMesh()
 
 void GeoGrid::loadMesh()
 {
-	QFile file(this->_path);
+	QFile file( this->getMeshFilePath() );
 	file.open(QFile::ReadOnly | QFile::Text);
 	uint data_line_count = 0;
-	QFileInfo info(_path);
+	QFileInfo info( this->getMeshFilePath() );
 
 	// if loaded mesh is not empty and was loaded before
 	if ( (!m_cellDefsPart.empty() || !m_vertexesPart.empty() ) && !m_lastModifiedDateTimeLastMeshLoad.isNull()) {
@@ -260,7 +260,7 @@ void GeoGrid::loadMesh()
 		if (currentLastModified <= m_lastModifiedDateTimeLastMeshLoad) {
 			Application::instance()->logInfo(
 				QString("Mesh file ")
-					.append(this->_path)
+					.append( this->getMeshFilePath() )
 					.append(" already loaded and up to date.  Did nothing."));
 			return; // does nothing
 		}
@@ -270,7 +270,7 @@ void GeoGrid::loadMesh()
 	m_lastModifiedDateTimeLastMeshLoad = info.lastModified();
 
 	Application::instance()->logInfo(
-		QString("Loading mesh from ").append(this->_path).append("..."));
+		QString("Loading mesh from ").append( this->getMeshFilePath() ).append("..."));
 
 	// make sure mesh data is empty
 	m_cellDefsPart.clear();
@@ -282,7 +282,7 @@ void GeoGrid::loadMesh()
 	//////////////////////////////////
 	QProgressDialog progressDialog;
 	progressDialog.show();
-	progressDialog.setLabelText("Loading and parsing mesh file " + _path + "...");
+	progressDialog.setLabelText("Loading and parsing mesh file " + this->getMeshFilePath() + "...");
 	progressDialog.setMinimum(0);
 	progressDialog.setValue(0);
 	progressDialog.setMaximum(getFileSize() / 100); // see MeshLoader::doLoad(). Dividing
@@ -290,8 +290,8 @@ void GeoGrid::loadMesh()
 													// when converting from long to int
 	QThread *thread = new QThread(); // does it need to set parent (a QObject)?
 	MeshLoader *ml = new MeshLoader(file, m_vertexesPart, m_cellDefsPart, data_line_count ); // Do not set a parent. The object
-														// cannot be moved if it has a
-														// parent.
+																							 // cannot be moved if it has a
+																							 // parent.
 	ml->moveToThread(thread);
 	ml->connect(thread, SIGNAL(finished()), ml, SLOT(deleteLater()));
 	ml->connect(thread, SIGNAL(started()), ml, SLOT(doLoad()));
@@ -307,24 +307,6 @@ void GeoGrid::loadMesh()
 	}
 
 	file.close();
-
-	// cartesian grids must have a given number of read lines
-	if (this->getFileType() == "CARTESIANGRID") {
-		CartesianGrid *cg = (CartesianGrid *)this;
-		uint expected_total_lines
-			= cg->getNX() * cg->getNY() * cg->getNZ() * cg->getNReal();
-		if (data_line_count != expected_total_lines) {
-			Application::instance()->logWarn(
-				QString("DataFile::loadData(): number of parsed data lines ("
-						+ QString::number(data_line_count)
-						+ +") differs from the expected lines computed from the "
-						   "Cartesian grid parameters ("
-						+ QString::number(expected_total_lines)
-						+ ").  Truncated files may cause crashes and result in incorrect "
-						  "data analysis."),
-				true);
-		}
-	}
 
 	Application::instance()->logInfo("Finished loading mesh.");
 }
@@ -396,6 +378,37 @@ void GeoGrid::setInfo(int nI, int nJ, int nK, int nreal, const QString no_data_v
 	_categorical_attributes << categorical_attributes;
 	//update the attribut fields
 	this->updatePropertyCollection();
+}
+
+uint GeoGrid::getMeshNumberOfVertexes()
+{
+	this->loadMesh();
+	return m_vertexesPart.size();
+}
+
+void GeoGrid::getMeshVertexLocation(uint index, double & x, double & y, double & z)
+{
+	x = m_vertexesPart[index]->X;
+	y = m_vertexesPart[index]->Y;
+	z = m_vertexesPart[index]->Z;
+}
+
+uint GeoGrid::getMeshNumberOfCells()
+{
+	this->loadMesh();
+	return m_cellDefsPart.size();
+}
+
+void GeoGrid::getMeshCellDefinition(uint index, uint (&vIds)[8])
+{
+	vIds[0] = m_cellDefsPart[index]->vId[0];
+	vIds[1] = m_cellDefsPart[index]->vId[1];
+	vIds[2] = m_cellDefsPart[index]->vId[2];
+	vIds[3] = m_cellDefsPart[index]->vId[3];
+	vIds[4] = m_cellDefsPart[index]->vId[4];
+	vIds[5] = m_cellDefsPart[index]->vId[5];
+	vIds[6] = m_cellDefsPart[index]->vId[6];
+	vIds[7] = m_cellDefsPart[index]->vId[7];
 }
 
 void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z)
