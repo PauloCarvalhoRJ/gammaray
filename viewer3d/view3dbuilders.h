@@ -83,6 +83,9 @@ private:
 
 	/** Specific builder for GeoGrid mesh without property.	 */
 	static View3DViewData buildForGeoGridMesh( GeoGrid* geoGrid, View3DWidget * widget3D );
+
+	/** Specific builder for an Attribute in a GeoGrid. */
+	static View3DViewData buildForAttributeGeoGrid( GeoGrid* geoGrid, Attribute* attribute, View3DWidget* widget3D );
 };
 
 #endif // VIEW3DBUILDERS_H

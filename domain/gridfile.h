@@ -82,6 +82,11 @@ public:
 	/** Replaces the data in the column with the data in passed data array. */
 	void setColumnData( uint dataColumn, spectral::array& array );
 
+	uint getNI(){ return m_nI; }
+	uint getNJ(){ return m_nJ; }
+	uint getNK(){ return m_nK; }
+	uint getNumberOfRealizations(){ return m_nreal; }
+
 // ICalcPropertyCollection interface
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 

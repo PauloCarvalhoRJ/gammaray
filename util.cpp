@@ -399,7 +399,7 @@ QString Util::copyFileToDir(const QString from_path, const QString path_to_direc
     return to_path;
 }
 
-void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
+void Util::createGEOEAScheckerboardGrid(GridFile * gf, QString path)
 {
     //open file for writing
     QFile file( path );
@@ -412,8 +412,8 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     out << "checkerboard pattern\n";
 
     //flags to help in creating a checkerboard pattern.
-    bool isNXeven = ( cg->getNX() % 2 ) == 0;
-    bool isNYeven = ( cg->getNY() % 2 ) == 0;
+	bool isNXeven = ( gf->getNI() % 2 ) == 0;
+	bool isNYeven = ( gf->getNJ() % 2 ) == 0;
 
     QProgressDialog progressDialog;
     progressDialog.setRange(0,0);
@@ -423,10 +423,10 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     //loop to output the binary values
     ulong count = 0;
     int counter = 0;
-    for( uint ir = 0; ir < cg->getNReal(); ++ir)
-        for( uint iz = 0; iz < cg->getNZ(); ++iz){
-            for( uint iy = 0; iy < cg->getNY(); ++iy, ++counter){
-                for( uint ix = 0; ix < cg->getNX(); ++ix, ++count)
+	for( uint ir = 0; ir < gf->getNumberOfRealizations(); ++ir)
+		for( uint iz = 0; iz < gf->getNK(); ++iz){
+			for( uint iy = 0; iy < gf->getNJ(); ++iy, ++counter){
+				for( uint ix = 0; ix < gf->getNI(); ++ix, ++count)
                     out << (count % 2) << '\n';
                 if( isNXeven )
                     ++count;

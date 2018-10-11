@@ -2202,11 +2202,15 @@ void MainWindow::onCreateGeoGridFromBaseAndTop()
 
 	//the necessary steps to register the new object as a project member.
 	{
+		//create a GEO-EAS Cartesian grid file that serves as GeoGrid's data storage
+		Util::createGEOEAScheckerboardGrid( geoGrid, new_file_path );
 		//save data to file system
 		geoGrid->writeToFS();
 		//save its metadata file
 		geoGrid->updateMetaDataFile();
-		//attach it to the project tree
+		//causes an update to the child objects in the project tree
+		geoGrid->setInfoFromMetadataFile();
+		//attach the object to the project tree
 		Application::instance()->getProject()->addDataFile( geoGrid );
 		//show the newly created object in main window's project tree
 		Application::instance()->refreshProjectTree();

@@ -9,6 +9,7 @@
 #include "viewer3d/view3dviewdata.h"
 #include "viewer3d/view3dbuilders.h"
 #include "domain/application.h"
+#include "geogrid.h"
 
 #include "spectral/spectral.h" //eigen third party library
 
@@ -215,7 +216,21 @@ void CartesianGrid::setInfoFromGridParameter(GSLibParGrid *pg)
     nreal = 1;
     ndv = "";
 
-    this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal, ndv, empty, empty2);
+	this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal, ndv, empty, empty2);
+}
+
+void CartesianGrid::setInfoFromGeoGrid(GeoGrid * gg)
+{
+
+	//computes cell size so we have a 1.0 x 1.0 x 1.0 cube in depositional space (UVW).
+	double dx = 1.0 / gg->getNI();
+	double dy = 1.0 / gg->getNJ();
+	double dz = 1.0 / gg->getNK();
+
+	setInfo( 0.0, 0.0, 0.0, dx, dy, dz,
+			gg->getNI(), gg->getNJ(), gg->getNK(),
+			0.0, gg->getNumberOfRealizations(), gg->getNoDataValue(),
+			gg->getNSVarVarTrnTriads(), gg->getCategoricalAttributes() );
 }
 
 void CartesianGrid::setCellGeometry(int nx, int ny, int nz, double dx, double dy, double dz)
@@ -504,6 +519,12 @@ QString CartesianGrid::getFileType()
 
 void CartesianGrid::updateMetaDataFile()
 {
+	//If this object does not have a physical file on its own, it doesn't have a metadata file.
+	//Instead, its metadata is set on the fly by its parent GeoGrid (see DataFile::updatePropertyCollection() method).
+	//The Cartesian grid physical file belongs to the parent GeoGrid object and this one holds its metadata file.
+	if( isUVWOfAGeoGrid() )
+		return;
+
     QFile file( this->getMetaDataFilePath() );
     file.open( QFile::WriteOnly | QFile::Text );
     QTextStream out(&file);
@@ -565,7 +586,17 @@ void CartesianGrid::save(QTextStream *txt_stream)
 
 View3DViewData CartesianGrid::build3DViewObjects(View3DWidget *widget3D)
 {
-    return View3DBuilders::build( this, widget3D );
+	return View3DBuilders::build( this, widget3D );
+}
+
+QString CartesianGrid::getPresentationName()
+{
+	if( this->getParent()->isFile() ){
+		File* file = dynamic_cast<File*>( this->getParent() );
+		if( file->getFileType() == "GEOGRID")
+			return GridFile::getPresentationName() + " (UVW)";
+	}
+	return GridFile::getPresentationName();
 }
 
 spectral::array *CartesianGrid::createSpectralArray(int nDataColumn)
@@ -627,6 +658,15 @@ void CartesianGrid::setOrigin(double x0, double y0, double z0)
     _x0 = x0;
     _y0 = y0;
 	_z0 = z0;
+}
+
+bool CartesianGrid::isUVWOfAGeoGrid()
+{
+	if( this->getParent()->isFile() ){
+		File* parentFileAspect = dynamic_cast<File*>( this->getParent() );
+		return parentFileAspect->getFileType() == "GEOGRID";
+	}
+	return false;
 }
 
 double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)

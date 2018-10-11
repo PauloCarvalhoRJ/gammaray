@@ -9,7 +9,7 @@ class GSLibParGrid;
 class GridCell;
 class SVDFactor;
 class SpatialLocation;
-
+class GeoGrid;
 
 class CartesianGrid : public GridFile, public IJAbstractCartesianGrid
 {
@@ -44,6 +44,11 @@ public:
      */
     void setInfoFromGridParameter( GSLibParGrid* pg );
 
+	/**
+	 * Sets the cartesian grid metadata from the grid parameters of a GeoGrid (possibly the parent stratigraphic mesh).
+	 */
+	void setInfoFromGeoGrid( GeoGrid* gg );
+
     /** Changes the grid metadata to the new cell dimensions/count.
      */
     void setCellGeometry( int nx, int ny, int nz, double dx, double dy, double dz );
@@ -76,6 +81,11 @@ public:
     /** Translates the grid to the given origin. */
     void setOrigin( double x0, double y0, double z0 );
 
+	/** Returns whether this Cartesian grid is beind used as data store for a GeoGrid.
+	 * In other words: returns whether this grid is child of a GeoGrid file in the project tree.
+	 */
+	bool isUVWOfAGeoGrid();
+
 //GridFile interface
 	virtual bool XYZtoIJK( double x, double y, double z,
 						   uint& i,   uint& j,   uint& k );
@@ -106,6 +116,7 @@ public:
 	virtual QIcon getIcon();
 	virtual void save(QTextStream *txt_stream);
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
+	virtual QString getPresentationName();
 
 //IJAbstractCartesianGrid interface
 public:

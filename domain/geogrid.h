@@ -67,7 +67,8 @@ public:
 	GeoGrid( QString path );
 
 	/** The simplest geometry initializing constructor.  Creates its geometry from top and base values
-	 * of a map (2D CartesianGrid).
+	 * of a map (2D CartesianGrid).  Use this constructor for new grids only.  Do not use this to load
+	 * existing ones.
 	 * @param path The file path where the data file (GEO-EAS cartesian grid data file) will be saved
 	 * @param nHorizonSlices The number of cell layers between top and base.  Minimum is 1.
 	 */
@@ -142,6 +143,7 @@ public:
 	virtual void updateMetaDataFile();
 	virtual bool isDataFile(){ return true; }
 	virtual void writeToFS();
+	virtual void deleteFromFS();
 
 // ProjectComponent interface
 public:

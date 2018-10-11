@@ -376,7 +376,7 @@ void GeoGrid::setInfo(int nI, int nJ, int nK, int nreal, const QString no_data_v
 	_nsvar_var_trn.unite( nvar_var_trn_triads );
 	_categorical_attributes.clear();
 	_categorical_attributes << categorical_attributes;
-	//update the attribut fields
+	//update the attribute fields
 	this->updatePropertyCollection();
 }
 
@@ -587,6 +587,15 @@ void GeoGrid::writeToFS()
 	DataFile::writeToFS();
 	//Save the mesh data (cell geometry part)
 	saveMesh();
+}
+
+void GeoGrid::deleteFromFS()
+{
+	DataFile::deleteFromFS(); //delete data and metadata files
+	//in addition, GeoGrids have a mesh file, which also needs to be deleted.
+	QFile file(this->getMeshFilePath());
+	file.remove(); // TODO: throw exception if remove() returns false (fails).  Also see
+				   // QIODevice::errorString() to see error message.
 }
 
 QIcon GeoGrid::getIcon()

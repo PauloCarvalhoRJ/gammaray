@@ -24,6 +24,7 @@ class Attribute;
 class CategoryDefinition;
 class VariogramModel;
 class SpatialLocation;
+class GridFile;
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -238,10 +239,10 @@ public:
 
     /**
      * Creates a GEO-EAS regular grid file using the grid specs from the
-     * passed CartesianGrid object.  The resulting file contains a single binary variable
+	 * passed grid object.  The resulting file contains a single binary variable
      * that results in a checkerboard battern in the plots.
      */
-    static void createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path);
+	static void createGEOEAScheckerboardGrid(GridFile *gf, QString path);
 
     /**
      * Creates a GEO-EAS regular grid file using the given values
