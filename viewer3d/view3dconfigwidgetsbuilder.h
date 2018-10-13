@@ -7,6 +7,7 @@ class View3DConfigWidget;
 class ProjectComponent;
 class Attribute;
 class CartesianGrid;
+class GeoGrid;
 
 /**
  * This class groups static functions to build 3D viewer configuration widgets for the several domain objects.
@@ -37,6 +38,12 @@ private:
     /** Specific builder for an Attribute in 2D map (nK < 2) Cartesian grid.*/
     static View3DConfigWidget* buildForAttributeMapCartesianGrid(
             CartesianGrid* cartesianGrid,
+            Attribute* attribute ,
+            View3DViewData viewObjects);
+
+    /** Specific builder for an Attribute in a GeoGrid.*/
+    static View3DConfigWidget* buildForAttributeGeoGrid(
+            GeoGrid* geoGrid,
             Attribute* attribute ,
             View3DViewData viewObjects);
 };

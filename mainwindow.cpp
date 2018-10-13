@@ -768,7 +768,7 @@ void MainWindow::onPixelPlt()
         //... get the associated category definition
         cd = cg->getCategoryDefinition( _right_clicked_attribute );
     }
-	Util::viewGrid( _right_clicked_attribute, this, false, cd );
+    Util::viewGrid( _right_clicked_attribute, this, false, cd );
 }
 
 void MainWindow::onProbPlt()

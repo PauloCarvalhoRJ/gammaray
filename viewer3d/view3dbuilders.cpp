@@ -963,7 +963,7 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	unstructuredGrid->GetCellData()->SetScalars( values );
 	unstructuredGrid->GetCellData()->AddArray( visibility );
 
-	// threshold to make unvalued cells invisible
+    // threshold to make unvalued cells invisible
 	vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
 	threshold->SetInputData( unstructuredGrid );
 	threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
@@ -986,5 +986,6 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 			vtkSmartPointer<vtkActor>::New();
 	actor->SetMapper(mapper);
 	//actor->GetProperty()->EdgeVisibilityOn();
-	return View3DViewData(actor);
+
+    return View3DViewData( actor, threshold );
 }

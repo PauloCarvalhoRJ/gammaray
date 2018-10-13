@@ -5,7 +5,7 @@
 #include "../view3dconfigwidget.h"
 #include "../view3dviewdata.h"
 
-class CartesianGrid;
+class GridFile;
 class Attribute;
 
 namespace Ui {
@@ -18,7 +18,7 @@ class V3DCfgWidForAttributeIn3DCartesianGrid : public View3DConfigWidget
 
 public:
     explicit V3DCfgWidForAttributeIn3DCartesianGrid(
-            CartesianGrid *cartesianGrid,
+            GridFile *gridFile,
             Attribute *attribute,
             View3DViewData viewObjects,
             QWidget *parent = 0);
@@ -27,6 +27,7 @@ public:
 private:
     Ui::V3DCfgWidForAttributeIn3DCartesianGrid *ui;
     View3DViewData _viewObjects;
+    GridFile* m_gridFile;
 
 private slots:
     void onUserMadeChanges();

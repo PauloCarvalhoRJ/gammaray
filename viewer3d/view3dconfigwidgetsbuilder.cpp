@@ -4,6 +4,7 @@
 #include "domain/attribute.h"
 #include "domain/file.h"
 #include "domain/cartesiangrid.h"
+#include "domain/geogrid.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h"
 
@@ -29,10 +30,15 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute, View
 
     if( fileType == "CARTESIANGRID" ) {
         CartesianGrid* cg = (CartesianGrid*)file;
-        if( cg->getNZ() < 2 ){
-            return buildForAttributeMapCartesianGrid( cg, attribute, viewObjects );
+        if( ! cg->isUVWOfAGeoGrid() ) {
+            if( cg->getNZ() < 2 ){
+                return buildForAttributeMapCartesianGrid( cg, attribute, viewObjects );
+            } else {
+                return buildForAttribute3DCartesianGrid( cg, attribute, viewObjects );
+            }
         } else {
-            return buildForAttribute3DCartesianGrid( cg, attribute, viewObjects );
+            GeoGrid* gg = dynamic_cast<GeoGrid*>( cg->getParent() );
+            return buildForAttributeGeoGrid( gg, attribute, viewObjects );
         }
     } else {
         Application::instance()->logError("View3DConfigWidgetsBuilder::build(Attribute *): Config widget unavailable for Attributes of file type: " + fileType);
@@ -50,4 +56,11 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeMapCartesianGri
         CartesianGrid *cartesianGrid, Attribute *attribute, View3DViewData viewObjects)
 {
     return new V3DCfgWidForAttributeInMapCartesianGrid( cartesianGrid, attribute, viewObjects );
+}
+
+View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeGeoGrid(GeoGrid *geoGrid,
+                                                                         Attribute *attribute,
+                                                                         View3DViewData viewObjects)
+{
+    return new V3DCfgWidForAttributeIn3DCartesianGrid( geoGrid, attribute, viewObjects );
 }

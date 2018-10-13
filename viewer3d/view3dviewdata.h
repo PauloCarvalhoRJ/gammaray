@@ -32,6 +32,9 @@ public:
                    vtkSmartPointer<vtkThreshold> pThreshold,
                    int sRate = 1);
 
+    View3DViewData(vtkSmartPointer<vtkProp> pActor,
+                   vtkSmartPointer<vtkThreshold> pThreshold);
+
 
     /** All objects must have a VTKActor to become visible. */
     vtkSmartPointer<vtkProp> actor;
