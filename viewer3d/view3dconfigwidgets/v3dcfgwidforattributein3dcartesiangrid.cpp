@@ -137,6 +137,7 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
                 dynamic_cast<vtkUnstructuredGrid*>(_viewObjects.threshold->GetInputDataObject(0,0));
         if( ! unstructuredGrid ){
             Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges(): unstructured grid not found. Check View3DBuilders::buildForAttributeGeoGrid().");
+            return;
         }
 
         //Get visibility array
@@ -144,6 +145,7 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
                 dynamic_cast<vtkIntArray*>( unstructuredGrid->GetCellData()->GetArray( "Visibility" ) );
         if( ! visibilityArray ){
             Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges(): visibility array not found. Check View3DBuilders::buildForAttributeGeoGrid().");
+            return;
         }
 
         //Set transparency values for those cells outside clippling limits
