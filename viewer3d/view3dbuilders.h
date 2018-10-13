@@ -10,6 +10,14 @@ class CartesianGrid;
 class GeoGrid;
 class View3DWidget;
 
+/** Marks cells as visible or visible due to several reasons. */
+enum class InvisibiltyFlag : int {
+    VISIBLE = 1, //valid value
+    INVISIBLE_NDV_VALUE = 0, //invisible due to having invalid value
+    INVISIBLE_UVW_CLIPPING = -1, //invisible due to being outside UVW clipping limits
+    INVISIBLE_NDV_AND_UVW_CLIPPING = -2 //invisible due to having invalid value and being outside UVW clipping limits
+};
+
 /**
  * This class groups static functions to build VTK actors for the several domain objects.
  * In other words, if you need an object visible in the 3D Viewer, then you need to create a build() function

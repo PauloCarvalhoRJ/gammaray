@@ -3,6 +3,7 @@
 
 #include "domain/cartesiangrid.h"
 #include "domain/application.h"
+#include "../view3dbuilders.h" // for the InvisibilityFlag enum
 #include <vtkAlgorithmOutput.h>
 #include <vtkInformation.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
@@ -145,22 +146,36 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
             Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges(): visibility array not found. Check View3DBuilders::buildForAttributeGeoGrid().");
         }
 
-        //Set transparency values for for those cells outside clippling limits
+        //Set transparency values for those cells outside clippling limits
+        // convention:
+        // 1 = visible
+        // 0 = invisible due to null value
+        // -1 = invisible due to being outside IJK clipping limits
         int nI = m_gridFile->getNI();
         int nJ = m_gridFile->getNJ();
         int nK = m_gridFile->getNK();
         for( int k = 0; k < nK; ++k )
             for( int j = 0; j < nJ; ++j )
                 for( int i = 0; i < nI; ++i ) {
+                    int cellIndex = k*nJ*nI + j*nI + i;
+                    InvisibiltyFlag currentFlag = (InvisibiltyFlag)
+                            ( visibilityArray->GetValue( cellIndex ) );
                     if( i >= ui->sldILowClip->value() &&
                         i <= ui->sldIHighClip->value() &&
                         j >= ui->sldJLowClip->value() &&
                         j <= ui->sldJHighClip->value() &&
                         k >= ui->sldKLowClip->value() &&
-                        k <=ui->sldKHighClip->value() )
-                        visibilityArray->SetValue( k*nJ*nI + j*nI +i, 1 );
-                    else
-                        visibilityArray->SetValue( k*nJ*nI + j*nI +i, 0 );
+                        k <=ui->sldKHighClip->value() ){
+                        if( currentFlag == InvisibiltyFlag::INVISIBLE_NDV_AND_UVW_CLIPPING )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+                        else if( currentFlag == InvisibiltyFlag::INVISIBLE_UVW_CLIPPING )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::VISIBLE );
+                    } else {
+                        if( currentFlag == InvisibiltyFlag::VISIBLE )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::INVISIBLE_UVW_CLIPPING );
+                        else if( currentFlag == InvisibiltyFlag::INVISIBLE_NDV_VALUE )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::INVISIBLE_NDV_AND_UVW_CLIPPING );
+                    }
 
                 }
         unstructuredGrid->GetCellData()->Modified();

@@ -547,9 +547,9 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
         values->InsertNextValue( value );
         // visibility flag
         if( cartesianGrid->isNDV( value ) )
-            visibility->InsertNextValue( 0 );
+            visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
         else
-            visibility->InsertNextValue( 1 );
+            visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
     }
 
     //we don't need file's data anymore
@@ -764,9 +764,9 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
                 values->InsertNextValue( value );
                 // visibility flag
                 if( cartesianGrid->isNDV( value ) )
-                    visibility->InsertNextValue( 0 );
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
                 else
-                    visibility->InsertNextValue( 1 );
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
             }
         }
     }
@@ -923,9 +923,9 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 				values->InsertNextValue( value );
 				// visibility flag
 				if( geoGrid->isNDV( value ) )
-					visibility->InsertNextValue( 0 );
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
 				else
-					visibility->InsertNextValue( 1 );
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
 			}
 		}
 	}
