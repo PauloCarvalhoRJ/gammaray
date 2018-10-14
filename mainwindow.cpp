@@ -614,6 +614,46 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction(menu_caption, this, SLOT(onGetPoints()));
             }
         }
+        //if one object is a geogrid and the other object is a point set
+        // then Unfolding can be called, which
+        //consists of creating a new point set that is a copy of the original point set but with
+        //the XYZ coordinates transformed into depositional coordinates (UVW).
+        if( index1.isValid() && index2.isValid() ){
+            //Get the files pointers
+            File* file1 = nullptr;
+            File* file2 = nullptr;
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isFile() ){
+                file1 = static_cast<File*>( index1.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+                file2 = static_cast<File*>( index2.internalPointer() );
+            }
+            //determine the target PointSet file and reference GeoGrid
+            PointSet* pointSet = nullptr;
+            GeoGrid* geoGrid = nullptr;
+            if( file1 ){
+                if( file1->getFileType() == "POINTSET" )
+                    pointSet = dynamic_cast<PointSet*>( file1 );
+                else if( file1->getFileType() == "GEOGRID" )
+                    geoGrid = dynamic_cast<GeoGrid*>( file1 );
+            }
+            if( file2 ){
+                if( file2->getFileType() == "POINTSET" )
+                    pointSet = dynamic_cast<PointSet*>( file2 );
+                else if( file2->getFileType() == "GEOGRID" )
+                    geoGrid = dynamic_cast<GeoGrid*>( file2 );
+            }
+            //if user selected a point set file and a GeoGrid
+            if( pointSet && geoGrid ){
+                _right_clicked_geo_grid = geoGrid;
+                _right_clicked_point_set = pointSet;
+                QString menu_caption = "Unfold ";
+                menu_caption.append( pointSet->getName());
+                menu_caption.append(" with ");
+                menu_caption.append( geoGrid->getName());
+                _projectContextMenu->addAction(menu_caption, this, SLOT(onUnfold()));
+            }
+        }
         //if one object is a property of a cartesian grid and the other is a cartesian grid then grid projection can be used.
         //Grid projection means copying values cell-to-cell in topological space (the spatial size
         //and location of cells don't matter) such that the centers of the grids coincide.
@@ -2214,7 +2254,27 @@ void MainWindow::onCreateGeoGridFromBaseAndTop()
 		Application::instance()->getProject()->addDataFile( geoGrid );
 		//show the newly created object in main window's project tree
 		Application::instance()->refreshProjectTree();
-	}
+    }
+}
+
+void MainWindow::onUnfold()
+{
+    QString suggested_name = _right_clicked_point_set->getName() + "_UVW";
+
+    //open the renaming dialog
+    bool ok;
+    QString new_file_name = QInputDialog::getText(this, "New point set file",
+                                             "New point set file name:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //create a new point set file
+    PointSet* psUVW = _right_clicked_geo_grid->unfold( _right_clicked_point_set, new_file_name );
+
+    if( ! psUVW ){
+        QMessageBox::critical( this, "Error", "Unfolding failed.  Check the messages panel.");
+        return;
+    }
 }
 
 void MainWindow::onCreateCategoryDefinition()

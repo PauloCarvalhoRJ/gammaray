@@ -22,6 +22,7 @@ class VariogramModel;
 class UnivariateCategoryClassification;
 class SVDFactor;
 class IJAbstractCartesianGrid;
+class GeoGrid;
 
 class MainWindow : public QMainWindow
 {
@@ -111,6 +112,8 @@ private:
     PointSet* _right_clicked_point_set;
     //saves the right clicked attribute in the last call to onSVD() slot.
     Attribute *_right_clicked_attribute_onSVD;
+    //pointer to right clicked GeoGrid (set in onProjectContextMenu() slot)
+    GeoGrid* _right_clicked_geo_grid;
 
 private slots:
     void onProjectContextMenu(const QPoint &mouse_location);
@@ -184,6 +187,7 @@ private slots:
                                                  IJAbstractCartesianGrid* gridWithGridSpecs );
 	void onFactorialKriging();
 	void onCreateGeoGridFromBaseAndTop();
+    void onUnfold();
 
 private:
     /**

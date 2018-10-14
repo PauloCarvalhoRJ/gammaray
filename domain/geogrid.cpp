@@ -1,11 +1,14 @@
-#include "geogrid.h"
+#include "domain/geogrid.h"
 #include "viewer3d/view3dviewdata.h"
 #include "viewer3d/view3dbuilders.h"
-#include "attribute.h"
-#include "cartesiangrid.h"
+#include "domain/attribute.h"
+#include "domain/cartesiangrid.h"
 #include "spatialindex/spatialindexpoints.h"
-#include "application.h"
+#include "domain/application.h"
 #include "auxiliary/meshloader.h"
+#include "domain/pointset.h"
+#include "util.h"
+#include "domain/project.h"
 
 #include <QCoreApplication>
 #include <QFile>
@@ -408,7 +411,65 @@ void GeoGrid::getMeshCellDefinition(uint index, uint (&vIds)[8])
 	vIds[4] = m_cellDefsPart[index]->vId[4];
 	vIds[5] = m_cellDefsPart[index]->vId[5];
 	vIds[6] = m_cellDefsPart[index]->vId[6];
-	vIds[7] = m_cellDefsPart[index]->vId[7];
+    vIds[7] = m_cellDefsPart[index]->vId[7];
+}
+
+PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
+{
+    if( ! inputPS->is3D() ){
+        Application::instance()->logError("GeoGrid::unfold(): input point set is not 3D.");
+        return nullptr;
+    }
+
+    //create the new point set object
+    PointSet* result = new PointSet( Application::instance()->getProject()->getPath() +
+                                     '/' + nameForNewPointSet );
+
+    //make a duplicate of the input point set
+    {
+        //copy metadata from the input point set
+        result->setInfoFromOtherPointSet( inputPS );
+        //copy the physical data file
+        Util::copyFile( inputPS->getPath(), result->getPath() );
+    }
+
+    //load the data
+    result->loadData();
+
+    //get the number of samples in the input point set
+    uint nSamples = result->getDataLineCount();
+
+    //append three new columns to the samples (output): the UVW coordinates
+    result->addEmptyDataColumn( "U", nSamples );
+    result->addEmptyDataColumn( "V", nSamples );
+    result->addEmptyDataColumn( "W", nSamples );
+    result->writeToFS();
+
+    //iterate over the samples in the point set
+    uint xIndex = result->getXindex() - 1; //first GEO-EAS index = 1
+    uint yIndex = result->getYindex() - 1;
+    uint zIndex = result->getZindex() - 1;
+    std::vector<uint> samplesToRemove;
+    for( uint iSample = 0; iSample < nSamples; ++iSample ){
+        //get the XYZ location of the sample
+        double x = result->data( iSample, xIndex );
+        double y = result->data( iSample, yIndex );
+        double z = result->data( iSample, zIndex );
+        //get the UVW coordinates
+        double u, v, w;
+        if( XYZtoUVW( x, y, z, u, v, w ) ){
+
+        } else {
+            //a cell was not found (likely the sample is outside the grid)
+            //so mark the sample for removal
+            samplesToRemove.push_back( iSample );
+        }
+    }
+}
+
+bool GeoGrid::XYZtoUVW(double x, double y, double z, double &u, double &v, double &w)
+{
+    // https://math.stackexchange.com/questions/13404/mapping-irregular-quadrilateral-to-a-rectangle
 }
 
 void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z)
