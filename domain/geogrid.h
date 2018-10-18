@@ -2,6 +2,7 @@
 #define GEOGRID_H
 
 #include "gridfile.h"
+#include "geometry/face3d.h"
 
 class CartesianGrid;
 class SpatialIndexPoints;
@@ -133,6 +134,11 @@ public:
      */
     bool XYZtoUVW(  double x,  double y,  double z,
                    double& u, double& v, double& w );
+
+	/**
+	 * Creates and returns a vector containing the geometries of the six faces of a cell.
+	 */
+	std::vector<Face3D> getFaces( uint cellIndex );
 
 //GridFile interface
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,

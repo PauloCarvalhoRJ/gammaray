@@ -1825,5 +1825,18 @@ QString Util::getGSLibVariogramStructureName(uint it)
     case 4: return "Power";
     case 5: return "Hole effect";
     default: return "UNKNOWN";
-    }
+	}
+}
+
+bool Util::isInside(const Vertex3D & p, const std::vector<Face3D> & fs)
+{
+	double bound = -1e-15; // use -1e-15 to exclude boundaries
+	for (const Face3D& f : fs) {
+		Vector3D p2f = f.v[0] - p;       // any point of f cloud be used
+		double d = p2f.dot( f.normal() );
+		d /= p2f.norm();                 // for numeric stability
+		if ( d < bound )
+			return false;
+	}
+	return true;
 }

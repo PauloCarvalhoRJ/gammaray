@@ -87,6 +87,9 @@ public:
 	uint getNK(){ return m_nK; }
 	uint getNumberOfRealizations(){ return m_nreal; }
 
+	/** Returns the data row index corresponding to the given topological coordinate (cell address). */
+	uint IJKtoIndex( uint i, uint j, uint k );
+
 // ICalcPropertyCollection interface
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 

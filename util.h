@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <cassert>
 #include <complex>
+#include "geometry/face3d.h"
 
 // macro used to do printf on QString for debugging purposes
 // it is safe to delete this.
@@ -580,6 +581,11 @@ public:
       * Returns the name of a variographic structure given its code following GSLib convention.
       */
     static QString getGSLibVariogramStructureName(uint it);
+
+	/** Thests whether the passed point (as Vertex3D) is inside the polyhedron (as a vector of Face3D).
+	 * This assumes the polyhedron is convex and the faces are all counter-clockwise.
+	 */
+	static bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs );
 };
 
 #endif // UTIL_H

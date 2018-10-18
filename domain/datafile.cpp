@@ -1147,3 +1147,8 @@ void DataFile::setData(uint line, uint column, double value)
 	}
 	this->_data.at(line).at(column) = value;
 }
+
+void DataFile::removeDataLine(uint line)
+{
+	_data.erase( _data.begin() + line );
+}

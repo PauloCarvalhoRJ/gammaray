@@ -138,6 +138,11 @@ void GridFile::setColumnData(uint dataColumn, spectral::array & array)
 	Application::instance()->refreshProjectTree();
 }
 
+uint GridFile::IJKtoIndex(uint i, uint j, uint k)
+{
+	return k * m_nJ * m_nI + j * m_nI + i;
+}
+
 double GridFile::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
 {
 	uint i, j, k;

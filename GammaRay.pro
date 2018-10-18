@@ -222,7 +222,9 @@ SOURCES += main.cpp\
     geostats/indexedspatiallocation.cpp \
     domain/geogrid.cpp \
     domain/gridfile.cpp \
-    domain/auxiliary/meshloader.cpp
+    domain/auxiliary/meshloader.cpp \
+    geometry/vector3d.cpp \
+    geometry/face3d.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -423,7 +425,9 @@ HEADERS  += mainwindow.h \
     geostats/indexedspatiallocation.h \
     domain/geogrid.h \
     domain/gridfile.h \
-    domain/auxiliary/meshloader.h
+    domain/auxiliary/meshloader.h \
+    geometry/vector3d.h \
+    geometry/face3d.h
 
 
 FORMS    += mainwindow.ui \

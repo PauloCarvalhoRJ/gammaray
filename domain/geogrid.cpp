@@ -9,6 +9,8 @@
 #include "domain/pointset.h"
 #include "util.h"
 #include "domain/project.h"
+#include "geometry/vector3d.h"
+#include "geometry/face3d.h"
 
 #include <QCoreApplication>
 #include <QFile>
@@ -18,68 +20,6 @@
 #include <QThread>
 
 #include <cassert>
-
-
-///================== private classes for computational geometry (TODO: make these public)==========================
-
-class Vector3D {
-public:
-	double x, y, z;
-
-	Vector3D operator-(Vector3D p) const {
-		return Vector3D{x - p.x, y - p.y, z - p.z};
-	}
-
-	Vector3D cross(Vector3D p) const {
-		return Vector3D{
-			y * p.z - p.y * z,
-					z * p.x - p.z * x,
-					x * p.y - p.x * y
-		};
-	}
-
-	double dot(Vector3D p) const {
-		return x * p.x + y * p.y + z * p.z;
-	}
-
-	double norm() const {
-		return std::sqrt(x*x + y*y + z*z);
-	}
-};
-
-//make a point type with the same structure of the vector for clarity
-typedef Vector3D Vertex3D;
-
-class Face3D {
-public:
-	Face3D() : v(4){} //making the face with 4 vertexes by default
-
-	std::vector<Vertex3D> v;
-
-	Vector3D normal() const {
-		assert(v.size() > 2);
-		Vector3D dir1 = v[1] - v[0];
-		Vector3D dir2 = v[2] - v[0];
-		Vector3D n  = dir1.cross(dir2);
-		double d = n.norm();
-		return Vector3D{n.x / d, n.y / d, n.z / d};
-	}
-};
-
-//this assumes the polyhedron is convex and the faces are all counter-clockwise
-bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs ) {
-	double bound = -1e-15; // use -1e-15 to exclude boundaries
-	for (const Face3D& f : fs) {
-		Vector3D p2f = f.v[0] - p;       // any point of f cloud be used
-		double d = p2f.dot( f.normal() );
-		d /= p2f.norm();                 // for numeric stability
-		if ( d < bound )
-			return false;
-	}
-	return true;
-}
-
-///===================================================The GeoGrid implementation=====================================
 
 GeoGrid::GeoGrid( QString path ) :
 	GridFile( path ),
@@ -445,6 +385,8 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
     result->addEmptyDataColumn( "W", nSamples );
     result->writeToFS();
 
+	uint nColumns = result->getDataColumnCount();
+
     //iterate over the samples in the point set
     uint xIndex = result->getXindex() - 1; //first GEO-EAS index = 1
     uint yIndex = result->getYindex() - 1;
@@ -456,20 +398,129 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
         double y = result->data( iSample, yIndex );
         double z = result->data( iSample, zIndex );
         //get the UVW coordinates
-        double u, v, w;
+		double u = -1.0;
+		double v = -1.0;
+		double w = -1.0;
         if( XYZtoUVW( x, y, z, u, v, w ) ){
-
-        } else {
+			//assign them to the point set
+			result->setData( iSample, nColumns - 3, u );
+			result->setData( iSample, nColumns - 2, v );
+			result->setData( iSample, nColumns - 1, w );
+		} else {
             //a cell was not found (likely the sample is outside the grid)
             //so mark the sample for removal
             samplesToRemove.push_back( iSample );
         }
     }
+
+	//remove the samples with invalid UVW coordinates
+	std::vector<uint>::iterator it = samplesToRemove.begin();
+	for( ; it != samplesToRemove.end(); ++it )
+		result->removeDataLine( *it );
+
+	//commit changes to filesystem
+	result->writeToFS();
+
+	return result;
 }
 
 bool GeoGrid::XYZtoUVW(double x, double y, double z, double &u, double &v, double &w)
 {
     // https://math.stackexchange.com/questions/13404/mapping-irregular-quadrilateral-to-a-rectangle
+
+	//Obtain the topological coordinates (IJK) of the cell that contains the location.
+	uint i, j, k;
+	if( ! XYZtoIJK( x, y, z, i, j, k ) )
+		return false;
+
+	//Obtain the index of the cell.
+	uint cellIndex = IJKtoIndex( i, j, k );
+
+	//Make a point object corresponding to the query location.
+	Vertex3D location{ x, y, z };
+
+	//Get the faces' geometries of the cell.
+	std::vector<Face3D> cellFaces = getFaces( cellIndex );
+
+	//faces 2 and 3 are along I direction, thus are respect to U depositional coordinate
+	//faces 4 and 5 are along J direction, thus are respect to V depositional coordinate
+	//faces 0 and 1 are along K direction, thus are respect to W depositional coordinate
+	//compute the six distances between the location and the faces
+	double dU0 = cellFaces[2].distance( location );
+	double dU1 = cellFaces[3].distance( location );
+	double dV0 = cellFaces[4].distance( location );
+	double dV1 = cellFaces[5].distance( location );
+	double dW0 = cellFaces[0].distance( location );
+	double dW1 = cellFaces[1].distance( location );
+
+	//compute the UVW within the cell (min = 0.0, max = 1.0)
+	double local_u = dU0 / (dU0 + dU1);
+	double local_v = dV0 / (dV0 + dV1);
+	double local_w = dW0 / (dW0 + dW1);
+
+	//compute the global UVW steps.
+	double du = 1.0 / m_nI;
+	double dv = 1.0 / m_nJ;
+	double dw = 1.0 / m_nK;
+
+	//compute the UVW coordinates.
+	u = du * i + du * local_u;
+	v = dv * j + dv * local_v;
+	w = dw * k + dw * local_w;
+
+	return true;
+}
+
+std::vector<Face3D> GeoGrid::getFaces( uint cellIndex )
+{
+	//get the cell geometry definition (vertexes' indexes).
+	CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndex );
+
+	//get the vertex data of the cell
+	VertexRecordPtr vd[8];
+	vd[0] = m_vertexesPart.at( cellDef->vId[0] );
+	vd[1] = m_vertexesPart.at( cellDef->vId[1] );
+	vd[2] = m_vertexesPart.at( cellDef->vId[2] );
+	vd[3] = m_vertexesPart.at( cellDef->vId[3] );
+	vd[4] = m_vertexesPart.at( cellDef->vId[4] );
+	vd[5] = m_vertexesPart.at( cellDef->vId[5] );
+	vd[6] = m_vertexesPart.at( cellDef->vId[6] );
+	vd[7] = m_vertexesPart.at( cellDef->vId[7] );
+
+	//------------make the six face geometries------------
+	std::vector<Face3D> fs( 6 );
+	fs[0].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+	fs[0].v[1] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+	fs[0].v[2] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+	fs[0].v[3] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+
+	fs[1].v[0] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+	fs[1].v[1] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+	fs[1].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+	fs[1].v[3] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+
+	fs[2].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+	fs[2].v[1] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+	fs[2].v[2] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+	fs[2].v[3] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+
+	fs[3].v[0] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+	fs[3].v[1] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+	fs[3].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+	fs[3].v[3] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+
+	fs[4].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+	fs[4].v[1] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+	fs[4].v[2] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+	fs[4].v[3] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+
+	fs[5].v[0] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+	fs[5].v[1] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+	fs[5].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+	fs[5].v[3] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+	//----------------------------------------------------
+
+	return fs;
 }
 
 void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z)
@@ -534,58 +585,14 @@ bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k 
 	if( cellIndexes.empty() )
 		return false;
 
-	//get the cell geometry definition (vertexes' indexes).
-	CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndexes[0] );
+	//get the cell's faces geometry .
+	std::vector<Face3D> fs = getFaces( cellIndexes[0] );
 
 	//the test location
 	Vertex3D p{ x, y, z };
 
-	//get the vertex data of the cell
-	VertexRecordPtr vd[8];
-	vd[0] = m_vertexesPart.at( cellDef->vId[0] );
-	vd[1] = m_vertexesPart.at( cellDef->vId[1] );
-	vd[2] = m_vertexesPart.at( cellDef->vId[2] );
-	vd[3] = m_vertexesPart.at( cellDef->vId[3] );
-	vd[4] = m_vertexesPart.at( cellDef->vId[4] );
-	vd[5] = m_vertexesPart.at( cellDef->vId[5] );
-	vd[6] = m_vertexesPart.at( cellDef->vId[6] );
-	vd[7] = m_vertexesPart.at( cellDef->vId[7] );
-
-	//------------make the six face geometries------------
-	std::vector<Face3D> fs( 6 );
-	fs[0].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
-	fs[0].v[1] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
-	fs[0].v[2] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
-	fs[0].v[3] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
-
-	fs[1].v[0] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
-	fs[1].v[1] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
-	fs[1].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
-	fs[1].v[3] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
-
-	fs[2].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
-	fs[2].v[1] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
-	fs[2].v[2] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
-	fs[2].v[3] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
-
-	fs[3].v[0] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
-	fs[3].v[1] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
-	fs[3].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
-	fs[3].v[3] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
-
-	fs[4].v[0] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
-	fs[4].v[1] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
-	fs[4].v[2] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
-	fs[4].v[3] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
-
-	fs[5].v[0] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
-	fs[5].v[1] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
-	fs[5].v[2] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
-	fs[5].v[3] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
-	//----------------------------------------------------
-
 	//test whether x,y,z is actually inside the cell.
-	bool testInside = isInside( p, fs );
+	bool testInside = Util::isInside( p, fs );
 	if( ! testInside )
 		return false;
 

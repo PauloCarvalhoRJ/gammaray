@@ -317,6 +317,11 @@ public:
 	/** Returns whether this data set is tridimensional. */
 	virtual bool isTridimensional() = 0;
 
+	/** Removes one data line from the internal data array.
+	 * It is necessary to call writeToFS() to commit the change to filesystem.
+	 */
+	void removeDataLine( uint line );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
