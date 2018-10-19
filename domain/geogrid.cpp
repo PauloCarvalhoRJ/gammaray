@@ -415,6 +415,9 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
         }
     }
 
+	//changed the assigned X, Y, Z fields of the unfolded point set to the new U, V, W columns
+	result->setInfo( nColumns - 2, nColumns - 1, nColumns, result->getNoDataValue() );
+
 	//remove the samples with invalid UVW coordinates
 	std::vector<uint>::iterator it = samplesToRemove.begin();
 	uint offset = 0; //adjust for previously deleted lines.
