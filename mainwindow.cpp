@@ -2275,6 +2275,15 @@ void MainWindow::onUnfold()
         QMessageBox::critical( this, "Error", "Unfolding failed.  Check the messages panel.");
         return;
     }
+
+	//update the metadata file of the unfolded point set
+	psUVW->updateMetaDataFile();
+
+	//attach the object to the project tree
+	Application::instance()->getProject()->addDataFile( psUVW );
+
+	//show the newly created object in main window's project tree
+	Application::instance()->refreshProjectTree();
 }
 
 void MainWindow::onCreateCategoryDefinition()

@@ -3,11 +3,16 @@
 
 Face3D::Face3D() : v(4){}
 
+
+// TODO: treat degenerate cases (e.g. a face may collapse into a triangle, edge or point).
+//       current GeoGrid constructors do not generate degenerate cells, but in the future, they might.
+
 Vector3D Face3D::normal() const {
 	assert(v.size() > 2);
 	Vector3D dir1 = v[1] - v[0];
 	Vector3D dir2 = v[2] - v[0];
-	Vector3D n  = dir1.cross(dir2);
+	// dir1 cross dir2 or dir2 cross dir1 depends on whether the 3D coordinate system is right-handed or left-handed
+	Vector3D n  = dir2.cross(dir1);
 	double d = n.norm();
 	return Vector3D{n.x / d, n.y / d, n.z / d};
 }

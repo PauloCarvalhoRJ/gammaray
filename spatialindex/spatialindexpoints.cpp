@@ -82,7 +82,11 @@ void SpatialIndexPoints::fill(GeoGrid * gg)
 	//first clear the index.
 	clear();
 
+	//set the data file as the passed GeoGrid
 	setDataFile( gg );
+
+	//load the GeoGrid's mesh
+	gg->loadMesh();
 
 	//for each data line...
 	uint totlines = gg->getDataLineCount();

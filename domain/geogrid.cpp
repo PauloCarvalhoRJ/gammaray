@@ -367,10 +367,10 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
 
     //make a duplicate of the input point set
     {
-        //copy metadata from the input point set
-        result->setInfoFromOtherPointSet( inputPS );
-        //copy the physical data file
-        Util::copyFile( inputPS->getPath(), result->getPath() );
+		//copy the physical data file
+		Util::copyFile( inputPS->getPath(), result->getPath() );
+		//copy metadata from the input point set
+		result->setInfoFromOtherPointSet( inputPS );
     }
 
     //load the data
@@ -392,6 +392,7 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
     uint yIndex = result->getYindex() - 1;
     uint zIndex = result->getZindex() - 1;
     std::vector<uint> samplesToRemove;
+	bool empty = true;
     for( uint iSample = 0; iSample < nSamples; ++iSample ){
         //get the XYZ location of the sample
         double x = result->data( iSample, xIndex );
@@ -402,6 +403,7 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
 		double v = -1.0;
 		double w = -1.0;
         if( XYZtoUVW( x, y, z, u, v, w ) ){
+			empty = false;
 			//assign them to the point set
 			result->setData( iSample, nColumns - 3, u );
 			result->setData( iSample, nColumns - 2, v );
@@ -415,8 +417,21 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
 
 	//remove the samples with invalid UVW coordinates
 	std::vector<uint>::iterator it = samplesToRemove.begin();
-	for( ; it != samplesToRemove.end(); ++it )
-		result->removeDataLine( *it );
+	uint offset = 0; //adjust for previously deleted lines.
+	for( ; it != samplesToRemove.end(); ++it, ++offset )
+		result->removeDataLine( *it - offset );
+
+	//if no data remained
+	if( empty ){
+		//remove the file with partial data
+		QFile resultFile( result->getPath() );
+		resultFile.remove();
+		//de-allocate the object
+		delete result;
+		Application::instance()->logError("GeoGrid::unfold(): Unfolding resulted in empty data set. Canceled.");
+		//return null pointer
+		return nullptr;
+	}
 
 	//commit changes to filesystem
 	result->writeToFS();
@@ -578,27 +593,31 @@ bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k 
 	if( m_spatialIndex->isEmpty() )
 		m_spatialIndex->fill( this );
 
-	//Get the nearest cell.
-	QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 1 );
+	//Get the nearest cells.
+	QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 5 );
 
 	//if the spatial search failed, assumes it fell outside the grid
 	if( cellIndexes.empty() )
 		return false;
 
-	//get the cell's faces geometry .
-	std::vector<Face3D> fs = getFaces( cellIndexes[0] );
-
 	//the test location
 	Vertex3D p{ x, y, z };
 
-	//test whether x,y,z is actually inside the cell.
-	bool testInside = Util::isInside( p, fs );
-	if( ! testInside )
-		return false;
+	//for each one of the closest cells returned by the spatial index
+	QList<uint>::iterator itCellIndex = cellIndexes.begin();
+	for( ; itCellIndex != cellIndexes.end(); ++itCellIndex ){
+		//get the cell's faces geometry .
+		std::vector<Face3D> fs = getFaces( *itCellIndex );
+		//if the location is inside the cell
+		if( Util::isInside( p, fs ) ){
+			//return the cell's topological coordinates
+			this->indexToIJK( *itCellIndex, i, j, k );
+			return true;
+		}
+	}
 
-	//return the indexes (via output parameters) and true to indicate success
-	this->indexToIJK( cellIndexes[0], i, j, k );
-	return true;
+	//if execution reaches this point, the search failed.
+	return false;
 }
 
 double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
