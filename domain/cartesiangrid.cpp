@@ -662,7 +662,7 @@ void CartesianGrid::setOrigin(double x0, double y0, double z0)
 
 bool CartesianGrid::isUVWOfAGeoGrid()
 {
-	if( this->getParent()->isFile() ){
+	if( this->getParent() && this->getParent()->isFile() ){
 		File* parentFileAspect = dynamic_cast<File*>( this->getParent() );
 		return parentFileAspect->getFileType() == "GEOGRID";
 	}
