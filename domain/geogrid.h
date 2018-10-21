@@ -165,6 +165,7 @@ public:
 	virtual bool isDataFile(){ return true; }
 	virtual void writeToFS();
 	virtual void deleteFromFS();
+    virtual bool isDistribution(){ return false; }
 
 // ProjectComponent interface
 public:
