@@ -82,6 +82,7 @@ public:
     QString getFileType();
     void updateMetaDataFile();
     bool isDataFile(){ return true; }
+	bool isDistribution(){ return false; }
 
     // ProjectComponent interface
 public:

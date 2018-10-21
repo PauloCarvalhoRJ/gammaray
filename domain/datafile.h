@@ -322,6 +322,13 @@ public:
 	 */
 	void removeDataLine( uint line );
 
+    /** Returns the loaded values for a variable given its column index (GEO-EAS index - 1).
+     * May return an empty container if data is not loaded or less elements than records in the
+     * physical file if it has been paged (e.g. file with multiple simulation realizations, see
+     * setDataPage() method).
+     */
+    std::vector< double > getDataColumn( uint column );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();

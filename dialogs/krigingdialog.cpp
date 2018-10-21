@@ -303,8 +303,12 @@ void KrigingDialog::onSave(bool estimates)
     if (ok && !new_var_name.isEmpty()){
         //the estimates are normally the first variable in the resulting grid
         Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( ( estimates ? 1 : 2 ) );
-        //add the estimates or variances to the selected estimation grid
-        estimation_grid->addGEOEASColumn( values, new_var_name );
+		if( values ){
+			//add the estimates or variances to the selected estimation grid
+			estimation_grid->addGEOEASColumn( values, new_var_name );
+		} else {
+			QMessageBox::critical( this, "Error", "KrigingDialog::onSave: m_cd_estimation is null. Please, run the estimation again.");
+		}
     }
 }
 

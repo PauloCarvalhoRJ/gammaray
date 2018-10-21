@@ -1145,7 +1145,18 @@ void DataFile::setData(uint line, uint column, double value)
 	case 0:
 		loadData(); // loads the data from disk.
 	}
-	this->_data.at(line).at(column) = value;
+    this->_data.at(line).at(column) = value;
+}
+
+std::vector<double> DataFile::getDataColumn(uint column)
+{
+    loadData();
+    std::vector<double> result;
+    uint nLines = getDataLineCount();
+    result.reserve( nLines );
+    for( uint i = 0; i < nLines; ++i)
+        result.push_back( data(i, column) );
+    return result;
 }
 
 void DataFile::removeDataLine(uint line)

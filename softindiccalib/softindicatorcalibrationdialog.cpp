@@ -10,6 +10,7 @@
 #include "domain/categorypdf.h"
 #include "domain/project.h"
 #include "domain/pointset.h"
+#include "domain/cartesiangrid.h"
 #include "widgets/fileselectorwidget.h"
 #include "dialogs/valuespairsdialog.h"
 #include "softindicatorcalibplot.h"
@@ -149,36 +150,55 @@ void SoftIndicatorCalibrationDialog::onSave()
     //get the Attribute's data file
     File *dataFile = m_at->getContainingFile();
 
-    //ask the user for the name to the new point set file
+	//ask the user for the name to the new data set file
     bool ok = false;
-    QString proposed_name = dataFile->getName().append("_SOFT.xyz");
-    QString new_name = QInputDialog::getText(this, "Name the new point set file",
-                                             "New point set file name with soft indicators:", QLineEdit::Normal,
+	QString proposed_name = dataFile->getName().append("_SOFT.dat");
+	QString new_name = QInputDialog::getText(this, "Name the new data set file (" + dataFile->getFileType() + ")",
+											 "New data set (" + dataFile->getFileType() + ") file name with soft indicators:", QLineEdit::Normal,
                                              proposed_name, &ok);
     if(!ok) return;
 
-    if( dataFile->getFileType() == "POINTSET" ){
-        //get the temporary data file with the computed soft indicators
-        QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+	//get the temporary data file with the computed soft indicators
+	QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+
+	//rename the output point set file
+	QString newDataSetPath = Util::renameFile( fileWithSoftIndicators, new_name );
+
+	if( dataFile->getFileType() == "POINTSET" ){
 
         //assuming the data file is a point set file
         PointSet* psData = (PointSet*)dataFile;
 
-        //rename the output point set file
-        QString newPSpath = Util::renameFile( fileWithSoftIndicators, new_name );
-
         //create a new point set object corresponding to a file created in the tmp directory
-        PointSet* ps = new PointSet( newPSpath );
+		PointSet* ps = new PointSet( newDataSetPath );
 
         //set the new point set metadata
-        ps->setInfo( 1, 2, 3, psData->getNoDataValue() );
+		ps->setInfo( psData->getXindex(), psData->getYindex(), psData->getZindex(), psData->getNoDataValue() );
 
         //adds the point set to the project
         Application::instance()->getProject()->addDataFile( ps );
 
         //refreshes the project tree
         Application::instance()->refreshProjectTree();
-    }
+
+	} else if( dataFile->getFileType() == "CARTESIANGRID" ){
+
+		//assuming the data file is a Cartesian grid file
+		CartesianGrid* cgData = (CartesianGrid*)dataFile;
+
+		//create a new Cartesian grid object corresponding to a file created in the tmp directory
+		CartesianGrid* cg = new CartesianGrid( newDataSetPath );
+
+		//set the new Cartesian grid metadata
+		cg->setInfoFromOtherCG( cgData );
+
+		//adds the Cartesiangrid to the project
+		Application::instance()->getProject()->addDataFile( cg );
+
+		//refreshes the project tree
+		Application::instance()->refreshProjectTree();
+
+	}
 }
 
 void SoftIndicatorCalibrationDialog::onPreview()
@@ -196,7 +216,7 @@ void SoftIndicatorCalibrationDialog::onPreview()
     QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
 
     if( dataFile->getFileType() == "POINTSET" ){
-        //create a new grid object corresponding to a file to be created in the tmp directory
+		//create a new point set object corresponding to a file to be created in the tmp directory
         PointSet* ps = new PointSet( fileWithSoftIndicators );
 
         //set the new point set metadata
@@ -213,7 +233,23 @@ void SoftIndicatorCalibrationDialog::onPreview()
             //open the plot dialog
             Util::viewPointSet( softIndicator, this );
         }
-    }
+	} else if( dataFile->getFileType() == "CARTESIANGRID" ){
+		//create a new grid object corresponding to a file to be created in the tmp directory
+		CartesianGrid* cg = new CartesianGrid( fileWithSoftIndicators );
+
+		//set the new grid metadata
+		cg->setInfoFromOtherCG( dynamic_cast<CartesianGrid*>(dataFile) );
+
+		//get the number of data columns (variables)
+		uint nFields = cg->getDataColumnCount();
+
+		for( uint i = 0; i < nFields; ++i){
+			//get the variable with the soft indicator
+			Attribute* softIndicator = (Attribute*)cg->getAttributeFromGEOEASIndex( i + 1 );
+			//open the plot dialog
+			Util::viewGrid( softIndicator, this );
+		}
+	}
 
     //TODO: destroy the created object pointed to by ps.
 }
@@ -244,9 +280,13 @@ void SoftIndicatorCalibrationDialog::onResultedGlobalPDF()
     //get the Attribute's data file
     File *dataFile = m_at->getContainingFile();
 
-    if( dataFile->getFileType() == "POINTSET" ){
-        //get the temporary data file with the computed soft indicators
-        QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+	//get the temporary data file with the computed soft indicators
+	QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+
+	//create a p.d.f. object to store the global
+	CategoryPDF* globalPDF = new CategoryPDF( selectedCategoryDefinition, "");
+
+	if( dataFile->getFileType() == "POINTSET" ){
 
         //assuming the data file is a point set file
         PointSet* psData = (PointSet*)dataFile;
@@ -263,9 +303,6 @@ void SoftIndicatorCalibrationDialog::onResultedGlobalPDF()
         //get the number of computed soft indicator variables (number of data columns - 3 for the x,y,z coordinates)
         uint nSoftIndicators = ps->getDataColumnCount() - 3;
 
-        //create a p.d.f. object to store the global
-        CategoryPDF* globalPDF = new CategoryPDF( selectedCategoryDefinition, "");
-
         //for each soft indicator
         for( uint i = 0; i < nSoftIndicators; ++i){
             //get its mean through the resulted data file
@@ -274,10 +311,36 @@ void SoftIndicatorCalibrationDialog::onResultedGlobalPDF()
             globalPDF->addPair( selectedCategoryDefinition->getCategoryCode( i ), mean );
         }
 
-        //show the p.d.f. editor to display the computed global frequencies
-        ValuesPairsDialog* vpd = new ValuesPairsDialog( globalPDF, this );
-        vpd->show(); //show dialog non-modally
-    }
+	}else if( dataFile->getFileType() == "CARTESIANGRID" ){
+
+		//assuming the data file is a grid file
+		CartesianGrid* cgData = (CartesianGrid*)dataFile;
+
+		//create a new grid object corresponding to a file created in the tmp directory
+		CartesianGrid* cg = new CartesianGrid( fileWithSoftIndicators );
+
+		//set the new grid metadata
+		cg->setInfoFromOtherCG( cgData );
+
+		//loads the soft indicator data
+		cg->loadData();
+
+		//get the number of computed soft indicator variables (number of data columns)
+		uint nSoftIndicators = cg->getDataColumnCount();
+
+		//for each soft indicator
+		for( uint i = 0; i < nSoftIndicators; ++i){
+			//get its mean through the resulted data file
+			double mean = cg->mean( i );
+			//added the pair category code-probability to the p.d.f. object
+			globalPDF->addPair( selectedCategoryDefinition->getCategoryCode( i ), mean );
+		}
+
+	}
+
+	//show the p.d.f. editor to display the computed global frequencies
+	ValuesPairsDialog* vpd = new ValuesPairsDialog( globalPDF, this );
+	vpd->show(); //show dialog non-modally
 }
 
 void SoftIndicatorCalibrationDialog::onResultedGlobalCDF()
@@ -297,9 +360,13 @@ void SoftIndicatorCalibrationDialog::onResultedGlobalCDF()
     //get the Attribute's data file
     File *dataFile = m_at->getContainingFile();
 
-    if( dataFile->getFileType() == "POINTSET" ){
-        //get the temporary data file with the computed soft indicators
-        QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+	//get the temporary data file with the computed soft indicators
+	QString fileWithSoftIndicators = saveTmpFileWithSoftIndicators();
+
+	//create a c.d.f. object to store the global cumulative probabilities
+	ThresholdCDF* globalCDF = new ThresholdCDF( "" );
+
+	if( dataFile->getFileType() == "POINTSET" ){
 
         //assuming the data file is a point set file
         PointSet* psData = (PointSet*)dataFile;
@@ -316,9 +383,6 @@ void SoftIndicatorCalibrationDialog::onResultedGlobalCDF()
         //get the number of computed soft indicator variables (number of data columns - 3 for the x,y,z coordinates)
         uint nSoftIndicators = ps->getDataColumnCount() - 3;
 
-        //create a c.d.f. object to store the global cumulative probabilities
-        ThresholdCDF* globalCDF = new ThresholdCDF( "" );
-
         //for each soft indicator
         for( uint i = 0; i < nSoftIndicators; ++i){
             //get its mean through the resulted data file
@@ -327,12 +391,38 @@ void SoftIndicatorCalibrationDialog::onResultedGlobalCDF()
             globalCDF->addPair( cdf->get1stValue( i ) , mean );
         }
 
-        //show the c.d.f. editor to display the computed global cumulative frequencies
-        ValuesPairsDialog* vpd = new ValuesPairsDialog( globalCDF, this );
-        vpd->show(); //show dialog non-modally
+	} else if( dataFile->getFileType() == "CARTESIANGRID" ){
 
-        //TODO: delete globalCDF somewhere
-    }
+		//assuming the data file is a grid file
+		CartesianGrid* cgData = (CartesianGrid*)dataFile;
+
+		//create a new point set object corresponding to a file created in the tmp directory
+		CartesianGrid* cg = new CartesianGrid( fileWithSoftIndicators );
+
+		//set the new point set metadata
+		cg->setInfoFromOtherCG( cgData );
+
+		//loads the soft indicator data
+		cg->loadData();
+
+		//get the number of computed soft indicator variables (number of data columns)
+		uint nSoftIndicators = cg->getDataColumnCount();
+
+		//for each soft indicator
+		for( uint i = 0; i < nSoftIndicators; ++i){
+			//get its mean through the resulted data file
+			double mean = cg->mean( i );
+			//added the pair category code-probability to the p.d.f. object
+			globalCDF->addPair( cdf->get1stValue( i ) , mean );
+		}
+
+	}
+
+	//show the c.d.f. editor to display the computed global cumulative frequencies
+	ValuesPairsDialog* vpd = new ValuesPairsDialog( globalCDF, this );
+	vpd->show(); //show dialog non-modally
+
+	//TODO: delete globalCDF somewhere
 }
 
 QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
@@ -407,26 +497,34 @@ QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
 
             //output the GEO-EAS header
             out << "Soft indicators for " + dataFile->getPath() + '\n';
-            out << nSoftIndicators+3 << '\n'; // +3 for the X,Y,Z coordinates of a pointset
-            out << "X" << '\n';
-            out << "Y" << '\n';
-            out << "Z" << '\n';
-            for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
+			if( dataFile->getFileType() == "POINTSET" ){
+				out << nSoftIndicators+3 << '\n'; // +3 for the X,Y,Z coordinates of a pointset
+				out << "X" << '\n';
+				out << "Y" << '\n';
+				out << "Z" << '\n';
+			} else if( dataFile->getFileType() == "CARTESIANGRID" ){
+				out << nSoftIndicators << '\n';
+			}
+			for( uint iSoftIndicator = 0; iSoftIndicator < nSoftIndicators; ++iSoftIndicator){
                 out << m_at->getName() << " soft indicator for " << labels[ iSoftIndicator ] << '\n';
             }
 
-            //The data file is surely a PointSet file
-            PointSet* ps = (PointSet*)dataFile;
+			//Get the point set aspect of the data (if it is actually a point set)
+			PointSet* ps = nullptr;
+			if( dataFile->getFileType() == "POINTSET" )
+				ps = dynamic_cast<PointSet*>( dataFile );
 
             //output the original data and their computed soft indicators
             for( uint i = 0; i < nData; ++i){
-                //output the X, Y, Z fields of the pointset
-                out << dataFile->data( i, ps->getXindex()-1 ) << '\t';
-                out << dataFile->data( i, ps->getYindex()-1 ) << '\t';
-                if( ps->is3D() )
-                    out << dataFile->data( i, ps->getZindex()-1 ) << '\t';
-                else
-                    out << "0.0" << '\t';
+				//output the X, Y, Z fields if the data file is a pointset
+				if( ps ){
+					out << dataFile->data( i, ps->getXindex()-1 ) << '\t';
+					out << dataFile->data( i, ps->getYindex()-1 ) << '\t';
+					if( ps->is3D() )
+						out << dataFile->data( i, ps->getZindex()-1 ) << '\t';
+					else
+						out << "0.0" << '\t';
+				}
                 // the residue is used to ensure a 1.0 sum for the soft indicators
                 double residue = 1.0;
                 //for each soft indicator variable

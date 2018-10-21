@@ -50,6 +50,8 @@ public:
     QWidget *createWidgetFilledWithContentElement( uint iContent );
     void addContentElementFromWidget( QWidget* w );
     bool isDataFile(){ return false; }
+	bool isDistribution(){ return false; }
+
 
 private:
     CategoryDefinition* m_categoryDefinition;

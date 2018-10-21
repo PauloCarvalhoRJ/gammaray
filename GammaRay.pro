@@ -224,7 +224,9 @@ SOURCES += main.cpp\
     domain/gridfile.cpp \
     domain/auxiliary/meshloader.cpp \
     geometry/vector3d.cpp \
-    geometry/face3d.cpp
+    geometry/face3d.cpp \
+    dialogs/sisimdialog.cpp \
+    dialogs/variograminputdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -427,7 +429,9 @@ HEADERS  += mainwindow.h \
     domain/gridfile.h \
     domain/auxiliary/meshloader.h \
     geometry/vector3d.h \
-    geometry/face3d.h
+    geometry/face3d.h \
+    dialogs/sisimdialog.h \
+    dialogs/variograminputdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -503,7 +507,9 @@ FORMS    += mainwindow.ui \
 	calculator/calculatordialog.ui \
 	imagejockey/vardecomp/variographicdecompositiondialog.ui \
 	imagejockey/widgets/ijquick3dviewer.ui \
-	dialogs/factorialkrigingdialog.ui
+	dialogs/factorialkrigingdialog.ui \
+    dialogs/sisimdialog.ui \
+    dialogs/variograminputdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -607,7 +613,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 4.7
+VERSION = 4.9
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
