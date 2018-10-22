@@ -541,6 +541,63 @@ std::vector<Face3D> GeoGrid::getFaces( uint cellIndex )
 	return fs;
 }
 
+void GeoGrid::computeCellVolumes(QString variable_name)
+{
+	//Get pointer to the Cartesian grid object used as data store
+	CartesianGrid* myCartesianGrid = getUnderlyingCartesianGrid();
+
+	//load the data
+	myCartesianGrid->loadData();
+
+	//appends a new variable
+	myCartesianGrid->addEmptyDataColumn( variable_name, myCartesianGrid->getDataLineCount() );
+
+	//get the current data column count
+	uint columnCount = myCartesianGrid->getDataColumnCount();
+
+	//load grid mesh
+	loadMesh();
+
+
+	//compute the volumes
+	for( uint k = 0; k < m_nK; ++k )
+		for( uint j = 0; j < m_nJ; ++j )
+			for( uint i = 0; i < m_nI; ++i ){
+				uint cellIndex = IJKtoIndex( i, j, k );
+				Hexahedron hexa = makeHexahedron( cellIndex );
+				double cellVolume = hexa.getVolume();
+				myCartesianGrid->setData( cellIndex, columnCount-1, cellVolume );
+			}
+
+	//commit results to file system
+	myCartesianGrid->writeToFS();
+}
+
+CartesianGrid *GeoGrid::getUnderlyingCartesianGrid()
+{
+	for( int i = 0; i < getChildCount(); ++i ){
+		ProjectComponent* pc = getChildByIndex( i );
+		if( pc->getTypeName() == "CARTESIANGRID" )
+			return dynamic_cast<CartesianGrid*>( pc );
+	}
+	return nullptr;
+}
+
+Hexahedron GeoGrid::makeHexahedron( uint cellIndex )
+{
+	Hexahedron hexa;
+	uint vertexIndexes[8];
+	getMeshCellDefinition( cellIndex, vertexIndexes );
+	double x, y, z;
+	for( uint i = 0; i < 8; ++i ){
+		getMeshVertexLocation( vertexIndexes[i], x, y, z );
+		hexa.v[i].x = x;
+		hexa.v[i].y = y;
+		hexa.v[i].z = z;
+	}
+	return hexa;
+}
+
 void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z)
 {
 	uint cellIndex = k * m_nJ * m_nI + j * m_nI + i;

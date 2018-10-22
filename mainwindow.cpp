@@ -466,7 +466,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Calculator...", this, SLOT(onCalculator()));
                 _projectContextMenu->addAction("Add new variable", this, SLOT(onNewAttribute()));
             }
-            _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
+			if( _right_clicked_file->getFileType() == "GEOGRID" ){
+				_projectContextMenu->addAction("Compute cell volumes", this, SLOT(onGeoGridCellVolumes()));
+			}
+			_projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
         //build context menu for an attribute
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isAttribute() ) {
@@ -2236,7 +2239,21 @@ void MainWindow::onSISIMContinuous()
 void MainWindow::onSISIMCategorical()
 {
     SisimDialog* sisimd = new SisimDialog( IKVariableType::CATEGORICAL, this );
-    sisimd->show();
+	sisimd->show();
+}
+
+void MainWindow::onGeoGridCellVolumes()
+{
+	GeoGrid* gg = dynamic_cast<GeoGrid*>( _right_clicked_file );
+	if( gg ){
+		//open the renaming dialog
+		bool ok;
+		QString var_name = QInputDialog::getText(this, "Name the new variable",
+												 "New variable with cell volumes:", QLineEdit::Normal, "cell_volumes", &ok);
+		if( ! ok )
+			return;
+		gg->computeCellVolumes( var_name );
+	}
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

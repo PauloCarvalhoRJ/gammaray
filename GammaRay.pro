@@ -226,7 +226,10 @@ SOURCES += main.cpp\
     geometry/vector3d.cpp \
     geometry/face3d.cpp \
     dialogs/sisimdialog.cpp \
-    dialogs/variograminputdialog.cpp
+    dialogs/variograminputdialog.cpp \
+    geometry/hexahedron.cpp \
+    geometry/pyramid.cpp \
+    geometry/tetrahedron.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -431,7 +434,10 @@ HEADERS  += mainwindow.h \
     geometry/vector3d.h \
     geometry/face3d.h \
     dialogs/sisimdialog.h \
-    dialogs/variograminputdialog.h
+    dialogs/variograminputdialog.h \
+    geometry/hexahedron.h \
+    geometry/pyramid.h \
+    geometry/tetrahedron.h
 
 
 FORMS    += mainwindow.ui \

@@ -3,6 +3,7 @@
 
 #include "gridfile.h"
 #include "geometry/face3d.h"
+#include "geometry/hexahedron.h"
 
 class CartesianGrid;
 class SpatialIndexPoints;
@@ -139,6 +140,25 @@ public:
 	 * Creates and returns a vector containing the geometries of the six faces of a cell.
 	 */
 	std::vector<Face3D> getFaces( uint cellIndex );
+
+	/**
+	 * Adds a new variable containing the volumes of the cells.  The values can be useful
+	 * for debiasing, for instance.
+	 */
+	void computeCellVolumes( QString variable_name );
+
+	/**
+	 * Returns the pointer to the CartesianGrid object that holds GeoGrid's data.
+	 * Returns a null pointer if no CartesianGrid is found among its child objects.
+	 * Returns the first CartesianGrid object in _children container if there is more
+	 * than one attached to this object.
+	 */
+	CartesianGrid* getUnderlyingCartesianGrid();
+
+	/**
+	 * Creates a Hexahedron object from a cell's geometry data given the cell's index.
+	 */
+	Hexahedron makeHexahedron( uint cellIndex );
 
 //GridFile interface
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,

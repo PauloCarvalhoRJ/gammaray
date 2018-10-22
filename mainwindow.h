@@ -187,9 +187,10 @@ private slots:
                                                  IJAbstractCartesianGrid* gridWithGridSpecs );
 	void onFactorialKriging();
 	void onCreateGeoGridFromBaseAndTop();
-        void onUnfold();
-    	void onSISIMContinuous();
-    	void onSISIMCategorical();
+	void onUnfold();
+	void onSISIMContinuous();
+	void onSISIMCategorical();
+	void onGeoGridCellVolumes();
 
 private:
     /**
