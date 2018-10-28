@@ -28,6 +28,7 @@
 #include "auxiliary/datasaver.h"
 #include "algorithms/ialgorithmdatasource.h"
 #include "calculator/icalcproperty.h"
+#include "geogrid.h"
 
 /****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES
  * ****************************/
@@ -178,17 +179,17 @@ void DataFile::loadData()
 
     file.close();
 
-    // cartesian grids must have a given number of read lines
-    if (this->getFileType() == "CARTESIANGRID") {
-        CartesianGrid *cg = (CartesianGrid *)this;
+	// geo- and cartesian grids must have a given number of read lines
+	if (this->getFileType() == "CARTESIANGRID" || this->getFileType() == "GEOGRID" ) {
+		GridFile *gf = (GridFile *)this;
         uint expected_total_lines
-            = cg->getNX() * cg->getNY() * cg->getNZ() * cg->getNReal();
+			= gf->getNI() * gf->getNJ() * gf->getNK() * gf->getNumberOfRealizations();
         if (data_line_count != expected_total_lines) {
             Application::instance()->logWarn(
                 QString("DataFile::loadData(): number of parsed data lines ("
                         + QString::number(data_line_count)
                         + +") differs from the expected lines computed from the "
-                           "Cartesian grid parameters ("
+						   " grid file parameters ("
                         + QString::number(expected_total_lines)
                         + ").  Truncated files may cause crashes and result in incorrect "
                           "data analysis."),
@@ -540,48 +541,60 @@ int DataFile::getCalcPropertyIndex(const std::string & name)
 
 void DataFile::updatePropertyCollection()
 {
-    // updates attribute collection
+	// erases all current children
     this->_children.clear(); // TODO: deallocate elements/deep delete (minor memory leak)
-    QStringList fields = Util::getFieldNames(this->_path);
-    for (int i = 0; i < fields.size(); ++i) {
-        int index_in_file = i + 1;
-        // do not include the x,y,z coordinates among the attributes
-        /*if( index_in_file != this->_x_field_index &&
-            index_in_file != this->_y_field_index &&
-            index_in_file != this->_z_field_index ){*/
-        Attribute *at = new Attribute(fields[i].trimmed(), index_in_file);
-        if (isWeight(
-                at)) { // if attribute is a weight, it is represented as a child object
-            // of the variable it refers to
-            Attribute *variable = this->getVariableOfWeight(at);
-            if (!variable)
-                Application::instance()->logError("Error in variable-weight assignment.");
-            else {
-                delete at; // it is not a generic Attribute
-                Weight *wgt = new Weight(fields[i].trimmed(), index_in_file, variable);
-                variable->addChild(wgt);
-            }
-        } else if (isNormal(
-                       at)) { // if attribute is a normal transform of another variable,
-            // it is represented as a child object of the variable it refers to
-            Attribute *variable = this->getVariableOfNScoreVar(at);
-            if (!variable)
-                Application::instance()->logError(
-                    "Error in variable-normal variable assignment.");
-            else {
-                delete at; // it is not a generic Attribute
-                NormalVariable *ns_var
-                    = new NormalVariable(fields[i].trimmed(), index_in_file, variable);
-                variable->addChild(ns_var);
-            }
-        } else { // common variables are direct children of files
-            if (isCategorical(at))
-                at->setCategorical(true);
-            this->_children.push_back(at);
-            at->setParent(this);
-        }
-        /*}*/
-    }
+
+	if( this->getFileType() == "GEOGRID" ){
+		//The GeoGrid is a special case.  In order to reuse functionality already made for the
+		// Cartesian grid (such as histogram, map, etc.) we add a Cartesian grid object as child
+		// and the user will access the GeoGrid's data in depositional domain (UVW).
+		// The new UVW CartesianGrid will point to the same data file refered to by the GeoGrid object
+		CartesianGrid* cgUVW = new CartesianGrid( this->_path );
+		this->_children.push_back( cgUVW );
+		cgUVW->setParent( this );
+		GeoGrid* thisGeoGridAspect = dynamic_cast<GeoGrid*>( this );
+		cgUVW->setInfoFromGeoGrid( thisGeoGridAspect );
+		cgUVW->updatePropertyCollection();
+	} else {
+		// list fields from data file
+		QStringList fields = Util::getFieldNames(this->_path);
+
+		// create children objects (Attributes)
+		for (int i = 0; i < fields.size(); ++i) {
+			int index_in_file = i + 1;
+			Attribute *at = new Attribute(fields[i].trimmed(), index_in_file);
+			if (isWeight(
+					at)) { // if attribute is a weight, it is represented as a child object
+				// of the variable it refers to
+				Attribute *variable = this->getVariableOfWeight(at);
+				if (!variable)
+					Application::instance()->logError("Error in variable-weight assignment.");
+				else {
+					delete at; // it is not a generic Attribute
+					Weight *wgt = new Weight(fields[i].trimmed(), index_in_file, variable);
+					variable->addChild(wgt);
+				}
+			} else if (isNormal(
+						   at)) { // if attribute is a normal transform of another variable,
+				// it is represented as a child object of the variable it refers to
+				Attribute *variable = this->getVariableOfNScoreVar(at);
+				if (!variable)
+					Application::instance()->logError(
+						"Error in variable-normal variable assignment.");
+				else {
+					delete at; // it is not a generic Attribute
+					NormalVariable *ns_var
+						= new NormalVariable(fields[i].trimmed(), index_in_file, variable);
+					variable->addChild(ns_var);
+				}
+			} else { // common variables are direct children of files
+				if (isCategorical(at))
+					at->setCategorical(true);
+				this->_children.push_back(at);
+				at->setParent(this);
+			}
+		}
+	}
 }
 
 void DataFile::replacePhysicalFile(const QString from_file_path)
@@ -1144,4 +1157,9 @@ std::vector<double> DataFile::getDataColumn(uint column)
     for( uint i = 0; i < nLines; ++i)
         result.push_back( data(i, column) );
     return result;
+}
+
+void DataFile::removeDataLine(uint line)
+{
+	_data.erase( _data.begin() + line );
 }

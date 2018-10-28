@@ -31,6 +31,12 @@ public:
      Nothing happens if the metadata file does not exist.  If it exists, it calls
      #setInfo(int,int,int,const QString) with the metadata read from the .md file.*/
     void setInfoFromMetadataFile();
+
+    /** Sets point set metadata from the passed point set. This is useful to make
+     * duplicates of or to extend existing point sets.
+     */
+    void setInfoFromOtherPointSet( PointSet* otherPS );
+
     int getXindex();
     int getYindex();
     int getZindex();
@@ -51,6 +57,12 @@ public:
      * First index is 0.
      */
     bool isCoordinate( uint column );
+
+    /** Returns a list with pairs with weight-variable relations.
+     *  The key of the map is the index of the variable which is the weight
+     *  of the variable whose index is the second member of the pair.
+     */
+    QMap<uint, uint> getWeightsVariablesPairs()  { return _wgt_var_pairs; }
 
     //DataFile interface
 public:

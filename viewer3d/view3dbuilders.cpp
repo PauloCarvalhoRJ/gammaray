@@ -4,6 +4,7 @@
 #include "domain/pointset.h"
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
+#include "domain/geogrid.h"
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
 
@@ -19,6 +20,7 @@
 #include <vtkDataArray.h>
 #include <vtkDoubleArray.h>
 #include <vtkLookupTable.h>
+#include <vtkHexahedron.h>
 #include <vtkPlaneSource.h>
 #include <vtkTransform.h>
 #include <vtkTransformPolyDataFilter.h>
@@ -41,6 +43,7 @@
 #include <vtkCallbackCommand.h>
 #include <vtkRenderWindow.h>
 #include <vtkThreshold.h>
+#include <vtkUnstructuredGrid.h>
 #include <QMessageBox>
 
 void RefreshCallback( vtkObject* vtkNotUsed(caller),
@@ -132,11 +135,15 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
         return buildForAttributeFromPointSet( (PointSet*)file, attribute, widget3D );
     } else if( fileType == "CARTESIANGRID" ) {
         CartesianGrid* cg = (CartesianGrid*)file;
-        if( cg->getNZ() < 2 ){
-            return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
-        } else {
-            return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
-        }
+		if( ! cg->isUVWOfAGeoGrid() ){
+			if( cg->getNZ() < 2 ){
+				return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
+			} else {
+				return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
+			}
+		} else {
+			return buildForAttributeGeoGrid( dynamic_cast<GeoGrid*>(cg->getParent()), attribute, widget3D );
+		}
     } else {
         Application::instance()->logError("View3DBuilders::build(Attribute *): Attribute belongs to unsupported file type: " + fileType);
         return View3DViewData();
@@ -152,7 +159,12 @@ View3DViewData View3DBuilders::build(CartesianGrid *object, View3DWidget * widge
         return buildForMapCartesianGrid( cartesianGrid, widget3D );
     } else {
         return buildFor3DCartesianGrid( cartesianGrid, widget3D );
-    }
+	}
+}
+
+View3DViewData View3DBuilders::build(GeoGrid * object, View3DWidget * widget3D)
+{
+	return buildForGeoGridMesh( object, widget3D );
 }
 
 View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet,
@@ -541,9 +553,9 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
         values->InsertNextValue( value );
         // visibility flag
         if( cartesianGrid->isNDV( value ) )
-            visibility->InsertNextValue( 0 );
+            visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
         else
-            visibility->InsertNextValue( 1 );
+            visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
     }
 
     //we don't need file's data anymore
@@ -762,9 +774,9 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
                 values->InsertNextValue( value );
                 // visibility flag
                 if( cartesianGrid->isNDV( value ) )
-                    visibility->InsertNextValue( 0 );
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
                 else
-                    visibility->InsertNextValue( 1 );
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
             }
         }
     }
@@ -835,47 +847,155 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     //actor->GetProperty()->EdgeVisibilityOn();
-    return View3DViewData(actor, subGrid, mapper, threshold, srate);
+	return View3DViewData(actor, subGrid, mapper, threshold, srate);
 }
 
-View3DViewData View3DBuilders::buildForStratGrid(ProjectComponent */*toBeSpecified*/, View3DWidget */*widget3D*/)
+View3DViewData View3DBuilders::buildForGeoGridMesh( GeoGrid * geoGrid, View3DWidget * widget3D )
 {
-    // Create a grid
-    vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+	Q_UNUSED( widget3D );
 
-    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
-    double x, y, z;
+	// Create a VTK container with the points (mesh vertexes)
+	vtkSmartPointer< vtkPoints > hexaPoints = vtkSmartPointer< vtkPoints >::New();
+	hexaPoints->SetNumberOfPoints( geoGrid->getMeshNumberOfVertexes() );
+	for( int i = 0;  i < hexaPoints->GetNumberOfPoints(); ++i ){
+		double x, y, z;
+		geoGrid->getMeshVertexLocation( i, x, y, z );
+		hexaPoints->InsertPoint(i, x, y, z);
+	}
 
-    x = 0.0;
-    y = 0.0;
-    z = 0.0;
+	// Create a VTK unstructured grid object (allows faults, erosions, and other geologic discordances )
+	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	uint nCells = geoGrid->getMeshNumberOfCells();
+	unstructuredGrid->Allocate( nCells );
+	for( uint i = 0; i < nCells; ++i ) {
+		uint vIds[8];
+		geoGrid->getMeshCellDefinition( i, vIds );
+		vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+		hexa->GetPointIds()->SetId(0, vIds[0]);
+		hexa->GetPointIds()->SetId(1, vIds[1]);
+		hexa->GetPointIds()->SetId(2, vIds[2]);
+		hexa->GetPointIds()->SetId(3, vIds[3]);
+		hexa->GetPointIds()->SetId(4, vIds[4]);
+		hexa->GetPointIds()->SetId(5, vIds[5]);
+		hexa->GetPointIds()->SetId(6, vIds[6]);
+		hexa->GetPointIds()->SetId(7, vIds[7]);
+		unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
+	}
+	unstructuredGrid->SetPoints(hexaPoints);
 
-    for(unsigned int k = 0; k < 2; k++)
-    {
-        z += 2.0;
-        for(unsigned int j = 0; j < 3; j++)
-        {
-            y += 1.0;
-            for(unsigned int i = 0; i < 2; i++)
-            {
-                x += .5;
-                points->InsertNextPoint(x, y, z);
-            }
-        }
-    }
-
-    // Specify the dimensions of the grid
-    structuredGrid->SetDimensions(2,3,2);
-    structuredGrid->SetPoints(points);
-
-    // Create a mapper and actor
+	// Create a mapper and actor
     vtkSmartPointer<vtkDataSetMapper> mapper =
             vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputData(structuredGrid);
+	mapper->SetInputData(unstructuredGrid);
 
     vtkSmartPointer<vtkActor> actor =
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
 
-    return View3DViewData(actor);
+	return View3DViewData( actor );
+}
+
+View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attribute * attribute, View3DWidget* widget3D )
+{
+	Q_UNUSED( widget3D );
+
+	//get the variable index in parent data file
+	uint var_index = geoGrid->getFieldGEOEASIndex( attribute->getName() );
+
+	//create a VTK array to store the sample values
+	vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+	values->SetName("values");
+
+	//create a visibility array. Cells with visibility >= 1 will be
+	//visible, and < 1 will be invisible.
+	vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+	visibility->SetNumberOfComponents(1);
+	visibility->SetName("Visibility");
+
+	//get the max and min of the selected variable
+	geoGrid->loadData();
+	double min = geoGrid->min( var_index-1 );
+	double max = geoGrid->max( var_index-1 );
+
+	//get the grid dimension of the GeoGrid
+	uint nI = geoGrid->getNI();
+	uint nJ = geoGrid->getNJ();
+	uint nK = geoGrid->getNK();
+
+	//read sample values
+	values->Allocate( nI * nJ * nK );
+	visibility->Allocate( nI * nJ * nK );
+	for( int k = 0; k < nK; ++k){
+		for( int j = 0; j < nJ; ++j){
+			for( int i = 0; i < nI; ++i){
+				// sample value
+				double value = geoGrid->dataIJK( var_index - 1, i, j, k);
+				values->InsertNextValue( value );
+				// visibility flag
+				if( geoGrid->isNDV( value ) )
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+				else
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+			}
+		}
+	}
+
+	// Create a VTK container with the points (mesh vertexes)
+	vtkSmartPointer< vtkPoints > hexaPoints = vtkSmartPointer< vtkPoints >::New();
+	hexaPoints->SetNumberOfPoints( geoGrid->getMeshNumberOfVertexes() );
+	for( int i = 0;  i < hexaPoints->GetNumberOfPoints(); ++i ){
+		double x, y, z;
+		geoGrid->getMeshVertexLocation( i, x, y, z );
+		hexaPoints->InsertPoint(i, x, y, z);
+	}
+
+	// Create a VTK unstructured grid object (allows faults, erosions, and other geologic discordances )
+	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+	uint nCells = geoGrid->getMeshNumberOfCells();
+	unstructuredGrid->Allocate( nCells );
+	for( uint i = 0; i < nCells; ++i ) {
+		uint vIds[8];
+		geoGrid->getMeshCellDefinition( i, vIds );
+		vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+		hexa->GetPointIds()->SetId(0, vIds[0]);
+		hexa->GetPointIds()->SetId(1, vIds[1]);
+		hexa->GetPointIds()->SetId(2, vIds[2]);
+		hexa->GetPointIds()->SetId(3, vIds[3]);
+		hexa->GetPointIds()->SetId(4, vIds[4]);
+		hexa->GetPointIds()->SetId(5, vIds[5]);
+		hexa->GetPointIds()->SetId(6, vIds[6]);
+		hexa->GetPointIds()->SetId(7, vIds[7]);
+		unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
+	}
+	unstructuredGrid->SetPoints(hexaPoints);
+
+	//assign the grid values to the grid cells
+	unstructuredGrid->GetCellData()->SetScalars( values );
+	unstructuredGrid->GetCellData()->AddArray( visibility );
+
+    // threshold to make unvalued cells invisible
+	vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
+	threshold->SetInputData( unstructuredGrid );
+	threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+	threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
+	threshold->Update();
+
+	//assign a color table
+	vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+
+	// Create mapper (visualization parameters)
+	vtkSmartPointer<vtkDataSetMapper> mapper =
+			vtkSmartPointer<vtkDataSetMapper>::New();
+	mapper->SetInputConnection( threshold->GetOutputPort() );
+	mapper->SetLookupTable(lut);
+	mapper->SetScalarRange(min, max);
+	mapper->Update();
+
+	// Finally, pass everything to the actor and return it.
+	vtkSmartPointer<vtkActor> actor =
+			vtkSmartPointer<vtkActor>::New();
+	actor->SetMapper(mapper);
+	//actor->GetProperty()->EdgeVisibilityOn();
+
+    return View3DViewData( actor, threshold );
 }

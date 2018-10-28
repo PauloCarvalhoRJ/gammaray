@@ -22,6 +22,7 @@
 #include "domain/categorypdf.h"
 #include "domain/categorydefinition.h"
 #include "domain/univariatecategoryclassification.h"
+#include "geogrid.h"
 #include "plot.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
@@ -214,7 +215,21 @@ Project::Project(const QString path) : QAbstractItemModel()
                 this->_resources->addChild( file );
                 file->setParent( this->_resources );
            }
-        }
+		   //found a GeoGrid file reference in gammaray.prj
+		   if( line.startsWith( "GEOGRID:" )){
+			   //get file name
+				QString geogrid_file = line.split(":")[1];
+				//make file path
+				QFile gg_file( this->_project_directory->absoluteFilePath( geogrid_file ) );
+				//create GeoGrid object from file
+				GeoGrid *gg = new GeoGrid( gg_file.fileName() );
+				//add the object to project tree structure
+				this->_data_files->addChild( gg );
+				gg->setParent( this->_data_files );
+				//reads GeoGrid metadata from the .md file
+				gg->setInfoFromMetadataFile();
+		   }
+		}
         prj_file.close();
     }
 
@@ -294,16 +309,24 @@ QString Project::getPath()
 
 void Project::addDataFile(DataFile *df)
 {
-    //before enrolling the file, copies it to the
-    //project's directory
-    df->changeDir( this->_project_directory->canonicalPath() );
+	QFile dataFile( df->getPath() );
+	if( ! dataFile.exists() ){
+		Application::instance()->logWarn("Project::addDataFile(): Added a data file whose physical file " + df->getPath() + " does not exist."
+										  " Maybe a prior call to File::writeToFS() is missing or has failed.");
+	}
 
-    //then remove possible trailing whitespaces from variable names
-    //calling renameGEOEASvariable with bogus arguments does this.
-    //TODO: The names without the trailing spaces appear only after closing and opening the program as
-    //      the metadata are read from the original file.  This can only be solved by changing the original
-    //       file, which doesn't seem right.
-    Util::renameGEOEASvariable( df->getPath(), "aaaaa", "aaaaa");
+	if( dataFile.exists() ){
+		//before enrolling the file, copies it to the
+		//project's directory
+		df->changeDir( this->_project_directory->canonicalPath() );
+
+		//then remove possible trailing whitespaces from variable names
+		//calling renameGEOEASvariable with bogus arguments does this.
+		//TODO: The names without the trailing spaces appear only after closing and opening the program as
+		//      the metadata are read from the original file.  This can only be solved by changing the original
+		//       file, which doesn't seem right.
+		Util::renameGEOEASvariable( df->getPath(), "aaaaa", "aaaaa");
+	}
 
     this->_data_files->addChild( df );
     df->setParent( this->_data_files );

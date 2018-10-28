@@ -16,5 +16,7 @@ QString ICalcProperty::getScriptCompatibleName()
     compatibleName = compatibleName.replace( '+', '_' );
     compatibleName = compatibleName.replace( '>', '_' );
     compatibleName = compatibleName.replace( '<', '_' );
+    compatibleName = compatibleName.replace( ':', '_' );
+    compatibleName = compatibleName.replace( '=', '_' );
     return compatibleName;
 }

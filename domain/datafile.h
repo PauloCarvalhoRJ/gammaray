@@ -317,6 +317,11 @@ public:
 	/** Returns whether this data set is tridimensional. */
 	virtual bool isTridimensional() = 0;
 
+	/** Removes one data line from the internal data array.
+	 * It is necessary to call writeToFS() to commit the change to filesystem.
+	 */
+	void removeDataLine( uint line );
+
     /** Returns the loaded values for a variable given its column index (GEO-EAS index - 1).
      * May return an empty container if data is not loaded or less elements than records in the
      * physical file if it has been paged (e.g. file with multiple simulation realizations, see

@@ -56,3 +56,13 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
     threshold( pThreshold ),
     samplingRate( sRate )
 {}
+
+View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor, vtkSmartPointer<vtkThreshold> pThreshold) :
+    actor( pActor ),
+    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
+    subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
+    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
+    threshold( pThreshold ),
+    samplingRate( 1 )
+{
+}

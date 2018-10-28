@@ -50,6 +50,7 @@
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
+#include "domain/geogrid.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -465,7 +466,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Calculator...", this, SLOT(onCalculator()));
                 _projectContextMenu->addAction("Add new variable", this, SLOT(onNewAttribute()));
             }
-            _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
+			if( _right_clicked_file->getFileType() == "GEOGRID" ){
+				_projectContextMenu->addAction("Compute cell volumes", this, SLOT(onGeoGridCellVolumes()));
+			}
+			_projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
         //build context menu for an attribute
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isAttribute() ) {
@@ -541,7 +545,11 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 menu_caption_rfft += "mag. = " + _right_clicked_attribute->getName();
                 menu_caption_rfft += "; phase = " + _right_clicked_attribute2->getName();
                 _projectContextMenu->addAction(menu_caption_rfft, this, SLOT(onRFFT()));
-            }
+				QString menu_caption_geobase = "Create GeoGrid: ";
+				menu_caption_geobase += "top = " + _right_clicked_attribute->getName();
+				menu_caption_geobase += "; base = " + _right_clicked_attribute2->getName();
+				_projectContextMenu->addAction(menu_caption_geobase, this, SLOT(onCreateGeoGridFromBaseAndTop()));
+			}
         }
         //if both objects are variables and have different parent files,
         if( index1.isValid() && index2.isValid() &&
@@ -608,6 +616,46 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 menu_caption.append(" to ");
                 menu_caption.append( point_set->getName());
                 _projectContextMenu->addAction(menu_caption, this, SLOT(onGetPoints()));
+            }
+        }
+        //if one object is a geogrid and the other object is a point set
+        // then Unfolding can be called, which
+        //consists of creating a new point set that is a copy of the original point set but with
+        //the XYZ coordinates transformed into depositional coordinates (UVW).
+        if( index1.isValid() && index2.isValid() ){
+            //Get the files pointers
+            File* file1 = nullptr;
+            File* file2 = nullptr;
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isFile() ){
+                file1 = static_cast<File*>( index1.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+                file2 = static_cast<File*>( index2.internalPointer() );
+            }
+            //determine the target PointSet file and reference GeoGrid
+            PointSet* pointSet = nullptr;
+            GeoGrid* geoGrid = nullptr;
+            if( file1 ){
+                if( file1->getFileType() == "POINTSET" )
+                    pointSet = dynamic_cast<PointSet*>( file1 );
+                else if( file1->getFileType() == "GEOGRID" )
+                    geoGrid = dynamic_cast<GeoGrid*>( file1 );
+            }
+            if( file2 ){
+                if( file2->getFileType() == "POINTSET" )
+                    pointSet = dynamic_cast<PointSet*>( file2 );
+                else if( file2->getFileType() == "GEOGRID" )
+                    geoGrid = dynamic_cast<GeoGrid*>( file2 );
+            }
+            //if user selected a point set file and a GeoGrid
+            if( pointSet && geoGrid ){
+                _right_clicked_geo_grid = geoGrid;
+                _right_clicked_point_set = pointSet;
+                QString menu_caption = "Unfold ";
+                menu_caption.append( pointSet->getName());
+                menu_caption.append(" with ");
+                menu_caption.append( geoGrid->getName());
+                _projectContextMenu->addAction(menu_caption, this, SLOT(onUnfold()));
             }
         }
         //if one object is a property of a cartesian grid and the other is a cartesian grid then grid projection can be used.
@@ -764,7 +812,7 @@ void MainWindow::onPixelPlt()
         //... get the associated category definition
         cd = cg->getCategoryDefinition( _right_clicked_attribute );
     }
-	Util::viewGrid( _right_clicked_attribute, this, false, cd );
+    Util::viewGrid( _right_clicked_attribute, this, false, cd );
 }
 
 void MainWindow::onProbPlt()
@@ -2191,7 +2239,88 @@ void MainWindow::onSISIMContinuous()
 void MainWindow::onSISIMCategorical()
 {
     SisimDialog* sisimd = new SisimDialog( IKVariableType::CATEGORICAL, this );
-    sisimd->show();
+	sisimd->show();
+}
+
+void MainWindow::onGeoGridCellVolumes()
+{
+	GeoGrid* gg = dynamic_cast<GeoGrid*>( _right_clicked_file );
+	if( gg ){
+		//open the renaming dialog
+		bool ok;
+		QString var_name = QInputDialog::getText(this, "Name the new variable",
+												 "New variable with cell volumes:", QLineEdit::Normal, "cell_volumes", &ok);
+		if( ! ok )
+			return;
+		gg->computeCellVolumes( var_name );
+	}
+}
+
+void MainWindow::onCreateGeoGridFromBaseAndTop()
+{
+	//open the renaming dialog
+	bool ok;
+	QString new_file_name = QInputDialog::getText(this, "Name the new grid file",
+											 "New file name:", QLineEdit::Normal, "", &ok);
+	if( ! ok )
+		return;
+
+	//ask the user for the number of horizon slices.
+	int nHSlices = QInputDialog::getInt(this, "User input requested",
+					  "Number of horizon slices:", 1, 1, 500000, 1,
+					   &ok);
+	if(!ok) return;
+
+	//make the path for the file.
+	QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
+
+	//create the grid object
+	GeoGrid* geoGrid = new GeoGrid( new_file_path, _right_clicked_attribute, _right_clicked_attribute2, nHSlices );
+
+	//the necessary steps to register the new object as a project member.
+	{
+		//create a GEO-EAS Cartesian grid file that serves as GeoGrid's data storage
+		Util::createGEOEAScheckerboardGrid( geoGrid, new_file_path );
+		//save data to file system
+		geoGrid->writeToFS();
+		//save its metadata file
+		geoGrid->updateMetaDataFile();
+		//causes an update to the child objects in the project tree
+		geoGrid->setInfoFromMetadataFile();
+		//attach the object to the project tree
+		Application::instance()->getProject()->addDataFile( geoGrid );
+		//show the newly created object in main window's project tree
+		Application::instance()->refreshProjectTree();
+    }
+}
+
+void MainWindow::onUnfold()
+{
+    QString suggested_name = _right_clicked_point_set->getName() + "_UVW";
+
+    //open the renaming dialog
+    bool ok;
+    QString new_file_name = QInputDialog::getText(this, "New point set file",
+                                             "New point set file name:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //create a new point set file
+    PointSet* psUVW = _right_clicked_geo_grid->unfold( _right_clicked_point_set, new_file_name );
+
+    if( ! psUVW ){
+        QMessageBox::critical( this, "Error", "Unfolding failed.  Check the messages panel.");
+        return;
+    }
+
+	//update the metadata file of the unfolded point set
+	psUVW->updateMetaDataFile();
+
+	//attach the object to the project tree
+	Application::instance()->getProject()->addDataFile( psUVW );
+
+	//show the newly created object in main window's project tree
+	Application::instance()->refreshProjectTree();
 }
 
 void MainWindow::onCreateCategoryDefinition()

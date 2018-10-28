@@ -220,8 +220,16 @@ SOURCES += main.cpp\
     geostats/searchellipsoid.cpp \
     geostats/pointsetcell.cpp \
     geostats/indexedspatiallocation.cpp \
+    domain/geogrid.cpp \
+    domain/gridfile.cpp \
+    domain/auxiliary/meshloader.cpp \
+    geometry/vector3d.cpp \
+    geometry/face3d.cpp \
     dialogs/sisimdialog.cpp \
-    dialogs/variograminputdialog.cpp
+    dialogs/variograminputdialog.cpp \
+    geometry/hexahedron.cpp \
+    geometry/pyramid.cpp \
+    geometry/tetrahedron.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -420,8 +428,16 @@ HEADERS  += mainwindow.h \
     geostats/searchellipsoid.h \
     geostats/pointsetcell.h \
     geostats/indexedspatiallocation.h \
+    domain/geogrid.h \
+    domain/gridfile.h \
+    domain/auxiliary/meshloader.h \
+    geometry/vector3d.h \
+    geometry/face3d.h \
     dialogs/sisimdialog.h \
-    dialogs/variograminputdialog.h
+    dialogs/variograminputdialog.h \
+    geometry/hexahedron.h \
+    geometry/pyramid.h \
+    geometry/tetrahedron.h
 
 
 FORMS    += mainwindow.ui \
@@ -603,7 +619,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 4.9
+VERSION = 5.0
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

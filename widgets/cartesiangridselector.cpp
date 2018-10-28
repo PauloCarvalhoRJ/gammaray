@@ -21,12 +21,16 @@ CartesianGridSelector::CartesianGridSelector(bool show_not_set, QWidget *parent)
 
     ObjectGroup* og = project->getDataFilesGroup();
 
-    for( int i = 0; i < og->getChildCount(); ++i){
-        File* varFile = (File*)og->getChildByIndex( i );
-        if( varFile->getFileType() == "CARTESIANGRID" ){
-            ui->cmbGrids->addItem( varFile->getIcon(), varFile->getName() );
-        }
-    }
+	std::vector< ProjectComponent*> allChildObjects;
+	og->getAllObjects( allChildObjects );
+
+	std::vector< ProjectComponent*>::iterator it = allChildObjects.begin();
+	for( ; it != allChildObjects.end(); ++it ){
+		File* varFile = dynamic_cast<File*>( *it );
+		if( varFile && varFile->getFileType() == "CARTESIANGRID" ){
+			ui->cmbGrids->addItem( varFile->getIcon(), varFile->getName() );
+		}
+	}
 }
 
 CartesianGridSelector::~CartesianGridSelector()
@@ -39,16 +43,22 @@ void CartesianGridSelector::onSelection(int /*index*/)
     m_dataFile = nullptr;
     Project* project = Application::instance()->getProject();
     ObjectGroup* og = project->getDataFilesGroup();
-    for( int i = 0; i < og->getChildCount(); ++i){
-        File* varFile = (File*)og->getChildByIndex( i );
-        if( varFile->getFileType() == "CARTESIANGRID" ){
-            if( varFile->getName() == ui->cmbGrids->currentText() ){
-                m_dataFile = dynamic_cast<DataFile*>(varFile);
-                emit cartesianGridSelected( m_dataFile );
-                return;
-            }
-        }
-    }
+
+	std::vector< ProjectComponent*> allChildObjects;
+	og->getAllObjects( allChildObjects );
+
+	std::vector< ProjectComponent*>::iterator it = allChildObjects.begin();
+	for( ; it != allChildObjects.end(); ++it ){
+		File* varFile = dynamic_cast<File*>( *it );
+		if( varFile && varFile->getFileType() == "CARTESIANGRID" ){
+			if( varFile->getName() == ui->cmbGrids->currentText() ){
+				m_dataFile = dynamic_cast<DataFile*>(varFile);
+				emit cartesianGridSelected( m_dataFile );
+				return;
+			}
+		}
+	}
+
     //the user may select "NOT SET", so emit signal with null pointer.
     emit cartesianGridSelected( nullptr );
 }

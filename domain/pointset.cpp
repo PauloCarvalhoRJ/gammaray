@@ -221,6 +221,20 @@ void PointSet::setInfoFromMetadataFile()
     }
 }
 
+void PointSet::setInfoFromOtherPointSet(PointSet *otherPS)
+{
+    QString ndv;
+    QMap<uint, QPair<uint, QString> > nsvar_var_trn_triads;
+    QList< QPair<uint, QString> > categorical_attributes;
+    QMap<uint, uint> wgt_var_pairs;
+    ndv = otherPS->getNoDataValue();
+    nsvar_var_trn_triads = otherPS->getNSVarVarTrnTriads();
+    wgt_var_pairs = otherPS->getWeightsVariablesPairs();
+    categorical_attributes = otherPS->getCategoricalAttributes();
+    this->setInfo( otherPS->getXindex(), otherPS->getYindex(), otherPS->getZindex(),
+                   ndv, wgt_var_pairs, nsvar_var_trn_triads, categorical_attributes);
+}
+
 int PointSet::getXindex()
 {
     return this->_x_field_index;

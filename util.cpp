@@ -399,7 +399,7 @@ QString Util::copyFileToDir(const QString from_path, const QString path_to_direc
     return to_path;
 }
 
-void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
+void Util::createGEOEAScheckerboardGrid(GridFile * gf, QString path)
 {
     //open file for writing
     QFile file( path );
@@ -412,8 +412,8 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     out << "checkerboard pattern\n";
 
     //flags to help in creating a checkerboard pattern.
-    bool isNXeven = ( cg->getNX() % 2 ) == 0;
-    bool isNYeven = ( cg->getNY() % 2 ) == 0;
+	bool isNXeven = ( gf->getNI() % 2 ) == 0;
+	bool isNYeven = ( gf->getNJ() % 2 ) == 0;
 
     QProgressDialog progressDialog;
     progressDialog.setRange(0,0);
@@ -423,10 +423,10 @@ void Util::createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path)
     //loop to output the binary values
     ulong count = 0;
     int counter = 0;
-    for( uint ir = 0; ir < cg->getNReal(); ++ir)
-        for( uint iz = 0; iz < cg->getNZ(); ++iz){
-            for( uint iy = 0; iy < cg->getNY(); ++iy, ++counter){
-                for( uint ix = 0; ix < cg->getNX(); ++ix, ++count)
+	for( uint ir = 0; ir < gf->getNumberOfRealizations(); ++ir)
+		for( uint iz = 0; iz < gf->getNK(); ++iz){
+			for( uint iy = 0; iy < gf->getNJ(); ++iy, ++counter){
+				for( uint ix = 0; ix < gf->getNI(); ++ix, ++count)
                     out << (count % 2) << '\n';
                 if( isNXeven )
                     ++count;
@@ -1000,7 +1000,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" <<
+    previousVersions  << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" <<
                       "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" <<
                       "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" <<
                       "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
@@ -1825,5 +1825,18 @@ QString Util::getGSLibVariogramStructureName(uint it)
     case 4: return "Power";
     case 5: return "Hole effect";
     default: return "UNKNOWN";
-    }
+	}
+}
+
+bool Util::isInside(const Vertex3D & p, const std::vector<Face3D> & fs)
+{
+	double bound = -1e-15; // use -1e-15 to exclude boundaries
+	for (const Face3D& f : fs) {
+		Vector3D p2f = f.v[0] - p;       // any point of f cloud be used
+		double d = p2f.dot( f.normal() );
+		d /= p2f.norm();                 // for numeric stability
+		if ( d < bound )
+			return false;
+	}
+	return true;
 }

@@ -3,19 +3,24 @@
 
 #include "domain/cartesiangrid.h"
 #include "domain/application.h"
+#include "../view3dbuilders.h" // for the InvisibilityFlag enum
 #include <vtkAlgorithmOutput.h>
 #include <vtkInformation.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
 #include <vtkExtractGrid.h>
+#include <vtkUnstructuredGrid.h>
+#include <vtkIntArray.h>
+#include <vtkThreshold.h>
+#include <vtkCellData.h>
 
-V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(
-        CartesianGrid *cartesianGrid,
+V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(GridFile *gridFile,
         Attribute */*attribute*/,
         View3DViewData viewObjects,
         QWidget *parent) :
     View3DConfigWidget(parent),
     ui(new Ui::V3DCfgWidForAttributeIn3DCartesianGrid),
-    _viewObjects( viewObjects )
+    _viewObjects( viewObjects ),
+    m_gridFile( gridFile )
 {
     ui->setupUi(this);
 
@@ -27,13 +32,20 @@ V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(
     ui->sldKLowClip->blockSignals(true);
     ui->sldKHighClip->blockSignals(true);
 
-    int nXsub = cartesianGrid->getNX() / _viewObjects.samplingRate + 1;
-    int nYsub = cartesianGrid->getNY() / _viewObjects.samplingRate + 1;
-    int nZsub = cartesianGrid->getNZ() / _viewObjects.samplingRate + 1;
-    if( _viewObjects.samplingRate == 1 ){
-        nXsub = cartesianGrid->getNX();
-        nYsub = cartesianGrid->getNY();
-        nZsub = cartesianGrid->getNZ();
+    int nXsub = 1;
+    int nYsub = 1;
+    int nZsub = 1;
+    if( gridFile ){
+        nXsub = gridFile->getNI() / _viewObjects.samplingRate + 1;
+        nYsub = gridFile->getNJ() / _viewObjects.samplingRate + 1;
+        nZsub = gridFile->getNK() / _viewObjects.samplingRate + 1;
+        if( _viewObjects.samplingRate == 1 ){
+            nXsub = gridFile->getNI();
+            nYsub = gridFile->getNJ();
+            nZsub = gridFile->getNK();
+        }
+    } else {
+        Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(): null grid file.");
     }
 
     ui->sldILowClip->setMinimum( 0 );
@@ -75,11 +87,6 @@ V3DCfgWidForAttributeIn3DCartesianGrid::~V3DCfgWidForAttributeIn3DCartesianGrid(
 
 void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 {
-
-    //Since we are in a V3DCfgWidForAttributeIn3DCartesianGrid (data cube with clipping)
-    //assumes a vtkStructuredGridClip and a vtkDataSetMapper exist in the View3DViewData object
-    vtkSmartPointer<vtkExtractGrid> subgrider = _viewObjects.subgrider;
-
     //get the object that triggered the call to this slot
     QObject* obj = sender();
     //check which slider was changed by the user
@@ -110,14 +117,74 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
             ui->sldKHighClip->setValue( ui->sldKLowClip->value() );
     }
 
-    //set the cliping planes
-    subgrider->SetVOI( ui->sldILowClip->value(),
-                       ui->sldIHighClip->value(),
-                       ui->sldJLowClip->value(),
-                       ui->sldJHighClip->value(),
-                       ui->sldKLowClip->value(),
-                       ui->sldKHighClip->value());
-    subgrider->Update();
+    if( m_gridFile && m_gridFile->isRegular() ){
+        //Since we are in a V3DCfgWidForAttributeIn3DCartesianGrid (data cube with clipping)
+        //assumes a vtkStructuredGridClip and a vtkDataSetMapper exist in the View3DViewData object
+        vtkSmartPointer<vtkExtractGrid> subgrider = _viewObjects.subgrider;
+
+        //set the cliping planes
+        subgrider->SetVOI( ui->sldILowClip->value(),
+                           ui->sldIHighClip->value(),
+                           ui->sldJLowClip->value(),
+                           ui->sldJHighClip->value(),
+                           ui->sldKLowClip->value(),
+                           ui->sldKHighClip->value());
+        subgrider->Update();
+
+    } else if ( m_gridFile ) {
+        //Since it is an Attribute of a GeoGrid, get the corresponding VTK object.
+        vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid =
+                dynamic_cast<vtkUnstructuredGrid*>(_viewObjects.threshold->GetInputDataObject(0,0));
+        if( ! unstructuredGrid ){
+            Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges(): unstructured grid not found. Check View3DBuilders::buildForAttributeGeoGrid().");
+            return;
+        }
+
+        //Get visibility array
+        vtkSmartPointer<vtkIntArray> visibilityArray =
+                dynamic_cast<vtkIntArray*>( unstructuredGrid->GetCellData()->GetArray( "Visibility" ) );
+        if( ! visibilityArray ){
+            Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges(): visibility array not found. Check View3DBuilders::buildForAttributeGeoGrid().");
+            return;
+        }
+
+        //Set transparency values for those cells outside clippling limits
+        // convention:
+        // 1 = visible
+        // 0 = invisible due to null value
+        // -1 = invisible due to being outside IJK clipping limits
+        int nI = m_gridFile->getNI();
+        int nJ = m_gridFile->getNJ();
+        int nK = m_gridFile->getNK();
+        for( int k = 0; k < nK; ++k )
+            for( int j = 0; j < nJ; ++j )
+                for( int i = 0; i < nI; ++i ) {
+                    int cellIndex = k*nJ*nI + j*nI + i;
+                    InvisibiltyFlag currentFlag = (InvisibiltyFlag)
+                            ( visibilityArray->GetValue( cellIndex ) );
+                    if( i >= ui->sldILowClip->value() &&
+                        i <= ui->sldIHighClip->value() &&
+                        j >= ui->sldJLowClip->value() &&
+                        j <= ui->sldJHighClip->value() &&
+                        k >= ui->sldKLowClip->value() &&
+                        k <=ui->sldKHighClip->value() ){
+                        if( currentFlag == InvisibiltyFlag::INVISIBLE_NDV_AND_UVW_CLIPPING )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+                        else if( currentFlag == InvisibiltyFlag::INVISIBLE_UVW_CLIPPING )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::VISIBLE );
+                    } else {
+                        if( currentFlag == InvisibiltyFlag::VISIBLE )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::INVISIBLE_UVW_CLIPPING );
+                        else if( currentFlag == InvisibiltyFlag::INVISIBLE_NDV_VALUE )
+                            visibilityArray->SetValue( cellIndex, (int)InvisibiltyFlag::INVISIBLE_NDV_AND_UVW_CLIPPING );
+                    }
+
+                }
+        unstructuredGrid->GetCellData()->Modified();
+
+    } else {
+        Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges(): null grid file.");
+    }
 
     //update the GUI label readout.
     updateLabels();

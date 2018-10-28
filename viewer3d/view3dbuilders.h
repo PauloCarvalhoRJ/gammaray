@@ -7,7 +7,16 @@ class ProjectComponent;
 class PointSet;
 class Attribute;
 class CartesianGrid;
+class GeoGrid;
 class View3DWidget;
+
+/** Marks cells as visible or visible due to several reasons. */
+enum class InvisibiltyFlag : int {
+    VISIBLE = 1, //valid value
+    INVISIBLE_NDV_VALUE = 0, //invisible due to having invalid value
+    INVISIBLE_UVW_CLIPPING = -1, //invisible due to being outside UVW clipping limits
+    INVISIBLE_NDV_AND_UVW_CLIPPING = -2 //invisible due to having invalid value and being outside UVW clipping limits
+};
 
 /**
  * This class groups static functions to build VTK actors for the several domain objects.
@@ -27,7 +36,8 @@ public:
     static View3DViewData build( PointSet* object, View3DWidget * widget3D ); //point set geometry only
     static View3DViewData build( Attribute* object, View3DWidget * widget3D ); //attribute (can be of point set, cartesian grid, etc.)
     static View3DViewData build( CartesianGrid* object, View3DWidget * widget3D );  //cartesian grid geometry only
-    //@}
+	static View3DViewData build( GeoGrid* object, View3DWidget * widget3D );  //GeoGrid mesh (no property)
+	//@}
 
 private:
     static View3DViewData buildForAttributeFromPointSet( PointSet* pointSet, Attribute* attribute, View3DWidget * widget3D );
@@ -79,9 +89,11 @@ private:
             Attribute* attribute,
             View3DWidget * widget3D);
 
-    /** Specific builder for a stratigraphic grid (kept for future reference).
-     */
-    static View3DViewData buildForStratGrid( ProjectComponent* toBeSpecified, View3DWidget * widget3D );
+	/** Specific builder for GeoGrid mesh without property.	 */
+	static View3DViewData buildForGeoGridMesh( GeoGrid* geoGrid, View3DWidget * widget3D );
+
+	/** Specific builder for an Attribute in a GeoGrid. */
+	static View3DViewData buildForAttributeGeoGrid( GeoGrid* geoGrid, Attribute* attribute, View3DWidget* widget3D );
 };
 
 #endif // VIEW3DBUILDERS_H

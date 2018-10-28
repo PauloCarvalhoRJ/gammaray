@@ -7,6 +7,7 @@
 #include <QStringList>
 #include <cassert>
 #include <complex>
+#include "geometry/face3d.h"
 
 // macro used to do printf on QString for debugging purposes
 // it is safe to delete this.
@@ -24,6 +25,7 @@ class Attribute;
 class CategoryDefinition;
 class VariogramModel;
 class SpatialLocation;
+class GridFile;
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -238,10 +240,10 @@ public:
 
     /**
      * Creates a GEO-EAS regular grid file using the grid specs from the
-     * passed CartesianGrid object.  The resulting file contains a single binary variable
+	 * passed grid object.  The resulting file contains a single binary variable
      * that results in a checkerboard battern in the plots.
      */
-    static void createGEOEAScheckerboardGrid(CartesianGrid *cg, QString path);
+	static void createGEOEAScheckerboardGrid(GridFile *gf, QString path);
 
     /**
      * Creates a GEO-EAS regular grid file using the given values
@@ -579,6 +581,11 @@ public:
       * Returns the name of a variographic structure given its code following GSLib convention.
       */
     static QString getGSLibVariogramStructureName(uint it);
+
+	/** Thests whether the passed point (as Vertex3D) is inside the polyhedron (as a vector of Face3D).
+	 * This assumes the polyhedron is convex and the faces are all counter-clockwise.
+	 */
+	static bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs );
 };
 
 #endif // UTIL_H
