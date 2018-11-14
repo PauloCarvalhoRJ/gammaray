@@ -152,6 +152,9 @@ public:
 
     /** Adds de contents of the given data array as new variable to this Cartesian grid. */
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array ) = 0;
+
+    /** Returns the value considered as uninformed data. It can be NaN or infinity.*/
+    virtual double getUninformedDataValue() = 0;
 };
 
 typedef std::shared_ptr<IJAbstractCartesianGrid> IJAbstractCartesianGridPtr;

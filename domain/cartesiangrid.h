@@ -151,6 +151,7 @@ public:
                                                                  int variableIndex2);
     virtual void clearLoadedData();
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array );
+    virtual double getUninformedDataValue(){ return getNoDataValueAsDouble(); }
 
 // ICalcPropertyCollection interface
 public:
