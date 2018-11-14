@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>EMDAnalysisDialog</class>
+ <widget class="QDialog" name="EMDAnalysisDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>400</width>
+    <height>300</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <widget class="QPushButton" name="btnDismiss">
+   <property name="geometry">
+    <rect>
+     <x>270</x>
+     <y>260</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Dismiss</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnPerformEMD">
+   <property name="geometry">
+    <rect>
+     <x>294</x>
+     <y>100</y>
+     <width>31</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Perform EMD analysis</string>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset resource="../ijresources.qrc">
+     <normaloff>:/ijicons32/ijplay32</normaloff>:/ijicons32/ijplay32</iconset>
+   </property>
+  </widget>
+ </widget>
+ <resources>
+  <include location="../ijresources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>btnDismiss</sender>
+   <signal>clicked()</signal>
+   <receiver>EMDAnalysisDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>311</x>
+     <y>270</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>369</x>
+     <y>274</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnPerformEMD</sender>
+   <signal>clicked()</signal>
+   <receiver>EMDAnalysisDialog</receiver>
+   <slot>onPerformEMD()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>309</x>
+     <y>119</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>357</x>
+     <y>143</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onPerformEMD()</slot>
+ </slots>
+</ui>

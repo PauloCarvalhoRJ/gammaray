@@ -191,6 +191,7 @@ private slots:
 	void onSISIMContinuous();
 	void onSISIMCategorical();
 	void onGeoGridCellVolumes();
+    void onEMD();
 
 private:
     /**

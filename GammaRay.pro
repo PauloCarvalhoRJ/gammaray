@@ -229,7 +229,8 @@ SOURCES += main.cpp\
     dialogs/variograminputdialog.cpp \
     geometry/hexahedron.cpp \
     geometry/pyramid.cpp \
-    geometry/tetrahedron.cpp
+    geometry/tetrahedron.cpp \
+    imagejockey/emd/emdanalysisdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -437,7 +438,8 @@ HEADERS  += mainwindow.h \
     dialogs/variograminputdialog.h \
     geometry/hexahedron.h \
     geometry/pyramid.h \
-    geometry/tetrahedron.h
+    geometry/tetrahedron.h \
+    imagejockey/emd/emdanalysisdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -515,7 +517,8 @@ FORMS    += mainwindow.ui \
 	imagejockey/widgets/ijquick3dviewer.ui \
 	dialogs/factorialkrigingdialog.ui \
     dialogs/sisimdialog.ui \
-    dialogs/variograminputdialog.ui
+    dialogs/variograminputdialog.ui \
+    imagejockey/emd/emdanalysisdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

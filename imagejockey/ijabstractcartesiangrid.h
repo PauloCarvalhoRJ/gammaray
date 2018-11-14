@@ -5,6 +5,7 @@
 
 #include <QString>
 #include <QIcon>
+#include <memory>
 
 class IJAbstractVariable;
 
@@ -152,5 +153,7 @@ public:
     /** Adds de contents of the given data array as new variable to this Cartesian grid. */
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array ) = 0;
 };
+
+typedef std::shared_ptr<IJAbstractCartesianGrid> IJAbstractCartesianGridPtr;
 
 #endif // IJABSTRACTCARTESIANGRID_H
