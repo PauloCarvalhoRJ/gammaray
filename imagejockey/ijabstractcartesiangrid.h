@@ -155,6 +155,11 @@ public:
 
     /** Returns the value considered as uninformed data. It can be NaN or infinity.*/
     virtual double getUninformedDataValue() = 0;
+
+    /** Returns, via output variables, the x,y,z location of a cell given its topological
+     * coordinate i,j,k.
+     */
+    virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z ) = 0;
 };
 
 typedef std::shared_ptr<IJAbstractCartesianGrid> IJAbstractCartesianGridPtr;

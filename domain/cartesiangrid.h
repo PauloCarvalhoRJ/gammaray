@@ -152,6 +152,7 @@ public:
     virtual void clearLoadedData();
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array );
     virtual double getUninformedDataValue(){ return getNoDataValueAsDouble(); }
+    virtual void getCellLocation(int i, int j, int k, double& x, double& y, double& z);
 
 // ICalcPropertyCollection interface
 public:

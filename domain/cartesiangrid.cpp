@@ -641,7 +641,12 @@ void CartesianGrid::clearLoadedData()
 
 long CartesianGrid::appendAsNewVariable(const QString variableName, const spectral::array &array)
 {
-	return append( variableName, array );
+    return append( variableName, array );
+}
+
+void CartesianGrid::getCellLocation(int i, int j, int k, double &x, double &y, double &z)
+{
+    IJKtoXYZ( i, j, k, x, y, z );
 }
 
 void CartesianGrid::getSpatialAndTopologicalCoordinates(int iRecord, double & x, double & y, double & z, int & i, int & j, int & k)

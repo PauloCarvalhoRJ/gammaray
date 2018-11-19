@@ -269,6 +269,8 @@ public:
     virtual spectral::complex_array *createSpectralComplexArray(int variableIndex1, int variableIndex2);
     virtual void clearLoadedData(){} //SVDFactors are not persistible
     virtual long appendAsNewVariable(const QString variableName, const spectral::array &array);
+    virtual double getUninformedDataValue();
+    virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z );
 
 };
 
