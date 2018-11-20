@@ -23,6 +23,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkColorTransferFunction.h>
 #include <vtkLookupTable.h>
 #include <vtkProperty.h>
+#include <vtkVertexGlyphFilter.h>
+#include <vtkPointData.h>
 
 IJQuick3DViewer::IJQuick3DViewer( QWidget *parent ) :
     QWidget(parent),
@@ -55,6 +57,8 @@ IJQuick3DViewer::IJQuick3DViewer( QWidget *parent ) :
 	_vtkAxesWidget->SetEnabled(1);
 	_vtkAxesWidget->InteractiveOn();
 
+    // adjusts view so everything fits in the screen
+    _renderer->ResetCamera();
 
 	// add the VTK widget the layout
 	ui->frmViewer->layout()->addWidget(_vtkwidget);
@@ -122,7 +126,28 @@ void IJQuick3DViewer::display(vtkPolyData* polyData , int r, int g, int b)
 
 	_renderer->ResetCamera();
 
-	_vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->GetRenderWindow()->Render();
+}
+
+void IJQuick3DViewer::display(vtkPolyData *polyData, float pointSize)
+{
+    if (! threadCheck() )
+        return;
+
+    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputData( polyData );
+
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper( mapper );
+    actor->GetProperty()->SetColor(255, 255, 255);
+    actor->GetProperty()->SetPointSize( pointSize );
+
+    _renderer->AddActor(actor);
+    _currentActors.push_back( actor );
+
+    _renderer->ResetCamera();
+
+    _vtkwidget->GetRenderWindow()->Render();
 }
 
 void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, double colorScaleMax )
