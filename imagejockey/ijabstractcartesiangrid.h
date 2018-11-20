@@ -160,6 +160,18 @@ public:
      * coordinate i,j,k.
      */
     virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z ) = 0;
+
+    /**
+     * Returns the maximum value in the given variable.
+     * First variable is 0.
+     */
+    virtual double getMax( int variableIndex ) = 0;
+
+    /**
+     * Returns the minimum value in the given variable.
+     * First variable is 0.
+     */
+    virtual double getMin( int variableIndex ) = 0;
 };
 
 typedef std::shared_ptr<IJAbstractCartesianGrid> IJAbstractCartesianGridPtr;

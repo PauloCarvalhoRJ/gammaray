@@ -98,7 +98,7 @@ public:
 	//@}
 
     //@{
-    /** Getters for the absolute max. and min. values in the factor. */
+    /** Getters for the max. and min. values in the factor. */
     double getMinValue();
 	double getMaxValue();
     //@}
@@ -271,6 +271,8 @@ public:
     virtual long appendAsNewVariable(const QString variableName, const spectral::array &array);
     virtual double getUninformedDataValue();
     virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z );
+    virtual double getMax(int variableIndex);
+    virtual double getMin(int variableIndex);
 
 };
 

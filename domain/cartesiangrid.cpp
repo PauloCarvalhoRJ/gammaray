@@ -649,6 +649,16 @@ void CartesianGrid::getCellLocation(int i, int j, int k, double &x, double &y, d
     IJKtoXYZ( i, j, k, x, y, z );
 }
 
+double CartesianGrid::getMax(int column)
+{
+    return max( column );
+}
+
+double CartesianGrid::getMin(int column)
+{
+    return min( column );
+}
+
 void CartesianGrid::getSpatialAndTopologicalCoordinates(int iRecord, double & x, double & y, double & z, int & i, int & j, int & k)
 {
 	indexToIJK( iRecord, (uint&)i, (uint&)j, (uint&)k );

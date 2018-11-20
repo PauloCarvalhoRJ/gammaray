@@ -700,6 +700,18 @@ void SVDFactor::getCellLocation(int i, int j, int k, double &x, double &y, doubl
         z = 0.0; //2D grids are positioned at Z=0.0 by convention
 }
 
+double SVDFactor::getMax(int variableIndex)
+{
+    Q_UNUSED( variableIndex );
+    return getMaxValue();
+}
+
+double SVDFactor::getMin(int variableIndex)
+{
+    Q_UNUSED( variableIndex );
+    return getMinValue();
+}
+
 int SVDFactor::getNI() const
 {
     return m_factorData->M();
