@@ -2262,7 +2262,7 @@ void MainWindow::onGeoGridCellVolumes()
 void MainWindow::onEMD()
 {
     //Get the Cartesian grid (assumes the Attribute's parent file is one)
-    IJAbstractCartesianGridPtr cg( dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile()) );
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile());
     if( ! cg ){
         QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
         return;

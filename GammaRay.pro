@@ -591,7 +591,8 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
                            -lvtkalglib$$_VTK_VERSION_SUFFIX \
-                -lvtkImagingStencil$$_VTK_VERSION_SUFFIX
+                -lvtkImagingStencil$$_VTK_VERSION_SUFFIX \
+                -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 

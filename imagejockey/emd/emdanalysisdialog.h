@@ -2,11 +2,12 @@
 #define EMDANALYSISDIALOG_H
 
 #include <QDialog>
-#include "imagejockey/ijabstractcartesiangrid.h"
 
 namespace Ui {
 class EMDAnalysisDialog;
 }
+
+class IJAbstractCartesianGrid;
 
 /** The dialog used to perform Empirical Mode Decomposition on an image (grid). */
 class EMDAnalysisDialog : public QDialog
@@ -14,7 +15,10 @@ class EMDAnalysisDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit EMDAnalysisDialog( IJAbstractCartesianGridPtr inputGrid,
+    /**
+    * The index of first variable is zero.
+    */
+    explicit EMDAnalysisDialog( IJAbstractCartesianGrid* inputGrid,
                                 uint inputVariableIndex,
                                 QWidget *parent = nullptr);
     ~EMDAnalysisDialog();
@@ -22,7 +26,7 @@ public:
 
 private:
     Ui::EMDAnalysisDialog *ui;
-    IJAbstractCartesianGridPtr m_inputGrid;
+    IJAbstractCartesianGrid* m_inputGrid;
     uint m_inputVariableIndex;
 
 private Q_SLOTS:
