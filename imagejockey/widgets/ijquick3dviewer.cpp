@@ -36,7 +36,7 @@ IJQuick3DViewer::IJQuick3DViewer( QWidget *parent ) :
 
 	this->setWindowTitle("Quick 3D Viewer");
 
-	_vtkwidget = new QVTKOpenGLWidget();
+    _vtkwidget = new QVTKOpenGLWidget();
 
 	_renderer = vtkSmartPointer<vtkRenderer>::New();
 
@@ -206,6 +206,6 @@ bool IJQuick3DViewer::threadCheck()
 
 void IJQuick3DViewer::onDismiss()
 {
-	this->close();
+    this->close();
 }
 
