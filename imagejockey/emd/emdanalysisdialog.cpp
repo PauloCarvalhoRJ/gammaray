@@ -6,7 +6,7 @@
 #include "imagejockey/widgets/ijquick3dviewer.h"
 #include <vtkSmartPointer.h>
 #include <vtkPoints.h>
-#include <vtkDoubleArray.h>
+#include <vtkFloatArray.h>
 #include <vtkShepardMethod.h>
 #include <vtkImageData.h>
 #include <vtkPolyData.h>
@@ -60,8 +60,10 @@ void EMDAnalysisDialog::onPerformEMD()
     //initialize the current Empirical Mode Function with the grid's original data
     spectral::array* currentEMF = m_inputGrid->createSpectralArray( m_inputVariableIndex );
 
+    int nSteps = ui->spinMaxNbOfSteps->value();
+
     //EMD iterations
-    {
+    for( int iter = 0; iter < nSteps; ++iter ){
         //count the local extrema count
         uint localMaximaCount = 0;
         uint localMinimaCount = 0;
@@ -128,40 +130,41 @@ void EMDAnalysisDialog::onPerformEMD()
 
         //----------------------------------------------------------------------------------------
 
-    //    IJGridViewerWidget* ijgw = new IJGridViewerWidget( true, false, true, this );
-    //    SVDFactor* grid = new SVDFactor( std::move(localMaximaEnvelope), 1, 1.0, 0.0, 0.0, 0.0,
-    //                                     m_inputGrid->getCellSizeI(),
-    //                                     m_inputGrid->getCellSizeJ(),
-    //                                     m_inputGrid->getCellSizeK(),
-    //                                     0.42
-    //                                     );
-    //    ijgw->setFactor( grid );
-    //    ijgw->show();
-    //    return;
+        //Debug the extrema envelopes
+//        IJGridViewerWidget* ijgw = new IJGridViewerWidget( true, false, true, this );
+//        SVDFactor* grid = new SVDFactor( std::move(localMaximaEnvelope), 1, 1.0, 0.0, 0.0, 0.0, //DO NOT USE localMaximaEnvelope beyond this point!
+//                                         m_inputGrid->getCellSizeI(),
+//                                         m_inputGrid->getCellSizeJ(),
+//                                         m_inputGrid->getCellSizeK(),
+//                                         0.42
+//                                         );
+//        ijgw->setFactor( grid );
+//        ijgw->show();
+//        return;
 
         //--------------------------interpolate the local extrema--------------------------------
 
         //the VTK collections of points in space of the local extrema
         vtkSmartPointer<vtkPoints> pointsMaxima = vtkSmartPointer<vtkPoints>::New();
         vtkSmartPointer<vtkPoints> pointsMinima = vtkSmartPointer<vtkPoints>::New();
-        pointsMaxima->SetNumberOfPoints( localMaximaCount );
-        pointsMinima->SetNumberOfPoints( localMinimaCount );
+
+        vtkSmartPointer<vtkCellArray> vertexesMaxima = vtkSmartPointer<vtkCellArray>::New();
+        vtkSmartPointer<vtkCellArray> vertexesMinima = vtkSmartPointer<vtkCellArray>::New();
 
         //the VTK collections of values of local extrema
-        vtkSmartPointer<vtkDoubleArray> valuesMaxima = vtkSmartPointer<vtkDoubleArray>::New();
-        vtkSmartPointer<vtkDoubleArray> valuesMinima = vtkSmartPointer<vtkDoubleArray>::New();
-        valuesMaxima->SetNumberOfComponents(1);
-        valuesMaxima->SetNumberOfValues( localMaximaCount );
+        vtkSmartPointer<vtkFloatArray> valuesMaxima = vtkSmartPointer<vtkFloatArray>::New();
         valuesMaxima->SetName("ValuesMaxima");
-        valuesMinima->SetNumberOfComponents(1);
-        valuesMaxima->SetNumberOfValues( localMinimaCount );
+        vtkSmartPointer<vtkFloatArray> valuesMinima = vtkSmartPointer<vtkFloatArray>::New();
         valuesMinima->SetName("ValuesMinima");
 
         //the VTK collections of ids to identify vertexes
         vtkSmartPointer<vtkIdList> vIDsMaxima = vtkSmartPointer<vtkIdList>::New();
+        vIDsMaxima->Allocate( localMaximaCount );
         vtkSmartPointer<vtkIdList> vIDsMinima = vtkSmartPointer<vtkIdList>::New();
-        vtkSmartPointer<vtkCellArray> vertexesMaxima = vtkSmartPointer<vtkCellArray>::New();
-        vtkSmartPointer<vtkCellArray> vertexesMinima = vtkSmartPointer<vtkCellArray>::New();
+        vIDsMaxima->Allocate( localMinimaCount );
+
+        valuesMaxima->Allocate( localMaximaCount );
+        valuesMinima->Allocate( localMinimaCount );
 
         //populate the VTK collections above
         double x, y, z;
@@ -189,15 +192,28 @@ void EMDAnalysisDialog::onPerformEMD()
         polydataMaxima->SetPoints( pointsMaxima );
         polydataMaxima->SetVerts( vertexesMaxima );
         polydataMaxima->GetPointData()->SetScalars( valuesMaxima );
+        //polydataMaxima->GetPointData()->SetActiveScalars("ValuesMaxima"); //setting this makes vtkShepardMethod fail... figures! But enable this to visualize.
         vtkSmartPointer<vtkPolyData> polydataMinima = vtkSmartPointer<vtkPolyData>::New();
         polydataMinima->SetPoints( pointsMinima );
         polydataMinima->SetVerts( vertexesMinima );
         polydataMinima->GetPointData()->SetScalars( valuesMinima );
+        //polydataMaxima->GetPointData()->SetActiveScalars("ValuesMinima"); //setting this makes vtkShepardMethod fail... figures! But enable this to visualize.
+
+        //Debug the extrema envelopes as point sets
+//        IJQuick3DViewer* ijq3dv2 = new IJQuick3DViewer;
+//        ijq3dv2->setWindowTitle( "Maxima Envelope" );
+//        ijq3dv2->show();
+//        ijq3dv2->display( polydataMaxima, 3.0f );
+//        IJQuick3DViewer* ijq3dv3 = new IJQuick3DViewer;
+//        ijq3dv3->setWindowTitle( "Minima Envelope" );
+//        ijq3dv3->show();
+//        ijq3dv3->display( polydataMinima, 3.0f );
+//        return;
 
         //configure the volume for Shepard's Method interpolation algorithm
         //vtkGaussianSplatter can be an alternative if results are not good
         vtkSmartPointer<vtkShepardMethod> shepard = vtkSmartPointer<vtkShepardMethod>::New();
-        shepard->SetInputData( polydataMinima );
+        shepard->SetInputData( polydataMaxima );
         shepard->SetMaximumDistance(1); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
         double xmin = m_inputGrid->getOriginX() - dx / 2.0;
         double ymin = m_inputGrid->getOriginY() - dy / 2.0;
@@ -208,17 +224,58 @@ void EMDAnalysisDialog::onPerformEMD()
         shepard->SetModelBounds( xmin, xmax, ymin, ymax, zmin, zmax);
         shepard->SetSampleDimensions( nI, nJ, nK+1 );
         shepard->Update();
+        vtkSmartPointer<vtkImageData> interpolatedMaximaEnvelope = shepard->GetOutput();
 
-        vtkSmartPointer<vtkImageData> output = shepard->GetOutput();
+        //configure Shepard's for the local minima envelope.
+        shepard = vtkSmartPointer<vtkShepardMethod>::New();
+        shepard->SetInputData( polydataMinima );
+        shepard->SetMaximumDistance(1); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
+        shepard->SetModelBounds( xmin, xmax, ymin, ymax, zmin, zmax);
+        shepard->SetSampleDimensions( nI, nJ, nK+1 );
+        shepard->Update();
+        vtkSmartPointer<vtkImageData> interpolatedMinimaEnvelope = shepard->GetOutput();
 
-        IJQuick3DViewer* ijq3dv = new IJQuick3DViewer;
-        ijq3dv->setWindowTitle( "Maxima Envelope" );
-        ijq3dv->show();
-        ijq3dv->display( output,
-                         m_inputGrid->getMin( m_inputVariableIndex ),
-                         m_inputGrid->getMax( m_inputVariableIndex ) );
+
+        //Debug the interpolated extrema envelopes
+//        IJQuick3DViewer* ijq3dv = new IJQuick3DViewer;
+//        ijq3dv->setWindowTitle( "Maxima Envelope" );
+//        ijq3dv->show();
+//        ijq3dv->display( interpolatedMaximaEnvelope,
+//                         m_inputGrid->getMin( static_cast<int>( m_inputVariableIndex ) ),
+//                         m_inputGrid->getMax( static_cast<int>( m_inputVariableIndex ) ) );
+//        IJQuick3DViewer* ijq3dv4 = new IJQuick3DViewer;
+//        ijq3dv4->setWindowTitle( "Minima Envelope" );
+//        ijq3dv4->show();
+//        ijq3dv4->display( interpolatedMinimaEnvelope,
+//                         m_inputGrid->getMin( static_cast<int>( m_inputVariableIndex ) ),
+//                         m_inputGrid->getMax( static_cast<int>( m_inputVariableIndex ) ) );
 
         //---------------------------------------------------------------------------------------
 
+        //----------------------------- Compute the next Empirical Mode Function-----------------
+
+        for( int k = 0; k < nK; ++k )
+            for( int j = 0; j < nJ; ++j )
+                for( int i = 0; i < nI; ++i ){
+                    //intput for VTK were vtkFloatArray's
+                    float* cellMaxima = static_cast<float*>(interpolatedMaximaEnvelope->GetScalarPointer( i, j, k ));
+                    float* cellMinima = static_cast<float*>(interpolatedMinimaEnvelope->GetScalarPointer( i, j, k ));
+                    //assuming the first element in the returned array is the interpolated value
+                    (*currentEMF)( i, j, k ) = (*currentEMF)( i, j, k ) - static_cast<double>(cellMaxima[0] + cellMinima[0]) / 2.0 ;
+                }
+
+        //---------------------------------------------------------------------------------------
+
+        //Debug the extrema envelopes
+        IJGridViewerWidget* ijgw2 = new IJGridViewerWidget( true, false, true );
+        spectral::array currentEMFCopy( *currentEMF );
+        SVDFactor* grid = new SVDFactor( std::move(currentEMFCopy), 1, 1.0, 0.0, 0.0, 0.0,
+                                         m_inputGrid->getCellSizeI(),
+                                         m_inputGrid->getCellSizeJ(),
+                                         m_inputGrid->getCellSizeK(),
+                                         0.42
+                                         );
+        ijgw2->setFactor( grid );
+        ijgw2->show();
     } //----EMD iterations
 }
