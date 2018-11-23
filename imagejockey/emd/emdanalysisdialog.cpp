@@ -60,10 +60,16 @@ void EMDAnalysisDialog::onPerformEMD()
     //initialize the current Empirical Mode Function with the grid's original data
     spectral::array* currentEMF = m_inputGrid->createSpectralArray( m_inputVariableIndex );
 
+    //get the maximum number of steps
     int nSteps = ui->spinMaxNbOfSteps->value();
 
+    // the local extrema counts in the previous interation to detect whether
+    // the number of extrema increased (algorithm is diverging)
+    uint previousLocalMaximaCount = 0;
+    uint previousLocalMinimaCount = 0;
+
     //EMD iterations
-    for( int iter = 0; iter < nSteps; ++iter ){
+    for( int iteration = 0; iteration < nSteps; ++iteration ){
         //count the local extrema count
         uint localMaximaCount = 0;
         uint localMinimaCount = 0;
@@ -125,6 +131,12 @@ void EMDAnalysisDialog::onPerformEMD()
 
         if( localMinimaCount < ui->spinMinNbOfExtrema->value() ){
             QMessageBox::information( this, "Info", "EMD terminated by reaching minimum number of local minima.");
+            return;
+        }
+
+        if( iteration > 0 && ( localMaximaCount > previousLocalMaximaCount ||
+                               localMinimaCount > previousLocalMinimaCount ) ) {
+            QMessageBox::information( this, "Info", "EMD terminated because it started diverging (number of local extrema increased).");
             return;
         }
 
@@ -210,28 +222,34 @@ void EMDAnalysisDialog::onPerformEMD()
 //        ijq3dv3->display( polydataMinima, 3.0f );
 //        return;
 
-        //configure the volume for Shepard's Method interpolation algorithm
-        //vtkGaussianSplatter can be an alternative if results are not good
-        vtkSmartPointer<vtkShepardMethod> shepard = vtkSmartPointer<vtkShepardMethod>::New();
-        shepard->SetInputData( polydataMaxima );
-        shepard->SetMaximumDistance(1); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
+        //compute bounding box for Shepard' method
         double xmin = m_inputGrid->getOriginX() - dx / 2.0;
         double ymin = m_inputGrid->getOriginY() - dy / 2.0;
         double zmin = m_inputGrid->getOriginZ() - dz / 2.0;
         double xmax = xmin + dx * nI;
         double ymax = ymin + dy * nJ;
         double zmax = zmin + dz * nK;
+
+        //configure the volume for Shepard's Method interpolation algorithm for the maxima envelope.
+        //vtkGaussianSplatter can be an alternative if results are not good
+        vtkSmartPointer<vtkShepardMethod> shepard = vtkSmartPointer<vtkShepardMethod>::New();
+        shepard->SetInputData( polydataMaxima );
+        shepard->SetMaximumDistance(1); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
         shepard->SetModelBounds( xmin, xmax, ymin, ymax, zmin, zmax);
+        shepard->SetPowerParameter( ui->dblSpinPowerParameter->value() );
         shepard->SetSampleDimensions( nI, nJ, nK+1 );
+        shepard->SetNullValue( NDV );
         shepard->Update();
         vtkSmartPointer<vtkImageData> interpolatedMaximaEnvelope = shepard->GetOutput();
 
-        //configure Shepard's for the local minima envelope.
+        //now re-configure Shepard's for the local minima envelope. (reusing the vtkShepardMethod instance didn't work)
         shepard = vtkSmartPointer<vtkShepardMethod>::New();
         shepard->SetInputData( polydataMinima );
         shepard->SetMaximumDistance(1); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
         shepard->SetModelBounds( xmin, xmax, ymin, ymax, zmin, zmax);
+        shepard->SetPowerParameter( ui->dblSpinPowerParameter->value() );
         shepard->SetSampleDimensions( nI, nJ, nK+1 );
+        shepard->SetNullValue( NDV );
         shepard->Update();
         vtkSmartPointer<vtkImageData> interpolatedMinimaEnvelope = shepard->GetOutput();
 
@@ -277,5 +295,9 @@ void EMDAnalysisDialog::onPerformEMD()
                                          );
         ijgw2->setFactor( grid );
         ijgw2->show();
+
+        // keep track of number of extrema count to detect divergence
+        previousLocalMaximaCount = localMaximaCount;
+        previousLocalMinimaCount = localMinimaCount;
     } //----EMD iterations
 }
