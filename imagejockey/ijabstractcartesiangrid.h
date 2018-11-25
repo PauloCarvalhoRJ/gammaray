@@ -172,8 +172,7 @@ public:
      * First variable is 0.
      */
     virtual double getMin( int variableIndex ) = 0;
-};
 
-typedef std::shared_ptr<IJAbstractCartesianGrid> IJAbstractCartesianGridPtr;
+};
 
 #endif // IJABSTRACTCARTESIANGRID_H

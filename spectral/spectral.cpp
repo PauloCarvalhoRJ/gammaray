@@ -503,7 +503,36 @@ double array::min() const
 
 double array::euclideanLength() const
 {
-	return std::sqrt( spectral::dot( *this, *this ) );
+    return std::sqrt( spectral::dot( *this, *this ) );
+}
+
+double array::get_window_average(index M, index N, index K, int halfWindowSize) const
+{
+    int value_count = 0;
+    double total = 0.0;
+    for( int offsetK = -halfWindowSize; offsetK <= halfWindowSize; ++offsetK )
+        for( int offsetJ = -halfWindowSize; offsetJ <= halfWindowSize; ++offsetJ )
+            for( int offsetI = -halfWindowSize; offsetI <= halfWindowSize; ++offsetI ){
+                int neighI = M + offsetI;
+                int neighJ = N + offsetJ;
+                int neighK = K + offsetK;
+                //if's to handle border cases
+                if( neighI >= 0 && neighI < M_ &&
+                    neighJ >= 0 && neighJ < N_ &&
+                    neighK >= 0 && neighK < K_ ){
+                    //get neighboring value
+                    double neighValue = (*this)( neighI, neighJ, neighK );
+                    //if it is a valid value
+                    if( std::isfinite( neighValue )){
+                        total += neighValue;
+                        ++value_count;
+                    }
+                }
+            }
+    if( value_count )
+        return total / value_count;
+    else
+        return std::numeric_limits<double>::quiet_NaN();
 }
 
 const double &array::operator()(index i, index j) const { return d_.at(i * N_ + j); }
@@ -1829,6 +1858,143 @@ array get_extrema_cells( const array &in,
                     ++count;
                 }
             } // --- for each cell
+
+    return localExtrema;
+}
+
+array get_ridges_or_valleys(const array &in,
+                            ExtremumType extremaType,
+                            int halfWindowSize,
+                            int &count)
+{
+    //--------------------------definitions-------------------------
+
+    //ATTENTION: do not set values or change the order for this enum, otherwise the loop further down will break.
+    enum window_set_area{
+        N_S,   //1st window to the north, 2nd window to the south of the target cell
+        NE_SW, //1st window to the northeast, 2nd window to the southwest of the target cell
+        E_W,   //1st window to the east, 2nd window to the west of the target cell
+        SE_NW, //1st window to the southeast, 2nd window to the northwest of the target cell
+    };
+
+    //ATTENTION: do not set values or change the order for this enum, otherwise the loop further down will break.
+    enum window_set_vert{
+        LEVEL,      //1st and 2nd windows are on the same level as the target cell.
+        GOING_UP,   //1st window is above and 2nd window is below the target cell.
+        GOING_DOWN, //1st window is below and 2nd window is above the target cell.
+        VERTICAL,   //areal direction is ignored. 1st window is directly above and 2nd window is directly below.
+    };
+
+    //a set of IJK steps
+    struct steps{
+        int stepI, stepJ, stepK;
+    };
+
+    //a set with two opposing IJK steps sets
+    struct window_steps{
+        steps win1, win2;
+    };
+
+    auto get_steps = []( window_set_area areal_direction,
+                         window_set_vert vertical_direction,
+                         int step_size )
+         {
+            window_steps result;
+            switch( areal_direction ){
+            case window_set_area::N_S:
+                result.win1.stepI = 0; result.win1.stepJ = step_size;
+                result.win2.stepI = 0; result.win2.stepJ = -step_size;
+                break;
+            case window_set_area::NE_SW:
+                result.win1.stepI = step_size; result.win1.stepJ = step_size;
+                result.win2.stepI = -step_size; result.win2.stepJ = -step_size;
+                break;
+            case window_set_area::E_W:
+                result.win1.stepI = step_size; result.win1.stepJ = 0;
+                result.win2.stepI = -step_size; result.win2.stepJ = 0;
+                break;
+            case window_set_area::SE_NW:
+                result.win1.stepI = step_size; result.win1.stepJ = -step_size;
+                result.win2.stepI = -step_size; result.win2.stepJ = step_size;
+                break;
+            }
+            switch( vertical_direction ){
+            case window_set_vert::LEVEL:
+                result.win1.stepK = 0;
+                result.win2.stepK = 0;
+                break;
+            case window_set_vert::GOING_UP:
+                result.win1.stepK = step_size;
+                result.win2.stepK = -step_size;
+                break;
+            case window_set_vert::GOING_DOWN:
+                result.win1.stepK = -step_size;
+                result.win2.stepK = step_size;
+                break;
+            case window_set_vert::VERTICAL:
+                result.win1.stepI = 0; result.win1.stepJ = 0; result.win1.stepK = step_size;
+                result.win2.stepI = 0; result.win2.stepJ = 0; result.win2.stepK = -step_size;
+                break;
+            }
+            return result;
+         };
+
+    //--------------------------the algorithm-------------------------
+    //--------This ridge/valley search algorithm is a 3D version of the one
+    //--------proposed by Linderhed (2009):
+    //--------     IMAGE EMPIRICAL MODE DECOMPOSITION:
+    //--------      A NEW TOOL FOR IMAGE PROCESSING
+
+    //get grid dimension
+    int nI = in.M();
+    int nJ = in.N();
+    int nK = in.K();
+
+    //get the null data value (NaN for a spectral::array single-variable grid)
+    double NDV = std::numeric_limits<double>::quiet_NaN();
+
+    //create the local extrema array, initialized to no-data-values.
+    spectral::array localExtrema( nI, nJ, nK, NDV );
+
+    //for each cell...
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ){
+                //...get its value
+                double cellValue = in( i, j, k );
+                if( ! std::isfinite( cellValue ) )
+                    continue;
+                //scan the directions
+                for( int dir_vert = window_set_vert::LEVEL; dir_vert <= window_set_vert::VERTICAL; ++dir_vert )
+                    for( int dir_area = window_set_area::N_S; dir_area <= window_set_area::SE_NW; ++dir_area ){
+                        //get the steps so we have to opposing windows with the target cell in between
+                        window_steps win_steps = get_steps( static_cast<window_set_area>( dir_area ),
+                                                            static_cast<window_set_vert>( dir_vert ),
+                                                            halfWindowSize + 1 ); //+1 to not include the target cell in the windows
+                        //get the averages in two opposed windows with the target cell in between them
+                        double avg1 = in.get_window_average( i + win_steps.win1.stepI,
+                                                             j + win_steps.win1.stepJ,
+                                                             k + win_steps.win1.stepK,
+                                                             halfWindowSize );
+                        double avg2 = in.get_window_average( i + win_steps.win2.stepI,
+                                                             j + win_steps.win2.stepJ,
+                                                             k + win_steps.win2.stepK,
+                                                             halfWindowSize );
+                        //if both averages exist
+                        if( std::isfinite(avg1) && std::isfinite(avg2) ){
+                            //compute the errors with repect to the target cell
+                            double e1 = cellValue - avg1;
+                            double e2 = cellValue - avg2;
+                            //if the sign of the errors are the same, the cell belongs
+                            //to a ridge or valley (depends in whether the signs are positive or negative)
+                            if( ( e1 > 0.0 && e2 > 0.0 && extremaType == ExtremumType::MAXIMUM ) ||
+                                ( e1 < 0.0 && e2 < 0.0 && extremaType == ExtremumType::MINIMUM ) ){
+                                localExtrema( i, j, k ) = cellValue;
+                                ++count;
+                            }
+                        }
+                    }
+            }
 
     return localExtrema;
 }

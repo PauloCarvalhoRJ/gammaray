@@ -1,6 +1,7 @@
 #include "ijabstractcartesiangrid.h"
 #include "imagejockeyutils.h"
 #include <cmath>
+#include "spectral/spectral.h"
 
 IJAbstractCartesianGrid::IJAbstractCartesianGrid()
 {

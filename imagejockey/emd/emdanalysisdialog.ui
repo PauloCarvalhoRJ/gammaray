@@ -15,6 +15,61 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_5">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>half-window size for search of local extrema:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinHalfWindowSize">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>extrema type:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="cmbExtremaType">
+       <item>
+        <property name="text">
+         <string>lines</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>points</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_4">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+   <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
      <property name="topMargin">
       <number>0</number>
@@ -22,7 +77,7 @@
      <item>
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>interpolation method:</string>
+        <string>extrema interpolation method:</string>
        </property>
       </widget>
      </item>
@@ -91,7 +146,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string> Stop at</string>
+        <string> Stop with less than</string>
        </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>

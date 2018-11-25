@@ -149,6 +149,13 @@ struct array {
 
 	double euclideanLength() const;
 
+    /** Returns the average of values in a window centered at the cell identified
+     * by the topological coordinate MNK.  It returns std::numeric_limits<double>::quiet_NaN()
+     * if no valid values are found in the window.
+     * @param halfWindowSize the number of cells around the center cell. 1 means a 3x3x3 window.
+     */
+    double get_window_average( index M, index N, index K, int halfWindowSize = 1 ) const;
+
     std::vector<double> d_;
     index ndim_ = 1;
     index M_ = 1; // dim 1
@@ -326,12 +333,25 @@ complex_array to_rectangular_form(const complex_array & in );
  * @param extremaType Sets whether to search for maxima or minima.
  * @param halfWindowSize Defines the size of the search window around the cells to look for extrema.
  *                       A value of 1 means a 3x3x3 neighborhood.
- * @param count An output prameter that will contain the number of cells with extrema values.
+ * @param count An output parameter that will contain the number of cells with extrema values.
  */
 array get_extrema_cells( const array &in,
                          ExtremumType extremaType ,
                          int halfWindowSize,
                          int& count );
+
+/**
+ * Returns a new array containing the maxima or extrema as cells belonging to ridges or valleys.
+ * All other cells are set to std::numeric_limits<double>::quiet_NaN().
+ * @param extremaType Sets whether to search for maxima or minima.
+ * @param halfWindowSize Defines the size of the search window around the cells to look for extrema.
+ *                       A value of 1 means a 3x3x3 neighborhood.
+ * @param count An output parameter that will contain the number of cells with extrema values.
+ */
+array get_ridges_or_valleys( const array &in,
+                             ExtremumType extremaType ,
+                             int halfWindowSize,
+                             int& count );
 
 } // namepsace spectral
 

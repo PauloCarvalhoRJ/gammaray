@@ -48,14 +48,8 @@ void EMDAnalysisDialog::onPerformEMD()
     //get the null data value (NaN for a spectral::array single-variable grid)
     double NDV = std::numeric_limits<double>::quiet_NaN();
 
-    //create the local maxima envelope data set, initialized with no-data-values.
-    spectral::array localMaximaEnvelope( nI, nJ, nK, NDV );
-
-    //create the local minima envelope data set, initialized with no-data-values.
-    spectral::array localMinimaEnvelope( nI, nJ, nK, NDV );
-
     //define the size of half-window (1 means a 3x3x3 window with the target cell in the center)
-    int halfWindowSize = 1;
+    int halfWindowSize = ui->spinHalfWindowSize->value();
 
     //initialize the current Empirical Mode Function with the grid's original data
     spectral::array* currentEMF = m_inputGrid->createSpectralArray( m_inputVariableIndex );
@@ -71,58 +65,32 @@ void EMDAnalysisDialog::onPerformEMD()
     //EMD iterations
     for( int iteration = 0; iteration < nSteps; ++iteration ){
         //count the local extrema count
-        uint localMaximaCount = 0;
-        uint localMinimaCount = 0;
+        int localMaximaCount = 0;
+        int localMinimaCount = 0;
 
-        //-------------- The loop to find the local extrema for the envelopes -----------------
-        //for each cell...
-        for( int k = 0; k < nK; ++k )
-            for( int j = 0; j < nJ; ++j )
-                for( int i = 0; i < nI; ++i ){
-                    bool is_a_local_minimum = true;
-                    bool is_a_local_maximum = true;
-                    //...get its value
-                    double cellValue = (*currentEMF)( i, j, k );
-                    //...evaluate the neighboring values
-                    for( int offsetK = -halfWindowSize; offsetK <= halfWindowSize; ++offsetK )
-                        for( int offsetJ = -halfWindowSize; offsetJ <= halfWindowSize; ++offsetJ )
-                            for( int offsetI = -halfWindowSize; offsetI <= halfWindowSize; ++offsetI ){
-                                int neighI = i + offsetI;
-                                int neighJ = j + offsetJ;
-                                int neighK = k + offsetK;
-                                //if's to handle border cases
-                                if( neighI >= 0 && neighI < nI &&
-                                    neighJ >= 0 && neighJ < nJ &&
-                                    neighK >= 0 && neighK < nK &&
-                                    ! (neighI == i && neighJ == j && neighK == k) /*do not compare with itself*/ ){
-                                    //get neighboring value
-                                    double neighValue = (*currentEMF)( neighI, neighJ, neighK );
-                                    //if it is a valid value
-                                    if( std::isfinite( neighValue )){
-                                        //if the cell value is less than a neighbor's...
-                                        if( cellValue < neighValue )
-                                            //...it can't be a local maximum
-                                            is_a_local_maximum = false;
-                                        //if the cell value is greater than a neighbor's...
-                                        if( cellValue > neighValue )
-                                            //...it can't be a local minimum
-                                            is_a_local_minimum = false;
-                                    }
-                                }
-                            } // --- evaluate the neighboring cells
-                    //if the cell is a local maximum...
-                    if( is_a_local_maximum ){
-                        //... assign the value to the grid of the local maxima envelope
-                        localMaximaEnvelope( i, j, k ) = cellValue;
-                        ++localMaximaCount;
-                    }
-                    //if the cell is a local minimum...
-                    if( is_a_local_minimum ){
-                        //... assign the value to the grid of the local minima envelope
-                        localMinimaEnvelope( i, j, k ) = cellValue;
-                        ++localMinimaCount;
-                    }
-                } // --- for each cell
+        //create the local extrema envelopes data sets, initialized with the local extrema.
+        spectral::array localMaximaEnvelope;
+        spectral::array localMinimaEnvelope;
+
+        if( ui->cmbExtremaType->currentText() == "points" ){
+            localMaximaEnvelope = spectral::get_extrema_cells( *currentEMF,
+                                                               spectral::ExtremumType::MAXIMUM,
+                                                               halfWindowSize,
+                                                               localMaximaCount );
+            localMinimaEnvelope = spectral::get_extrema_cells( *currentEMF,
+                                                               spectral::ExtremumType::MINIMUM,
+                                                               halfWindowSize,
+                                                               localMinimaCount );
+        } else {
+            localMaximaEnvelope = spectral::get_ridges_or_valleys( *currentEMF,
+                                                                   spectral::ExtremumType::MAXIMUM,
+                                                                   halfWindowSize,
+                                                                   localMaximaCount );
+            localMinimaEnvelope = spectral::get_ridges_or_valleys( *currentEMF,
+                                                                   spectral::ExtremumType::MINIMUM,
+                                                                   halfWindowSize,
+                                                                   localMinimaCount );
+        }
 
         if( localMaximaCount < ui->spinMinNbOfExtrema->value() ){
             QMessageBox::information( this, "Info", "EMD terminated by reaching minimum number of local maxima.");
@@ -143,14 +111,14 @@ void EMDAnalysisDialog::onPerformEMD()
         //----------------------------------------------------------------------------------------
 
         //Debug the extrema envelopes
-//        IJGridViewerWidget* ijgw = new IJGridViewerWidget( true, false, true, this );
-//        SVDFactor* grid = new SVDFactor( std::move(localMaximaEnvelope), 1, 1.0, 0.0, 0.0, 0.0, //DO NOT USE localMaximaEnvelope beyond this point!
+//        IJGridViewerWidget* ijgw = new IJGridViewerWidget( true, false, true, nullptr );
+//        SVDFactor* grid2 = new SVDFactor( std::move(localMinimaEnvelope), 1, 1.0, 0.0, 0.0, 0.0, //DO NOT USE localMaximaEnvelope beyond this point!
 //                                         m_inputGrid->getCellSizeI(),
 //                                         m_inputGrid->getCellSizeJ(),
 //                                         m_inputGrid->getCellSizeK(),
 //                                         0.42
 //                                         );
-//        ijgw->setFactor( grid );
+//        ijgw->setFactor( grid2 );
 //        ijgw->show();
 //        return;
 
