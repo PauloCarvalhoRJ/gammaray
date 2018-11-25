@@ -23,6 +23,11 @@ namespace spectral
 using index = long long;
 using fftw_array_raw = fftw_complex *;
 
+enum class ExtremumType : int {
+    MAXIMUM,
+    MINIMUM
+};
+
 struct complex_array {
     complex_array();
     complex_array(index N);
@@ -313,6 +318,20 @@ complex_array to_polar_form(const complex_array & in );
  * (magnitude and phase) to Cartesian form (real and imaginary parts).
  */
 complex_array to_rectangular_form(const complex_array & in );
+
+
+/**
+ * Returns a new array containing the maxima or extrema as single cells.
+ * All other cells are set to std::numeric_limits<double>::quiet_NaN().
+ * @param extremaType Sets whether to search for maxima or minima.
+ * @param halfWindowSize Defines the size of the search window around the cells to look for extrema.
+ *                       A value of 1 means a 3x3x3 neighborhood.
+ * @param count An output prameter that will contain the number of cells with extrema values.
+ */
+array get_extrema_cells( const array &in,
+                         ExtremumType extremaType ,
+                         int halfWindowSize,
+                         int& count );
 
 } // namepsace spectral
 

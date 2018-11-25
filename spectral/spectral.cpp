@@ -1766,7 +1766,71 @@ array operator*(double theValue, const array & theArray)
 	array result( theArray.M(), theArray.N(), theArray.K() );
 	for( int i = 0; i < theArray.size(); ++i )
 		result.d_[i] = theValue * theArray.d_[i];
-	return result;
+    return result;
+}
+
+array get_extrema_cells( const array &in,
+                         ExtremumType extremaType,
+                         int halfWindowSize,
+                         int &count)
+{
+
+    //get grid dimension
+    int nI = in.M();
+    int nJ = in.N();
+    int nK = in.K();
+
+    //get the null data value (NaN for a spectral::array single-variable grid)
+    double NDV = std::numeric_limits<double>::quiet_NaN();
+
+    //create the local extrema array, initialized to no-data-values.
+    spectral::array localExtrema( nI, nJ, nK, NDV );
+
+    //for each cell...
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ){
+                bool is_a_local_extrema = true;
+                //...get its value
+                double cellValue = in( i, j, k );
+                //...evaluate the neighboring values
+                for( int offsetK = -halfWindowSize; offsetK <= halfWindowSize; ++offsetK )
+                    for( int offsetJ = -halfWindowSize; offsetJ <= halfWindowSize; ++offsetJ )
+                        for( int offsetI = -halfWindowSize; offsetI <= halfWindowSize; ++offsetI ){
+                            int neighI = i + offsetI;
+                            int neighJ = j + offsetJ;
+                            int neighK = k + offsetK;
+                            //if's to handle border cases
+                            if( neighI >= 0 && neighI < nI &&
+                                neighJ >= 0 && neighJ < nJ &&
+                                neighK >= 0 && neighK < nK &&
+                                ! (neighI == i && neighJ == j && neighK == k) /*do not compare with itself*/ ){
+                                //get neighboring value
+                                double neighValue = in( neighI, neighJ, neighK );
+                                //if it is a valid value
+                                if( std::isfinite( neighValue )){
+                                    //if the cell value is less than a neighbor's...
+                                    if( extremaType == ExtremumType::MAXIMUM &&
+                                            cellValue < neighValue )
+                                        //...it can't be a local maximum
+                                        is_a_local_extrema = false;
+                                    //if the cell value is greater than a neighbor's...
+                                    if( extremaType == ExtremumType::MINIMUM &&
+                                            cellValue > neighValue )
+                                        //...it can't be a local minimum
+                                        is_a_local_extrema = false;
+                                }
+                            }
+                        } // --- evaluate the neighboring cells
+                //if the cell is a local maximum...
+                if( is_a_local_extrema ){
+                    //... assign the value to the grid of the local maxima envelope
+                    localExtrema( i, j, k ) = cellValue;
+                    ++count;
+                }
+            } // --- for each cell
+
+    return localExtrema;
 }
 
 } // namespace spectral
