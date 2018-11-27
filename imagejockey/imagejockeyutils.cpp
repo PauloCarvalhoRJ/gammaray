@@ -21,6 +21,9 @@
 #include <vtkCenterOfMass.h>
 #include <vtkEllipseArcSource.h>
 #include <vtkAppendPolyData.h>
+#include <vtkFloatArray.h>
+#include <vtkShepardMethod.h>
+#include <imagejockey/widgets/ijquick3dviewer.h>
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -92,7 +95,7 @@ QString ImageJockeyUtils::humanReadable(double value)
     //buffer string for formatting the output (QString's sptrintf doesn't honor field size)
     char buffer[50];
     //define base unit to change suffix (could be 1024 for ISO bytes (iB), for instance)
-    double unit = 1000.0d;
+    double unit = 1000.0;
     //return the plain value if it doesn't require a multiplier suffix (small values)
     if (value <= unit){
         std::sprintf(buffer, "%.1f", value);
@@ -667,5 +670,110 @@ double ImageJockeyUtils::getAzimuth( double x, double y, double centerX, double 
 	   az = 0.0;
 	if( ! halfAzimuth && localX < 0.0 )
 	   az += 180.0;
-	return az;
+    return az;
+}
+
+spectral::array ImageJockeyUtils::interpolateNullValuesShepard(const spectral::array &inputData,
+                                                               IJAbstractCartesianGrid &gridMesh,
+                                                               double powerParameter,
+                                                               double nullValue )
+{
+    //get array dimensions
+    int nI = inputData.M();
+    int nJ = inputData.N();
+    int nK = inputData.K();
+
+    //get grid mesh geometry
+    double dx = gridMesh.getCellSizeI();
+    double dy = gridMesh.getCellSizeJ();
+    double dz = gridMesh.getCellSizeK();
+
+    //the VTK collections of points in space
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    vtkSmartPointer<vtkCellArray> vertexes = vtkSmartPointer<vtkCellArray>::New();
+
+    //the VTK collections of values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("Values");
+
+    //the VTK collections of ids to identify vertexes
+    vtkSmartPointer<vtkIdList> vIDs = vtkSmartPointer<vtkIdList>::New();
+
+    //populate the VTK collections above
+    double x, y, z;
+    double minValue = std::numeric_limits<double>::max();
+    double maxValue = std::numeric_limits<double>::min();
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ){
+                double inputValue = inputData( i, j, k );
+                if( std::isfinite( inputValue ) ){
+                    if( inputValue < minValue )
+                        minValue = inputValue;
+                    if( inputValue > maxValue )
+                        maxValue = inputValue;
+                    gridMesh.getCellLocation( i, j, k, x, y, z );
+                    vIDs->InsertNextId( points->InsertNextPoint( x, y, z ) );
+                    values->InsertNextValue( static_cast<float>(inputValue) );
+                }
+            }
+    vertexes->InsertNextCell( vIDs );
+
+    //mount VTK polygonal objects for interpolation with the extrema locations and values
+    vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+    polydata->SetPoints( points );
+    polydata->SetVerts( vertexes );
+    polydata->GetPointData()->SetScalars( values );
+    //polydataMaxima->GetPointData()->SetActiveScalars("Values"); //setting this makes vtkShepardMethod fail... figures! But enable this to visualize.
+
+    //Debug the input values as point sets
+//        IJQuick3DViewer* ijq3dv2 = new IJQuick3DViewer;
+//        ijq3dv2->setWindowTitle( "input points" );
+//        ijq3dv2->show();
+//        ijq3dv2->display( polydata, 3.0f );
+//        return spectral::array();
+
+    //compute bounding box for Shepard' method
+    double xmin = gridMesh.getOriginX() - dx / 2.0;
+    double ymin = gridMesh.getOriginY() - dy / 2.0;
+    double zmin = gridMesh.getOriginZ() - dz / 2.0;
+    double xmax = xmin + dx * nI;
+    double ymax = ymin + dy * nJ;
+    double zmax = zmin + dz * nK;
+
+    //configure the volume for Shepard's Method interpolation algorithm for the maxima envelope.
+    //vtkGaussianSplatter can be an alternative if results are not good
+    vtkSmartPointer<vtkShepardMethod> shepard = vtkSmartPointer<vtkShepardMethod>::New();
+    shepard->SetInputData( polydata );
+    shepard->SetMaximumDistance(1); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
+    shepard->SetModelBounds( xmin, xmax, ymin, ymax, zmin, zmax);
+    shepard->SetPowerParameter( powerParameter );
+    shepard->SetSampleDimensions( nI, nJ, nK+1 );
+    shepard->SetNullValue( nullValue );
+    shepard->Update();
+    vtkSmartPointer<vtkImageData> interpolatedGrid = shepard->GetOutput();
+
+    //Debug the interpolated result
+//    IJQuick3DViewer* ijq3dv = new IJQuick3DViewer;
+//    ijq3dv->setWindowTitle( "interpolated grid" );
+//    ijq3dv->show();
+//    ijq3dv->display( interpolatedGrid,
+//                     minValue,
+//                     maxValue );
+//    return spectral::array();
+
+    spectral::array result( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>(nK) );
+
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ){
+                //intput for VTK were vtkFloatArray's
+                float* cellValue = static_cast<float*>(interpolatedGrid->GetScalarPointer( i, j, k ));
+                //assuming the first element in the returned array is the interpolated value
+                result( i, j, k ) = static_cast<double>(cellValue[0]);
+            }
+
+    return result;
 }

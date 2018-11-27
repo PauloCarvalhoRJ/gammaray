@@ -258,6 +258,21 @@ public:
 	 * @note If the internal arctangent call results in infinity (very near or at the center) the returned azimuth value is zero.
 	 */
 	static double getAzimuth( double x, double y, double centerX, double centerY, bool halfAzimuth = false );
+
+    /**
+     * Interpolates invalid values ( std::isfinite() returns false ) from valid values in the passed array.
+     * The returned array has the same dimensions of the input array.
+     * Interpolation method is Shepard's (inverse distance weighted of all data points).
+     * This method is slow if the array has too many valid values.
+     * @param inputData array of data values.  Number of data elements must be nI * nJ * nK (see gridMesh parameter).
+     * @param gridMesh an object containing grid mesh definition, that is,
+     *        origin (X0, Y0, Z0), cell sizes (dX, dY, dZ) and cell count (nI, nJ, nK).
+     * @param nullValue Value to be used in places impossible to interpolate due to lack of samples with valid values.
+     */
+    static spectral::array interpolateNullValuesShepard(const spectral::array& inputData,
+                                                        IJAbstractCartesianGrid& gridMesh,
+                                                        double powerParameter = 2.0,
+                                                        double nullValue = std::numeric_limits<double>::quiet_NaN() );
 };
 
 #endif // IMAGEJOCKEYUTILS_H
