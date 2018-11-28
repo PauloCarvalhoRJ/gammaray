@@ -94,6 +94,11 @@
          <string>Shepard</string>
         </property>
        </item>
+       <item>
+        <property name="text">
+         <string>Thin Plate Spline</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>
@@ -118,11 +123,31 @@
        <property name="minimum">
         <double>0.100000000000000</double>
        </property>
+       <property name="maximum">
+        <double>100.000000000000000</double>
+       </property>
        <property name="singleStep">
         <double>0.500000000000000</double>
        </property>
        <property name="value">
         <double>2.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>relaxation (TPS):</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="dblSpinLambda">
+       <property name="decimals">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <double>10000000.000000000000000</double>
        </property>
       </widget>
      </item>

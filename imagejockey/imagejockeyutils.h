@@ -273,6 +273,28 @@ public:
                                                         IJAbstractCartesianGrid& gridMesh,
                                                         double powerParameter = 2.0,
                                                         double nullValue = std::numeric_limits<double>::quiet_NaN() );
+
+
+    /**
+    * Interpolates invalid values ( std::isfinite() returns false ) from valid values in the passed array.
+    * The returned array has the same dimensions of the input array.
+    * Interpolation method is Thin Plate Spline ("Approximation Methods for Thin Plate Spline Mappings and Principal Warps"
+    * (Donato G and Belongie S, 2002), thus the input data must be 2D (only data at first z-slice will be processed).
+    * This implementation is adapted from the original stand-alone C++ code by Jarno Elonen: https://elonen.iki.fi/code/tpsdemo/index.html
+    * In this implementation, the height variable is Z, instead of Elonen's Y.
+    * This method is slow if the array has too many valid values.
+    * @param inputData array of data values.  Number of data elements must be nI * nJ (see gridMesh parameter).
+    * @param gridMesh an object containing grid mesh definition, that is,
+    *        origin (X0, Y0), cell sizes (dX, dY) and cell count (nI, nJ)).
+    * @param lambda Set to 0.0 to force the spline pass through all points.  Set to near-infinity for a least-squares plane.
+    *               Set to values in-between for a relaxed interpolation of a smooth spline, balancing misfit and smoothness.
+    * @param status Check this value for execution termination status: 0 = OK; 1 = singular matrix, 2 = premature ending.
+    *               Do not use the returned array if the execution fails.
+    */
+    static spectral::array interpolateNullValuesThinPlateSpline( const spectral::array& inputData,
+                                                                 IJAbstractCartesianGrid& gridMesh,
+                                                                 double lambda,
+                                                                 int& status );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

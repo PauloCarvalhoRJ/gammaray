@@ -73,7 +73,6 @@ void EMDAnalysisDialog::onPerformEMD()
         spectral::array localMaximaEnvelope;
         spectral::array localMinimaEnvelope;
 
-        //initialize the extrema envelopes with the extrema points
         if( ui->cmbExtremaType->currentText() == "points" ){
             localMaximaEnvelope = spectral::get_extrema_cells( *currentEMF,
                                                                spectral::ExtremumType::MAXIMUM,
@@ -94,21 +93,23 @@ void EMDAnalysisDialog::onPerformEMD()
                                                                    localMinimaCount );
         }
 
-        //perform some checks before proceeding to interpolation of the extrema points
         if( localMaximaCount < ui->spinMinNbOfExtrema->value() ){
             QMessageBox::information( this, "Info", "EMD terminated by reaching minimum number of local maxima.");
             return;
         }
+
         if( localMinimaCount < ui->spinMinNbOfExtrema->value() ){
             QMessageBox::information( this, "Info", "EMD terminated by reaching minimum number of local minima.");
             return;
         }
+
         if( iteration > 0 && ( localMaximaCount > previousLocalMaximaCount ||
                                localMinimaCount > previousLocalMinimaCount ) ) {
             QMessageBox::information( this, "Info", "EMD terminated because it started diverging (number of local extrema increased).");
             return;
         }
 
+        //----------------------------------------------------------------------------------------
 
         //Debug the extrema envelopes
 //        IJGridViewerWidget* ijgw = new IJGridViewerWidget( true, false, true, nullptr );
@@ -122,49 +123,30 @@ void EMDAnalysisDialog::onPerformEMD()
 //        ijgw->show();
 //        return;
 
-
         //--------------------------interpolate the local extrema--------------------------------
-        spectral::array interpolatedMaximaEnvelope;
-        spectral::array interpolatedMinimaEnvelope;
-        if( ui->cmbInterpolationMethod->currentText() == "Shepard" ){
-            interpolatedMaximaEnvelope = ImageJockeyUtils::interpolateNullValuesShepard( localMaximaEnvelope,
-                                                            *m_inputGrid,
-                                                            ui->dblSpinPowerParameter->value(),
-                                                            NDV );
 
-            interpolatedMinimaEnvelope = ImageJockeyUtils::interpolateNullValuesShepard( localMinimaEnvelope,
-                                                            *m_inputGrid,
-                                                            ui->dblSpinPowerParameter->value(),
-                                                            NDV );
-        } else {
-            int status;
-            interpolatedMaximaEnvelope = ImageJockeyUtils::interpolateNullValuesThinPlateSpline( localMaximaEnvelope,
-                                                            *m_inputGrid,
-                                                            ui->dblSpinLambda->value(),
-                                                            status );
-            if( status ){
-                QMessageBox::critical( this, "Error",
-                                       "EMD terminated because interpolation with Thin Plate Spline terminated prematurely. termination code = " +
-                                       QString::number( status ));
-                return;
-            }
-            interpolatedMinimaEnvelope = ImageJockeyUtils::interpolateNullValuesThinPlateSpline( localMinimaEnvelope,
-                                                            *m_inputGrid,
-                                                            ui->dblSpinLambda->value(),
-                                                            status );
-            if( status ){
-                QMessageBox::critical( this, "Error",
-                                       "EMD terminated because interpolation with Thin Plate Spline terminated prematurely. termination code = " +
-                                       QString::number( status ));
-                return;
-            }
-        }
+
+        spectral::array interpolatedMaximaEnvelope = ImageJockeyUtils::interpolateNullValuesShepard( localMaximaEnvelope,
+                                                        *m_inputGrid,
+                                                        ui->dblSpinPowerParameter->value(),
+                                                        NDV );
+
+        spectral::array interpolatedMinimaEnvelope = ImageJockeyUtils::interpolateNullValuesShepard( localMinimaEnvelope,
+                                                        *m_inputGrid,
+                                                        ui->dblSpinPowerParameter->value(),
+                                                        NDV );
+
         //---------------------------------------------------------------------------------------
 
         //----------------------------- Compute the next Empirical Mode Function-----------------
+
         for( int k = 0; k < nK; ++k )
             for( int j = 0; j < nJ; ++j )
                 for( int i = 0; i < nI; ++i ){
+                    //intput for VTK were vtkFloatArray's
+//                    float* cellMaxima = static_cast<float*>(interpolatedMaximaEnvelope->GetScalarPointer( i, j, k ));
+//                    float* cellMinima = static_cast<float*>(interpolatedMinimaEnvelope->GetScalarPointer( i, j, k ));
+                    //assuming the first element in the returned array is the interpolated value
                     (*currentEMF)( i, j, k ) = (*currentEMF)( i, j, k ) - ( interpolatedMaximaEnvelope(i,j,k) + interpolatedMinimaEnvelope(i,j,k) ) / 2.0 ;
                 }
 

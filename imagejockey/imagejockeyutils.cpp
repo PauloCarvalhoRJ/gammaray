@@ -23,7 +23,13 @@
 #include <vtkAppendPolyData.h>
 #include <vtkFloatArray.h>
 #include <vtkShepardMethod.h>
-#include <imagejockey/widgets/ijquick3dviewer.h>
+#include "imagejockey/widgets/ijquick3dviewer.h"
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <ludecomposition.h> //third party header library for the LU_solve() function call
+                             // in ImageJockeyUtils::interpolateNullValuesThinPlateSpline()
+                             // replace with gauss-elim.h (slower) with you run into numerical issues.
+
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -775,5 +781,128 @@ spectral::array ImageJockeyUtils::interpolateNullValuesShepard(const spectral::a
                 result( i, j, k ) = static_cast<double>(cellValue[0]);
             }
 
+    return result;
+}
+
+spectral::array ImageJockeyUtils::interpolateNullValuesThinPlateSpline(const spectral::array &inputData,
+                                                                        IJAbstractCartesianGrid &gridMesh,
+                                                                        double lambda, int &status )
+{
+    using boost::numeric::ublas::matrix;
+
+    auto basisFunction = [](double r){
+      if ( r == 0.0 )
+        return 0.0;
+      else
+        return r*r * log(r);
+    };
+
+    //get data array dimensions
+    int nI = inputData.M();
+    int nJ = inputData.N();
+
+    //populate a vector with points: x, y, data value
+    std::vector< IJSpatialLocation > control_points;
+    double x, y, z;
+    for( int j = 0; j < nJ; ++j )
+        for( int i = 0; i < nI; ++i ){
+            double inputValue = inputData( i, j, 0 );
+            if( std::isfinite( inputValue ) ){
+                gridMesh.getCellLocation( i, j, 0, x, y, z );
+                control_points.push_back( IJSpatialLocation( x, y, inputValue ) );
+            }
+        }
+
+    size_t p = control_points.size();
+
+    //debug the control points
+//    for( IJSpatialLocation& loc : control_points )
+//        loc.print();
+//    status = 2;
+//    return spectral::array();
+
+    // Allocate the matrix and vector
+    matrix<double> mtx_l(p+3, p+3);
+    matrix<double> mtx_v(p+3, 1);
+    matrix<double> mtx_orig_k(p, p);
+
+    // Fill K (p x p, upper left of L) and calculate
+    // mean edge length from control points
+    //
+    // K is symmetrical so we really have to
+    // calculate only about half of the coefficients.
+    double a = 0.0;
+    for ( unsigned i = 0; i < p; ++i )
+      for ( unsigned j = i+1; j < p; ++j ) {
+        IJSpatialLocation& pt_i = control_points[i];
+        IJSpatialLocation& pt_j = control_points[j];
+        pt_i._z = pt_j._z = 0;
+        double elen = (pt_i - pt_j).norm();
+        mtx_l(i, j) = mtx_l(j, i) = mtx_orig_k(i, j) = mtx_orig_k(j, i) = basisFunction(elen);
+        a += elen * 2; // same for upper & lower tri
+      }
+    a /= static_cast<double>(p*p);
+
+    // Fill the rest of L
+    for ( unsigned i=0; i<p; ++i ) {
+      // diagonal: reqularization parameters (lambda * a^2)
+      mtx_l(i,i) = mtx_orig_k(i,i) =
+        lambda * (a*a);
+
+      // P (p x 3, upper right)
+      mtx_l(i, p+0) = 1.0;
+      mtx_l(i, p+1) = control_points[i]._x;
+      mtx_l(i, p+2) = control_points[i]._y;
+
+      // P transposed (3 x p, bottom left)
+      mtx_l(p+0, i) = 1.0;
+      mtx_l(p+1, i) = control_points[i]._x;
+      mtx_l(p+2, i) = control_points[i]._y;
+    }
+    // O (3 x 3, lower right)
+    for ( unsigned i = p; i < p+3; ++i )
+        for ( unsigned j = p; j < p+3; ++j )
+            mtx_l(i, j) = 0.0;
+
+    // Fill the right hand vector V
+    for ( unsigned i=0; i<p; ++i )
+        mtx_v(i,0) = control_points[i]._z;
+    mtx_v(p+0, 0) = mtx_v(p+1, 0) = mtx_v(p+2, 0) = 0.0;
+
+    // Solve the linear system "inplace"
+    // TODO PERFORMANCE ISSUE: LU decomposition doesn't scale well for large data sets (O(n^3)), though it's
+    //       faster than Gaussian elimination.
+    //       Consider using iterative numerical solvers (like Gauss-Seidel or the conjugate gradient method)
+    //       which assume the effect of the control points is mainly local (i.e. only a few neighboring
+    //       control points contribute majorly to interpolating a given point). These approximations scale well,
+    //       in the order of O( n log n ).  Maybe Eigen has something fast.
+    if (0 != LU_Solve( mtx_l, mtx_v )) {
+        status = 1;
+        return spectral::array();
+    }
+
+    std::cout << mtx_v;
+    status = 2;
+    return spectral::array();
+
+    spectral::array result( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>(1 ) );
+
+    // Interpolate grid heights
+    for ( int i = 0; i < nI; ++i )
+        for ( int j = 0; j < nJ; ++j ){
+            gridMesh.getCellLocation( i, j, 0, x, y, z );
+            double h = mtx_v(p+0, 0) + mtx_v(p+1, 0)*x + mtx_v(p+2, 0)*y;
+            IJSpatialLocation pt_cur(x,y,0);
+            for ( unsigned ii = 0; ii < p; ++ii ){
+                IJSpatialLocation& pt_i = control_points[ii];
+                pt_i._z = 0;
+                h += mtx_v(ii,0) * basisFunction( ( pt_i - pt_cur ).norm() );
+            }
+            result( i, j, 0 ) = h;
+        }
+
+    status = 0;
     return result;
 }
