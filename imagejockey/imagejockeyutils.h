@@ -267,11 +267,16 @@ public:
      * @param inputData array of data values.  Number of data elements must be nI * nJ * nK (see gridMesh parameter).
      * @param gridMesh an object containing grid mesh definition, that is,
      *        origin (X0, Y0, Z0), cell sizes (dX, dY, dZ) and cell count (nI, nJ, nK).
+     * @param powerParameter The inverse distance power.  The algorithm is optimized for 2.0.
+     * @param maxDistanceFactor Determines the maximum distance beyond which no samples are considered for the interpolation.
+     *                          1.0 means no limit, hence all samples are used (slower, but without serach neighborhood artifacts).
+     *                          Use values between 0.0 and 1.0 to set a maximum distance.
      * @param nullValue Value to be used in places impossible to interpolate due to lack of samples with valid values.
      */
     static spectral::array interpolateNullValuesShepard(const spectral::array& inputData,
                                                         IJAbstractCartesianGrid& gridMesh,
                                                         double powerParameter = 2.0,
+                                                        double maxDistanceFactor = 1.0,
                                                         double nullValue = std::numeric_limits<double>::quiet_NaN() );
 
 

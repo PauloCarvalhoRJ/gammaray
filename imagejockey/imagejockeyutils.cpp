@@ -681,7 +681,7 @@ double ImageJockeyUtils::getAzimuth( double x, double y, double centerX, double 
 
 spectral::array ImageJockeyUtils::interpolateNullValuesShepard(const spectral::array &inputData,
                                                                IJAbstractCartesianGrid &gridMesh,
-                                                               double powerParameter,
+                                                               double powerParameter, double maxDistanceFactor,
                                                                double nullValue )
 {
     //get array dimensions
@@ -751,7 +751,7 @@ spectral::array ImageJockeyUtils::interpolateNullValuesShepard(const spectral::a
     //vtkGaussianSplatter can be an alternative if results are not good
     vtkSmartPointer<vtkShepardMethod> shepard = vtkSmartPointer<vtkShepardMethod>::New();
     shepard->SetInputData( polydata );
-    shepard->SetMaximumDistance(1); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
+    shepard->SetMaximumDistance( maxDistanceFactor ); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
     shepard->SetModelBounds( xmin, xmax, ymin, ymax, zmin, zmax);
     shepard->SetPowerParameter( powerParameter );
     shepard->SetSampleDimensions( nI, nJ, nK+1 );
@@ -834,8 +834,8 @@ spectral::array ImageJockeyUtils::interpolateNullValuesThinPlateSpline(const spe
     double a = 0.0;
     for ( unsigned i = 0; i < p; ++i )
       for ( unsigned j = i+1; j < p; ++j ) {
-        IJSpatialLocation& pt_i = control_points[i];
-        IJSpatialLocation& pt_j = control_points[j];
+        IJSpatialLocation pt_i( control_points[i] );
+        IJSpatialLocation pt_j( control_points[j] );
         pt_i._z = pt_j._z = 0;
         double elen = (pt_i - pt_j).norm();
         mtx_l(i, j) = mtx_l(j, i) = mtx_orig_k(i, j) = mtx_orig_k(j, i) = basisFunction(elen);
@@ -880,10 +880,6 @@ spectral::array ImageJockeyUtils::interpolateNullValuesThinPlateSpline(const spe
         status = 1;
         return spectral::array();
     }
-
-    std::cout << mtx_v;
-    status = 2;
-    return spectral::array();
 
     spectral::array result( static_cast<spectral::index>(nI),
                             static_cast<spectral::index>(nJ),

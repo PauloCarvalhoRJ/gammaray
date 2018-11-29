@@ -63,6 +63,10 @@ void EMDAnalysisDialog::onPerformEMD()
     int previousLocalMaximaCount = 0;
     int previousLocalMinimaCount = 0;
 
+    // the number of the empirical mode function.
+    // EMF #0 is the original image itself
+    int EMFnumber = 0;
+
     //EMD iterations
     for( int iteration = 0; iteration < nSteps; ++iteration ){
         //count the local extrema count
@@ -130,11 +134,13 @@ void EMDAnalysisDialog::onPerformEMD()
             interpolatedMaximaEnvelope = ImageJockeyUtils::interpolateNullValuesShepard( localMaximaEnvelope,
                                                             *m_inputGrid,
                                                             ui->dblSpinPowerParameter->value(),
+                                                            ui->dblSpinMaxDistance->value(),
                                                             NDV );
 
             interpolatedMinimaEnvelope = ImageJockeyUtils::interpolateNullValuesShepard( localMinimaEnvelope,
                                                             *m_inputGrid,
                                                             ui->dblSpinPowerParameter->value(),
+                                                            ui->dblSpinMaxDistance->value(),
                                                             NDV );
         } else {
             int status;
@@ -159,6 +165,26 @@ void EMDAnalysisDialog::onPerformEMD()
                 return;
             }
         }
+        //Debug the interpolated envelopes
+//        IJGridViewerWidget* ijgw = new IJGridViewerWidget( true, false, true, nullptr );
+//        SVDFactor* grid2 = new SVDFactor( std::move(interpolatedMaximaEnvelope), 1, 1.0, 0.0, 0.0, 0.0, //DO NOT USE the array object beyond this point!
+//                                         m_inputGrid->getCellSizeI(),
+//                                         m_inputGrid->getCellSizeJ(),
+//                                         m_inputGrid->getCellSizeK(),
+//                                         0.42
+//                                         );
+//        ijgw->setFactor( grid2 );
+//        ijgw->show();
+//        IJGridViewerWidget* ijgw6 = new IJGridViewerWidget( true, false, true, nullptr );
+//        SVDFactor* grid3 = new SVDFactor( std::move(interpolatedMinimaEnvelope), 1, 1.0, 0.0, 0.0, 0.0, //DO NOT USE the array object beyond this point!
+//                                         m_inputGrid->getCellSizeI(),
+//                                         m_inputGrid->getCellSizeJ(),
+//                                         m_inputGrid->getCellSizeK(),
+//                                         0.42
+//                                         );
+//        ijgw6->setFactor( grid3 );
+//        ijgw6->show();
+//        return;
         //---------------------------------------------------------------------------------------
 
         //----------------------------- Compute the next Empirical Mode Function-----------------
@@ -167,7 +193,7 @@ void EMDAnalysisDialog::onPerformEMD()
                 for( int i = 0; i < nI; ++i ){
                     (*currentEMF)( i, j, k ) = (*currentEMF)( i, j, k ) - ( interpolatedMaximaEnvelope(i,j,k) + interpolatedMinimaEnvelope(i,j,k) ) / 2.0 ;
                 }
-
+        ++EMFnumber;
         //---------------------------------------------------------------------------------------
 
         //Debug the next empirical mode function
@@ -180,6 +206,7 @@ void EMDAnalysisDialog::onPerformEMD()
                                          0.42
                                          );
         ijgw2->setFactor( grid );
+        ijgw2->setWindowTitle( "EMF #" + QString::number( EMFnumber ) );
         ijgw2->show();
 
         // keep track of number of extrema count to detect divergence
