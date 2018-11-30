@@ -26,6 +26,10 @@
 #include "imagejockey/widgets/ijquick3dviewer.h"
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
+#include <itkBinaryThinningImageFilter.hxx>
+#include <itkImageFileWriter.hxx>
+#include <itkPNGImageIOFactory.h>
+#include <itkRescaleIntensityImageFilter.hxx>
 #include <ludecomposition.h> //third party header library for the LU_solve() function call
                              // in ImageJockeyUtils::interpolateNullValuesThinPlateSpline()
                              // replace with gauss-elim.h (slower) with you run into numerical issues.
@@ -900,5 +904,107 @@ spectral::array ImageJockeyUtils::interpolateNullValuesThinPlateSpline(const spe
         }
 
     status = 0;
+    return result;
+}
+
+spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
+    //get data array dimensions
+    int nI = inputData.M();
+    int nJ = inputData.N();
+    int nK = inputData.K();
+
+
+    // create an ITK image object containg a mask marking cells
+    // with values and unvalued.  The image pixels corresponding
+    // to cells with valid values are marked with 255 values.
+    // The ones corresponding to unvalued cells are marked with zeroes.
+    typedef itk::Image<unsigned char, 2>  ImageType;
+    ImageType::Pointer itkImage = ImageType::New();
+    {
+        ImageType::IndexType start;
+        start.Fill(0);
+        ImageType::SizeType size;
+        //size.Fill( 100 );
+        size[0] = nI;
+        size[1] = nJ;
+        size[2] = nK;
+        ImageType::RegionType region(start, size);
+        itkImage->SetRegions(region);
+        itkImage->Allocate();
+        itkImage->FillBuffer(0);
+        for(unsigned int k = 0; k < nK; ++k)
+            for(unsigned int j = 0; j < nJ; ++j)
+                for(unsigned int i = 0; i < nI; ++i){
+                    if( std::isfinite( inputData(i, j, k) ) ){
+                        itk::Index<2> index;
+                        index[0] = i;
+                        index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                        index[2] = nK - 1 - k;
+                        itkImage->SetPixel(index, 255);
+                    }
+                }
+    }
+
+    //debug the input itk image
+//    {
+//        // save image to PNG file
+//        {
+//            itk::PNGImageIOFactory::RegisterOneFactory();
+//            typedef  itk::ImageFileWriter< ImageType  > WriterType;
+//            WriterType::Pointer writer = WriterType::New();
+//            writer->SetFileName("~itkInputImage.png");
+//            writer->SetInput(itkImage);
+//            writer->Update();
+//        }
+//    }
+
+    // perform skeletonization
+    typedef itk::BinaryThinningImageFilter <ImageType, ImageType> BinaryThinningImageFilterType;
+    BinaryThinningImageFilterType::Pointer binaryThinningImageFilter = BinaryThinningImageFilterType::New();
+    binaryThinningImageFilter->SetInput( itkImage );
+    binaryThinningImageFilter->Update();
+
+    // Rescale the image so that it can be seen (the output is 0 and 1, we want 0 and 255)
+    // NOTE: this is not necessary, 0s and 1s are enough, but a value of 255 makes the cells stand out
+    //       in the PNG file for debugging
+    typedef itk::RescaleIntensityImageFilter< ImageType, ImageType > RescaleType;
+    RescaleType::Pointer rescaler = RescaleType::New();
+    rescaler->SetInput( binaryThinningImageFilter->GetOutput() );
+    rescaler->SetOutputMinimum(0);
+    rescaler->SetOutputMaximum(255);
+    rescaler->Update();
+
+    //debug the output itk image
+//    {
+//        // save image to PNG file
+//        {
+//            itk::PNGImageIOFactory::RegisterOneFactory();
+//            typedef  itk::ImageFileWriter< ImageType  > WriterType;
+//            WriterType::Pointer writer = WriterType::New();
+//            writer->SetFileName("~itkSkeletonizedImage.png");
+//            writer->SetInput( rescaler->GetOutput() );
+//            writer->Update();
+//        }
+//    }
+
+    //prepare to return the result
+    spectral::array result( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>(nK) );
+    for(unsigned int k = 0; k < nK; ++k)
+        for(unsigned int j = 0; j < nJ; ++j)
+            for(unsigned int i = 0; i < nI; ++i){
+                itk::Index<2> index;
+                index[0] = i;
+                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                index[2] = nK - 1 - k;
+                unsigned char pxValue = itkImage->GetPixel( index );
+                if( pxValue )
+                    //the cells marked as valid receive the value from the original input data.
+                    result( i, j, k ) = inputData( i, j, k );
+                else
+                    //those out receive an invalid value
+                    result( i, j, k ) = std::numeric_limits<double>::quiet_NaN();
+            }
     return result;
 }

@@ -300,6 +300,9 @@ public:
                                                                  IJAbstractCartesianGrid& gridMesh,
                                                                  double lambda,
                                                                  int& status );
+
+    /** Skeletonizes gridded data so only values along thin lines remain. */
+    static spectral::array skeletonize( const spectral::array& inputData );
 };
 
 #endif // IMAGEJOCKEYUTILS_H
