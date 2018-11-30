@@ -96,6 +96,12 @@ void EMDAnalysisDialog::onPerformEMD()
                                                                    spectral::ExtremumType::MINIMUM,
                                                                    halfWindowSize,
                                                                    localMinimaCount );
+            //getting the ridges and valleys often result in thick lines, which means way more
+            //samples than necessary to interpolate them.  These excess samples unnecessarily
+            //increase the matrices in the interpolation steps.  Thus we need to get the center
+            //lines of the valeys and ridges.
+            localMaximaEnvelope = ImageJockeyUtils::skeletonize( localMaximaEnvelope );
+            localMinimaEnvelope = ImageJockeyUtils::skeletonize( localMinimaEnvelope );
         }
 
         //perform some checks before proceeding to interpolation of the extrema points
@@ -116,7 +122,7 @@ void EMDAnalysisDialog::onPerformEMD()
 
         //Debug the extrema envelopes
 //        IJGridViewerWidget* ijgw = new IJGridViewerWidget( true, false, true, nullptr );
-//        SVDFactor* grid2 = new SVDFactor( std::move(localMinimaEnvelope), 1, 1.0, 0.0, 0.0, 0.0, //DO NOT USE localMaximaEnvelope beyond this point!
+//        SVDFactor* grid2 = new SVDFactor( std::move(localMaximaEnvelope), 1, 1.0, 0.0, 0.0, 0.0, //DO NOT USE localMaximaEnvelope beyond this point!
 //                                         m_inputGrid->getCellSizeI(),
 //                                         m_inputGrid->getCellSizeJ(),
 //                                         m_inputGrid->getCellSizeK(),
