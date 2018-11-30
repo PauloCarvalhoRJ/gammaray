@@ -596,6 +596,30 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 
 #=============================================================================
 
+#========== The ITK include and lib paths and libraries==================
+_ITK_INCLUDE = $$(ITK_INCLUDE)
+isEmpty(_ITK_INCLUDE){
+    error(ITK_INCLUDE environment variable not defined.)
+}
+_ITK_LIB = $$(ITK_LIB)
+isEmpty(_ITK_LIB){
+    error(ITK_LIB environment variable not defined.)
+}
+_ITK_VERSION_SUFFIX = $$(ITK_VERSION_SUFFIX)
+isEmpty(_ITK_VERSION_SUFFIX){
+    warning(ITK_VERSION_SUFFIX environment variable not defined or empty.)
+}
+INCLUDEPATH += $$_ITK_INCLUDE
+LIBPATH     += $$_ITK_LIB
+LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
+               -lITKIOImageBase$$_ITK_VERSION_SUFFIX \
+               -litkvnl$$_ITK_VERSION_SUFFIX \
+               -litkvnl_algo$$_ITK_VERSION_SUFFIX \
+               -lITKIOPNG$$_ITK_VERSION_SUFFIX
+
+#=============================================================================
+
+
 #========= The FFTW3 include and lib path and libraries.=========
 _FFTW3_INCLUDE = $$(FFTW3_INCLUDE)
 isEmpty(_FFTW3_INCLUDE){
