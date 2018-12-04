@@ -33,6 +33,7 @@
 #include <ludecomposition.h> //third party header library for the LU_solve() function call
                              // in ImageJockeyUtils::interpolateNullValuesThinPlateSpline()
                              // replace with gauss-elim.h (slower) with you run into numerical issues.
+#include <Eigen/QR>
 
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
@@ -880,9 +881,31 @@ spectral::array ImageJockeyUtils::interpolateNullValuesThinPlateSpline(const spe
     //       which assume the effect of the control points is mainly local (i.e. only a few neighboring
     //       control points contribute majorly to interpolating a given point). These approximations scale well,
     //       in the order of O( n log n ).  Maybe Eigen has something fast.
-    if (0 != LU_Solve( mtx_l, mtx_v )) {
-        status = 1;
-        return spectral::array();
+//    if (0 != LU_Solve( mtx_l, mtx_v )) {
+//        status = 1;
+//        return spectral::array();
+//    }
+
+    {
+        //make Eigen matrices for the Eigen's solver
+        Eigen::MatrixXd A( p+3, p+3 );
+        Eigen::VectorXd b( p+3 );
+        for ( unsigned i = 0; i < p+3; ++i ){
+            b( i ) = mtx_v( i, 0 );
+            for ( unsigned j = 0; j < p+3; ++j )
+                A(i, j) = mtx_l(i, j);
+        }
+        //solve
+        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(A);
+        Eigen::VectorXd x = dec.solve( b );
+        //test for solution for acccuracy, since Eigen doesn't do divisions by zero.
+        if( ! (A*x).isApprox( b, 0.01 ) ){
+            status = 3;
+            return spectral::array();
+        }
+        //put results back in mtx_v (in-place solving)
+        for ( unsigned i = 0; i < p+3; ++i )
+            mtx_v( i, 0 ) = x( i );
     }
 
     spectral::array result( static_cast<spectral::index>(nI),

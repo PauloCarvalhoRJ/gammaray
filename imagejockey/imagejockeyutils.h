@@ -293,7 +293,7 @@ public:
     *        origin (X0, Y0), cell sizes (dX, dY) and cell count (nI, nJ)).
     * @param lambda Set to 0.0 to force the spline pass through all points.  Set to near-infinity for a least-squares plane.
     *               Set to values in-between for a relaxed interpolation of a smooth spline, balancing misfit and smoothness.
-    * @param status Check this value for execution termination status: 0 = OK; 1 = singular matrix, 2 = premature ending.
+    * @param status Check this value for execution termination status: 0 = OK; 1 = singular matrix, 2 = premature ending, 3 = innacurate solution.
     *               Do not use the returned array if the execution fails.
     */
     static spectral::array interpolateNullValuesThinPlateSpline( const spectral::array& inputData,

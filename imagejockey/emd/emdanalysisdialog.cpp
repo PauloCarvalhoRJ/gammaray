@@ -13,6 +13,7 @@
 #include <vtkPolyData.h>
 #include <vtkPointData.h>
 #include <QMessageBox>
+#include <imagejockey/ijabstractvariable.h>
 
 EMDAnalysisDialog::EMDAnalysisDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
@@ -115,8 +116,8 @@ void EMDAnalysisDialog::onPerformEMD()
         }
         if( iteration > 0 && ( localMaximaCount > previousLocalMaximaCount ||
                                localMinimaCount > previousLocalMinimaCount ) ) {
-            QMessageBox::information( this, "Info", "EMD terminated because it started diverging (number of local extrema increased).");
-            return;
+            //QMessageBox::information( this, "Info", "EMD terminated because it started diverging (number of local extrema increased).");
+            //return;
         }
 
 
@@ -203,17 +204,25 @@ void EMDAnalysisDialog::onPerformEMD()
         //---------------------------------------------------------------------------------------
 
         //Debug the next empirical mode function
-        IJGridViewerWidget* ijgw2 = new IJGridViewerWidget( true, false, true );
-        spectral::array currentEMFCopy( *currentEMF );
-        SVDFactor* grid = new SVDFactor( std::move(currentEMFCopy), 1, 1.0, 0.0, 0.0, 0.0,
-                                         m_inputGrid->getCellSizeI(),
-                                         m_inputGrid->getCellSizeJ(),
-                                         m_inputGrid->getCellSizeK(),
-                                         0.42
-                                         );
-        ijgw2->setFactor( grid );
-        ijgw2->setWindowTitle( "EMF #" + QString::number( EMFnumber ) );
-        ijgw2->show();
+//        IJGridViewerWidget* ijgw2 = new IJGridViewerWidget( true, false, true );
+//        spectral::array currentEMFCopy( *currentEMF );
+//        SVDFactor* grid = new SVDFactor( std::move(currentEMFCopy), 1, 1.0, 0.0, 0.0, 0.0,
+//                                         m_inputGrid->getCellSizeI(),
+//                                         m_inputGrid->getCellSizeJ(),
+//                                         m_inputGrid->getCellSizeK(),
+//                                         0.42
+//                                         );
+//        ijgw2->setFactor( grid );
+//        ijgw2->setWindowTitle( "EMF #" + QString::number( EMFnumber ) );
+//        ijgw2->show();
+
+        // save the EMF as a new variable to the grid data
+        IJAbstractVariable* var = m_inputGrid->getVariableByIndex( m_inputVariableIndex );
+        m_inputGrid->appendAsNewVariable( var->getVariableName() + "_EMF" + QString::number( EMFnumber ),
+                                          *currentEMF );
+
+        //save the grid to file
+        m_inputGrid->saveData();
 
         // keep track of number of extrema count to detect divergence
         previousLocalMaximaCount = localMaximaCount;
