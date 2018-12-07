@@ -68,6 +68,15 @@ void EMDAnalysisDialog::onPerformEMD()
     // EMF #0 is the original image itself
     int EMFnumber = 0;
 
+    // this thresold discard extrema with low significant values.
+    // this reduces the number of extrema while impact little the result.
+    bool ok;
+    double extremaThresholdAbs = ui->txtExtremaThresholdAbs->text().toDouble( &ok );
+    if( ! ok ){
+        QMessageBox::critical( this, "Info", "Invalid value entered for extrema threshold.");
+        return;
+    }
+
     //EMD iterations
     for( int iteration = 0; iteration < nSteps; ++iteration ){
         //count the local extrema count
@@ -83,19 +92,23 @@ void EMDAnalysisDialog::onPerformEMD()
             localMaximaEnvelope = spectral::get_extrema_cells( *currentEMF,
                                                                spectral::ExtremumType::MAXIMUM,
                                                                halfWindowSize,
+                                                               extremaThresholdAbs,
                                                                localMaximaCount );
             localMinimaEnvelope = spectral::get_extrema_cells( *currentEMF,
                                                                spectral::ExtremumType::MINIMUM,
                                                                halfWindowSize,
+                                                               extremaThresholdAbs,
                                                                localMinimaCount );
         } else {
             localMaximaEnvelope = spectral::get_ridges_or_valleys( *currentEMF,
                                                                    spectral::ExtremumType::MAXIMUM,
                                                                    halfWindowSize,
+                                                                   extremaThresholdAbs,
                                                                    localMaximaCount );
             localMinimaEnvelope = spectral::get_ridges_or_valleys( *currentEMF,
                                                                    spectral::ExtremumType::MINIMUM,
                                                                    halfWindowSize,
+                                                                   extremaThresholdAbs,
                                                                    localMinimaCount );
             //getting the ridges and valleys often result in thick lines, which means way more
             //samples than necessary to interpolate them.  These excess samples unnecessarily
@@ -198,7 +211,13 @@ void EMDAnalysisDialog::onPerformEMD()
         for( int k = 0; k < nK; ++k )
             for( int j = 0; j < nJ; ++j )
                 for( int i = 0; i < nI; ++i ){
-                    (*currentEMF)( i, j, k ) = (*currentEMF)( i, j, k ) - ( interpolatedMaximaEnvelope(i,j,k) + interpolatedMinimaEnvelope(i,j,k) ) / 2.0 ;
+                    double EMFvalue = (*currentEMF)( i, j, k ) - ( interpolatedMaximaEnvelope(i,j,k) + interpolatedMinimaEnvelope(i,j,k) ) / 2.0;
+                    if( ! std::isfinite( EMFvalue ) ){
+                        QMessageBox::critical( this, "Error",
+                                               "EMD resulted in null values.  Maybe the search neighborhood is too small.");
+                        return;
+                    } else
+                        (*currentEMF)( i, j, k ) = EMFvalue;
                 }
         ++EMFnumber;
         //---------------------------------------------------------------------------------------

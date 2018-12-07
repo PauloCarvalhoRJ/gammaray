@@ -1801,6 +1801,7 @@ array operator*(double theValue, const array & theArray)
 array get_extrema_cells( const array &in,
                          ExtremumType extremaType,
                          int halfWindowSize,
+                         double thresholdAbs,
                          int &count)
 {
 
@@ -1851,8 +1852,8 @@ array get_extrema_cells( const array &in,
                                 }
                             }
                         } // --- evaluate the neighboring cells
-                //if the cell is a local maximum...
-                if( is_a_local_extrema ){
+                //if the cell is a local extrema...
+                if( is_a_local_extrema && std::abs( cellValue ) >= thresholdAbs ){
                     //... assign the value to the grid of the local maxima envelope
                     localExtrema( i, j, k ) = cellValue;
                     ++count;
@@ -1865,6 +1866,7 @@ array get_extrema_cells( const array &in,
 array get_ridges_or_valleys(const array &in,
                             ExtremumType extremaType,
                             int halfWindowSize,
+                            double thresholdAbs,
                             int &count)
 {
     //--------------------------definitions-------------------------
@@ -1987,8 +1989,9 @@ array get_ridges_or_valleys(const array &in,
                             double e2 = cellValue - avg2;
                             //if the sign of the errors are the same, the cell belongs
                             //to a ridge or valley (depends in whether the signs are positive or negative)
-                            if( ( e1 > 0.0 && e2 > 0.0 && extremaType == ExtremumType::MAXIMUM ) ||
-                                ( e1 < 0.0 && e2 < 0.0 && extremaType == ExtremumType::MINIMUM ) ){
+                            if( ( ( e1 > 0.0 && e2 > 0.0 && extremaType == ExtremumType::MAXIMUM ) ||
+                                ( e1 < 0.0 && e2 < 0.0 && extremaType == ExtremumType::MINIMUM ) ) &&
+                                     std::abs( cellValue ) >= thresholdAbs ){
                                 localExtrema( i, j, k ) = cellValue;
                                 ++count;
                             }

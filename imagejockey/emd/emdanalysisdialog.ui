@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>474</width>
-    <height>183</height>
+    <width>534</width>
+    <height>193</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,7 +22,7 @@
      <item>
       <widget class="QLabel" name="label_6">
        <property name="text">
-        <string>half-window size for search of local extrema:</string>
+        <string>Extrema: search half-window:</string>
        </property>
       </widget>
      </item>
@@ -36,7 +36,7 @@
      <item>
       <widget class="QLabel" name="label_7">
        <property name="text">
-        <string>extrema type:</string>
+        <string>type</string>
        </property>
       </widget>
      </item>
@@ -52,6 +52,32 @@
          <string>points</string>
         </property>
        </item>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>threshold (abs. value):</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="txtExtremaThresholdAbs">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>50</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>0.0</string>
+       </property>
       </widget>
      </item>
      <item>
@@ -77,7 +103,7 @@
      <item>
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>extrema interpolation method:</string>
+        <string>Extrema interpolation method:</string>
        </property>
       </widget>
      </item>
@@ -111,7 +137,7 @@
      <item>
       <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>power parameter (Shepard):</string>
+        <string>Power parameter (Shepard):</string>
        </property>
       </widget>
      </item>
@@ -137,7 +163,7 @@
      <item>
       <widget class="QLabel" name="label_8">
        <property name="text">
-        <string>relaxation (TPS):</string>
+        <string>Relaxation (TPS):</string>
        </property>
       </widget>
      </item>
@@ -174,7 +200,7 @@
      <item>
       <widget class="QLabel" name="label_9">
        <property name="text">
-        <string>max. distance (Shepard):</string>
+        <string>Max. distance (Shepard):</string>
        </property>
       </widget>
      </item>

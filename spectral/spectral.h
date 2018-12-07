@@ -333,11 +333,14 @@ complex_array to_rectangular_form(const complex_array & in );
  * @param extremaType Sets whether to search for maxima or minima.
  * @param halfWindowSize Defines the size of the search window around the cells to look for extrema.
  *                       A value of 1 means a 3x3x3 neighborhood.
+ * @param thresholdAbs This value discard extrema with absolute values below this value.
+ *                     Set to zero or lower so no extrema are discarded
  * @param count An output parameter that will contain the number of cells with extrema values.
  */
 array get_extrema_cells( const array &in,
                          ExtremumType extremaType ,
                          int halfWindowSize,
+                         double thresholdAbs,
                          int& count );
 
 /**
@@ -346,11 +349,14 @@ array get_extrema_cells( const array &in,
  * @param extremaType Sets whether to search for maxima or minima.
  * @param halfWindowSize Defines the size of the search window around the cells to look for extrema.
  *                       A value of 1 means a 3x3x3 neighborhood.
+ * @param thresholdAbs This value discard extrema with absolute values below this value.
+ *                     Set to zero or lower so no extrema are discarded
  * @param count An output parameter that will contain the number of cells with extrema values.
  */
 array get_ridges_or_valleys( const array &in,
                              ExtremumType extremaType ,
                              int halfWindowSize,
+                             double thresholdAbs,
                              int& count );
 
 } // namepsace spectral
