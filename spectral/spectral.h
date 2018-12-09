@@ -117,6 +117,8 @@ struct array {
 
     array operator-( const array &other ) const;
 
+    array operator+( const array &other ) const;
+
 	array getVectorColumn( index j ) const;
 
     virtual ~array();

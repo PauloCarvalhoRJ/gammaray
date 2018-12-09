@@ -405,7 +405,15 @@ array array::operator-(const array &other) const
     array result( M_, N_, K_ );
 	for (size_t i = 0; i < d_.size(); ++i)
         result.d_[i] = d_[i] - other.d_[i];
-	return result;
+    return result;
+}
+
+array array::operator+(const array &other) const
+{
+    array result( M_, N_, K_ );
+    for (size_t i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] + other.d_[i];
+    return result;
 }
 
 array array::getVectorColumn(index j) const
