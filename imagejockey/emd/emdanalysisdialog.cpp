@@ -43,9 +43,6 @@ void EMDAnalysisDialog::onPerformEMD()
     int nI = m_inputGrid->getNI();
     int nJ = m_inputGrid->getNJ();
     int nK = m_inputGrid->getNK();
-    double dx = m_inputGrid->getCellSizeI();
-    double dy = m_inputGrid->getCellSizeJ();
-    double dz = m_inputGrid->getCellSizeK();
 
     //get the null data value (NaN for a spectral::array single-variable grid)
     double NDV = std::numeric_limits<double>::quiet_NaN();
@@ -54,7 +51,7 @@ void EMDAnalysisDialog::onPerformEMD()
     int halfWindowSize = ui->spinHalfWindowSize->value();
 
     //initialize the current Empirical Mode Function with the grid's original data
-    spectral::array* currentEMF = m_inputGrid->createSpectralArray( m_inputVariableIndex );
+    spectral::array* currentSignal = m_inputGrid->createSpectralArray( m_inputVariableIndex );
 
     //get the maximum number of steps
     int nSteps = ui->spinMaxNbOfSteps->value();
@@ -65,8 +62,8 @@ void EMDAnalysisDialog::onPerformEMD()
     int previousLocalMinimaCount = 0;
 
     // the number of the empirical mode function.
-    // EMF #0 is the original image itself
-    int EMFnumber = 0;
+    // IMF #0 is the original image itself
+    int IMFnumber = 0;
 
     // this thresold discard extrema with low significant values.
     // this reduces the number of extrema while impact little the result.
@@ -76,6 +73,18 @@ void EMDAnalysisDialog::onPerformEMD()
         QMessageBox::critical( this, "Info", "Invalid value entered for extrema threshold.");
         return;
     }
+
+    // the value considered as "close enough to zero".
+    double epsilon = ui->dblSpinEpsilon->value();
+
+    spectral::array residueSignal(  (spectral::index)nI,
+                                    (spectral::index)nJ,
+                                    (spectral::index)nK,
+                                    0.0);
+
+    IJGridViewerWidget ijgw2( true, false, true );
+    ijgw2.setWindowTitle( "mean envelope" );
+    ijgw2.show();
 
     //EMD iterations
     for( int iteration = 0; iteration < nSteps; ++iteration ){
@@ -88,24 +97,25 @@ void EMDAnalysisDialog::onPerformEMD()
         spectral::array localMinimaEnvelope;
 
         //initialize the extrema envelopes with the extrema points
+        // Step (1) in Linderhed (2009)
         if( ui->cmbExtremaType->currentText() == "points" ){
-            localMaximaEnvelope = spectral::get_extrema_cells( *currentEMF,
+            localMaximaEnvelope = spectral::get_extrema_cells( *currentSignal,
                                                                spectral::ExtremumType::MAXIMUM,
                                                                halfWindowSize,
                                                                extremaThresholdAbs,
                                                                localMaximaCount );
-            localMinimaEnvelope = spectral::get_extrema_cells( *currentEMF,
+            localMinimaEnvelope = spectral::get_extrema_cells( *currentSignal,
                                                                spectral::ExtremumType::MINIMUM,
                                                                halfWindowSize,
                                                                extremaThresholdAbs,
                                                                localMinimaCount );
         } else {
-            localMaximaEnvelope = spectral::get_ridges_or_valleys( *currentEMF,
+            localMaximaEnvelope = spectral::get_ridges_or_valleys( *currentSignal,
                                                                    spectral::ExtremumType::MAXIMUM,
                                                                    halfWindowSize,
                                                                    extremaThresholdAbs,
                                                                    localMaximaCount );
-            localMinimaEnvelope = spectral::get_ridges_or_valleys( *currentEMF,
+            localMinimaEnvelope = spectral::get_ridges_or_valleys( *currentSignal,
                                                                    spectral::ExtremumType::MINIMUM,
                                                                    halfWindowSize,
                                                                    extremaThresholdAbs,
@@ -119,12 +129,15 @@ void EMDAnalysisDialog::onPerformEMD()
         }
 
         //perform some checks before proceeding to interpolation of the extrema points
-        if( localMaximaCount < ui->spinMinNbOfExtrema->value() ){
-            QMessageBox::information( this, "Info", "EMD terminated by reaching minimum number of local maxima.");
-            return;
-        }
-        if( localMinimaCount < ui->spinMinNbOfExtrema->value() ){
-            QMessageBox::information( this, "Info", "EMD terminated by reaching minimum number of local minima.");
+        if( localMaximaCount < ui->spinMinNbOfExtrema->value() ||
+            localMinimaCount < ui->spinMinNbOfExtrema->value() ){
+            // save the last residue as a new variable to the grid data
+            IJAbstractVariable* var = m_inputGrid->getVariableByIndex( m_inputVariableIndex );
+            m_inputGrid->appendAsNewVariable( var->getVariableName() + "_RESIDUE",
+                                              residueSignal );
+            //save the last residue grid to file
+            m_inputGrid->saveData();
+            QMessageBox::information( this, "Info", "EMD terminated by reaching minimum number of local extrema.");
             return;
         }
         if( iteration > 0 && ( localMaximaCount > previousLocalMaximaCount ||
@@ -148,6 +161,7 @@ void EMDAnalysisDialog::onPerformEMD()
 
 
         //--------------------------interpolate the local extrema--------------------------------
+        // Step (2) in Linderhed (2009)
         spectral::array interpolatedMaximaEnvelope;
         spectral::array interpolatedMinimaEnvelope;
         if( ui->cmbInterpolationMethod->currentText() == "Shepard" ){
@@ -207,41 +221,76 @@ void EMDAnalysisDialog::onPerformEMD()
 //        return;
         //---------------------------------------------------------------------------------------
 
-        //----------------------------- Compute the next Empirical Mode Function-----------------
+
+        //-------compute the mean envelope--------------
+        // Step (3) in Linderhed (2009)
+        bool meanEnvelopIsNearZero = true;
+        spectral::array meanEnvelope( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
         for( int k = 0; k < nK; ++k )
             for( int j = 0; j < nJ; ++j )
                 for( int i = 0; i < nI; ++i ){
-                    double EMFvalue = (*currentEMF)( i, j, k ) - ( interpolatedMaximaEnvelope(i,j,k) + interpolatedMinimaEnvelope(i,j,k) ) / 2.0;
-                    if( ! std::isfinite( EMFvalue ) ){
+                    double meanValue = ( interpolatedMaximaEnvelope(i,j,k) + interpolatedMinimaEnvelope(i,j,k) ) / 2.0;
+                    if( ! std::isfinite( meanValue ) ){
                         QMessageBox::critical( this, "Error",
-                                               "EMD resulted in null values.  Maybe the search neighborhood is too small.");
+                                               "Interpolation resulted in null values.  Maybe the search neighborhood is too small.");
                         return;
-                    } else
-                        (*currentEMF)( i, j, k ) = EMFvalue;
+                    } else {
+                        meanEnvelope( i, j, k ) = meanValue;
+                        //If a mean value is too high, then current signal is not an IMF
+                        if( std::abs(meanValue) > epsilon )
+                            meanEnvelopIsNearZero = false;
+                    }
                 }
-        ++EMFnumber;
-        //---------------------------------------------------------------------------------------
 
-        //Debug the next empirical mode function
-//        IJGridViewerWidget* ijgw2 = new IJGridViewerWidget( true, false, true );
-//        spectral::array currentEMFCopy( *currentEMF );
-//        SVDFactor* grid = new SVDFactor( std::move(currentEMFCopy), 1, 1.0, 0.0, 0.0, 0.0,
-//                                         m_inputGrid->getCellSizeI(),
-//                                         m_inputGrid->getCellSizeJ(),
-//                                         m_inputGrid->getCellSizeK(),
-//                                         0.42
-//                                         );
-//        ijgw2->setFactor( grid );
-//        ijgw2->setWindowTitle( "EMF #" + QString::number( EMFnumber ) );
-//        ijgw2->show();
+        //Debug the mean envelope
+        spectral::array meanCopy( meanEnvelope );
+        SVDFactor* grid = new SVDFactor( std::move(meanCopy), 1, 1.0, 0.0, 0.0, 0.0,
+                                         m_inputGrid->getCellSizeI(),
+                                         m_inputGrid->getCellSizeJ(),
+                                         m_inputGrid->getCellSizeK(),
+                                         0.42
+                                         );
+        ijgw2.setFactor( grid );
+        QApplication::processEvents();
 
-        // save the EMF as a new variable to the grid data
-        IJAbstractVariable* var = m_inputGrid->getVariableByIndex( m_inputVariableIndex );
-        m_inputGrid->appendAsNewVariable( var->getVariableName() + "_EMF" + QString::number( EMFnumber ),
-                                          *currentEMF );
 
-        //save the grid to file
-        m_inputGrid->saveData();
+        //------------subtract the mean envelope from the current signal----------
+        // Step (4) in Linderhed (2009)
+        spectral::array candidateSignal = *currentSignal - meanEnvelope;
+
+        //-----------check whether the mean envelope has value close to zero------
+        //-----------if not, use the signal obtained in step (4), use it as
+        //-----------input signal and start over.
+        // Step (5) in Linderhed (2009)
+        if( ! meanEnvelopIsNearZero ){
+            (*currentSignal) = candidateSignal;
+            --iteration; //no IMF found, step back
+        } else { // candidate signal is an IMF
+            //Debug the next empirical mode function
+    //        IJGridViewerWidget* ijgw2 = new IJGridViewerWidget( true, false, true );
+    //        spectral::array currentIMFCopy( *currentIMF );
+    //        SVDFactor* grid = new SVDFactor( std::move(currentIMFCopy), 1, 1.0, 0.0, 0.0, 0.0,
+    //                                         m_inputGrid->getCellSizeI(),
+    //                                         m_inputGrid->getCellSizeJ(),
+    //                                         m_inputGrid->getCellSizeK(),
+    //                                         0.42
+    //                                         );
+    //        ijgw2->setFactor( grid );
+    //        ijgw2->setWindowTitle( "IMF #" + QString::number( IMFnumber ) );
+    //        ijgw2->show();
+            ++IMFnumber;
+            // save the candate signal (an IMF) as a new variable to the grid data
+            IJAbstractVariable* var = m_inputGrid->getVariableByIndex( m_inputVariableIndex );
+            m_inputGrid->appendAsNewVariable( var->getVariableName() + "_IMF" + QString::number( IMFnumber ),
+                                              candidateSignal );
+            //save the IMF grid to file
+            m_inputGrid->saveData();
+            // compute the residue
+            residueSignal = (*currentSignal) - candidateSignal;
+            // make the residue as input signal to the next EMD iteration
+            // Step (6) in Linderhed (2009)
+            (*currentSignal) = residueSignal;
+        }
 
         // keep track of number of extrema count to detect divergence
         previousLocalMaximaCount = localMaximaCount;
