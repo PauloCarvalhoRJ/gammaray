@@ -258,6 +258,51 @@ public:
 	 * @note If the internal arctangent call results in infinity (very near or at the center) the returned azimuth value is zero.
 	 */
 	static double getAzimuth( double x, double y, double centerX, double centerY, bool halfAzimuth = false );
+
+    /**
+     * Interpolates invalid values ( std::isfinite() returns false ) from valid values in the passed array.
+     * The returned array has the same dimensions of the input array.
+     * Interpolation method is Shepard's (inverse distance weighted of all data points).
+     * This method is slow if the array has too many valid values.
+     * @param inputData array of data values.  Number of data elements must be nI * nJ * nK (see gridMesh parameter).
+     * @param gridMesh an object containing grid mesh definition, that is,
+     *        origin (X0, Y0, Z0), cell sizes (dX, dY, dZ) and cell count (nI, nJ, nK).
+     * @param powerParameter The inverse distance power.  The algorithm is optimized for 2.0.
+     * @param maxDistanceFactor Determines the maximum distance beyond which no samples are considered for the interpolation.
+     *                          1.0 means no limit, hence all samples are used (slower, but without serach neighborhood artifacts).
+     *                          Use values between 0.0 and 1.0 to set a maximum distance.
+     * @param nullValue Value to be used in places impossible to interpolate due to lack of samples with valid values.
+     */
+    static spectral::array interpolateNullValuesShepard(const spectral::array& inputData,
+                                                        IJAbstractCartesianGrid& gridMesh,
+                                                        double powerParameter = 2.0,
+                                                        double maxDistanceFactor = 1.0,
+                                                        double nullValue = std::numeric_limits<double>::quiet_NaN() );
+
+
+    /**
+    * Interpolates invalid values ( std::isfinite() returns false ) from valid values in the passed array.
+    * The returned array has the same dimensions of the input array.
+    * Interpolation method is Thin Plate Spline ("Approximation Methods for Thin Plate Spline Mappings and Principal Warps"
+    * (Donato G and Belongie S, 2002), thus the input data must be 2D (only data at first z-slice will be processed).
+    * This implementation is adapted from the original stand-alone C++ code by Jarno Elonen: https://elonen.iki.fi/code/tpsdemo/index.html
+    * In this implementation, the height variable is Z, instead of Elonen's Y.
+    * This method is slow if the array has too many valid values.
+    * @param inputData array of data values.  Number of data elements must be nI * nJ (see gridMesh parameter).
+    * @param gridMesh an object containing grid mesh definition, that is,
+    *        origin (X0, Y0), cell sizes (dX, dY) and cell count (nI, nJ)).
+    * @param lambda Set to 0.0 to force the spline pass through all points.  Set to near-infinity for a least-squares plane.
+    *               Set to values in-between for a relaxed interpolation of a smooth spline, balancing misfit and smoothness.
+    * @param status Check this value for execution termination status: 0 = OK; 1 = singular matrix, 2 = premature ending, 3 = innacurate solution.
+    *               Do not use the returned array if the execution fails.
+    */
+    static spectral::array interpolateNullValuesThinPlateSpline( const spectral::array& inputData,
+                                                                 IJAbstractCartesianGrid& gridMesh,
+                                                                 double lambda,
+                                                                 int& status );
+
+    /** Skeletonizes gridded data so only values along thin lines remain. */
+    static spectral::array skeletonize( const spectral::array& inputData );
 };
 
 #endif // IMAGEJOCKEYUTILS_H

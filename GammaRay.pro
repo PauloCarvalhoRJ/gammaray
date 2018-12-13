@@ -229,7 +229,8 @@ SOURCES += main.cpp\
     dialogs/variograminputdialog.cpp \
     geometry/hexahedron.cpp \
     geometry/pyramid.cpp \
-    geometry/tetrahedron.cpp
+    geometry/tetrahedron.cpp \
+    imagejockey/emd/emdanalysisdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -437,7 +438,8 @@ HEADERS  += mainwindow.h \
     dialogs/variograminputdialog.h \
     geometry/hexahedron.h \
     geometry/pyramid.h \
-    geometry/tetrahedron.h
+    geometry/tetrahedron.h \
+    imagejockey/emd/emdanalysisdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -515,7 +517,8 @@ FORMS    += mainwindow.ui \
 	imagejockey/widgets/ijquick3dviewer.ui \
 	dialogs/factorialkrigingdialog.ui \
     dialogs/sisimdialog.ui \
-    dialogs/variograminputdialog.ui
+    dialogs/variograminputdialog.ui \
+    imagejockey/emd/emdanalysisdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -588,9 +591,34 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
                            -lvtkalglib$$_VTK_VERSION_SUFFIX \
-                -lvtkImagingStencil$$_VTK_VERSION_SUFFIX
+                -lvtkImagingStencil$$_VTK_VERSION_SUFFIX \
+                -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
+
+#========== The ITK include and lib paths and libraries==================
+_ITK_INCLUDE = $$(ITK_INCLUDE)
+isEmpty(_ITK_INCLUDE){
+    error(ITK_INCLUDE environment variable not defined.)
+}
+_ITK_LIB = $$(ITK_LIB)
+isEmpty(_ITK_LIB){
+    error(ITK_LIB environment variable not defined.)
+}
+_ITK_VERSION_SUFFIX = $$(ITK_VERSION_SUFFIX)
+isEmpty(_ITK_VERSION_SUFFIX){
+    warning(ITK_VERSION_SUFFIX environment variable not defined or empty.)
+}
+INCLUDEPATH += $$_ITK_INCLUDE
+LIBPATH     += $$_ITK_LIB
+LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
+               -lITKIOImageBase$$_ITK_VERSION_SUFFIX \
+               -litkvnl$$_ITK_VERSION_SUFFIX \
+               -litkvnl_algo$$_ITK_VERSION_SUFFIX \
+               -lITKIOPNG$$_ITK_VERSION_SUFFIX
+
+#=============================================================================
+
 
 #========= The FFTW3 include and lib path and libraries.=========
 _FFTW3_INCLUDE = $$(FFTW3_INCLUDE)
@@ -619,7 +647,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 5.0
+VERSION = 5.1
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

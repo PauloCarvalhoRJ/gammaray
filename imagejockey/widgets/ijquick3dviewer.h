@@ -27,12 +27,16 @@ class IJQuick3DViewer : public QWidget
     Q_OBJECT
 
 public:
-    /** @param show_not_set If true, adds a "NOT SET" item as the first item. */
     explicit IJQuick3DViewer( QWidget *parent = 0 );
     ~IJQuick3DViewer();
 
-	/** Renders the given polytopes with the given color expressed as RGB values. */
+    /** Renders the given polytopes as lines/surfaces with the given color expressed as RGB values. */
 	void display( vtkPolyData* polyData, int r=255, int g=255, int b=255 );
+
+    /** Renders the given polytopes as a point cloud.
+     * The points are rendered white if no scalars are provided to render with a color scale.
+     */
+    void display( vtkPolyData* polyData, float pointSize );
 
 	/** Renders the passed regular grid.  Its values are mapped to a grayscale set between given values. */
 	void display( vtkImageData* imageData, double colorScaleMin, double colorScaleMax );

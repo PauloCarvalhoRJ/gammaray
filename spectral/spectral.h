@@ -23,6 +23,11 @@ namespace spectral
 using index = long long;
 using fftw_array_raw = fftw_complex *;
 
+enum class ExtremumType : int {
+    MAXIMUM,
+    MINIMUM
+};
+
 struct complex_array {
     complex_array();
     complex_array(index N);
@@ -112,6 +117,8 @@ struct array {
 
     array operator-( const array &other ) const;
 
+    array operator+( const array &other ) const;
+
 	array getVectorColumn( index j ) const;
 
     virtual ~array();
@@ -143,6 +150,13 @@ struct array {
 	double min() const;
 
 	double euclideanLength() const;
+
+    /** Returns the average of values in a window centered at the cell identified
+     * by the topological coordinate MNK.  It returns std::numeric_limits<double>::quiet_NaN()
+     * if no valid values are found in the window.
+     * @param halfWindowSize the number of cells around the center cell. 1 means a 3x3x3 window.
+     */
+    double get_window_average( index M, index N, index K, int halfWindowSize = 1 ) const;
 
     std::vector<double> d_;
     index ndim_ = 1;
@@ -313,6 +327,39 @@ complex_array to_polar_form(const complex_array & in );
  * (magnitude and phase) to Cartesian form (real and imaginary parts).
  */
 complex_array to_rectangular_form(const complex_array & in );
+
+
+/**
+ * Returns a new array containing the maxima or extrema as single cells.
+ * All other cells are set to std::numeric_limits<double>::quiet_NaN().
+ * @param extremaType Sets whether to search for maxima or minima.
+ * @param halfWindowSize Defines the size of the search window around the cells to look for extrema.
+ *                       A value of 1 means a 3x3x3 neighborhood.
+ * @param thresholdAbs This value discard extrema with absolute values below this value.
+ *                     Set to zero or lower so no extrema are discarded
+ * @param count An output parameter that will contain the number of cells with extrema values.
+ */
+array get_extrema_cells( const array &in,
+                         ExtremumType extremaType ,
+                         int halfWindowSize,
+                         double thresholdAbs,
+                         int& count );
+
+/**
+ * Returns a new array containing the maxima or extrema as cells belonging to ridges or valleys.
+ * All other cells are set to std::numeric_limits<double>::quiet_NaN().
+ * @param extremaType Sets whether to search for maxima or minima.
+ * @param halfWindowSize Defines the size of the search window around the cells to look for extrema.
+ *                       A value of 1 means a 3x3x3 neighborhood.
+ * @param thresholdAbs This value discard extrema with absolute values below this value.
+ *                     Set to zero or lower so no extrema are discarded
+ * @param count An output parameter that will contain the number of cells with extrema values.
+ */
+array get_ridges_or_valleys( const array &in,
+                             ExtremumType extremaType ,
+                             int halfWindowSize,
+                             double thresholdAbs,
+                             int& count );
 
 } // namepsace spectral
 

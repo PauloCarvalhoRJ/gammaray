@@ -5,6 +5,7 @@
 
 #include <QString>
 #include <QIcon>
+#include <memory>
 
 class IJAbstractVariable;
 
@@ -151,6 +152,27 @@ public:
 
     /** Adds de contents of the given data array as new variable to this Cartesian grid. */
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array ) = 0;
+
+    /** Returns the value considered as uninformed data. It can be NaN or infinity.*/
+    virtual double getUninformedDataValue() = 0;
+
+    /** Returns, via output variables, the x,y,z location of a cell given its topological
+     * coordinate i,j,k.
+     */
+    virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z ) = 0;
+
+    /**
+     * Returns the maximum value in the given variable.
+     * First variable is 0.
+     */
+    virtual double getMax( int variableIndex ) = 0;
+
+    /**
+     * Returns the minimum value in the given variable.
+     * First variable is 0.
+     */
+    virtual double getMin( int variableIndex ) = 0;
+
 };
 
 #endif // IJABSTRACTCARTESIANGRID_H

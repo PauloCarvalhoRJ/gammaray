@@ -7,3 +7,6 @@ docs/~*.docx
 
 # Some editor keeps these *.autosave files and sometimes it leaves them over
 *.autosave
+
+# recent versions of Qt creator sometimes leave tmp files in the sources directory.
+*~*.TMP

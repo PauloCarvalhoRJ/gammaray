@@ -9,7 +9,10 @@ public:
 	/** Initializes the location at ( 0.0, 0.0, 0.0 ) */
 	IJSpatialLocation();
 
-	double _x;
+    /** Initializes the location at ( 0.0, 0.0, 0.0 ) */
+    IJSpatialLocation( double x, double y, double z);
+
+    double _x;
 	double _y;
 	double _z;
 
@@ -18,6 +21,13 @@ public:
 
 	/** Returns the distance between origin and this location in the XY plane. */
 	double norm2D();
+
+    /** Returns the distance between origin and this location. */
+    double norm();
+
+    IJSpatialLocation operator-( const IJSpatialLocation& b ) const;
+
+    void print();
 };
 
 #endif // IJSPATIALLOCATION_H

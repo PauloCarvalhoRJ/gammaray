@@ -683,6 +683,35 @@ long SVDFactor::appendAsNewVariable(const QString variableName, const spectral::
     return -1;
 }
 
+double SVDFactor::getUninformedDataValue()
+{
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
+void SVDFactor::getCellLocation(int i, int j, int k, double &x, double &y, double &z)
+{
+    // TODO: refactor: this is the same code (giving or taking differences in member names)
+    //       as CartesianGrid::IJKtoXYZ() method.
+    x = m_x0 + m_dx / 2 + m_dx * i;
+    y = m_y0 + m_dy / 2 + m_dy * j;
+    if( getNK() > 1 )
+        z = m_z0 + m_dz / 2 + m_dz * k;
+    else
+        z = 0.0; //2D grids are positioned at Z=0.0 by convention
+}
+
+double SVDFactor::getMax(int variableIndex)
+{
+    Q_UNUSED( variableIndex );
+    return getMaxValue();
+}
+
+double SVDFactor::getMin(int variableIndex)
+{
+    Q_UNUSED( variableIndex );
+    return getMinValue();
+}
+
 int SVDFactor::getNI() const
 {
     return m_factorData->M();

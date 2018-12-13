@@ -21,6 +21,20 @@
 #include <vtkCenterOfMass.h>
 #include <vtkEllipseArcSource.h>
 #include <vtkAppendPolyData.h>
+#include <vtkFloatArray.h>
+#include <vtkShepardMethod.h>
+#include "imagejockey/widgets/ijquick3dviewer.h"
+#include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/io.hpp>
+#include <itkBinaryThinningImageFilter.hxx>
+#include <itkImageFileWriter.hxx>
+#include <itkPNGImageIOFactory.h>
+#include <itkRescaleIntensityImageFilter.hxx>
+#include <ludecomposition.h> //third party header library for the LU_solve() function call
+                             // in ImageJockeyUtils::interpolateNullValuesThinPlateSpline()
+                             // replace with gauss-elim.h (slower) with you run into numerical issues.
+#include <Eigen/QR>
+
 
 /*static*/const long double ImageJockeyUtils::PI( 3.141592653589793238L );
 
@@ -92,7 +106,7 @@ QString ImageJockeyUtils::humanReadable(double value)
     //buffer string for formatting the output (QString's sptrintf doesn't honor field size)
     char buffer[50];
     //define base unit to change suffix (could be 1024 for ISO bytes (iB), for instance)
-    double unit = 1000.0d;
+    double unit = 1000.0;
     //return the plain value if it doesn't require a multiplier suffix (small values)
     if (value <= unit){
         std::sprintf(buffer, "%.1f", value);
@@ -667,5 +681,353 @@ double ImageJockeyUtils::getAzimuth( double x, double y, double centerX, double 
 	   az = 0.0;
 	if( ! halfAzimuth && localX < 0.0 )
 	   az += 180.0;
-	return az;
+    return az;
+}
+
+spectral::array ImageJockeyUtils::interpolateNullValuesShepard(const spectral::array &inputData,
+                                                               IJAbstractCartesianGrid &gridMesh,
+                                                               double powerParameter, double maxDistanceFactor,
+                                                               double nullValue )
+{
+    //get array dimensions
+    int nI = inputData.M();
+    int nJ = inputData.N();
+    int nK = inputData.K();
+
+    //get grid mesh geometry
+    double dx = gridMesh.getCellSizeI();
+    double dy = gridMesh.getCellSizeJ();
+    double dz = gridMesh.getCellSizeK();
+
+    //the VTK collections of points in space
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    vtkSmartPointer<vtkCellArray> vertexes = vtkSmartPointer<vtkCellArray>::New();
+
+    //the VTK collections of values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("Values");
+
+    //the VTK collections of ids to identify vertexes
+    vtkSmartPointer<vtkIdList> vIDs = vtkSmartPointer<vtkIdList>::New();
+
+    //populate the VTK collections above
+    double x, y, z;
+    double minValue = std::numeric_limits<double>::max();
+    double maxValue = std::numeric_limits<double>::min();
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ){
+                double inputValue = inputData( i, j, k );
+                if( std::isfinite( inputValue ) ){
+                    if( inputValue < minValue )
+                        minValue = inputValue;
+                    if( inputValue > maxValue )
+                        maxValue = inputValue;
+                    gridMesh.getCellLocation( i, j, k, x, y, z );
+                    vIDs->InsertNextId( points->InsertNextPoint( x, y, z ) );
+                    values->InsertNextValue( static_cast<float>(inputValue) );
+                }
+            }
+    vertexes->InsertNextCell( vIDs );
+
+    //mount VTK polygonal objects for interpolation with the extrema locations and values
+    vtkSmartPointer<vtkPolyData> polydata = vtkSmartPointer<vtkPolyData>::New();
+    polydata->SetPoints( points );
+    polydata->SetVerts( vertexes );
+    polydata->GetPointData()->SetScalars( values );
+    //polydataMaxima->GetPointData()->SetActiveScalars("Values"); //setting this makes vtkShepardMethod fail... figures! But enable this to visualize.
+
+    //Debug the input values as point sets
+//        IJQuick3DViewer* ijq3dv2 = new IJQuick3DViewer;
+//        ijq3dv2->setWindowTitle( "input points" );
+//        ijq3dv2->show();
+//        ijq3dv2->display( polydata, 3.0f );
+//        return spectral::array();
+
+    //compute bounding box for Shepard' method
+    double xmin = gridMesh.getOriginX() - dx / 2.0;
+    double ymin = gridMesh.getOriginY() - dy / 2.0;
+    double zmin = gridMesh.getOriginZ() - dz / 2.0;
+    double xmax = xmin + dx * nI;
+    double ymax = ymin + dy * nJ;
+    double zmax = zmin + dz * nK;
+
+    //configure the volume for Shepard's Method interpolation algorithm for the maxima envelope.
+    //vtkGaussianSplatter can be an alternative if results are not good
+    vtkSmartPointer<vtkShepardMethod> shepard = vtkSmartPointer<vtkShepardMethod>::New();
+    shepard->SetInputData( polydata );
+    shepard->SetMaximumDistance( maxDistanceFactor ); //1.0 means it uses all points (slower, but without search neighborhood artifacts)
+    shepard->SetModelBounds( xmin, xmax, ymin, ymax, zmin, zmax);
+    shepard->SetPowerParameter( powerParameter );
+    shepard->SetSampleDimensions( nI, nJ, nK+1 );
+    shepard->SetNullValue( nullValue );
+    shepard->Update();
+    vtkSmartPointer<vtkImageData> interpolatedGrid = shepard->GetOutput();
+
+    //Debug the interpolated result
+//    IJQuick3DViewer* ijq3dv = new IJQuick3DViewer;
+//    ijq3dv->setWindowTitle( "interpolated grid" );
+//    ijq3dv->show();
+//    ijq3dv->display( interpolatedGrid,
+//                     minValue,
+//                     maxValue );
+//    return spectral::array();
+
+    spectral::array result( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>(nK) );
+
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ){
+                //intput for VTK were vtkFloatArray's
+                float* cellValue = static_cast<float*>(interpolatedGrid->GetScalarPointer( i, j, k ));
+                //assuming the first element in the returned array is the interpolated value
+                result( i, j, k ) = static_cast<double>(cellValue[0]);
+            }
+
+    return result;
+}
+
+spectral::array ImageJockeyUtils::interpolateNullValuesThinPlateSpline(const spectral::array &inputData,
+                                                                        IJAbstractCartesianGrid &gridMesh,
+                                                                        double lambda, int &status )
+{
+    using boost::numeric::ublas::matrix;
+
+    auto basisFunction = [](double r){
+      if ( r == 0.0 )
+        return 0.0;
+      else
+        return r*r * log(r);
+    };
+
+    //get data array dimensions
+    int nI = inputData.M();
+    int nJ = inputData.N();
+
+    //populate a vector with points: x, y, data value
+    std::vector< IJSpatialLocation > control_points;
+    double x, y, z;
+    for( int j = 0; j < nJ; ++j )
+        for( int i = 0; i < nI; ++i ){
+            double inputValue = inputData( i, j, 0 );
+            if( std::isfinite( inputValue ) ){
+                gridMesh.getCellLocation( i, j, 0, x, y, z );
+                control_points.push_back( IJSpatialLocation( x, y, inputValue ) );
+            }
+        }
+
+    size_t p = control_points.size();
+
+    //debug the control points
+//    for( IJSpatialLocation& loc : control_points )
+//        loc.print();
+//    status = 2;
+//    return spectral::array();
+
+    // Allocate the matrix and vector
+    matrix<double> mtx_l(p+3, p+3);
+    matrix<double> mtx_v(p+3, 1);
+    matrix<double> mtx_orig_k(p, p);
+
+    // Fill K (p x p, upper left of L) and calculate
+    // mean edge length from control points
+    //
+    // K is symmetrical so we really have to
+    // calculate only about half of the coefficients.
+    double a = 0.0;
+    for ( unsigned i = 0; i < p; ++i )
+      for ( unsigned j = i+1; j < p; ++j ) {
+        IJSpatialLocation pt_i( control_points[i] );
+        IJSpatialLocation pt_j( control_points[j] );
+        pt_i._z = pt_j._z = 0;
+        double elen = (pt_i - pt_j).norm();
+        mtx_l(i, j) = mtx_l(j, i) = mtx_orig_k(i, j) = mtx_orig_k(j, i) = basisFunction(elen);
+        a += elen * 2; // same for upper & lower tri
+      }
+    a /= static_cast<double>(p*p);
+
+    // Fill the rest of L
+    for ( unsigned i=0; i<p; ++i ) {
+      // diagonal: reqularization parameters (lambda * a^2)
+      mtx_l(i,i) = mtx_orig_k(i,i) =
+        lambda * (a*a);
+
+      // P (p x 3, upper right)
+      mtx_l(i, p+0) = 1.0;
+      mtx_l(i, p+1) = control_points[i]._x;
+      mtx_l(i, p+2) = control_points[i]._y;
+
+      // P transposed (3 x p, bottom left)
+      mtx_l(p+0, i) = 1.0;
+      mtx_l(p+1, i) = control_points[i]._x;
+      mtx_l(p+2, i) = control_points[i]._y;
+    }
+    // O (3 x 3, lower right)
+    for ( unsigned i = p; i < p+3; ++i )
+        for ( unsigned j = p; j < p+3; ++j )
+            mtx_l(i, j) = 0.0;
+
+    // Fill the right hand vector V
+    for ( unsigned i=0; i<p; ++i )
+        mtx_v(i,0) = control_points[i]._z;
+    mtx_v(p+0, 0) = mtx_v(p+1, 0) = mtx_v(p+2, 0) = 0.0;
+
+    // Solve the linear system "inplace"
+    // TODO PERFORMANCE ISSUE: LU decomposition doesn't scale well for large data sets (O(n^3)), though it's
+    //       faster than Gaussian elimination.
+    //       Consider using iterative numerical solvers (like Gauss-Seidel or the conjugate gradient method)
+    //       which assume the effect of the control points is mainly local (i.e. only a few neighboring
+    //       control points contribute majorly to interpolating a given point). These approximations scale well,
+    //       in the order of O( n log n ).  Maybe Eigen has something fast.
+//    if (0 != LU_Solve( mtx_l, mtx_v )) {
+//        status = 1;
+//        return spectral::array();
+//    }
+
+    {
+        //make Eigen matrices for the Eigen's solver
+        Eigen::MatrixXd A( p+3, p+3 );
+        Eigen::VectorXd b( p+3 );
+        for ( unsigned i = 0; i < p+3; ++i ){
+            b( i ) = mtx_v( i, 0 );
+            for ( unsigned j = 0; j < p+3; ++j )
+                A(i, j) = mtx_l(i, j);
+        }
+        //solve
+        Eigen::ColPivHouseholderQR<Eigen::MatrixXd> dec(A);
+        Eigen::VectorXd x = dec.solve( b );
+        //test for solution for acccuracy, since Eigen doesn't do divisions by zero.
+        if( ! (A*x).isApprox( b, 0.01 ) ){
+            status = 3;
+            return spectral::array();
+        }
+        //put results back in mtx_v (in-place solving)
+        for ( unsigned i = 0; i < p+3; ++i )
+            mtx_v( i, 0 ) = x( i );
+    }
+
+    spectral::array result( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>(1 ) );
+
+    // Interpolate grid heights
+    for ( int i = 0; i < nI; ++i )
+        for ( int j = 0; j < nJ; ++j ){
+            gridMesh.getCellLocation( i, j, 0, x, y, z );
+            double h = mtx_v(p+0, 0) + mtx_v(p+1, 0)*x + mtx_v(p+2, 0)*y;
+            IJSpatialLocation pt_cur(x,y,0);
+            for ( unsigned ii = 0; ii < p; ++ii ){
+                IJSpatialLocation& pt_i = control_points[ii];
+                pt_i._z = 0;
+                h += mtx_v(ii,0) * basisFunction( ( pt_i - pt_cur ).norm() );
+            }
+            result( i, j, 0 ) = h;
+        }
+
+    status = 0;
+    return result;
+}
+
+spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
+    //get data array dimensions
+    int nI = inputData.M();
+    int nJ = inputData.N();
+    int nK = inputData.K();
+
+
+    // create an ITK image object containg a mask marking cells
+    // with values and unvalued.  The image pixels corresponding
+    // to cells with valid values are marked with 255 values.
+    // The ones corresponding to unvalued cells are marked with zeroes.
+    typedef itk::Image<unsigned char, 2>  ImageType;
+    ImageType::Pointer itkImage = ImageType::New();
+    {
+        ImageType::IndexType start;
+        start.Fill(0);
+        ImageType::SizeType size;
+        //size.Fill( 100 );
+        size[0] = nI;
+        size[1] = nJ;
+        size[2] = nK;
+        ImageType::RegionType region(start, size);
+        itkImage->SetRegions(region);
+        itkImage->Allocate();
+        itkImage->FillBuffer(0);
+        for(unsigned int k = 0; k < nK; ++k)
+            for(unsigned int j = 0; j < nJ; ++j)
+                for(unsigned int i = 0; i < nI; ++i){
+                    if( std::isfinite( inputData(i, j, k) ) ){
+                        itk::Index<2> index;
+                        index[0] = i;
+                        index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                        index[2] = nK - 1 - k;
+                        itkImage->SetPixel(index, 255);
+                    }
+                }
+    }
+
+    //debug the input itk image
+//    {
+//        // save image to PNG file
+//        {
+//            itk::PNGImageIOFactory::RegisterOneFactory();
+//            typedef  itk::ImageFileWriter< ImageType  > WriterType;
+//            WriterType::Pointer writer = WriterType::New();
+//            writer->SetFileName("~itkInputImage.png");
+//            writer->SetInput(itkImage);
+//            writer->Update();
+//        }
+//    }
+
+    // perform skeletonization
+    typedef itk::BinaryThinningImageFilter <ImageType, ImageType> BinaryThinningImageFilterType;
+    BinaryThinningImageFilterType::Pointer binaryThinningImageFilter = BinaryThinningImageFilterType::New();
+    binaryThinningImageFilter->SetInput( itkImage );
+    binaryThinningImageFilter->Update();
+
+    // Rescale the image so that it can be seen (the output is 0 and 1, we want 0 and 255)
+    // NOTE: this is not necessary, 0s and 1s are enough, but a value of 255 makes the cells stand out
+    //       in the PNG file for debugging
+    typedef itk::RescaleIntensityImageFilter< ImageType, ImageType > RescaleType;
+    RescaleType::Pointer rescaler = RescaleType::New();
+    rescaler->SetInput( binaryThinningImageFilter->GetOutput() );
+    rescaler->SetOutputMinimum(0);
+    rescaler->SetOutputMaximum(255);
+    rescaler->Update();
+
+    //debug the output itk image
+//    {
+//        // save image to PNG file
+//        {
+//            itk::PNGImageIOFactory::RegisterOneFactory();
+//            typedef  itk::ImageFileWriter< ImageType  > WriterType;
+//            WriterType::Pointer writer = WriterType::New();
+//            writer->SetFileName("~itkSkeletonizedImage.png");
+//            writer->SetInput( rescaler->GetOutput() );
+//            writer->Update();
+//        }
+//    }
+
+    //prepare to return the result
+    spectral::array result( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>(nK) );
+    for(unsigned int k = 0; k < nK; ++k)
+        for(unsigned int j = 0; j < nJ; ++j)
+            for(unsigned int i = 0; i < nI; ++i){
+                itk::Index<2> index;
+                index[0] = i;
+                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                index[2] = nK - 1 - k;
+                unsigned char pxValue = itkImage->GetPixel( index );
+                if( pxValue )
+                    //the cells marked as valid receive the value from the original input data.
+                    result( i, j, k ) = inputData( i, j, k );
+                else
+                    //those out receive an invalid value
+                    result( i, j, k ) = std::numeric_limits<double>::quiet_NaN();
+            }
+    return result;
 }

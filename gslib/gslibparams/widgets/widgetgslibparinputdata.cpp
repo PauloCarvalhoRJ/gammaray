@@ -3,6 +3,7 @@
 #include "gslibparamwidgets.h"
 #include "../gslibparinputdata.h"
 #include <QPainter>
+#include <QStyleOption>
 
 WidgetGSLibParInputData::WidgetGSLibParInputData(QWidget *parent) :
     QWidget(parent),

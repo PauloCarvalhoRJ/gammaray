@@ -14,6 +14,7 @@
 #include <math.h>
 #include <QMessageBox>
 #include <QDir>
+#include <QRegularExpression>
 #include "domain/variogrammodel.h"
 #include "gslib/gslib.h"
 

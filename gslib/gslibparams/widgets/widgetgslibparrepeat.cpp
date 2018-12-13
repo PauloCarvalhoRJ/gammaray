@@ -7,6 +7,7 @@
 #include "widgetgslibparvmodel.h"
 #include "domain/application.h"
 #include <QPainter>
+#include <QStyleOption>
 
 WidgetGSLibParRepeat::WidgetGSLibParRepeat(QWidget *parent) :
     QWidget(parent),
