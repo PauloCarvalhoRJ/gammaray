@@ -279,7 +279,7 @@ void EMDAnalysisDialog::onPerformEMD()
     //        ijgw2->setWindowTitle( "IMF #" + QString::number( IMFnumber ) );
     //        ijgw2->show();
             ++IMFnumber;
-            // save the candate signal (an IMF) as a new variable to the grid data
+            // save the candidate signal (an IMF) as a new variable to the grid data
             IJAbstractVariable* var = m_inputGrid->getVariableByIndex( m_inputVariableIndex );
             m_inputGrid->appendAsNewVariable( var->getVariableName() + "_IMF" + QString::number( IMFnumber ),
                                               candidateSignal );
