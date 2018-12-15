@@ -13,7 +13,7 @@
 #include <vtkPolyData.h>
 #include <vtkPointData.h>
 #include <QMessageBox>
-#include <imagejockey/ijabstractvariable.h>
+#include "imagejockey/ijabstractvariable.h"
 
 EMDAnalysisDialog::EMDAnalysisDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
