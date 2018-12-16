@@ -2,13 +2,14 @@
 #include "ui_gaborfilterdialog.h"
 #include "imagejockey/ijabstractvariable.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
-#include <itkGaborImageSource.hxx>
+#include "spectral/spectral.h"
+#include <itkGaborImageSource.h>
 #include <itkConvolutionImageFilter.h>
 #include <itkGaussianInterpolateImageFunction.h>
-#include <itkImageFileReader.h>
-#include <itkImageRegionIterator.h>
-#include <itkTimeProbe.h>
-#include "spectral/spectral.h"
+#include <itkEuler3DTransform.h>
+#include <itkResampleImageFilter.h>
+#include <itkImageFileWriter.hxx>
+#include <itkPNGImageIOFactory.h>
 
 GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
                                      uint inputVariableIndex,
@@ -37,6 +38,7 @@ void GaborFilterDialog::onPerformGaborFilter()
     const unsigned int gridDim = 3;
     typedef float realType;
     typedef itk::Image<realType, gridDim> ImageType;
+    typedef itk::GaborImageSource<ImageType> GaborSourceType;
     typedef itk::GaussianInterpolateImageFunction<ImageType, realType> GaussianInterpolatorType;
     typedef itk::Euler3DTransform<realType> TransformType;
     typedef itk::ResampleImageFilter<ImageType, ImageType, realType> ResamplerType;
@@ -62,12 +64,9 @@ void GaborFilterDialog::onPerformGaborFilter()
     unsigned int nJ = m_inputGrid->getNJ();
     unsigned int nK = m_inputGrid->getNK();
 
-    /*
-     * Construct the gabor image kernel.
-     * The idea is that we construct a gabor image kernel and
-     * downsample it to a smaller size for image convolution.
-     */
-    typedef itk::GaborImageSource<ImageType> GaborSourceType;
+    // Construct the gabor image kernel.
+    // The idea is that we construct a gabor image kernel and
+    // downsample it to a smaller size for image convolution.
     GaborSourceType::Pointer gabor = GaborSourceType::New();
     {
         ImageType::SpacingType spacing; spacing[0] = 1.0; spacing[1] = 1.0; spacing[2] = 1.0;
@@ -99,12 +98,31 @@ void GaborFilterDialog::onPerformGaborFilter()
     }
     gabor->Update();
 
+
+    //debug the full Gabor kernel image
+    CONVERT_OUTPUT_TO_IMAGE_WITH_CHAR_OR_USHORT;
+    {
+        itk::PNGImageIOFactory::RegisterOneFactory();
+        typedef  itk::ImageFileWriter< ImageType  > WriterType;
+        WriterType::Pointer writer = WriterType::New();
+        writer->SetFileName("~itkFullGaborKernelImage.png");
+        writer->SetInput(gabor->GetOutput());
+        writer->Update();
+        return;
+    }
+
+
     // create an ITK image object from input grid data.
     ImageType::Pointer inputImage = ImageType::New();
     {
         ImageType::IndexType start;
         start.Fill(0); // = 0,0,0
         ImageType::SizeType size;
+        ImageType::SpacingType spacing; spacing[0] = dX; spacing[1] = dY; spacing[2] = dZ;
+        inputImage->SetSpacing( spacing );
+        ////////////////////
+        ImageType::PointType origin; origin[0] = x0; origin[1] = y0; origin[2] = z0;
+        inputImage->SetOrigin( origin );
         //size.Fill( 100 );
         size[0] = nI;
         size[1] = nJ;
@@ -125,9 +143,7 @@ void GaborFilterDialog::onPerformGaborFilter()
                 }
     }
 
-    /*
-     * Construct a Gaussian interpolator for the gabor filter resampling
-     */
+    // Construct a Gaussian interpolator for the gabor filter resampling
     typename GaussianInterpolatorType::Pointer gaussianInterpolator = GaussianInterpolatorType::New();
     {
         gaussianInterpolator->SetInputImage( inputImage );
@@ -178,31 +194,24 @@ void GaborFilterDialog::onPerformGaborFilter()
     typename ConvolutionFilterType::Pointer convoluter = ConvolutionFilterType::New();
     {
         convoluter->SetInput( inputImage );
-        convoluter->SetImageKernelInput( resampler->GetOutput() );
+        convoluter->SetKernelImage( resampler->GetOutput() );
         convoluter->NormalizeOn();
         convoluter->Update();
     }
 
     // Read the correlation image (spectrogram)
-    convoluter->GetOutput();
     spectral::array result( static_cast<spectral::index>(nI),
                             static_cast<spectral::index>(nJ),
                             static_cast<spectral::index>(nK) );
     for(unsigned int k = 0; k < nK; ++k)
         for(unsigned int j = 0; j < nJ; ++j)
             for(unsigned int i = 0; i < nI; ++i){
-                itk::Index<2> index;
+                itk::Index<gridDim> index;
                 index[0] = i;
                 index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                 index[2] = nK - 1 - k;
-                unsigned char pxValue = itkImage->GetPixel( index );
-                if( pxValue )
-                    //the cells marked as valid receive the value from the original input data.
-                    result( i, j, k ) = inputData( i, j, k );
-                else
-                    //those out receive an invalid value
-                    result( i, j, k ) = std::numeric_limits<double>::quiet_NaN();
+                realType correlation = convoluter->GetOutput()->GetPixel( index );
+                result( i, j, k ) = correlation;
             }
-    return result;
 
 }
