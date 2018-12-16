@@ -1,4 +1,4 @@
-<?xml version='1.0'?>
+<?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>GaborFilterDialog</class>
  <widget class="QDialog" name="GaborFilterDialog">
@@ -6,14 +6,82 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>240</width>
+    <width>443</width>
     <height>320</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
+  <widget class="QPushButton" name="btnProcess">
+   <property name="geometry">
+    <rect>
+     <x>290</x>
+     <y>170</y>
+     <width>31</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="icon">
+    <iconset resource="../ijresources.qrc">
+     <normaloff>:/ijicons32/ijplay32</normaloff>:/ijicons32/ijplay32</iconset>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btnDismiss">
+   <property name="geometry">
+    <rect>
+     <x>180</x>
+     <y>280</y>
+     <width>75</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Dismiss</string>
+   </property>
+  </widget>
  </widget>
- <resources/>
- <connections/>
+ <resources>
+  <include location="../ijresources.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>btnProcess</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onPerformGaborFilter()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>205</x>
+     <y>183</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>253</x>
+     <y>190</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnDismiss</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>315</x>
+     <y>239</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>373</x>
+     <y>244</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onPerformGaborFilter()</slot>
+ </slots>
 </ui>
