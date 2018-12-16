@@ -79,7 +79,7 @@
 #include "imagejockey/svd/svdfactor.h"
 #include "imagejockey/emd/emdanalysisdialog.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
-
+#include "imagejockey/gabor/gaborfilterdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -507,6 +507,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("EMD analysis", this, SLOT(onEMD()));
+                _projectContextMenu->addAction("Gabor filter", this, SLOT(onGabor()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
@@ -2278,6 +2279,28 @@ void MainWindow::onEMD()
     //open the Empirical Mode Decomposition dialog
     EMDAnalysisDialog* emdd = new EMDAnalysisDialog( cg, static_cast<uint>(varIndex), this );
     emdd->show();
+}
+
+void MainWindow::onGabor()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //get the index of the selected variable in the grid
+    int varIndex = cg->getVariableIndexByName( _right_clicked_attribute->getName() );
+    if( varIndex < 0 ){
+        QMessageBox::critical( this, "Error", QString("IJAbstractCartesianGrid::getVariableIndexByName() returned an invalid variable index."));
+        return;
+    }
+
+    //open the Empirical Mode Decomposition dialog
+    GaborFilterDialog* gfd = new GaborFilterDialog( cg, static_cast<uint>(varIndex), this );
+    gfd->show();
+
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
