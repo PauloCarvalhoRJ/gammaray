@@ -10,6 +10,8 @@
 #include <itkResampleImageFilter.h>
 #include <itkImageFileWriter.hxx>
 #include <itkPNGImageIOFactory.h>
+#include <itkCastImageFilter.h>
+#include <itkRescaleIntensityImageFilter.hxx>
 
 GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
                                      uint inputVariableIndex,
@@ -100,16 +102,25 @@ void GaborFilterDialog::onPerformGaborFilter()
 
 
     //debug the full Gabor kernel image
-    CONVERT_OUTPUT_TO_IMAGE_WITH_CHAR_OR_USHORT;
-    {
-        itk::PNGImageIOFactory::RegisterOneFactory();
-        typedef  itk::ImageFileWriter< ImageType  > WriterType;
-        WriterType::Pointer writer = WriterType::New();
-        writer->SetFileName("~itkFullGaborKernelImage.png");
-        writer->SetInput(gabor->GetOutput());
-        writer->Update();
-        return;
-    }
+//    {
+//        // Rescale the values and convert the image
+//        // so that it can be seen as a PNG file
+//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
+//        RescaleType::Pointer rescaler = RescaleType::New();
+//        rescaler->SetInput( gabor->GetOutput() );
+//        rescaler->SetOutputMinimum(0);
+//        rescaler->SetOutputMaximum(255);
+//        rescaler->Update();
+//        //save the converted umage as PNG file
+//        itk::PNGImageIOFactory::RegisterOneFactory();
+//        typedef itk::ImageFileWriter< PngImageType > WriterType;
+//        WriterType::Pointer writer = WriterType::New();
+//        writer->SetFileName("~itkFullGaborKernelImage.png");
+//        writer->SetInput( rescaler->GetOutput() );
+//        writer->Update();
+//        return;
+//    }
 
 
     // create an ITK image object from input grid data.
@@ -142,6 +153,27 @@ void GaborFilterDialog::onPerformGaborFilter()
                     inputImage->SetPixel(index, value);
                 }
     }
+
+    //debug the input image
+//    {
+//        // Rescale the values and convert the image
+//        // so that it can be seen as a PNG file
+//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
+//        RescaleType::Pointer rescaler = RescaleType::New();
+//        rescaler->SetInput( inputImage );
+//        rescaler->SetOutputMinimum(0);
+//        rescaler->SetOutputMaximum(255);
+//        rescaler->Update();
+//        //save the converted umage as PNG file
+//        itk::PNGImageIOFactory::RegisterOneFactory();
+//        typedef itk::ImageFileWriter< PngImageType > WriterType;
+//        WriterType::Pointer writer = WriterType::New();
+//        writer->SetFileName("~itkGaborInputImage.png");
+//        writer->SetInput( rescaler->GetOutput() );
+//        writer->Update();
+//        return;
+//    }
 
     // Construct a Gaussian interpolator for the gabor filter resampling
     typename GaussianInterpolatorType::Pointer gaussianInterpolator = GaussianInterpolatorType::New();
@@ -182,13 +214,36 @@ void GaborFilterDialog::onPerformGaborFilter()
         resampler->SetTransform( transform );
         resampler->SetInterpolator( gaussianInterpolator );
         resampler->SetInput( gabor->GetOutput() );
-        // The output spacing and origin are irrelevant in the convolution
-        // calculation.
-        resampler->SetOutputSpacing( gabor->GetOutput()->GetSpacing() );
-        resampler->SetOutputOrigin( inputImage->GetOrigin() );
+        ImageType::SpacingType spacing;
+        for( int i = 0; i < gridDim; ++i )
+            spacing[i] = gabor->GetOutput()->GetSpacing()[i] *
+                    gabor->GetSize()[i] / kernelSize[i];
+        resampler->SetOutputSpacing( spacing );
+        resampler->SetOutputOrigin( gabor->GetOutput()->GetOrigin() /*inputImage->GetOrigin()*/ );
         resampler->SetSize( kernelSize );
         resampler->Update();
     }
+
+    // debug the rescaled Gabor kernel
+//    {
+//        // Rescale the values and convert the image
+//        // so that it can be seen as a PNG file
+//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
+//        RescaleType::Pointer rescaler = RescaleType::New();
+//        rescaler->SetInput( resampler->GetOutput() );
+//        rescaler->SetOutputMinimum(0);
+//        rescaler->SetOutputMaximum(255);
+//        rescaler->Update();
+//        //save the converted umage as PNG file
+//        itk::PNGImageIOFactory::RegisterOneFactory();
+//        typedef itk::ImageFileWriter< PngImageType > WriterType;
+//        WriterType::Pointer writer = WriterType::New();
+//        writer->SetFileName("~itkRescaledGaborKernel.png");
+//        writer->SetInput( rescaler->GetOutput() );
+//        writer->Update();
+//        return;
+//    }
 
     // Convolve the input image against the resampled gabor image kernel.
     typename ConvolutionFilterType::Pointer convoluter = ConvolutionFilterType::New();
