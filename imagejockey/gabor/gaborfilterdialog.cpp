@@ -2,7 +2,9 @@
 #include "ui_gaborfilterdialog.h"
 #include "imagejockey/ijabstractvariable.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
+#include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "spectral/spectral.h"
+#include "imagejockey/svd/svdfactor.h"
 #include <itkGaborImageSource.h>
 #include <itkConvolutionImageFilter.h>
 #include <itkGaussianInterpolateImageFunction.h>
@@ -47,8 +49,8 @@ void GaborFilterDialog::onPerformGaborFilter()
     typedef itk::ConvolutionImageFilter<ImageType> ConvolutionFilterType;
 
     ///----------------------------user-defined Gabor parameters------------------------------
-    double frequency = 0.001;
-    double azimuth = 0.0;
+    double frequency = ui->txtInitialFrequency->text().toDouble();
+    double azimuth = ui->txtAzimuth->text().toDouble();
     // Size of the kernel.
     ImageType::RegionType::SizeType kernelSize;
     for( unsigned int i = 0; i < gridDim; ++i )
@@ -66,207 +68,238 @@ void GaborFilterDialog::onPerformGaborFilter()
     unsigned int nJ = m_inputGrid->getNJ();
     unsigned int nK = m_inputGrid->getNK();
 
-    // Construct the gabor image kernel.
-    // The idea is that we construct a gabor image kernel and
-    // downsample it to a smaller size for image convolution.
-    GaborSourceType::Pointer gabor = GaborSourceType::New();
-    {
-        ImageType::SpacingType spacing; spacing[0] = 1.0; spacing[1] = 1.0; spacing[2] = 1.0;
-        gabor->SetSpacing( spacing );
-        ////////////////////
-        ImageType::PointType origin; origin[0] = 0.0; origin[1] = 0.0; origin[2] = 0.0;
-        gabor->SetOrigin( origin );
-        ////////////////////
-        ImageType::RegionType::SizeType size; size[0] = 255; size[1] = 255; size[2] = 255;
-        gabor->SetSize( size );
-        ////////////////////
-        ImageType::DirectionType direction; direction.SetIdentity();
-        gabor->SetDirection( direction );
-        ////////////////////
-        gabor->SetFrequency( frequency );
-        ////////////////////
-        gabor->SetCalculateImaginaryPart( true );
-        ////////////////////
-        GaborSourceType::ArrayType mean;
-        for( unsigned int i = 0; i < gridDim; i++ )
-            mean[i] = origin[i] + 0.5 * spacing[i] * static_cast<realType>( size[i] - 1 );
-        gabor->SetMean( mean );
-        ////////////////////
-        GaborSourceType::ArrayType sigma;
-        sigma[0] = 50.0;
-        sigma[1] = 75.0;
-        sigma[2] = 75.0;
-        gabor->SetSigma( sigma );
-    }
-    gabor->Update();
+    //define the frequency schedule
+    uint s0 = 1;
+    uint s1 = s0 + ui->spinNumberOfFrequencySteps->value();
+    double f0 = ui->txtInitialFrequency->text().toDouble();
+    double f1 = ui->txtFinalFrequency->text().toDouble();
+
+    //this lambda interpolates between the initial frequency (f0)
+    //and final frequency(f1) logarithmically
+    std::function<double (int)> f = [ s0, s1, f0, f1 ](int s)
+                          { return std::pow(10.0,
+                                  ( (s-s0)*(std::log10(f1)-std::log10(f0))/(s1-s0) ) + std::log10( f0 )
+                                            ); };
+
+    //TODO: performance: this loop could be parallelized
+    for( uint step = s0; step <= s1; ++step ){
+        double frequency = f( step );
+
+        // Construct the gabor image kernel.
+        // The idea is that we construct a gabor image kernel and
+        // downsample it to a smaller size for image convolution.
+        GaborSourceType::Pointer gabor = GaborSourceType::New();
+        {
+            ImageType::SpacingType spacing; spacing[0] = 1.0; spacing[1] = 1.0; spacing[2] = 1.0;
+            gabor->SetSpacing( spacing );
+            ////////////////////
+            ImageType::PointType origin; origin[0] = 0.0; origin[1] = 0.0; origin[2] = 0.0;
+            gabor->SetOrigin( origin );
+            ////////////////////
+            ImageType::RegionType::SizeType size; size[0] = 255; size[1] = 255; size[2] = 255;
+            gabor->SetSize( size );
+            ////////////////////
+            ImageType::DirectionType direction; direction.SetIdentity();
+            gabor->SetDirection( direction );
+            ////////////////////
+            gabor->SetFrequency( frequency );
+            ////////////////////
+            gabor->SetCalculateImaginaryPart( true );
+            ////////////////////
+            GaborSourceType::ArrayType mean;
+            for( unsigned int i = 0; i < gridDim; i++ )
+                mean[i] = origin[i] + 0.5 * spacing[i] * static_cast<realType>( size[i] - 1 );
+            gabor->SetMean( mean );
+            ////////////////////
+            GaborSourceType::ArrayType sigma;
+            sigma[0] = 50.0;
+            sigma[1] = 75.0;
+            sigma[2] = 75.0;
+            gabor->SetSigma( sigma );
+        }
+        gabor->Update();
 
 
-    //debug the full Gabor kernel image
-//    {
-//        // Rescale the values and convert the image
-//        // so that it can be seen as a PNG file
-//        typedef itk::Image<unsigned char, 3>  PngImageType;
-//        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
-//        RescaleType::Pointer rescaler = RescaleType::New();
-//        rescaler->SetInput( gabor->GetOutput() );
-//        rescaler->SetOutputMinimum(0);
-//        rescaler->SetOutputMaximum(255);
-//        rescaler->Update();
-//        //save the converted umage as PNG file
-//        itk::PNGImageIOFactory::RegisterOneFactory();
-//        typedef itk::ImageFileWriter< PngImageType > WriterType;
-//        WriterType::Pointer writer = WriterType::New();
-//        writer->SetFileName("~itkFullGaborKernelImage.png");
-//        writer->SetInput( rescaler->GetOutput() );
-//        writer->Update();
-//        return;
-//    }
+        //debug the full Gabor kernel image
+    //    {
+    //        // Rescale the values and convert the image
+    //        // so that it can be seen as a PNG file
+    //        typedef itk::Image<unsigned char, 3>  PngImageType;
+    //        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
+    //        RescaleType::Pointer rescaler = RescaleType::New();
+    //        rescaler->SetInput( gabor->GetOutput() );
+    //        rescaler->SetOutputMinimum(0);
+    //        rescaler->SetOutputMaximum(255);
+    //        rescaler->Update();
+    //        //save the converted umage as PNG file
+    //        itk::PNGImageIOFactory::RegisterOneFactory();
+    //        typedef itk::ImageFileWriter< PngImageType > WriterType;
+    //        WriterType::Pointer writer = WriterType::New();
+    //        writer->SetFileName("~itkFullGaborKernelImage.png");
+    //        writer->SetInput( rescaler->GetOutput() );
+    //        writer->Update();
+    //        return;
+    //    }
 
 
-    // create an ITK image object from input grid data.
-    ImageType::Pointer inputImage = ImageType::New();
-    {
-        ImageType::IndexType start;
-        start.Fill(0); // = 0,0,0
-        ImageType::SizeType size;
-        ImageType::SpacingType spacing; spacing[0] = dX; spacing[1] = dY; spacing[2] = dZ;
-        inputImage->SetSpacing( spacing );
-        ////////////////////
-        ImageType::PointType origin; origin[0] = x0; origin[1] = y0; origin[2] = z0;
-        inputImage->SetOrigin( origin );
-        //size.Fill( 100 );
-        size[0] = nI;
-        size[1] = nJ;
-        size[2] = nK;
-        ImageType::RegionType region(start, size);
-        inputImage->SetRegions(region);
-        inputImage->Allocate();
-        inputImage->FillBuffer(0);
+        // create an ITK image object from input grid data.
+        ImageType::Pointer inputImage = ImageType::New();
+        {
+            ImageType::IndexType start;
+            start.Fill(0); // = 0,0,0
+            ImageType::SizeType size;
+            ImageType::SpacingType spacing; spacing[0] = dX; spacing[1] = dY; spacing[2] = dZ;
+            inputImage->SetSpacing( spacing );
+            ////////////////////
+            ImageType::PointType origin; origin[0] = x0; origin[1] = y0; origin[2] = z0;
+            inputImage->SetOrigin( origin );
+            //size.Fill( 100 );
+            size[0] = nI;
+            size[1] = nJ;
+            size[2] = nK;
+            ImageType::RegionType region(start, size);
+            inputImage->SetRegions(region);
+            inputImage->Allocate();
+            inputImage->FillBuffer(0);
+            for(unsigned int k = 0; k < nK; ++k)
+                for(unsigned int j = 0; j < nJ; ++j)
+                    for(unsigned int i = 0; i < nI; ++i){
+                        double value = m_inputGrid->getData( m_inputVariableIndex, i, j, k );
+                        itk::Index<gridDim> index;
+                        index[0] = i;
+                        index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                        index[2] = nK - 1 - k;
+                        inputImage->SetPixel(index, value);
+                    }
+        }
+
+        //debug the input image
+    //    {
+    //        // Rescale the values and convert the image
+    //        // so that it can be seen as a PNG file
+    //        typedef itk::Image<unsigned char, 3>  PngImageType;
+    //        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
+    //        RescaleType::Pointer rescaler = RescaleType::New();
+    //        rescaler->SetInput( inputImage );
+    //        rescaler->SetOutputMinimum(0);
+    //        rescaler->SetOutputMaximum(255);
+    //        rescaler->Update();
+    //        //save the converted umage as PNG file
+    //        itk::PNGImageIOFactory::RegisterOneFactory();
+    //        typedef itk::ImageFileWriter< PngImageType > WriterType;
+    //        WriterType::Pointer writer = WriterType::New();
+    //        writer->SetFileName("~itkGaborInputImage.png");
+    //        writer->SetInput( rescaler->GetOutput() );
+    //        writer->Update();
+    //        return;
+    //    }
+
+        // Construct a Gaussian interpolator for the gabor filter resampling
+        typename GaussianInterpolatorType::Pointer gaussianInterpolator = GaussianInterpolatorType::New();
+        {
+            gaussianInterpolator->SetInputImage( inputImage );
+            double sigma[gridDim];
+            for( unsigned int i = 0; i < gridDim; i++ )
+                sigma[i] = 0.8;
+            double alpha = 1.0;
+            gaussianInterpolator->SetParameters( sigma, alpha );
+        }
+
+        // make a linear transform (translation, rotation, etc.) object
+        // to manipulate the Gabor kernel.
+        TransformType::Pointer transform = TransformType::New();
+        {
+            //set translation
+            TransformType::OutputVectorType translation;
+            translation.Fill( 0.0 ); // = 0.0,0.0,0.0 == no translation
+            transform->SetTranslation( translation );
+            //set center for rotation
+            TransformType::InputPointType center;
+            for( unsigned int i = 0; i < gridDim; i++ )
+            {
+                center[i] = gabor->GetOutput()->GetOrigin()[i] +
+                            gabor->GetOutput()->GetSpacing()[i] *
+                          ( gabor->GetOutput()->GetBufferedRegion().GetSize()[i] - 1 );
+            }
+            transform->SetCenter( center );
+            //set rotation angles
+            transform->SetRotation( 0.0, 0.0, azimuth );
+        }
+
+        // create an usable kernel image from the Gabor parameter object
+        // after transforms are applied
+        ResamplerType::Pointer resampler = ResamplerType::New();
+        {
+            resampler->SetTransform( transform );
+            resampler->SetInterpolator( gaussianInterpolator );
+            resampler->SetInput( gabor->GetOutput() );
+            ImageType::SpacingType spacing;
+            for( int i = 0; i < gridDim; ++i )
+                spacing[i] = gabor->GetOutput()->GetSpacing()[i] *
+                        gabor->GetSize()[i] / kernelSize[i];
+            resampler->SetOutputSpacing( spacing );
+            resampler->SetOutputOrigin( gabor->GetOutput()->GetOrigin() /*inputImage->GetOrigin()*/ );
+            resampler->SetSize( kernelSize );
+            resampler->Update();
+        }
+
+        // debug the rescaled Gabor kernel
+    //    {
+    //        // Rescale the values and convert the image
+    //        // so that it can be seen as a PNG file
+    //        typedef itk::Image<unsigned char, 3>  PngImageType;
+    //        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
+    //        RescaleType::Pointer rescaler = RescaleType::New();
+    //        rescaler->SetInput( resampler->GetOutput() );
+    //        rescaler->SetOutputMinimum(0);
+    //        rescaler->SetOutputMaximum(255);
+    //        rescaler->Update();
+    //        //save the converted umage as PNG file
+    //        itk::PNGImageIOFactory::RegisterOneFactory();
+    //        typedef itk::ImageFileWriter< PngImageType > WriterType;
+    //        WriterType::Pointer writer = WriterType::New();
+    //        writer->SetFileName("~itkRescaledGaborKernel.png");
+    //        writer->SetInput( rescaler->GetOutput() );
+    //        writer->Update();
+    //        return;
+    //    }
+
+        // Convolve the input image against the resampled gabor image kernel.
+        typename ConvolutionFilterType::Pointer convoluter = ConvolutionFilterType::New();
+        {
+            convoluter->SetInput( inputImage );
+            convoluter->SetKernelImage( resampler->GetOutput() );
+            convoluter->NormalizeOn();
+            convoluter->Update();
+        }
+
+        // Read the correlation image (spectrogram)
+        spectral::array correlationGrid( static_cast<spectral::index>(nI),
+                                static_cast<spectral::index>(nJ),
+                                static_cast<spectral::index>(nK) );
         for(unsigned int k = 0; k < nK; ++k)
             for(unsigned int j = 0; j < nJ; ++j)
                 for(unsigned int i = 0; i < nI; ++i){
-                    double value = m_inputGrid->getData( m_inputVariableIndex, i, j, k );
                     itk::Index<gridDim> index;
                     index[0] = i;
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                     index[2] = nK - 1 - k;
-                    inputImage->SetPixel(index, value);
+                    realType correlation = convoluter->GetOutput()->GetPixel( index );
+                    correlationGrid( i, j, k ) = correlation;
                 }
+
+        //Debug the correlation image
+        IJGridViewerWidget* ijgw2 = new IJGridViewerWidget( true, false, true );
+        spectral::array correlationGridCopy( correlationGrid );
+        SVDFactor* grid = new SVDFactor( std::move(correlationGridCopy), 1, 1.0,
+                                         x0, y0, z0,
+                                         dX, dY, dZ,
+                                         0.42
+                                         );
+        ijgw2->setFactor( grid );
+        ijgw2->setWindowTitle( "Correlation: f = " + QString::number( frequency ) );
+        ijgw2->show();
+
     }
-
-    //debug the input image
-//    {
-//        // Rescale the values and convert the image
-//        // so that it can be seen as a PNG file
-//        typedef itk::Image<unsigned char, 3>  PngImageType;
-//        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
-//        RescaleType::Pointer rescaler = RescaleType::New();
-//        rescaler->SetInput( inputImage );
-//        rescaler->SetOutputMinimum(0);
-//        rescaler->SetOutputMaximum(255);
-//        rescaler->Update();
-//        //save the converted umage as PNG file
-//        itk::PNGImageIOFactory::RegisterOneFactory();
-//        typedef itk::ImageFileWriter< PngImageType > WriterType;
-//        WriterType::Pointer writer = WriterType::New();
-//        writer->SetFileName("~itkGaborInputImage.png");
-//        writer->SetInput( rescaler->GetOutput() );
-//        writer->Update();
-//        return;
-//    }
-
-    // Construct a Gaussian interpolator for the gabor filter resampling
-    typename GaussianInterpolatorType::Pointer gaussianInterpolator = GaussianInterpolatorType::New();
-    {
-        gaussianInterpolator->SetInputImage( inputImage );
-        double sigma[gridDim];
-        for( unsigned int i = 0; i < gridDim; i++ )
-            sigma[i] = 0.8;
-        double alpha = 1.0;
-        gaussianInterpolator->SetParameters( sigma, alpha );
-    }
-
-    // make a linear transform (translation, rotation, etc.) object
-    // to manipulate the Gabor kernel.
-    TransformType::Pointer transform = TransformType::New();
-    {
-        //set translation
-        TransformType::OutputVectorType translation;
-        translation.Fill( 0.0 ); // = 0.0,0.0,0.0 == no translation
-        transform->SetTranslation( translation );
-        //set center for rotation
-        TransformType::InputPointType center;
-        for( unsigned int i = 0; i < gridDim; i++ )
-        {
-            center[i] = gabor->GetOutput()->GetOrigin()[i] +
-                        gabor->GetOutput()->GetSpacing()[i] *
-                      ( gabor->GetOutput()->GetBufferedRegion().GetSize()[i] - 1 );
-        }
-        transform->SetCenter( center );
-        //set rotation angles
-        transform->SetRotation( 0.0, 0.0, azimuth );
-    }
-
-    // create an usable kernel image from the Gabor parameter object
-    // after transforms are applied
-    ResamplerType::Pointer resampler = ResamplerType::New();
-    {
-        resampler->SetTransform( transform );
-        resampler->SetInterpolator( gaussianInterpolator );
-        resampler->SetInput( gabor->GetOutput() );
-        ImageType::SpacingType spacing;
-        for( int i = 0; i < gridDim; ++i )
-            spacing[i] = gabor->GetOutput()->GetSpacing()[i] *
-                    gabor->GetSize()[i] / kernelSize[i];
-        resampler->SetOutputSpacing( spacing );
-        resampler->SetOutputOrigin( gabor->GetOutput()->GetOrigin() /*inputImage->GetOrigin()*/ );
-        resampler->SetSize( kernelSize );
-        resampler->Update();
-    }
-
-    // debug the rescaled Gabor kernel
-//    {
-//        // Rescale the values and convert the image
-//        // so that it can be seen as a PNG file
-//        typedef itk::Image<unsigned char, 3>  PngImageType;
-//        typedef itk::RescaleIntensityImageFilter< ImageType, PngImageType > RescaleType;
-//        RescaleType::Pointer rescaler = RescaleType::New();
-//        rescaler->SetInput( resampler->GetOutput() );
-//        rescaler->SetOutputMinimum(0);
-//        rescaler->SetOutputMaximum(255);
-//        rescaler->Update();
-//        //save the converted umage as PNG file
-//        itk::PNGImageIOFactory::RegisterOneFactory();
-//        typedef itk::ImageFileWriter< PngImageType > WriterType;
-//        WriterType::Pointer writer = WriterType::New();
-//        writer->SetFileName("~itkRescaledGaborKernel.png");
-//        writer->SetInput( rescaler->GetOutput() );
-//        writer->Update();
-//        return;
-//    }
-
-    // Convolve the input image against the resampled gabor image kernel.
-    typename ConvolutionFilterType::Pointer convoluter = ConvolutionFilterType::New();
-    {
-        convoluter->SetInput( inputImage );
-        convoluter->SetKernelImage( resampler->GetOutput() );
-        convoluter->NormalizeOn();
-        convoluter->Update();
-    }
-
-    // Read the correlation image (spectrogram)
-    spectral::array result( static_cast<spectral::index>(nI),
-                            static_cast<spectral::index>(nJ),
-                            static_cast<spectral::index>(nK) );
-    for(unsigned int k = 0; k < nK; ++k)
-        for(unsigned int j = 0; j < nJ; ++j)
-            for(unsigned int i = 0; i < nI; ++i){
-                itk::Index<gridDim> index;
-                index[0] = i;
-                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                index[2] = nK - 1 - k;
-                realType correlation = convoluter->GetOutput()->GetPixel( index );
-                result( i, j, k ) = correlation;
-            }
 
 }
