@@ -3,6 +3,7 @@
 #include "imagejockey/ijabstractvariable.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
+#include "imagejockey/widgets/ijquick3dviewer.h"
 #include "spectral/spectral.h"
 #include "imagejockey/svd/svdfactor.h"
 #include <itkGaborImageSource.h>
@@ -49,7 +50,6 @@ void GaborFilterDialog::onPerformGaborFilter()
     typedef itk::ConvolutionImageFilter<ImageType> ConvolutionFilterType;
 
     ///----------------------------user-defined Gabor parameters------------------------------
-    double frequency = ui->txtInitialFrequency->text().toDouble();
     double azimuth = ui->txtAzimuth->text().toDouble();
     // Size of the kernel.
     ImageType::RegionType::SizeType kernelSize;
@@ -70,16 +70,36 @@ void GaborFilterDialog::onPerformGaborFilter()
 
     //define the frequency schedule
     uint s0 = 1;
-    uint s1 = s0 + ui->spinNumberOfFrequencySteps->value();
+    uint s1 = s0 + ui->spinNumberOfFrequencySteps->value() - 1;
     double f0 = ui->txtInitialFrequency->text().toDouble();
     double f1 = ui->txtFinalFrequency->text().toDouble();
 
     //this lambda interpolates between the initial frequency (f0)
     //and final frequency(f1) logarithmically
+    //
+    // readable formula:
+    //
+    //    log(f1) - log(f0)       s1 - s0
+    //  --------------------- = -----------
+    //    log(f)  - log(f0)        s - s0
+    //
+    //  Where:
+    //
+    //  f: output interpolated frequency
+    //  s: input step number
+    //  s1 and s0: final and intial step numbers.
+    //  f1 and f0: final and initial frequencies.
+    //
     std::function<double (int)> f = [ s0, s1, f0, f1 ](int s)
                           { return std::pow(10.0,
                                   ( (s-s0)*(std::log10(f1)-std::log10(f0))/(s1-s0) ) + std::log10( f0 )
                                             ); };
+    // This is the correlation cube (spectrogram)
+    // I and J are the index of the input image
+    // K is the index for each frequency (vertical)
+    spectral::array spectrogram( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>( s1 - s0 ) );
 
     //TODO: performance: this loop could be parallelized
     for( uint step = s0; step <= s1; ++step ){
@@ -96,7 +116,11 @@ void GaborFilterDialog::onPerformGaborFilter()
             ImageType::PointType origin; origin[0] = 0.0; origin[1] = 0.0; origin[2] = 0.0;
             gabor->SetOrigin( origin );
             ////////////////////
-            ImageType::RegionType::SizeType size; size[0] = 255; size[1] = 255; size[2] = 255;
+            // if the image is 2D, the kernel doesn't need to be a cube (performance)
+            uint nK_kernel = 255;
+            if( nK == 1 )
+                nK_kernel = 1;
+            ImageType::RegionType::SizeType size; size[0] = 255; size[1] = 255; size[2] = nK_kernel;
             gabor->SetSize( size );
             ////////////////////
             ImageType::DirectionType direction; direction.SetIdentity();
@@ -274,32 +298,19 @@ void GaborFilterDialog::onPerformGaborFilter()
         }
 
         // Read the correlation image (spectrogram)
-        spectral::array correlationGrid( static_cast<spectral::index>(nI),
-                                static_cast<spectral::index>(nJ),
-                                static_cast<spectral::index>(nK) );
-        for(unsigned int k = 0; k < nK; ++k)
-            for(unsigned int j = 0; j < nJ; ++j)
-                for(unsigned int i = 0; i < nI; ++i){
+        for(unsigned int j = 0; j < nJ; ++j)
+            for(unsigned int i = 0; i < nI; ++i) {
                     itk::Index<gridDim> index;
                     index[0] = i;
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                    index[2] = nK - 1 - k;
+                    index[2] = nK - 1 - 0 /*k*/;
                     realType correlation = convoluter->GetOutput()->GetPixel( index );
-                    correlationGrid( i, j, k ) = correlation;
-                }
-
-        //Debug the correlation image
-        IJGridViewerWidget* ijgw2 = new IJGridViewerWidget( true, false, true );
-        spectral::array correlationGridCopy( correlationGrid );
-        SVDFactor* grid = new SVDFactor( std::move(correlationGridCopy), 1, 1.0,
-                                         x0, y0, z0,
-                                         dX, dY, dZ,
-                                         0.42
-                                         );
-        ijgw2->setFactor( grid );
-        ijgw2->setWindowTitle( "Correlation: f = " + QString::number( frequency ) );
-        ijgw2->show();
-
+                    spectrogram( i, j, step - s0 ) = correlation;
+            }
     }
 
+    //Debug the spectrogram cube
+    IJQuick3DViewer* ijqv = new IJQuick3DViewer();
+    ijqv->display( spectrogram, spectrogram.min(), spectrogram.max() );
+    ijqv->show();
 }
