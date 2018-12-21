@@ -4,7 +4,6 @@
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "imagejockey/widgets/ijquick3dviewer.h"
-#include "spectral/spectral.h"
 #include "imagejockey/svd/svdfactor.h"
 #include <itkGaborImageSource.h>
 #include <itkConvolutionImageFilter.h>
@@ -15,6 +14,7 @@
 #include <itkPNGImageIOFactory.h>
 #include <itkCastImageFilter.h>
 #include <itkRescaleIntensityImageFilter.hxx>
+#include <QProgressDialog>
 
 GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
                                      uint inputVariableIndex,
@@ -29,7 +29,7 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
 
-    this->setWindowTitle( "Gabor Filter Dialog" );
+    this->setWindowTitle( "Gabor Transform Dialog" );
 }
 
 GaborFilterDialog::~GaborFilterDialog()
@@ -94,16 +94,31 @@ void GaborFilterDialog::onPerformGaborFilter()
                           { return std::pow(10.0,
                                   ( (s-s0)*(std::log10(f1)-std::log10(f0))/(s1-s0) ) + std::log10( f0 )
                                             ); };
+
     // This is the correlation cube (spectrogram)
     // I and J are the index of the input image
     // K is the index for each frequency (vertical)
-    spectral::array spectrogram( static_cast<spectral::index>(nI),
+    m_spectrogram = spectral::arrayPtr( new spectral::array(
+                            static_cast<spectral::index>(nI),
                             static_cast<spectral::index>(nJ),
-                            static_cast<spectral::index>( s1 - s0 ) );
+                            static_cast<spectral::index>( s1 - s0 ) ) );
+
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Performing convolutions...");
+    progressDialog.setMinimum( s0 );
+    progressDialog.setMaximum( s1 );
+    progressDialog.show();
+    /////////////////////////////////
 
     //TODO: performance: this loop could be parallelized
     for( uint step = s0; step <= s1; ++step ){
         double frequency = f( step );
+
+        //update the progress window
+        progressDialog.setValue( step );
+        QApplication::processEvents();
 
         // Construct the gabor image kernel.
         // The idea is that we construct a gabor image kernel and
@@ -305,12 +320,14 @@ void GaborFilterDialog::onPerformGaborFilter()
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                     index[2] = nK - 1 - 0 /*k*/;
                     realType correlation = convoluter->GetOutput()->GetPixel( index );
-                    spectrogram( i, j, step - s0 ) = correlation;
+                    (*m_spectrogram)( i, j, step - s0 ) = correlation;
             }
     }
 
     //Debug the spectrogram cube
     IJQuick3DViewer* ijqv = new IJQuick3DViewer();
-    ijqv->display( spectrogram, spectrogram.min(), spectrogram.max() );
+    ijqv->display( *m_spectrogram, m_spectrogram->min(), m_spectrogram->max() );
     ijqv->show();
+
+    emit spectrogramGenerated();
 }

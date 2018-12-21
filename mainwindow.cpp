@@ -507,7 +507,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("EMD analysis", this, SLOT(onEMD()));
-                _projectContextMenu->addAction("Gabor filter", this, SLOT(onGabor()));
+                _projectContextMenu->addAction("Gabor transform", this, SLOT(onGabor()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
@@ -2299,8 +2299,53 @@ void MainWindow::onGabor()
 
     //open the Empirical Mode Decomposition dialog
     GaborFilterDialog* gfd = new GaborFilterDialog( cg, static_cast<uint>(varIndex), this );
+    connect( gfd, SIGNAL(spectrogramGenerated()), this, SLOT(onGaborSpectrogramGenerated()) );
     gfd->show();
 
+}
+
+void MainWindow::onGaborSpectrogramGenerated()
+{
+    GaborFilterDialog* gfd = qobject_cast<GaborFilterDialog*>(sender());
+    if( gfd ) {
+        spectral::arrayPtr spectrogram = gfd->getSpectrogram();
+
+//        bool ok;
+//        //propose a name based on the point set name.
+//        QString proposed_name( m_pointSet->getName() );
+//        proposed_name.append( ".grid" );
+//        QString new_cg_name = QInputDialog::getText(this, "Name the new grid file",
+//                                                 "New grid file name:", QLineEdit::Normal,
+//                                                 proposed_name, &ok);
+
+//        if (ok && !new_cg_name.isEmpty()){
+//            //read values entered by the user
+//            m_gridParameters->updateValue( m_par );
+
+//            //make a tmp file path
+//            QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+
+//            //create a new grid object corresponding to a file to be created in the tmp directory
+//            CartesianGrid* cg = new CartesianGrid( tmp_file_path );
+
+//            //set the geometry info entered by the user
+//            cg->setInfoFromGridParameter( m_par );
+
+//            //create the physical GEO-EAS grid file with a binary values with a checkerboard pattern.
+//            Util::createGEOEAScheckerboardGrid( cg, tmp_file_path );
+
+//            //import the newly created grid file as a project item
+//            Application::instance()->getProject()->importCartesianGrid( cg, new_cg_name );
+
+//            //close dialog
+//            emit this->accept();
+//        }
+
+
+        IJAbstractCartesianGrid* cg = CREATE_CARTESIAN_GRID;
+        cg->appendAsNewVariable(new_variable_name, *spectrogram );
+
+    }
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

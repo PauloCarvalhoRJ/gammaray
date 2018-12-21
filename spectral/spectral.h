@@ -16,6 +16,7 @@ With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 #include <iostream>
 #include <omp.h>
 #include <vector>
+#include <memory>
 
 namespace spectral
 {
@@ -164,6 +165,8 @@ struct array {
     index N_ = 1; // dim 2
     index K_ = 1; // dim 3
 };
+
+typedef std::shared_ptr< array > arrayPtr;
 
 array operator-( double theValue, const array& theArray );
 
