@@ -2290,6 +2290,11 @@ void MainWindow::onGabor()
         return;
     }
 
+    if( cg->getNK() > 1 ){
+        QMessageBox::critical( this, "Error", QString("3D grids are impractical."));
+        return;
+    }
+
     //get the index of the selected variable in the grid
     int varIndex = cg->getVariableIndexByName( _right_clicked_attribute->getName() );
     if( varIndex < 0 ){
@@ -2308,7 +2313,7 @@ void MainWindow::onGaborSpectrogramGenerated()
 {
     GaborFilterDialog* gfd = qobject_cast<GaborFilterDialog*>(sender());
     if( gfd ) {
-        spectral::arrayPtr spectrogram = gfd->getSpectrogram();
+//        spectral::arrayPtr spectrogram = gfd->getSpectrogram();
 
 //        bool ok;
 //        //propose a name based on the point set name.
@@ -2342,8 +2347,8 @@ void MainWindow::onGaborSpectrogramGenerated()
 //        }
 
 
-        IJAbstractCartesianGrid* cg = CREATE_CARTESIAN_GRID;
-        cg->appendAsNewVariable(new_variable_name, *spectrogram );
+//        IJAbstractCartesianGrid* cg = CREATE_CARTESIAN_GRID;
+//        cg->appendAsNewVariable(new_variable_name, *spectrogram );
 
     }
 }

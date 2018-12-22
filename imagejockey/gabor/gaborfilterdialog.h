@@ -3,12 +3,20 @@
 
 #include <QDialog>
 #include "spectral/spectral.h"
+#include <vtkSmartPointer.h>
 
 namespace Ui {
 class GaborFilterDialog;
 }
 
 class IJAbstractCartesianGrid;
+class QVTKOpenGLWidget;
+class vtkRenderer;
+class vtkOrientationMarkerWidget;
+class vtkPolyData;
+class vtkImageData;
+class vtkActor;
+class vtkActor2D;
 
 class GaborFilterDialog : public QDialog
 {
@@ -36,6 +44,23 @@ private:
     IJAbstractCartesianGrid* m_inputGrid;
     uint m_inputVariableIndex;
     spectral::arrayPtr m_spectrogram;
+
+    ////////-----members used for 3D display-------------------
+    // the Qt widget containing a VTK viewport
+    QVTKOpenGLWidget *_vtkwidget;
+    // the VTK renderer (add VTK actors to it to build the scene).
+    vtkSmartPointer<vtkRenderer> _renderer;
+    // this must be class variable, otherwise a crash ensues due to smart pointer going
+    // out of scope
+    vtkSmartPointer<vtkOrientationMarkerWidget> _vtkAxesWidget;
+    // List of pointers to the objects being viewed (if any).
+    std::vector< vtkSmartPointer<vtkActor> > _currentActors;
+    // Pointer to the scale bar actor
+    vtkSmartPointer<vtkActor2D> _scaleBarActor;
+    ///////////////////////////////////////////////////////////
+
+    void updateDisplay();
+    void clearDisplay();
 
 private Q_SLOTS:
     void onPerformGaborFilter();
