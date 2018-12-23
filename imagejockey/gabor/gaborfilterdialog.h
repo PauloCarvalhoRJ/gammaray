@@ -33,12 +33,6 @@ public:
      */
     spectral::arrayPtr getSpectrogram();
 
-Q_SIGNALS:
-    /** Client code can use this to be notified when the spectrogram is read.
-     * Retrieve results with getSpectrogram().
-     */
-    void spectrogramGenerated();
-
 private:
     Ui::GaborFilterDialog *ui;
     IJAbstractCartesianGrid* m_inputGrid;
@@ -59,11 +53,11 @@ private:
     vtkSmartPointer<vtkActor2D> _scaleBarActor;
     ///////////////////////////////////////////////////////////
 
-    void updateDisplay();
     void clearDisplay();
 
 private Q_SLOTS:
     void onPerformGaborFilter();
+    void updateDisplay();
 };
 
 #endif // GABORFILTERDIALOG_H

@@ -78,6 +78,9 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     _vtkAxesWidget->SetEnabled(1);
     _vtkAxesWidget->InteractiveOn();
 
+    //set the background to a shade of gray
+    _renderer->SetBackground(0.5, 0.5, 0.5);
+
     // adjusts view so everything fits in the screen
     _renderer->ResetCamera();
 
@@ -93,6 +96,9 @@ GaborFilterDialog::~GaborFilterDialog()
 
 void GaborFilterDialog::updateDisplay()
 {
+    if( ! m_spectrogram )
+        return;
+
     //Clear current display
     clearDisplay();
 
@@ -100,10 +106,10 @@ void GaborFilterDialog::updateDisplay()
     vtkSmartPointer<vtkActor> spectrogramActor = vtkSmartPointer<vtkActor>::New();
     vtkSmartPointer<vtkScalarBarActor> scalarBarActor = vtkSmartPointer<vtkScalarBarActor>::New();
     {
-        double absOfMin = std::abs( m_spectrogram->min() );
-        double absOfMax = std::abs( m_spectrogram->max() );
-        double colorScaleMin = 0.0;
-        double colorScaleMax = std::max( absOfMax, absOfMin );
+        //Get user settings.
+        double colorScaleMin = ui->txtColorScaleMin->text().toDouble();
+        double colorScaleMax = ui->txtColorScaleMax->text().toDouble();
+        double thresholdValue = ui->txtThreshold->text().toDouble();
 
         //Convert the spectrogram cube into a corresponding VTK object.
         vtkSmartPointer<vtkImageData> spectrogramGrid = vtkSmartPointer<vtkImageData>::New();
@@ -121,25 +127,21 @@ void GaborFilterDialog::updateDisplay()
             int nJ = extent[3] - extent[2];
             int nK = extent[5] - extent[4];
             visibility->Allocate( nI * nJ * nK );
-            double threshold = ui->txtThreshold->text().toDouble();
-            if( threshold < colorScaleMax )
-                colorScaleMin = std::max( colorScaleMin, threshold );
             for (int k = extent[4]; k <= extent[5]; ++k){
                 for (int j = extent[2]; j <= extent[3]; ++j){
                     for (int i = extent[0]; i <= extent[1]; ++i){
                         double* value = static_cast<double*>(spectrogramGrid->GetScalarPointer(i,j,k));
-                        if ( value[0] < threshold )
+                        if ( value[0] < thresholdValue )
                             visibility->InsertNextValue( 0 );
                         else
                             visibility->InsertNextValue( 1 );
                     }
                 }
             }
+            spectrogramGrid->GetCellData()->AddArray( visibility );
         }
 
-        spectrogramGrid->GetCellData()->AddArray( visibility );
-
-        // threshold object to make unvalued cells invisible
+        // configure a thresholding object to make cells below cut-off invisible
         vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
         {
             threshold->SetInputData( spectrogramGrid );
@@ -538,9 +540,13 @@ void GaborFilterDialog::onPerformGaborFilter()
 //    ijqv->display( *m_spectrogram, m_spectrogram->min(), m_spectrogram->max() );
 //    ijqv->show();
 
+    // set the color scale form fields to suitable initial values
+    double absOfMin = std::abs( m_spectrogram->min() );
+    double absOfMax = std::abs( m_spectrogram->max() );
+    ui->txtColorScaleMin->setText( "0.0" );
+    ui->txtColorScaleMax->setText( QString::number( std::max( absOfMax, absOfMin ) ) );
+
     //Update the spectrogram analyser.
     updateDisplay();
 
-    //notify any client code that the spectrogram has been generated
-    emit spectrogramGenerated();
 }

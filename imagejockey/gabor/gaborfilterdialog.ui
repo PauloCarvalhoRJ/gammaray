@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>739</width>
-    <height>390</height>
+    <height>455</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,169 +16,266 @@
   <layout class="QHBoxLayout" name="horizontalLayout_2">
    <item>
     <widget class="QFrame" name="frame">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="maximumSize">
+      <size>
+       <width>300</width>
+       <height>16777215</height>
+      </size>
+     </property>
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
      </property>
      <property name="frameShadow">
       <enum>QFrame::Raised</enum>
      </property>
-     <widget class="QPushButton" name="btnDismiss">
-      <property name="geometry">
-       <rect>
-        <x>40</x>
-        <y>120</y>
-        <width>75</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Dismiss</string>
-      </property>
-     </widget>
-     <widget class="QPushButton" name="btnProcess">
-      <property name="geometry">
-       <rect>
-        <x>270</x>
-        <y>80</y>
-        <width>31</width>
-        <height>23</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string/>
-      </property>
-      <property name="icon">
-       <iconset resource="../ijresources.qrc">
-        <normaloff>:/ijicons32/ijplay32</normaloff>:/ijicons32/ijplay32</iconset>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="txtAzimuth">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>80</y>
-        <width>81</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>0.0</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="txtInitialFrequency">
-      <property name="geometry">
-       <rect>
-        <x>40</x>
-        <y>40</y>
-        <width>71</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>0.001</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_4">
-      <property name="geometry">
-       <rect>
-        <x>250</x>
-        <y>40</y>
-        <width>41</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>steps:</string>
-      </property>
-     </widget>
-     <widget class="QSpinBox" name="spinNumberOfFrequencySteps">
-      <property name="geometry">
-       <rect>
-        <x>290</x>
-        <y>40</y>
-        <width>42</width>
-        <height>22</height>
-       </rect>
-      </property>
-      <property name="minimum">
-       <number>1</number>
-      </property>
-      <property name="maximum">
-       <number>200</number>
-      </property>
-      <property name="value">
-       <number>5</number>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_3">
-      <property name="geometry">
-       <rect>
-        <x>130</x>
-        <y>50</y>
-        <width>46</width>
-        <height>13</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>final:</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label">
-      <property name="geometry">
-       <rect>
-        <x>20</x>
-        <y>10</y>
-        <width>91</width>
-        <height>16</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>Spatial frequency:</string>
-      </property>
-     </widget>
-     <widget class="QLabel" name="label_2">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>50</y>
-        <width>46</width>
-        <height>13</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>initial:</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="txtFinalFrequency">
-      <property name="geometry">
-       <rect>
-        <x>170</x>
-        <y>40</y>
-        <width>71</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>0.1</string>
-      </property>
-     </widget>
-     <widget class="QLineEdit" name="txtThreshold">
-      <property name="geometry">
-       <rect>
-        <x>120</x>
-        <y>80</y>
-        <width>113</width>
-        <height>20</height>
-       </rect>
-      </property>
-      <property name="text">
-       <string>1000.0</string>
-      </property>
-     </widget>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QFrame" name="frame_3">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>Spatial frequency:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_7">
+           <item>
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>initial:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtInitialFrequency">
+             <property name="text">
+              <string>0.001</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>final:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtFinalFrequency">
+             <property name="text">
+              <string>0.1</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>steps:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="spinNumberOfFrequencySteps">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>200</number>
+             </property>
+             <property name="value">
+              <number>5</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_6">
+           <item>
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>azimuth:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtAzimuth">
+             <property name="text">
+              <string>0.0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_5">
+           <item>
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>correlation display threshold:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtThreshold">
+             <property name="text">
+              <string>1000.0</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QLabel" name="label_7">
+             <property name="text">
+              <string>color scale min.:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtColorScaleMin"/>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>max.:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtColorScaleMax"/>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnUpdateView">
+             <property name="toolTip">
+              <string>update view</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../ijresources.qrc">
+               <normaloff>:/ijicons32/ijupdate32</normaloff>:/ijicons32/ijupdate32</iconset>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>213</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <widget class="QFrame" name="frame_2">
+        <property name="frameShape">
+         <enum>QFrame::StyledPanel</enum>
+        </property>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <spacer name="horizontalSpacer_2">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnProcess">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../ijresources.qrc">
+             <normaloff>:/ijicons32/ijplay32</normaloff>:/ijicons32/ijplay32</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>60</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnDismiss">
+           <property name="text">
+            <string>Dismiss</string>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_3">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </widget>
+      </item>
+     </layout>
     </widget>
    </item>
    <item>
     <widget class="QFrame" name="frm3DDisplay">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="frameShape">
       <enum>QFrame::StyledPanel</enum>
      </property>
@@ -217,8 +314,8 @@
    <slot>onPerformGaborFilter()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>205</x>
-     <y>183</y>
+     <x>126</x>
+     <y>425</y>
     </hint>
     <hint type="destinationlabel">
      <x>253</x>
@@ -233,8 +330,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>315</x>
-     <y>239</y>
+     <x>276</x>
+     <y>424</y>
     </hint>
     <hint type="destinationlabel">
      <x>373</x>
@@ -242,8 +339,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnUpdateView</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>updateDisplay()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>149</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>4</x>
+     <y>172</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onPerformGaborFilter()</slot>
+  <slot>updateDisplay()</slot>
  </slots>
 </ui>
