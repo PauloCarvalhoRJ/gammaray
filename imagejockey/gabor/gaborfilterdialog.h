@@ -58,6 +58,7 @@ private:
 private Q_SLOTS:
     void onPerformGaborFilter();
     void updateDisplay();
+    void onScan();
 };
 
 #endif // GABORFILTERDIALOG_H

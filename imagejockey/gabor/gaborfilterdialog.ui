@@ -45,11 +45,31 @@
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Spatial frequency:</string>
+          <layout class="QHBoxLayout" name="horizontalLayout_8">
+           <property name="spacing">
+            <number>0</number>
            </property>
-          </widget>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>Spatial frequency:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnScan">
+             <property name="text">
+              <string>scan</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item>
           <layout class="QHBoxLayout" name="horizontalLayout_7">
@@ -115,7 +135,7 @@
            <item>
             <widget class="QLineEdit" name="txtAzimuth">
              <property name="text">
-              <string>0.0</string>
+              <string>90.0</string>
              </property>
             </widget>
            </item>
@@ -314,7 +334,7 @@
    <slot>onPerformGaborFilter()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>126</x>
+     <x>100</x>
      <y>425</y>
     </hint>
     <hint type="destinationlabel">
@@ -330,7 +350,7 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>276</x>
+     <x>244</x>
      <y>424</y>
     </hint>
     <hint type="destinationlabel">
@@ -346,8 +366,8 @@
    <slot>updateDisplay()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>334</x>
-     <y>149</y>
+     <x>287</x>
+     <y>168</y>
     </hint>
     <hint type="destinationlabel">
      <x>4</x>
@@ -355,9 +375,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnScan</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onScan()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>211</x>
+     <y>44</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>3</x>
+     <y>47</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onPerformGaborFilter()</slot>
   <slot>updateDisplay()</slot>
+  <slot>onScan()</slot>
  </slots>
 </ui>

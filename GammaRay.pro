@@ -231,7 +231,9 @@ SOURCES += main.cpp\
     geometry/pyramid.cpp \
     geometry/tetrahedron.cpp \
     imagejockey/emd/emdanalysisdialog.cpp \
-    imagejockey/gabor/gaborfilterdialog.cpp
+    imagejockey/gabor/gaborfilterdialog.cpp \
+    imagejockey/gabor/gaborscandialog.cpp \
+    imagejockey/gabor/gaborutils.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -441,7 +443,9 @@ HEADERS  += mainwindow.h \
     geometry/pyramid.h \
     geometry/tetrahedron.h \
     imagejockey/emd/emdanalysisdialog.h \
-    imagejockey/gabor/gaborfilterdialog.h
+    imagejockey/gabor/gaborfilterdialog.h \
+    imagejockey/gabor/gaborscandialog.h \
+    imagejockey/gabor/gaborutils.h
 
 
 FORMS    += mainwindow.ui \
@@ -521,7 +525,8 @@ FORMS    += mainwindow.ui \
     dialogs/sisimdialog.ui \
     dialogs/variograminputdialog.ui \
     imagejockey/emd/emdanalysisdialog.ui \
-    imagejockey/gabor/gaborfilterdialog.ui
+    imagejockey/gabor/gaborfilterdialog.ui \
+    imagejockey/gabor/gaborscandialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
