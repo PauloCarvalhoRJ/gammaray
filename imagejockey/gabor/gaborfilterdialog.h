@@ -10,6 +10,7 @@ class GaborFilterDialog;
 }
 
 class IJAbstractCartesianGrid;
+class IJQuick3DViewer;
 class QVTKOpenGLWidget;
 class vtkRenderer;
 class vtkOrientationMarkerWidget;
@@ -38,6 +39,8 @@ private:
     IJAbstractCartesianGrid* m_inputGrid;
     uint m_inputVariableIndex;
     spectral::arrayPtr m_spectrogram;
+    IJQuick3DViewer* m_kernelViewer1;
+    IJQuick3DViewer* m_kernelViewer2;
 
     ////////-----members used for 3D display-------------------
     // the Qt widget containing a VTK viewport
@@ -59,6 +62,7 @@ private Q_SLOTS:
     void onPerformGaborFilter();
     void updateDisplay();
     void onScan();
+    void updateKernelDisplays();
 };
 
 #endif // GABORFILTERDIALOG_H

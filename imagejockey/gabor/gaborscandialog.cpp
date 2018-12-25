@@ -8,12 +8,25 @@
 #include <itkAbsImageFilter.h>
 #include <QProgressDialog>
 
-GaborScanDialog::GaborScanDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex,
+GaborScanDialog::GaborScanDialog(IJAbstractCartesianGrid *inputGrid,
+                                 uint inputVariableIndex,
+                                 double meanMajorAxis,
+                                 double meanMinorAxis,
+                                 double sigmaMajorAxis,
+                                 double sigmaMinorAxis,
+                                 int kernelSizeI,
+                                 int kernelSizeJ,
                                  QWidget *parent) :
     QDialog(parent),
     ui(new Ui::GaborScanDialog),
     m_inputGrid( inputGrid ),
-    m_inputVariableIndex( inputVariableIndex )
+    m_inputVariableIndex( inputVariableIndex ),
+    m_meanMajorAxis( meanMajorAxis ),
+    m_meanMinorAxis( meanMinorAxis ),
+    m_sigmaMajorAxis( sigmaMajorAxis ),
+    m_sigmaMinorAxis( sigmaMinorAxis ),
+    m_kernelSizeI( kernelSizeI ),
+    m_kernelSizeJ( kernelSizeJ )
 {
     ui->setupUi(this);
     m_ijgv = new IJGridViewerWidget( true, false, false );
@@ -81,7 +94,15 @@ void GaborScanDialog::onScan()
             QApplication::processEvents();
             //compute the Gabor response of a given frequency-azimuth pair
             GaborUtils::ImageTypePtr response =
-                    GaborUtils::computeGaborResponse( frequency, azimuth, inputImage );
+                    GaborUtils::computeGaborResponse( frequency,
+                                                      azimuth,
+                                                      m_meanMajorAxis,
+                                                      m_meanMinorAxis,
+                                                      m_sigmaMajorAxis,
+                                                      m_sigmaMinorAxis,
+                                                      m_kernelSizeI,
+                                                      m_kernelSizeJ,
+                                                      inputImage );
             //get the absolute values from the response grid
             absFilter->SetInput( response );
             absFilter->Update();

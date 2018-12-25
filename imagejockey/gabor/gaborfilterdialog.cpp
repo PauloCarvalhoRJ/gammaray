@@ -80,6 +80,13 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     // add the VTK widget the layout
     ui->frm3DDisplay->layout()->addWidget( _vtkwidget );
     //////////////////////////////////////////////////////////////
+
+    m_kernelViewer1 = new IJQuick3DViewer();
+    ui->frmKernelDisplay1->layout()->addWidget( m_kernelViewer1 );
+    m_kernelViewer1->hideDismissButton();
+    m_kernelViewer2 = new IJQuick3DViewer();
+    m_kernelViewer2->hideDismissButton();
+    ui->frmKernelDisplay2->layout()->addWidget( m_kernelViewer2 );
 }
 
 GaborFilterDialog::~GaborFilterDialog()
@@ -105,9 +112,26 @@ void GaborFilterDialog::updateDisplay()
         double thresholdValue = ui->txtThreshold->text().toDouble();
 
         //Convert the spectrogram cube into a corresponding VTK object.
+        //In this case, the input values are transformed to their absolute values.
         vtkSmartPointer<vtkImageData> spectrogramGrid = vtkSmartPointer<vtkImageData>::New();
         ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram,
                                                              [] (double x) { return std::abs( x ); } );
+
+        //make a cell-centered VTK grid from the corner-point values
+        //with the same grid specs of the input 2D grid.
+        int* extent = spectrogramGrid->GetExtent();
+        vtkImageData* spectrogramGridAsCellCentered = vtkImageData::New();
+        spectrogramGridAsCellCentered->SetSpacing ( m_inputGrid->getCellSizeI(),
+                                                    m_inputGrid->getCellSizeJ(),
+                                                    1);
+        spectrogramGridAsCellCentered->SetOrigin ( m_inputGrid->getOriginX() - m_inputGrid->getCellSizeI()/2,
+                                                   m_inputGrid->getOriginY() - m_inputGrid->getCellSizeJ()/2,
+                                                  -0.5);
+        spectrogramGridAsCellCentered->SetExtent( extent[0], extent[1]+1,
+                                                  extent[2], extent[3]+1,
+                                                  extent[4], extent[5]+1 );
+        spectrogramGridAsCellCentered->GetCellData()->SetScalars (
+                    spectrogramGrid->GetPointData()->GetScalars());
 
         //create a visibility array. Cells with visibility >= 1 will be
         //visible, and < 1 will be invisible.
@@ -131,13 +155,13 @@ void GaborFilterDialog::updateDisplay()
                     }
                 }
             }
-            spectrogramGrid->GetCellData()->AddArray( visibility );
+            spectrogramGridAsCellCentered->GetCellData()->AddArray( visibility );
         }
 
         // configure a thresholding object to make cells below cut-off invisible
         vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
         {
-            threshold->SetInputData( spectrogramGrid );
+            threshold->SetInputData( spectrogramGridAsCellCentered );
             threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
             threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
             threshold->Update();
@@ -159,7 +183,8 @@ void GaborFilterDialog::updateDisplay()
             {
                 double *rgb;
                 rgb = ctf->GetColor(static_cast<double>(i)/tableSize);
-                lut->SetTableValue(i, rgb[0], rgb[1], rgb[2], i/(double)tableSize);
+                //the 5th parameter is transparency (0.0 == fully transparent, 1.0 == full opaque)
+                lut->SetTableValue( i, rgb[0], rgb[1], rgb[2] /*, i/(double)tableSize*/ );
             }
             lut->SetRampToLinear();
             lut->Build();
@@ -171,7 +196,8 @@ void GaborFilterDialog::updateDisplay()
         mapper->SetLookupTable( lut );
         mapper->SetScalarRange( colorScaleMin, colorScaleMax );
 
-        //Create the scene actor.
+        //Configure the spectrogram actor.
+        spectrogramActor->GetProperty()->SetInterpolationToFlat();
         spectrogramActor->SetMapper( mapper );
 
         //Confgure the correlation values scale bar
@@ -246,8 +272,21 @@ void GaborFilterDialog::updateDisplay()
 
 void GaborFilterDialog::onScan()
 {
-    GaborScanDialog* gsd = new GaborScanDialog( m_inputGrid, m_inputVariableIndex );
+    GaborScanDialog* gsd = new GaborScanDialog( m_inputGrid,
+                                                m_inputVariableIndex,
+                                                ui->txtMeanMajorAxis->text().toDouble(),
+                                                ui->txtMeanMinorAxis->text().toDouble(),
+                                                ui->txtSigmaMajorAxis->text().toDouble(),
+                                                ui->txtSigmaMinorAxis->text().toDouble(),
+                                                ui->spinKernelSizeI->value(),
+                                                ui->spinKernelSizeJ->value()
+                                                );
     gsd->show();
+}
+
+void GaborFilterDialog::updateKernelDisplays()
+{
+
 }
 
 void GaborFilterDialog::clearDisplay()
@@ -318,14 +357,22 @@ void GaborFilterDialog::onPerformGaborFilter()
     progressDialog.show();
     /////////////////////////////////
 
-    for( uint step = s0; step <= s1; ++step ){
+    for( uint step = s0; step < s1; ++step ){
         double frequency = f( step );
 
         //update the progress window
         progressDialog.setValue( step );
         QApplication::processEvents();
 
-        GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( frequency, azimuth, inputAsITK );
+        GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( frequency,
+                                                                              azimuth,
+                                                                              ui->txtMeanMajorAxis->text().toDouble(),
+                                                                              ui->txtMeanMinorAxis->text().toDouble(),
+                                                                              ui->txtSigmaMajorAxis->text().toDouble(),
+                                                                              ui->txtSigmaMinorAxis->text().toDouble(),
+                                                                              ui->spinKernelSizeI->value(),
+                                                                              ui->spinKernelSizeJ->value(),
+                                                                              inputAsITK );
 
         // Read the response image to build the spectrogram
         for(unsigned int j = 0; j < nJ; ++j)

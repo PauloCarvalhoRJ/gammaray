@@ -43,22 +43,45 @@ GaborUtils::ImageTypePtr GaborUtils::createITKImageFromCartesianGrid
     return output;
 }
 
-GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
-                                                          double azimuth,
-                                                          const ImageTypePtr inputImage)
+GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse( double frequency,
+                                                           double azimuth,
+                                                           double meanMajorAxis,
+                                                           double meanMinorAxis,
+                                                           double sigmaMajorAxis,
+                                                           double sigmaMinorAxis,
+                                                           int kernelSizeI,
+                                                           int kernelSizeJ,
+                                                           const ImageTypePtr inputImage )
 {
-    //convert azimuth to an angle in radians and in trigonometric convention
-    double azimuthRad = (azimuth - 90.0) *  ImageJockeyUtils::PI_OVER_180;
 
-    // Size of the kernel (e.g. 20 x 20 pixels).
-    ImageType::RegionType::SizeType kernelSize;
-    for( unsigned int i = 0; i < gridDim; ++i )
-        kernelSize[i] = 40;
+    GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel( frequency,
+                                                                     azimuth,
+                                                                     meanMajorAxis,
+                                                                     meanMinorAxis,
+                                                                     sigmaMajorAxis,
+                                                                     sigmaMinorAxis,
+                                                                     kernelSizeI,
+                                                                     kernelSizeJ );
 
-    // Construct the gabor image kernel.
-    // The idea is that we construct a gabor image kernel and
-    // downsample it to a smaller size for image convolution.
-    GaborSourceType::Pointer gabor = GaborSourceType::New();
+    // Convolve the input image against the resampled gabor image kernel.
+    typename ConvolutionFilterType::Pointer convoluter = ConvolutionFilterType::New();
+    {
+        convoluter->SetInput( inputImage );
+        convoluter->SetKernelImage( kernel );
+        convoluter->NormalizeOn();
+        convoluter->Update();
+    }
+
+    return convoluter->GetOutput();
+}
+
+GaborUtils::GaborSourceTypePtr GaborUtils::createGabor2D(double frequency,
+                                                         double meanMajorAxis,
+                                                         double meanMinorAxis,
+                                                         double sigmaMajorAxis,
+                                                         double sigmaMinorAxis)
+{
+    GaborSourceTypePtr gabor = GaborSourceType::New();
     {
         ImageType::SpacingType spacing; spacing[0] = 1.0; spacing[1] = 1.0;
         gabor->SetSpacing( spacing );
@@ -77,15 +100,43 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
         gabor->SetCalculateImaginaryPart( true );
         ////////////////////
         GaborSourceType::ArrayType mean;
-        for( unsigned int i = 0; i < gridDim; i++ )
-            mean[i] = origin[i] + 0.5 * spacing[i] * static_cast<realType>( size[i] - 1 );
+        mean[0] = meanMajorAxis;
+        mean[1] = meanMinorAxis;
         gabor->SetMean( mean );
         ////////////////////
         GaborSourceType::ArrayType sigma;
-        sigma[0] = 50.0;
-        sigma[1] = 75.0;
+        sigma[0] = sigmaMajorAxis;
+        sigma[1] = sigmaMinorAxis;
         gabor->SetSigma( sigma );
     }
+    return gabor;
+}
+
+GaborUtils::ImageTypePtr GaborUtils::createGaborKernel( double frequency,
+                                                        double azimuth,
+                                                        double meanMajorAxis,
+                                                        double meanMinorAxis,
+                                                        double sigmaMajorAxis,
+                                                        double sigmaMinorAxis,
+                                                        int kernelSizeI,
+                                                        int kernelSizeJ )
+{
+    //convert azimuth to an angle in radians and in trigonometric convention
+    double azimuthRad = ( azimuth - 90 ) *  ImageJockeyUtils::PI_OVER_180;
+
+    // Size of the kernel (e.g. 20 x 20 pixels).
+    ImageType::RegionType::SizeType kernelSize;
+    kernelSize[0] = kernelSizeI;
+    kernelSize[1] = kernelSizeJ;
+
+    // Construct the gabor image kernel.
+    // The idea is that we construct a gabor image kernel and
+    // downsample it to a smaller size for image convolution.
+    GaborSourceTypePtr gabor = GaborUtils::createGabor2D( frequency,
+                                                          meanMajorAxis,
+                                                          meanMinorAxis,
+                                                          sigmaMajorAxis,
+                                                          sigmaMinorAxis );
     gabor->Update();
 
 
@@ -136,7 +187,7 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
     // Construct a Gaussian interpolator for the gabor filter resampling
     typename GaussianInterpolatorType::Pointer gaussianInterpolator = GaussianInterpolatorType::New();
     {
-        gaussianInterpolator->SetInputImage( inputImage );
+        gaussianInterpolator->SetInputImage( gabor->GetOutput() /*inputImage*/ );
         double sigma[gridDim];
         for( unsigned int i = 0; i < gridDim; i++ )
             sigma[i] = 0.8;
@@ -203,14 +254,5 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
 //        return;
 //    }
 
-    // Convolve the input image against the resampled gabor image kernel.
-    typename ConvolutionFilterType::Pointer convoluter = ConvolutionFilterType::New();
-    {
-        convoluter->SetInput( inputImage );
-        convoluter->SetKernelImage( resampler->GetOutput() );
-        convoluter->NormalizeOn();
-        convoluter->Update();
-    }
-
-    return convoluter->GetOutput();
+    return resampler->GetOutput();
 }

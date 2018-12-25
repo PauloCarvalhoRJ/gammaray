@@ -132,6 +132,9 @@ public:
 	 * Populates a vtkImageData object with the data from a spectral::array object.
 	 * Client code must create the vtkImageData object beforehand with a call to
 	 * vtkSmartPointer<vtkImageData>::New(), for example.
+     * The client code must also define the grid geometry such as cell sizes and origin
+     * (default are 1,1,1 and 0,0,0 respectively) because spectral::array only has only data values,
+     * not geometry.
      * @param functor A lambda or non-class function used to transform the values (e.g. absolute values).
      *                This functor must be made such it accepts a sole double value as parameter and returns a double.
      *                If you don't need to transform the values, simply call makeVTKImageDataFromSpectralArray without
