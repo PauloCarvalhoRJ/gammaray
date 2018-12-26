@@ -286,7 +286,51 @@ void GaborFilterDialog::onScan()
 
 void GaborFilterDialog::updateKernelDisplays()
 {
+    int kernelNI = ui->spinKernelSizeI->value();
+    int kernelNJ = ui->spinKernelSizeJ->value();
 
+    GaborUtils::ImageTypePtr kernelF0 = GaborUtils::createGaborKernel(
+                                                ui->txtInitialFrequency->text().toDouble(),
+                                                ui->txtAzimuth->text().toDouble(),
+                                                ui->txtMeanMajorAxis->text().toDouble(),
+                                                ui->txtMeanMinorAxis->text().toDouble(),
+                                                ui->txtSigmaMajorAxis->text().toDouble(),
+                                                ui->txtSigmaMinorAxis->text().toDouble(),
+                                                kernelNI,
+                                                kernelNJ
+                                              );
+
+    GaborUtils::ImageTypePtr kernelF1 = GaborUtils::createGaborKernel(
+                                                ui->txtFinalFrequency->text().toDouble(),
+                                                ui->txtAzimuth->text().toDouble(),
+                                                ui->txtMeanMajorAxis->text().toDouble(),
+                                                ui->txtMeanMinorAxis->text().toDouble(),
+                                                ui->txtSigmaMajorAxis->text().toDouble(),
+                                                ui->txtSigmaMinorAxis->text().toDouble(),
+                                                kernelNI,
+                                                kernelNJ
+                                              );
+
+    spectral::array kernelData1( static_cast<spectral::index>( kernelNI ),
+                                 static_cast<spectral::index>( kernelNJ ) );
+    spectral::array kernelData2( static_cast<spectral::index>( kernelNI ),
+                                 static_cast<spectral::index>( kernelNJ ) );
+    for(unsigned int j = 0; j < kernelNJ; ++j)
+        for(unsigned int i = 0; i < kernelNI; ++i) {
+                itk::Index<GaborUtils::gridDim> index;
+                index[0] = i;
+                index[1] = kernelNJ - 1 - j; // itkImage grid convention is different from GSLib's
+                kernelData1( i, j ) = kernelF0->GetPixel( index );
+                kernelData2( i, j ) = kernelF1->GetPixel( index );
+        }
+
+    double colorScaleMin1 = kernelData1.min();
+    double colorScaleMax1 = kernelData1.max();
+    double colorScaleMin2 = kernelData2.min();
+    double colorScaleMax2 = kernelData2.max();
+
+    m_kernelViewer1->display( kernelData1, colorScaleMin1, colorScaleMax1 );
+    m_kernelViewer2->display( kernelData2, colorScaleMin2, colorScaleMax2 );
 }
 
 void GaborFilterDialog::clearDisplay()

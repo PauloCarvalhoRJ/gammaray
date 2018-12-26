@@ -184,6 +184,20 @@
              </property>
             </widget>
            </item>
+           <item>
+            <widget class="QPushButton" name="btnUpdateKernelsDisplays">
+             <property name="toolTip">
+              <string>update kernel displays</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../ijresources.qrc">
+               <normaloff>:/ijicons32/ijupdate32</normaloff>:/ijicons32/ijupdate32</iconset>
+             </property>
+            </widget>
+           </item>
           </layout>
          </item>
          <item>
@@ -633,8 +647,8 @@
    <slot>onPerformGaborFilter()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>100</x>
-     <y>425</y>
+     <x>93</x>
+     <y>437</y>
     </hint>
     <hint type="destinationlabel">
      <x>253</x>
@@ -649,8 +663,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>244</x>
-     <y>424</y>
+     <x>240</x>
+     <y>436</y>
     </hint>
     <hint type="destinationlabel">
      <x>373</x>
@@ -665,8 +679,8 @@
    <slot>updateDisplay()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>287</x>
-     <y>168</y>
+     <x>293</x>
+     <y>370</y>
     </hint>
     <hint type="destinationlabel">
      <x>4</x>
@@ -681,12 +695,28 @@
    <slot>onScan()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>211</x>
-     <y>44</y>
+     <x>293</x>
+     <y>34</y>
     </hint>
     <hint type="destinationlabel">
      <x>3</x>
      <y>47</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnUpdateKernelsDisplays</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>updateKernelDisplays()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>275</x>
+     <y>82</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1</x>
+     <y>87</y>
     </hint>
    </hints>
   </connection>
@@ -695,5 +725,6 @@
   <slot>onPerformGaborFilter()</slot>
   <slot>updateDisplay()</slot>
   <slot>onScan()</slot>
+  <slot>updateKernelDisplays()</slot>
  </slots>
 </ui>

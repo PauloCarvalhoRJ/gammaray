@@ -208,7 +208,7 @@ GaborUtils::ImageTypePtr GaborUtils::createGaborKernel( double frequency,
         for( unsigned int i = 0; i < gridDim; i++ )
         {
             center[i] = gabor->GetOutput()->GetOrigin()[i] +
-                        gabor->GetOutput()->GetSpacing()[i] *
+                        0.5 * gabor->GetOutput()->GetSpacing()[i] *
                       ( gabor->GetOutput()->GetBufferedRegion().GetSize()[i] - 1 );
         }
         transform->SetCenter( center );
