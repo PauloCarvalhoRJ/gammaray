@@ -29,6 +29,13 @@ GaborScanDialog::GaborScanDialog(IJAbstractCartesianGrid *inputGrid,
     m_kernelSizeJ( kernelSizeJ )
 {
     ui->setupUi(this);
+
+    //deletes dialog from memory upon user closing it
+    this->setAttribute(Qt::WA_DeleteOnClose);
+
+    this->setWindowTitle( "Scan Gabor Response Dialog" );
+
+
     m_ijgv = new IJGridViewerWidget( true, false, false );
     ui->frmGridDisplay->layout()->addWidget( m_ijgv );
 }
