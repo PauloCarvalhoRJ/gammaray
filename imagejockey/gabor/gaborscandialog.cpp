@@ -86,6 +86,13 @@ void GaborScanDialog::onScan()
     StatisticsImageFilterType::Pointer statisticsImageFilter = StatisticsImageFilterType::New();
     AbsImageFilterType::Pointer absFilter = AbsImageFilterType::New();
     spectral::index iAz = 0;
+    const int MEAN = 0;
+    const int MAX = 1;
+    int whichMetric = 2;
+    if( ui->cmbMetric->currentText() == "mean" )
+        whichMetric = MEAN;
+    if( ui->cmbMetric->currentText() == "maximum" )
+        whichMetric = MAX;
     for( const double& azimuth : azSchedule ){
         spectral::index iF = 0;
         for( const double& frequency : fSchedule ){
@@ -111,7 +118,12 @@ void GaborScanDialog::onScan()
             statisticsImageFilter->Update();
             //get the metric
             double metric;
-            metric = statisticsImageFilter->GetMean();
+            switch( whichMetric ){
+            case MEAN: metric = statisticsImageFilter->GetMean(); break;
+            case MAX: metric = statisticsImageFilter->GetMaximum(); break;
+            default: metric = 0.0;
+            }
+
             gridData(iF, iAz) = metric;
             ++iF;
         }

@@ -178,6 +178,11 @@
      <string>mean</string>
     </property>
    </item>
+   <item>
+    <property name="text">
+     <string>maximum</string>
+    </property>
+   </item>
   </widget>
  </widget>
  <resources>

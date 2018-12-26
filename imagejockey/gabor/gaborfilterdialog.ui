@@ -279,7 +279,7 @@
            <item>
             <widget class="QLabel" name="label_12">
              <property name="text">
-              <string>means:  major ax. = </string>
+              <string>means:  x = </string>
              </property>
             </widget>
            </item>
@@ -293,7 +293,7 @@
            <item>
             <widget class="QLabel" name="label_13">
              <property name="text">
-              <string> minor ax. = </string>
+              <string> y = </string>
              </property>
             </widget>
            </item>
@@ -317,7 +317,7 @@
            <item>
             <widget class="QLabel" name="label_14">
              <property name="text">
-              <string>sigmas:  major ax. = </string>
+              <string>sigmas:  main axis = </string>
              </property>
             </widget>
            </item>
@@ -331,7 +331,7 @@
            <item>
             <widget class="QLabel" name="label_15">
              <property name="text">
-              <string> minor ax. = </string>
+              <string> sec. axis = </string>
              </property>
             </widget>
            </item>

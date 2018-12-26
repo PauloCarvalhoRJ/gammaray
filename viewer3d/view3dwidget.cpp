@@ -83,6 +83,12 @@ View3DWidget::View3DWidget(QWidget *parent)
     vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
     fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
     //fxaaOptions->SetSubpixelContrastThreshold(1/2.0);
+    //fxaaOptions->SetRelativeContrastThreshold(0.125);
+    //fxaaOptions->SetHardContrastThreshold(0.045);
+    //fxaaOptions->SetSubpixelBlendLimit(0.75);
+    //fxaaOptions->SetSubpixelContrastThreshold(0.25);
+    //fxaaOptions->SetUseHighQualityEndpoints(true);
+    //fxaaOptions->SetEndpointSearchIterations(12);
 
     //    renderer->AddActor( sphereActor );  // VTK TEST CODE
     //    vtkRenderWindow* renwin = vtkRenderWindow::New();
