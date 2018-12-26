@@ -36,13 +36,18 @@ public:
     static ImageTypePtr createITKImageFromCartesianGrid(IJAbstractCartesianGrid &input,
                                                          int variableIndex );
 
-    /** The azimuth follows the geologist's convention. 0 degrees = North; 90 deg. = East. etc.
-     * Due to technical constraints of the ITK library, the azimuth must be between 3 and 177
-     * degrees, including these values.
+    /**
+     * Convolves the input image against a Gabor kernel defined by the input parameters.
+     * The azimuth follows the geologist's convention. 0 degrees = North; 90 deg. = East. etc.
+     * The result is an image containing the response which has the same grid cell count
+     * of the input image.  Recall that a convolution is a cell-wise operation, thus, grid
+     * geometry parameters such as origin and cell sizes are ignored, therefore, frequency
+     * is relative to distances in cell counts.
+     *
      * @param frequency Sets which frequency of the 2D sine wave inside the 2D Gaussian window.
      * @param azimuth Sets the direction (degrees) of the major axis of the 2D Gaussian window.
-     * @param meanMajorAxis Sets the center of the 2D Gaussian window.  Relates to phase.
-     * @param meanMinorAxis Sets the center of the 2D Gaussian window.  Relates to phase.
+     * @param meanMajorAxis Sets the x position of the center of the 2D Gaussian window.  Relates to phase.
+     * @param meanMinorAxis Sets the y position of the center of the 2D Gaussian window.  Relates to phase.
      * @param sigmaMajorAxis Sets the how wide is the 2D Gaussian window along the main axis.
      * @param sigmaMinorAxis Sets the how wide is the 2D Gaussian window along the secondary axis.
      * @param kernelSizeI The size of the convolution kernel in number of cells in E-W direction.
