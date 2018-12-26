@@ -286,7 +286,7 @@
            <item>
             <widget class="QLineEdit" name="txtMeanMajorAxis">
              <property name="text">
-              <string>120.0</string>
+              <string>127.5</string>
              </property>
             </widget>
            </item>
@@ -300,7 +300,7 @@
            <item>
             <widget class="QLineEdit" name="txtMeanMinorAxis">
              <property name="text">
-              <string>120.0</string>
+              <string>127.5</string>
              </property>
             </widget>
            </item>

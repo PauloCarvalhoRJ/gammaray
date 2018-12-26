@@ -122,7 +122,7 @@ GaborUtils::ImageTypePtr GaborUtils::createGaborKernel( double frequency,
                                                         int kernelSizeJ )
 {
     //convert azimuth to an angle in radians and in trigonometric convention
-    double azimuthRad = ( azimuth - 90 ) *  ImageJockeyUtils::PI_OVER_180;
+    double azimuthRad = ( - azimuth + 90 ) *  ImageJockeyUtils::PI_OVER_180;
 
     // Size of the kernel (e.g. 20 x 20 pixels).
     ImageType::RegionType::SizeType kernelSize;
