@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>722</width>
-    <height>450</height>
+    <width>757</width>
+    <height>709</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -127,12 +127,150 @@
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
+         <property name="toolTip">
+          <string>start scan</string>
+         </property>
          <property name="text">
           <string/>
          </property>
          <property name="icon">
           <iconset resource="../ijresources.qrc">
            <normaloff>:/ijicons32/ijplay32</normaloff>:/ijicons32/ijplay32</iconset>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <item row="2" column="0">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>f. max.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>az. max.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QLineEdit" name="txtSelAzMax">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_9">
+         <property name="text">
+          <string>az. min.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QLineEdit" name="txtSelAzMin">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0" colspan="2">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>Selection:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLineEdit" name="txtSelFmax">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>f. min.</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QLineEdit" name="txtSelFmin">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QPushButton" name="pushButton">
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../ijresources.qrc">
+           <normaloff>:/ijicons32/ijadd32</normaloff>:/ijicons32/ijadd32</iconset>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>Selections list:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_12">
+         <property name="font">
+          <font>
+           <family>Courier New</family>
+          </font>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;aaaa&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnClearSelectionsList">
+         <property name="text">
+          <string>clear list</string>
          </property>
         </widget>
        </item>
