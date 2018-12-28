@@ -53,10 +53,10 @@ void GaborScanDialog::updateFrequAzSelectionDisplay()
               "</td><td><b>az. min.</b>"
               "</td><td><b>az. max.</b></td></tr>";
     for( GaborFrequencyAzimuthSelection fAzSel : m_freqAzSelections )
-        output += "<tr><td>" + QString::number( fAzSel.minF ) +
-                  "</td><td>" + QString::number( fAzSel.maxF ) +
-                  "</td><td>" + QString::number( fAzSel.minAz ) +
-                  "</td><td>" + QString::number( fAzSel.maxAz ) + "</td></tr>";
+        output += "<tr><td><center>" + QString::number( fAzSel.minF ) +
+                  "</center></td><td><center>" + QString::number( fAzSel.maxF ) +
+                  "</center></td><td><center>" + QString::number( fAzSel.minAz ) +
+                  "</center></td><td><center>" + QString::number( fAzSel.maxAz ) + "</center></td></tr>";
     output += "</table></body></html>";
     ui->lblSelectionDisplay->setText( output );
 }
@@ -170,5 +170,6 @@ void GaborScanDialog::onAddSelection()
 
 void GaborScanDialog::onClearSelectionList()
 {
-
+    m_freqAzSelections.clear();
+    updateFrequAzSelectionDisplay();
 }
