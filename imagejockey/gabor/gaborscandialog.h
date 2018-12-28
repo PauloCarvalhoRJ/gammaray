@@ -49,6 +49,7 @@ private Q_SLOTS:
     void onScan();
     void onAddSelection();
     void onClearSelectionList();
+    void onZoom( const QRectF& zoomBox );
 };
 
 #endif // GABORSCANDIALOG_H

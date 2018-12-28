@@ -312,6 +312,7 @@ ImageJockeyGridPlot::ImageJockeyGridPlot( QWidget *parent ):
         Qt::RightButton, Qt::ControlModifier );
     m_zoomer->setMousePattern( QwtEventPattern::MouseSelect3,
         Qt::RightButton );
+    connect( m_zoomer, SIGNAL(zoomed(QRectF)), this, SIGNAL(zoomed(QRectF)));
 
     QwtPlotPanner *panner = new QwtPlotPanner( canvas() );
     panner->setAxisEnabled( QwtPlot::yRight, false );

@@ -35,9 +35,9 @@ GaborScanDialog::GaborScanDialog(IJAbstractCartesianGrid *inputGrid,
 
     this->setWindowTitle( "Scan Gabor Response Dialog" );
 
-
     m_ijgv = new IJGridViewerWidget( true, false, false );
     ui->frmGridDisplay->layout()->addWidget( m_ijgv );
+    connect( m_ijgv, SIGNAL(zoomed(QRectF)), this, SLOT(onZoom(QRectF)));
 }
 
 GaborScanDialog::~GaborScanDialog()
@@ -172,4 +172,12 @@ void GaborScanDialog::onClearSelectionList()
 {
     m_freqAzSelections.clear();
     updateFrequAzSelectionDisplay();
+}
+
+void GaborScanDialog::onZoom(const QRectF &zoomBox)
+{
+    ui->txtSelFmin->setText( QString::number( zoomBox.left() ) );
+    ui->txtSelFmax->setText( QString::number( zoomBox.right() ) );
+    ui->txtSelAzMin->setText( QString::number( zoomBox.bottom() ) );
+    ui->txtSelAzMax->setText( QString::number( zoomBox.top() ) );
 }

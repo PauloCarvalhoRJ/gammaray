@@ -31,6 +31,7 @@ IJGridViewerWidget::IJGridViewerWidget(bool deleteFactorOnClose, bool showSaveBu
 	//add a grid plot widget to the right pane of the dialog
 	m_gridPlot = new ImageJockeyGridPlot();
 	ui->frmRightTop->layout()->addWidget( m_gridPlot );
+    connect( m_gridPlot, SIGNAL(zoomed(QRectF)), this, SIGNAL(zoomed(QRectF)));
 
     connect( ui->dblSpinColorScaleMin, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMin(double)));
     connect( ui->dblSpinColorScaleMax, SIGNAL(valueChanged(double)), m_gridPlot, SLOT(setColorScaleMax(double)));
