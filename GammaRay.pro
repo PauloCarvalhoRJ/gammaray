@@ -233,7 +233,8 @@ SOURCES += main.cpp\
     imagejockey/emd/emdanalysisdialog.cpp \
     imagejockey/gabor/gaborfilterdialog.cpp \
     imagejockey/gabor/gaborscandialog.cpp \
-    imagejockey/gabor/gaborutils.cpp
+    imagejockey/gabor/gaborutils.cpp \
+    imagejockey/gabor/gaborfrequencyazimuthselections.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -445,7 +446,8 @@ HEADERS  += mainwindow.h \
     imagejockey/emd/emdanalysisdialog.h \
     imagejockey/gabor/gaborfilterdialog.h \
     imagejockey/gabor/gaborscandialog.h \
-    imagejockey/gabor/gaborutils.h
+    imagejockey/gabor/gaborutils.h \
+    imagejockey/gabor/gaborfrequencyazimuthselections.h
 
 
 FORMS    += mainwindow.ui \

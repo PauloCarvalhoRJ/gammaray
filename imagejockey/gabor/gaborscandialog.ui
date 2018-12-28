@@ -253,7 +253,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QLabel" name="label_12">
+        <widget class="QLabel" name="lblSelectionDisplay">
          <property name="font">
           <font>
            <family>Courier New</family>
@@ -263,7 +263,7 @@
           <enum>QFrame::Box</enum>
          </property>
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;aaaa&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -334,8 +334,8 @@
    <slot>onScan()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>102</x>
-     <y>181</y>
+     <x>113</x>
+     <y>164</y>
     </hint>
     <hint type="destinationlabel">
      <x>19</x>
@@ -350,8 +350,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>86</x>
-     <y>390</y>
+     <x>96</x>
+     <y>698</y>
     </hint>
     <hint type="destinationlabel">
      <x>39</x>
@@ -359,8 +359,42 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborScanDialog</receiver>
+   <slot>onAddSelection()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>108</x>
+     <y>308</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>8</x>
+     <y>312</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnClearSelectionsList</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborScanDialog</receiver>
+   <slot>onClearSelectionList()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>83</x>
+     <y>377</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>5</x>
+     <y>380</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onScan()</slot>
+  <slot>onAddSelection()</slot>
+  <slot>onClearSelectionList()</slot>
  </slots>
 </ui>

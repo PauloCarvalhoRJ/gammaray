@@ -45,6 +45,22 @@ GaborScanDialog::~GaborScanDialog()
     delete ui;
 }
 
+void GaborScanDialog::updateFrequAzSelectionDisplay()
+{
+    QString output = "<html><head/><body><table>";
+    output += "<tr><td><b>f. min.</b>"
+              "</td><td><b>f. max.</b>"
+              "</td><td><b>az. min.</b>"
+              "</td><td><b>az. max.</b></td></tr>";
+    for( GaborFrequencyAzimuthSelection fAzSel : m_freqAzSelections )
+        output += "<tr><td>" + QString::number( fAzSel.minF ) +
+                  "</td><td>" + QString::number( fAzSel.maxF ) +
+                  "</td><td>" + QString::number( fAzSel.minAz ) +
+                  "</td><td>" + QString::number( fAzSel.maxAz ) + "</td></tr>";
+    output += "</table></body></html>";
+    ui->lblSelectionDisplay->setText( output );
+}
+
 void GaborScanDialog::onScan()
 {
     typedef itk::StatisticsImageFilter<GaborUtils::ImageType> StatisticsImageFilterType;
@@ -141,4 +157,18 @@ void GaborScanDialog::onScan()
     SVDFactor* grid = new SVDFactor( std::move(gridData),
                                      1, 0.42, f0, az0, 0.0, fStep, azStep, 1.0, 0.0 );
     m_ijgv->setFactor( grid );
+}
+
+void GaborScanDialog::onAddSelection()
+{
+    m_freqAzSelections.push_back( { ui->txtSelFmin->text().toDouble(),
+                                    ui->txtSelFmax->text().toDouble(),
+                                    ui->txtSelAzMin->text().toDouble(),
+                                    ui->txtSelAzMax->text().toDouble() } );
+    updateFrequAzSelectionDisplay();
+}
+
+void GaborScanDialog::onClearSelectionList()
+{
+
 }

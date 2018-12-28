@@ -2,6 +2,7 @@
 #define GABORSCANDIALOG_H
 
 #include <QDialog>
+#include "imagejockey/gabor/gaborfrequencyazimuthselections.h"
 
 class IJAbstractCartesianGrid;
 class IJGridViewerWidget;
@@ -40,8 +41,14 @@ private:
     int m_kernelSizeI;
     int m_kernelSizeJ;
 
+    GaborFrequencyAzimuthSelections m_freqAzSelections;
+
+    void updateFrequAzSelectionDisplay();
+
 private Q_SLOTS:
     void onScan();
+    void onAddSelection();
+    void onClearSelectionList();
 };
 
 #endif // GABORSCANDIALOG_H
