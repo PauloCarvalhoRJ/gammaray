@@ -13,7 +13,6 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/widgets/ijquick3dviewer.h"
 #include "imagejockey/svd/svdfactor.h"
 #include "imagejockey/imagejockeyutils.h"
-#include "imagejockey/gabor/gaborscandialog.h"
 #include "imagejockey/gabor/gaborutils.h"
 #include <QProgressDialog>
 #include <QVTKOpenGLWidget.h>
@@ -87,6 +86,9 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     m_kernelViewer2 = new IJQuick3DViewer();
     m_kernelViewer2->hideDismissButton();
     ui->frmKernelDisplay2->layout()->addWidget( m_kernelViewer2 );
+
+    ui->lblFeatureSizeEquiv->setStyleSheet( "background-color: black; border-radius: 10px; color: #00FF00;" );
+);
 }
 
 GaborFilterDialog::~GaborFilterDialog()
@@ -272,16 +274,18 @@ void GaborFilterDialog::updateDisplay()
 
 void GaborFilterDialog::onScan()
 {
-    GaborScanDialog* gsd = new GaborScanDialog( m_inputGrid,
-                                                m_inputVariableIndex,
-                                                ui->txtMeanMajorAxis->text().toDouble(),
-                                                ui->txtMeanMinorAxis->text().toDouble(),
-                                                ui->txtSigmaMajorAxis->text().toDouble(),
-                                                ui->txtSigmaMinorAxis->text().toDouble(),
-                                                ui->spinKernelSizeI->value(),
-                                                ui->spinKernelSizeJ->value()
-                                                );
-    gsd->show();
+    m_gsd = new GaborScanDialog( m_inputGrid,
+                                 m_inputVariableIndex,
+                                 ui->txtMeanMajorAxis->text().toDouble(),
+                                 ui->txtMeanMinorAxis->text().toDouble(),
+                                 ui->txtSigmaMajorAxis->text().toDouble(),
+                                 ui->txtSigmaMinorAxis->text().toDouble(),
+                                 ui->spinKernelSizeI->value(),
+                                 ui->spinKernelSizeJ->value()
+                                );
+    connect( m_gsd, SIGNAL(frequencyAzimuthSelectionUpdated(GaborFrequencyAzimuthSelections)),
+             this,  SLOT(onFreqAzSelectionsUpdated(GaborFrequencyAzimuthSelections)) );
+    m_gsd->show();
 }
 
 void GaborFilterDialog::updateKernelDisplays()
@@ -331,6 +335,11 @@ void GaborFilterDialog::updateKernelDisplays()
 
     m_kernelViewer1->display( kernelData1, colorScaleMin1, colorScaleMax1 );
     m_kernelViewer2->display( kernelData2, colorScaleMin2, colorScaleMax2 );
+}
+
+void GaborFilterDialog::onFreqAzSelectionsUpdated(const GaborFrequencyAzimuthSelections &freqAzSelections)
+{
+    m_freqAzSelections = freqAzSelections;
 }
 
 void GaborFilterDialog::clearDisplay()

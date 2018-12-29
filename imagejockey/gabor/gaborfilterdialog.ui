@@ -103,7 +103,7 @@
            <item>
             <widget class="QLabel" name="label">
              <property name="text">
-              <string>Spatial frequency:</string>
+              <string>Topological frequencies (x cell)</string>
              </property>
             </widget>
            </item>
@@ -163,6 +163,20 @@
              </property>
              <property name="value">
               <number>5</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_16">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="lblFeatureSizeEquiv">
+             <property name="text">
+              <string>TextLabel</string>
              </property>
             </widget>
            </item>
@@ -556,6 +570,34 @@
            <property name="icon">
             <iconset resource="../ijresources.qrc">
              <normaloff>:/ijicons32/ijplay32</normaloff>:/ijicons32/ijplay32</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnPreview">
+           <property name="toolTip">
+            <string>preview filtered result</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../ijresources.qrc">
+             <normaloff>:/ijicons32/ijpreview32</normaloff>:/ijicons32/ijpreview32</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnSave">
+           <property name="toolTip">
+            <string>save filtered result to file</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../ijresources.qrc">
+             <normaloff>:/ijicons32/ijsave32</normaloff>:/ijicons32/ijsave32</iconset>
            </property>
           </widget>
          </item>

@@ -4,6 +4,7 @@
 #include <QDialog>
 #include "spectral/spectral.h"
 #include <vtkSmartPointer.h>
+#include "imagejockey/gabor/gaborscandialog.h"
 
 namespace Ui {
 class GaborFilterDialog;
@@ -41,6 +42,8 @@ private:
     spectral::arrayPtr m_spectrogram;
     IJQuick3DViewer* m_kernelViewer1;
     IJQuick3DViewer* m_kernelViewer2;
+    GaborScanDialog* m_gsd;
+    GaborFrequencyAzimuthSelections m_freqAzSelections;
 
     ////////-----members used for 3D display-------------------
     // the Qt widget containing a VTK viewport
@@ -63,6 +66,7 @@ private Q_SLOTS:
     void updateDisplay();
     void onScan();
     void updateKernelDisplays();
+    void onFreqAzSelectionsUpdated( const GaborFrequencyAzimuthSelections& freqAzSelections );
 };
 
 #endif // GABORFILTERDIALOG_H

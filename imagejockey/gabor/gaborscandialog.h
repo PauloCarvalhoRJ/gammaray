@@ -28,6 +28,10 @@ public:
             QWidget *parent = 0);
     ~GaborScanDialog();
 
+Q_SIGNALS:
+    /** This signal is emitted whenever the user changed the frequency x azimuth selections. */
+    void frequencyAzimuthSelectionUpdated( const GaborFrequencyAzimuthSelections& freqAzSelections );
+
 private:
     Ui::GaborScanDialog *ui;
     IJAbstractCartesianGrid* m_inputGrid;

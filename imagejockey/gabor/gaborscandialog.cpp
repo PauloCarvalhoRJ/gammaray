@@ -59,6 +59,9 @@ void GaborScanDialog::updateFrequAzSelectionDisplay()
                   "</center></td><td><center>" + QString::number( fAzSel.maxAz ) + "</center></td></tr>";
     output += "</table></body></html>";
     ui->lblSelectionDisplay->setText( output );
+
+    //take the opportunity to notify client code of changes to the selections
+    emit frequencyAzimuthSelectionUpdated( m_freqAzSelections );
 }
 
 void GaborScanDialog::onScan()
