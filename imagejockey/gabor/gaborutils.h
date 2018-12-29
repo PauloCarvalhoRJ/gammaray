@@ -23,6 +23,8 @@ public:
 
     //typedfs and other definitions
     static const unsigned int gridDim = 2;
+    static const unsigned int gaborKernelMaxNI = 255;
+    static const unsigned int gaborKernelMaxNJ = 255;
     typedef float realType;
     typedef itk::Image<realType, gridDim> ImageType;
     typedef ImageType::Pointer ImageTypePtr;

@@ -88,7 +88,8 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     ui->frmKernelDisplay2->layout()->addWidget( m_kernelViewer2 );
 
     ui->lblFeatureSizeEquiv->setStyleSheet( "background-color: black; border-radius: 10px; color: #00FF00;" );
-);
+
+    onUserEditedAFrequency("");
 }
 
 GaborFilterDialog::~GaborFilterDialog()
@@ -340,6 +341,44 @@ void GaborFilterDialog::updateKernelDisplays()
 void GaborFilterDialog::onFreqAzSelectionsUpdated(const GaborFrequencyAzimuthSelections &freqAzSelections)
 {
     m_freqAzSelections = freqAzSelections;
+}
+
+void GaborFilterDialog::onUserEditedAFrequency(QString freqValue)
+{
+    Q_UNUSED( freqValue );
+    //get the user-entered topological frequencies
+    // the frequencies are topological (that is, inverse of cell counts)
+    // because the Gabor transform involves convolutions, which are cell-centered
+    // operations in grids (they ignore geometry).
+    double topologicalFrequencyInitial = ui->txtInitialFrequency->text().toDouble();
+    double topologicalFrequencyFinal = ui->txtFinalFrequency->text().toDouble();
+    //get the user-entered kernel sizes
+    int kernelNI = ui->spinKernelSizeI->value();
+    int kernelNJ = ui->spinKernelSizeJ->value();
+    //get the system-defined maximum kernel resolution
+    int maxNI = GaborUtils::gaborKernelMaxNI;
+    int maxNJ = GaborUtils::gaborKernelMaxNJ;
+    //convert the user-entered topological frequencies as cell counts.
+    int nCellsIInitial = kernelNI * ( 1 / topologicalFrequencyInitial) / maxNI;
+    int nCellsJInitial = kernelNJ * ( 1 / topologicalFrequencyInitial) / maxNJ;
+    int nCellsIFinal = kernelNI * ( 1 / topologicalFrequencyFinal) / maxNI;
+    int nCellsJFinal = kernelNJ * ( 1 / topologicalFrequencyFinal) / maxNJ;
+    //convert cell counts to real-world lengths
+    double featureSizeXInitial = nCellsIInitial * m_inputGrid->getCellSizeI();
+    double featureSizeYInitial = nCellsJInitial * m_inputGrid->getCellSizeJ();
+    double featureSizeXFinal = nCellsIFinal * m_inputGrid->getCellSizeI();
+    double featureSizeYFinal = nCellsJFinal * m_inputGrid->getCellSizeJ();
+
+    //display the feature sizes
+    //lower frequency (initial) translates to larger features and vice-versa.
+    QString textForLabel = "<html><head/><body><b>&nbsp;&nbsp;&nbsp;Feature sizes equivalency:</b><br>";
+    textForLabel += "&nbsp;&nbsp;&nbsp;max. (X direction) = " + QString::number(featureSizeXInitial) + "<br>";
+    textForLabel += "&nbsp;&nbsp;&nbsp;max. (Y direction) = " + QString::number(featureSizeYInitial) + "<br>";
+    textForLabel += "&nbsp;&nbsp;&nbsp;min. (X direction) = " + QString::number(featureSizeXFinal) + "<br>";
+    textForLabel += "&nbsp;&nbsp;&nbsp;min. (Y direction) = " + QString::number(featureSizeYFinal) + "<br>";
+    textForLabel += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sizes are in length units.</body></html>";
+
+    ui->lblFeatureSizeEquiv->setText( textForLabel );
 }
 
 void GaborFilterDialog::clearDisplay()

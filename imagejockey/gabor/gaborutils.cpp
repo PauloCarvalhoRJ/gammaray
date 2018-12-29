@@ -89,7 +89,7 @@ GaborUtils::GaborSourceTypePtr GaborUtils::createGabor2D(double frequency,
         ImageType::PointType origin; origin[0] = 0.0; origin[1] = 0.0;
         gabor->SetOrigin( origin );
         ////////////////////
-        ImageType::RegionType::SizeType size; size[0] = 255; size[1] = 255;
+        ImageType::RegionType::SizeType size; size[0] = gaborKernelMaxNI; size[1] = gaborKernelMaxNJ;
         gabor->SetSize( size );
         ////////////////////
         ImageType::DirectionType direction; direction.SetIdentity();

@@ -175,6 +175,11 @@
            </property>
            <item>
             <widget class="QLabel" name="lblFeatureSizeEquiv">
+             <property name="font">
+              <font>
+               <family>Courier New</family>
+              </font>
+             </property>
              <property name="text">
               <string>TextLabel</string>
              </property>
@@ -689,7 +694,7 @@
    <slot>onPerformGaborFilter()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>93</x>
+     <x>69</x>
      <y>437</y>
     </hint>
     <hint type="destinationlabel">
@@ -753,12 +758,76 @@
    <slot>updateKernelDisplays()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>275</x>
-     <y>82</y>
+     <x>293</x>
+     <y>106</y>
     </hint>
     <hint type="destinationlabel">
      <x>1</x>
      <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>txtFinalFrequency</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onUserEditedAFrequency(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>174</x>
+     <y>54</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>1</x>
+     <y>36</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>txtInitialFrequency</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onUserEditedAFrequency(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>92</x>
+     <y>55</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>0</x>
+     <y>142</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinKernelSizeI</sender>
+   <signal>valueChanged(QString)</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onUserEditedAFrequency(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>128</x>
+     <y>123</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>2</x>
+     <y>128</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinKernelSizeJ</sender>
+   <signal>valueChanged(QString)</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onUserEditedAFrequency(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>239</x>
+     <y>118</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>-1</x>
+     <y>116</y>
     </hint>
    </hints>
   </connection>
@@ -768,5 +837,6 @@
   <slot>updateDisplay()</slot>
   <slot>onScan()</slot>
   <slot>updateKernelDisplays()</slot>
+  <slot>onUserEditedAFrequency(QString)</slot>
  </slots>
 </ui>
