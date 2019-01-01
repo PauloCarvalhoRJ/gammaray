@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>739</width>
-    <height>455</height>
+    <height>475</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -102,15 +102,35 @@
            </property>
            <item>
             <widget class="QLabel" name="label">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="text">
-              <string>Topological frequencies (x cell)</string>
+              <string>&lt;html&gt;frequencies (1/(n &amp;times; cells))&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="btnScan">
              <property name="text">
-              <string>scan</string>
+              <string>scanner...</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QPushButton" name="btnProcess">
+             <property name="toolTip">
+              <string>recalculate spectrogram</string>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="icon">
+              <iconset resource="../ijresources.qrc">
+               <normaloff>:/ijicons32/ijupdate32</normaloff>:/ijicons32/ijupdate32</iconset>
              </property>
             </widget>
            </item>
@@ -182,6 +202,37 @@
              </property>
              <property name="text">
               <string>TextLabel</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_17">
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="Line" name="line_3">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_16">
+             <property name="text">
+              <string>kernel parameters</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="Line" name="line_4">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
              </property>
             </widget>
            </item>
@@ -568,17 +619,6 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="btnProcess">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset resource="../ijresources.qrc">
-             <normaloff>:/ijicons32/ijplay32</normaloff>:/ijicons32/ijplay32</iconset>
-           </property>
-          </widget>
-         </item>
-         <item>
           <widget class="QPushButton" name="btnPreview">
            <property name="toolTip">
             <string>preview filtered result</string>
@@ -831,6 +871,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnPreview</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onPreviewFilteredResult()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>87</x>
+     <y>426</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>0</x>
+     <y>430</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSave</sender>
+   <signal>clicked()</signal>
+   <receiver>GaborFilterDialog</receiver>
+   <slot>onSaveFilteredResult()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>127</x>
+     <y>422</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>305</x>
+     <y>439</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onPerformGaborFilter()</slot>
@@ -838,5 +910,7 @@
   <slot>onScan()</slot>
   <slot>updateKernelDisplays()</slot>
   <slot>onUserEditedAFrequency(QString)</slot>
+  <slot>onPreviewFilteredResult()</slot>
+  <slot>onSaveFilteredResult()</slot>
  </slots>
 </ui>

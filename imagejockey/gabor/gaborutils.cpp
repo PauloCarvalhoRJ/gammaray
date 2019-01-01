@@ -51,7 +51,8 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse( double frequency,
                                                            double sigmaMinorAxis,
                                                            int kernelSizeI,
                                                            int kernelSizeJ,
-                                                           const ImageTypePtr inputImage )
+                                                           const ImageTypePtr inputImage,
+                                                           bool imaginaryPart )
 {
 
     GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel( frequency,
@@ -61,7 +62,8 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse( double frequency,
                                                                      sigmaMajorAxis,
                                                                      sigmaMinorAxis,
                                                                      kernelSizeI,
-                                                                     kernelSizeJ );
+                                                                     kernelSizeJ,
+                                                                     imaginaryPart );
 
     // Convolve the input image against the resampled gabor image kernel.
     typename ConvolutionFilterType::Pointer convoluter = ConvolutionFilterType::New();
@@ -79,7 +81,8 @@ GaborUtils::GaborSourceTypePtr GaborUtils::createGabor2D(double frequency,
                                                          double meanMajorAxis,
                                                          double meanMinorAxis,
                                                          double sigmaMajorAxis,
-                                                         double sigmaMinorAxis)
+                                                         double sigmaMinorAxis,
+                                                         bool imaginary)
 {
     GaborSourceTypePtr gabor = GaborSourceType::New();
     {
@@ -97,7 +100,7 @@ GaborUtils::GaborSourceTypePtr GaborUtils::createGabor2D(double frequency,
         ////////////////////
         gabor->SetFrequency( frequency );
         ////////////////////
-        gabor->SetCalculateImaginaryPart( true );
+        gabor->SetCalculateImaginaryPart( imaginary );
         ////////////////////
         GaborSourceType::ArrayType mean;
         mean[0] = meanMajorAxis;
@@ -112,14 +115,15 @@ GaborUtils::GaborSourceTypePtr GaborUtils::createGabor2D(double frequency,
     return gabor;
 }
 
-GaborUtils::ImageTypePtr GaborUtils::createGaborKernel( double frequency,
+GaborUtils::ImageTypePtr GaborUtils::createGaborKernel(double frequency,
                                                         double azimuth,
                                                         double meanMajorAxis,
                                                         double meanMinorAxis,
                                                         double sigmaMajorAxis,
                                                         double sigmaMinorAxis,
                                                         int kernelSizeI,
-                                                        int kernelSizeJ )
+                                                        int kernelSizeJ ,
+                                                       bool imaginary)
 {
     //convert azimuth to an angle in radians and in trigonometric convention
     double azimuthRad = ( - azimuth + 90 ) *  ImageJockeyUtils::PI_OVER_180;
@@ -136,7 +140,8 @@ GaborUtils::ImageTypePtr GaborUtils::createGaborKernel( double frequency,
                                                           meanMajorAxis,
                                                           meanMinorAxis,
                                                           sigmaMajorAxis,
-                                                          sigmaMinorAxis );
+                                                          sigmaMinorAxis,
+                                                          imaginary );
     gabor->Update();
 
 

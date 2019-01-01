@@ -10,7 +10,8 @@
 #include <itkImageFileWriter.hxx>
 #include <itkPNGImageIOFactory.h>
 #include <itkCastImageFilter.h>
-#include <itkRescaleIntensityImageFilter.hxx>
+#include <itkRescaleIntensityImageFilter.h>
+#include <itkVnlForwardFFTImageFilter.h>
 
 
 /**
@@ -34,6 +35,9 @@ public:
     typedef itk::Euler2DTransform<realType> TransformType;
     typedef itk::ResampleImageFilter<ImageType, ImageType, realType> ResamplerType;
     typedef itk::ConvolutionImageFilter<ImageType> ConvolutionFilterType;
+    typedef itk::VnlForwardFFTImageFilter< ImageType > FFTFilterType;
+    typedef FFTFilterType::OutputImageType ComplexImageType;
+
 
     static ImageTypePtr createITKImageFromCartesianGrid(IJAbstractCartesianGrid &input,
                                                          int variableIndex );
@@ -54,8 +58,9 @@ public:
      * @param sigmaMinorAxis Sets the how wide is the 2D Gaussian window along the secondary axis.
      * @param kernelSizeI The size of the convolution kernel in number of cells in E-W direction.
      * @param kernelSizeJ The size of the convolution kernel in number of cells in N-S direction.
+     * @param imaginaryPart If true, the response is the imaginary part of the transform.
      */
-    static ImageTypePtr computeGaborResponse( double frequency,
+    static ImageTypePtr computeGaborResponse(double frequency,
                                               double azimuth,
                                               double meanMajorAxis,
                                               double meanMinorAxis,
@@ -63,7 +68,8 @@ public:
                                               double sigmaMinorAxis,
                                               int kernelSizeI,
                                               int kernelSizeJ,
-                                              const ImageTypePtr inputImage );
+                                              const ImageTypePtr inputImage,
+                                              bool imaginaryPart );
 
     /**
      * Creates a 255 x 255 Gabor template kernel object.  Normally it is downscaled (e.g. 20 x 20)
@@ -73,12 +79,14 @@ public:
      * @param meanMinorAxis Sets the center of the 2D Gaussian window.  Relates to phase.
      * @param sigmaMajorAxis Sets the how wide is the 2D Gaussian window along the main axis.
      * @param sigmaMinorAxis Sets the how wide is the 2D Gaussian window along the secondary axis.
+     * @param imaginary If true, the kernel serves to compute the imaginary part of the Gabor response.
      */
     static GaborSourceTypePtr createGabor2D( double frequency,
                                              double meanMajorAxis,
                                              double meanMinorAxis,
                                              double sigmaMajorAxis,
-                                             double sigmaMinorAxis );
+                                             double sigmaMinorAxis,
+                                             bool imaginary );
 
     /**
      * Creates a Gabor kernel object usable in convolutions.
@@ -90,6 +98,7 @@ public:
      * @param sigmaMinorAxis Sets the how wide is the 2D Gaussian window along the secondary axis.
      * @param kernelSizeI The size of the convolution kernel in number of cells in E-W direction.
      * @param kernelSizeJ The size of the convolution kernel in number of cells in N-S direction.
+     * @param imaginary If true, the kernel serves to compute the imaginary part of the Gabor response.
      */
     static ImageTypePtr createGaborKernel( double frequency,
                                            double azimuth,
@@ -98,7 +107,8 @@ public:
                                            double sigmaMajorAxis,
                                            double sigmaMinorAxis,
                                            int kernelSizeI,
-                                           int kernelSizeJ );
+                                           int kernelSizeJ,
+                                           bool imaginary );
 
 };
 

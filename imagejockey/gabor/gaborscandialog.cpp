@@ -69,10 +69,8 @@ void GaborScanDialog::onScan()
     typedef itk::StatisticsImageFilter<GaborUtils::ImageType> StatisticsImageFilterType;
     typedef itk::AbsImageFilter <GaborUtils::ImageType, GaborUtils::ImageType> AbsImageFilterType;
 
-    // do not set limits lesser than 3.0 or greater than 177.0 degrees
-    // Otherwise The transform object used to manipulate the kernel crashes (figures).
-    double az0 = 3.0;
-    double az1 = 177.0;
+    double az0 = 0.0;
+    double az1 = 180.0;
 
     //get the user settings
     double azStep = ui->txtAzStep->text().toDouble();
@@ -164,6 +162,17 @@ void GaborScanDialog::onScan()
 
 void GaborScanDialog::onAddSelection()
 {
+    double fmin = ui->txtSelFmin->text().toDouble();
+    double fmax = ui->txtSelFmax->text().toDouble();
+    double azmin = ui->txtSelAzMin->text().toDouble();
+    double azmax = ui->txtSelAzMax->text().toDouble();
+
+    //force valid values
+    fmin = std::min( 0.000001, fmin );
+    fmax = std::min( 0.000001, fmax );
+    azmin = std::max( std::min( 0.0, azmin ), 180.0 );
+    azmax = std::max( std::min( 0.0, azmax ), 180.0 );
+
     m_freqAzSelections.push_back( { ui->txtSelFmin->text().toDouble(),
                                     ui->txtSelFmax->text().toDouble(),
                                     ui->txtSelAzMin->text().toDouble(),

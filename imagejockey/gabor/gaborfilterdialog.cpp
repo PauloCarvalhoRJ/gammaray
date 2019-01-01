@@ -33,6 +33,9 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkThreshold.h>
 #include <vtkCellData.h>
 
+//#include <itkTikhonovDeconvolutionImageFilter.h>
+//#include <itkWienerDeconvolutionImageFilter.h>
+
 GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
                                      uint inputVariableIndex,
                                      QWidget *parent) :
@@ -302,7 +305,8 @@ void GaborFilterDialog::updateKernelDisplays()
                                                 ui->txtSigmaMajorAxis->text().toDouble(),
                                                 ui->txtSigmaMinorAxis->text().toDouble(),
                                                 kernelNI,
-                                                kernelNJ
+                                                kernelNJ,
+                                                false
                                               );
 
     GaborUtils::ImageTypePtr kernelF1 = GaborUtils::createGaborKernel(
@@ -313,7 +317,8 @@ void GaborFilterDialog::updateKernelDisplays()
                                                 ui->txtSigmaMajorAxis->text().toDouble(),
                                                 ui->txtSigmaMinorAxis->text().toDouble(),
                                                 kernelNI,
-                                                kernelNJ
+                                                kernelNJ,
+                                                false
                                               );
 
     spectral::array kernelData1( static_cast<spectral::index>( kernelNI ),
@@ -359,10 +364,10 @@ void GaborFilterDialog::onUserEditedAFrequency(QString freqValue)
     int maxNI = GaborUtils::gaborKernelMaxNI;
     int maxNJ = GaborUtils::gaborKernelMaxNJ;
     //convert the user-entered topological frequencies as cell counts.
-    int nCellsIInitial = kernelNI * ( 1 / topologicalFrequencyInitial) / maxNI;
-    int nCellsJInitial = kernelNJ * ( 1 / topologicalFrequencyInitial) / maxNJ;
-    int nCellsIFinal = kernelNI * ( 1 / topologicalFrequencyFinal) / maxNI;
-    int nCellsJFinal = kernelNJ * ( 1 / topologicalFrequencyFinal) / maxNJ;
+    double nCellsIInitial = kernelNI * ( 1 / topologicalFrequencyInitial) / maxNI;
+    double nCellsJInitial = kernelNJ * ( 1 / topologicalFrequencyInitial) / maxNJ;
+    double nCellsIFinal = kernelNI * ( 1 / topologicalFrequencyFinal) / maxNI;
+    double nCellsJFinal = kernelNJ * ( 1 / topologicalFrequencyFinal) / maxNJ;
     //convert cell counts to real-world lengths
     double featureSizeXInitial = nCellsIInitial * m_inputGrid->getCellSizeI();
     double featureSizeYInitial = nCellsJInitial * m_inputGrid->getCellSizeJ();
@@ -379,6 +384,81 @@ void GaborFilterDialog::onUserEditedAFrequency(QString freqValue)
     textForLabel += "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sizes are in length units.</body></html>";
 
     ui->lblFeatureSizeEquiv->setText( textForLabel );
+}
+
+void GaborFilterDialog::onPreviewFilteredResult()
+{
+    GaborUtils::ImageTypePtr inputAsITK = GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid,
+                                                                                       m_inputVariableIndex);
+    GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( 0.0153841,
+                                                                          45.0,
+                                                                          ui->txtMeanMajorAxis->text().toDouble(),
+                                                                          ui->txtMeanMinorAxis->text().toDouble(),
+                                                                          ui->txtSigmaMajorAxis->text().toDouble(),
+                                                                          ui->txtSigmaMinorAxis->text().toDouble(),
+                                                                          ui->spinKernelSizeI->value(),
+                                                                          ui->spinKernelSizeJ->value(),
+                                                                          inputAsITK );
+
+
+//    GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(0.0153841,
+//                                                                    45.0,
+//                                                                    ui->txtMeanMajorAxis->text().toDouble(),
+//                                                                    ui->txtMeanMinorAxis->text().toDouble(),
+//                                                                    ui->txtSigmaMajorAxis->text().toDouble(),
+//                                                                    ui->txtSigmaMinorAxis->text().toDouble(),
+//                                                                    ui->spinKernelSizeI->value(),
+//                                                                    ui->spinKernelSizeJ->value() );
+
+
+//    using FilterType = itk::TikhonovDeconvolutionImageFilter< GaborUtils::ImageType,
+//                                                       GaborUtils::ImageType,
+//                                                       GaborUtils::ImageType,
+//                                                       GaborUtils::ImageType::PixelType >;
+//    FilterType::Pointer deconvolutionFilter = FilterType::New();
+
+    //using DeconvolutionFilterType = itk::TikhonovDeconvolutionImageFilter<GaborUtils::ImageType>;
+    //using DeconvolutionFilterType = itk::InverseDeconvolutionImageFilter<GaborUtils::ImageType>;
+    //using DeconvolutionFilterType = itk::Functor::WienerDeconvolutionFunctor< GaborUtils::ImageType::PixelType >;
+    //DeconvolutionFilterType::Pointer deconvolutionFilter = DeconvolutionFilterType::New();
+//    itk::ConstantBoundaryCondition< GaborUtils::ImageType > cbc;
+//    cbc.SetConstant( 0.0 );
+//    deconvolutionFilter->SetInput( response );
+//    deconvolutionFilter->SetKernelImage( kernel );
+    //deconvolutionFilter->SetNormalize( false );
+    //deconvolutionFilter->SetBoundaryCondition( &cbc );
+    //deconvolutionFilter->SetSizeGreatestPrimeFactor( 5 );
+    //deconvolutionFilter->SetRegularizationConstant( 1.0e-4 );
+//    deconvolutionFilter->Update();
+
+    spectral::index nI = m_inputGrid->getNI();
+    spectral::index nJ = m_inputGrid->getNJ();
+    spectral::array responseS( nI, nJ );
+    for(unsigned int j = 0; j < nJ; ++j)
+        for(unsigned int i = 0; i < nI; ++i) {
+                itk::Index<GaborUtils::gridDim> index;
+                index[0] = i;
+                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                GaborUtils::realType correlation = response->GetPixel( index );
+                responseS( i, j ) = correlation;
+        }
+
+    //show the result
+    SVDFactor* grid = new SVDFactor( std::move(responseS), 1, 0.42,
+                                     m_inputGrid->getOriginX(),
+                                     m_inputGrid->getOriginY(),
+                                     0.0,
+                                     m_inputGrid->getCellSizeI(),
+                                     m_inputGrid->getCellSizeJ(),
+                                     1.0, 0.0 );
+    IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
+    ijgv->setFactor( grid );
+    ijgv->show();
+}
+
+void GaborFilterDialog::onSaveFilteredResult()
+{
+
 }
 
 void GaborFilterDialog::clearDisplay()
@@ -449,14 +529,18 @@ void GaborFilterDialog::onPerformGaborFilter()
     progressDialog.show();
     /////////////////////////////////
 
+    //for each frequency in the schedule
     for( uint step = s0; step < s1; ++step ){
+
+        //get the current frequency of the schedule
         double frequency = f( step );
 
         //update the progress window
         progressDialog.setValue( step );
         QApplication::processEvents();
 
-        GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( frequency,
+        //get the real part of the Gabor response
+        GaborUtils::ImageTypePtr responseRealPart = GaborUtils::computeGaborResponse( frequency,
                                                                               azimuth,
                                                                               ui->txtMeanMajorAxis->text().toDouble(),
                                                                               ui->txtMeanMinorAxis->text().toDouble(),
@@ -464,7 +548,21 @@ void GaborFilterDialog::onPerformGaborFilter()
                                                                               ui->txtSigmaMinorAxis->text().toDouble(),
                                                                               ui->spinKernelSizeI->value(),
                                                                               ui->spinKernelSizeJ->value(),
-                                                                              inputAsITK );
+                                                                              inputAsITK,
+                                                                              false );
+
+        //get the imaginary part of the Gabor response
+        GaborUtils::ImageTypePtr responseImaginaryPart = GaborUtils::computeGaborResponse( frequency,
+                                                                              azimuth,
+                                                                              ui->txtMeanMajorAxis->text().toDouble(),
+                                                                              ui->txtMeanMinorAxis->text().toDouble(),
+                                                                              ui->txtSigmaMajorAxis->text().toDouble(),
+                                                                              ui->txtSigmaMinorAxis->text().toDouble(),
+                                                                              ui->spinKernelSizeI->value(),
+                                                                              ui->spinKernelSizeJ->value(),
+                                                                              inputAsITK,
+                                                                              true );
+
 
         // Read the response image to build the spectrogram
         for(unsigned int j = 0; j < nJ; ++j)

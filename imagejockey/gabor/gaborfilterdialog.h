@@ -68,6 +68,8 @@ private Q_SLOTS:
     void updateKernelDisplays();
     void onFreqAzSelectionsUpdated( const GaborFrequencyAzimuthSelections& freqAzSelections );
     void onUserEditedAFrequency( QString freqValue );
+    void onPreviewFilteredResult();
+    void onSaveFilteredResult();
 };
 
 #endif // GABORFILTERDIALOG_H
