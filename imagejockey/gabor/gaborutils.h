@@ -11,8 +11,6 @@
 #include <itkPNGImageIOFactory.h>
 #include <itkCastImageFilter.h>
 #include <itkRescaleIntensityImageFilter.h>
-#include <itkVnlForwardFFTImageFilter.h>
-
 
 /**
  * The GaborUtils class organizes processing units for Gabor-related workflows.
@@ -35,12 +33,19 @@ public:
     typedef itk::Euler2DTransform<realType> TransformType;
     typedef itk::ResampleImageFilter<ImageType, ImageType, realType> ResamplerType;
     typedef itk::ConvolutionImageFilter<ImageType> ConvolutionFilterType;
-    typedef itk::VnlForwardFFTImageFilter< ImageType > FFTFilterType;
-    typedef FFTFilterType::OutputImageType ComplexImageType;
 
-
+    /**
+     * Creates an ITK image object from the grid object of ImageJockey framework.
+     * The image is filled with the values of the given variable (by index).
+     */
     static ImageTypePtr createITKImageFromCartesianGrid(IJAbstractCartesianGrid &input,
                                                          int variableIndex );
+
+    /**
+     * Creates an ITK image object from the grid object of ImageJockey framework.
+     * The values are initialized to zero.
+     */
+    static ImageTypePtr createEmptyITKImageFromCartesianGrid(IJAbstractCartesianGrid &input );
 
     /**
      * Convolves the input image against a Gabor kernel defined by the input parameters.

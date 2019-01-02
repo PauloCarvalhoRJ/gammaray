@@ -390,7 +390,7 @@ void GaborFilterDialog::onPreviewFilteredResult()
 {
     GaborUtils::ImageTypePtr inputAsITK = GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid,
                                                                                        m_inputVariableIndex);
-    GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( 0.0153841,
+    GaborUtils::ImageTypePtr responseRealPart = GaborUtils::computeGaborResponse( 0.0153841,
                                                                           45.0,
                                                                           ui->txtMeanMajorAxis->text().toDouble(),
                                                                           ui->txtMeanMinorAxis->text().toDouble(),
@@ -398,7 +398,8 @@ void GaborFilterDialog::onPreviewFilteredResult()
                                                                           ui->txtSigmaMinorAxis->text().toDouble(),
                                                                           ui->spinKernelSizeI->value(),
                                                                           ui->spinKernelSizeJ->value(),
-                                                                          inputAsITK );
+                                                                          inputAsITK,
+                                                                          false );
 
 
 //    GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(0.0153841,
@@ -439,7 +440,7 @@ void GaborFilterDialog::onPreviewFilteredResult()
                 itk::Index<GaborUtils::gridDim> index;
                 index[0] = i;
                 index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                GaborUtils::realType correlation = response->GetPixel( index );
+                GaborUtils::realType correlation = 42.0; //response->GetPixel( index );
                 responseS( i, j ) = correlation;
         }
 
@@ -563,15 +564,16 @@ void GaborFilterDialog::onPerformGaborFilter()
                                                                               inputAsITK,
                                                                               true );
 
-
-        // Read the response image to build the spectrogram
+        // Read the response image to build the amplitude spectrogram
         for(unsigned int j = 0; j < nJ; ++j)
             for(unsigned int i = 0; i < nI; ++i) {
                     itk::Index<GaborUtils::gridDim> index;
                     index[0] = i;
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                    GaborUtils::realType correlation = response->GetPixel( index );
-                    (*m_spectrogram)( i, j, step - s0 ) = correlation;
+                    GaborUtils::realType rValue = responseRealPart->GetPixel( index );
+                    GaborUtils::realType iValue = responseImaginaryPart->GetPixel( index );
+                    std::complex<GaborUtils::realType> cValue( rValue, iValue );
+                    (*m_spectrogram)( i, j, step - s0 ) = std::abs( cValue );
             }
     }
 

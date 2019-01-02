@@ -43,6 +43,35 @@ GaborUtils::ImageTypePtr GaborUtils::createITKImageFromCartesianGrid
     return output;
 }
 
+GaborUtils::ImageTypePtr GaborUtils::createEmptyITKImageFromCartesianGrid(IJAbstractCartesianGrid &input)
+{
+    double dX = input.getCellSizeI();
+    double dY = input.getCellSizeJ();
+    double x0 = input.getOriginX();
+    double y0 = input.getOriginY();
+    unsigned int nI = input.getNI();
+    unsigned int nJ = input.getNJ();
+
+    ImageTypePtr output = ImageType::New();
+    {
+        ImageType::IndexType start;
+        start.Fill(0); // = 0,0,0
+        ImageType::SizeType size;
+        ImageType::SpacingType spacing; spacing[0] = dX; spacing[1] = dY;
+        output->SetSpacing( spacing );
+        ////////////////////
+        ImageType::PointType origin; origin[0] = x0; origin[1] = y0;
+        output->SetOrigin( origin );
+        size[0] = nI;
+        size[1] = nJ;
+        ImageType::RegionType region(start, size);
+        output->SetRegions(region);
+        output->Allocate();
+        output->FillBuffer(0);
+    }
+    return output;
+}
+
 GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse( double frequency,
                                                            double azimuth,
                                                            double meanMajorAxis,

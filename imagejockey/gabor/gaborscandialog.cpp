@@ -124,7 +124,7 @@ void GaborScanDialog::onScan()
             progressDialog.setValue( progressDialog.value()+1 );
             QApplication::processEvents();
             //compute the Gabor response of a given frequency-azimuth pair
-            GaborUtils::ImageTypePtr response =
+            GaborUtils::ImageTypePtr responseRealPart =
                     GaborUtils::computeGaborResponse( frequency,
                                                       azimuth,
                                                       m_meanMajorAxis,
@@ -133,9 +133,38 @@ void GaborScanDialog::onScan()
                                                       m_sigmaMinorAxis,
                                                       m_kernelSizeI,
                                                       m_kernelSizeJ,
-                                                      inputImage );
+                                                      inputImage,
+                                                      false);
+            GaborUtils::ImageTypePtr responseImagPart =
+                    GaborUtils::computeGaborResponse( frequency,
+                                                      azimuth,
+                                                      m_meanMajorAxis,
+                                                      m_meanMinorAxis,
+                                                      m_sigmaMajorAxis,
+                                                      m_sigmaMinorAxis,
+                                                      m_kernelSizeI,
+                                                      m_kernelSizeJ,
+                                                      inputImage,
+                                                      true);
+
+            // Read the response image to build the amplitude spectrogram
+            GaborUtils::ImageTypePtr responseAmplitude =
+                    GaborUtils::createEmptyITKImageFromCartesianGrid( *m_inputGrid );
+            int nI = m_inputGrid->getNI();
+            int nJ = m_inputGrid->getNJ();
+            for(unsigned int j = 0; j < nJ; ++j)
+                for(unsigned int i = 0; i < nI; ++i) {
+                        itk::Index<GaborUtils::gridDim> index;
+                        index[0] = i;
+                        index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                        GaborUtils::realType rValue = responseRealPart->GetPixel( index );
+                        GaborUtils::realType iValue = responseImagPart->GetPixel( index );
+                        std::complex<GaborUtils::realType> cValue( rValue, iValue );
+                        responseAmplitude->SetPixel( index, std::abs( cValue ) );
+                }
+
             //get the absolute values from the response grid
-            absFilter->SetInput( response );
+            absFilter->SetInput( responseAmplitude );
             absFilter->Update();
             //compute the image (absolute values) stats
             statisticsImageFilter->SetInput( absFilter->GetOutput() );
@@ -173,10 +202,10 @@ void GaborScanDialog::onAddSelection()
     azmin = std::max( std::min( 0.0, azmin ), 180.0 );
     azmax = std::max( std::min( 0.0, azmax ), 180.0 );
 
-    m_freqAzSelections.push_back( { ui->txtSelFmin->text().toDouble(),
-                                    ui->txtSelFmax->text().toDouble(),
-                                    ui->txtSelAzMin->text().toDouble(),
-                                    ui->txtSelAzMax->text().toDouble() } );
+    m_freqAzSelections.push_back( { fmin,
+                                    fmax,
+                                    azmin,
+                                    azmax } );
     updateFrequAzSelectionDisplay();
 }
 
@@ -190,6 +219,6 @@ void GaborScanDialog::onZoom(const QRectF &zoomBox)
 {
     ui->txtSelFmin->setText( QString::number( zoomBox.left() ) );
     ui->txtSelFmax->setText( QString::number( zoomBox.right() ) );
-    ui->txtSelAzMin->setText( QString::number( zoomBox.bottom() ) );
-    ui->txtSelAzMax->setText( QString::number( zoomBox.top() ) );
+    ui->txtSelAzMin->setText( QString::number( zoomBox.top() ) );
+    ui->txtSelAzMax->setText( QString::number( zoomBox.bottom() ) );
 }
