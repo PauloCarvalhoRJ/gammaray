@@ -573,7 +573,8 @@ void GaborFilterDialog::onPerformGaborFilter()
                     GaborUtils::realType rValue = responseRealPart->GetPixel( index );
                     GaborUtils::realType iValue = responseImaginaryPart->GetPixel( index );
                     std::complex<GaborUtils::realType> cValue( rValue, iValue );
-                    (*m_spectrogram)( i, j, step - s0 ) = std::abs( cValue );
+                    //(*m_spectrogram)( i, j, step - s0 ) = std::abs( cValue );
+                    (*m_spectrogram)( i, j, step - s0 ) = responseImaginaryPart->GetPixel( index ) + responseRealPart->GetPixel( index ) ;
             }
     }
 

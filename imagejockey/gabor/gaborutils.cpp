@@ -1,5 +1,6 @@
 #include "gaborutils.h"
 #include "imagejockey/imagejockeyutils.h"
+#include <itkImageDuplicator.h>
 
 GaborUtils::GaborUtils()
 {
