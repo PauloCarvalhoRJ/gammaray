@@ -135,17 +135,17 @@ void GaborScanDialog::onScan()
                                                       m_kernelSizeJ,
                                                       inputImage,
                                                       false);
-            GaborUtils::ImageTypePtr responseImagPart =
-                    GaborUtils::computeGaborResponse( frequency,
-                                                      azimuth,
-                                                      m_meanMajorAxis,
-                                                      m_meanMinorAxis,
-                                                      m_sigmaMajorAxis,
-                                                      m_sigmaMinorAxis,
-                                                      m_kernelSizeI,
-                                                      m_kernelSizeJ,
-                                                      inputImage,
-                                                      true);
+//            GaborUtils::ImageTypePtr responseImagPart =
+//                    GaborUtils::computeGaborResponse( frequency,
+//                                                      azimuth,
+//                                                      m_meanMajorAxis,
+//                                                      m_meanMinorAxis,
+//                                                      m_sigmaMajorAxis,
+//                                                      m_sigmaMinorAxis,
+//                                                      m_kernelSizeI,
+//                                                      m_kernelSizeJ,
+//                                                      inputImage,
+//                                                      true);
 
             // Read the response image to build the amplitude spectrogram
             GaborUtils::ImageTypePtr responseAmplitude =
@@ -158,9 +158,10 @@ void GaborScanDialog::onScan()
                         index[0] = i;
                         index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                         GaborUtils::realType rValue = responseRealPart->GetPixel( index );
-                        GaborUtils::realType iValue = responseImagPart->GetPixel( index );
-                        std::complex<GaborUtils::realType> cValue( rValue, iValue );
-                        responseAmplitude->SetPixel( index, std::abs( cValue ) );
+//                        GaborUtils::realType iValue = responseImagPart->GetPixel( index );
+//                        std::complex<GaborUtils::realType> cValue( rValue, iValue );
+//                        responseAmplitude->SetPixel( index, std::abs( cValue ) );
+                        responseAmplitude->SetPixel( index, std::abs( rValue ) );
                 }
 
             //get the absolute values from the response grid

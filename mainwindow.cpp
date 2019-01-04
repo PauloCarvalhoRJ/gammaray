@@ -184,7 +184,6 @@ MainWindow::MainWindow(QWidget *parent) :
 
 MainWindow::~MainWindow()
 {
-    std::cout << "lalalals" << std::endl;
     delete ui;
 }
 

@@ -120,8 +120,9 @@ void GaborFilterDialog::updateDisplay()
         //Convert the spectrogram cube into a corresponding VTK object.
         //In this case, the input values are transformed to their absolute values.
         vtkSmartPointer<vtkImageData> spectrogramGrid = vtkSmartPointer<vtkImageData>::New();
-        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram,
-                                                             [] (double x) { return std::abs( x ); } );
+//        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram,
+//                                                             [] (double x) { return std::abs( x ); } );
+        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram );
 
         //make a cell-centered VTK grid from the corner-point values
         //with the same grid specs of the input 2D grid.
@@ -553,16 +554,16 @@ void GaborFilterDialog::onPerformGaborFilter()
                                                                               false );
 
         //get the imaginary part of the Gabor response
-        GaborUtils::ImageTypePtr responseImaginaryPart = GaborUtils::computeGaborResponse( frequency,
-                                                                              azimuth,
-                                                                              ui->txtMeanMajorAxis->text().toDouble(),
-                                                                              ui->txtMeanMinorAxis->text().toDouble(),
-                                                                              ui->txtSigmaMajorAxis->text().toDouble(),
-                                                                              ui->txtSigmaMinorAxis->text().toDouble(),
-                                                                              ui->spinKernelSizeI->value(),
-                                                                              ui->spinKernelSizeJ->value(),
-                                                                              inputAsITK,
-                                                                              true );
+//        GaborUtils::ImageTypePtr responseImaginaryPart = GaborUtils::computeGaborResponse( frequency,
+//                                                                              azimuth,
+//                                                                              ui->txtMeanMajorAxis->text().toDouble(),
+//                                                                              ui->txtMeanMinorAxis->text().toDouble(),
+//                                                                              ui->txtSigmaMajorAxis->text().toDouble(),
+//                                                                              ui->txtSigmaMinorAxis->text().toDouble(),
+//                                                                              ui->spinKernelSizeI->value(),
+//                                                                              ui->spinKernelSizeJ->value(),
+//                                                                              inputAsITK,
+//                                                                              true );
 
         // Read the response image to build the amplitude spectrogram
         for(unsigned int j = 0; j < nJ; ++j)
@@ -571,10 +572,10 @@ void GaborFilterDialog::onPerformGaborFilter()
                     index[0] = i;
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                     GaborUtils::realType rValue = responseRealPart->GetPixel( index );
-                    GaborUtils::realType iValue = responseImaginaryPart->GetPixel( index );
-                    std::complex<GaborUtils::realType> cValue( rValue, iValue );
+//                    GaborUtils::realType iValue = responseImaginaryPart->GetPixel( index );
+//                    std::complex<GaborUtils::realType> cValue( rValue, iValue );
                     //(*m_spectrogram)( i, j, step - s0 ) = std::abs( cValue );
-                    (*m_spectrogram)( i, j, step - s0 ) = responseImaginaryPart->GetPixel( index ) + responseRealPart->GetPixel( index ) ;
+                    (*m_spectrogram)( i, j, step - s0 ) = responseRealPart->GetPixel( index ) ;
             }
     }
 
