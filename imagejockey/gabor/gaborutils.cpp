@@ -291,3 +291,35 @@ GaborUtils::ImageTypePtr GaborUtils::createGaborKernel(double frequency,
 
     return resampler->GetOutput();
 }
+
+spectral::array GaborUtils::convertITKImageToSpectralArray(const GaborUtils::ImageType &input)
+{
+    //get input grid dimensions
+    ImageType::RegionType region = input.GetLargestPossibleRegion();
+    ImageType::SizeType size = region.GetSize();
+    spectral::index nI = size[0];
+    spectral::index nJ = 1;
+    if( GaborUtils::gridDim > 1 )
+        nJ = size[1];
+    spectral::index nK = 1;
+    if( GaborUtils::gridDim > 2 )
+        nK = size[2];
+
+    //transfer values to a new spectral::array object
+    spectral::array result( nI, nJ, nK );
+    for(unsigned int k = 0; k < nK; ++k)
+        for(unsigned int j = 0; j < nJ; ++j)
+            for(unsigned int i = 0; i < nI; ++i){
+                itk::Index<gridDim> index;
+                switch( GaborUtils::gridDim ){
+                case 3: index[2] = nK - 1 - k; // itkImage grid convention is different from GSLib's
+                case 2: index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                }
+                index[0] = i;
+                GaborUtils::realType value = input.GetPixel( index );
+                result( i, j, k ) = value;
+            }
+
+    return result;
+}
+

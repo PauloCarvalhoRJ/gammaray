@@ -389,73 +389,89 @@ void GaborFilterDialog::onUserEditedAFrequency(QString freqValue)
 
 void GaborFilterDialog::onPreviewFilteredResult()
 {
-    GaborUtils::ImageTypePtr inputAsITK = GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid,
-                                                                                       m_inputVariableIndex);
-    GaborUtils::ImageTypePtr responseRealPart = GaborUtils::computeGaborResponse( 0.0153841,
-                                                                          45.0,
-                                                                          ui->txtMeanMajorAxis->text().toDouble(),
-                                                                          ui->txtMeanMinorAxis->text().toDouble(),
-                                                                          ui->txtSigmaMajorAxis->text().toDouble(),
-                                                                          ui->txtSigmaMinorAxis->text().toDouble(),
-                                                                          ui->spinKernelSizeI->value(),
-                                                                          ui->spinKernelSizeJ->value(),
-                                                                          inputAsITK,
-                                                                          false );
-
-
-//    GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(0.0153841,
-//                                                                    45.0,
-//                                                                    ui->txtMeanMajorAxis->text().toDouble(),
-//                                                                    ui->txtMeanMinorAxis->text().toDouble(),
-//                                                                    ui->txtSigmaMajorAxis->text().toDouble(),
-//                                                                    ui->txtSigmaMinorAxis->text().toDouble(),
-//                                                                    ui->spinKernelSizeI->value(),
-//                                                                    ui->spinKernelSizeJ->value() );
-
-
-//    using FilterType = itk::TikhonovDeconvolutionImageFilter< GaborUtils::ImageType,
-//                                                       GaborUtils::ImageType,
-//                                                       GaborUtils::ImageType,
-//                                                       GaborUtils::ImageType::PixelType >;
-//    FilterType::Pointer deconvolutionFilter = FilterType::New();
-
-    //using DeconvolutionFilterType = itk::TikhonovDeconvolutionImageFilter<GaborUtils::ImageType>;
-    //using DeconvolutionFilterType = itk::InverseDeconvolutionImageFilter<GaborUtils::ImageType>;
-    //using DeconvolutionFilterType = itk::Functor::WienerDeconvolutionFunctor< GaborUtils::ImageType::PixelType >;
-    //DeconvolutionFilterType::Pointer deconvolutionFilter = DeconvolutionFilterType::New();
-//    itk::ConstantBoundaryCondition< GaborUtils::ImageType > cbc;
-//    cbc.SetConstant( 0.0 );
-//    deconvolutionFilter->SetInput( response );
-//    deconvolutionFilter->SetKernelImage( kernel );
-    //deconvolutionFilter->SetNormalize( false );
-    //deconvolutionFilter->SetBoundaryCondition( &cbc );
-    //deconvolutionFilter->SetSizeGreatestPrimeFactor( 5 );
-    //deconvolutionFilter->SetRegularizationConstant( 1.0e-4 );
-//    deconvolutionFilter->Update();
-
+    //get input grid sizes
     spectral::index nI = m_inputGrid->getNI();
     spectral::index nJ = m_inputGrid->getNJ();
-    spectral::array responseS( nI, nJ );
-    for(unsigned int j = 0; j < nJ; ++j)
-        for(unsigned int i = 0; i < nI; ++i) {
-                itk::Index<GaborUtils::gridDim> index;
-                index[0] = i;
-                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                GaborUtils::realType correlation = 42.0; //response->GetPixel( index );
-                responseS( i, j ) = correlation;
-        }
+
+
+    //compute FFT of the kernel
+    spectral::complex_array kernelFFT;
+    {
+        //make the kernel
+        GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(0.0153841,
+                                                                        45.0,
+                                                                        ui->txtMeanMajorAxis->text().toDouble(),
+                                                                        ui->txtMeanMinorAxis->text().toDouble(),
+                                                                        ui->txtSigmaMajorAxis->text().toDouble(),
+                                                                        ui->txtSigmaMinorAxis->text().toDouble(),
+                                                                        ui->spinKernelSizeI->value(),
+                                                                        ui->spinKernelSizeJ->value(),
+                                                                        false );
+
+        //convert it to a spectral:: array
+        spectral::array kernelS = GaborUtils::convertITKImageToSpectralArray( *kernel );
+
+        //makes it compatible with inner multiplication with the input grid (same size)
+        spectral::array kernelPadded = spectral::project( kernelS, nI, nJ, 1 );
+
+        //compute the FFT
+        spectral::foward( kernelFFT, kernelPadded );
+    }
+
+    //compute the FFT of the input data
+    spectral::complex_array inputFFT;
+    {
+        spectral::arrayPtr inputData( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
+        spectral::foward( inputFFT, *inputData );
+    }
+
+    spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+    spectral::complex_array kernelFFTpolar = spectral::to_polar_form( kernelFFT );
+
+    spectral::array amplProd = spectral::hadamard( spectral::real( inputFFTpolar ),
+                                                   spectral::real( kernelFFTpolar ) );
+
+    spectral::complex_array filteredPolar = spectral::to_complex_array(
+                amplProd, spectral::imag( inputFFTpolar) );
+
+    spectral::complex_array filtered = spectral::to_rectangular_form( filteredPolar );
+
+    spectral::array result( nI, nJ );
+    spectral::backward( result, filtered );
+
+        result = spectral::real( kernelFFT );
+        SVDFactor* grid = new SVDFactor( std::move(result), 1, 0.42,
+                                         m_inputGrid->getOriginX(),
+                                         m_inputGrid->getOriginY(),
+                                         0.0,
+                                         m_inputGrid->getCellSizeI(),
+                                         m_inputGrid->getCellSizeJ(),
+                                         1.0, 0.0 );
+        IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
+        ijgv->setFactor( grid );
+        ijgv->show();
+
+
+//    for(unsigned int j = 0; j < nJ; ++j)
+//        for(unsigned int i = 0; i < nI; ++i) {
+//                itk::Index<GaborUtils::gridDim> index;
+//                index[0] = i;
+//                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+//                GaborUtils::realType correlation = responseRealPart->GetPixel( index );
+//                responseS( i, j ) += correlation;
+//        }
 
     //show the result
-    SVDFactor* grid = new SVDFactor( std::move(responseS), 1, 0.42,
-                                     m_inputGrid->getOriginX(),
-                                     m_inputGrid->getOriginY(),
-                                     0.0,
-                                     m_inputGrid->getCellSizeI(),
-                                     m_inputGrid->getCellSizeJ(),
-                                     1.0, 0.0 );
-    IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
-    ijgv->setFactor( grid );
-    ijgv->show();
+//    SVDFactor* grid = new SVDFactor( std::move(responseS), 1, 0.42,
+//                                     m_inputGrid->getOriginX(),
+//                                     m_inputGrid->getOriginY(),
+//                                     0.0,
+//                                     m_inputGrid->getCellSizeI(),
+//                                     m_inputGrid->getCellSizeJ(),
+//                                     1.0, 0.0 );
+//    IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
+//    ijgv->setFactor( grid );
+//    ijgv->show();
 }
 
 void GaborFilterDialog::onSaveFilteredResult()
@@ -575,7 +591,7 @@ void GaborFilterDialog::onPerformGaborFilter()
 //                    GaborUtils::realType iValue = responseImaginaryPart->GetPixel( index );
 //                    std::complex<GaborUtils::realType> cValue( rValue, iValue );
                     //(*m_spectrogram)( i, j, step - s0 ) = std::abs( cValue );
-                    (*m_spectrogram)( i, j, step - s0 ) = responseRealPart->GetPixel( index ) ;
+                    (*m_spectrogram)( i, j, step - s0 ) = rValue;
             }
     }
 

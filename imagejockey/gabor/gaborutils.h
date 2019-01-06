@@ -115,6 +115,12 @@ public:
                                            int kernelSizeJ,
                                            bool imaginary );
 
+    /**
+     * Returns a spectral::array object with data from an ITK image object.
+     * Supported grid dimension depends on what is set in the gridDim constant (see top of this header file).
+     */
+    static spectral::array convertITKImageToSpectralArray( const ImageType& input );
+
 };
 
 #endif // GABORUTILS_H
