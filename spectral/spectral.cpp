@@ -2010,5 +2010,25 @@ array get_ridges_or_valleys(const array &in,
     return localExtrema;
 }
 
+array project(const array &in, int newM, int newN, int newK)
+{
+    spectral::array output ( newM, newN, newK, 0.0);
+    //projection loop
+    for( int k = 0; k < in.K(); ++k ){
+        int kDest = k - in.K()/2 + newK/2;
+        for( int j = 0; j < in.N(); ++j ){
+            int jDest = j - in.N()/2 + newN/2;
+            for( int i = 0; i < in.M(); ++i ){
+                int iDest = i - in.M()/2 + newM/2;
+                if( iDest >= 0 && iDest < newM &&
+                    jDest >= 0 && jDest < newN &&
+                    kDest >= 0 && kDest < newK )
+                   output( iDest, jDest, kDest ) = in( i, j, k );
+            }
+        }
+    }
+    return output;
+}
+
 } // namespace spectral
 

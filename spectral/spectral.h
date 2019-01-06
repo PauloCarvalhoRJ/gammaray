@@ -364,5 +364,12 @@ array get_ridges_or_valleys( const array &in,
                              double thresholdAbs,
                              int& count );
 
+/**
+ * Creates an array object with a different grid size and containing the values of the given array.
+ * The values are centered at the center of the new array.  If new dimension is greater, then zeros are
+ * padded, otherwise the outermost values are clipped.
+ */
+array project(const array &in, int newM, int newN, int newK );
+
 } // namepsace spectral
 
