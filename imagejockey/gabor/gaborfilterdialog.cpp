@@ -397,41 +397,6 @@ void GaborFilterDialog::onPreviewFilteredResult()
     spectral::index nI = m_inputGrid->getNI();
     spectral::index nJ = m_inputGrid->getNJ();
 
-
-    //compute the unitized (min. = 0.0, max. = 1.0) amplitude of FFT of the kernel.
-    spectral::array kernelFFTamplUnitized;
-    {
-        //make the kernel
-        GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(0.0153841,
-                                                                        45.0,
-                                                                        ui->txtMeanMajorAxis->text().toDouble(),
-                                                                        ui->txtMeanMinorAxis->text().toDouble(),
-                                                                        ui->txtSigmaMajorAxis->text().toDouble(),
-                                                                        ui->txtSigmaMinorAxis->text().toDouble(),
-                                                                        ui->spinKernelSizeI->value(),
-                                                                        ui->spinKernelSizeJ->value(),
-                                                                        false );
-
-        //convert it to a spectral:: array
-        spectral::array kernelS = GaborUtils::convertITKImageToSpectralArray( *kernel );
-
-        //makes it compatible with inner multiplication with the input grid (same size)
-        spectral::array kernelPadded = spectral::project( kernelS, nI, nJ, 1 );
-
-        //compute the FFT
-        spectral::complex_array kernelFFT;
-        spectral::foward( kernelFFT, kernelPadded );
-
-        //put the complex numbers into polar form
-        spectral::complex_array kernelFFTpolar = spectral::to_polar_form( kernelFFT );
-
-        //get the amplitde values.
-        spectral::array kernelFFTampl = spectral::real( kernelFFTpolar );
-
-        //rescale the amplitudes to 0.0-1.0
-        kernelFFTamplUnitized = kernelFFTampl / kernelFFTampl.max();
-    }
-
     //compute the FFT of the input data in polar form (magnitude and phase).
     spectral::complex_array inputFFTpolar;
     {
@@ -441,9 +406,60 @@ void GaborFilterDialog::onPreviewFilteredResult()
         inputFFTpolar = spectral::to_polar_form( inputFFT );
     }
 
+    //this map is to sum up the FFT amplitudes of each Gabor kernel resulting from the
+    //azimuth and frequency selection set by the user
+    spectral::array kernelFFTamplUnitizedSum( nI, nJ, 1, 0.0 );
+
+    for( const GaborFrequencyAzimuthSelection& gFAzSel : m_freqAzSelections ){
+        double dAz = ( gFAzSel.maxAz - gFAzSel.minAz ) / 10.0;
+        double dF = ( gFAzSel.maxF - gFAzSel.minF ) / 10.0;
+        for( double azimuth = gFAzSel.minAz; azimuth <= gFAzSel.maxAz; azimuth += dAz )
+            for( double frequency = gFAzSel.minF; frequency <= gFAzSel.maxF; frequency += dF ){
+                //compute the unitized (min. = 0.0, max. = 1.0) amplitude of FFT of the Gabor kernel of a given azimuth and frequency.
+                spectral::array kernelFFTamplUnitized;
+                {
+                    //make the kernel
+                    GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(frequency,
+                                                                                    azimuth,
+                                                                                    ui->txtMeanMajorAxis->text().toDouble(),
+                                                                                    ui->txtMeanMinorAxis->text().toDouble(),
+                                                                                    ui->txtSigmaMajorAxis->text().toDouble(),
+                                                                                    ui->txtSigmaMinorAxis->text().toDouble(),
+                                                                                    ui->spinKernelSizeI->value(),
+                                                                                    ui->spinKernelSizeJ->value(),
+                                                                                    false );
+
+                    //convert it to a spectral:: array
+                    spectral::array kernelS = GaborUtils::convertITKImageToSpectralArray( *kernel );
+
+                    //makes it compatible with inner multiplication with the input grid (same size)
+                    spectral::array kernelPadded = spectral::project( kernelS, nI, nJ, 1 );
+
+                    //compute the FFT
+                    spectral::complex_array kernelFFT;
+                    spectral::foward( kernelFFT, kernelPadded );
+
+                    //put the complex numbers into polar form
+                    spectral::complex_array kernelFFTpolar = spectral::to_polar_form( kernelFFT );
+
+                    //get the amplitde values.
+                    spectral::array kernelFFTampl = spectral::real( kernelFFTpolar );
+
+                    //rescale the amplitudes to 0.0-1.0
+                    kernelFFTamplUnitized = kernelFFTampl / kernelFFTampl.max();
+
+                    //add this kernel's contribution
+                    kernelFFTamplUnitizedSum += kernelFFTamplUnitized;
+                }
+            }
+    }
+
+    //unitize the sum of kernel FFT amplitudes
+    kernelFFTamplUnitizedSum = kernelFFTamplUnitizedSum / kernelFFTamplUnitizedSum.max();
+
     //multiply the magnitude of the input  with the magnitude of the kernel, effectivelly separating the desired frequency/azimuth
     spectral::array filteredAmplitude = spectral::hadamard( spectral::real( inputFFTpolar ),
-                                                            kernelFFTamplUnitized );
+                                                            kernelFFTamplUnitizedSum );
 
     //make a new FFT field by combinind the filtered amplitudes with the untouched phase field of the input
     spectral::complex_array filteredFFTpolar = spectral::to_complex_array(
