@@ -61,6 +61,9 @@ private:
 
     void clearDisplay();
 
+    /** Call this to inspect results in grid objects. */
+    void debugGrid( const spectral::array& grid );
+
 private Q_SLOTS:
     void onPerformGaborFilter();
     void updateDisplay();

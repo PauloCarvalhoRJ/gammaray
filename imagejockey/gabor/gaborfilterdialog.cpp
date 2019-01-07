@@ -49,7 +49,7 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
 
-    this->setWindowTitle( "Gabor Transform Dialog" );
+    this->setWindowTitle( "Gabor Analysis Dialog" );
 
     ///-------------------setup the 3D viewer-------------------
     _vtkwidget = new QVTKOpenGLWidget();
@@ -115,14 +115,15 @@ void GaborFilterDialog::updateDisplay()
         //Get user settings.
         double colorScaleMin = ui->txtColorScaleMin->text().toDouble();
         double colorScaleMax = ui->txtColorScaleMax->text().toDouble();
-        double thresholdValue = ui->txtThreshold->text().toDouble();
+        double thresholdMinValue = ui->txtThresholdMin->text().toDouble();
+        double thresholdMaxValue = ui->txtThreshold->text().toDouble();
 
         //Convert the spectrogram cube into a corresponding VTK object.
         //In this case, the input values are transformed to their absolute values.
         vtkSmartPointer<vtkImageData> spectrogramGrid = vtkSmartPointer<vtkImageData>::New();
-//        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram,
-//                                                             [] (double x) { return std::abs( x ); } );
-        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram );
+        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram,
+                                                             [] (double x) { return std::abs( x ); } );
+//        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( spectrogramGrid, *m_spectrogram );
 
         //make a cell-centered VTK grid from the corner-point values
         //with the same grid specs of the input 2D grid.
@@ -155,10 +156,10 @@ void GaborFilterDialog::updateDisplay()
                 for (int j = extent[2]; j <= extent[3]; ++j){
                     for (int i = extent[0]; i <= extent[1]; ++i){
                         double* value = static_cast<double*>(spectrogramGrid->GetScalarPointer(i,j,k));
-                        if ( value[0] < thresholdValue )
-                            visibility->InsertNextValue( 0 );
-                        else
+                        if ( value[0] >= thresholdMinValue && value[0] <= thresholdMaxValue )
                             visibility->InsertNextValue( 1 );
+                        else
+                            visibility->InsertNextValue( 0 );
                     }
                 }
             }
@@ -177,11 +178,13 @@ void GaborFilterDialog::updateDisplay()
         //Create a color table
         vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
         {
-            size_t tableSize = 32; //number of shades
+            size_t tableSize = 64; //number of shades
             //create a color interpolator object (grayscale)
             vtkSmartPointer<vtkColorTransferFunction> ctf = vtkSmartPointer<vtkColorTransferFunction>::New();
             ctf->SetColorSpaceToRGB();
             ctf->AddRGBPoint(0.00, 0.000, 0.000, 0.000);
+            ctf->AddRGBPoint(0.33, 1.000, 1.000, 0.000);
+            ctf->AddRGBPoint(0.66, 1.000, 0.000, 0.000);
             ctf->AddRGBPoint(1.00, 1.000, 1.000, 1.000);
             //configure the color table object
             lut->SetTableRange(colorScaleMin, colorScaleMax);
@@ -286,7 +289,8 @@ void GaborFilterDialog::onScan()
                                  ui->txtSigmaMajorAxis->text().toDouble(),
                                  ui->txtSigmaMinorAxis->text().toDouble(),
                                  ui->spinKernelSizeI->value(),
-                                 ui->spinKernelSizeJ->value()
+                                 ui->spinKernelSizeJ->value(),
+                                 this
                                 );
     connect( m_gsd, SIGNAL(frequencyAzimuthSelectionUpdated(GaborFrequencyAzimuthSelections)),
              this,  SLOT(onFreqAzSelectionsUpdated(GaborFrequencyAzimuthSelections)) );
@@ -394,8 +398,8 @@ void GaborFilterDialog::onPreviewFilteredResult()
     spectral::index nJ = m_inputGrid->getNJ();
 
 
-    //compute FFT of the kernel
-    spectral::complex_array kernelFFT;
+    //compute the unitized (min. = 0.0, max. = 1.0) amplitude of FFT of the kernel.
+    spectral::array kernelFFTamplUnitized;
     {
         //make the kernel
         GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(0.0153841,
@@ -415,63 +419,50 @@ void GaborFilterDialog::onPreviewFilteredResult()
         spectral::array kernelPadded = spectral::project( kernelS, nI, nJ, 1 );
 
         //compute the FFT
+        spectral::complex_array kernelFFT;
         spectral::foward( kernelFFT, kernelPadded );
+
+        //put the complex numbers into polar form
+        spectral::complex_array kernelFFTpolar = spectral::to_polar_form( kernelFFT );
+
+        //get the amplitde values.
+        spectral::array kernelFFTampl = spectral::real( kernelFFTpolar );
+
+        //rescale the amplitudes to 0.0-1.0
+        kernelFFTamplUnitized = kernelFFTampl / kernelFFTampl.max();
     }
 
-    //compute the FFT of the input data
-    spectral::complex_array inputFFT;
+    //compute the FFT of the input data in polar form (magnitude and phase).
+    spectral::complex_array inputFFTpolar;
     {
+        spectral::complex_array inputFFT;
         spectral::arrayPtr inputData( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
         spectral::foward( inputFFT, *inputData );
+        inputFFTpolar = spectral::to_polar_form( inputFFT );
     }
 
-    spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
-    spectral::complex_array kernelFFTpolar = spectral::to_polar_form( kernelFFT );
+    //multiply the magnitude of the input  with the magnitude of the kernel, effectivelly separating the desired frequency/azimuth
+    spectral::array filteredAmplitude = spectral::hadamard( spectral::real( inputFFTpolar ),
+                                                            kernelFFTamplUnitized );
 
-    spectral::array amplProd = spectral::hadamard( spectral::real( inputFFTpolar ),
-                                                   spectral::real( kernelFFTpolar ) );
+    //make a new FFT field by combinind the filtered amplitudes with the untouched phase field of the input
+    spectral::complex_array filteredFFTpolar = spectral::to_complex_array(
+                               filteredAmplitude ,
+                               spectral::imag( inputFFTpolar) );
 
-    spectral::complex_array filteredPolar = spectral::to_complex_array(
-                amplProd, spectral::imag( inputFFTpolar) );
-
-    spectral::complex_array filtered = spectral::to_rectangular_form( filteredPolar );
-
-    spectral::array result( nI, nJ );
-    spectral::backward( result, filtered );
-
-        result = spectral::real( kernelFFT );
-        SVDFactor* grid = new SVDFactor( std::move(result), 1, 0.42,
-                                         m_inputGrid->getOriginX(),
-                                         m_inputGrid->getOriginY(),
-                                         0.0,
-                                         m_inputGrid->getCellSizeI(),
-                                         m_inputGrid->getCellSizeJ(),
-                                         1.0, 0.0 );
-        IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
-        ijgv->setFactor( grid );
-        ijgv->show();
+    //convert the filtered FFT field to Cartesian form (real and imaginary parts)
+    spectral::complex_array filteredFFT = spectral::to_rectangular_form( filteredFFTpolar );
 
 
-//    for(unsigned int j = 0; j < nJ; ++j)
-//        for(unsigned int i = 0; i < nI; ++i) {
-//                itk::Index<GaborUtils::gridDim> index;
-//                index[0] = i;
-//                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-//                GaborUtils::realType correlation = responseRealPart->GetPixel( index );
-//                responseS( i, j ) += correlation;
-//        }
+    //performs inverse FFT to get the filtered result in spatial domain.
+    spectral::array filtered( nI, nJ, 1, 0.0 );
+    spectral::backward( filtered, filteredFFT );
 
-    //show the result
-//    SVDFactor* grid = new SVDFactor( std::move(responseS), 1, 0.42,
-//                                     m_inputGrid->getOriginX(),
-//                                     m_inputGrid->getOriginY(),
-//                                     0.0,
-//                                     m_inputGrid->getCellSizeI(),
-//                                     m_inputGrid->getCellSizeJ(),
-//                                     1.0, 0.0 );
-//    IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
-//    ijgv->setFactor( grid );
-//    ijgv->show();
+    //fftw3 requires that the result be divided by the number of grid cells to get the correct scale
+    filtered = filtered / ( nI * nJ );
+
+    debugGrid( filtered );
+
 }
 
 void GaborFilterDialog::onSaveFilteredResult()
@@ -487,6 +478,21 @@ void GaborFilterDialog::clearDisplay()
         it = _currentActors.erase( it );
     }
     _renderer->RemoveActor( _scaleBarActor );
+}
+
+void GaborFilterDialog::debugGrid(const spectral::array &grid)
+{
+    spectral::array result ( grid );
+    SVDFactor* gridSVD = new SVDFactor( std::move(result), 1, 0.42,
+                                     m_inputGrid->getOriginX(),
+                                     m_inputGrid->getOriginY(),
+                                     0.0,
+                                     m_inputGrid->getCellSizeI(),
+                                     m_inputGrid->getCellSizeJ(),
+                                     1.0, 0.0 );
+    IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
+    ijgv->setFactor( gridSVD );
+    ijgv->show();
 }
 
 void GaborFilterDialog::onPerformGaborFilter()
@@ -557,8 +563,8 @@ void GaborFilterDialog::onPerformGaborFilter()
         progressDialog.setValue( step );
         QApplication::processEvents();
 
-        //get the real part of the Gabor response
-        GaborUtils::ImageTypePtr responseRealPart = GaborUtils::computeGaborResponse( frequency,
+        //get the response of the Gabor filter
+        GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( frequency,
                                                                               azimuth,
                                                                               ui->txtMeanMajorAxis->text().toDouble(),
                                                                               ui->txtMeanMinorAxis->text().toDouble(),
@@ -569,28 +575,13 @@ void GaborFilterDialog::onPerformGaborFilter()
                                                                               inputAsITK,
                                                                               false );
 
-        //get the imaginary part of the Gabor response
-//        GaborUtils::ImageTypePtr responseImaginaryPart = GaborUtils::computeGaborResponse( frequency,
-//                                                                              azimuth,
-//                                                                              ui->txtMeanMajorAxis->text().toDouble(),
-//                                                                              ui->txtMeanMinorAxis->text().toDouble(),
-//                                                                              ui->txtSigmaMajorAxis->text().toDouble(),
-//                                                                              ui->txtSigmaMinorAxis->text().toDouble(),
-//                                                                              ui->spinKernelSizeI->value(),
-//                                                                              ui->spinKernelSizeJ->value(),
-//                                                                              inputAsITK,
-//                                                                              true );
-
         // Read the response image to build the amplitude spectrogram
         for(unsigned int j = 0; j < nJ; ++j)
             for(unsigned int i = 0; i < nI; ++i) {
                     itk::Index<GaborUtils::gridDim> index;
                     index[0] = i;
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                    GaborUtils::realType rValue = responseRealPart->GetPixel( index );
-//                    GaborUtils::realType iValue = responseImaginaryPart->GetPixel( index );
-//                    std::complex<GaborUtils::realType> cValue( rValue, iValue );
-                    //(*m_spectrogram)( i, j, step - s0 ) = std::abs( cValue );
+                    GaborUtils::realType rValue = response->GetPixel( index );
                     (*m_spectrogram)( i, j, step - s0 ) = rValue;
             }
     }

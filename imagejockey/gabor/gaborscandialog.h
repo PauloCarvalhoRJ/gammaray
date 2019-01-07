@@ -25,7 +25,7 @@ public:
             double sigmaMinorAxis,
             int kernelSizeI,
             int kernelSizeJ,
-            QWidget *parent = 0);
+            QWidget *parent = nullptr);
     ~GaborScanDialog();
 
 Q_SIGNALS:

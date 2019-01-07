@@ -124,7 +124,7 @@ void GaborScanDialog::onScan()
             progressDialog.setValue( progressDialog.value()+1 );
             QApplication::processEvents();
             //compute the Gabor response of a given frequency-azimuth pair
-            GaborUtils::ImageTypePtr responseRealPart =
+            GaborUtils::ImageTypePtr response =
                     GaborUtils::computeGaborResponse( frequency,
                                                       azimuth,
                                                       m_meanMajorAxis,
@@ -135,37 +135,9 @@ void GaborScanDialog::onScan()
                                                       m_kernelSizeJ,
                                                       inputImage,
                                                       false);
-//            GaborUtils::ImageTypePtr responseImagPart =
-//                    GaborUtils::computeGaborResponse( frequency,
-//                                                      azimuth,
-//                                                      m_meanMajorAxis,
-//                                                      m_meanMinorAxis,
-//                                                      m_sigmaMajorAxis,
-//                                                      m_sigmaMinorAxis,
-//                                                      m_kernelSizeI,
-//                                                      m_kernelSizeJ,
-//                                                      inputImage,
-//                                                      true);
-
-            // Read the response image to build the amplitude spectrogram
-            GaborUtils::ImageTypePtr responseAmplitude =
-                    GaborUtils::createEmptyITKImageFromCartesianGrid( *m_inputGrid );
-            int nI = m_inputGrid->getNI();
-            int nJ = m_inputGrid->getNJ();
-            for(unsigned int j = 0; j < nJ; ++j)
-                for(unsigned int i = 0; i < nI; ++i) {
-                        itk::Index<GaborUtils::gridDim> index;
-                        index[0] = i;
-                        index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                        GaborUtils::realType rValue = responseRealPart->GetPixel( index );
-//                        GaborUtils::realType iValue = responseImagPart->GetPixel( index );
-//                        std::complex<GaborUtils::realType> cValue( rValue, iValue );
-//                        responseAmplitude->SetPixel( index, std::abs( cValue ) );
-                        responseAmplitude->SetPixel( index, std::abs( rValue ) );
-                }
 
             //get the absolute values from the response grid
-            absFilter->SetInput( responseAmplitude );
+            absFilter->SetInput( response );
             absFilter->Update();
             //compute the image (absolute values) stats
             statisticsImageFilter->SetInput( absFilter->GetOutput() );
@@ -178,6 +150,7 @@ void GaborScanDialog::onScan()
             default: metric = 0.0;
             }
 
+            //assing the metric to the frequency/azimuth space
             gridData(iF, iAz) = metric;
             ++iF;
         }
@@ -198,10 +171,10 @@ void GaborScanDialog::onAddSelection()
     double azmax = ui->txtSelAzMax->text().toDouble();
 
     //force valid values
-    fmin = std::min( 0.000001, fmin );
-    fmax = std::min( 0.000001, fmax );
-    azmin = std::max( std::min( 0.0, azmin ), 180.0 );
-    azmax = std::max( std::min( 0.0, azmax ), 180.0 );
+    fmin = std::max( 0.000001, fmin );
+    fmax = std::max( 0.000001, fmax );
+    azmin = std::min( std::max( 0.0, azmin ), 180.0 );
+    azmax = std::min( std::max( 0.0, azmax ), 180.0 );
 
     m_freqAzSelections.push_back( { fmin,
                                     fmax,

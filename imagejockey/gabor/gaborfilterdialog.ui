@@ -408,7 +408,7 @@
            <item>
             <widget class="QLineEdit" name="txtSigmaMinorAxis">
              <property name="text">
-              <string>75.0</string>
+              <string>50.0</string>
              </property>
             </widget>
            </item>
@@ -529,7 +529,21 @@
            <item>
             <widget class="QLabel" name="label_6">
              <property name="text">
-              <string>correlation display threshold:</string>
+              <string>filter min.:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtThresholdMin">
+             <property name="text">
+              <string>-1000.0</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>max:</string>
              </property>
             </widget>
            </item>
