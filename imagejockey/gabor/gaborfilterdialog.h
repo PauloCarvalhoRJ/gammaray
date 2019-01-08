@@ -19,6 +19,7 @@ class vtkPolyData;
 class vtkImageData;
 class vtkActor;
 class vtkActor2D;
+class vtkCubeAxesActor2D;
 
 class GaborFilterDialog : public QDialog
 {
@@ -57,6 +58,8 @@ private:
     std::vector< vtkSmartPointer<vtkActor> > _currentActors;
     // Pointer to the scale bar actor
     vtkSmartPointer<vtkActor2D> _scaleBarActor;
+    // Pointer to the axes scales actor
+    vtkSmartPointer<vtkCubeAxesActor2D> _axes;
     ///////////////////////////////////////////////////////////
 
     void clearDisplay();

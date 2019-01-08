@@ -32,9 +32,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkScalarBarActor.h>
 #include <vtkThreshold.h>
 #include <vtkCellData.h>
-
-//#include <itkTikhonovDeconvolutionImageFilter.h>
-//#include <itkWienerDeconvolutionImageFilter.h>
+#include <vtkCubeAxesActor2D.h>
+#include <vtkTextProperty.h>
 
 GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
                                      uint inputVariableIndex,
@@ -108,6 +107,42 @@ void GaborFilterDialog::updateDisplay()
     //Clear current display
     clearDisplay();
 
+    //define the frequency schedule
+    uint s0 = 1;
+    uint s1 = s0 + ui->spinNumberOfFrequencySteps->value() - 1;
+    double f0 = ui->txtInitialFrequency->text().toDouble();
+    double f1 = ui->txtFinalFrequency->text().toDouble();
+
+
+    //get the user-entered topological frequencies
+    // the frequencies are topological (that is, inverse of cell counts)
+    // because the Gabor transform involves convolutions, which are cell-centered
+    // operations in grids (they ignore geometry).
+    //get the user-entered kernel sizes
+    int kernelNI = ui->spinKernelSizeI->value();
+    int kernelNJ = ui->spinKernelSizeJ->value();
+    //get the system-defined maximum kernel resolution
+    int maxNI = GaborUtils::gaborKernelMaxNI;
+    int maxNJ = GaborUtils::gaborKernelMaxNJ;
+    //convert the user-entered topological frequencies as cell counts.
+    double nCellsIInitial = kernelNI * ( 1 / f0 ) / maxNI;
+    double nCellsJInitial = kernelNJ * ( 1 / f0 ) / maxNJ;
+    double nCellsIFinal = kernelNI * ( 1 / f1 ) / maxNI;
+    double nCellsJFinal = kernelNJ * ( 1 / f1 ) / maxNJ;
+    //convert cell counts to real-world lengths
+    double featureSizeXInitial = nCellsIInitial * m_inputGrid->getCellSizeI();
+    double featureSizeYInitial = nCellsJInitial * m_inputGrid->getCellSizeJ();
+    double featureSizeXFinal = nCellsIFinal * m_inputGrid->getCellSizeI();
+    double featureSizeYFinal = nCellsJFinal * m_inputGrid->getCellSizeJ();
+    //get resultant feature sizes
+    double featureSizeInitial = std::sqrt( featureSizeXInitial*featureSizeXInitial +
+                                           featureSizeYInitial*featureSizeYInitial );
+    double featureSizeFinal = std::sqrt( featureSizeXFinal*featureSizeXFinal +
+                                         featureSizeYFinal*featureSizeYFinal );
+    //get the feature size step size (intial size is greater because initial frequency is lower)
+    double dFeatureSize = ( featureSizeInitial - featureSizeFinal ) / ( s1 - s0 ) ;
+
+
     /////--------------------code to render the spectrogram cube-----------------------
     vtkSmartPointer<vtkActor> spectrogramActor = vtkSmartPointer<vtkActor>::New();
     vtkSmartPointer<vtkScalarBarActor> scalarBarActor = vtkSmartPointer<vtkScalarBarActor>::New();
@@ -131,10 +166,10 @@ void GaborFilterDialog::updateDisplay()
         vtkImageData* spectrogramGridAsCellCentered = vtkImageData::New();
         spectrogramGridAsCellCentered->SetSpacing ( m_inputGrid->getCellSizeI(),
                                                     m_inputGrid->getCellSizeJ(),
-                                                    1);
+                                                    dFeatureSize);
         spectrogramGridAsCellCentered->SetOrigin ( m_inputGrid->getOriginX() - m_inputGrid->getCellSizeI()/2,
                                                    m_inputGrid->getOriginY() - m_inputGrid->getCellSizeJ()/2,
-                                                  -0.5);
+                                                   featureSizeFinal - 0.5 * dFeatureSize );
         spectrogramGridAsCellCentered->SetExtent( extent[0], extent[1]+1,
                                                   extent[2], extent[3]+1,
                                                   extent[4], extent[5]+1 );
@@ -214,6 +249,25 @@ void GaborFilterDialog::updateDisplay()
         scalarBarActor->SetLookupTable( lut );
         scalarBarActor->SetTitle("correlation");
         scalarBarActor->SetNumberOfLabels( 4 );
+
+        // Create a text style for the cube axes
+        vtkSmartPointer<vtkTextProperty> tprop = vtkSmartPointer<vtkTextProperty>::New();
+        tprop->SetColor(1, 1, 1);
+        tprop->ShadowOn();
+        tprop->SetFontSize(20);
+
+        // add scaling to the edges of the cube.
+        _axes = vtkSmartPointer<vtkCubeAxesActor2D>::New();
+        _axes->SetViewProp( spectrogramActor.GetPointer() );
+        _axes->SetCamera( _renderer->GetActiveCamera() );
+        _axes->SetLabelFormat("%6.4g");
+        _axes->SetFlyModeToClosestTriad();
+        _axes->ScalingOff();
+        _axes->SetNumberOfLabels( 5 );
+        _axes->SetZLabel("Feature Size");
+        _axes->SetAxisTitleTextProperty( tprop.GetPointer() );
+        _axes->SetAxisLabelTextProperty( tprop.GetPointer() );
+        _renderer->AddViewProp( _axes.GetPointer() );
     }
 
     /////-----------------code to render the input grid (aid in interpretation)-------------------
@@ -494,6 +548,7 @@ void GaborFilterDialog::clearDisplay()
         it = _currentActors.erase( it );
     }
     _renderer->RemoveActor( _scaleBarActor );
+    _renderer->RemoveViewProp( _axes.GetPointer() );
 }
 
 void GaborFilterDialog::debugGrid(const spectral::array &grid)
@@ -544,10 +599,10 @@ void GaborFilterDialog::onPerformGaborFilter()
     //  s1 and s0: final and intial step numbers.
     //  f1 and f0: final and initial frequencies.
     //
-    std::function<double (int)> f = [ s0, s1, f0, f1 ](int s)
-                          { return std::pow(10.0,
-                                  ( (s-s0)*(std::log10(f1)-std::log10(f0))/(s1-s0) ) + std::log10( f0 )
-                                            ); };
+//    std::function<double (int)> f = [ s0, s1, f0, f1 ](int s)
+//                          { return std::pow(10.0,
+//                                  ( (s-s0)*(std::log10(f1)-std::log10(f0))/(s1-s0) ) + std::log10( f0 )
+//                                            ); };
 
     // This is the correlation cube (spectrogram)
     // I and J are the index of the input image
@@ -570,10 +625,12 @@ void GaborFilterDialog::onPerformGaborFilter()
     /////////////////////////////////
 
     //for each frequency in the schedule
+    double df = ( f1 - f0 ) / ( s1 - s0 ) ;
     for( uint step = s0; step < s1; ++step ){
 
         //get the current frequency of the schedule
-        double frequency = f( step );
+        //double frequency = f( step );
+        double frequency = f0 + (step - s0) * df;
 
         //update the progress window
         progressDialog.setValue( step );
@@ -598,7 +655,7 @@ void GaborFilterDialog::onPerformGaborFilter()
                     index[0] = i;
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                     GaborUtils::realType rValue = response->GetPixel( index );
-                    (*m_spectrogram)( i, j, step - s0 ) = rValue;
+                    (*m_spectrogram)( i, j, s1 - (step - s0) - 1 ) = rValue;
             }
     }
 
