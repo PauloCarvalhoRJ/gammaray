@@ -592,7 +592,8 @@ void GaborFilterDialog::onPerformGaborFilter()
 {
 
     ///----------------------------user-defined Gabor parameters------------------------------
-    double azimuth = ui->txtAzimuth->text().toDouble();
+    bool singleAzimuth = ui->chkSingleAzimuth->isChecked();
+    double azimuthFinalIfNotSingle = ui->txtAzFinal->text().toDouble();
     ///---------------------------------------------------------------------------------------
 
     //get grid geometry
@@ -658,27 +659,37 @@ void GaborFilterDialog::onPerformGaborFilter()
         progressDialog.setValue( step );
         QApplication::processEvents();
 
-        //get the response of the Gabor filter
-        GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( frequency,
-                                                                              azimuth,
-                                                                              ui->txtMeanMajorAxis->text().toDouble(),
-                                                                              ui->txtMeanMinorAxis->text().toDouble(),
-                                                                              ui->txtSigmaMajorAxis->text().toDouble(),
-                                                                              ui->txtSigmaMinorAxis->text().toDouble(),
-                                                                              ui->spinKernelSizeI->value(),
-                                                                              ui->spinKernelSizeJ->value(),
-                                                                              inputAsITK,
-                                                                              false );
+        double azimuth = ui->txtAzimuth->text().toDouble();
 
-        // Read the response image to build the amplitude spectrogram
-        for(unsigned int j = 0; j < nJ; ++j)
-            for(unsigned int i = 0; i < nI; ++i) {
-                    itk::Index<GaborUtils::gridDim> index;
-                    index[0] = i;
-                    index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                    GaborUtils::realType rValue = response->GetPixel( index );
-                    (*m_spectrogram)( i, j, s1 - (step - s0) - 1 ) = rValue;
-            }
+        while( true ){
+            //get the response of the Gabor filter
+            GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( frequency,
+                                                                                  azimuth,
+                                                                                  ui->txtMeanMajorAxis->text().toDouble(),
+                                                                                  ui->txtMeanMinorAxis->text().toDouble(),
+                                                                                  ui->txtSigmaMajorAxis->text().toDouble(),
+                                                                                  ui->txtSigmaMinorAxis->text().toDouble(),
+                                                                                  ui->spinKernelSizeI->value(),
+                                                                                  ui->spinKernelSizeJ->value(),
+                                                                                  inputAsITK,
+                                                                                  false );
+
+            // Read the response image to build the amplitude spectrogram
+            for(unsigned int j = 0; j < nJ; ++j)
+                for(unsigned int i = 0; i < nI; ++i) {
+                        itk::Index<GaborUtils::gridDim> index;
+                        index[0] = i;
+                        index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                        GaborUtils::realType rValue = response->GetPixel( index );
+                        if( ! singleAzimuth )
+                            rValue = std::abs( rValue );
+                        (*m_spectrogram)( i, j, s1 - (step - s0) - 1 ) += rValue;
+                }
+
+            if( singleAzimuth || azimuth > azimuthFinalIfNotSingle )
+                break;
+            azimuth += 5.0;
+        }
     }
 
     // set the color scale form fields to suitable initial values
