@@ -75,6 +75,16 @@ public:
                                               int kernelSizeJ,
                                               const ImageTypePtr inputImage,
                                               bool imaginaryPart );
+    static ImageTypePtr computeGaborResponse(double frequency,
+                                              double azimuth,
+                                              double meanMajorAxis,
+                                              double meanMinorAxis,
+                                              double sigmaMajorAxis,
+                                              double sigmaMinorAxis,
+                                              int kernelSizeI,
+                                              int kernelSizeJ,
+                                              const spectral::array& inputGrid,
+                                              bool imaginaryPart );
 
     /**
      * Creates a 255 x 255 Gabor template kernel object.  Normally it is downscaled (e.g. 20 x 20)
@@ -121,6 +131,11 @@ public:
      */
     static spectral::array convertITKImageToSpectralArray( const ImageType& input );
 
+    /**
+    * Returns a ITK image object object with data from an spectral::array.
+    * Supported grid dimension depends on what is set in the gridDim constant (see top of this header file).
+    */
+   static ImageTypePtr convertSpectralArrayToITKImage( const spectral::array& input );
 };
 
 #endif // GABORUTILS_H

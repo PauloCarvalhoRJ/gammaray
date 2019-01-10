@@ -635,8 +635,7 @@ void GaborFilterDialog::onPerformGaborFilter()
                             static_cast<spectral::index>(nJ),
                             static_cast<spectral::index>( s1 - s0 ) ) );
 
-    GaborUtils::ImageTypePtr inputAsITK = GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid,
-                                                                                       m_inputVariableIndex);
+    spectral::arrayPtr inputAsArray( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
 
     //////////////////////////////////
     QProgressDialog progressDialog;
@@ -671,7 +670,7 @@ void GaborFilterDialog::onPerformGaborFilter()
                                                                                   ui->txtSigmaMinorAxis->text().toDouble(),
                                                                                   ui->spinKernelSizeI->value(),
                                                                                   ui->spinKernelSizeJ->value(),
-                                                                                  inputAsITK,
+                                                                                  *inputAsArray,
                                                                                   false );
 
             // Read the response image to build the amplitude spectrogram
@@ -683,7 +682,7 @@ void GaborFilterDialog::onPerformGaborFilter()
                         GaborUtils::realType rValue = response->GetPixel( index );
                         if( ! singleAzimuth )
                             rValue = std::abs( rValue );
-                        (*m_spectrogram)( i, j, s1 - (step - s0) - 1 ) += rValue;
+                        (*m_spectrogram)( i, j, s1 - s0 - step ) += rValue;
                 }
 
             if( singleAzimuth || azimuth > azimuthFinalIfNotSingle )

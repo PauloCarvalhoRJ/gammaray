@@ -107,6 +107,34 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse( double frequency,
     return convoluter->GetOutput();
 }
 
+GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
+                                                          double azimuth,
+                                                          double meanMajorAxis,
+                                                          double meanMinorAxis,
+                                                          double sigmaMajorAxis,
+                                                          double sigmaMinorAxis,
+                                                          int kernelSizeI,
+                                                          int kernelSizeJ,
+                                                          const spectral::array &inputGrid,
+                                                          bool imaginaryPart)
+{
+    GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel( frequency,
+                                                                     azimuth,
+                                                                     meanMajorAxis,
+                                                                     meanMinorAxis,
+                                                                     sigmaMajorAxis,
+                                                                     sigmaMinorAxis,
+                                                                     kernelSizeI,
+                                                                     kernelSizeJ,
+                                                                     imaginaryPart );
+
+    spectral::array kernelA = GaborUtils::convertITKImageToSpectralArray( *kernel );
+
+    spectral::array result;
+    spectral::conv2d( result, inputGrid, kernelA );
+    return GaborUtils::convertSpectralArrayToITKImage( result );
+}
+
 GaborUtils::GaborSourceTypePtr GaborUtils::createGabor2D(double frequency,
                                                          double meanMajorAxis,
                                                          double meanMinorAxis,
@@ -321,5 +349,42 @@ spectral::array GaborUtils::convertITKImageToSpectralArray(const GaborUtils::Ima
             }
 
     return result;
+}
+
+GaborUtils::ImageTypePtr GaborUtils::convertSpectralArrayToITKImage( const spectral::array& input )
+{
+    double dX = 1.0;
+    double dY = 1.0;
+    double x0 = 0.0;
+    double y0 = 0.0;
+    unsigned int nI = input.M();
+    unsigned int nJ = input.N();
+
+    ImageTypePtr output = ImageType::New();
+    {
+        ImageType::IndexType start;
+        start.Fill(0); // = 0,0,0
+        ImageType::SizeType size;
+        ImageType::SpacingType spacing; spacing[0] = dX; spacing[1] = dY;
+        output->SetSpacing( spacing );
+        ////////////////////
+        ImageType::PointType origin; origin[0] = x0; origin[1] = y0;
+        output->SetOrigin( origin );
+        size[0] = nI;
+        size[1] = nJ;
+        ImageType::RegionType region(start, size);
+        output->SetRegions(region);
+        output->Allocate();
+        output->FillBuffer(0);
+        for(unsigned int j = 0; j < nJ; ++j)
+            for(unsigned int i = 0; i < nI; ++i){
+                double value = input( i, j, 0 );
+                itk::Index<gridDim> index;
+                index[0] = i;
+                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                output->SetPixel(index, value);
+            }
+    }
+    return output;
 }
 
