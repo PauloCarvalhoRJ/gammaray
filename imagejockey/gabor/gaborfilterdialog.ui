@@ -255,6 +255,26 @@
             </widget>
            </item>
            <item>
+            <widget class="QCheckBox" name="chkSingleAzimuth">
+             <property name="text">
+              <string>single az.</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="txtAzFinal">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <property name="text">
+              <string>180.0</string>
+             </property>
+            </widget>
+           </item>
+           <item>
             <widget class="QPushButton" name="btnUpdateKernelsDisplays">
              <property name="toolTip">
               <string>update kernel displays</string>
@@ -748,8 +768,8 @@
    <slot>onPerformGaborFilter()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>69</x>
-     <y>437</y>
+     <x>293</x>
+     <y>35</y>
     </hint>
     <hint type="destinationlabel">
      <x>253</x>
@@ -781,7 +801,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>293</x>
-     <y>370</y>
+     <y>408</y>
     </hint>
     <hint type="destinationlabel">
      <x>4</x>
@@ -796,7 +816,7 @@
    <slot>onScan()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>293</x>
+     <x>265</x>
      <y>34</y>
     </hint>
     <hint type="destinationlabel">
@@ -860,8 +880,8 @@
    <slot>onUserEditedAFrequency(QString)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>128</x>
-     <y>123</y>
+     <x>182</x>
+     <y>151</y>
     </hint>
     <hint type="destinationlabel">
      <x>2</x>
@@ -876,8 +896,8 @@
    <slot>onUserEditedAFrequency(QString)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>239</x>
-     <y>118</y>
+     <x>293</x>
+     <y>151</y>
     </hint>
     <hint type="destinationlabel">
      <x>-1</x>
@@ -892,8 +912,8 @@
    <slot>onPreviewFilteredResult()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>87</x>
-     <y>426</y>
+     <x>80</x>
+     <y>457</y>
     </hint>
     <hint type="destinationlabel">
      <x>0</x>
@@ -908,12 +928,28 @@
    <slot>onSaveFilteredResult()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>127</x>
-     <y>422</y>
+     <x>114</x>
+     <y>457</y>
     </hint>
     <hint type="destinationlabel">
      <x>305</x>
      <y>439</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkSingleAzimuth</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>txtAzFinal</receiver>
+   <slot>setDisabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>153</x>
+     <y>113</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>213</x>
+     <y>111</y>
     </hint>
    </hints>
   </connection>

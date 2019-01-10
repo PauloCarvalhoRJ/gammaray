@@ -16,6 +16,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/gabor/gaborutils.h"
 #include <QProgressDialog>
 #include <QVTKOpenGLWidget.h>
+#include <QMessageBox>
 #include <vtkAxesActor.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkRenderer.h>
@@ -135,10 +136,8 @@ void GaborFilterDialog::updateDisplay()
     double featureSizeXFinal = nCellsIFinal * m_inputGrid->getCellSizeI();
     double featureSizeYFinal = nCellsJFinal * m_inputGrid->getCellSizeJ();
     //get resultant feature sizes
-    double featureSizeInitial = std::sqrt( featureSizeXInitial*featureSizeXInitial +
-                                           featureSizeYInitial*featureSizeYInitial );
-    double featureSizeFinal = std::sqrt( featureSizeXFinal*featureSizeXFinal +
-                                         featureSizeYFinal*featureSizeYFinal );
+    double featureSizeInitial = ( featureSizeXInitial + featureSizeYInitial ) / 2;
+    double featureSizeFinal = ( featureSizeXFinal + featureSizeYFinal ) / 2;
     //get the feature size step size (intial size is greater because initial frequency is lower)
     double dFeatureSize = ( featureSizeInitial - featureSizeFinal ) / ( s1 - s0 ) ;
 
@@ -447,6 +446,11 @@ void GaborFilterDialog::onUserEditedAFrequency(QString freqValue)
 
 void GaborFilterDialog::onPreviewFilteredResult()
 {
+    if( m_freqAzSelections.empty() ){
+        QMessageBox::critical( this, "Error", "Please, add at least one min./max. frequency/azimuth range in the Gabor scan dialog (the \"scan\" button).");
+        return;
+    }
+
     //get input grid sizes
     spectral::index nI = m_inputGrid->getNI();
     spectral::index nJ = m_inputGrid->getNJ();
@@ -464,11 +468,27 @@ void GaborFilterDialog::onPreviewFilteredResult()
     //azimuth and frequency selection set by the user
     spectral::array kernelFFTamplUnitizedSum( nI, nJ, 1, 0.0 );
 
+    double rangeDiv = 10.0;
+
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Performing back-transforms...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setMaximum( m_freqAzSelections.size() * rangeDiv * rangeDiv );
+    progressDialog.show();
+    /////////////////////////////////
+
+    int progressCounter = 0;
     for( const GaborFrequencyAzimuthSelection& gFAzSel : m_freqAzSelections ){
-        double dAz = ( gFAzSel.maxAz - gFAzSel.minAz ) / 10.0;
-        double dF = ( gFAzSel.maxF - gFAzSel.minF ) / 10.0;
+        double dAz = ( gFAzSel.maxAz - gFAzSel.minAz ) / rangeDiv;
+        double dF = ( gFAzSel.maxF - gFAzSel.minF ) / rangeDiv;
         for( double azimuth = gFAzSel.minAz; azimuth <= gFAzSel.maxAz; azimuth += dAz )
             for( double frequency = gFAzSel.minF; frequency <= gFAzSel.maxF; frequency += dF ){
+
+                progressDialog.setValue( progressCounter );
+                QApplication::processEvents();
+
                 //compute the unitized (min. = 0.0, max. = 1.0) amplitude of FFT of the Gabor kernel of a given azimuth and frequency.
                 spectral::array kernelFFTamplUnitized;
                 {
@@ -504,6 +524,8 @@ void GaborFilterDialog::onPreviewFilteredResult()
 
                     //add this kernel's contribution
                     kernelFFTamplUnitizedSum += kernelFFTamplUnitized;
+
+                    ++progressCounter;
                 }
             }
     }
