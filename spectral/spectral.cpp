@@ -2030,5 +2030,14 @@ array project(const array &in, int newM, int newN, int newK)
     return output;
 }
 
+void normalize(array &in)
+{
+    double sum = 0.0;
+    for (index i = 0; i < in.size(); ++i) {
+        sum += in(i);
+    }
+    normalize( in, 1.0 / sum );
+}
+
 } // namespace spectral
 

@@ -255,6 +255,8 @@ void normalize(complex_array &in, const std::complex<double> &K);
 void normalize(complex_array &in, double K);
 void normalize(array &in, double K);
 
+void normalize( array &in );
+
 /** Puts the values in the 0-1 range. */
 void standardize(array &in);
 
