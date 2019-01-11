@@ -75,6 +75,11 @@ public:
                                               int kernelSizeJ,
                                               const ImageTypePtr inputImage,
                                               bool imaginaryPart );
+
+    /**
+     * Does the same as the other computeGaborResponse, but it uses spectral::conv2d()
+     * which has a better performance.
+     */
     static ImageTypePtr computeGaborResponse(double frequency,
                                               double azimuth,
                                               double meanMajorAxis,

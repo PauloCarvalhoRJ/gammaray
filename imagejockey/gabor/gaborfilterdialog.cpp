@@ -637,6 +637,9 @@ void GaborFilterDialog::onPerformGaborFilter()
 
     spectral::arrayPtr inputAsArray( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
 
+//    GaborUtils::ImageTypePtr inputImage =
+//            GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid, m_inputVariableIndex );
+
     //////////////////////////////////
     QProgressDialog progressDialog;
     progressDialog.show();
@@ -661,8 +664,8 @@ void GaborFilterDialog::onPerformGaborFilter()
         double azimuth = ui->txtAzimuth->text().toDouble();
 
         while( true ){
-            //get the response of the Gabor filter
-            GaborUtils::ImageTypePtr response = GaborUtils::computeGaborResponse( frequency,
+            //get the response of the Gabor filter (real part)
+            GaborUtils::ImageTypePtr responseRealPart = GaborUtils::computeGaborResponse( frequency,
                                                                                   azimuth,
                                                                                   ui->txtMeanMajorAxis->text().toDouble(),
                                                                                   ui->txtMeanMinorAxis->text().toDouble(),
@@ -672,6 +675,17 @@ void GaborFilterDialog::onPerformGaborFilter()
                                                                                   ui->spinKernelSizeJ->value(),
                                                                                   *inputAsArray,
                                                                                   false );
+            //get the response of the Gabor filter (imaginary part)
+            GaborUtils::ImageTypePtr responseImaginaryPart = GaborUtils::computeGaborResponse( frequency,
+                                                                                  azimuth,
+                                                                                  ui->txtMeanMajorAxis->text().toDouble(),
+                                                                                  ui->txtMeanMinorAxis->text().toDouble(),
+                                                                                  ui->txtSigmaMajorAxis->text().toDouble(),
+                                                                                  ui->txtSigmaMinorAxis->text().toDouble(),
+                                                                                  ui->spinKernelSizeI->value(),
+                                                                                  ui->spinKernelSizeJ->value(),
+                                                                                  *inputAsArray,
+                                                                                  true );
 
             // Read the response image to build the amplitude spectrogram
             for(unsigned int j = 0; j < nJ; ++j)
@@ -679,10 +693,10 @@ void GaborFilterDialog::onPerformGaborFilter()
                         itk::Index<GaborUtils::gridDim> index;
                         index[0] = i;
                         index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
-                        GaborUtils::realType rValue = response->GetPixel( index );
-                        if( ! singleAzimuth )
-                            rValue = std::abs( rValue );
-                        (*m_spectrogram)( i, j, s1 - s0 - step ) += rValue;
+                        GaborUtils::realType rValue = responseRealPart->GetPixel( index );
+                        GaborUtils::realType iValue = responseImaginaryPart->GetPixel( index );
+                        std::complex<GaborUtils::realType> cValue( rValue, iValue );
+                        (*m_spectrogram)( i, j, s1 - s0 - step ) += std::abs( cValue );
                 }
 
             if( singleAzimuth || azimuth > azimuthFinalIfNotSingle )

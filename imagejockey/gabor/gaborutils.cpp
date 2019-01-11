@@ -127,11 +127,16 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
                                                                      kernelSizeI,
                                                                      kernelSizeJ,
                                                                      imaginaryPart );
-
     spectral::array kernelA = GaborUtils::convertITKImageToSpectralArray( *kernel );
 
-    spectral::array result;
-    spectral::conv2d( result, inputGrid, kernelA );
+    spectral::normalize( kernelA );
+
+    spectral::array temp;
+    spectral::conv2d( temp, inputGrid, kernelA );
+
+    //Remove padding from the convolution result.
+    spectral::array result = spectral::project( temp, inputGrid.M(), inputGrid.N(), 1 );
+
     return GaborUtils::convertSpectralArrayToITKImage( result );
 }
 

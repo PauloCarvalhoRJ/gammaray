@@ -79,8 +79,10 @@ void GaborScanDialog::onScan()
     double f1 = ui->txtF1->text().toDouble();
 
     //convert the input data to ITK image
-    GaborUtils::ImageTypePtr inputImage =
-            GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid, m_inputVariableIndex );
+//    GaborUtils::ImageTypePtr inputImage =
+//            GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid, m_inputVariableIndex );
+
+    spectral::arrayPtr inputImage( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
 
     //define the list of azimuths to scan
     std::vector<double> azSchedule;
@@ -133,7 +135,7 @@ void GaborScanDialog::onScan()
                                                       m_sigmaMinorAxis,
                                                       m_kernelSizeI,
                                                       m_kernelSizeJ,
-                                                      inputImage,
+                                                      *inputImage,
                                                       false);
 
             //get the absolute values from the response grid
