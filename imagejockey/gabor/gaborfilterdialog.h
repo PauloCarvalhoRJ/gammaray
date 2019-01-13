@@ -45,6 +45,7 @@ private:
     IJQuick3DViewer* m_kernelViewer2;
     GaborScanDialog* m_gsd;
     GaborFrequencyAzimuthSelections m_freqAzSelections;
+    spectral::array m_filteredResult;
 
     ////////-----members used for 3D display-------------------
     // the Qt widget containing a VTK viewport
@@ -63,6 +64,7 @@ private:
     ///////////////////////////////////////////////////////////
 
     void clearDisplay();
+    void performFiltering();
 
     /** Call this to inspect results in grid objects. */
     void debugGrid( const spectral::array& grid );

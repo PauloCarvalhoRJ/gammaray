@@ -1,5 +1,6 @@
 //----------Since we're not building with CMake, we need to init the VTK modules------------------
 //--------------linking with the VTK libraries is often not enough--------------------------------
+#include <QInputDialog>
 #include <vtkAutoInit.h>
 VTK_MODULE_INIT(vtkRenderingOpenGL2) // VTK was built with vtkRenderingOpenGL2
 VTK_MODULE_INIT(vtkInteractionStyle)
@@ -246,7 +247,7 @@ void GaborFilterDialog::updateDisplay()
 
         //Confgure the correlation values scale bar
         scalarBarActor->SetLookupTable( lut );
-        scalarBarActor->SetTitle("correlation");
+        scalarBarActor->SetTitle("amplitude");
         scalarBarActor->SetNumberOfLabels( 4 );
 
         // Create a text style for the cube axes
@@ -451,6 +452,49 @@ void GaborFilterDialog::onPreviewFilteredResult()
         return;
     }
 
+    performFiltering();
+
+    debugGrid( m_filteredResult );
+}
+
+void GaborFilterDialog::onSaveFilteredResult()
+{
+    if( m_freqAzSelections.empty() ){
+        QMessageBox::critical( this, "Error", "Please, add at least one min./max. frequency/azimuth range in the Gabor scan dialog (the \"scan\" button).");
+        return;
+    }
+
+    performFiltering();
+
+    QString proposed_name = m_inputGrid->getVariableByIndex( m_inputVariableIndex )->getVariableName();
+    proposed_name += "_filtered";
+
+    //open file rename dialog
+    bool ok;
+    QString new_name = QInputDialog::getText(this, "Name the variable",
+                                             "New variable with filtered results:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok )
+        return;
+
+    m_inputGrid->appendAsNewVariable( new_name , m_filteredResult );
+    m_inputGrid->saveData();
+
+}
+
+void GaborFilterDialog::clearDisplay()
+{
+    std::vector< vtkSmartPointer<vtkActor> >::iterator it = _currentActors.begin();
+    for( ; it != _currentActors.end(); ){ // erase() already increments the iterator.
+        _renderer->RemoveActor( *it );
+        it = _currentActors.erase( it );
+    }
+    _renderer->RemoveActor( _scaleBarActor );
+    _renderer->RemoveViewProp( _axes.GetPointer() );
+}
+
+void GaborFilterDialog::performFiltering()
+{
     //get input grid sizes
     spectral::index nI = m_inputGrid->getNI();
     spectral::index nJ = m_inputGrid->getNJ();
@@ -547,30 +591,11 @@ void GaborFilterDialog::onPreviewFilteredResult()
 
 
     //performs inverse FFT to get the filtered result in spatial domain.
-    spectral::array filtered( nI, nJ, 1, 0.0 );
-    spectral::backward( filtered, filteredFFT );
+    m_filteredResult = spectral::array( nI, nJ, 1, 0.0 );
+    spectral::backward( m_filteredResult, filteredFFT );
 
     //fftw3 requires that the result be divided by the number of grid cells to get the correct scale
-    filtered = filtered / ( nI * nJ );
-
-    debugGrid( filtered );
-
-}
-
-void GaborFilterDialog::onSaveFilteredResult()
-{
-
-}
-
-void GaborFilterDialog::clearDisplay()
-{
-    std::vector< vtkSmartPointer<vtkActor> >::iterator it = _currentActors.begin();
-    for( ; it != _currentActors.end(); ){ // erase() already increments the iterator.
-        _renderer->RemoveActor( *it );
-        it = _currentActors.erase( it );
-    }
-    _renderer->RemoveActor( _scaleBarActor );
-    _renderer->RemoveViewProp( _axes.GetPointer() );
+    m_filteredResult = m_filteredResult / ( nI * nJ );
 }
 
 void GaborFilterDialog::debugGrid(const spectral::array &grid)
