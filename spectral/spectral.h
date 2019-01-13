@@ -159,6 +159,11 @@ struct array {
      */
     double get_window_average( index M, index N, index K, int halfWindowSize = 1 ) const;
 
+    /** Updates the values of this array with the values of another array where they are greater
+     * than this array's values.  Both arrays must have the same matrix dimension for consistent results.
+     */
+    void updateMax( const array &other );
+
     std::vector<double> d_;
     index ndim_ = 1;
     index M_ = 1; // dim 1

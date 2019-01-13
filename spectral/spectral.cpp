@@ -543,6 +543,13 @@ double array::get_window_average(index M, index N, index K, int halfWindowSize) 
         return std::numeric_limits<double>::quiet_NaN();
 }
 
+void array::updateMax(const array &other)
+{
+    for (index i = 0; i < size(); ++i)
+        if( d_[i] < other.d_[i] )
+            d_[i] = other.d_[i];
+}
+
 const double &array::operator()(index i, index j) const { return d_.at(i * N_ + j); }
 
 const double &array::operator()(index i) const { return d_.at(i); }
