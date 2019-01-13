@@ -7,6 +7,35 @@
 #include <itkStatisticsImageFilter.h>
 #include <itkAbsImageFilter.h>
 #include <QProgressDialog>
+#include <thread>
+
+/** The code for multithreaded convolution *////////////////////////
+void taskConvolution( double frequency,
+             double azimuth,
+             double meanMajorAxis,
+             double meanMinorAxis,
+             double sigmaMajorAxis,
+             double sigmaMinorAxis,
+             int kernelSizeI,
+             int kernelSizeJ,
+             const spectral::array &inputGrid,
+             bool imaginaryPart,
+             GaborUtils::ImageTypePtr* response
+           ){
+             *response =
+                GaborUtils::computeGaborResponse( frequency,
+                                                  azimuth,
+                                                  meanMajorAxis,
+                                                  meanMinorAxis,
+                                                  sigmaMajorAxis,
+                                                  sigmaMinorAxis,
+                                                  kernelSizeI,
+                                                  kernelSizeJ,
+                                                  inputGrid,
+                                                  imaginaryPart );
+}
+///////////////////////////////////////////////////////////////////////////////
+
 
 GaborScanDialog::GaborScanDialog(IJAbstractCartesianGrid *inputGrid,
                                  uint inputVariableIndex,
@@ -72,16 +101,16 @@ void GaborScanDialog::onScan()
     double az0 = 0.0;
     double az1 = 180.0;
 
+    int nI = m_inputGrid->getNI();
+    int nJ = m_inputGrid->getNJ();
+
     //get the user settings
     double azStep = ui->txtAzStep->text().toDouble();
     double fStep = ui->txtFStep->text().toDouble();
     double f0 = ui->txtF0->text().toDouble();
     double f1 = ui->txtF1->text().toDouble();
 
-    //convert the input data to ITK image
-//    GaborUtils::ImageTypePtr inputImage =
-//            GaborUtils::createITKImageFromCartesianGrid( *m_inputGrid, m_inputVariableIndex );
-
+    //convert the input data to spectral::array
     spectral::arrayPtr inputImage( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
 
     //define the list of azimuths to scan
@@ -109,8 +138,6 @@ void GaborScanDialog::onScan()
 
 
     //scan frequencies and azimuths
-    StatisticsImageFilterType::Pointer statisticsImageFilter = StatisticsImageFilterType::New();
-    AbsImageFilterType::Pointer absFilter = AbsImageFilterType::New();
     spectral::index iAz = 0;
     const int MEAN = 0;
     const int MAX = 1;
@@ -125,8 +152,25 @@ void GaborScanDialog::onScan()
             //update the progress dialog
             progressDialog.setValue( progressDialog.value()+1 );
             QApplication::processEvents();
-            //compute the Gabor response of a given frequency-azimuth pair
-            GaborUtils::ImageTypePtr response =
+            //compute the Gabor responses of a given frequency-azimuth pair
+
+            //run the imaginary part in a separate thread
+            GaborUtils::ImageTypePtr responseImagPart;
+            std::thread thread = std::thread( taskConvolution,
+                                  frequency,
+                                  azimuth,
+                                    m_meanMajorAxis,
+                                    m_meanMinorAxis,
+                                    m_sigmaMajorAxis,
+                                    m_sigmaMinorAxis,
+                                    m_kernelSizeI,
+                                    m_kernelSizeJ,
+                                    *inputImage,
+                                    true,
+                                    &responseImagPart
+                                  );
+
+            GaborUtils::ImageTypePtr responseRealPart =
                     GaborUtils::computeGaborResponse( frequency,
                                                       azimuth,
                                                       m_meanMajorAxis,
@@ -138,17 +182,32 @@ void GaborScanDialog::onScan()
                                                       *inputImage,
                                                       false);
 
-            //get the absolute values from the response grid
-            absFilter->SetInput( response );
-            absFilter->Update();
-            //compute the image (absolute values) stats
-            statisticsImageFilter->SetInput( absFilter->GetOutput() );
-            statisticsImageFilter->Update();
+            //wait for the imaginary part thread to finish.
+            thread.join();
+
+            //compute the metrics
+            GaborUtils::realType max = std::numeric_limits<GaborUtils::realType>::min();
+            GaborUtils::realType mean = 0.0;
+            for(unsigned int j = 0; j < nJ; ++j)
+                for(unsigned int i = 0; i < nI; ++i){
+                    itk::Index<GaborUtils::gridDim> index;
+                    index[0] = i;
+                    index[1] = j;
+                    GaborUtils::realType rValue = responseRealPart->GetPixel( index );
+                    GaborUtils::realType iValue = responseImagPart->GetPixel( index );
+                    std::complex<GaborUtils::realType> cValue( rValue, iValue );
+                    GaborUtils::realType amplitude = std::abs( cValue );
+                    if( amplitude > max )
+                        max = amplitude;
+                    mean += amplitude;
+                }
+            mean /= ( nI * nJ );
+
             //get the metric
             double metric;
             switch( whichMetric ){
-            case MEAN: metric = statisticsImageFilter->GetMean(); break;
-            case MAX: metric = statisticsImageFilter->GetMaximum(); break;
+            case MEAN: metric = mean; break;
+            case MAX: metric = max; break;
             default: metric = 0.0;
             }
 

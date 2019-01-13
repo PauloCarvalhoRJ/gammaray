@@ -1,6 +1,9 @@
 #include "gaborutils.h"
 #include "imagejockey/imagejockeyutils.h"
 #include <itkImageDuplicator.h>
+#include <mutex>
+
+std::mutex mutexFFTW; //spectral::conv2d calls FFTW, which crashes when called concurrently
 
 GaborUtils::GaborUtils()
 {
@@ -118,6 +121,7 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
                                                           const spectral::array &inputGrid,
                                                           bool imaginaryPart)
 {
+    std::unique_lock<std::mutex> lck (mutexFFTW, std::defer_lock);
     GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel( frequency,
                                                                      azimuth,
                                                                      meanMajorAxis,
@@ -132,7 +136,9 @@ GaborUtils::ImageTypePtr GaborUtils::computeGaborResponse(double frequency,
     spectral::normalize( kernelA );
 
     spectral::array temp;
+    lck.lock(); //spectral::conv2d calls FFTW, which crashes when called concurrently
     spectral::conv2d( temp, inputGrid, kernelA );
+    lck.unlock();
 
     //Remove padding from the convolution result.
     spectral::array result = spectral::project( temp, inputGrid.M(), inputGrid.N(), 1 );

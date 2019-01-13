@@ -468,7 +468,7 @@ void GaborFilterDialog::onPreviewFilteredResult()
     //azimuth and frequency selection set by the user
     spectral::array kernelFFTamplUnitizedSum( nI, nJ, 1, 0.0 );
 
-    double rangeDiv = 10.0;
+    double rangeDiv = 20.0;
 
     //////////////////////////////////
     QProgressDialog progressDialog;
@@ -523,7 +523,7 @@ void GaborFilterDialog::onPreviewFilteredResult()
                     kernelFFTamplUnitized = kernelFFTampl / kernelFFTampl.max();
 
                     //add this kernel's contribution
-                    kernelFFTamplUnitizedSum += kernelFFTamplUnitized;
+                    kernelFFTamplUnitizedSum.updateMax( kernelFFTamplUnitized );
 
                     ++progressCounter;
                 }
@@ -531,7 +531,7 @@ void GaborFilterDialog::onPreviewFilteredResult()
     }
 
     //unitize the sum of kernel FFT amplitudes
-    kernelFFTamplUnitizedSum = kernelFFTamplUnitizedSum / kernelFFTamplUnitizedSum.max();
+    //kernelFFTamplUnitizedSum = kernelFFTamplUnitizedSum / kernelFFTamplUnitizedSum.max();
 
     //multiply the magnitude of the input  with the magnitude of the kernel, effectivelly separating the desired frequency/azimuth
     spectral::array filteredAmplitude = spectral::hadamard( spectral::real( inputFFTpolar ),
