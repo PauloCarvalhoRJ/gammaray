@@ -195,7 +195,12 @@ void IJQuick3DViewer::clearScene()
 	for( ; it != _currentActors.end(); ){ // erase() already increments the iterator.
 		_renderer->RemoveActor( *it );
 		it = _currentActors.erase( it );
-	}
+    }
+}
+
+void IJQuick3DViewer::hideDismissButton()
+{
+    ui->btnDismiss->hide();
 }
 
 bool IJQuick3DViewer::threadCheck()

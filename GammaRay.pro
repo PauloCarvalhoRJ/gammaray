@@ -230,7 +230,11 @@ SOURCES += main.cpp\
     geometry/hexahedron.cpp \
     geometry/pyramid.cpp \
     geometry/tetrahedron.cpp \
-    imagejockey/emd/emdanalysisdialog.cpp
+    imagejockey/emd/emdanalysisdialog.cpp \
+    imagejockey/gabor/gaborfilterdialog.cpp \
+    imagejockey/gabor/gaborscandialog.cpp \
+    imagejockey/gabor/gaborutils.cpp \
+    imagejockey/gabor/gaborfrequencyazimuthselections.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -439,7 +443,11 @@ HEADERS  += mainwindow.h \
     geometry/hexahedron.h \
     geometry/pyramid.h \
     geometry/tetrahedron.h \
-    imagejockey/emd/emdanalysisdialog.h
+    imagejockey/emd/emdanalysisdialog.h \
+    imagejockey/gabor/gaborfilterdialog.h \
+    imagejockey/gabor/gaborscandialog.h \
+    imagejockey/gabor/gaborutils.h \
+    imagejockey/gabor/gaborfrequencyazimuthselections.h
 
 
 FORMS    += mainwindow.ui \
@@ -518,7 +526,9 @@ FORMS    += mainwindow.ui \
 	dialogs/factorialkrigingdialog.ui \
     dialogs/sisimdialog.ui \
     dialogs/variograminputdialog.ui \
-    imagejockey/emd/emdanalysisdialog.ui
+    imagejockey/emd/emdanalysisdialog.ui \
+    imagejockey/gabor/gaborfilterdialog.ui \
+    imagejockey/gabor/gaborscandialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -615,7 +625,8 @@ LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
                -lITKIOImageBase$$_ITK_VERSION_SUFFIX \
                -litkvnl$$_ITK_VERSION_SUFFIX \
                -litkvnl_algo$$_ITK_VERSION_SUFFIX \
-               -lITKIOPNG$$_ITK_VERSION_SUFFIX
+               -lITKIOPNG$$_ITK_VERSION_SUFFIX \
+               -lITKTransform$$_ITK_VERSION_SUFFIX
 
 #=============================================================================
 
@@ -647,7 +658,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 5.1
+VERSION = 5.3
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

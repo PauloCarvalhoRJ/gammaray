@@ -11,16 +11,12 @@
 #include <cmath>
 #include <numeric>
 #include "ijmatrix3x3.h"
+#include "spectral/spectral.h"
+#include <vtkImageData.h>
 
 class IJSpatialLocation;
 class IJAbstractCartesianGrid;
-class vtkImageData;
 class vtkPolyData;
-
-namespace spectral {
-	struct array;
-    struct complex_array;
-}
 
 class ImageJockeyUtils
 {
@@ -132,12 +128,54 @@ public:
      */
     QString generateUniqueFilePathInDir(const QString directory, const QString file_extension);
 
-	/**
+    /**
 	 * Populates a vtkImageData object with the data from a spectral::array object.
 	 * Client code must create the vtkImageData object beforehand with a call to
 	 * vtkSmartPointer<vtkImageData>::New(), for example.
+     * The client code must also define the grid geometry such as cell sizes and origin
+     * (default are 1,1,1 and 0,0,0 respectively) because spectral::array only has only data values,
+     * not geometry.
+     * @param functor A lambda or non-class function used to transform the values (e.g. absolute values).
+     *                This functor must be made such it accepts a sole double value as parameter and returns a double.
+     *                If you don't need to transform the values, simply call makeVTKImageDataFromSpectralArray without
+     *                the the third parameter.
+     *                Code example:
+     *                       int g(int x) {
+     *                           return std::abs( x );
+     *                       }
+     *                       void Foo::foomethod() {
+     *                           auto lambda = [] (double x) { return std::abs(x); };
+     *                           makeVTKImageDataFromSpectralArray( out, in, lambda ); //pass lambda
+     *                           makeVTKImageDataFromSpectralArray( out, in, g );      //pass function
+     *                       }
 	 */
-	static void makeVTKImageDataFromSpectralArray( vtkImageData* out, const spectral::array& in );
+    template<typename TransformFunctor>
+    static void makeVTKImageDataFromSpectralArray( vtkImageData* out,
+                                                   const spectral::array& in,
+                                                   TransformFunctor functor ) {
+        out->SetExtent(0, in.M()-1, 0, in.N()-1, 0, in.K()-1); //extent (indexes) of GammaRay grids start at i=0,j=0,k=0
+        out->AllocateScalars(VTK_DOUBLE, 1); //each cell will contain one double value.
+        int* extent = out->GetExtent();
+
+        for (int k = extent[4]; k <= extent[5]; ++k){
+            for (int j = extent[2]; j <= extent[3]; ++j){
+                for (int i = extent[0]; i <= extent[1]; ++i){
+                    double* pixel = static_cast<double*>(out->GetScalarPointer(i,j,k));
+                    pixel[0] = functor( in( i, j, k ) );
+                }
+            }
+        }
+    }
+
+    /**
+     * An overload of makeVTKImageDataFromSpectralArray() that builds a default
+     * lambda that does not transform the values.
+     */
+    static void makeVTKImageDataFromSpectralArray( vtkImageData* out,
+                                                   const spectral::array& in ) {
+        auto f = [] (double x) { return x; };
+        makeVTKImageDataFromSpectralArray( out, in, f );
+    }
 
     /**
      * Rasterizes the vector geometry (as a vtkPolyData) into a spectral::array grid object.

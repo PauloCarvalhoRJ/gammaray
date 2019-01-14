@@ -13,5 +13,9 @@
         <file alias="ijpng32">icons/ijpng32.png</file>
         <file alias="ijpngimp32">icons/ijpngimp32.png</file>
         <file alias="ijplay32">icons/ijplay32.png</file>
+        <file alias="ijupdate32">icons/ijupdate32.png</file>
+        <file alias="ijadd32">icons/ijadd32.png</file>
+        <file alias="ijpreview32">icons/ijpreview32.png</file>
+        <file alias="ijsave32">icons/ijsave32.png</file>
     </qresource>
 </RCC>

@@ -44,6 +44,9 @@ signals:
 	 */
 	void save( const SVDFactor* factor );
 
+    /** This signal is emitted when the user zooms. */
+    void zoomed( const QRectF& 	rect );
+
 private:
     Ui::IJGridViewerWidget *ui;
 	ImageJockeyGridPlot* m_gridPlot;

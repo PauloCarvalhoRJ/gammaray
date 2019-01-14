@@ -62,6 +62,9 @@ signals:
 	/** This signal is triggered when an error occurs. */
 	void errorOccurred( QString message );
 
+    /** This signal is emitted when the user zooms. */
+    void zoomed( const QRectF& 	rect );
+
 public Q_SLOTS:
     void showContour( bool on );
     void showSpectrogram( bool on );

@@ -47,6 +47,9 @@ public:
 	/** Removes the actor(s) currently being displayed (if any). */
 	void clearScene();
 
+    /** Hides the dismiss button.  Useful for when this widget is part of another widget. */
+    void hideDismissButton();
+
 private:
 	Ui::IJQuick3DViewer *ui;
 	// the Qt widget containing a VTK viewport

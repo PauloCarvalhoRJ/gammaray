@@ -16,6 +16,7 @@ With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 #include <iostream>
 #include <omp.h>
 #include <vector>
+#include <memory>
 
 namespace spectral
 {
@@ -158,12 +159,19 @@ struct array {
      */
     double get_window_average( index M, index N, index K, int halfWindowSize = 1 ) const;
 
+    /** Updates the values of this array with the values of another array where they are greater
+     * than this array's values.  Both arrays must have the same matrix dimension for consistent results.
+     */
+    void updateMax( const array &other );
+
     std::vector<double> d_;
     index ndim_ = 1;
     index M_ = 1; // dim 1
     index N_ = 1; // dim 2
     index K_ = 1; // dim 3
 };
+
+typedef std::shared_ptr< array > arrayPtr;
 
 array operator-( double theValue, const array& theArray );
 
@@ -251,6 +259,8 @@ void autocovariance_naive(array &out, const array &a, bool centered);
 void normalize(complex_array &in, const std::complex<double> &K);
 void normalize(complex_array &in, double K);
 void normalize(array &in, double K);
+
+void normalize( array &in );
 
 /** Puts the values in the 0-1 range. */
 void standardize(array &in);
@@ -360,6 +370,13 @@ array get_ridges_or_valleys( const array &in,
                              int halfWindowSize,
                              double thresholdAbs,
                              int& count );
+
+/**
+ * Creates an array object with a different grid size and containing the values of the given array.
+ * The values are centered at the center of the new array.  If new dimension is greater, then zeros are
+ * padded, otherwise the outermost values are clipped.
+ */
+array project(const array &in, int newM, int newN, int newK );
 
 } // namepsace spectral
 
