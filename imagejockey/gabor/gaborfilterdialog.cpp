@@ -91,6 +91,9 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     m_kernelViewer2->hideDismissButton();
     ui->frmKernelDisplay2->layout()->addWidget( m_kernelViewer2 );
 
+    ui->spinKernelSizeI->setMaximum( GaborUtils::gaborKernelMaxNI );
+    ui->spinKernelSizeJ->setMaximum( GaborUtils::gaborKernelMaxNJ );
+
     ui->lblFeatureSizeEquiv->setStyleSheet( "background-color: black; border-radius: 10px; color: #00FF00;" );
 
     onUserEditedAFrequency("");
