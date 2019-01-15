@@ -2678,6 +2678,8 @@ void MainWindow::doAddDataFile(const QString filePath )
                                  empty, empty2 );
                     Application::instance()->getProject()->addDataFile( cg );
                 }
+            } else if( dfd.getDataFileType() == DataFileDialog::SEGMENTSET ) {
+                QMessageBox::critical( this, "Error", "Support for segment sets under construction." );
             }
         }
     }
