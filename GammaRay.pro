@@ -234,7 +234,8 @@ SOURCES += main.cpp\
     imagejockey/gabor/gaborfilterdialog.cpp \
     imagejockey/gabor/gaborscandialog.cpp \
     imagejockey/gabor/gaborutils.cpp \
-    imagejockey/gabor/gaborfrequencyazimuthselections.cpp
+    imagejockey/gabor/gaborfrequencyazimuthselections.cpp \
+    dialogs/segmentsetdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -447,7 +448,8 @@ HEADERS  += mainwindow.h \
     imagejockey/gabor/gaborfilterdialog.h \
     imagejockey/gabor/gaborscandialog.h \
     imagejockey/gabor/gaborutils.h \
-    imagejockey/gabor/gaborfrequencyazimuthselections.h
+    imagejockey/gabor/gaborfrequencyazimuthselections.h \
+    dialogs/segmentsetdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -528,7 +530,8 @@ FORMS    += mainwindow.ui \
     dialogs/variograminputdialog.ui \
     imagejockey/emd/emdanalysisdialog.ui \
     imagejockey/gabor/gaborfilterdialog.ui \
-    imagejockey/gabor/gaborscandialog.ui
+    imagejockey/gabor/gaborscandialog.ui \
+    dialogs/segmentsetdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
