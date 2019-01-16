@@ -31,12 +31,29 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>X field</string>
+           <string>field w/ initial X:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="cmbX">
+         <widget class="QComboBox" name="cmbX0">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>field w/ final X:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="cmbX1">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -58,12 +75,29 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Y field</string>
+           <string>field w/ initial Y:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="cmbY">
+         <widget class="QComboBox" name="cmbY0">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_6">
+          <property name="text">
+           <string>field w/ final Y:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="cmbY1">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -85,12 +119,29 @@
            </sizepolicy>
           </property>
           <property name="text">
-           <string>Z field</string>
+           <string>field w/ initial Z:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QComboBox" name="cmbZ">
+         <widget class="QComboBox" name="cmbZ0">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>field w/ final Z:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QComboBox" name="cmbZ1">
           <property name="sizePolicy">
            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
             <horstretch>0</horstretch>

@@ -235,7 +235,8 @@ SOURCES += main.cpp\
     imagejockey/gabor/gaborscandialog.cpp \
     imagejockey/gabor/gaborutils.cpp \
     imagejockey/gabor/gaborfrequencyazimuthselections.cpp \
-    dialogs/segmentsetdialog.cpp
+    dialogs/segmentsetdialog.cpp \
+    domain/segmentset.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -449,7 +450,8 @@ HEADERS  += mainwindow.h \
     imagejockey/gabor/gaborscandialog.h \
     imagejockey/gabor/gaborutils.h \
     imagejockey/gabor/gaborfrequencyazimuthselections.h \
-    dialogs/segmentsetdialog.h
+    dialogs/segmentsetdialog.h \
+    domain/segmentset.h
 
 
 FORMS    += mainwindow.ui \

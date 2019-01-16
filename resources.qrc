@@ -115,5 +115,6 @@
         <file alias="svd32">art/iconsHD/svd32.png</file>
         <file alias="geogrid32">art/iconsHD/geogrid32.png</file>
         <file alias="geogrid32n">art/iconsHD/geogrid32n.png</file>
+        <file alias="segmentset32">art/iconsHD/segmentset32.png</file>
     </qresource>
 </RCC>

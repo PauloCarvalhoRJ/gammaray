@@ -51,6 +51,7 @@
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
 #include "domain/geogrid.h"
+#include "domain/segmentset.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -66,6 +67,7 @@
 #include "dialogs/machinelearningdialog.h"
 #include "dialogs/factorialkrigingdialog.h"
 #include "dialogs/sisimdialog.h"
+#include "dialogs/segmentsetdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -2679,7 +2681,15 @@ void MainWindow::doAddDataFile(const QString filePath )
                     Application::instance()->getProject()->addDataFile( cg );
                 }
             } else if( dfd.getDataFileType() == DataFileDialog::SEGMENTSET ) {
-                QMessageBox::critical( this, "Error", "Support for segment sets under construction." );
+                SegmentSetDialog ssd( this, filePath );
+                ssd.exec();
+                if( ssd.result() == QDialog::Accepted ){
+                    SegmentSet *ss = new SegmentSet( filePath );
+                    ss->setInfo( ssd.getXIniFieldIndex(), ssd.getYIniFieldIndex(), ssd.getZIniFieldIndex(),
+                                 ssd.getXFinFieldIndex(), ssd.getYFinFieldIndex(), ssd.getZFinFieldIndex(),
+                                 ssd.getNoDataValue() );
+                    Application::instance()->getProject()->addDataFile( ss );
+                }
             }
         }
     }
