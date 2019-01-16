@@ -236,7 +236,10 @@ SOURCES += main.cpp\
     imagejockey/gabor/gaborutils.cpp \
     imagejockey/gabor/gaborfrequencyazimuthselections.cpp \
     dialogs/segmentsetdialog.cpp \
-    domain/segmentset.cpp
+    domain/segmentset.cpp \
+    domain/quintuplets.cpp \
+    gslib/gslibparams/gslibparcustomcolor.cpp \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -451,7 +454,10 @@ HEADERS  += mainwindow.h \
     imagejockey/gabor/gaborutils.h \
     imagejockey/gabor/gaborfrequencyazimuthselections.h \
     dialogs/segmentsetdialog.h \
-    domain/segmentset.h
+    domain/segmentset.h \
+    domain/quintuplets.h \
+    gslib/gslibparams/gslibparcustomcolor.h \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.h
 
 
 FORMS    += mainwindow.ui \
@@ -533,7 +539,8 @@ FORMS    += mainwindow.ui \
     imagejockey/emd/emdanalysisdialog.ui \
     imagejockey/gabor/gaborfilterdialog.ui \
     imagejockey/gabor/gaborscandialog.ui \
-    dialogs/segmentsetdialog.ui
+    dialogs/segmentsetdialog.ui \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
