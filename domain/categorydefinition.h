@@ -1,29 +1,33 @@
 #ifndef CATEGORYDEFINITION_H
 #define CATEGORYDEFINITION_H
 
-#include "triads.h"
+#include "domain/quintuplets.h"
 #include <QList>
 
-typedef Triads<int,int,QString> IntIntQStringTriplets;
+typedef Quintuplets<int,int,QString,QColor,QString> IntIntQStringQColorQStringQuintuplets;
 
 class GSLibParType;
 
 /**
- * @brief The CategoryDefinition class represents a file containing triplets of
- * category code (an integer), a GSLib color code (an integer) and a category name (a string).
+ * @brief The CategoryDefinition class represents a file containing quintuplets of
+ * category code (an integer), a GSLib color code (an integer), a category name (a string),
+ * a custom RGB color (a QColor) and an extended name (a string).
  * The triplets are category definitions, for example, to define sandstone as having code 1,
  * color yellow and name "Arenite".
  */
-class CategoryDefinition : public IntIntQStringTriplets
+class CategoryDefinition : public IntIntQStringQColorQStringQuintuplets
 {
 public:
     CategoryDefinition( QString path );
     ~CategoryDefinition();
 
-    int getCategoryCount(){ return getTripletCount(); }
+    int getCategoryCount(){ return getQuintupletCount(); }
+
     int getCategoryCode( int category_index ){ return get1stValue(category_index); }
     int getColorCode( int category_index ){ return get2ndValue(category_index); }
     QString getCategoryName( int category_index ){ return get3rdValue(category_index); }
+    QColor getCustomColor( int category_index ){ return get4thValue(category_index); }
+    QString getExtendedCategoryName( int category_index ){ return get5thValue(category_index); }
 
     /** Returns the category name given its code. */
     QString getCategoryNameByCode( int category_code );

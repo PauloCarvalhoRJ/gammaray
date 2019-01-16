@@ -1302,7 +1302,7 @@ void MainWindow::onCreateCategoryPDF()
 {
     //We can assume the file is a category definitio.
     CategoryDefinition* cd  = (CategoryDefinition*)_right_clicked_file;
-    cd->loadTriplets();
+    cd->loadQuintuplets();
 
     //Create an empty p.d.f.
     CategoryPDF* cpdf = new CategoryPDF(cd, "");

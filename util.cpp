@@ -640,7 +640,7 @@ bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, Catego
     //enable categorical display, if a category definition is passed
     if( cd ){
         //make sure the category definition info is loaded from the file
-        cd->loadTriplets();
+        cd->loadQuintuplets();
         //set category mode on
         GSLibParOption* par11 = gpf.getParameter<GSLibParOption*>(11);
         par11->_selected_value = 1;
@@ -662,6 +662,7 @@ bool Util::viewGrid(Attribute *variable, QWidget* parent = 0, bool modal, Catego
             //set the category name
             GSLibParString* par14_2 = parMV->getParameter<GSLibParString*>( 2 );
             par14_2->_value = cd->getCategoryName( iCat );
+            //the other two values in the category definition are not relevant for GSLib
         }
     }
 

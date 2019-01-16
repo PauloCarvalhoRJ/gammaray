@@ -1,6 +1,6 @@
 #include "gslibparcustomcolor.h"
 #include <QTextStream>
-#include "widgets/widgetgslibparcustomcolor.h"
+#include "gslib/gslibparams/widgets/widgetgslibcustomcolor.h"
 
 GSLibParCustomColor::GSLibParCustomColor(const QString name, const QString label, const QString description) :
     GSLibParType(name, label, description)
@@ -16,14 +16,14 @@ void GSLibParCustomColor::save(QTextStream *out)
 QWidget *GSLibParCustomColor::getWidget()
 {
     if( ! this->_widget )
-       this->_widget = new WidgetGSLibParCustomColor();
-    ((WidgetGSLibParCustomColor*)this->_widget)->fillFields( this );
+       this->_widget = new WidgetGSLibCustomColor();
+    ((WidgetGSLibCustomColor*)this->_widget)->fillFields( this );
     return this->_widget;
 }
 
 bool GSLibParCustomColor::update()
 {
-    ((WidgetGSLibParCustomColor*)this->_widget)->updateValue( this );
+    ((WidgetGSLibCustomColor*)this->_widget)->updateValue( this );
     return true;
 }
 

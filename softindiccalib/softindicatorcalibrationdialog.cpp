@@ -124,7 +124,7 @@ void SoftIndicatorCalibrationDialog::onUpdateNumberOfCalibrationCurves()
             //fills the areas between the curves with the colors of the categories
             CategoryPDF *pdf = (CategoryPDF*)selectedFile;
             CategoryDefinition *cd = pdf->getCategoryDefinition();
-            cd->loadTriplets();
+            cd->loadQuintuplets();
             double curveBase = 0.0;
             for( int i = 0; i < nCategories; ++i ){
                 m_softIndCalibPlot->fillColor( Util::getGSLibColor( cd->getCategoryColorByCode( pdf->get1stValue( i ) ) ) ,
@@ -482,7 +482,7 @@ QString SoftIndicatorCalibrationDialog::saveTmpFileWithSoftIndicators()
                 }else if( selectedFile->getFileType() == "CATEGORYPDF"){
                     CategoryPDF *pdf = (CategoryPDF*)selectedFile;
                     CategoryDefinition *cd = pdf->getCategoryDefinition();
-                    cd->loadTriplets();
+                    cd->loadQuintuplets();
                     labels.append( cd->getCategoryNameByCode( pdf->get1stValue( iSoftIndicator ) ) );
                 }
             }
