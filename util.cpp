@@ -1508,6 +1508,33 @@ void Util::fastSplit(const QString lineGEOEAS, QStringList & list)
     }
 }
 
+std::vector<std::string> Util::tokenizeWithDoubleQuotes( const std::string &lineOfText, bool includeDoubleQuotes )
+{
+    std::vector<std::string> result;
+    size_t i = 0, j = 0, begin = 0;
+    int doubleQuotesOffSet = 1;
+    if( includeDoubleQuotes )
+        doubleQuotesOffSet = 0;
+    std::string currentToken;
+    bool isBetweenDoubleQuotes = false;
+    while(i < lineOfText.size()) {
+        char character = lineOfText[i];
+        if( character == '"' )
+            isBetweenDoubleQuotes = !isBetweenDoubleQuotes;
+        if( ( character != ' ' && character != '\t' ) || isBetweenDoubleQuotes ){
+            if( character != '"' || includeDoubleQuotes )
+                currentToken.push_back( character );
+        }else if( ! currentToken.empty() ){
+            result.push_back( currentToken );
+            currentToken.clear();
+        }
+        ++i;
+    }
+    if( ! currentToken.empty() )
+        result.push_back( currentToken );
+    return result;
+}
+
 void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values,
                  FFTComputationMode isig,
                  FFTImageType itype )
@@ -1839,5 +1866,69 @@ bool Util::isInside(const Vertex3D & p, const std::vector<Face3D> & fs)
 		if ( d < bound )
 			return false;
 	}
-	return true;
+    return true;
+}
+
+bool Util::replaceFaciesNamesWithCodes(QString path, CategoryDefinition *cd, bool useMainNames, QString saveTo)
+{
+    //open a new file for output
+    QFile outputFile( saveTo );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+    //open the input file for reading
+    QFile inputFile( path );
+    if ( inputFile.open(QIODevice::ReadOnly | QFile::Text ) ) {
+        QTextStream in(&inputFile);
+        int lineNumber = 0;
+        while ( !in.atEnd() ){
+            ++lineNumber;
+            // get the text file line
+            QString line = in.readLine();
+            // tokenize the line
+            std::vector<std::string> tokens = Util::tokenizeWithDoubleQuotes( line.toStdString(), false );
+            // prepare the output line
+            QString outputLine;
+            //for each token found in the input line
+            bool thereWasAReplacement = false;
+            for( const std::string& token : tokens ){
+                // for each category
+                bool aTokenMatched = false;
+                for( int catIndex = 0; catIndex < cd->getCategoryCount(); ++catIndex ){
+                    // get the category numerical code as text
+                    QString catCodeAsString = QString::number( cd->getCategoryCode( catIndex ) );
+                    // get the text (category name or alternate name) to be searched and replaced
+                    QString textToReplace = cd->getCategoryName( catIndex );
+                    if( ! useMainNames )
+                        textToReplace = cd->getExtendedCategoryName( catIndex );
+                    //if the token matches a facies name/symbol
+                    if ( ! token.compare( textToReplace.toStdString() ) ){
+                        // the facies code is sent to output
+                        outputLine += catCodeAsString;
+                        aTokenMatched = true;
+                        thereWasAReplacement = true;
+                        break;
+                    }
+                }
+                //if the token didn't match any facies name/symbol, forward it to output
+                if( ! aTokenMatched ){
+                    outputLine += QString(token.c_str());
+                }
+                //tabulate the output
+                outputLine += '\t';
+            }
+            //remove the last tab character
+            outputLine = outputLine.left( outputLine.size()-1 );
+            //writes the output line to the new file
+            out << outputLine << '\n';
+            //report that no token in the line was replaced (possible inconsistency in the file)
+            if( ! thereWasAReplacement )
+                Application::instance()->logWarn("Util::replaceFaciesNamesWithCodes(): line " + QString::number( lineNumber ) + " did not match any facies name/symbol.");
+        }
+        inputFile.close();
+        //closes the output file
+        outputFile.close();
+        return true;
+    } else {
+        return false;
+    }
 }
