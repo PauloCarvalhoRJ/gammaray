@@ -10,6 +10,7 @@ CategoryDefinition::CategoryDefinition(QString path) : IntIntQStringQColorQStrin
 CategoryDefinition::~CategoryDefinition()
 {
     //TODO: delete the objects in m_createdParameters here.
+    clearStashOfCreatedParameters();
 }
 
 QString CategoryDefinition::getCategoryNameByCode(int category_code)
@@ -133,4 +134,19 @@ void CategoryDefinition::addContentElementFromWidget(QWidget *w)
 
     //store the parameter set pointer to delete some time later.
     m_stashOfCreatedParameters.append( par );
+}
+
+void CategoryDefinition::clearLoadedContents()
+{
+    Quintuplets::clearLoadedContents();
+    clearStashOfCreatedParameters();
+}
+
+void CategoryDefinition::clearStashOfCreatedParameters()
+{
+    QList<GSLibParType*>::iterator it = m_stashOfCreatedParameters.begin();
+    for( ; it != m_stashOfCreatedParameters.end(); ){ // erase() already increments the iterator.
+        //delete *it; //TODO: this causes a crash.  investigate later.
+        it = m_stashOfCreatedParameters.erase( it );
+    }
 }

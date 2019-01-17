@@ -51,6 +51,7 @@ public:
     void addContentElementFromWidget( QWidget* w );
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; }
+    virtual void clearLoadedContents();
 
 protected:
     /** This member stores the pointers to the created GSLibParTypes
@@ -58,6 +59,8 @@ protected:
      * They should be deleted at some time (destructor?).
      */
     QList<GSLibParType*> m_stashOfCreatedParameters;
+
+    void clearStashOfCreatedParameters();
 };
 
 #endif // CATEGORYDEFINITION_H

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>252</width>
-    <height>25</height>
+    <width>250</width>
+    <height>23</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,16 +18,16 @@
     <number>0</number>
    </property>
    <property name="leftMargin">
-    <number>1</number>
+    <number>0</number>
    </property>
    <property name="topMargin">
-    <number>1</number>
+    <number>0</number>
    </property>
    <property name="rightMargin">
-    <number>1</number>
+    <number>0</number>
    </property>
    <property name="bottomMargin">
-    <number>1</number>
+    <number>0</number>
    </property>
    <item>
     <widget class="Line" name="line">

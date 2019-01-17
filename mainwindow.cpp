@@ -1300,7 +1300,7 @@ void MainWindow::onEdit()
 
 void MainWindow::onCreateCategoryPDF()
 {
-    //We can assume the file is a category definitio.
+    //We can assume the file is a category definition.
     CategoryDefinition* cd  = (CategoryDefinition*)_right_clicked_file;
     cd->loadQuintuplets();
 
