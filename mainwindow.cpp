@@ -46,6 +46,7 @@
 #include <QMimeData>
 #include <QTimer>
 #include <QProgressDialog>
+#include <QPushButton>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
@@ -464,6 +465,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
+                _projectContextMenu->addAction("Convert facies names/symbols to codes...", this, SLOT(onConvertFaciesNamesToCodes()));
             }
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ||
                 _right_clicked_file->getFileType() == "POINTSET" ){
@@ -2308,6 +2310,30 @@ void MainWindow::onGabor()
     GaborFilterDialog* gfd = new GaborFilterDialog( cg, static_cast<uint>(varIndex), this );
     gfd->show();
 
+}
+
+void MainWindow::onConvertFaciesNamesToCodes()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Choose data file with facies names/symbols:", Util::getLastBrowsedDirectory());
+    if( path.isEmpty() )
+        return;
+    QString saveTo = QFileDialog::getSaveFileName(this, "Save output file as:", Util::getLastBrowsedDirectory());
+    if( ! saveTo.isEmpty() ){
+        //We can assume the file is a category definition.
+        CategoryDefinition* cd  = dynamic_cast<CategoryDefinition*>( _right_clicked_file );
+        if( cd ){
+            cd->loadQuintuplets();
+            QString mainNameExample = cd->getCategoryName( 0 );
+            QString alternateNameExample = cd->getExtendedCategoryName( 0 );
+            QMessageBox msgBox;
+            msgBox.setText("Which textual info to use?");
+            QAbstractButton* pButtonMainName = msgBox.addButton("main name (e.g. " + mainNameExample + ")", QMessageBox::YesRole);
+            msgBox.addButton("alternate name (e.g. " + alternateNameExample + ")", QMessageBox::NoRole);
+            msgBox.exec();
+            bool useMainNames = ( msgBox.clickedButton() == pButtonMainName );
+            Util::replaceFaciesNamesWithCodes( path, cd, useMainNames, saveTo );
+        }
+    }
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
