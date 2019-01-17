@@ -193,6 +193,7 @@ private slots:
 	void onGeoGridCellVolumes();
     void onEMD();
     void onGabor();
+    void onWavelet();
 
 private:
     /**

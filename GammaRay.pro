@@ -234,7 +234,9 @@ SOURCES += main.cpp\
     imagejockey/gabor/gaborfilterdialog.cpp \
     imagejockey/gabor/gaborscandialog.cpp \
     imagejockey/gabor/gaborutils.cpp \
-    imagejockey/gabor/gaborfrequencyazimuthselections.cpp
+    imagejockey/gabor/gaborfrequencyazimuthselections.cpp \
+    imagejockey/wavelet/wavelettransformdialog.cpp \
+    imagejockey/wavelet/waveletutils.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -447,7 +449,9 @@ HEADERS  += mainwindow.h \
     imagejockey/gabor/gaborfilterdialog.h \
     imagejockey/gabor/gaborscandialog.h \
     imagejockey/gabor/gaborutils.h \
-    imagejockey/gabor/gaborfrequencyazimuthselections.h
+    imagejockey/gabor/gaborfrequencyazimuthselections.h \
+    imagejockey/wavelet/wavelettransformdialog.h \
+    imagejockey/wavelet/waveletutils.h
 
 
 FORMS    += mainwindow.ui \
@@ -528,7 +532,8 @@ FORMS    += mainwindow.ui \
     dialogs/variograminputdialog.ui \
     imagejockey/emd/emdanalysisdialog.ui \
     imagejockey/gabor/gaborfilterdialog.ui \
-    imagejockey/gabor/gaborscandialog.ui
+    imagejockey/gabor/gaborscandialog.ui \
+    imagejockey/wavelet/wavelettransformdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -644,6 +649,20 @@ INCLUDEPATH += $$_FFTW3_INCLUDE
 LIBPATH     += $$_FFTW3_LIB
 LIBS        += -lfftw3
 LIBS        += -lfftw3f
+#==============================================================
+
+#========= The GSL (GNU Scientific Library) include and lib path and libraries.=========
+_GSL_INCLUDE = $$(GSL_INCLUDE)
+isEmpty(_GSL_INCLUDE){
+        error(GSL_INCLUDE environment variable not defined.)
+}
+_GSL_LIB = $$(GSL_LIB)
+isEmpty(_GSL_LIB){
+        error(GSL_LIB environment variable not defined.)
+}
+INCLUDEPATH += $$_GSL_INCLUDE
+LIBPATH     += $$_GSL_LIB
+LIBS        += -lgsl
 #==============================================================
 
 #=====================Embedded thirdparty libraries===========================

@@ -80,6 +80,7 @@
 #include "imagejockey/emd/emdanalysisdialog.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/gabor/gaborfilterdialog.h"
+#include "imagejockey/wavelet/wavelettransformdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -508,6 +509,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("EMD analysis", this, SLOT(onEMD()));
                 _projectContextMenu->addAction("Gabor analysis", this, SLOT(onGabor()));
+                _projectContextMenu->addAction("Wavelet transform", this, SLOT(onWavelet()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
@@ -2305,7 +2307,32 @@ void MainWindow::onGabor()
     //open the Gabor analysis dialog
     GaborFilterDialog* gfd = new GaborFilterDialog( cg, static_cast<uint>(varIndex), this );
     gfd->show();
+}
 
+void MainWindow::onWavelet()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    if( cg->getNK() > 1 ){
+        QMessageBox::critical( this, "Error", QString("3D grids are impractical."));
+        return;
+    }
+
+    //get the index of the selected variable in the grid
+    int varIndex = cg->getVariableIndexByName( _right_clicked_attribute->getName() );
+    if( varIndex < 0 ){
+        QMessageBox::critical( this, "Error", QString("IJAbstractCartesianGrid::getVariableIndexByName() returned an invalid variable index."));
+        return;
+    }
+
+    //open the Gabor analysis dialog
+    WaveletTransformDialog* wtd = new WaveletTransformDialog( cg, static_cast<uint>(varIndex), this );
+    wtd->show();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
