@@ -116,5 +116,8 @@
         <file alias="geogrid32">art/iconsHD/geogrid32.png</file>
         <file alias="geogrid32n">art/iconsHD/geogrid32n.png</file>
         <file alias="segmentset32">art/iconsHD/segmentset32.png</file>
+        <file alias="xcoordf32">art/iconsHD/xcoordf32.png</file>
+        <file alias="ycoordf32">art/iconsHD/ycoordf32.png</file>
+        <file alias="zcoordf32">art/iconsHD/zcoordf32.png</file>
     </qresource>
 </RCC>

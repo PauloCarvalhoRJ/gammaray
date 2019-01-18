@@ -433,10 +433,13 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
             _right_clicked_file = static_cast<File*>( index.internalPointer() );
+            //all files should be removable
             _projectContextMenu->addAction("Remove from project", this, SLOT(onRemoveFile()));
             _projectContextMenu->addAction("Remove and delete", this, SLOT(onRemoveAndDeleteFile()));
+            //for all those files editable with GammaRay editors (normaly any file that is not a data file)
             if( _right_clicked_file->isEditable() )
                 _projectContextMenu->addAction("Edit", this, SLOT(onEdit()));
+            //for all thos files with a no-data-value attribute (normally all data files)
             if ( _right_clicked_file->canHaveMetaData() ){
                 _projectContextMenu->addAction("See metadata", this, SLOT(onSeeMetadata()));
                 //TODO: consider creating a method hasNDV() in File class.
@@ -468,7 +471,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Convert facies names/symbols to codes...", this, SLOT(onConvertFaciesNamesToCodes()));
             }
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ||
-                _right_clicked_file->getFileType() == "POINTSET" ){
+                _right_clicked_file->getFileType() == "POINTSET" ||
+                _right_clicked_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Calculator...", this, SLOT(onCalculator()));
                 _projectContextMenu->addAction("Add new variable", this, SLOT(onNewAttribute()));
             }
@@ -482,10 +486,14 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _right_clicked_attribute = static_cast<Attribute*>( index.internalPointer() );
             File* parent_file = _right_clicked_attribute->getContainingFile();
             if( parent_file->getFileType() == "POINTSET" ||
-                parent_file->getFileType() == "CARTESIANGRID"  )
+                parent_file->getFileType() == "CARTESIANGRID" ||
+                parent_file->getFileType() == "SEGMENTSET" )
                 _projectContextMenu->addAction("Histogram", this, SLOT(onHistogram()));
-            if( parent_file->getFileType().compare("POINTSET") == 0 ){
+            if( parent_file->getFileType() == "POINTSET"  ||
+                parent_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Map (locmap)", this, SLOT(onLocMap()));
+            }
+            if( parent_file->getFileType().compare("POINTSET") == 0 ){
                 _projectContextMenu->addAction("Decluster...", this, SLOT(onDecluster()));
             }
             if( parent_file->getFileType().compare("CARTESIANGRID") == 0 ){
@@ -494,14 +502,19 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuMapAs );
             }
             if( parent_file->getFileType() == "POINTSET" ||
-                parent_file->getFileType() == "CARTESIANGRID"  ){
+                parent_file->getFileType() == "CARTESIANGRID"  ||
+                parent_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Probability plot", this, SLOT(onProbPlt()));
-                _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
                 _projectContextMenu->addAction("Normal score...", this, SLOT(onNScore()));
                 _projectContextMenu->addAction("Model a distribution...", this, SLOT(onDistrModel()));
 				_projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
 			}
-            if( parent_file->getFileType().compare("POINTSET") == 0 ){
+            if( parent_file->getFileType() == "POINTSET" ||
+                parent_file->getFileType() == "CARTESIANGRID" ){
+                _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
+            }
+            if( parent_file->getFileType() == "POINTSET"  ||
+                parent_file->getFileType() == "SEGMENTSET" ){
                 makeMenuClassifyInto();
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
@@ -521,8 +534,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
                 }
             }
-            if( parent_file->getFileType() == "POINTSET" ||
-                parent_file->getFileType() == "CARTESIANGRID"  )
+            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
                 _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -545,7 +557,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _projectContextMenu->addAction(menu_caption_xplot.append(menu_caption_vars), this, SLOT(onXPlot()));
             _projectContextMenu->addAction(menu_caption_bidist.append(menu_caption_vars), this, SLOT(onBidistrModel()));
             _projectContextMenu->addAction(menu_caption_xvariography.append(menu_caption_vars), this, SLOT(onVariogramAnalysis()));
-            //if their parent file is a Cartesin grid
+            //if their parent file is a Cartesian grid
             _right_clicked_attribute = static_cast<Attribute*>( index1.internalPointer() );
             _right_clicked_attribute2 = static_cast<Attribute*>( index2.internalPointer() );
             if( _right_clicked_attribute->getContainingFile()->getFileType() == "CARTESIANGRID" ){
@@ -570,9 +582,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _right_clicked_attribute2 = static_cast<Attribute*>( index2.internalPointer() );
             _projectContextMenu->addAction("Q-Q/P-P plot", this, SLOT(onQpplt()));
             //if one parent is a point set and the other is a Cartesian grid
-            if( (_right_clicked_attribute ->getContainingFile()->getFileType()=="POINTSET" &&
+            if( ( Util::isIn( _right_clicked_attribute ->getContainingFile()->getFileType(), {"POINTSET", "SEGMENTSET"} ) &&
                  _right_clicked_attribute2->getContainingFile()->getFileType()=="CARTESIANGRID") ||
-                (_right_clicked_attribute2->getContainingFile()->getFileType()=="POINTSET" &&
+                ( Util::isIn( _right_clicked_attribute ->getContainingFile()->getFileType(), {"POINTSET", "SEGMENTSET"} ) &&
                  _right_clicked_attribute ->getContainingFile()->getFileType()=="CARTESIANGRID")){
                 CartesianGrid* cg;
                 if( _right_clicked_attribute2->getContainingFile()->getFileType()=="CARTESIANGRID" )

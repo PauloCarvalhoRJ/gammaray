@@ -186,9 +186,9 @@ void SegmentSet::updateMetaDataFile()
     out << "Xinitial:" << this->_x_field_index << '\n';
     out << "Yinitial:" << this->_y_field_index << '\n';
     out << "Zinitial:" << this->_z_field_index << '\n';
-    out << "Xfinal:" << this->_x_field_index << '\n';
-    out << "Yfinal:" << this->_y_field_index << '\n';
-    out << "Zfinal:" << this->_z_field_index << '\n';
+    out << "Xfinal:" << this->_x_final_field_index << '\n';
+    out << "Yfinal:" << this->_y_final_field_index << '\n';
+    out << "Zfinal:" << this->_z_final_field_index << '\n';
     out << "NDV:" << this->_no_data_value << '\n';
     QMapIterator<uint, uint> i( this->_wgt_var_pairs );
     while (i.hasNext()) {
