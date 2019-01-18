@@ -239,7 +239,8 @@ SOURCES += main.cpp\
     domain/segmentset.cpp \
     domain/quintuplets.cpp \
     gslib/gslibparams/gslibparcustomcolor.cpp \
-    gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp \
+    dialogs/choosecategorydialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -457,7 +458,8 @@ HEADERS  += mainwindow.h \
     domain/segmentset.h \
     domain/quintuplets.h \
     gslib/gslibparams/gslibparcustomcolor.h \
-    gslib/gslibparams/widgets/widgetgslibcustomcolor.h
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.h \
+    dialogs/choosecategorydialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -540,7 +542,8 @@ FORMS    += mainwindow.ui \
     imagejockey/gabor/gaborfilterdialog.ui \
     imagejockey/gabor/gaborscandialog.ui \
     dialogs/segmentsetdialog.ui \
-    gslib/gslibparams/widgets/widgetgslibcustomcolor.ui
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.ui \
+    dialogs/choosecategorydialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

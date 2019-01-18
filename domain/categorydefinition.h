@@ -35,6 +35,9 @@ public:
     /** Returns the category GSLib color code given its code. */
     uint getCategoryColorByCode( int category_code );
 
+    /** Tests whether the passed code exists in this collection. */
+    bool codeExists( int category_code );
+
     // ProjectComponent interface
 public:
     QIcon getIcon(){return QIcon(":icons/catdef16");}

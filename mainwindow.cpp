@@ -69,6 +69,7 @@
 #include "dialogs/factorialkrigingdialog.h"
 #include "dialogs/sisimdialog.h"
 #include "dialogs/segmentsetdialog.h"
+#include "dialogs/choosecategorydialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -87,8 +88,9 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_subMenuClassifyInto( new QMenu("Classify into", this) ),
-    m_subMenuClassifyWith( new QMenu("Classify with", this) ),
+    m_subMenuClassifyInto( new QMenu("Classify into",       this) ),
+    m_subMenuClassifyWith( new QMenu("Classify with",       this) ),
+    m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
     m_subMenuMapAs( new QMenu("Map as", this) )
 {
     //Import any registry/home user settings of a previous version
@@ -519,6 +521,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
+                makeMenuCategorize();
+                _projectContextMenu->addMenu( m_subMenuCategorize );
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
@@ -2348,6 +2352,54 @@ void MainWindow::onConvertFaciesNamesToCodes()
     }
 }
 
+void MainWindow::onCategorize()
+{
+    //assuming sender() returns a QAction* if execution passes through here.
+    QAction *act = (QAction*)sender();
+
+    //assuming the text in the menu item is the name of a categorical definition file.
+    QString categoricalDefinitionFileName = act->text();
+
+    //try to get the corresponding project component.
+    ProjectComponent* pc = Application::instance()->getProject()->
+            getResourcesGroup()->getChildByName( categoricalDefinitionFileName );
+    if( ! pc ){
+        Application::instance()->logError("MainWindow::onCategorize(): File " + categoricalDefinitionFileName +
+                                          " not found in Resource Files group.");
+        return;
+    }
+
+    //Assuming the project componene is a CategoryDefinition
+    CategoryDefinition* cd = (CategoryDefinition*)pc;
+
+    //Open the dialog to edit the classification intervals and category.
+    ChooseCategoryDialog ccd( cd, "Input", "Choose fallback category:", this );
+    int result = ccd.exec();
+    if( result != QDialog::Accepted )
+        return;
+
+    //Assumes the attribute's parent file is a DataFile
+    DataFile* df = dynamic_cast<DataFile*>(_right_clicked_attribute->getContainingFile());
+
+    //Get the target attribute GEO-EAS index in the data file
+    uint index = df->getFieldGEOEASIndex( _right_clicked_attribute->getName() );
+
+    //propose a name for the new variable
+    QString proposed_name = _right_clicked_attribute->getName() + "_CAT";
+
+    //user enters the name for the new variable
+    QString new_var_name = QInputDialog::getText(this, "Name the new categorical variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name );
+
+    //if the user didn't cancel the input box
+    if ( ! new_var_name.isEmpty() ){
+        //perfom de classification
+        df->convertToCategorical(index-1, cd, ccd.getSelectedCategoryCode(), new_var_name );
+    }
+
+}
+
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
@@ -2665,6 +2717,24 @@ void MainWindow::makeMenuClassifyWith()
                                                   fileAspect->getName(),
                                                   this,
                                                   SLOT(onClassifyWith()));
+            }
+        }
+    }
+}
+
+void MainWindow::makeMenuCategorize()
+{
+    m_subMenuCategorize->clear(); //remove any previously added item actions
+    ObjectGroup* resources = Application::instance()->getProject()->getResourcesGroup();
+    for( uint i = 0; i < (uint)resources->getChildCount(); ++i){
+        ProjectComponent *pc = resources->getChildByIndex( i );
+        if( pc->isFile() ){
+            File *fileAspect = (File*)pc;
+            if( fileAspect->getFileType() == "CATEGORYDEFINITION" ){
+                m_subMenuCategorize->addAction( fileAspect->getIcon(),
+                                                fileAspect->getName(),
+                                                this,
+                                                SLOT(onCategorize()));
             }
         }
     }

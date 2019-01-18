@@ -33,6 +33,16 @@ uint CategoryDefinition::getCategoryColorByCode(int category_code)
     return 0;
 }
 
+bool CategoryDefinition::codeExists(int category_code)
+{
+    uint nQuintuplets = getCategoryCount();
+    for( uint i = 0; i < nQuintuplets; ++i){
+        if( category_code == getCategoryCode( i ) )
+            return true;
+    }
+    return false;
+}
+
 void CategoryDefinition::save(QTextStream *txt_stream)
 {
     (*txt_stream) << this->getFileType() << ":" << this->getFileName() << '\n';

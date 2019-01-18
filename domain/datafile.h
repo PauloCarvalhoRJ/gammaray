@@ -225,6 +225,13 @@ public:
      */
     void classify(uint column, UnivariateCategoryClassification* ucc , const QString name_for_new_column);
 
+    /**
+     * Adds a new data column of categorical type with the same values as the input column.
+     * Values not corresponding to one of the category codes of the passed CategoryDefinition object
+     * are mapped to the given fallback code (supposedly one of the codes in the CategoryDefinition).
+     */
+    void convertToCategorical(uint column, CategoryDefinition* cd, int fallbackCode, const QString name_for_new_column);
+
     /** De-allocates the data loaded with loadData(). */
     void freeLoadedData();
 
