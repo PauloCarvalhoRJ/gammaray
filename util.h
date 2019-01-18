@@ -609,6 +609,14 @@ public:
                                              CategoryDefinition* cd,
                                              bool useMainNames,
                                              QString saveTo );
+
+    /**
+     * Tests wheter the string is one of those in the list.
+     * This method is designed for comparison against a short list of constant strings.
+     * For brevity, it is suggested to call this function like this:
+     *    Util::isIn( droidName, {"C3PO", "R2D2", "BB8"} );
+     */
+    static bool isIn( const QString& stringToTest, const QStringList& listOfValues );
 };
 
 #endif // UTIL_H

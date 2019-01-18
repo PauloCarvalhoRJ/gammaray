@@ -1932,3 +1932,8 @@ bool Util::replaceFaciesNamesWithCodes(QString path, CategoryDefinition *cd, boo
         return false;
     }
 }
+
+bool Util::isIn(const QString &stringToTest, const QStringList &listOfValues)
+{
+    return listOfValues.contains( stringToTest );
+}
