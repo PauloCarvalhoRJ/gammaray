@@ -9,6 +9,7 @@ class Attribute;
 class CartesianGrid;
 class GeoGrid;
 class View3DWidget;
+class SegmentSet;
 
 /** Marks cells as visible or visible due to several reasons. */
 enum class InvisibiltyFlag : int {
@@ -41,6 +42,8 @@ public:
 
 private:
     static View3DViewData buildForAttributeFromPointSet( PointSet* pointSet, Attribute* attribute, View3DWidget * widget3D );
+
+    static View3DViewData buildForAttributeFromSegmentSet(SegmentSet* segmentSet, Attribute* attribute, View3DWidget * widget3D );
 
     /** Specific builder for a Cartesian grid that represents a 2D map (nZ < 2).
      *  The grid is displayed in the XY plane (Z=0).
