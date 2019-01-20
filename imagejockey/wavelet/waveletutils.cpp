@@ -54,33 +54,42 @@ void WaveletUtils::transform( IJAbstractCartesianGrid *cg, int variableIndex )
     padFilter->Update();
     GaborUtils::ImageTypePtr inputMirrorPadded = padFilter->GetOutput();
 
-    int nc = nPowerOf2*nPowerOf2 - 20;
-
     //the following low-level code is necessary to interface to GSL library.
 
     //the input data in raw format used by GSL
     double *data = new double[ nPowerOf2 * nPowerOf2 ];
     fillRawArray( inputMirrorPadded, data );
 
+    //array to hold the absolute values of the DWT coefficients
     double *abscoeff = new double[ nPowerOf2 * nPowerOf2 ];
 
+    //array to hold the indexes of the coefficients ordered by value.
     size_t *p = new size_t[ nPowerOf2 * nPowerOf2 ];
 
+    //the wavelet
     gsl_wavelet *w = gsl_wavelet_alloc (gsl_wavelet_daubechies, 4);
 
-    gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 * nPowerOf2 );
+    //the transform in 2D operates on individual rows and columns.
+    gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
 
-    gsl_wavelet2d_transform_forward( w, data, 1, nPowerOf2, nPowerOf2, work);
+    //DWT
+    gsl_wavelet2d_transform_forward( w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
 
+    //compute the absolute values of the DWT coefficients
     for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
         abscoeff[i] = fabs (data[i]);
 
+    //order them by their values
     gsl_sort_index (p, abscoeff, 1, nPowerOf2*nPowerOf2);
 
-    for (int i = 0; (i + nc) < nPowerOf2*nPowerOf2; i++)
-        data[p[i]] = 0;
+    //filter, which means to zero-out the coefficients corresponding to certain
+    //energy levels
+    for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
+        if( i < nPowerOf2*nPowerOf2-200 || i > nPowerOf2*nPowerOf2-20 )
+            data[p[i]] = 0;
 
-    gsl_wavelet2d_transform_inverse(w, data, 1, nPowerOf2, nPowerOf2, work);
+    //DWT back transform
+    gsl_wavelet2d_transform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
 
     debugGridRawArray( data, nPowerOf2, nPowerOf2, 1 );
 
