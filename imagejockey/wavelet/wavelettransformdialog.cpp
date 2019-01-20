@@ -1,6 +1,9 @@
 #include "wavelettransformdialog.h"
 #include "ui_wavelettransformdialog.h"
 
+#include "imagejockey/wavelet/waveletutils.h"
+
+
 WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::WaveletTransformDialog),
@@ -21,5 +24,6 @@ WaveletTransformDialog::~WaveletTransformDialog()
 
 void WaveletTransformDialog::onPerformTransform()
 {
-
+    WaveletUtils::transform( m_inputGrid, m_inputVariableIndex );
 }
+
