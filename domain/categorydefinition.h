@@ -35,6 +35,11 @@ public:
     /** Returns the category GSLib color code given its code. */
     uint getCategoryColorByCode( int category_code );
 
+    /** Returns the index of the category given its code.
+     * Returns -1 of the category code is not found.
+     */
+    int getCategoryIndex( int category_code );
+
     /** Tests whether the passed code exists in this collection. */
     bool codeExists( int category_code );
 

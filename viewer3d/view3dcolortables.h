@@ -5,6 +5,7 @@
 #include <QString>
 
 class vtkLookupTable;
+class CategoryDefinition;
 
 /*! The available color tables. */
 enum class ColorTable : uint {
@@ -24,6 +25,12 @@ public:
 
     /** Returns the name of a color table given its code. */
     static QString getColorTableName( ColorTable ct );
+
+    /** Makes a color table for a categorical variable.
+     * @param useGSLibColors If true, uses the RGB colors restriced to GSLib standard colors (GSLib color codes).
+     *                       If false, uses the RGB values specified in the custom color field of the category definition.
+     */
+    static vtkSmartPointer<vtkLookupTable> getCategoricalColorTable(CategoryDefinition *cd , bool useGSLibColors);
 
 private:
     /** Code example for implementing color tables with predefined colors. */

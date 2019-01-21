@@ -30,7 +30,7 @@ public:
     void setInfoFromMetadataFile();
 
     /** The inherited getXindex(), getYindex() and getZindex() from PointSet are the
-     * coordinates of the initial segment.
+     * coordinates of the initial segment. First index is 1 (GEO-EAS indexes).
      */
     int getXFinalIndex();
     int getYFinalIndex();

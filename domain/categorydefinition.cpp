@@ -33,6 +33,16 @@ uint CategoryDefinition::getCategoryColorByCode(int category_code)
     return 0;
 }
 
+int CategoryDefinition::getCategoryIndex(int category_code)
+{
+    uint nQuintuplets = getCategoryCount();
+    for( uint i = 0; i < nQuintuplets; ++i){
+        if( category_code == getCategoryCode( i ) )
+            return i;
+    }
+    return -1;
+}
+
 bool CategoryDefinition::codeExists(int category_code)
 {
     uint nQuintuplets = getCategoryCount();

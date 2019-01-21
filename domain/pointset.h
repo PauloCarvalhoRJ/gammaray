@@ -37,6 +37,7 @@ public:
      */
     void setInfoFromOtherPointSet( PointSet* otherPS );
 
+    /** First index is 1 (GEO-EAS indexes) */
     int getXindex();
     int getYindex();
     int getZindex();
