@@ -240,7 +240,8 @@ SOURCES += main.cpp\
     domain/quintuplets.cpp \
     gslib/gslibparams/gslibparcustomcolor.cpp \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp \
-    dialogs/choosecategorydialog.cpp
+    dialogs/choosecategorydialog.cpp \
+    domain/faciestransitionmatrix.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -459,7 +460,8 @@ HEADERS  += mainwindow.h \
     domain/quintuplets.h \
     gslib/gslibparams/gslibparcustomcolor.h \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.h \
-    dialogs/choosecategorydialog.h
+    dialogs/choosecategorydialog.h \
+    domain/faciestransitionmatrix.h
 
 
 FORMS    += mainwindow.ui \

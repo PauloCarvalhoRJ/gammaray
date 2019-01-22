@@ -195,6 +195,7 @@ private slots:
     void onGabor();
     void onConvertFaciesNamesToCodes();
     void onCategorize();
+    void onAddFaciesTransitionMatrix();
 
 private:
     /**

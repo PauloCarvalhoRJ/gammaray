@@ -431,6 +431,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         if ( index.isValid() && index.internalPointer() == project->getResourcesGroup()) {
             _projectContextMenu->addAction("Create threshold c.d.f. ...", this, SLOT(onCreateThresholdCDF()));
             _projectContextMenu->addAction("Create categories definition ...", this, SLOT(onCreateCategoryDefinition()));
+            _projectContextMenu->addAction("Add facies transition matrix...", this, SLOT(onAddFaciesTransitionMatrix()));
         }
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
@@ -2348,6 +2349,7 @@ void MainWindow::onConvertFaciesNamesToCodes()
             msgBox.exec();
             bool useMainNames = ( msgBox.clickedButton() == pButtonMainName );
             Util::replaceFaciesNamesWithCodes( path, cd, useMainNames, saveTo );
+            Util::saveLastBrowsedDirectoryOfFile( saveTo );
         }
     }
 }
@@ -2397,6 +2399,14 @@ void MainWindow::onCategorize()
         //perfom de classification
         df->convertToCategorical(index-1, cd, ccd.getSelectedCategoryCode(), new_var_name );
     }
+
+}
+
+void MainWindow::onAddFaciesTransitionMatrix()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Choose file formatted as a transition matrix (see program manual):", Util::getLastBrowsedDirectory());
+    if( path.isEmpty() )
+        return;
 
 }
 
