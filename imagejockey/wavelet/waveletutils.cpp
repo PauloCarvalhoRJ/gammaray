@@ -13,7 +13,11 @@ WaveletUtils::WaveletUtils()
 {
 }
 
-void WaveletUtils::transform( IJAbstractCartesianGrid *cg, int variableIndex )
+void WaveletUtils::transform( IJAbstractCartesianGrid *cg,
+                              int variableIndex ,
+                              WaveletFamily waveletFamily,
+                              int waveletType,
+                              bool interleaved )
 {
     //get the grid dimensions
     int nI = cg->getNI();
@@ -28,7 +32,6 @@ void WaveletUtils::transform( IJAbstractCartesianGrid *cg, int variableIndex )
     int nPowerOf2 = 1;
     while( nPowerOf2 < nMax )
         nPowerOf2 <<= 1;
-
 
     //load the input data as an array
     cg->dataWillBeRequested();
@@ -67,13 +70,29 @@ void WaveletUtils::transform( IJAbstractCartesianGrid *cg, int variableIndex )
     size_t *p = new size_t[ nPowerOf2 * nPowerOf2 ];
 
     //the wavelet
-    gsl_wavelet *w = gsl_wavelet_alloc (gsl_wavelet_daubechies, 4);
+    gsl_wavelet *w;
+    switch ( waveletFamily ) {
+    case WaveletFamily::DAUBECHIES:
+        w = gsl_wavelet_alloc ( gsl_wavelet_daubechies, waveletType );
+        break;
+    case WaveletFamily::HAAR:
+        w = gsl_wavelet_alloc ( gsl_wavelet_haar, waveletType );
+        break;
+    case WaveletFamily::B_SPLINE:
+        w = gsl_wavelet_alloc ( gsl_wavelet_bspline, waveletType );
+        break;
+    default:
+        break;
+    }
 
     //the transform in 2D operates on individual rows and columns.
     gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
 
     //DWT
-    gsl_wavelet2d_transform_forward( w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
+    if( interleaved )
+        gsl_wavelet2d_nstransform_forward( w, data, nPowerOf2, nPowerOf2, nPowerOf2, work );
+    else
+        gsl_wavelet2d_transform_forward( w, data, nPowerOf2, nPowerOf2, nPowerOf2, work );
 
     //compute the absolute values of the DWT coefficients
     for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
@@ -85,13 +104,14 @@ void WaveletUtils::transform( IJAbstractCartesianGrid *cg, int variableIndex )
     //filter, which means to zero-out the coefficients corresponding to certain
     //energy levels
     for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
-        if( i < nPowerOf2*nPowerOf2-200 || i > nPowerOf2*nPowerOf2-20 )
+        if( i < nPowerOf2*nPowerOf2-20 || i > nPowerOf2*nPowerOf2 )
             data[p[i]] = 0;
 
     //DWT back transform
-    gsl_wavelet2d_transform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
-
-    debugGridRawArray( data, nPowerOf2, nPowerOf2, 1 );
+    if( interleaved )
+        gsl_wavelet2d_nstransform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
+    else
+        gsl_wavelet2d_transform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
 
     //free allocated resources
     gsl_wavelet_free (w);

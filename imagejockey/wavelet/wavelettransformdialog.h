@@ -1,6 +1,8 @@
 #ifndef WAVELETTRANSFORMDIALOG_H
 #define WAVELETTRANSFORMDIALOG_H
 
+#include "imagejockey/wavelet/waveletutils.h"
+
 #include <QDialog>
 
 namespace Ui {
@@ -23,9 +25,11 @@ private:
     Ui::WaveletTransformDialog *ui;
     IJAbstractCartesianGrid* m_inputGrid;
     uint m_inputVariableIndex;
+    WaveletFamily getSelectedWaveletFamily();
 
 private Q_SLOTS:
     void onPerformTransform();
+    void onWaveletFamilySelected( QString waveletFamilyName );
 };
 
 #endif // WAVELETTRANSFORMDIALOG_H

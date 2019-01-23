@@ -17,5 +17,6 @@
         <file alias="ijadd32">icons/ijadd32.png</file>
         <file alias="ijpreview32">icons/ijpreview32.png</file>
         <file alias="ijsave32">icons/ijsave32.png</file>
+        <file alias="ijreadgrid32">icons/ijreadgrid32.png</file>
     </qresource>
 </RCC>
