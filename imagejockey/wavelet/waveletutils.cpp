@@ -13,7 +13,7 @@ WaveletUtils::WaveletUtils()
 {
 }
 
-void WaveletUtils::transform( IJAbstractCartesianGrid *cg,
+spectral::array WaveletUtils::transform( IJAbstractCartesianGrid *cg,
                               int variableIndex ,
                               WaveletFamily waveletFamily,
                               int waveletType,
@@ -63,11 +63,11 @@ void WaveletUtils::transform( IJAbstractCartesianGrid *cg,
     double *data = new double[ nPowerOf2 * nPowerOf2 ];
     fillRawArray( inputMirrorPadded, data );
 
-    //array to hold the absolute values of the DWT coefficients
-    double *abscoeff = new double[ nPowerOf2 * nPowerOf2 ];
+//    //array to hold the absolute values of the DWT coefficients
+//    double *abscoeff = new double[ nPowerOf2 * nPowerOf2 ];
 
     //array to hold the indexes of the coefficients ordered by value.
-    size_t *p = new size_t[ nPowerOf2 * nPowerOf2 ];
+//    size_t *p = new size_t[ nPowerOf2 * nPowerOf2 ];
 
     //the wavelet
     gsl_wavelet *w;
@@ -94,31 +94,39 @@ void WaveletUtils::transform( IJAbstractCartesianGrid *cg,
     else
         gsl_wavelet2d_transform_forward( w, data, nPowerOf2, nPowerOf2, nPowerOf2, work );
 
-    //compute the absolute values of the DWT coefficients
-    for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
-        abscoeff[i] = fabs (data[i]);
+    //prepare the result
+    spectral::array result( nPowerOf2, nPowerOf2, 1, 0.0 );
+    for( int j = 0; j < nPowerOf2; ++j )
+        for( int i = 0; i < nPowerOf2; ++i )
+            result(i, j) = data[ j * nPowerOf2 + i];
 
-    //order them by their values
-    gsl_sort_index (p, abscoeff, 1, nPowerOf2*nPowerOf2);
+//    //compute the absolute values of the DWT coefficients
+//    for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
+//        abscoeff[i] = fabs (data[i]);
 
-    //filter, which means to zero-out the coefficients corresponding to certain
-    //energy levels
-    for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
-        if( i < nPowerOf2*nPowerOf2-20 || i > nPowerOf2*nPowerOf2 )
-            data[p[i]] = 0;
+//    //order them by their values
+//    gsl_sort_index (p, abscoeff, 1, nPowerOf2*nPowerOf2);
 
-    //DWT back transform
-    if( interleaved )
-        gsl_wavelet2d_nstransform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
-    else
-        gsl_wavelet2d_transform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
+//    //filter, which means to zero-out the coefficients corresponding to certain
+//    //energy levels
+//    for (int i = 0; i < nPowerOf2*nPowerOf2; i++)
+//        if( i < nPowerOf2*nPowerOf2-20 || i > nPowerOf2*nPowerOf2 )
+//            data[p[i]] = 0;
 
-    //free allocated resources
+//    //DWT back transform
+//    if( interleaved )
+//        gsl_wavelet2d_nstransform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
+//    else
+//        gsl_wavelet2d_transform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
+
+//    //free allocated resources
     gsl_wavelet_free (w);
     gsl_wavelet_workspace_free (work);
     delete[] data;
-    delete[] abscoeff;
-    delete[] p;
+//    delete[] abscoeff;
+//    delete[] p;
+
+    return result;
 }
 
 void WaveletUtils::fillRawArray(const GaborUtils::ImageTypePtr input, double *output)

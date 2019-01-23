@@ -1,7 +1,9 @@
 #include "wavelettransformdialog.h"
 #include "ui_wavelettransformdialog.h"
 
-
+#include "spectral/spectral.h"
+#include "imagejockey/svd/svdfactor.h"
+#include "imagejockey/widgets/ijgridviewerwidget.h"
 
 #include <QMessageBox>
 
@@ -16,6 +18,8 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     this->setWindowTitle( "Wavelet Transform Dialog" );
+
+    onWaveletFamilySelected( ui->cmbWaveletFamily->currentText() );
 }
 
 WaveletTransformDialog::~WaveletTransformDialog()
@@ -41,13 +45,14 @@ WaveletFamily WaveletTransformDialog::getSelectedWaveletFamily()
 
 void WaveletTransformDialog::onPerformTransform()
 {
-    int waveletType = ui->cmbWaveletType->currentData().Int;
+    int waveletType = ui->cmbWaveletType->itemData( ui->cmbWaveletType->currentIndex() ).toInt();
     bool interleaved = ( ui->cmbMethod->currentIndex() == 0 );
-    WaveletUtils::transform( m_inputGrid,
-                             m_inputVariableIndex,
-                             getSelectedWaveletFamily(),
-                             waveletType,
-                             interleaved );
+    m_DWTbuffer = WaveletUtils::transform( m_inputGrid,
+                                           m_inputVariableIndex,
+                                           getSelectedWaveletFamily(),
+                                           waveletType,
+                                           interleaved );
+    debugGrid( m_DWTbuffer );
 }
 
 void WaveletTransformDialog::onWaveletFamilySelected( QString waveletFamilyName )
@@ -56,29 +61,48 @@ void WaveletTransformDialog::onWaveletFamilySelected( QString waveletFamilyName 
     // http://www.gnu.org/software/gsl/manual/html_node/DWT-Initialization.html#DWT-Initialization
     ui->cmbWaveletType->clear();
     if( waveletFamilyName == "Daubechies" ){
-        for( int i = 2; i < 21; i += 2)
-            ui->cmbWaveletType->addItem( QString::number( i ), i );
+        for( int i = 4; i < 21; i += 2)
+            ui->cmbWaveletType->addItem( QString::number( i ), QVariant( i ) );
         return;
     }
     if( waveletFamilyName == "Haar" ){
-        ui->cmbWaveletType->addItem( "2", 2 );
+        ui->cmbWaveletType->addItem( "2", QVariant( 2 ) );
         return;
     }
     if( waveletFamilyName == "B-Spline" ){
         //parameter is computed as i*100 + j
-        ui->cmbWaveletType->addItem( "i=1, j=3", 103 );
-        ui->cmbWaveletType->addItem( "i=1, j=5", 105 );
-        ui->cmbWaveletType->addItem( "i=2, j=2", 202 );
-        ui->cmbWaveletType->addItem( "i=2, j=4", 204 );
-        ui->cmbWaveletType->addItem( "i=2, j=6", 206 );
-        ui->cmbWaveletType->addItem( "i=2, j=8", 208 );
-        ui->cmbWaveletType->addItem( "i=3, j=1", 301 );
-        ui->cmbWaveletType->addItem( "i=3, j=3", 303 );
-        ui->cmbWaveletType->addItem( "i=3, j=5", 305 );
-        ui->cmbWaveletType->addItem( "i=3, j=7", 307 );
-        ui->cmbWaveletType->addItem( "i=3, j=9", 309 );
+        ui->cmbWaveletType->addItem( "i=1, j=3", QVariant( 103 ));
+        ui->cmbWaveletType->addItem( "i=1, j=5", QVariant( 105 ));
+        ui->cmbWaveletType->addItem( "i=2, j=2", QVariant( 202 ));
+        ui->cmbWaveletType->addItem( "i=2, j=4", QVariant( 204 ));
+        ui->cmbWaveletType->addItem( "i=2, j=6", QVariant( 206 ));
+        ui->cmbWaveletType->addItem( "i=2, j=8", QVariant( 208 ));
+        ui->cmbWaveletType->addItem( "i=3, j=1", QVariant( 301 ));
+        ui->cmbWaveletType->addItem( "i=3, j=3", QVariant( 303 ));
+        ui->cmbWaveletType->addItem( "i=3, j=5", QVariant( 305 ));
+        ui->cmbWaveletType->addItem( "i=3, j=7", QVariant( 307 ));
+        ui->cmbWaveletType->addItem( "i=3, j=9", QVariant( 309 ));
         return;
     }
     QMessageBox::critical( this, "Error", QString("WaveletTransformDialog::onWaveletFamilySelected(): Unknown wavelet family: " + waveletFamilyName));
 }
 
+void WaveletTransformDialog::onSaveDWTResultAsGrid()
+{
+    emit saveDWTTransform( ui->txtCoeffVariableName->text(), m_DWTbuffer );
+}
+
+void WaveletTransformDialog::debugGrid(const spectral::array &grid)
+{
+    spectral::array result ( grid );
+    SVDFactor* gridSVD = new SVDFactor( std::move(result), 1, 0.42,
+                                     0.0,
+                                     0.0,
+                                     0.0,
+                                     1.0,
+                                     1.0,
+                                     1.0, 0.0 );
+    IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
+    ijgv->setFactor( gridSVD );
+    ijgv->show();
+}

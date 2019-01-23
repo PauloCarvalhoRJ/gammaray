@@ -2333,6 +2333,29 @@ void MainWindow::onWavelet()
     //open the Gabor analysis dialog
     WaveletTransformDialog* wtd = new WaveletTransformDialog( cg, static_cast<uint>(varIndex), this );
     wtd->show();
+    connect( wtd, SIGNAL(saveDWTTransform(QString,spectral::array)), this, SLOT(onSaveDWTTransform(QString,spectral::array)) );
+}
+
+void MainWindow::onSaveDWTTransform(const QString name, const spectral::array &DWTtransform)
+{
+    //make a path for a temporary file
+    QString tmp_file_path = Application::instance()->getProject()->getTmpPath() + "/" + name;
+
+    //create a new grid object corresponding to the tmp file
+    CartesianGrid* cg = new CartesianGrid( tmp_file_path );
+
+    //set the metadata info for the grid
+    cg->setInfo( 0,0,0,1,1,1,DWTtransform.M(),DWTtransform.N(),DWTtransform.K(),0,1,"",
+                 QMap<uint, QPair<uint, QString> > (), QList< QPair<uint,QString> > () );
+
+    //add a data column
+    cg->addEmptyDataColumn( "coefficients", DWTtransform.size() );
+
+    //save the data as a GEO-EAS grid file
+    cg->writeToFS();
+
+    //import the grid file with the DWT coefficients estimates as a project item
+    Application::instance()->getProject()->importCartesianGrid( cg, name );
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

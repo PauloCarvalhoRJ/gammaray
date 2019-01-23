@@ -22,7 +22,13 @@ public:
     WaveletUtils();
 
     /**
-     * @brief Performs Discrete Wavelet Transform on gridded data.
+     * Performs Discrete Wavelet Transform on gridded data.
+     * IMPORTANT: the returned grid is a square grid with a power of two size,
+     *            for example: if the input grid is 120x100, the returned grid
+     *            is 128x128.  This is a requirement for GSL DWT operation.
+     *            The input grid is aligned with the top-left corner of the power-
+     *            -of-two grid and the excess cells are filled by mirror-padding
+     *            to avoid the introduction of broad band artifacts in the transform.
      * @param cg The grid object containing the data.
      * @param variableIndex The variable to be transformed.
      * @param waveletFamily The wavelet family.
@@ -30,11 +36,11 @@ public:
      * @param interleaved If true, a two-step 1D DWT is performed on rows and columns alternately,
      *                    otherwise, 1D DWT is performed first on rows, then on columns.
      */
-    static void transform( IJAbstractCartesianGrid* cg,
-                           int variableIndex,
-                           WaveletFamily waveletFamily,
-                           int waveletType,
-                           bool interleaved );
+    static spectral::array transform( IJAbstractCartesianGrid* cg,
+                                      int variableIndex,
+                                      WaveletFamily waveletFamily,
+                                      int waveletType,
+                                      bool interleaved );
 
     /**
      * Fills the passed array of doubles with the values in the passed

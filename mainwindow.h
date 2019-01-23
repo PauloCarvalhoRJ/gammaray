@@ -194,6 +194,7 @@ private slots:
     void onEMD();
     void onGabor();
     void onWavelet();
+    void onSaveDWTTransform( const QString name, const spectral::array& DWTtransform );
 
 private:
     /**
