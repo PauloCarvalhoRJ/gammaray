@@ -196,6 +196,7 @@ private slots:
     void onConvertFaciesNamesToCodes();
     void onCategorize();
     void onAddFaciesTransitionMatrix();
+    void onSetCategoryDefinitionOfAFasciesTransitionMatrix();
 
 private:
     /**

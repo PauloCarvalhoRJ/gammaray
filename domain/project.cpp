@@ -25,6 +25,7 @@
 #include "geogrid.h"
 #include "plot.h"
 #include "domain/segmentset.h"
+#include "domain/faciestransitionmatrix.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
 {
@@ -243,6 +244,20 @@ Project::Project(const QString path) : QAbstractItemModel()
                 ss->setParent( this->_data_files );
                 //reads SegmentSet metadata from the .md file
                 ss->setInfoFromMetadataFile();
+           }
+           //found a Transition Probability Matrix file reference in gammaray.prj
+           if( line.startsWith( "FACIESTRANSITIONMATRIX:" )){
+               //get file name
+                QString faciesTransitionMatrix_file = line.split(":")[1];
+                //make file path
+                QFile ftm_file( this->_project_directory->absoluteFilePath( faciesTransitionMatrix_file ) );
+                //create FaciesTransitionMatrix object from file
+                FaciesTransitionMatrix *ftm = new FaciesTransitionMatrix( ftm_file.fileName() );
+                //add the object to its correct directory in the project tree structure
+                this->_resources->addChild( ftm );
+                ftm->setParent( this->_resources );
+                //reads FaciesTransitionMatrix metadata from the .md file
+                ftm->setInfoFromMetadataFile();
            }
         }
         prj_file.close();
@@ -489,6 +504,23 @@ void Project::importBivariateDistribution(const QString from_path, const QString
     //adds the bivariate distribution object to the project
     //TODO: do not add again if there is already a univariate distribution with the same name.
     this->addDistribution( bi_dist );
+    //refreshes project tree display
+    Application::instance()->refreshProjectTree();
+}
+
+void Project::importFaciesTransitionMatrix( const QString from_path, const QString new_file_name, QString associatedCategoryDefinitionName )
+{
+    //create a new Facies Transition Matrix object from the given scatsmth output file
+    FaciesTransitionMatrix* ftm = new FaciesTransitionMatrix( from_path );
+    //copy the file to the project's directory
+    ftm->changeDir( Application::instance()->getProject()->getPath() );
+    //rename the file
+    ftm->rename( new_file_name );
+    //set metadata (if any)
+    ftm->setInfo( associatedCategoryDefinitionName );
+    //adds the facies transition matrix object to the project
+    //TODO: do not add again if there is already a univariate distribution with the same name.
+    this->addResourceFile( ftm );
     //refreshes project tree display
     Application::instance()->refreshProjectTree();
 }

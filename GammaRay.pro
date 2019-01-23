@@ -241,7 +241,8 @@ SOURCES += main.cpp\
     gslib/gslibparams/gslibparcustomcolor.cpp \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp \
     dialogs/choosecategorydialog.cpp \
-    domain/faciestransitionmatrix.cpp
+    domain/faciestransitionmatrix.cpp \
+    dialogs/projectfilechoosedialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -461,7 +462,8 @@ HEADERS  += mainwindow.h \
     gslib/gslibparams/gslibparcustomcolor.h \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.h \
     dialogs/choosecategorydialog.h \
-    domain/faciestransitionmatrix.h
+    domain/faciestransitionmatrix.h \
+    dialogs/projectfilechoosedialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -545,7 +547,8 @@ FORMS    += mainwindow.ui \
     imagejockey/gabor/gaborscandialog.ui \
     dialogs/segmentsetdialog.ui \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.ui \
-    dialogs/choosecategorydialog.ui
+    dialogs/choosecategorydialog.ui \
+    dialogs/projectfilechoosedialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

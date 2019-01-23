@@ -53,6 +53,16 @@ bool CategoryDefinition::codeExists(int category_code)
     return false;
 }
 
+bool CategoryDefinition::categoryExistByName(const QString &catName)
+{
+    uint nQuintuplets = getCategoryCount();
+    for( uint i = 0; i < nQuintuplets; ++i){
+        if( catName == getCategoryName( i ) )
+            return true;
+    }
+    return false;
+}
+
 void CategoryDefinition::save(QTextStream *txt_stream)
 {
     (*txt_stream) << this->getFileType() << ":" << this->getFileName() << '\n';

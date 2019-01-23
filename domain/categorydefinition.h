@@ -43,6 +43,9 @@ public:
     /** Tests whether the passed code exists in this collection. */
     bool codeExists( int category_code );
 
+    /** Tests whether there is a category with the given name. */
+    bool categoryExistByName( const QString& catName );
+
     // ProjectComponent interface
 public:
     QIcon getIcon(){return QIcon(":icons/catdef16");}
