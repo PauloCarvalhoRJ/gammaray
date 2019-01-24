@@ -197,6 +197,7 @@ private slots:
     void onCategorize();
     void onAddFaciesTransitionMatrix();
     void onSetCategoryDefinitionOfAFasciesTransitionMatrix();
+    void onEntropyCyclicityAnalysis();
 
 private:
     /**

@@ -72,6 +72,134 @@ CategoryDefinition *FaciesTransitionMatrix::getAssociatedCategoryDefinition()
     return result;
 }
 
+double FaciesTransitionMatrix::getTotal()
+{
+    double result = 0.0;
+    for( const std::vector<double>& row : m_transitionProbabilities )
+        for( const double& value : row )
+            result += value;
+    return result;
+}
+
+double FaciesTransitionMatrix::getSumOfRow( int rowIndex )
+{
+    double result = 0.0;
+    int rowCount = 0;
+    for( const std::vector<double>& row : m_transitionProbabilities ){
+        if( rowIndex == rowCount ){
+            for( const double& value : row )
+                result += value;
+            return result;
+        }
+        ++rowCount;
+    }
+    return result;
+}
+
+double FaciesTransitionMatrix::getTotalMinusSumOfRow(int rowIndex)
+{
+    return getTotal() - getSumOfRow( rowIndex );
+}
+
+double FaciesTransitionMatrix::getSumOfColumn(int columnIndex)
+{
+    double result = 0.0;
+    for( const std::vector<double>& row : m_transitionProbabilities ){
+        int columnCount = 0;
+        for( const double& value : row ){
+            if ( columnIndex == columnCount )
+                result += value;
+            ++columnCount;
+        }
+    }
+    return result;
+}
+
+int FaciesTransitionMatrix::getColumnCount()
+{
+    return m_columnHeadersFaciesNames.size();
+}
+
+int FaciesTransitionMatrix::getRowCount()
+{
+    return m_lineHeadersFaciesNames.size();
+}
+
+QString FaciesTransitionMatrix::getColumnHeader(int columnIndex)
+{
+    return m_columnHeadersFaciesNames[columnIndex];
+}
+
+QString FaciesTransitionMatrix::getRowHeader(int rowIndex)
+{
+    return m_lineHeadersFaciesNames[rowIndex];
+}
+
+double FaciesTransitionMatrix::getValue(int rowIndex, int colIndex)
+{
+    return  m_transitionProbabilities[rowIndex][colIndex];
+}
+
+QColor FaciesTransitionMatrix::getColorOfCategoryInColumnHeader(int columnIndex)
+{
+    QColor result;
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    if( ! cd )
+        return result;
+    int catCode = cd->getCategoryCodeByName( getColumnHeader( columnIndex ) );
+    if( catCode == -999 )
+        return result;
+    return cd->getCustomColor( cd->getCategoryIndex( catCode ) );
+}
+
+QColor FaciesTransitionMatrix::getColorOfCategoryInRowHeader(int rowIndex)
+{
+    QColor result;
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    if( ! cd )
+        return result;
+    int catCode = cd->getCategoryCodeByName( getRowHeader( rowIndex ) );
+    if( catCode == -999 )
+        return result;
+    return cd->getCustomColor( cd->getCategoryIndex( catCode ) );
+}
+
+double FaciesTransitionMatrix::getUpwardTransitionProbability(int fromFaciesRowIndex, int toFaciesColIndex)
+{
+    return getValue( fromFaciesRowIndex, toFaciesColIndex ) / getSumOfRow( fromFaciesRowIndex );
+}
+
+double FaciesTransitionMatrix::getDownwardTransitionProbability(int fromFaciesColumnIndex, int toFaciesRowIndex)
+{
+    return getValue( toFaciesRowIndex, fromFaciesColumnIndex ) / getSumOfRow( fromFaciesColumnIndex );
+}
+
+double FaciesTransitionMatrix::getPostDepositionalEntropy(int faciesIndex, bool normalize)
+{
+    double sum = 0.0;
+    for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
+        double prob = getUpwardTransitionProbability( faciesIndex, j );
+        sum += prob * std::log( prob );
+    }
+    sum = -sum;
+    if( normalize )
+        sum /= -std::log( 1.0 / (m_columnHeadersFaciesNames.size()-1));
+    return sum;
+}
+
+double FaciesTransitionMatrix::getPreDepositionalEntropy(int faciesIndex, bool normalize)
+{
+    double sum = 0.0;
+    for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
+        double prob = getDownwardTransitionProbability( faciesIndex, j );
+        sum += prob * std::log( prob );
+    }
+    sum = -sum;
+    if( normalize )
+        sum /= -std::log( 1.0 / (m_columnHeadersFaciesNames.size()-1));
+    return sum;
+}
+
 QIcon FaciesTransitionMatrix::getIcon()
 {
     return QIcon(":icons32/transmat32");

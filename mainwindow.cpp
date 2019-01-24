@@ -72,6 +72,7 @@
 #include "dialogs/segmentsetdialog.h"
 #include "dialogs/choosecategorydialog.h"
 #include "dialogs/projectfilechoosedialog.h"
+#include "dialogs/entropycyclicityanalysisdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -487,6 +488,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 			}
             if( _right_clicked_file->getFileType() == "FACIESTRANSITIONMATRIX" ){
                 _projectContextMenu->addAction("Set/Change associated category definition", this, SLOT(onSetCategoryDefinitionOfAFasciesTransitionMatrix()));
+                _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -2476,6 +2478,15 @@ void MainWindow::onSetCategoryDefinitionOfAFasciesTransitionMatrix()
     else
         ftm->setInfo( "" );
     ftm->updateMetaDataFile();
+}
+
+void MainWindow::onEntropyCyclicityAnalysis()
+{
+    FaciesTransitionMatrix *ftm = dynamic_cast<FaciesTransitionMatrix*>(_right_clicked_file);
+    if( ftm ){
+        EntropyCyclicityAnalysisDialog* ecad = new EntropyCyclicityAnalysisDialog( ftm, this );
+        ecad->exec();
+    }
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

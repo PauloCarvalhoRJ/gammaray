@@ -242,7 +242,8 @@ SOURCES += main.cpp\
     gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp \
     dialogs/choosecategorydialog.cpp \
     domain/faciestransitionmatrix.cpp \
-    dialogs/projectfilechoosedialog.cpp
+    dialogs/projectfilechoosedialog.cpp \
+    dialogs/entropycyclicityanalysisdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -463,7 +464,8 @@ HEADERS  += mainwindow.h \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.h \
     dialogs/choosecategorydialog.h \
     domain/faciestransitionmatrix.h \
-    dialogs/projectfilechoosedialog.h
+    dialogs/projectfilechoosedialog.h \
+    dialogs/entropycyclicityanalysisdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -548,7 +550,8 @@ FORMS    += mainwindow.ui \
     dialogs/segmentsetdialog.ui \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.ui \
     dialogs/choosecategorydialog.ui \
-    dialogs/projectfilechoosedialog.ui
+    dialogs/projectfilechoosedialog.ui \
+    dialogs/entropycyclicityanalysisdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
