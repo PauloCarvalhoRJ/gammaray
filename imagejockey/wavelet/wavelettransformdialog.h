@@ -24,12 +24,19 @@ public:
 
 Q_SIGNALS:
     void saveDWTTransform( const QString name, const spectral::array& DWTtransform );
+    /**
+     * This unusual signal is triggered when this dialog wants some grid with the given name.
+     * If there is a grid by the given name, its pointer is set to the passed pointer
+     * reference, otherwise, the context must set it to nullptr.
+     */
+    void requestGrid( const QString name, IJAbstractCartesianGrid*& pointer );
 
 private:
     Ui::WaveletTransformDialog *ui;
     IJAbstractCartesianGrid* m_inputGrid;
     uint m_inputVariableIndex;
     spectral::array m_DWTbuffer;
+    IJAbstractCartesianGrid* m_pointerToRequestedGrid; //used with the unusual requestGrid() signal
     WaveletFamily getSelectedWaveletFamily();
     static void debugGrid( const spectral::array &grid );
 
@@ -37,6 +44,7 @@ private Q_SLOTS:
     void onPerformTransform();
     void onWaveletFamilySelected( QString waveletFamilyName );
     void onSaveDWTResultAsGrid();
+    void onReadDWTResultFromGrid();
 };
 
 #endif // WAVELETTRANSFORMDIALOG_H

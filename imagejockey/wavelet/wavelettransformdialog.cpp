@@ -89,7 +89,18 @@ void WaveletTransformDialog::onWaveletFamilySelected( QString waveletFamilyName 
 
 void WaveletTransformDialog::onSaveDWTResultAsGrid()
 {
-    emit saveDWTTransform( ui->txtCoeffVariableName->text(), m_DWTbuffer );
+    if( m_DWTbuffer.size() > 0 && ! ui->txtCoeffVariableName->text().trimmed().isEmpty() )
+        emit saveDWTTransform( ui->txtCoeffVariableName->text(), m_DWTbuffer );
+    else
+        QMessageBox::critical( this, "Error", "No data to save or grid name not given.");
+}
+
+void WaveletTransformDialog::onReadDWTResultFromGrid()
+{
+    if( m_DWTbuffer.size() > 0 && ! ui->txtCoeffVariableName->text().trimmed().isEmpty() )
+        emit requestGrid( ui->txtCoeffVariableName->text(), m_pointerToRequestedGrid );
+    else
+        QMessageBox::critical( this, "Error", "No array to receive the data or grid name not given.");
 }
 
 void WaveletTransformDialog::debugGrid(const spectral::array &grid)

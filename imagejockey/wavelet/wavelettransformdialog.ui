@@ -471,10 +471,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnReadCoeffsFromVar</sender>
+   <signal>clicked()</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>onReadDWTResultFromGrid()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>294</x>
+     <y>137</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>317</x>
+     <y>175</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onPerformTransform()</slot>
   <slot>onWaveletFamilySelected(QString)</slot>
   <slot>onSaveDWTResultAsGrid()</slot>
+  <slot>onReadDWTResultFromGrid()</slot>
  </slots>
 </ui>

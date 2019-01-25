@@ -195,6 +195,7 @@ private slots:
     void onGabor();
     void onWavelet();
     void onSaveDWTTransform( const QString name, const spectral::array& DWTtransform );
+    void onRequestGrid( const QString name, IJAbstractCartesianGrid*& pointer );
 
 private:
     /**

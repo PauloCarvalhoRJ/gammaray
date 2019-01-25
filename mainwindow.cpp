@@ -2334,10 +2334,12 @@ void MainWindow::onWavelet()
     WaveletTransformDialog* wtd = new WaveletTransformDialog( cg, static_cast<uint>(varIndex), this );
     wtd->show();
     connect( wtd, SIGNAL(saveDWTTransform(QString,spectral::array)), this, SLOT(onSaveDWTTransform(QString,spectral::array)) );
+    connect( wtd, SIGNAL(requestGrid(QString,IJAbstractCartesianGrid*&)), this, SLOT(onRequestGrid(QString,IJAbstractCartesianGrid*&)) );
 }
 
 void MainWindow::onSaveDWTTransform(const QString name, const spectral::array &DWTtransform)
 {
+
     //make a path for a temporary file
     QString tmp_file_path = Application::instance()->getProject()->getTmpPath() + "/" + name;
 
@@ -2351,11 +2353,26 @@ void MainWindow::onSaveDWTTransform(const QString name, const spectral::array &D
     //add a data column
     cg->addEmptyDataColumn( "coefficients", DWTtransform.size() );
 
+    for( int i = 0; i < DWTtransform.size(); ++i )
+        cg->setData( i, 0, DWTtransform.d_[i] );
+
     //save the data as a GEO-EAS grid file
     cg->writeToFS();
 
     //import the grid file with the DWT coefficients estimates as a project item
     Application::instance()->getProject()->importCartesianGrid( cg, name );
+}
+
+void MainWindow::onRequestGrid( const QString name, IJAbstractCartesianGrid *&pointer )
+{
+    std::vector<IJAbstractCartesianGrid*> grids = Application::instance()->getProject()->getAllCartesianGrids();
+    for( IJAbstractCartesianGrid*& grid : grids )
+        if( grid->getGridName() == name ){
+            pointer = grid;
+            return;
+        }
+    Application::instance()->logWarn("MainWindow::onRequestGrid(): Cartesian grid named [" + name + "] not found.");
+    pointer = nullptr;
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
