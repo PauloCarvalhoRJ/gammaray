@@ -94,13 +94,25 @@ public:
     double getDownwardTransitionProbability( int fromFaciesColumnIndex, int toFaciesRowIndex );
 
     /**
-     * Returns the post-depositional entropy for a given facies.
+     * Returns the sum of post-depositional entropies for a given facies with respect to all other facies.
+     * A value of zero with respect to one facies means that the given facies (faciesIndex) is always succeeded by the former.
+     * A value greater than zero means that the target facies may be overlaid by other facies.
+     * A large sum means that the facies occurs more independently of adjacent facies that have been deposited after (high randomness).
+     * See paper "Application of Markov Chain and Entropy Function for Cyclicity Analysis
+     *             of a Lithostratigraphic Sequence - A Case History from the Kolhan Basin,
+     *             Jharkhand, Eastern India" for further details.
      * @param normalize If true, the result is normalized (divided by the max. entropy value).
      */
     double getPostDepositionalEntropy( int faciesIndex, bool normalize );
 
     /**
      * Returns the pre-depositional entropy for a given facies.
+     * A value of zero with respect to one facies means that the given facies (faciesIndex) always succeeds the former.
+     * A value greater than zero means that the target facies may overlay other facies.
+     * A large sum means that the facies occurs independently of adjacent facies that have been deposited before (high randomness).
+     * See paper "Application of Markov Chain and Entropy Function for Cyclicity Analysis
+     *             of a Lithostratigraphic Sequence - A Case History from the Kolhan Basin,
+     *             Jharkhand, Eastern India" for further details.
      * @param normalize If true, the result is normalized (divided by the max. entropy value).
      */
     double getPreDepositionalEntropy( int faciesIndex, bool normalize );

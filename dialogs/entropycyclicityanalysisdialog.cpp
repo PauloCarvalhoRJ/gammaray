@@ -2,9 +2,11 @@
 #include "ui_entropycyclicityanalysisdialog.h"
 
 #include "domain/faciestransitionmatrix.h"
+#include "viewer3d/view3dcolortables.h"
 
 #include <QMessageBox>
 #include <QStringBuilder>
+#include <vtkLookupTable.h>
 
 EntropyCyclicityAnalysisDialog::EntropyCyclicityAnalysisDialog(FaciesTransitionMatrix* ftm, QWidget *parent) :
     QDialog(parent),
@@ -155,6 +157,18 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
 
 
     reportHTML = reportHTML % "<H2>d) Entropies matrix:</H2>";
+    vtkSmartPointer<vtkLookupTable> colorTable = View3dColorTables::getColorTable( ColorTable::RAINBOW, 0.0, 1.0 );
+    //////////////////////////////// render a color table ///////////////////
+    reportHTML = reportHTML % "<table><tr><td>0.0</td>";
+    for( int i = 1; i <= 32; ++i ){
+        double e = i / 32.0 ;
+        double rgb[3];
+        colorTable->GetColor( e , rgb );
+        QColor color( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+        reportHTML = reportHTML % "<td style='border: 0px; padding 0px;' bgcolor='" % color.name(QColor::HexRgb) % "'>&nbsp;</td>";
+    }
+    reportHTML = reportHTML % "<td>1.0</td></tr></table>";
+    /////////////////////////////////////////////////////////////////
     reportHTML = reportHTML % "<table class=\"countMatrix\">";
     {
         //column headers
@@ -176,12 +190,22 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
             reportHTML = reportHTML % "<td>";
             reportHTML = reportHTML % QString::number( m_faciesTransitionMatrix->getPreDepositionalEntropy( i, false ) );
             reportHTML = reportHTML % "</td>";
-            reportHTML = reportHTML % "<td>";
-            reportHTML = reportHTML % QString::number( m_faciesTransitionMatrix->getPostDepositionalEntropy( i, true ) );
+
+            double e = m_faciesTransitionMatrix->getPostDepositionalEntropy( i, true );
+            double rgb[3];
+            colorTable->GetColor( e , rgb );
+            QColor color( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % QString::number( e );
             reportHTML = reportHTML % "</td>";
-            reportHTML = reportHTML % "<td>";
-            reportHTML = reportHTML % QString::number( m_faciesTransitionMatrix->getPreDepositionalEntropy( i, true ) );
+
+            e = m_faciesTransitionMatrix->getPreDepositionalEntropy( i, true );
+            colorTable->GetColor( e , rgb );
+            color = QColor( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % QString::number( e );
             reportHTML = reportHTML % "</td>";
+
             reportHTML = reportHTML % "</tr>";
         }
     }

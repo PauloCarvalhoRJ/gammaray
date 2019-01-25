@@ -179,11 +179,12 @@ double FaciesTransitionMatrix::getPostDepositionalEntropy(int faciesIndex, bool 
     double sum = 0.0;
     for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
         double prob = getUpwardTransitionProbability( faciesIndex, j );
-        sum += prob * std::log( prob );
+        if( ! Util::almostEqual2sComplement( prob, 0.0, 1) )
+            sum += prob * std::log2( prob );
     }
     sum = -sum;
     if( normalize )
-        sum /= -std::log( 1.0 / (m_columnHeadersFaciesNames.size()-1));
+        sum /= -std::log2( 1.0 / (m_columnHeadersFaciesNames.size()-1));
     return sum;
 }
 
@@ -192,11 +193,12 @@ double FaciesTransitionMatrix::getPreDepositionalEntropy(int faciesIndex, bool n
     double sum = 0.0;
     for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
         double prob = getDownwardTransitionProbability( faciesIndex, j );
-        sum += prob * std::log( prob );
+        if( ! Util::almostEqual2sComplement( prob, 0.0, 1) )
+            sum += prob * std::log2( prob );
     }
     sum = -sum;
     if( normalize )
-        sum /= -std::log( 1.0 / (m_columnHeadersFaciesNames.size()-1));
+        sum /= -std::log2( 1.0 / (m_columnHeadersFaciesNames.size()-1));
     return sum;
 }
 

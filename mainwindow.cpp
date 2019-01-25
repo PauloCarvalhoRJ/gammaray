@@ -2485,7 +2485,7 @@ void MainWindow::onEntropyCyclicityAnalysis()
     FaciesTransitionMatrix *ftm = dynamic_cast<FaciesTransitionMatrix*>(_right_clicked_file);
     if( ftm ){
         EntropyCyclicityAnalysisDialog* ecad = new EntropyCyclicityAnalysisDialog( ftm, this );
-        ecad->exec();
+        ecad->show();
     }
 }
 
