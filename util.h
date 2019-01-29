@@ -8,6 +8,7 @@
 #include <cassert>
 #include <complex>
 #include "geometry/face3d.h"
+#include "viewer3d/view3dcolortables.h"
 
 // macro used to do printf on QString for debugging purposes
 // it is safe to delete this.
@@ -617,6 +618,12 @@ public:
      *    Util::isIn( droidName, {"C3PO", "R2D2", "BB8"} );
      */
     static bool isIn( const QString& stringToTest, const QStringList& listOfValues );
+
+    /**
+     * Returns a string in the format "#RRGGBB" mapped from the given value according to
+     * the passed color table.
+     */
+    static QString getHTMLColorFromValue(double value, ColorTable colorTableToUse, double min = 0.0, double max = 1.0);
 };
 
 #endif // UTIL_H

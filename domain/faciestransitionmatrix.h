@@ -2,6 +2,7 @@
 #define FACIESTRANSITIONMATRIX_H
 
 #include "domain/file.h"
+#include "spectral/spectral.h"
 
 class CategoryDefinition;
 
@@ -66,6 +67,7 @@ public:
     QString getColumnHeader( int columnIndex );
     QString getRowHeader( int rowIndex );
     double getValue( int rowIndex, int colIndex );
+    double getValueMax();
 
     /** Returns the color assigned to the category of the given column.
      * A default color is returned if no category definition is associated
@@ -117,6 +119,30 @@ public:
      */
     double getPreDepositionalEntropy( int faciesIndex, bool normalize );
 
+    /**
+     * Returns the probability of the transition from one facies to another that occur in a random manner.
+     * The value is computed as getSumOfColumn( toFaciesColIndex ) / ( getTotal() - getSumOfRow( fromFaciesRowIndex ) )
+     */
+    double getIndependentTrail( int fromFaciesRowIndex, int toFaciesColIndex );
+
+    /**
+     * This value highlight probabilities of occurrence greater than if the sequence were random.
+     * Great positive values indicate an upward correlation (less random upward sequence).
+     * Great negative values indicate a downward correlation (less random downward sequence).
+     * It is computed as getUpwardTransitionProbability(fromFaciesRowIndex, toFaciesColIndex) - getIndependentTrail(fromFaciesRowIndex, toFaciesColIndex)
+     */
+    double getDifference( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getMaxAbsDifference( );
+
+    /**
+     * Returns the expected number of transitions from one facies to another.
+     * It is computed as getIndependentTrail(fromFaciesRowIndex, toFaciesColIndex) * getSumOfRow( fromFaciesRowIndex ).
+     */
+    double getExpectedFrequency( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getMaxExpectedFrequency();
+
+    double getRank();
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
@@ -143,6 +169,8 @@ protected:
     std::vector<QString> m_lineHeadersFaciesNames;
     //outer vector: each line; inner vector: each value (columns)
     std::vector< std::vector < double> > m_transitionProbabilities;
+
+    spectral::array toSpectralArray();
 };
 
 #endif // FACIESTRANSITIONMATRIX_H

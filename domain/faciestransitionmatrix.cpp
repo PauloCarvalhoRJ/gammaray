@@ -140,6 +140,18 @@ double FaciesTransitionMatrix::getValue(int rowIndex, int colIndex)
     return  m_transitionProbabilities[rowIndex][colIndex];
 }
 
+double FaciesTransitionMatrix::getValueMax()
+{
+    double max = 0.0;
+    double value = m_transitionProbabilities[0][0];
+    for( int i = 0; i < m_transitionProbabilities.size(); ++i )
+        for( int j = 0; j < m_transitionProbabilities[i].size(); ++j ){
+            value = m_transitionProbabilities[i][j];
+            max = std::max( max, value );
+        }
+    return max;
+}
+
 QColor FaciesTransitionMatrix::getColorOfCategoryInColumnHeader(int columnIndex)
 {
     QColor result;
@@ -200,6 +212,77 @@ double FaciesTransitionMatrix::getPreDepositionalEntropy(int faciesIndex, bool n
     if( normalize )
         sum /= -std::log2( 1.0 / (m_columnHeadersFaciesNames.size()-1));
     return sum;
+}
+
+double FaciesTransitionMatrix::getIndependentTrail(int fromFaciesRowIndex, int toFaciesColIndex)
+{
+    if( fromFaciesRowIndex == toFaciesColIndex )
+        return 0.0;
+    return getSumOfColumn( toFaciesColIndex ) / ( getTotal() - getSumOfRow( fromFaciesRowIndex ) );
+}
+
+double FaciesTransitionMatrix::getDifference(int fromFaciesRowIndex, int toFaciesColIndex)
+{
+    if( fromFaciesRowIndex == toFaciesColIndex )
+        return 0.0;
+    return getUpwardTransitionProbability(fromFaciesRowIndex, toFaciesColIndex) - getIndependentTrail(fromFaciesRowIndex, toFaciesColIndex);
+}
+
+double FaciesTransitionMatrix::getMaxAbsDifference()
+{
+    double max = 0.0;
+    double value = std::abs( getDifference(0, 0) );
+    for( int i = 0; i < m_transitionProbabilities.size(); ++i )
+        for( int j = 0; j < m_transitionProbabilities[i].size(); ++j ){
+            value = std::abs( getDifference(i, j) );
+            max = std::max( max, value );
+        }
+    return max;
+}
+
+double FaciesTransitionMatrix::getExpectedFrequency(int fromFaciesRowIndex, int toFaciesColIndex)
+{
+    if( fromFaciesRowIndex == toFaciesColIndex )
+        return 0.0;
+    return getIndependentTrail(fromFaciesRowIndex, toFaciesColIndex) * getSumOfRow( fromFaciesRowIndex );
+}
+
+double FaciesTransitionMatrix::getMaxExpectedFrequency()
+{
+    double max = 0.0;
+    double value = std::abs( getExpectedFrequency(0, 0) );
+    for( int i = 0; i < m_transitionProbabilities.size(); ++i )
+        for( int j = 0; j < m_transitionProbabilities[i].size(); ++j ){
+            value = std::abs( getExpectedFrequency(i, j) );
+            max = std::max( max, value );
+        }
+    return max;
+}
+
+double FaciesTransitionMatrix::getRank()
+{
+    int cov_matrix_rank = 0;
+    spectral::array eigenvectors, eigenvalues;
+    std::tie( eigenvectors, eigenvalues ) = spectral::eig( toSpectralArray() );
+    {
+        double smallestEigenValue = std::numeric_limits<double>::max();
+        double largestEigenValue = 0; //since the cov table is positive definite, the smallest value possible is zero.
+        for( int i = 0; i < eigenvalues.size(); ++i ){
+            double eigenvalue = eigenvalues(i);
+            //since the cov table is positive definite, there is no need to compute the absolute value.
+            if( eigenvalue < smallestEigenValue )
+                smallestEigenValue = eigenvalue;
+            if( eigenvalue > largestEigenValue )
+                largestEigenValue = eigenvalue;
+            if( eigenvalue > eta )
+                cov_matrix_rank = i;
+        }
+        ++cov_matrix_rank;
+        if( condition_number > 10 ){
+            is_cov_matrix_ill_conditioned = true;
+            ++nIllConditioned;
+        }
+    }
 }
 
 QIcon FaciesTransitionMatrix::getIcon()
@@ -320,4 +403,14 @@ void FaciesTransitionMatrix::deleteFromFS()
     //also deletes the metadata file
     QFile file( this->getMetaDataFilePath() );
     file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
+}
+
+spectral::array FaciesTransitionMatrix::toSpectralArray()
+{
+    //Make a spectral-compatible copy of this matrix.
+    spectral::array A( m_transitionProbabilities.size(), m_transitionProbabilities[0].size(), 1, 0.0 );
+    for( int i = 0; i < A.M(); ++i)
+        for( int j = 0; j < A.N(); ++j)
+            A(i,j) = m_transitionProbabilities[i][j];
+    return A;
 }

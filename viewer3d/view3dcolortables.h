@@ -9,7 +9,8 @@ class CategoryDefinition;
 
 /*! The available color tables. */
 enum class ColorTable : uint {
-    RAINBOW = 0 /*!< The classic color table mapping low values to bluer hues and high values to redder hues. */
+    RAINBOW = 0, /*!< The classic color table mapping low values to bluer hues and high values to redder hues. */
+    SEISMIC = 1  /*!< Color table mapping low values to bluer hues and high values to redder hues with white in the middle. */
 };
 
 /** This class groups static functions to create color tables.
@@ -41,6 +42,9 @@ private:
 
     /** The classic color table mapping lower values to bluer hues and high values to redder hues. */
     static vtkSmartPointer<vtkLookupTable> getClassicRainbow( double min, double max );
+
+    /** The color table mapping lower values to bluer hues and high values to redder hues with white in the middle. */
+    static vtkSmartPointer<vtkLookupTable> getSeismic( double min, double max );
 };
 
 #endif // VIEW3DCOLORTABLES_H

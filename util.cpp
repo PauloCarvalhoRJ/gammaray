@@ -35,6 +35,7 @@
 #include <vtkImageData.h>
 #include <vtkImageFFT.h>
 #include <vtkImageRFFT.h>
+#include <vtkLookupTable.h>
 #include <QProgressDialog>
 
 //includes for getPhysicalRAMusage()
@@ -1936,4 +1937,13 @@ bool Util::replaceFaciesNamesWithCodes(QString path, CategoryDefinition *cd, boo
 bool Util::isIn(const QString &stringToTest, const QStringList &listOfValues)
 {
     return listOfValues.contains( stringToTest );
+}
+
+QString Util::getHTMLColorFromValue(double value, ColorTable colorTableToUse, double min, double max )
+{
+    vtkSmartPointer<vtkLookupTable> colorTable = View3dColorTables::getColorTable( colorTableToUse, min, max );
+    double rgb[3];
+    colorTable->GetColor( value, rgb );
+    QColor color( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+    return color.name( QColor::HexRgb );
 }

@@ -15,7 +15,8 @@ View3dColorTables::View3dColorTables()
 vtkSmartPointer<vtkLookupTable> View3dColorTables::getColorTable(ColorTable ct, double min, double max)
 {
     switch( ct ){
-        case ColorTable::RAINBOW: return getClassicRainbow( min, max ); break;
+        case ColorTable::RAINBOW: return getClassicRainbow( min, max );
+        case ColorTable::SEISMIC: return getSeismic( min, max );
         default:
             Application::instance()->logError("View3dColorTables::getColorTable(): unknown color table code.  Returning a default.");
             return getClassicRainbow( min, max );
@@ -25,7 +26,8 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getColorTable(ColorTable ct, 
 QString View3dColorTables::getColorTableName(ColorTable ct)
 {
     switch( ct ){
-        case ColorTable::RAINBOW: return "Rainbow"; break;
+        case ColorTable::RAINBOW: return "Rainbow";
+        case ColorTable::SEISMIC: return "Seismic";
         default:
             return "UNKNOWN";
     }
@@ -134,6 +136,34 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getClassicRainbow(double min,
     ctf->AddRGBPoint(0.25, 0.000, 1.000, 1.000);
     ctf->AddRGBPoint(0.50, 0.000, 1.000, 0.000);
     ctf->AddRGBPoint(0.75, 1.000, 1.000, 0.000);
+    ctf->AddRGBPoint(1.00, 1.000, 0.000, 0.000);
+
+    //create the color table object
+    vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+    lut->SetTableRange(min, max);
+    lut->SetNumberOfTableValues(tableSize);
+    for(size_t i = 0; i < tableSize; ++i)
+    {
+        double *rgb;
+        rgb = ctf->GetColor(static_cast<double>(i)/tableSize);
+        lut->SetTableValue(i, rgb[0], rgb[1], rgb[2]);
+    }
+    lut->SetRampToLinear();
+    lut->Build();
+
+    return lut;
+}
+
+vtkSmartPointer<vtkLookupTable> View3dColorTables::getSeismic(double min, double max)
+{
+    size_t tableSize = 32;
+
+    //create a color interpolator object
+    vtkSmartPointer<vtkColorTransferFunction> ctf =
+            vtkSmartPointer<vtkColorTransferFunction>::New();
+    ctf->SetColorSpaceToRGB();
+    ctf->AddRGBPoint(0.00, 0.000, 0.000, 1.000);
+    ctf->AddRGBPoint(0.50, 1.000, 1.000, 1.000);
     ctf->AddRGBPoint(1.00, 1.000, 0.000, 0.000);
 
     //create the color table object
