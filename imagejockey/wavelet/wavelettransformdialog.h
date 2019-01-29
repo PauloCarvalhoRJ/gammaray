@@ -36,7 +36,6 @@ private:
     IJAbstractCartesianGrid* m_inputGrid;
     uint m_inputVariableIndex;
     spectral::array m_DWTbuffer;
-    IJAbstractCartesianGrid* m_pointerToRequestedGrid; //used with the unusual requestGrid() signal
     WaveletFamily getSelectedWaveletFamily();
     static void debugGrid( const spectral::array &grid );
 
@@ -45,6 +44,7 @@ private Q_SLOTS:
     void onWaveletFamilySelected( QString waveletFamilyName );
     void onSaveDWTResultAsGrid();
     void onReadDWTResultFromGrid();
+    void onPreviewBacktransformedResult();
 };
 
 #endif // WAVELETTRANSFORMDIALOG_H

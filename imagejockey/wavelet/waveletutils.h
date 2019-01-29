@@ -2,6 +2,7 @@
 #define WAVELETUTILS_H
 
 #include "imagejockey/gabor/gaborutils.h"
+#include <gsl/gsl_wavelet2d.h>
 
 class IJAbstractCartesianGrid;
 
@@ -42,6 +43,12 @@ public:
                                       int waveletType,
                                       bool interleaved );
 
+    static spectral::array backtrans( IJAbstractCartesianGrid *gridWithOriginalGeometry,
+                                      const spectral::array& input,
+                                      WaveletFamily waveletFamily,
+                                      int waveletType,
+                                      bool interleaved );
+
     /**
      * Fills the passed array of doubles with the values in the passed
      * image object.  The client code is responsible for correct allocation
@@ -54,6 +61,8 @@ private:
     static void debugGridITK( const GaborUtils::ImageType &in);
     static void debugGrid( const spectral::array &grid );
     static void debugGridRawArray(const double *in, int nI, int nJ, int nK);
+    //the returned structure must be deleted with gsl_wavelet_free().
+    static gsl_wavelet* makeWavelet( WaveletFamily waveletFamily , int waveletType );
 };
 
 #endif // WAVELETUTILS_H

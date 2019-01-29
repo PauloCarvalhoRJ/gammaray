@@ -5,7 +5,6 @@
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "spectral/spectral.h"
 
-#include <gsl/gsl_wavelet2d.h>
 #include <gsl/gsl_sort.h>
 #include <itkMirrorPadImageFilter.h>
 
@@ -70,20 +69,7 @@ spectral::array WaveletUtils::transform( IJAbstractCartesianGrid *cg,
 //    size_t *p = new size_t[ nPowerOf2 * nPowerOf2 ];
 
     //the wavelet
-    gsl_wavelet *w;
-    switch ( waveletFamily ) {
-    case WaveletFamily::DAUBECHIES:
-        w = gsl_wavelet_alloc ( gsl_wavelet_daubechies, waveletType );
-        break;
-    case WaveletFamily::HAAR:
-        w = gsl_wavelet_alloc ( gsl_wavelet_haar, waveletType );
-        break;
-    case WaveletFamily::B_SPLINE:
-        w = gsl_wavelet_alloc ( gsl_wavelet_bspline, waveletType );
-        break;
-    default:
-        break;
-    }
+    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType );
 
     //the transform in 2D operates on individual rows and columns.
     gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
@@ -129,6 +115,55 @@ spectral::array WaveletUtils::transform( IJAbstractCartesianGrid *cg,
     return result;
 }
 
+spectral::array WaveletUtils::backtrans(IJAbstractCartesianGrid *gridWithOriginalGeometry,
+                                        const spectral::array& input,
+                                        WaveletFamily waveletFamily,
+                                        int waveletType,
+                                        bool interleaved)
+{
+    //assuming the input grid is square and with dimension that is a power of 2.
+    int nPowerOf2 = input.M();
+
+    //load input data into a raw array of doubles (readable by GSL)
+    double *data = new double[ nPowerOf2 * nPowerOf2 ];
+    for( int j = 0; j < nPowerOf2; ++j )
+        for( int i = 0; i < nPowerOf2; ++i )
+            data[ j * nPowerOf2 + i ] = input( i, j );
+
+    //the wavelet
+    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType );
+
+    //the transform in 2D operates on individual rows and columns.
+    gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
+
+    //DWT back transform
+    if( interleaved )
+        gsl_wavelet2d_nstransform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
+    else
+        gsl_wavelet2d_transform_inverse(w, data, nPowerOf2, nPowerOf2, nPowerOf2, work);
+
+    //prepare the result
+    int nI = gridWithOriginalGeometry->getNI();
+    int nJ = gridWithOriginalGeometry->getNJ();
+    spectral::array result( nI, nJ, 1, 0.0 );
+    for( int j = 0; j < nPowerOf2; ++j ){
+        int jr = j - ( nPowerOf2 - nJ );
+        for( int i = 0; i < nPowerOf2; ++i ){
+            //the retrotransformed result is to the top, left corner of the square grid
+            //with the power-of-2 dimension
+            if( i < nI && jr >= 0 )
+                result(i, jr) = data[ j * nPowerOf2 + i ];
+        }
+    }
+
+    //free allocated resources
+    gsl_wavelet_free(w);
+    gsl_wavelet_workspace_free (work);
+    delete[] data;
+
+    return result;
+}
+
 void WaveletUtils::fillRawArray(const GaborUtils::ImageTypePtr input, double *output)
 {
     //get input grid dimensions
@@ -165,6 +200,26 @@ void WaveletUtils::debugGridRawArray( const double* in, int nI, int nJ, int nK )
                 a(i, j, k) = in[ k * nJ * nI + j * nI + i ];
             }
     debugGrid( a );
+}
+
+gsl_wavelet *WaveletUtils::makeWavelet(WaveletFamily waveletFamily,
+                                       int waveletType )
+{
+    gsl_wavelet *w = nullptr;
+    switch ( waveletFamily ) {
+    case WaveletFamily::DAUBECHIES:
+        w = gsl_wavelet_alloc ( gsl_wavelet_daubechies, waveletType );
+        break;
+    case WaveletFamily::HAAR:
+        w = gsl_wavelet_alloc ( gsl_wavelet_haar, waveletType );
+        break;
+    case WaveletFamily::B_SPLINE:
+        w = gsl_wavelet_alloc ( gsl_wavelet_bspline, waveletType );
+        break;
+    default:
+        break;
+    }
+    return w;
 }
 
 void WaveletUtils::debugGridITK( const GaborUtils::ImageType& in ){

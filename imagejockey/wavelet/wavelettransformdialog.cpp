@@ -97,10 +97,33 @@ void WaveletTransformDialog::onSaveDWTResultAsGrid()
 
 void WaveletTransformDialog::onReadDWTResultFromGrid()
 {
-    if( m_DWTbuffer.size() > 0 && ! ui->txtCoeffVariableName->text().trimmed().isEmpty() )
-        emit requestGrid( ui->txtCoeffVariableName->text(), m_pointerToRequestedGrid );
-    else
+    if( m_DWTbuffer.size() > 0 && ! ui->txtCoeffVariableName->text().trimmed().isEmpty() ){
+        IJAbstractCartesianGrid* pointerToRequestedGrid;
+        emit requestGrid( ui->txtCoeffVariableName->text(), pointerToRequestedGrid );
+        if( ! pointerToRequestedGrid ){
+            QMessageBox::critical( this, "Error", "Null data grid.");
+            return;
+        }
+        //read the requested data
+        int nI = pointerToRequestedGrid->getNI();
+        int nJ = pointerToRequestedGrid->getNJ();
+        for( int i = 0; i < nI; ++i )
+            for( int j = 0; j < nJ; ++j )
+                m_DWTbuffer( i, j, 0 ) = pointerToRequestedGrid->getData( 0, i, j, 0 );
+    }else
         QMessageBox::critical( this, "Error", "No array to receive the data or grid name not given.");
+}
+
+void WaveletTransformDialog::onPreviewBacktransformedResult()
+{
+    int waveletType = ui->cmbWaveletType->itemData( ui->cmbWaveletType->currentIndex() ).toInt();
+    bool interleaved = ( ui->cmbMethod->currentIndex() == 0 );
+    spectral::array backtrans = WaveletUtils::backtrans( m_inputGrid,
+                                                         m_DWTbuffer,
+                                                         getSelectedWaveletFamily(),
+                                                         waveletType,
+                                                         interleaved );
+    debugGrid( backtrans );
 }
 
 void WaveletTransformDialog::debugGrid(const spectral::array &grid)

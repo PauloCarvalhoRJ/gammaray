@@ -487,11 +487,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnPreview</sender>
+   <signal>clicked()</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>onPreviewBacktransformedResult()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>20</x>
+     <y>419</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>314</x>
+     <y>394</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onPerformTransform()</slot>
   <slot>onWaveletFamilySelected(QString)</slot>
   <slot>onSaveDWTResultAsGrid()</slot>
   <slot>onReadDWTResultFromGrid()</slot>
+  <slot>onPreviewBacktransformedResult()</slot>
  </slots>
 </ui>
