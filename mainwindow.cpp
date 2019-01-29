@@ -2353,8 +2353,12 @@ void MainWindow::onSaveDWTTransform(const QString name, const spectral::array &D
     //add a data column
     cg->addEmptyDataColumn( "coefficients", DWTtransform.size() );
 
-    for( int i = 0; i < DWTtransform.size(); ++i )
-        cg->setData( i, 0, DWTtransform.d_[i] );
+    int nI = DWTtransform.M();
+    for( int j = 0; j < DWTtransform.N(); ++j )
+        for( int i = 0; i < nI; ++i ){
+            int index = j * nI + i;
+            cg->setData( index, 0, DWTtransform( i, j, 0 ) );
+        }
 
     //save the data as a GEO-EAS grid file
     cg->writeToFS();
