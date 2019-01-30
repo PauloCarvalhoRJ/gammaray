@@ -194,6 +194,27 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "<td>1.0 (unitized entropy values)</td></tr></table>";
     /////////////////////////////////////////////////////////////////
+    ///------------------------ compute min and max differences between Pre and Post depositional entropies -----------
+    double minDiff = m_faciesTransitionMatrix->getPreDepositionalEntropy( 0, false ) -
+                     m_faciesTransitionMatrix->getPostDepositionalEntropy( 0, false );
+    double maxDiff = minDiff;
+    double maxAbsDiff = minDiff;
+    for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+        double diff = m_faciesTransitionMatrix->getPreDepositionalEntropy( i, false ) -
+                      m_faciesTransitionMatrix->getPostDepositionalEntropy( i, false );
+        minDiff = std::min( minDiff, diff );
+        maxDiff = std::max( maxDiff, diff );
+    }
+    maxAbsDiff = std::max( std::abs( maxDiff ), std::abs( minDiff ) );
+    ///----------------------------------------------------------------------------------------------------------------
+    //////////////////////////////// render a color table ///////////////////
+    reportHTML = reportHTML % "<table><tr><td>" % QString::number( -maxAbsDiff ) % "</td>";
+    for( int i = 1; i <= 32; ++i ){
+        double e = i / 32.0 ;
+        reportHTML = reportHTML % "<td style='border: 0px; padding 0px;' bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::SEISMIC ) % "'>&nbsp;</td>";
+    }
+    reportHTML = reportHTML % "<td>" % QString::number( maxAbsDiff ) % " (E<sub>Pre</sub> - E<sub>Post</sub>)</td></tr></table>";
+    /////////////////////////////////////////////////////////////////
     reportHTML = reportHTML % "<table class=\"countMatrix\">";
     {
         //column headers
@@ -209,10 +230,13 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
             reportHTML = reportHTML % "<tr>";
             reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
                                                       % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
-            reportHTML = reportHTML % "<td>";
+            double diff = m_faciesTransitionMatrix->getPreDepositionalEntropy( i, false ) -
+                          m_faciesTransitionMatrix->getPostDepositionalEntropy( i, false );
+            QString color = Util::getHTMLColorFromValue( diff, ColorTable::SEISMIC, -maxAbsDiff, maxAbsDiff );
+            reportHTML = reportHTML % "<td bgcolor='" % color % "'>";
             reportHTML = reportHTML % QString::number( m_faciesTransitionMatrix->getPostDepositionalEntropy( i, false ) );
             reportHTML = reportHTML % "</td>";
-            reportHTML = reportHTML % "<td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color % "'>";
             reportHTML = reportHTML % QString::number( m_faciesTransitionMatrix->getPreDepositionalEntropy( i, false ) );
             reportHTML = reportHTML % "</td>";
 
