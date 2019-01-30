@@ -3,6 +3,7 @@
 
 #include "imagejockey/wavelet/waveletutils.h"
 #include "spectral/spectral.h"
+#include <vtkSmartPointer.h>
 
 #include <QDialog>
 
@@ -11,6 +12,15 @@ class WaveletTransformDialog;
 }
 
 class IJAbstractCartesianGrid;
+class IJQuick3DViewer;
+class QVTKOpenGLWidget;
+class vtkRenderer;
+class vtkOrientationMarkerWidget;
+class vtkPolyData;
+class vtkImageData;
+class vtkActor;
+class vtkActor2D;
+class vtkCubeAxesActor2D;
 
 class WaveletTransformDialog : public QDialog
 {
@@ -39,12 +49,32 @@ private:
     WaveletFamily getSelectedWaveletFamily();
     static void debugGrid( const spectral::array &grid );
 
+    ////////-----members used for 3D display-------------------
+    // the Qt widget containing a VTK viewport
+    QVTKOpenGLWidget *_vtkwidget;
+    // the VTK renderer (add VTK actors to it to build the scene).
+    vtkSmartPointer<vtkRenderer> _renderer;
+    // this must be class variable, otherwise a crash ensues due to smart pointer going
+    // out of scope
+    vtkSmartPointer<vtkOrientationMarkerWidget> _vtkAxesWidget;
+    // List of pointers to the objects being viewed (if any).
+    std::vector< vtkSmartPointer<vtkActor> > _currentActors;
+    // Pointer to the scale bar actor
+    vtkSmartPointer<vtkActor2D> _scaleBarActor;
+    // Pointer to the axes scales actor
+    vtkSmartPointer<vtkCubeAxesActor2D> _axes;
+    ///////////////////////////////////////////////////////////
+
+    void clearDisplay();
+
+
 private Q_SLOTS:
     void onPerformTransform();
     void onWaveletFamilySelected( QString waveletFamilyName );
     void onSaveDWTResultAsGrid();
     void onReadDWTResultFromGrid();
     void onPreviewBacktransformedResult();
+    void updateDisplay();
 };
 
 #endif // WAVELETTRANSFORMDIALOG_H

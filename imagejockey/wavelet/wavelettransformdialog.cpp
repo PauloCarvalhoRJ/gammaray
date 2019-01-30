@@ -1,11 +1,33 @@
+//----------Since we're not building with CMake, we need to init the VTK modules------------------
+//--------------linking with the VTK libraries is often not enough--------------------------------
+#include <QInputDialog>
+#include <vtkAutoInit.h>
+VTK_MODULE_INIT(vtkRenderingOpenGL2) // VTK was built with vtkRenderingOpenGL2
+VTK_MODULE_INIT(vtkInteractionStyle)
+VTK_MODULE_INIT(vtkRenderingFreeType)
+//------------------------------------------------------------------------------------------------
+
+
 #include "wavelettransformdialog.h"
 #include "ui_wavelettransformdialog.h"
 
 #include "spectral/spectral.h"
 #include "imagejockey/svd/svdfactor.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
+#include "imagejockey/imagejockeyutils.h"
 
 #include <QMessageBox>
+#include <QVTKOpenGLWidget.h>
+#include <vtkRenderer.h>
+#include <vtkGenericOpenGLRenderWindow.h>
+#include <vtkAxesActor.h>
+#include <vtkOrientationMarkerWidget.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkLookupTable.h>
+#include <vtkDataSetMapper.h>
+#include <vtkImageData.h>
+#include <vtkActor2D.h>
+#include <vtkCubeAxesActor2D.h>
 
 WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
@@ -19,7 +41,45 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
 
     this->setWindowTitle( "Wavelet Transform Dialog" );
 
+    ui->splitter->setSizes(QList<int>() << 100 << 200);
+
+    ///-------------------setup the 3D viewer-------------------
+    _vtkwidget = new QVTKOpenGLWidget();
+
+    _renderer = vtkSmartPointer<vtkRenderer>::New();
+
+    // enable antialiasing
+    _renderer->SetUseFXAA( true );
+
+    _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
+    _vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
+    _vtkwidget->setFocusPolicy(Qt::StrongFocus);
+
+    //----------------------adding the orientation axes-------------------------
+    vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
+    _vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
+    _vtkAxesWidget->SetOutlineColor(0.9300, 0.5700, 0.1300);
+    _vtkAxesWidget->SetOrientationMarker(axes);
+    _vtkAxesWidget->SetInteractor(_vtkwidget->GetRenderWindow()->GetInteractor());
+    _vtkAxesWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
+    _vtkAxesWidget->SetEnabled(1);
+    _vtkAxesWidget->InteractiveOn();
+
+    //set the background to a shade of gray
+    _renderer->SetBackground(0.5, 0.5, 0.5);
+
+    // adjusts view so everything fits in the screen
+    _renderer->ResetCamera();
+
+    // add the VTK widget the layout
+    ui->layout3DViewer->addWidget( _vtkwidget );
+    //////////////////////////////////////////////////////////////
+
+
+    //this causes the wavelet type combobox to update
     onWaveletFamilySelected( ui->cmbWaveletFamily->currentText() );
+
+    updateDisplay();
 }
 
 WaveletTransformDialog::~WaveletTransformDialog()
@@ -126,6 +186,77 @@ void WaveletTransformDialog::onPreviewBacktransformedResult()
     debugGrid( backtrans );
 }
 
+void WaveletTransformDialog::updateDisplay()
+{
+    //Clear current display
+    clearDisplay();
+
+    /////-----------------code to render the input grid (aid in interpretation)-------------------
+    vtkSmartPointer<vtkActor> gridActor = vtkSmartPointer<vtkActor>::New();
+    {
+        m_inputGrid->dataWillBeRequested();
+
+        double colorScaleMin = m_inputGrid->getMin( m_inputVariableIndex );
+        double colorScaleMax = m_inputGrid->getMax( m_inputVariableIndex );
+
+        //Convert the data grid into a corresponding VTK object.
+        vtkSmartPointer<vtkImageData> out = vtkSmartPointer<vtkImageData>::New();
+        spectral::arrayPtr gridData( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
+        ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, *gridData );
+
+        //put the input grid a bit far from the spectrogram cube
+        double* origin = out->GetOrigin();
+        origin[2] -= 10.0;
+        out->SetOrigin( origin );
+
+        //Create a color table
+        vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+        {
+            size_t tableSize = 32; //number of shades
+            //create a color interpolator object (classic rainbow scale)
+            vtkSmartPointer<vtkColorTransferFunction> ctf = vtkSmartPointer<vtkColorTransferFunction>::New();
+            ctf->SetColorSpaceToRGB();
+            ctf->AddRGBPoint(0.00, 0.000, 0.000, 1.000);
+            ctf->AddRGBPoint(0.25, 0.000, 1.000, 1.000);
+            ctf->AddRGBPoint(0.50, 0.000, 1.000, 0.000);
+            ctf->AddRGBPoint(0.75, 1.000, 1.000, 0.000);
+            ctf->AddRGBPoint(1.00, 1.000, 0.000, 0.000);
+            //configure the color table object
+            lut->SetTableRange(colorScaleMin, colorScaleMax);
+            lut->SetNumberOfTableValues(tableSize);
+            for(size_t i = 0; i < tableSize; ++i)
+            {
+                double *rgb;
+                rgb = ctf->GetColor(static_cast<double>(i)/tableSize);
+                lut->SetTableValue(i, rgb[0], rgb[1], rgb[2]);
+            }
+            lut->SetRampToLinear();
+            lut->Build();
+        }
+
+        //Create a VTK mapper for the VTK grid
+        vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
+        mapper->SetInputData( out );
+        mapper->SetLookupTable( lut );
+        mapper->SetScalarRange( colorScaleMin, colorScaleMax );
+
+        //Create the scene actor.
+        gridActor->SetMapper( mapper );
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    //Update the graphics system.
+    //_renderer->AddActor( spectrogramActor );
+//    _currentActors.push_back( spectrogramActor );
+//    _renderer->AddActor2D( scalarBarActor );
+//    _scaleBarActor = scalarBarActor;
+    _renderer->AddActor( gridActor );
+    _currentActors.push_back( gridActor );
+    _renderer->ResetCamera();
+    _vtkwidget->GetRenderWindow()->Render();
+}
+
 void WaveletTransformDialog::debugGrid(const spectral::array &grid)
 {
     spectral::array result ( grid );
@@ -139,4 +270,15 @@ void WaveletTransformDialog::debugGrid(const spectral::array &grid)
     IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
     ijgv->setFactor( gridSVD );
     ijgv->show();
+}
+
+void WaveletTransformDialog::clearDisplay()
+{
+    std::vector< vtkSmartPointer<vtkActor> >::iterator it = _currentActors.begin();
+    for( ; it != _currentActors.end(); ){ // erase() already increments the iterator.
+        _renderer->RemoveActor( *it );
+        it = _currentActors.erase( it );
+    }
+    _renderer->RemoveActor( _scaleBarActor );
+    _renderer->RemoveViewProp( _axes.GetPointer() );
 }
