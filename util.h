@@ -624,6 +624,16 @@ public:
      * the passed color table.
      */
     static QString getHTMLColorFromValue(double value, ColorTable colorTableToUse, double min = 0.0, double max = 1.0);
+
+    /** Returns the probability of a given value according to the Chi-Squared Distribution with the given degrees of freedom. */
+    static double chiSquared( double x, int degreesOfFreedom );
+
+    /** Returns the value of x of chiSquares() whose area under the chi-squared distribution (see chiSquared) to its right
+     * corresponds to the value passed as the significanceLevel parameter.
+     * The returned value is equivalent to the one that would be manually obtained with chi-square tables commonly used.
+     * @param step Step size used to compute the area under the cruve.
+     */
+    static double chiSquaredAreaToTheRight(double significanceLevel, int degreesOfFreedom, double step );
 };
 
 #endif // UTIL_H

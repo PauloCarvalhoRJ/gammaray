@@ -93,7 +93,7 @@ public:
      * for transition values stored as counts (count matrix).
      * The value is computed as getValue( fromFaciesColumnIndex, toFaciesRowIndex ) / getSumOfColumn( fromFaciesColumnIndex )
      */
-    double getDownwardTransitionProbability( int fromFaciesColumnIndex, int toFaciesRowIndex );
+    double getDownwardTransitionProbability(int toFaciesRowIndex , int fromFaciesColumnIndex);
 
     /**
      * Returns the sum of post-depositional entropies for a given facies with respect to all other facies.
@@ -141,7 +141,21 @@ public:
     double getExpectedFrequency( int fromFaciesRowIndex, int toFaciesColIndex );
     double getMaxExpectedFrequency();
 
-    double getRank();
+    /** Returns the rank of the matrix of values by the eigen decomposition method.
+     * Idealluy it should be equal to the number of facies in this matrix.
+     */
+    int getRank();
+
+    /** Returns a value used to test whether the sequence represented by this transition matrix
+     * has a "Markovian memory" or not.  A value greater than the chi-squared distribution
+     * for the same degrees of freedom ( = n^2 - 2n where n is the number of facies or the rank of
+     * this matrix - see getRank() ) at 0.5% (see Util::chiSquared()) suggests
+     * "Markovity" or that the facies succession has cyclicity.
+     *
+     * It is computed as a summation of ( getValue(i,j) - getExpectedFrequency(i,j) )^2 / getExpectedFrequency(i,j)
+     * over all rows (i's) and columns (j's).
+     */
+    double getChiSquared();
 
     // ProjectComponent interface
 public:

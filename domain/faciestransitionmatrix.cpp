@@ -181,9 +181,9 @@ double FaciesTransitionMatrix::getUpwardTransitionProbability(int fromFaciesRowI
     return getValue( fromFaciesRowIndex, toFaciesColIndex ) / getSumOfRow( fromFaciesRowIndex );
 }
 
-double FaciesTransitionMatrix::getDownwardTransitionProbability(int fromFaciesColumnIndex, int toFaciesRowIndex)
+double FaciesTransitionMatrix::getDownwardTransitionProbability( int toFaciesRowIndex, int fromFaciesColumnIndex )
 {
-    return getValue( toFaciesRowIndex, fromFaciesColumnIndex ) / getSumOfRow( fromFaciesColumnIndex );
+    return getValue( toFaciesRowIndex, fromFaciesColumnIndex ) / getSumOfColumn( fromFaciesColumnIndex );
 }
 
 double FaciesTransitionMatrix::getPostDepositionalEntropy(int faciesIndex, bool normalize)
@@ -191,7 +191,7 @@ double FaciesTransitionMatrix::getPostDepositionalEntropy(int faciesIndex, bool 
     double sum = 0.0;
     for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
         double prob = getUpwardTransitionProbability( faciesIndex, j );
-        if( ! Util::almostEqual2sComplement( prob, 0.0, 1) )
+        if( ! Util::almostEqual2sComplement( prob, 0.0, 1) && j != faciesIndex )
             sum += prob * std::log2( prob );
     }
     sum = -sum;
@@ -203,9 +203,9 @@ double FaciesTransitionMatrix::getPostDepositionalEntropy(int faciesIndex, bool 
 double FaciesTransitionMatrix::getPreDepositionalEntropy(int faciesIndex, bool normalize)
 {
     double sum = 0.0;
-    for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
-        double prob = getDownwardTransitionProbability( faciesIndex, j );
-        if( ! Util::almostEqual2sComplement( prob, 0.0, 1) )
+    for( int i = 0; i < m_columnHeadersFaciesNames.size(); ++i ){
+        double prob = getDownwardTransitionProbability( i, faciesIndex );
+        if( ! Util::almostEqual2sComplement( prob, 0.0, 1) && i != faciesIndex )
             sum += prob * std::log2( prob );
     }
     sum = -sum;
@@ -259,9 +259,11 @@ double FaciesTransitionMatrix::getMaxExpectedFrequency()
     return max;
 }
 
-double FaciesTransitionMatrix::getRank()
+int FaciesTransitionMatrix::getRank()
 {
-    int cov_matrix_rank = 0;
+    //The eta (after greek letter eta) number is the threshold below which the eigenvalues are rounded off to zero
+    double eta = 0.001;
+    int rank = 0;
     spectral::array eigenvectors, eigenvalues;
     std::tie( eigenvectors, eigenvalues ) = spectral::eig( toSpectralArray() );
     {
@@ -275,14 +277,25 @@ double FaciesTransitionMatrix::getRank()
             if( eigenvalue > largestEigenValue )
                 largestEigenValue = eigenvalue;
             if( eigenvalue > eta )
-                cov_matrix_rank = i;
+                rank = i;
         }
-        ++cov_matrix_rank;
-        if( condition_number > 10 ){
-            is_cov_matrix_ill_conditioned = true;
-            ++nIllConditioned;
-        }
+        ++rank;
     }
+    return rank;
+}
+
+double FaciesTransitionMatrix::getChiSquared()
+{
+    double sum = 0.0;
+    for( int i = 0; i < m_lineHeadersFaciesNames.size(); ++i )
+        for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
+            double E = getExpectedFrequency(i, j);
+            if( ! Util::almostEqual2sComplement( E , 0.0, 1 ) ){
+                double temp = getValue(i, j) - E;
+                sum += temp*temp / E;
+            }
+        }
+    return sum;
 }
 
 QIcon FaciesTransitionMatrix::getIcon()

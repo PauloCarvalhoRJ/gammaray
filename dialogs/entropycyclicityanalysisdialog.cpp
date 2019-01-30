@@ -345,6 +345,29 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
 
+    reportHTML = reportHTML % "<H2>h) Test of significance (E):</H2>";
+    reportHTML = reportHTML % "<table class=\"countMatrix\">";
+    {
+        int rank = m_faciesTransitionMatrix->getRank();
+        int n = m_faciesTransitionMatrix->getColumnCount();
+        int degreesOfFreedom = n*n - (n+n);
+        //column headers
+        reportHTML = reportHTML % "<tr>";
+        reportHTML = reportHTML % "<td><strong>Test of Equation</strong></td>";
+        reportHTML = reportHTML % "<td><strong>Computed value of</strong></td>";
+        reportHTML = reportHTML % "<td><strong>Limiting value at 0.5% significance level</strong></td>";
+        reportHTML = reportHTML % "<td><strong>Degrees of freedom</strong></td>";
+        reportHTML = reportHTML % "</tr>";
+        reportHTML = reportHTML % "<tr>";
+        reportHTML = reportHTML % "<td><center>Billingslay</center></td>";
+        reportHTML = reportHTML % "<td><center>" % QString::number( m_faciesTransitionMatrix->getChiSquared() ) % "</center></td>";
+        reportHTML = reportHTML % "<td><center>" % QString::number( Util::chiSquaredAreaToTheRight( 0.005, degreesOfFreedom, 0.001 ) ) % "</center></td>";
+        reportHTML = reportHTML % "<td><center>" % QString::number( degreesOfFreedom ) % "</center></td>";
+        reportHTML = reportHTML % "</tr>";
+    }
+    reportHTML = reportHTML % "</table><BR/><BR/>";
+
+
     reportHTML = reportHTML % "</body></html>";
 
     ui->txtEdCalcResult->setHtml( reportHTML );

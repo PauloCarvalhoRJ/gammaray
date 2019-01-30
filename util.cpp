@@ -1947,3 +1947,23 @@ QString Util::getHTMLColorFromValue(double value, ColorTable colorTableToUse, do
     QColor color( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
     return color.name( QColor::HexRgb );
 }
+
+double Util::chiSquared(double x, int degreesOfFreedom)
+{
+    double half_n = degreesOfFreedom / 2.0;
+    double half_x = x / 2.0;
+    double gamma = std::tgamma( half_n );
+    return 1.0 / ( gamma * std::pow(2.0, half_n) ) * std::pow( x, half_n - 1.0 ) * std::exp( -half_x );
+
+}
+
+double Util::chiSquaredAreaToTheRight( double significanceLevel, int degreesOfFreedom, double step )
+{
+    double sum = 0.0;
+    for( double currentX = 0.0; ; currentX += step ){
+        double chi = chiSquared( currentX, degreesOfFreedom );
+        sum += step * chi;
+        if( sum > 1.0 - significanceLevel )
+            return currentX;
+    }
+}
