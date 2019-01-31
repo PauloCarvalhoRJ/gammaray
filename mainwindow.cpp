@@ -73,6 +73,7 @@
 #include "dialogs/choosecategorydialog.h"
 #include "dialogs/projectfilechoosedialog.h"
 #include "dialogs/entropycyclicityanalysisdialog.h"
+#include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -489,6 +490,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "FACIESTRANSITIONMATRIX" ){
                 _projectContextMenu->addAction("Set/Change associated category definition", this, SLOT(onSetCategoryDefinitionOfAFasciesTransitionMatrix()));
                 _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
+                _projectContextMenu->addAction("Facies relationship diagram", this, SLOT(onFaciesRelationShipDiagram()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -2486,6 +2488,15 @@ void MainWindow::onEntropyCyclicityAnalysis()
     if( ftm ){
         EntropyCyclicityAnalysisDialog* ecad = new EntropyCyclicityAnalysisDialog( ftm, this );
         ecad->show();
+    }
+}
+
+void MainWindow::onFaciesRelationShipDiagram()
+{
+    FaciesTransitionMatrix *ftm = dynamic_cast<FaciesTransitionMatrix*>(_right_clicked_file);
+    if( ftm ){
+        FaciesRelationShipDiagramDialog* frsdd = new FaciesRelationShipDiagramDialog( ftm, this );
+        frsdd->show();
     }
 }
 
