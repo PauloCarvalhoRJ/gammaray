@@ -28,6 +28,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkImageData.h>
 #include <vtkActor2D.h>
 #include <vtkCubeAxesActor2D.h>
+#include <vtkScalarBarActor.h>
 
 WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
@@ -246,11 +247,127 @@ void WaveletTransformDialog::updateDisplay()
 
     //////////////////////////////////////////////////////////////////////////////////////////////
 
+    /////--------------------code to render the scalogram cubes-----------------------
+    vtkSmartPointer<vtkActor> scalogramActor = vtkSmartPointer<vtkActor>::New();
+    vtkSmartPointer<vtkScalarBarActor> scalarBarActor = vtkSmartPointer<vtkScalarBarActor>::New();
+    {
+        //  GSL's wavelet transform outputs the data of the 3D scalogram reusing the original
+        //  2D grid like this (example is 16 x 16 cells):
+        //  |----------------|----------------|
+        //  |                |                |
+        //  |                |                |
+        //  |                |                |   Convention:
+        //  |       3a       |      3c        |      -The numbers are the levels.  For a
+        //  |                |                |       16x16 input, we have four levels (0 through 3).
+        //  |                |                |       A higher level means more detail (higher frequency).
+        //  |                |                |      -The letters are directions. a = N-S; b = E-W
+        //  |--------|-------|----------------|       c = both diagonals.  This is because a 2D DWT is actually
+        //  |        |       |                |       two 1D DWT's column-wise and row-wise. Thus we have
+        //  |   2a   |  2c   |                |       three scalograms.
+        //  |        |       |                |      -The cells in lower levels should be represented in rendering
+        //  |----|---|-------|      3b        |       by doubling the cell size.  If the cell size in the original
+        //  | 1a | 1c|       |                |       grid is 10m x 10m, the cells in level 3 should be rendered with
+        //  |--|-|---|  2b   |                |       20m x 20m cells; cells in level 2, with 40m x 40m and so on.
+        //  |--|-| 1b|       |                |       Each level should be rendered at a different z-level, forming a cube.
+        //  |--|-|---|-------|----------------|
+        //    ^ ^
+        //    | |--- These three are 0a, 0c and 0b
+        //    |----- This single cell stores the smooth factor, a value representing the global trend
+        //           It is not part of the scalogram, though it used in the transform.  Thus the total number
+        //           of cells in the cubes is the number of cells of the input grid minus 1.
+
+        // determine the number of levels (assumes the DWT transform is square).
+        int numberOfLevels = std::log2( m_DWTbuffer.M() );
+
+        // determine the number of cells in the three cubes (assumes the DWT transform is square).
+        int numberOfCells = m_DWTbuffer.M() * m_DWTbuffer.M() - 1;
+
+        double gridCellWidth  = m_inputGrid->getCellSizeI();
+        double gridCellLength = m_inputGrid->getCellSizeJ();
+        double gridWidth      = gridCellWidth * m_DWTbuffer.M();
+        double gridLength     = gridCellLength * m_DWTbuffer.N();
+        double gridX0         = m_inputGrid->getOriginX();
+        double gridY0         = m_inputGrid->getOriginY();
+        double gridZ0         = m_inputGrid->getOriginZ();
+
+        // Create a VTK container with the points (mesh vertexes)
+        vtkSmartPointer< vtkPoints > hexaPoints = vtkSmartPointer< vtkPoints >::New();
+        hexaPoints->SetNumberOfPoints( numberOfCells * 8 );
+        // for each level (0, 1, 2, 3, ...) of the scalograms
+        for( int iLevel = 0; iLevel < numberOfLevels; ++iLevel ){
+            int numberOfRowsInLevel = ( 1 << iLevel );
+            int numberOfColsInLevel = numberOfRowsInLevel;
+            double cellWidth = gridWidth / numberOfColsInLevel;
+            double cellLength = gridLength / numberOfRowsInLevel;
+            double cellHeight = gridCellWidth; //2D: make cell hight equal one of the areal sizes
+            //for each scalogram (a, b and c) = (N-S, E-W, diagonals)
+            for( char cScalogram = 'a'; cScalogram <= 'c'; ++cScalogram ){
+                for( int jCell = 0; jCell < numberOfColsInLevel; ++jCell ){
+                    for( int iCell = 0; iCell < numberOfRowsInLevel; ++iCell ){
+                        double xOffset = 0;
+                        double yOffset = 0;
+                        if( cScalogram == 'b' || cScalogram == 'c' )
+                            xOffset = gridWidth  + gridCellWidth;
+                        if( cScalogram == 'a' || cScalogram == 'c' )
+                            yOffset = gridLength + gridCellLength;
+                        double cellX0 = gridX0 + xOffset + cellWidth*jCell;
+                        double cellX1 = cellX0 + cellWidth;
+                        double cellY0 = gridY0 + yOffset + cellLenght*iCell;
+                        double cellY1 = cellY0 + cellLength;
+                        double cellZ0 = gridZ0 + cellHeight*iLevel;
+                        double cellZ1 = cellZ0 + cellHeight;
+                        TODO_STORE_THE_EIGHT_VERTEXES_OF_THE_CELL;
+                    }
+                }
+            }
+
+//            double x, y, z;
+//            geoGrid->getMeshVertexLocation( i, x, y, z );
+//            hexaPoints->InsertPoint(i, x, y, z);
+        }
+
+        // Create a VTK unstructured grid object (allows faults, erosions, and other geologic discordances )
+        vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+        uint nCells = geoGrid->getMeshNumberOfCells();
+        unstructuredGrid->Allocate( nCells );
+        for( uint i = 0; i < nCells; ++i ) {
+            uint vIds[8];
+            geoGrid->getMeshCellDefinition( i, vIds );
+            vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+            hexa->GetPointIds()->SetId(0, vIds[0]);
+            hexa->GetPointIds()->SetId(1, vIds[1]);
+            hexa->GetPointIds()->SetId(2, vIds[2]);
+            hexa->GetPointIds()->SetId(3, vIds[3]);
+            hexa->GetPointIds()->SetId(4, vIds[4]);
+            hexa->GetPointIds()->SetId(5, vIds[5]);
+            hexa->GetPointIds()->SetId(6, vIds[6]);
+            hexa->GetPointIds()->SetId(7, vIds[7]);
+            unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
+        }
+        unstructuredGrid->SetPoints(hexaPoints);
+
+        // Create mapper (visualization parameters)
+        vtkSmartPointer<vtkDataSetMapper> mapper =
+                vtkSmartPointer<vtkDataSetMapper>::New();
+        mapper->SetInputData( unstructuredGrid );
+        //mapper->SetInputConnection( threshold->GetOutputPort() );
+        //mapper->SetLookupTable(lut);
+        //mapper->SetScalarRange(min, max);
+        mapper->Update();
+
+        // Finally, pass everything to the actor and return it.
+        vtkSmartPointer<vtkActor> scalogramActor =
+                vtkSmartPointer<vtkActor>::New();
+        scalogramActor->SetMapper(mapper);
+        scalogramActor->GetProperty()->EdgeVisibilityOn();
+    }
+
+
     //Update the graphics system.
-    //_renderer->AddActor( spectrogramActor );
-//    _currentActors.push_back( spectrogramActor );
-//    _renderer->AddActor2D( scalarBarActor );
-//    _scaleBarActor = scalarBarActor;
+    _renderer->AddActor( scalogramActor );
+    _currentActors.push_back( scalogramActor );
+    _renderer->AddActor2D( scalarBarActor );
+    _scaleBarActor = scalarBarActor;
     _renderer->AddActor( gridActor );
     _currentActors.push_back( gridActor );
     _renderer->ResetCamera();
