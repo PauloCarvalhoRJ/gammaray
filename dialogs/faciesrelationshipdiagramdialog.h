@@ -22,6 +22,7 @@ private:
 
     FaciesTransitionMatrix* m_faciesTransitionMatrix;
 
+private Q_SLOTS:
     void performCalculation();
 };
 

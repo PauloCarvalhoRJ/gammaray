@@ -672,6 +672,22 @@ LIBS        += -lfftw3
 LIBS        += -lfftw3f
 #==============================================================
 
+#========= The GraphViz include and lib path and libraries.=========
+_GRAPHVIZ_INCLUDE = $$(GRAPHVIZ_INCLUDE)
+isEmpty(_GRAPHVIZ_INCLUDE){
+        error(GRAPHVIZ_INCLUDE environment variable not defined.)
+}
+_GRAPHVIZ_LIB = $$(GRAPHVIZ_LIB)
+isEmpty(_GRAPHVIZ_LIB){
+        error(GRAPHVIZ_LIB environment variable not defined.)
+}
+INCLUDEPATH += $$_GRAPHVIZ_INCLUDE
+LIBPATH     += $$_GRAPHVIZ_LIB
+LIBS        += -lgvc
+LIBS        += -lcgraph
+#==============================================================
+
+
 #=====================Embedded thirdparty libraries===========================
 INCLUDEPATH += thirdparty
 #=============================================================================

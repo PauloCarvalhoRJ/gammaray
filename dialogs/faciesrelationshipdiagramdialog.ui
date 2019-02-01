@@ -6,29 +6,120 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>681</width>
-    <height>477</height>
+    <width>401</width>
+    <height>103</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QPushButton" name="btnDismiss">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>440</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Dismiss</string>
-   </property>
-  </widget>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>cutoff:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="dblSpinCutoff">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximum">
+        <double>1.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.050000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.400000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnDo">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/play32</normaloff>:/icons32/play32</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnDismiss">
+       <property name="text">
+        <string>Dismiss</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections>
+  <connection>
+   <sender>btnDo</sender>
+   <signal>clicked()</signal>
+   <receiver>FaciesRelationShipDiagramDialog</receiver>
+   <slot>performCalculation()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>372</x>
+     <y>28</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>386</x>
+     <y>53</y>
+    </hint>
+   </hints>
+  </connection>
   <connection>
    <sender>btnDismiss</sender>
    <signal>clicked()</signal>
@@ -36,14 +127,17 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>397</x>
-     <y>408</y>
+     <x>229</x>
+     <y>77</y>
     </hint>
     <hint type="destinationlabel">
-     <x>472</x>
-     <y>419</y>
+     <x>284</x>
+     <y>74</y>
     </hint>
    </hints>
   </connection>
  </connections>
+ <slots>
+  <slot>performCalculation()</slot>
+ </slots>
 </ui>
