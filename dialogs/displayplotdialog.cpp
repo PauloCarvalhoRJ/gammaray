@@ -67,10 +67,10 @@ void DisplayPlotDialog::onChangeParameters()
 
 void DisplayPlotDialog::onSavePlot()
 {
-    if( _gpf.isEmpty() )
-        return;
     bool ok;
-    QString proposed_name( _gpf.getProgramName() );
+    QString proposed_name = "Some";
+    if( ! _gpf.isEmpty() )
+        proposed_name = _gpf.getProgramName() ;
     proposed_name = proposed_name.append("_plot");
     QString new_plot_name = QInputDialog::getText(this, "Name the new plot file",
                                              "New plot file name:", QLineEdit::Normal,
