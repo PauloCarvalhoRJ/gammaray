@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>401</width>
-    <height>103</height>
+    <width>362</width>
+    <height>151</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,7 +25,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>cutoff:</string>
+        <string>Cutoff:</string>
        </property>
       </widget>
      </item>
@@ -56,6 +56,54 @@
        <property name="icon">
         <iconset resource="../resources.qrc">
          <normaloff>:/icons32/play32</normaloff>:/icons32/play32</iconset>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QCheckBox" name="chkMakeLinesProportional">
+       <property name="text">
+        <string>Make lines proportional to values.  Max. line width:</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinMaxLineWidth">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="value">
+        <number>10</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>Number of significant digits:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinPrecision">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>16</number>
+       </property>
+       <property name="value">
+        <number>2</number>
        </property>
       </widget>
      </item>
@@ -111,8 +159,8 @@
    <slot>performCalculation()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>372</x>
-     <y>28</y>
+     <x>351</x>
+     <y>34</y>
     </hint>
     <hint type="destinationlabel">
      <x>386</x>
@@ -127,12 +175,28 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>229</x>
-     <y>77</y>
+     <x>218</x>
+     <y>138</y>
     </hint>
     <hint type="destinationlabel">
      <x>284</x>
      <y>74</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkMakeLinesProportional</sender>
+   <signal>clicked(bool)</signal>
+   <receiver>spinMaxLineWidth</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>204</x>
+     <y>60</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>316</x>
+     <y>57</y>
     </hint>
    </hints>
   </connection>

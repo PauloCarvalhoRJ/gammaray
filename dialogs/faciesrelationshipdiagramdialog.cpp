@@ -80,7 +80,10 @@ void FaciesRelationShipDiagramDialog::performCalculation()
                     //style for the edge connecting both facies
                     outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" -> \"" %
                                                    m_faciesTransitionMatrix->getColumnHeader(j) % "\"" %
-                                            "[label=\"" % QString::number(diff) % "\"]\n";
+                                                   "[label=\"" % QString::number(diff,'g',ui->spinPrecision->value()) % "\"";
+                    if( ui->chkMakeLinesProportional->isChecked() )
+                        outputDOT = outputDOT % ",style=\"setlinewidth(" % QString::number((int)(diff*ui->spinMaxLineWidth->value())) % ")\"";
+                    outputDOT = outputDOT % "]\n";
                 }
             }
         }
