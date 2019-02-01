@@ -54,21 +54,30 @@ void FaciesRelationShipDiagramDialog::performCalculation()
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 // Help about the DOT style language: https://graphviz.gitlab.io/_pages/pdf/dotguide.pdf
                 // Help about GraphViz API:           https://graphviz.gitlab.io/_pages/pdf/libguide.pdf
+                // GraphViz general documentation:    https://www.graphviz.org/documentation/
                 double diff = m_faciesTransitionMatrix->getDifference( i, j );
                 if( diff > cutoff ){
-                    //color for the "from" facies
+                    //style for the "from" facies
                     QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).lighter();
                     QString rgb = QString::number( color.hueF() )   + " " +
                                   QString::number( color.saturationF() ) + " " +
                                   QString::number( color.lightnessF() )        ;
-                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" [shape=box,style=filled,color=\"" % rgb % "\"]\n";
-                    //color for the "to" facies
+                    QString labelColor = "black";
+                    if( color.lightnessF() < 0.6 ) //if the facies color is too dark, use white letters for the labels
+                        labelColor = "white";
+                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" [shape=box,style=filled,color=\"" % rgb % "\"," %
+                                          "label=<<FONT COLOR=\"" % labelColor % "\">" % m_faciesTransitionMatrix->getRowHeader(i) % "</FONT>>]\n";
+                    //style for the "to" facies
                     color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
                     rgb = QString::number( color.hueF() )   + " " +
                           QString::number( color.saturationF() ) + " " +
                           QString::number( color.lightnessF() )        ;
-                    //the edge connectinh both facies
-                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getColumnHeader(j) % "\" [shape=box,style=filled,color=\"" % rgb % "\"]\n";
+                    labelColor = "black";
+                    if( color.lightnessF() < 0.6 ) //if the facies color is too dark, use white letters for the labels
+                        labelColor = "white";
+                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getColumnHeader(j) % "\" [shape=box,style=filled,color=\"" % rgb % "\"," %
+                            "label=<<FONT COLOR=\"" % labelColor % "\">" % m_faciesTransitionMatrix->getColumnHeader(j) % "</FONT>>]\n";
+                    //style for the edge connecting both facies
                     outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" -> \"" %
                                                    m_faciesTransitionMatrix->getColumnHeader(j) % "\"" %
                                             "[label=\"" % QString::number(diff) % "\"]\n";
@@ -76,6 +85,8 @@ void FaciesRelationShipDiagramDialog::performCalculation()
             }
         }
         outputDOT = outputDOT % "}\n";
+
+        //std::cout << outputDOT.toStdString() << std::endl;
 
         G = agmemread( outputDOT.toStdString().c_str() );
     }
