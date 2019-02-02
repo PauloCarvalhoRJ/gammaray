@@ -18,43 +18,16 @@ spectral::array WaveletUtils::transform( IJAbstractCartesianGrid *cg,
                               int waveletType,
                               bool interleaved )
 {
-    //get the grid dimensions
-    int nI = cg->getNI();
-    int nJ = cg->getNJ();
-
-    //get which dimension has the greatest value
-    int nMax = std::max( nI, nJ );
-
-    //find the smallest power of 2 that is greater than or equal
-    //the greatest dimension.
-    //make it the grid dimension for DWT
-    int nPowerOf2 = 1;
-    while( nPowerOf2 < nMax )
-        nPowerOf2 <<= 1;
-
     //load the input data as an array
     cg->dataWillBeRequested();
     spectral::arrayPtr inputAsArray( cg->createSpectralArray( variableIndex ) );
 
-    //conver the array into an image object
+    //convert the array into an image object
     GaborUtils::ImageTypePtr inputAsITK = GaborUtils::convertSpectralArrayToITKImage( *inputAsArray );
 
     //mirror pad the image to the needed dimension (power of 2)
-    typedef itk::MirrorPadImageFilter <GaborUtils::ImageType, GaborUtils::ImageType>
-            MirrorPadImageFilterType;
-    GaborUtils::ImageType::SizeType lowerBound;
-    lowerBound[0] = 0;
-    lowerBound[1] = 0;
-    GaborUtils::ImageType::SizeType upperBound;
-    upperBound[0] = nPowerOf2 - nI;
-    upperBound[1] = nPowerOf2 - nJ;
-    MirrorPadImageFilterType::Pointer padFilter
-            = MirrorPadImageFilterType::New();
-    padFilter->SetInput( inputAsITK );
-    padFilter->SetPadLowerBound(lowerBound);
-    padFilter->SetPadUpperBound(upperBound);
-    padFilter->Update();
-    GaborUtils::ImageTypePtr inputMirrorPadded = padFilter->GetOutput();
+    int nPowerOf2;
+    GaborUtils::ImageTypePtr inputMirrorPadded = squareAndMirrorPad( inputAsITK, nPowerOf2 );
 
     //the following low-level code is necessary to interface to GSL library.
 
@@ -190,6 +163,49 @@ void WaveletUtils::fillRawArray(const GaborUtils::ImageTypePtr input, double *ou
                 GaborUtils::realType value = input->GetPixel( index );
                 output[ k * nJ * nI + j * nI + i ] = value;
             }
+}
+
+GaborUtils::ImageTypePtr WaveletUtils::squareAndMirrorPad(const GaborUtils::ImageTypePtr input, int &nPowerOf2)
+{
+    typedef itk::MirrorPadImageFilter <GaborUtils::ImageType, GaborUtils::ImageType>
+            MirrorPadImageFilterType;
+
+    //get the grid dimensions
+    //get input grid dimensions
+    GaborUtils::ImageType::RegionType region = input->GetLargestPossibleRegion();
+    GaborUtils::ImageType::SizeType size = region.GetSize();
+    spectral::index nI = size[0];
+    spectral::index nJ = 1;
+    if( GaborUtils::gridDim > 1 )
+        nJ = size[1];
+    spectral::index nK = 1;
+    if( GaborUtils::gridDim > 2 )
+        nK = size[2];
+
+    //get which dimension has the greatest value
+    int nMax = std::max( nI, nJ );
+
+    //find the smallest power of 2 that is greater than or equal
+    //the greatest dimension.
+    //make it the grid dimension for DWT
+    nPowerOf2 = 1;
+    while( nPowerOf2 < nMax )
+        nPowerOf2 <<= 1;
+
+    GaborUtils::ImageType::SizeType lowerBound;
+    lowerBound[0] = 0;
+    lowerBound[1] = 0;
+    GaborUtils::ImageType::SizeType upperBound;
+    upperBound[0] = nPowerOf2 - nI;
+    upperBound[1] = nPowerOf2 - nJ;
+    MirrorPadImageFilterType::Pointer padFilter
+            = MirrorPadImageFilterType::New();
+    padFilter->SetInput( input );
+    padFilter->SetPadLowerBound(lowerBound);
+    padFilter->SetPadUpperBound(upperBound);
+    padFilter->Update();
+
+    return padFilter->GetOutput();
 }
 
 void WaveletUtils::debugGridRawArray( const double* in, int nI, int nJ, int nK ){

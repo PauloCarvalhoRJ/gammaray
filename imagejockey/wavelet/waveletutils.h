@@ -57,6 +57,15 @@ public:
      */
     static void fillRawArray( const GaborUtils::ImageTypePtr input, double* output );
 
+    /**
+     * Creates a new image object that is the smallest square image with power-of-2
+     * dimensions.  The contents of the input image are placed in the top left corner and
+     * the excess pixels are mirror padded.
+     * The power-of-2 dimension of the output image is stored in the output parameter nPowerOf2.
+     */
+    static GaborUtils::ImageTypePtr squareAndMirrorPad(const GaborUtils::ImageTypePtr input,
+                                                        int& nPowerOf2 );
+
 private:
     static void debugGridITK( const GaborUtils::ImageType &in);
     static void debugGrid( const spectral::array &grid );
