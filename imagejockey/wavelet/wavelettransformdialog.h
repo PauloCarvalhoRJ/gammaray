@@ -75,6 +75,7 @@ private Q_SLOTS:
     void onReadDWTResultFromGrid();
     void onPreviewBacktransformedResult();
     void updateDisplay();
+    void onUpdateWaveletDisplays();
 };
 
 #endif // WAVELETTRANSFORMDIALOG_H

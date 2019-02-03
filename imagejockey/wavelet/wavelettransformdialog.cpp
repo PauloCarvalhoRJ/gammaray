@@ -36,6 +36,10 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkFloatArray.h>
 #include <vtkCellData.h>
 #include <vtkThreshold.h>
+#include <QLineSeries>
+#include <QValueAxis>
+#include <QChart>
+#include <QChartView>
 
 WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
@@ -83,9 +87,28 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
     ui->layout3DViewer->addWidget( _vtkwidget );
     //////////////////////////////////////////////////////////////
 
-
     //this causes the wavelet type combobox to update
     onWaveletFamilySelected( ui->cmbWaveletFamily->currentText() );
+
+    //////////////////////////////////////////////////////////////////
+    //create and fill a data series object for the chart
+    QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
+    for(uint i = 0; i < 100; ++i){
+        series->append( i+1, i+1 );
+    }
+
+    //create a new chart object using the data series
+    QtCharts::QChart *chart = new QtCharts::QChart();
+    chart->legend()->hide();
+    chart->addSeries(series);
+    chart->createDefaultAxes();
+    chart->axisY( series )->setMax(100.0);
+    chart->axisY( series )->setMin(0.0);
+    QtCharts::QValueAxis *axisX = new QtCharts::QValueAxis();
+    chart->setAxisX( axisX, series );
+    QtCharts::QChartView* chartView = new QtCharts::QChartView( chart );
+    ui->frmWaveletDisplay->layout()->addWidget( chartView );
+    //////////////////////////////////////////////////////////////////////
 
     updateDisplay();
 }
@@ -536,6 +559,11 @@ void WaveletTransformDialog::updateDisplay()
     _currentActors.push_back( gridActor );
     _renderer->ResetCamera();
     _vtkwidget->GetRenderWindow()->Render();
+}
+
+void WaveletTransformDialog::onUpdateWaveletDisplays()
+{
+
 }
 
 void WaveletTransformDialog::debugGrid(const spectral::array &grid)

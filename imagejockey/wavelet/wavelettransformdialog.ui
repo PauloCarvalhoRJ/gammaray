@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>631</width>
-    <height>435</height>
+    <height>428</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -232,6 +232,107 @@
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_14">
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_17">
+             <property name="text">
+              <string>wavelet (mother wavelet)</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QFrame" name="frmWaveletDisplay">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_5">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QLabel" name="label_18">
+             <property name="text">
+              <string>scalet (father wavelet)</string>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QFrame" name="frmScaletDisplay">
+             <property name="frameShape">
+              <enum>QFrame::StyledPanel</enum>
+             </property>
+             <property name="frameShadow">
+              <enum>QFrame::Raised</enum>
+             </property>
+             <layout class="QVBoxLayout" name="verticalLayout_6">
+              <property name="spacing">
+               <number>0</number>
+              </property>
+              <property name="leftMargin">
+               <number>0</number>
+              </property>
+              <property name="topMargin">
+               <number>0</number>
+              </property>
+              <property name="rightMargin">
+               <number>0</number>
+              </property>
+              <property name="bottomMargin">
+               <number>0</number>
+              </property>
+             </layout>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
           <widget class="Line" name="line_3">
@@ -431,7 +532,7 @@
         </layout>
        </item>
        <item>
-        <layout class="QHBoxLayout" name="horizontalLayout_12">
+        <layout class="QHBoxLayout" name="horizontalLayout_12" stretch="0,0,0,0">
          <property name="topMargin">
           <number>0</number>
          </property>
@@ -645,7 +746,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>612</x>
-     <y>426</y>
+     <y>419</y>
     </hint>
     <hint type="destinationlabel">
      <x>299</x>
@@ -740,12 +841,60 @@
    <slot>updateDisplay()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>602</x>
-     <y>210</y>
+     <x>612</x>
+     <y>293</y>
     </hint>
     <hint type="destinationlabel">
      <x>627</x>
      <y>231</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbWaveletFamily</sender>
+   <signal>activated(QString)</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>onUpdateWaveletDisplays()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>104</x>
+     <y>35</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>0</x>
+     <y>43</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbWaveletType</sender>
+   <signal>activated(QString)</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>onUpdateWaveletDisplays()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>387</x>
+     <y>37</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>631</x>
+     <y>51</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbMethod</sender>
+   <signal>activated(QString)</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>onUpdateWaveletDisplays()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>272</x>
+     <y>67</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>629</x>
+     <y>90</y>
     </hint>
    </hints>
   </connection>
@@ -757,5 +906,6 @@
   <slot>onReadDWTResultFromGrid()</slot>
   <slot>onPreviewBacktransformedResult()</slot>
   <slot>updateDisplay()</slot>
+  <slot>onUpdateWaveletDisplays()</slot>
  </slots>
 </ui>
