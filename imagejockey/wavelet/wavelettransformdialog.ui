@@ -357,7 +357,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>View settings</string>
+            <string>Scalogram view settings</string>
            </property>
           </widget>
          </item>
@@ -384,7 +384,7 @@
          <item>
           <widget class="QLabel" name="label_9">
            <property name="text">
-            <string>Color scale:  min:</string>
+            <string>Color scale:       min:</string>
            </property>
           </widget>
          </item>
@@ -406,12 +406,12 @@
        <item>
         <layout class="QHBoxLayout" name="horizontalLayout_11">
          <property name="topMargin">
-          <number>10</number>
+          <number>0</number>
          </property>
          <item>
           <widget class="QLabel" name="label_11">
            <property name="text">
-            <string>Filter:            min:</string>
+            <string>Coef. filter 1:    min:</string>
            </property>
           </widget>
          </item>
@@ -427,6 +427,100 @@
          </item>
          <item>
           <widget class="QLineEdit" name="txtThresholdMax"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_12">
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_13">
+           <property name="text">
+            <string>Coef. filter 2:    min:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="txtThresholdMin2"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_14">
+           <property name="text">
+            <string>max:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLineEdit" name="txtThresholdMax2"/>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_13">
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_15">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Scale filter         min:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="spinLevelMin">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_16">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>max:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="spinLevelMax">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnUpdateView">
+           <property name="toolTip">
+            <string>Upade scalograms view.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../ijresources.qrc">
+             <normaloff>:/ijicons32/ijupdate32</normaloff>:/ijicons32/ijupdate32</iconset>
+           </property>
+          </widget>
          </item>
         </layout>
        </item>
@@ -550,8 +644,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>310</x>
-     <y>428</y>
+     <x>612</x>
+     <y>426</y>
     </hint>
     <hint type="destinationlabel">
      <x>299</x>
@@ -566,8 +660,8 @@
    <slot>onPerformTransform()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>310</x>
-     <y>71</y>
+     <x>612</x>
+     <y>73</y>
     </hint>
     <hint type="destinationlabel">
      <x>274</x>
@@ -598,8 +692,8 @@
    <slot>onSaveDWTResultAsGrid()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>297</x>
-     <y>104</y>
+     <x>612</x>
+     <y>120</y>
     </hint>
     <hint type="destinationlabel">
      <x>315</x>
@@ -614,8 +708,8 @@
    <slot>onReadDWTResultFromGrid()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>294</x>
-     <y>137</y>
+     <x>612</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
      <x>317</x>
@@ -639,6 +733,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnUpdateView</sender>
+   <signal>clicked()</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>updateDisplay()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>602</x>
+     <y>210</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>627</x>
+     <y>231</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onPerformTransform()</slot>
@@ -646,5 +756,6 @@
   <slot>onSaveDWTResultAsGrid()</slot>
   <slot>onReadDWTResultFromGrid()</slot>
   <slot>onPreviewBacktransformedResult()</slot>
+  <slot>updateDisplay()</slot>
  </slots>
 </ui>

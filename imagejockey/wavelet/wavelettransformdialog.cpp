@@ -35,6 +35,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkIntArray.h>
 #include <vtkFloatArray.h>
 #include <vtkCellData.h>
+#include <vtkThreshold.h>
 
 WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
@@ -120,6 +121,28 @@ void WaveletTransformDialog::onPerformTransform()
                                            waveletType,
                                            interleaved );
     debugGrid( m_DWTbuffer );
+
+    // set the color scale form fields to suitable initial values
+    double absOfMin = std::abs( m_DWTbuffer.min() );
+    double absOfMax = std::abs( m_DWTbuffer.max() );
+    ui->txtColorScaleMin->setText( "0.0" );
+    ui->txtColorScaleMax->setText( QString::number( std::max( absOfMax, absOfMin ) ) );
+    ui->txtThresholdMin->setText ( QString::number( m_DWTbuffer.min() ) );
+    ui->txtThresholdMax->setText ( "0.0" );
+    ui->txtThresholdMin2->setText( "0.0" );
+    ui->txtThresholdMax2->setText( QString::number( m_DWTbuffer.max() ) );
+
+    // determine the number of levels (assumes the DWT transform is square).
+    int numberOfLevels = std::log2( m_DWTbuffer.M() );
+
+    // reconfigure the level spin boxes accoring to the number of levels.
+    ui->spinLevelMin->setMinimum( 0 );
+    ui->spinLevelMin->setMaximum( numberOfLevels - 1 );
+    ui->spinLevelMin->setValue( 0 );
+    ui->spinLevelMax->setMinimum( 0 );
+    ui->spinLevelMax->setMaximum( numberOfLevels - 1 );
+    ui->spinLevelMax->setValue( numberOfLevels - 1 );
+
     updateDisplay();
 }
 
@@ -198,6 +221,16 @@ void WaveletTransformDialog::updateDisplay()
 {
     //Clear current display
     clearDisplay();
+
+    //Get user settings.
+    double colorScaleMin = ui->txtColorScaleMin->text().toDouble();
+    double colorScaleMax = ui->txtColorScaleMax->text().toDouble();
+    double thresholdMinValue1 = ui->txtThresholdMin->text().toDouble();
+    double thresholdMaxValue1 = ui->txtThresholdMax->text().toDouble();
+    double thresholdMinValue2 = ui->txtThresholdMin2->text().toDouble();
+    double thresholdMaxValue2 = ui->txtThresholdMax2->text().toDouble();
+    int minLevel = ui->spinLevelMin->value();
+    int maxLevel = ui->spinLevelMax->value();
 
     /////-----------------code to render the input grid (aid in interpretation) -------------------
     vtkSmartPointer<vtkActor> gridActor = vtkSmartPointer<vtkActor>::New();
@@ -337,7 +370,7 @@ void WaveletTransformDialog::updateDisplay()
             int numberOfColsInLevel = numberOfRowsInLevel;
             double cellWidth = gridWidth / numberOfColsInLevel;
             double cellLength = gridLength / numberOfRowsInLevel;
-            double cellHeight = gridCellWidth * 2.0; //2D: make cell hight equal one of the areal sizes
+            double cellHeight = gridWidth / numberOfLevels; //2D: make cell hight equal one of the areal grid sizes divided by the number of levels so the scalograms look like cubes
             //for each scalogram (a, b and c) = (N-S, E-W, diagonals)
             for( char cScalogram = 'a'; cScalogram <= 'c'; ++cScalogram ){
                 for( int jCell = 0; jCell < numberOfColsInLevel; ++jCell ){
@@ -345,9 +378,9 @@ void WaveletTransformDialog::updateDisplay()
                         double xOffset = 0;
                         double yOffset = 0;
                         if( cScalogram == 'b' || cScalogram == 'c' )
-                            xOffset = gridWidth  + gridCellWidth;
+                            xOffset = gridWidth  + gridCellWidth * 10.0; //this control the E-W spacing between the scalograms and the original grid in the scene
                         if( cScalogram == 'a' || cScalogram == 'c' )
-                            yOffset = gridLength + gridCellLength;
+                            yOffset = gridLength + gridCellLength * 10.0; //this control the N-S spacing between the scalograms and the original grid in the scene
                         double cellX0 = gridX0 + xOffset + cellWidth*jCell;
                         double cellX1 = cellX0 + cellWidth;
                         double cellY0 = gridY0 + yOffset + cellLength*iCell;
@@ -385,14 +418,20 @@ void WaveletTransformDialog::updateDisplay()
         }
         unstructuredGrid->SetPoints(hexahedraPoints);
 
-
         //create a VTK array to store the sample values
         vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
         values->SetName("values");
 
+        //create a visibility array. Cells with visibility >= 1 will be
+        //visible, and < 1 will be invisible.
+        vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+
         //read sample values (order must be done so we can achive the rendering as
         //explained further above).
         values->Allocate( numberOfCells );
+        visibility->Allocate( numberOfCells );
+        visibility->SetNumberOfComponents(1);
+        visibility->SetName("Visibility");
         // for each level (0, 1, 2, 3, ...) of the scalograms
         for( int iLevel = 0; iLevel < numberOfLevels; ++iLevel ){
             //for each scalogram (a, b and c) = (N-S, E-W, diagonals)
@@ -412,8 +451,16 @@ void WaveletTransformDialog::updateDisplay()
                 //read the values from the sub-grid
                 for( int jCell = jStart; jCell < jEnd; ++jCell ){
                     for( int iCell = iStart; iCell < iEnd; ++iCell ){
-                        double value = m_DWTbuffer( iCell, jCell, 0 );
-                        values->InsertNextValue( value );
+                        double value = m_DWTbuffer( jCell, iCell, 0 ); // i index is N-S-wise (see the loop to build geometry further above)
+                        //assign the coefficient to the data array
+                        values->InsertNextValue( std::abs( value ) );
+                        //set the visibility flag accoring to the filter settings
+                        if ( ( ( value >= thresholdMinValue1 && value <= thresholdMaxValue1 ) ||
+                               ( value >= thresholdMinValue2 && value <= thresholdMaxValue2 ) ) &&
+                               iLevel >= minLevel && iLevel <= maxLevel )
+                            visibility->InsertNextValue( 1 );
+                        else
+                            visibility->InsertNextValue( 0 );
                     }
                 }
             }
@@ -422,11 +469,17 @@ void WaveletTransformDialog::updateDisplay()
         //assign the grid values to the grid cells
         unstructuredGrid->GetCellData()->SetScalars( values );
 
-        //Get user settings.
-        double colorScaleMin = ui->txtColorScaleMin->text().toDouble();
-        double colorScaleMax = ui->txtColorScaleMax->text().toDouble();
-        double thresholdMinValue = ui->txtThresholdMin->text().toDouble();
-        double thresholdMaxValue = ui->txtThresholdMax->text().toDouble();
+        //assign the visibility flags to the grid cells
+        unstructuredGrid->GetCellData()->AddArray( visibility );
+
+        // configure a thresholding object to make cells below or above cut-offs invisible
+        vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
+        {
+            threshold->SetInputData( unstructuredGrid );
+            threshold->ThresholdByUpper(1); // Criterion is cells whose flags are greater or equal to threshold.
+            threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
+            threshold->Update();
+        }
 
         //Create a color table
         vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -453,11 +506,15 @@ void WaveletTransformDialog::updateDisplay()
             lut->Build();
         }
 
+        //Confgure the coefficient values scale bar
+        scalarBarActor->SetLookupTable( lut );
+        scalarBarActor->SetTitle("abs(coefficients)");
+        scalarBarActor->SetNumberOfLabels( 5 );
+
         // Create mapper (visualization parameters)
         vtkSmartPointer<vtkDataSetMapper> mapper =
                 vtkSmartPointer<vtkDataSetMapper>::New();
-        mapper->SetInputData( unstructuredGrid );
-        //mapper->SetInputConnection( threshold->GetOutputPort() );
+        mapper->SetInputConnection( threshold->GetOutputPort() );
         mapper->SetLookupTable(lut);
         mapper->SetScalarRange(colorScaleMin, colorScaleMax);
         mapper->Update();
@@ -473,7 +530,7 @@ void WaveletTransformDialog::updateDisplay()
     //Update the graphics system.
     _renderer->AddActor( scalogramActor );
     _currentActors.push_back( scalogramActor );
-//    _renderer->AddActor2D( scalarBarActor );
+    _renderer->AddActor2D( scalarBarActor );
     _scaleBarActor = scalarBarActor;
     _renderer->AddActor( gridActor );
     _currentActors.push_back( gridActor );
