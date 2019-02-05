@@ -40,6 +40,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <QValueAxis>
 #include <QChart>
 #include <QChartView>
+#include <QGraphicsLayout>
 
 WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGrid, uint inputVariableIndex, QWidget *parent) :
     QDialog(parent),
@@ -91,19 +92,26 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
     onWaveletFamilySelected( ui->cmbWaveletFamily->currentText() );
 
     //////////////////////////////////////////////////////////////////
+
+    double a[128];
+    a[0] = 0.0;
+    a[1] = 1.0;
+    for( int i = 2; i < 128; ++i )
+        a[i] = 0.0;
+    WaveletUtils::backtrans( a, 7, WaveletFamily::DAUBECHIES, 4 );
+
     //create and fill a data series object for the chart
     QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
-    for(uint i = 0; i < 100; ++i){
-        series->append( i+1, i+1 );
+    for(uint i = 0; i < 128; ++i){
+        series->append( i+1, a[i] );
     }
 
     //create a new chart object using the data series
     QtCharts::QChart *chart = new QtCharts::QChart();
     chart->legend()->hide();
+    chart->layout()->setContentsMargins(0, 0, 0, 0);
     chart->addSeries(series);
     chart->createDefaultAxes();
-    chart->axisY( series )->setMax(100.0);
-    chart->axisY( series )->setMin(0.0);
     QtCharts::QValueAxis *axisX = new QtCharts::QValueAxis();
     chart->setAxisX( axisX, series );
     QtCharts::QChartView* chartView = new QtCharts::QChartView( chart );

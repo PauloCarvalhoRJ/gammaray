@@ -137,6 +137,25 @@ spectral::array WaveletUtils::backtrans(IJAbstractCartesianGrid *gridWithOrigina
     return result;
 }
 
+void WaveletUtils::backtrans(double *data, int nLog2nData, WaveletFamily waveletFamily, int waveletType)
+{
+    //assuming the input array has a lenght that is a power of 2.
+    int nPowerOf2 = 1 << nLog2nData;
+
+    //the wavelet
+    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType );
+
+    //the workspace for the algorithm.
+    gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
+
+    //DWT back transform
+    gsl_wavelet_transform_inverse(w, data, 1, nPowerOf2, work);
+
+    //free allocated resources
+    gsl_wavelet_free(w);
+    gsl_wavelet_workspace_free (work);
+}
+
 void WaveletUtils::fillRawArray(const GaborUtils::ImageTypePtr input, double *output)
 {
     //get input grid dimensions

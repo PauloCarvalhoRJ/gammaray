@@ -23,7 +23,7 @@ public:
     WaveletUtils();
 
     /**
-     * Performs Discrete Wavelet Transform on gridded data.
+     * Performs 2D Discrete Wavelet Transform on gridded data.
      * IMPORTANT: the returned grid is a square grid with a power of two size,
      *            for example: if the input grid is 120x100, the returned grid
      *            is 128x128.  This is a requirement for GSL DWT operation.
@@ -32,8 +32,9 @@ public:
      *            to avoid the introduction of broad band artifacts in the transform.
      * @param cg The grid object containing the data.
      * @param variableIndex The variable to be transformed.
-     * @param waveletFamily The wavelet family.
-     * @param waveletType The wavelet type of the selected family.
+     * @param waveletFamily The wavelet family (see WaveletFamily enum for valid wavelt families).
+     * @param waveletType The wavelet type of the selected family  (see WaveletTransformDialog::onWaveletFamilySelected()
+     *                      for valid type values ).
      * @param interleaved If true, a two-step 1D DWT is performed on rows and columns alternately,
      *                    otherwise, 1D DWT is performed first on rows, then on columns.
      */
@@ -48,6 +49,19 @@ public:
                                       WaveletFamily waveletFamily,
                                       int waveletType,
                                       bool interleaved );
+
+    /**
+     * Does an inplace inverse 1D DWT in a raw double array. The result is put back in the data array.
+     * @param input/output data 1D data series as a raw vector of doubles.
+     * @param nLog2nData The number of elements in data expressed as log2(n).  Ex.: 4 means 16 elements in data.
+     * @param waveletFamily See backtrans() for grids.
+     * @param waveletType See backtrans() for grids.
+     */
+    static void backtrans( double* data,
+                           int nLog2nData,
+                           WaveletFamily waveletFamily,
+                           int waveletType);
+
 
     /**
      * Fills the passed array of doubles with the values in the passed
