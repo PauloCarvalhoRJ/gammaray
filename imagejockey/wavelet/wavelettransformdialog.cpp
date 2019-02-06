@@ -46,7 +46,10 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
     QDialog(parent),
     ui(new Ui::WaveletTransformDialog),
     m_inputGrid( inputGrid ),
-    m_inputVariableIndex( inputVariableIndex )
+    m_inputVariableIndex( inputVariableIndex ),
+    m_waveletChart( nullptr ),
+    m_chartSeriesWavelet( nullptr ),
+    m_chartSeriesScalet( nullptr )
 {
     ui->setupUi(this);
     //deletes dialog from memory upon user closing it
@@ -92,30 +95,31 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
     onWaveletFamilySelected( ui->cmbWaveletFamily->currentText() );
 
     //////////////////////////////////////////////////////////////////
-
-    double a[128];
-    a[0] = 0.0;
-    a[1] = 1.0;
-    for( int i = 2; i < 128; ++i )
-        a[i] = 0.0;
-    WaveletUtils::backtrans( a, 7, WaveletFamily::DAUBECHIES, 4 );
-
-    //create and fill a data series object for the chart
-    QtCharts::QLineSeries *series = new QtCharts::QLineSeries();
+    //create a new chart object
+//    m_waveletChart = new QtCharts::QChart();
+//    m_waveletChart->legend()->hide();
+//    m_waveletChart->createDefaultAxes();
+//    m_waveletChart->axisX( m_chartSeriesWavelet );
+//    m_waveletChart->setAxisX( axisX, m_chartSeriesWavelet );
+//    m_chart->setAxisY(axisY, m_series);
+    m_chartSeriesWavelet = new QtCharts::QLineSeries();
     for(uint i = 0; i < 128; ++i){
-        series->append( i+1, a[i] );
+        m_chartSeriesWavelet->append( i+1, 0.0 );
     }
 
-    //create a new chart object using the data series
-    QtCharts::QChart *chart = new QtCharts::QChart();
-    chart->legend()->hide();
-    chart->layout()->setContentsMargins(0, 0, 0, 0);
-    chart->addSeries(series);
-    chart->createDefaultAxes();
-    QtCharts::QValueAxis *axisX = new QtCharts::QValueAxis();
-    chart->setAxisX( axisX, series );
-    QtCharts::QChartView* chartView = new QtCharts::QChartView( chart );
-    ui->frmWaveletDisplay->layout()->addWidget( chartView );
+//    QtCharts::QChartView* chartView = new QtCharts::QChartView( m_waveletChart );
+//    m_waveletChart->addSeries( m_chartSeriesWavelet );
+
+//    QtCharts::QValueAxis* axisX = new QtCharts::QValueAxis();
+//    axisX->setLabelFormat("%g");
+//    m_waveletChart->setAxisX(axisX, m_chartSeriesWavelet);
+
+//    QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
+//    axisX->setLabelFormat("%g");
+//    m_waveletChart->setAxisY(axisY, m_chartSeriesWavelet);
+
+//    m_waveletChart->legend()->hide();
+//    ui->frmWaveletDisplay->layout()->addWidget( chartView );
     //////////////////////////////////////////////////////////////////////
 
     updateDisplay();
@@ -571,7 +575,20 @@ void WaveletTransformDialog::updateDisplay()
 
 void WaveletTransformDialog::onUpdateWaveletDisplays()
 {
+    return;
+    int waveletType = ui->cmbWaveletType->itemData( ui->cmbWaveletType->currentIndex() ).toInt();
 
+    double a[128];
+    a[0] = 0.0;
+    a[1] = 1.0;
+    for( int i = 2; i < 128; ++i )
+        a[i] = 0.0;
+    WaveletUtils::backtrans( a, 7, getSelectedWaveletFamily(), waveletType );
+
+    //create and fill a data series object for the chart
+    for(uint i = 0; i < 128; ++i){
+        m_chartSeriesWavelet->append( i+1, a[i] );
+    }
 }
 
 void WaveletTransformDialog::debugGrid(const spectral::array &grid)

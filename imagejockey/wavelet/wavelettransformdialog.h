@@ -11,6 +11,12 @@ namespace Ui {
 class WaveletTransformDialog;
 }
 
+namespace QtCharts{
+    class QChart;
+    class QLineSeries;
+    class QValueAxis;
+}
+
 class IJAbstractCartesianGrid;
 class IJQuick3DViewer;
 class QVTKOpenGLWidget;
@@ -51,18 +57,24 @@ private:
 
     ////////-----members used for 3D display-------------------
     // the Qt widget containing a VTK viewport
-    QVTKOpenGLWidget *_vtkwidget;
+    QVTKOpenGLWidget*                           _vtkwidget;
     // the VTK renderer (add VTK actors to it to build the scene).
-    vtkSmartPointer<vtkRenderer> _renderer;
+    vtkSmartPointer<vtkRenderer>                _renderer;
     // this must be class variable, otherwise a crash ensues due to smart pointer going
     // out of scope
     vtkSmartPointer<vtkOrientationMarkerWidget> _vtkAxesWidget;
     // List of pointers to the objects being viewed (if any).
-    std::vector< vtkSmartPointer<vtkActor> > _currentActors;
+    std::vector< vtkSmartPointer<vtkActor> >    _currentActors;
     // Pointer to the scale bar actor
-    vtkSmartPointer<vtkActor2D> _scaleBarActor;
+    vtkSmartPointer<vtkActor2D>                 _scaleBarActor;
     // Pointer to the axes scales actor
-    vtkSmartPointer<vtkCubeAxesActor2D> _axes;
+    vtkSmartPointer<vtkCubeAxesActor2D>         _axes;
+    ///////////////////////////////////////////////////////////
+
+    ////////-----members used for wavelet chart display-------------------
+    QtCharts::QChart      *m_waveletChart;
+    QtCharts::QLineSeries *m_chartSeriesWavelet;
+    QtCharts::QLineSeries *m_chartSeriesScalet;
     ///////////////////////////////////////////////////////////
 
     void clearDisplay();
