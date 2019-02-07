@@ -58,24 +58,30 @@ void FaciesRelationShipDiagramDialog::performCalculation()
                 double diff = m_faciesTransitionMatrix->getDifference( i, j );
                 if( diff > cutoff ){
                     //style for the "from" facies
-                    QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).lighter();
-                    QString rgb = QString::number( color.hueF() )   + " " +
+                    QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).toHsv();
+                    double hue = color.hueF();
+                    if( hue < 0 )
+                        hue *= -1.0;
+                    QString hsv = QString::number( hue )   + " " +
                                   QString::number( color.saturationF() ) + " " +
-                                  QString::number( color.lightnessF() )        ;
+                                  QString::number( color.valueF() )        ;
                     QString labelColor = "black";
                     if( color.lightnessF() < 0.6 ) //if the facies color is too dark, use white letters for the labels
                         labelColor = "white";
-                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" [shape=box,style=filled,color=\"" % rgb % "\"," %
+                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
                                           "label=<<FONT COLOR=\"" % labelColor % "\">" % m_faciesTransitionMatrix->getRowHeader(i) % "</FONT>>]\n";
                     //style for the "to" facies
-                    color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
-                    rgb = QString::number( color.hueF() )   + " " +
+                    color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j ).toHsv();
+                    hue = color.hueF();
+                    if( hue < 0 )
+                        hue *= -1.0;
+                    hsv = QString::number( hue )   + " " +
                           QString::number( color.saturationF() ) + " " +
-                          QString::number( color.lightnessF() )        ;
+                          QString::number( color.valueF() )        ;
                     labelColor = "black";
                     if( color.lightnessF() < 0.6 ) //if the facies color is too dark, use white letters for the labels
                         labelColor = "white";
-                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getColumnHeader(j) % "\" [shape=box,style=filled,color=\"" % rgb % "\"," %
+                    outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getColumnHeader(j) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
                             "label=<<FONT COLOR=\"" % labelColor % "\">" % m_faciesTransitionMatrix->getColumnHeader(j) % "</FONT>>]\n";
                     //style for the edge connecting both facies
                     outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" -> \"" %

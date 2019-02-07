@@ -199,6 +199,7 @@ private slots:
     void onSetCategoryDefinitionOfAFasciesTransitionMatrix();
     void onEntropyCyclicityAnalysis();
     void onFaciesRelationShipDiagram();
+    void onTransiograms();
 
 private:
     /**

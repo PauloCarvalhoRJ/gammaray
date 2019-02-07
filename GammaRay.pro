@@ -244,7 +244,8 @@ SOURCES += main.cpp\
     domain/faciestransitionmatrix.cpp \
     dialogs/projectfilechoosedialog.cpp \
     dialogs/entropycyclicityanalysisdialog.cpp \
-    dialogs/faciesrelationshipdiagramdialog.cpp
+    dialogs/faciesrelationshipdiagramdialog.cpp \
+    dialogs/transiogramdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -467,7 +468,8 @@ HEADERS  += mainwindow.h \
     domain/faciestransitionmatrix.h \
     dialogs/projectfilechoosedialog.h \
     dialogs/entropycyclicityanalysisdialog.h \
-    dialogs/faciesrelationshipdiagramdialog.h
+    dialogs/faciesrelationshipdiagramdialog.h \
+    dialogs/transiogramdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -554,7 +556,8 @@ FORMS    += mainwindow.ui \
     dialogs/choosecategorydialog.ui \
     dialogs/projectfilechoosedialog.ui \
     dialogs/entropycyclicityanalysisdialog.ui \
-    dialogs/faciesrelationshipdiagramdialog.ui
+    dialogs/faciesrelationshipdiagramdialog.ui \
+    dialogs/transiogramdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
