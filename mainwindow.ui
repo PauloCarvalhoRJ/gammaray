@@ -285,6 +285,7 @@
     <addaction name="actionImage_Jockey"/>
     <addaction name="actionMachine_Learning"/>
     <addaction name="actionVariographic_Decomposition"/>
+    <addaction name="actionTransiography"/>
    </widget>
    <widget class="QMenu" name="menuSimulation">
     <property name="enabled">
@@ -412,6 +413,11 @@
   <action name="actionSequential_Indicator_Simulation_categorical">
    <property name="text">
     <string>Sequential Indicator Simulation (categorical)</string>
+   </property>
+  </action>
+  <action name="actionTransiography">
+   <property name="text">
+    <string>Transiography</string>
    </property>
   </action>
  </widget>
@@ -715,6 +721,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionTransiography</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openTransiography()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -734,5 +756,6 @@
   <slot>onFactorialKriging()</slot>
   <slot>onSISIMContinuous()</slot>
   <slot>onSISIMCategorical()</slot>
+  <slot>openTransiography()</slot>
  </slots>
 </ui>

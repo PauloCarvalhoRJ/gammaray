@@ -492,7 +492,6 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Set/Change associated category definition", this, SLOT(onSetCategoryDefinitionOfAFasciesTransitionMatrix()));
                 _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
                 _projectContextMenu->addAction("Facies relationship diagram", this, SLOT(onFaciesRelationShipDiagram()));
-                _projectContextMenu->addAction("Transiograms", this, SLOT(onTransiograms()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -2502,15 +2501,6 @@ void MainWindow::onFaciesRelationShipDiagram()
     }
 }
 
-void MainWindow::onTransiograms()
-{
-    FaciesTransitionMatrix *ftm = dynamic_cast<FaciesTransitionMatrix*>(_right_clicked_file);
-    if( ftm ){
-        TransiogramDialog* td = new TransiogramDialog( ftm, this );
-        td->show();
-    }
-}
-
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
@@ -3021,4 +3011,10 @@ void MainWindow::openCokrigingNewcokb3d()
 {
     CokrigingDialog* cokd = new CokrigingDialog( this, CokrigingProgram::NEWCOKB3D );
     cokd->show();
+}
+
+void MainWindow::openTransiography()
+{
+    TransiogramDialog* td = new TransiogramDialog( this );
+    td->show();
 }

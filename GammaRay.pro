@@ -245,7 +245,8 @@ SOURCES += main.cpp\
     dialogs/projectfilechoosedialog.cpp \
     dialogs/entropycyclicityanalysisdialog.cpp \
     dialogs/faciesrelationshipdiagramdialog.cpp \
-    dialogs/transiogramdialog.cpp
+    dialogs/transiogramdialog.cpp \
+    domain/auxiliary/faciestransitionmatrixmaker.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -469,7 +470,8 @@ HEADERS  += mainwindow.h \
     dialogs/projectfilechoosedialog.h \
     dialogs/entropycyclicityanalysisdialog.h \
     dialogs/faciesrelationshipdiagramdialog.h \
-    dialogs/transiogramdialog.h
+    dialogs/transiogramdialog.h \
+    domain/auxiliary/faciestransitionmatrixmaker.h
 
 
 FORMS    += mainwindow.ui \
