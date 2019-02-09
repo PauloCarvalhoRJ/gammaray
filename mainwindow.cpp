@@ -2333,11 +2333,16 @@ void MainWindow::onWavelet()
     //open the Gabor analysis dialog
     WaveletTransformDialog* wtd = new WaveletTransformDialog( cg, static_cast<uint>(varIndex), this );
     wtd->show();
-    connect( wtd, SIGNAL(saveDWTTransform(QString,spectral::array)), this, SLOT(onSaveDWTTransform(QString,spectral::array)) );
+    connect( wtd, SIGNAL(saveDWTTransform(QString,spectral::array,spectral::array,spectral::array)),
+             this, SLOT(onSaveDWTTransform(QString,spectral::array,spectral::array,spectral::array)) );
     connect( wtd, SIGNAL(requestGrid(QString,IJAbstractCartesianGrid*&)), this, SLOT(onRequestGrid(QString,IJAbstractCartesianGrid*&)) );
 }
 
-void MainWindow::onSaveDWTTransform(const QString name, const spectral::array &DWTtransform)
+void MainWindow::onSaveDWTTransform(const QString name,
+                                    const spectral::array& DWTtransform,
+                                    const spectral::array& scaleField,
+                                    const spectral::array& orientationField )
+
 {
 
     //make a path for a temporary file
@@ -2350,14 +2355,18 @@ void MainWindow::onSaveDWTTransform(const QString name, const spectral::array &D
     cg->setInfo( 0,0,0,1,1,1,DWTtransform.M(),DWTtransform.N(),DWTtransform.K(),0,1,"",
                  QMap<uint, QPair<uint, QString> > (), QList< QPair<uint,QString> > () );
 
-    //add a data column
-    cg->addEmptyDataColumn( "coefficients", DWTtransform.size() );
+    //add the data columns
+    cg->addEmptyDataColumn( "coefficient", DWTtransform.size() );
+    cg->addEmptyDataColumn( "level", DWTtransform.size() );
+    cg->addEmptyDataColumn( "orientation", DWTtransform.size() );
 
     int nI = DWTtransform.M();
     for( int j = 0; j < DWTtransform.N(); ++j )
         for( int i = 0; i < nI; ++i ){
             int index = j * nI + i;
             cg->setData( index, 0, DWTtransform( i, j, 0 ) );
+            cg->setData( index, 1, scaleField( i, j, 0 ) );
+            cg->setData( index, 2, orientationField( i, j, 0 ) );
         }
 
     //save the data as a GEO-EAS grid file

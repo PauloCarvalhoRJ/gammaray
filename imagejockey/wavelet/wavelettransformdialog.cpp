@@ -217,8 +217,35 @@ void WaveletTransformDialog::onWaveletFamilySelected( QString waveletFamilyName 
 
 void WaveletTransformDialog::onSaveDWTResultAsGrid()
 {
+    int nI = m_DWTbuffer.M();
+    int nJ = m_DWTbuffer.N();
+    spectral::array scaleField( nI, nJ, 1, 0.0 );
+    spectral::array orientationField( nI, nJ, 1, 0.0 );
+    for( int j = 0; j < nJ; ++j)
+        for( int i = 0; i < nI; ++i){
+            if( i == 0 && j == 0 ){ //the value at i=0;j=0 is the smooth factor (global mean)
+                scaleField      ( i, j, 0 ) = -1.0;
+                orientationField( i, j, 0 ) = -1.0;
+            } else {
+                //set the level value
+                double intpart;
+                std::modf ( std::log2( i ), &intpart );
+                int levelI = static_cast<int>( intpart );
+                std::modf ( std::log2( j ), &intpart );
+                int levelJ = static_cast<int>( intpart );
+                scaleField( i, j, 0 ) = std::max( levelI, levelJ );
+                //set the orientation field (vertical, diagonals, horizontal)
+                int orientation = 1;
+                if( levelI == levelJ )
+                    orientation = 2;
+                if( levelI > levelJ )
+                    orientation = 3;
+                orientationField( i, j, 0 ) = orientation;
+            }
+        }
+
     if( m_DWTbuffer.size() > 0 && ! ui->txtCoeffVariableName->text().trimmed().isEmpty() )
-        emit saveDWTTransform( ui->txtCoeffVariableName->text(), m_DWTbuffer );
+        emit saveDWTTransform( ui->txtCoeffVariableName->text(), m_DWTbuffer, scaleField, orientationField );
     else
         QMessageBox::critical( this, "Error", "No data to save or grid name not given.");
 }

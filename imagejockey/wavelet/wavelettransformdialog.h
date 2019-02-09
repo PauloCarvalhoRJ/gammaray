@@ -39,9 +39,18 @@ public:
     ~WaveletTransformDialog();
 
 Q_SIGNALS:
-    void saveDWTTransform( const QString name, const spectral::array& DWTtransform );
     /**
-     * This unusual signal is triggered when this dialog wants some grid with the given name.
+     * Signal emitted when the user wants to save a grid with the DWT result.
+     * @param DWTtransform The coefficients.
+     * @param scaleField The scale values (0 through log2(grid_size)).
+     * @param orientationField The orientation values (1=N-S, 2=diagonals, 3=E-W).
+     */
+    void saveDWTTransform( const QString name,
+                           const spectral::array& DWTtransform,
+                           const spectral::array& scaleField,
+                           const spectral::array& orientationField );
+    /**
+     * This unusual signal is emitted when this dialog wants some grid with the given name.
      * If there is a grid by the given name, its pointer is set to the passed pointer
      * reference, otherwise, the context must set it to nullptr.
      */
