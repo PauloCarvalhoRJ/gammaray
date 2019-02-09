@@ -35,19 +35,22 @@ public:
      * @param waveletFamily The wavelet family (see WaveletFamily enum for valid wavelt families).
      * @param waveletType The wavelet type of the selected family  (see WaveletTransformDialog::onWaveletFamilySelected()
      *                      for valid type values ).
+     * @param centered If true, the wavelet is centered.
      * @param interleaved If true, a two-step 1D DWT is performed on rows and columns alternately,
      *                    otherwise, 1D DWT is performed first on rows, then on columns.
      */
-    static spectral::array transform( IJAbstractCartesianGrid* cg,
+    static spectral::array transform(IJAbstractCartesianGrid* cg,
                                       int variableIndex,
                                       WaveletFamily waveletFamily,
                                       int waveletType,
+                                      bool centered,
                                       bool interleaved );
 
-    static spectral::array backtrans( IJAbstractCartesianGrid *gridWithOriginalGeometry,
+    static spectral::array backtrans(IJAbstractCartesianGrid *gridWithOriginalGeometry,
                                       const spectral::array& input,
                                       WaveletFamily waveletFamily,
                                       int waveletType,
+                                      bool centered,
                                       bool interleaved );
 
     /**
@@ -57,10 +60,11 @@ public:
      * @param waveletFamily See backtrans() for grids.
      * @param waveletType See backtrans() for grids.
      */
-    static void backtrans( double* data,
+    static void backtrans(double* data,
                            int nLog2nData,
                            WaveletFamily waveletFamily,
-                           int waveletType);
+                           int waveletType,
+                           bool centered);
 
 
     /**
@@ -85,7 +89,9 @@ private:
     static void debugGrid( const spectral::array &grid );
     static void debugGridRawArray(const double *in, int nI, int nJ, int nK);
     //the returned structure must be deleted with gsl_wavelet_free().
-    static gsl_wavelet* makeWavelet( WaveletFamily waveletFamily , int waveletType );
+    static gsl_wavelet* makeWavelet(WaveletFamily waveletFamily ,
+                                    int waveletType ,
+                                    bool centered );
 };
 
 #endif // WAVELETUTILS_H

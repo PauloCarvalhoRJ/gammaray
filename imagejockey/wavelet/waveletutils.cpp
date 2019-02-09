@@ -16,6 +16,7 @@ spectral::array WaveletUtils::transform( IJAbstractCartesianGrid *cg,
                               int variableIndex ,
                               WaveletFamily waveletFamily,
                               int waveletType,
+                              bool centered,
                               bool interleaved )
 {
     //load the input data as an array
@@ -42,7 +43,7 @@ spectral::array WaveletUtils::transform( IJAbstractCartesianGrid *cg,
 //    size_t *p = new size_t[ nPowerOf2 * nPowerOf2 ];
 
     //the wavelet
-    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType );
+    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType, centered );
 
     //the transform in 2D operates on individual rows and columns.
     gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
@@ -92,6 +93,7 @@ spectral::array WaveletUtils::backtrans(IJAbstractCartesianGrid *gridWithOrigina
                                         const spectral::array& input,
                                         WaveletFamily waveletFamily,
                                         int waveletType,
+                                        bool centered,
                                         bool interleaved)
 {
     //assuming the input grid is square and with dimension that is a power of 2.
@@ -104,7 +106,7 @@ spectral::array WaveletUtils::backtrans(IJAbstractCartesianGrid *gridWithOrigina
             data[ j * nPowerOf2 + i ] = input( i, j );
 
     //the wavelet
-    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType );
+    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType, centered );
 
     //the transform in 2D operates on individual rows and columns.
     gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
@@ -137,13 +139,17 @@ spectral::array WaveletUtils::backtrans(IJAbstractCartesianGrid *gridWithOrigina
     return result;
 }
 
-void WaveletUtils::backtrans(double *data, int nLog2nData, WaveletFamily waveletFamily, int waveletType)
+void WaveletUtils::backtrans(double *data,
+                             int nLog2nData,
+                             WaveletFamily waveletFamily,
+                             int waveletType,
+                             bool centered)
 {
     //assuming the input array has a lenght that is a power of 2.
     int nPowerOf2 = 1 << nLog2nData;
 
     //the wavelet
-    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType );
+    gsl_wavelet *w = makeWavelet( waveletFamily, waveletType, centered );
 
     //the workspace for the algorithm.
     gsl_wavelet_workspace *work = gsl_wavelet_workspace_alloc ( nPowerOf2 );
@@ -238,18 +244,28 @@ void WaveletUtils::debugGridRawArray( const double* in, int nI, int nJ, int nK )
 }
 
 gsl_wavelet *WaveletUtils::makeWavelet(WaveletFamily waveletFamily,
-                                       int waveletType )
+                                       int waveletType,
+                                       bool centered )
 {
     gsl_wavelet *w = nullptr;
     switch ( waveletFamily ) {
     case WaveletFamily::DAUBECHIES:
-        w = gsl_wavelet_alloc ( gsl_wavelet_daubechies, waveletType );
+        if( ! centered )
+            w = gsl_wavelet_alloc ( gsl_wavelet_daubechies, waveletType );
+        else
+            w = gsl_wavelet_alloc ( gsl_wavelet_daubechies_centered, waveletType );
         break;
     case WaveletFamily::HAAR:
-        w = gsl_wavelet_alloc ( gsl_wavelet_haar, waveletType );
+        if( ! centered )
+            w = gsl_wavelet_alloc ( gsl_wavelet_haar, waveletType );
+        else
+            w = gsl_wavelet_alloc ( gsl_wavelet_haar_centered, waveletType );
         break;
     case WaveletFamily::B_SPLINE:
-        w = gsl_wavelet_alloc ( gsl_wavelet_bspline, waveletType );
+        if( ! centered )
+            w = gsl_wavelet_alloc ( gsl_wavelet_bspline, waveletType );
+        else
+            w = gsl_wavelet_alloc ( gsl_wavelet_bspline_centered, waveletType );
         break;
     default:
         break;

@@ -149,10 +149,13 @@ void WaveletTransformDialog::onPerformTransform()
 {
     int waveletType = ui->cmbWaveletType->itemData( ui->cmbWaveletType->currentIndex() ).toInt();
     bool interleaved = ( ui->cmbMethod->currentIndex() == 0 );
+    bool centered = ui->chkWaveletCentered->isChecked();
+
     m_DWTbuffer = WaveletUtils::transform( m_inputGrid,
                                            m_inputVariableIndex,
                                            getSelectedWaveletFamily(),
                                            waveletType,
+                                           centered,
                                            interleaved );
     debugGrid( m_DWTbuffer );
 
@@ -243,10 +246,13 @@ void WaveletTransformDialog::onPreviewBacktransformedResult()
 {
     int waveletType = ui->cmbWaveletType->itemData( ui->cmbWaveletType->currentIndex() ).toInt();
     bool interleaved = ( ui->cmbMethod->currentIndex() == 0 );
+    bool centered = ui->chkWaveletCentered->isChecked();
+
     spectral::array backtrans = WaveletUtils::backtrans( m_inputGrid,
                                                          m_DWTbuffer,
                                                          getSelectedWaveletFamily(),
                                                          waveletType,
+                                                         centered,
                                                          interleaved );
     debugGrid( backtrans );
 }
@@ -575,13 +581,14 @@ void WaveletTransformDialog::updateDisplay()
 void WaveletTransformDialog::onUpdateWaveletDisplays()
 {
     int waveletType = ui->cmbWaveletType->itemData( ui->cmbWaveletType->currentIndex() ).toInt();
+    bool centered = ui->chkWaveletCentered->isChecked();
 
     double a[128];
     a[0] = 0.0;
     a[1] = 1.0;
     for( int i = 2; i < 128; ++i )
         a[i] = 0.0;
-    WaveletUtils::backtrans( a, 7, getSelectedWaveletFamily(), waveletType );
+    WaveletUtils::backtrans( a, 7, getSelectedWaveletFamily(), waveletType, centered );
 
     m_chartSeriesWavelet->clear();
 

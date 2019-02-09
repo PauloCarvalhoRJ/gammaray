@@ -175,6 +175,13 @@
            </property>
           </widget>
          </item>
+         <item>
+          <widget class="QCheckBox" name="chkWaveletCentered">
+           <property name="text">
+            <string>centered</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </item>
        <item>
@@ -704,8 +711,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>612</x>
-     <y>419</y>
+     <x>608</x>
+     <y>550</y>
     </hint>
     <hint type="destinationlabel">
      <x>299</x>
@@ -720,7 +727,7 @@
    <slot>onPerformTransform()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>612</x>
+     <x>608</x>
      <y>73</y>
     </hint>
     <hint type="destinationlabel">
@@ -752,8 +759,8 @@
    <slot>onSaveDWTResultAsGrid()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>612</x>
-     <y>120</y>
+     <x>608</x>
+     <y>340</y>
     </hint>
     <hint type="destinationlabel">
      <x>315</x>
@@ -768,8 +775,8 @@
    <slot>onReadDWTResultFromGrid()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>612</x>
-     <y>149</y>
+     <x>608</x>
+     <y>369</y>
     </hint>
     <hint type="destinationlabel">
      <x>317</x>
@@ -784,8 +791,8 @@
    <slot>onPreviewBacktransformedResult()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>20</x>
-     <y>419</y>
+     <x>27</x>
+     <y>551</y>
     </hint>
     <hint type="destinationlabel">
      <x>314</x>
@@ -800,8 +807,8 @@
    <slot>updateDisplay()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>612</x>
-     <y>293</y>
+     <x>608</x>
+     <y>491</y>
     </hint>
     <hint type="destinationlabel">
      <x>627</x>
@@ -854,6 +861,22 @@
     <hint type="destinationlabel">
      <x>629</x>
      <y>90</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkWaveletCentered</sender>
+   <signal>clicked()</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>onUpdateWaveletDisplays()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>552</x>
+     <y>61</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>625</x>
+     <y>127</y>
     </hint>
    </hints>
   </connection>
