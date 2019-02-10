@@ -871,12 +871,28 @@
    <slot>onUpdateWaveletDisplays()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>552</x>
-     <y>61</y>
+     <x>608</x>
+     <y>42</y>
     </hint>
     <hint type="destinationlabel">
      <x>625</x>
      <y>127</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSave</sender>
+   <signal>clicked()</signal>
+   <receiver>WaveletTransformDialog</receiver>
+   <slot>onSaveBacktransformedResult()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>51</x>
+     <y>541</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>79</x>
+     <y>557</y>
     </hint>
    </hints>
   </connection>
@@ -889,5 +905,6 @@
   <slot>onPreviewBacktransformedResult()</slot>
   <slot>updateDisplay()</slot>
   <slot>onUpdateWaveletDisplays()</slot>
+  <slot>onSaveBacktransformedResult()</slot>
  </slots>
 </ui>

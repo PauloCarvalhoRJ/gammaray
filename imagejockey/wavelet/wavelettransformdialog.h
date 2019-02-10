@@ -97,6 +97,7 @@ private Q_SLOTS:
     void onPreviewBacktransformedResult();
     void updateDisplay();
     void onUpdateWaveletDisplays();
+    void onSaveBacktransformedResult();
 };
 
 #endif // WAVELETTRANSFORMDIALOG_H

@@ -15,6 +15,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/svd/svdfactor.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "imagejockey/imagejockeyutils.h"
+#include "imagejockey/ijabstractvariable.h"
 
 #include <QMessageBox>
 #include <QVTKOpenGLWidget.h>
@@ -265,6 +266,8 @@ void WaveletTransformDialog::onReadDWTResultFromGrid()
         for( int i = 0; i < nI; ++i )
             for( int j = 0; j < nJ; ++j )
                 m_DWTbuffer( i, j, 0 ) = pointerToRequestedGrid->getData( 0, i, j, 0 );
+        //update the 3D viewer
+        updateDisplay();
     }else
         QMessageBox::critical( this, "Error", "No array to receive the data or grid name not given.");
 }
@@ -631,6 +634,34 @@ void WaveletTransformDialog::onUpdateWaveletDisplays()
     m_waveletChart->axisY()->setRange(min, max);
     m_waveletChart->axisX()->setRange(1.0, 128.0);
 
+}
+
+void WaveletTransformDialog::onSaveBacktransformedResult()
+{
+    int waveletType = ui->cmbWaveletType->itemData( ui->cmbWaveletType->currentIndex() ).toInt();
+    bool interleaved = ( ui->cmbMethod->currentIndex() == 0 );
+    bool centered = ui->chkWaveletCentered->isChecked();
+
+    spectral::array backtrans = WaveletUtils::backtrans( m_inputGrid,
+                                                         m_DWTbuffer,
+                                                         getSelectedWaveletFamily(),
+                                                         waveletType,
+                                                         centered,
+                                                         interleaved );
+
+    QString proposed_name = m_inputGrid->getVariableByIndex( m_inputVariableIndex )->getVariableName();
+    proposed_name += "_filtered";
+
+    //open file rename dialog
+    bool ok;
+    QString new_name = QInputDialog::getText(this, "Name the variable",
+                                             "New variable with filtered results:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok )
+        return;
+
+    m_inputGrid->appendAsNewVariable( new_name , backtrans );
+    m_inputGrid->saveData();
 }
 
 void WaveletTransformDialog::debugGrid(const spectral::array &grid)
