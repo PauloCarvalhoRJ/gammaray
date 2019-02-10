@@ -1,4 +1,5 @@
 #include "file.h"
+#include "domain/application.h"
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
@@ -38,6 +39,10 @@ void File::rename(QString new_name)
     QFile file( this->_path );
     //builds a file info object to describe the current file
     QFileInfo original( this->_path );
+    if( original.fileName() == new_name ){
+        Application::instance()->logWarn("File::rename(): file already has the target name. Operation ignored.");
+        return;
+    }
     //constructs the path with the new file name
     QString newPath = original.canonicalPath() + QDir::separator() + new_name;
     //make a file object with the future name

@@ -80,6 +80,7 @@
 #include "imagejockey/emd/emdanalysisdialog.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/gabor/gaborfilterdialog.h"
+#include "imagejockey/wavelet/wavelettransformdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -508,6 +509,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("EMD analysis", this, SLOT(onEMD()));
                 _projectContextMenu->addAction("Gabor analysis", this, SLOT(onGabor()));
+                _projectContextMenu->addAction("Wavelet transform", this, SLOT(onWavelet()));
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
@@ -2305,7 +2307,85 @@ void MainWindow::onGabor()
     //open the Gabor analysis dialog
     GaborFilterDialog* gfd = new GaborFilterDialog( cg, static_cast<uint>(varIndex), this );
     gfd->show();
+}
 
+void MainWindow::onWavelet()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(_right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    if( cg->getNK() > 1 ){
+        QMessageBox::critical( this, "Error", QString("3D grids are impractical."));
+        return;
+    }
+
+    //get the index of the selected variable in the grid
+    int varIndex = cg->getVariableIndexByName( _right_clicked_attribute->getName() );
+    if( varIndex < 0 ){
+        QMessageBox::critical( this, "Error", QString("IJAbstractCartesianGrid::getVariableIndexByName() returned an invalid variable index."));
+        return;
+    }
+
+    //open the Gabor analysis dialog
+    WaveletTransformDialog* wtd = new WaveletTransformDialog( cg, static_cast<uint>(varIndex), this );
+    wtd->show();
+    connect( wtd, SIGNAL(saveDWTTransform(QString,spectral::array,spectral::array,spectral::array)),
+             this, SLOT(onSaveDWTTransform(QString,spectral::array,spectral::array,spectral::array)) );
+    connect( wtd, SIGNAL(requestGrid(QString,IJAbstractCartesianGrid*&)), this, SLOT(onRequestGrid(QString,IJAbstractCartesianGrid*&)) );
+}
+
+void MainWindow::onSaveDWTTransform(const QString name,
+                                    const spectral::array& DWTtransform,
+                                    const spectral::array& scaleField,
+                                    const spectral::array& orientationField )
+
+{
+
+    //make a path for a temporary file
+    QString tmp_file_path = Application::instance()->getProject()->getTmpPath() + "/" + name;
+
+    //create a new grid object corresponding to the tmp file
+    CartesianGrid* cg = new CartesianGrid( tmp_file_path );
+
+    //set the metadata info for the grid
+    cg->setInfo( 0,0,0,1,1,1,DWTtransform.M(),DWTtransform.N(),DWTtransform.K(),0,1,"",
+                 QMap<uint, QPair<uint, QString> > (), QList< QPair<uint,QString> > () );
+
+    //add the data columns
+    cg->addEmptyDataColumn( "coefficient", DWTtransform.size() );
+    cg->addEmptyDataColumn( "level", DWTtransform.size() );
+    cg->addEmptyDataColumn( "orientation", DWTtransform.size() );
+
+    int nI = DWTtransform.M();
+    for( int j = 0; j < DWTtransform.N(); ++j )
+        for( int i = 0; i < nI; ++i ){
+            int index = j * nI + i;
+            cg->setData( index, 0, DWTtransform( i, j, 0 ) );
+            cg->setData( index, 1, scaleField( i, j, 0 ) );
+            cg->setData( index, 2, orientationField( i, j, 0 ) );
+        }
+
+    //save the data as a GEO-EAS grid file
+    cg->writeToFS();
+
+    //import the grid file with the DWT coefficients estimates as a project item
+    Application::instance()->getProject()->importCartesianGrid( cg, name );
+}
+
+void MainWindow::onRequestGrid( const QString name, IJAbstractCartesianGrid *&pointer )
+{
+    std::vector<IJAbstractCartesianGrid*> grids = Application::instance()->getProject()->getAllCartesianGrids();
+    for( IJAbstractCartesianGrid*& grid : grids )
+        if( grid->getGridName() == name ){
+            pointer = grid;
+            return;
+        }
+    Application::instance()->logWarn("MainWindow::onRequestGrid(): Cartesian grid named [" + name + "] not found.");
+    pointer = nullptr;
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

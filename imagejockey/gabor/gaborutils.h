@@ -140,7 +140,7 @@ public:
     * Returns a ITK image object object with data from an spectral::array.
     * Supported grid dimension depends on what is set in the gridDim constant (see top of this header file).
     */
-   static ImageTypePtr convertSpectralArrayToITKImage( const spectral::array& input );
+    static ImageTypePtr convertSpectralArrayToITKImage( const spectral::array& input );
 };
 
 #endif // GABORUTILS_H
