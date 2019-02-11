@@ -14,6 +14,7 @@
 #include "domain/segmentset.h"
 #include "domain/project.h"
 #include "domain/attribute.h"
+#include "domain/categorydefinition.h"
 
 TransiogramDialog::TransiogramDialog(QWidget *parent) :
     QDialog(parent),
@@ -77,17 +78,28 @@ void TransiogramDialog::dropEvent(QDropEvent *e)
 
 void TransiogramDialog::tryToAddAttribute(Attribute *attribute)
 {
-    CategoryDefinition* theCD = nullptr;
+    CategoryDefinition* CDofFirst = nullptr;
     if( ! m_categoricalAttributes.empty() ){
-        DataFile* parent = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
-        theCD = parent->getCategoryDefinition( m_categoricalAttributes.front() );
+        //get info from the first attribute added
+        DataFile* parentOfFirst = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
+        CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
 
+        //get info from the attribute to be added
         DataFile* myParent = dynamic_cast<DataFile*>( attribute->getContainingFile() );
         CategoryDefinition* myCD = myParent->getCategoryDefinition( attribute );
 
-        if( theCD != myCD ){
+        //the category defininion must be the same
+        if( CDofFirst != myCD ){
             Application::instance()->logError( "TransiogramDialog::tryToAddAttribute(): all attributes must be associated to the same categorical definition.", true );
             return;
+        }
+
+        //it can't be added twice
+        for( Attribute* at : m_categoricalAttributes ){
+            if( at == attribute ){
+                Application::instance()->logError( "TransiogramDialog::tryToAddAttribute(): the attribute has already been added.", true );
+                return;
+            }
         }
     }
 
@@ -97,23 +109,69 @@ void TransiogramDialog::tryToAddAttribute(Attribute *attribute)
 
 void TransiogramDialog::performCalculation()
 {
+    if( m_categoricalAttributes.empty() ){
+        Application::instance()->logError( "TransiogramDialog::performCalculation(): no categorical attributes to work with." );
+        return;
+    }
+
     using namespace QtCharts;
     double hInitial = ui->dblSpinHIni->value();
     double hFinal = ui->dblSpinHFin->value();
     int nSteps = ui->spinNSteps->value();
     double toleranceCoefficient = ui->dblSpinTolCoeff->value();
+    double dh = ( hFinal - hInitial ) / nSteps;
 
-//    FaciesTransitionMatrix ftm("");
-//    if( m_dataFile->getFileType() == "SEGMENTSET" ){
-//        FaciesTransitionMatrixMaker<SegmentSet> ftmMaker( dynamic_cast<SegmentSet*>(m_dataFile), m_variableIndex );
-//        ftmMaker.makeAlongTrajectory( h, tolerance );
-//    } else {
-//        Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
-//                                          m_dataFile->getFileType()+ " not currently supported.", true);
-//    }
+    for( double h = hInitial; h <= hFinal; h += dh ){
+        for( Attribute* at : m_categoricalAttributes ){
+            FaciesTransitionMatrix ftm("");
+            DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+            if( dataFile->getFileType() == "SEGMENTSET" ){
+                dataFile->readFromFS();
+                FaciesTransitionMatrixMaker<SegmentSet> ftmMaker( dynamic_cast<SegmentSet*>(dataFile),
+                                                                  at->getAttributeGEOEASgivenIndex()-1 );
+                ftmMaker.makeAlongTrajectory( h, toleranceCoefficient * h );
+            } else {
+                Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
+                                                   dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete.", true);
+            }
+        }
+    }
 
-    for( int j = 0; j < 10; ++j )
-        for( int i = 0; i < 10; ++i ){
+    //get pointer to the category definition of the first variable (assumed the same for all variables).
+    DataFile* parentOfFirst = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
+    CategoryDefinition* CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
+    CDofFirst->readFromFS();
+
+    //get pointer to the grid layout
+    QGridLayout* gridLayout = static_cast<QGridLayout*>( ui->frmTransiograms->layout() );
+
+    //place a frame in the top left corner of the grid
+    QFrame* topLeftCorner = new QFrame();
+    gridLayout->addWidget( topLeftCorner, 0, 0 );
+
+    //the column headers.
+    for( int j = 0; j < CDofFirst->getCategoryCount(); ++j ){
+        QLabel* faciesLabel = new QLabel( CDofFirst->getCategoryName( j ) );
+        faciesLabel->setAlignment( Qt::AlignCenter );
+        QColor color = CDofFirst->getCustomColor( j );
+        faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
+                                                                   QString::number(color.red()) + "," +
+                                                                   QString::number(color.green()) + "," +
+                                                                   QString::number(color.blue()) +"); }");
+        gridLayout->addWidget( faciesLabel, 0, j+1 );
+    }
+
+    for( int i = 0; i < CDofFirst->getCategoryCount(); ++i ){
+        //the line headers.
+        QLabel* faciesLabel = new QLabel( CDofFirst->getCategoryName( i ) );
+        faciesLabel->setAlignment( Qt::AlignCenter );
+        QColor color = CDofFirst->getCustomColor( i );
+        faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
+                                                                   QString::number(color.red()) + "," +
+                                                                   QString::number(color.green()) + "," +
+                                                                   QString::number(color.blue()) +"); }");
+        gridLayout->addWidget( faciesLabel, i+1, 0 );
+        for( int j = 0; j < CDofFirst->getCategoryCount(); ++j ){
 
              QLineSeries *series = new QLineSeries();
              series->append(0, 6);
@@ -132,7 +190,12 @@ void TransiogramDialog::performCalculation()
              QChartView *chartView = new QChartView(chart);
              chartView->setRenderHint(QPainter::Antialiasing);
 
+             chartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
+             gridLayout->setRowStretch( i+1, 1 );
+             gridLayout->setColumnStretch( j+1, 1 );
+             gridLayout->addWidget( chartView, i+1, j+1 );
         }
+    }
 }
 
 void TransiogramDialog::onResetAttributesList()

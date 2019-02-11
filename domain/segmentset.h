@@ -36,6 +36,16 @@ public:
     int getYFinalIndex();
     int getZFinalIndex();
 
+    /** Returns the length of the iRecord-th segment. */
+    double getSegmentLenght( int iRecord );
+
+    /** Returns the distance between the end of the iRecord-th segment
+     * to the beginning of the (iRecord+1)-th segment.
+     * If the iRecord-th segment is the last, this method returns zero.
+     */
+    double getDistanceToNextSegment( int iRecord );
+
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

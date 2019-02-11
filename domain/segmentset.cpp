@@ -119,6 +119,24 @@ int SegmentSet::getZFinalIndex()
     return _z_final_field_index;
 }
 
+double SegmentSet::getSegmentLenght(int iRecord)
+{
+    double dx = data( iRecord, getXFinalIndex() ) - data( iRecord, getXindex() );
+    double dy = data( iRecord, getYFinalIndex() ) - data( iRecord, getYindex() );
+    double dz = data( iRecord, getZFinalIndex() ) - data( iRecord, getZindex() );
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
+double SegmentSet::getDistanceToNextSegment(int iRecord)
+{
+    if( iRecord = getDataLineCount() - 1 )
+        return 0.0;
+    double dx = data( iRecord+1, getXindex() ) - data( iRecord, getXFinalIndex() );
+    double dy = data( iRecord+1, getYindex() ) - data( iRecord, getYFinalIndex() );
+    double dz = data( iRecord+1, getZindex() ) - data( iRecord, getZFinalIndex() );
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
 
 QIcon SegmentSet::getIcon()
 {

@@ -161,6 +161,21 @@
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QFrame" name="frmTransiograms">
          <property name="frameShape">
@@ -169,7 +184,23 @@
          <property name="frameShadow">
           <enum>QFrame::Raised</enum>
          </property>
-         <layout class="QGridLayout" name="gridLayout"/>
+         <layout class="QGridLayout" name="gridLayout">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>0</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="spacing">
+           <number>0</number>
+          </property>
+         </layout>
         </widget>
        </item>
       </layout>
@@ -273,8 +304,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnExecute</sender>
+   <signal>clicked()</signal>
+   <receiver>TransiogramDialog</receiver>
+   <slot>performCalculation()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>744</x>
+     <y>30</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>767</x>
+     <y>110</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onResetAttributesList()</slot>
+  <slot>performCalculation()</slot>
  </slots>
 </ui>

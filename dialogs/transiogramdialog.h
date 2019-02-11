@@ -30,10 +30,10 @@ private:
 
     void tryToAddAttribute( Attribute* attribute );
 
-    void performCalculation();
 
 private Q_SLOTS:
     void onResetAttributesList();
+    void performCalculation();
 };
 
 #endif // TRANSIOGRAMDIALOG_H
