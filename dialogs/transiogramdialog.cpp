@@ -109,38 +109,66 @@ void TransiogramDialog::tryToAddAttribute(Attribute *attribute)
 
 void TransiogramDialog::performCalculation()
 {
+    using namespace QtCharts;
+
+    //guard against misconfiguration
     if( m_categoricalAttributes.empty() ){
         Application::instance()->logError( "TransiogramDialog::performCalculation(): no categorical attributes to work with." );
         return;
     }
 
-    using namespace QtCharts;
+    //----------------------------------------------GET USER SETTINGS-----------------------------------
     double hInitial = ui->dblSpinHIni->value();
     double hFinal = ui->dblSpinHFin->value();
     int nSteps = ui->spinNSteps->value();
     double toleranceCoefficient = ui->dblSpinTolCoeff->value();
     double dh = ( hFinal - hInitial ) / nSteps;
 
-    for( double h = hInitial; h <= hFinal; h += dh ){
-        for( Attribute* at : m_categoricalAttributes ){
-            FaciesTransitionMatrix ftm("");
-            DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
-            if( dataFile->getFileType() == "SEGMENTSET" ){
-                dataFile->readFromFS();
-                FaciesTransitionMatrixMaker<SegmentSet> ftmMaker( dynamic_cast<SegmentSet*>(dataFile),
-                                                                  at->getAttributeGEOEASgivenIndex()-1 );
-                ftmMaker.makeAlongTrajectory( h, toleranceCoefficient * h );
-            } else {
-                Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
-                                                   dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete.", true);
-            }
-        }
-    }
+    //----------------------------------------------COMPUTE FTMs FOR ALL h's-----------------------------------
 
     //get pointer to the category definition of the first variable (assumed the same for all variables).
     DataFile* parentOfFirst = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
     CategoryDefinition* CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
     CDofFirst->readFromFS();
+
+    //store a FTM for each h.
+    typedef std::pair<double, FaciesTransitionMatrix> hFTM;
+    std::vector<hFTM> hFTMs;
+
+    //for each separation h
+    for( double h = hInitial; h <= hFinal; h += dh ){
+        //create a FTM for all categorical variables in different files for each h.
+        FaciesTransitionMatrix ftmAll("");
+        ftmAll.setInfo( CDofFirst->getName() );
+        ftmAll.initialize();
+        hFTMs.push_back( { h, ftmAll } );
+    }
+
+    //for each file (each categorical attribute)
+    for( Attribute* at : m_categoricalAttributes ){
+        //get the data file
+        DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+        //if the data file is a segment set
+        if( dataFile->getFileType() == "SEGMENTSET" ){
+            //load data from file system
+            dataFile->readFromFS();
+            //make an auxiliary object to count facies transitions at given separations
+            FaciesTransitionMatrixMaker<SegmentSet> ftmMaker( dynamic_cast<SegmentSet*>(dataFile),
+                                                              at->getAttributeGEOEASgivenIndex()-1 );
+            //for each separation h
+            for( hFTM& hftm : hFTMs ){
+                //make a Facies Transion Matrix for a given h
+                FaciesTransitionMatrix ftm = ftmMaker.makeAlongTrajectory( hftm.first, toleranceCoefficient * hftm.first );
+                //add its counts to the global FTM for a given h
+                hftm.second.add( ftm );
+            }
+        } else {
+            Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
+                                               dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete.", true);
+        }
+    }
+
+    //----------------------------------------------MAKE THE TRANSIOGRAMS CHARTS -----------------------------------
 
     //get pointer to the grid layout
     QGridLayout* gridLayout = static_cast<QGridLayout*>( ui->frmTransiograms->layout() );

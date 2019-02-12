@@ -4,8 +4,10 @@
 #include "domain/project.h"
 #include "domain/objectgroup.h"
 #include "util.h"
+
 #include <QFile>
 #include <QTextStream>
+#include <cassert>
 
 FaciesTransitionMatrix::FaciesTransitionMatrix(QString path,
                                                QString associatedCategoryDefinitionName ) :
@@ -64,9 +66,96 @@ void FaciesTransitionMatrix::setInfoFromMetadataFile()
     this->setInfo( associatedCDname );
 }
 
+void FaciesTransitionMatrix::initialize()
+{
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    assert( cd && "FaciesTransitionMatrix::initialize(): No CategoryDefinition was found.  "
+                  "Be sure to set a name of an existing CategoryDefinition before calling this method" );
+
+    //reset all matrix data
+    m_columnHeadersFaciesNames.clear();
+    m_lineHeadersFaciesNames.clear();
+    m_transitionCounts.clear();
+
+    //read category definition data
+    cd->readFromFS();
+
+    //populate the matrix headers
+    for( int i = 0; i < cd->getCategoryCount(); ++i ){
+        m_columnHeadersFaciesNames.push_back( cd->getCategoryName( i ) );
+        m_lineHeadersFaciesNames.push_back( cd->getCategoryName( i ) );
+    }
+
+    //initialize the counts/probabilities with zeroes
+    for( int i = 0; i < cd->getCategoryCount(); ++i ){
+        std::vector < double > lineWithValues;
+        for( int j = 0; j < cd->getCategoryCount(); ++j ){
+            lineWithValues.push_back( 0.0 );
+        }
+        m_transitionCounts.push_back( lineWithValues );
+    }
+}
+
+void FaciesTransitionMatrix::incrementCount(int faciesCodeFrom, int faciesCodeTo)
+{
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    if( cd ){
+        //finds the row index corresponding to the "from facies" code
+        int rowIndex = -1;
+        {
+            QString fromFaciesName = cd->getCategoryNameByCode( faciesCodeFrom );
+            int currentRow = 0;
+            for( const QString& faciesName : m_lineHeadersFaciesNames ){
+                if( faciesName == fromFaciesName ){
+                    rowIndex = currentRow;
+                    break;
+                }
+                ++currentRow;
+            }
+            if( rowIndex < 0 )
+                Application::instance()->logWarn( "FaciesTransitionMatrix::incrementCount(): facies [" + fromFaciesName + "] not found in categorical definition." );
+        }
+        //finds the column index corresponding to the "to facies" code
+        int columnIndex = -1;
+        {
+            QString toFaciesName = cd->getCategoryNameByCode( faciesCodeTo );
+            int currentColumn = 0;
+            for( const QString& faciesName : m_columnHeadersFaciesNames ){
+                if( faciesName == toFaciesName ){
+                    columnIndex = currentColumn;
+                    break;
+                }
+                ++currentColumn;
+            }
+            if( columnIndex < 0 )
+                Application::instance()->logWarn( "FaciesTransitionMatrix::incrementCount(): facies [" + toFaciesName + "] not found in categorical definition." );
+        }
+        //increments the count
+        if( columnIndex >= 0 && rowIndex >= 0 )
+            m_transitionCounts[ rowIndex ][ columnIndex ] += 1;
+    } else
+        Application::instance()->logError( "FaciesTransitionMatrix::incrementCount(): categorical definition no found." );
+}
+
+void FaciesTransitionMatrix::add(const FaciesTransitionMatrix &otherFTM)
+{
+    if( getColumnCount() == otherFTM.getColumnCount() &&
+           getRowCount() ==    otherFTM.getRowCount() ){
+        for( int i = 0; i < getRowCount(); ++i ){
+            for( int j = 0; j < getColumnCount(); ++j ){
+                m_transitionCounts[i][j] += otherFTM.getValue( i, j );
+            }
+        }
+    } else
+        Application::instance()->logWarn( "FaciesTransitionMatrix::add(): FTMs not compatible for addition.  Nothing done." );
+}
+
 CategoryDefinition *FaciesTransitionMatrix::getAssociatedCategoryDefinition()
 {
-    CategoryDefinition* result = dynamic_cast<CategoryDefinition*>( Application::instance()->getProject()->getResourcesGroup()->getChildByName( m_associatedCategoryDefinitionName ) );
+    CategoryDefinition* result = dynamic_cast<CategoryDefinition*>( Application::instance()->
+                                                                               getProject()->
+                                                                        getResourcesGroup()->
+                                                                     getChildByName( m_associatedCategoryDefinitionName ) );
     if( ! result )
         Application::instance()->logError( "FaciesTransitionMatrix::getAssociatedCategoryDefinition(): object does not exist or an object of different type was found." );
     return result;
@@ -75,7 +164,7 @@ CategoryDefinition *FaciesTransitionMatrix::getAssociatedCategoryDefinition()
 double FaciesTransitionMatrix::getTotal()
 {
     double result = 0.0;
-    for( const std::vector<double>& row : m_transitionProbabilities )
+    for( const std::vector<double>& row : m_transitionCounts )
         for( const double& value : row )
             result += value;
     return result;
@@ -85,7 +174,7 @@ double FaciesTransitionMatrix::getSumOfRow( int rowIndex )
 {
     double result = 0.0;
     int rowCount = 0;
-    for( const std::vector<double>& row : m_transitionProbabilities ){
+    for( const std::vector<double>& row : m_transitionCounts ){
         if( rowIndex == rowCount ){
             for( const double& value : row )
                 result += value;
@@ -104,7 +193,7 @@ double FaciesTransitionMatrix::getTotalMinusSumOfRow(int rowIndex)
 double FaciesTransitionMatrix::getSumOfColumn(int columnIndex)
 {
     double result = 0.0;
-    for( const std::vector<double>& row : m_transitionProbabilities ){
+    for( const std::vector<double>& row : m_transitionCounts ){
         int columnCount = 0;
         for( const double& value : row ){
             if ( columnIndex == columnCount )
@@ -115,12 +204,12 @@ double FaciesTransitionMatrix::getSumOfColumn(int columnIndex)
     return result;
 }
 
-int FaciesTransitionMatrix::getColumnCount()
+int FaciesTransitionMatrix::getColumnCount() const
 {
     return m_columnHeadersFaciesNames.size();
 }
 
-int FaciesTransitionMatrix::getRowCount()
+int FaciesTransitionMatrix::getRowCount() const
 {
     return m_lineHeadersFaciesNames.size();
 }
@@ -135,18 +224,18 @@ QString FaciesTransitionMatrix::getRowHeader(int rowIndex)
     return m_lineHeadersFaciesNames[rowIndex];
 }
 
-double FaciesTransitionMatrix::getValue(int rowIndex, int colIndex)
+double FaciesTransitionMatrix::getValue(int rowIndex, int colIndex) const
 {
-    return  m_transitionProbabilities[rowIndex][colIndex];
+    return  m_transitionCounts[rowIndex][colIndex];
 }
 
 double FaciesTransitionMatrix::getValueMax()
 {
     double max = 0.0;
-    double value = m_transitionProbabilities[0][0];
-    for( int i = 0; i < m_transitionProbabilities.size(); ++i )
-        for( int j = 0; j < m_transitionProbabilities[i].size(); ++j ){
-            value = m_transitionProbabilities[i][j];
+    double value = m_transitionCounts[0][0];
+    for( int i = 0; i < m_transitionCounts.size(); ++i )
+        for( int j = 0; j < m_transitionCounts[i].size(); ++j ){
+            value = m_transitionCounts[i][j];
             max = std::max( max, value );
         }
     return max;
@@ -232,8 +321,8 @@ double FaciesTransitionMatrix::getMaxAbsDifference()
 {
     double max = 0.0;
     double value = std::abs( getDifference(0, 0) );
-    for( int i = 0; i < m_transitionProbabilities.size(); ++i )
-        for( int j = 0; j < m_transitionProbabilities[i].size(); ++j ){
+    for( int i = 0; i < m_transitionCounts.size(); ++i )
+        for( int j = 0; j < m_transitionCounts[i].size(); ++j ){
             value = std::abs( getDifference(i, j) );
             max = std::max( max, value );
         }
@@ -251,8 +340,8 @@ double FaciesTransitionMatrix::getMaxExpectedFrequency()
 {
     double max = 0.0;
     double value = std::abs( getExpectedFrequency(0, 0) );
-    for( int i = 0; i < m_transitionProbabilities.size(); ++i )
-        for( int j = 0; j < m_transitionProbabilities[i].size(); ++j ){
+    for( int i = 0; i < m_transitionCounts.size(); ++i )
+        for( int j = 0; j < m_transitionCounts[i].size(); ++j ){
             value = std::abs( getExpectedFrequency(i, j) );
             max = std::max( max, value );
         }
@@ -383,7 +472,7 @@ void FaciesTransitionMatrix::readFromFS()
                     Application::instance()->logWarn("FaciesTransitionMatrix::readFromFS(): number of probability values differs from the "
                                                      "number of facies names in the header @ line " + QString::number(lineNumber) + ".");
                 }
-                m_transitionProbabilities.push_back( lineOfProbValues );
+                m_transitionCounts.push_back( lineOfProbValues );
             }
         }
         inputFile.close();
@@ -396,7 +485,7 @@ void FaciesTransitionMatrix::clearLoadedContents()
 {
     m_columnHeadersFaciesNames.clear();
     m_lineHeadersFaciesNames.clear();
-    m_transitionProbabilities.clear();
+    m_transitionCounts.clear();
 }
 
 bool FaciesTransitionMatrix::isDataFile()
@@ -421,9 +510,9 @@ void FaciesTransitionMatrix::deleteFromFS()
 spectral::array FaciesTransitionMatrix::toSpectralArray()
 {
     //Make a spectral-compatible copy of this matrix.
-    spectral::array A( m_transitionProbabilities.size(), m_transitionProbabilities[0].size(), 1, 0.0 );
+    spectral::array A( m_transitionCounts.size(), m_transitionCounts[0].size(), 1, 0.0 );
     for( int i = 0; i < A.M(); ++i)
         for( int j = 0; j < A.N(); ++j)
-            A(i,j) = m_transitionProbabilities[i][j];
+            A(i,j) = m_transitionCounts[i][j];
     return A;
 }

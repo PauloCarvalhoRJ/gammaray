@@ -6,6 +6,28 @@
 
 class CategoryDefinition;
 
+/**
+ * A facies transition matrix is a file containing counts (normally) of transitions from a facies in a row
+ * to a facies in a column.  Some applications require that the counts be converted to probabilities
+ * or proportions between 0.0 and 1.0.
+ *
+ * The file is a tab-separated text file like the example below (names are the name property of
+ * the refered CategoryDefinition object whose name is in m_associatedCategoryDefinitionName member):
+ *
+ *     LMT	ESF	CRT	BRC	CAR	CRD	DOL	CLH	SLX	TUF	TRV
+ * LMT	0	40	30	9	36	2	4	0	1	0	0
+ * ESF	48	0	13	1	165	4	4	0	0	0	0
+ * CRT	24	24	0	2	91	15	2	1	2	2	2
+ * BRC	9	4	4	0	3	0	0	1	0	0	0
+ * CAR	33	160	90	7	0	26	7	1	6	1	1
+ * CRD	3	5	20	1	19	0	0	0	0	0	0
+ * DOL	5	0	3	1	8	0	0	0	0	0	0
+ * CLH	0	1	2	0	0	0	0	0	0	0	0
+ * SLX	0	2	4	0	4	0	0	0	0	0	0
+ * TUF	0	0	3	0	0	0	0	0	0	0	0
+ * TRV	0	0	0	0	2	1	0	0	0	0	0
+ *
+ */
 class FaciesTransitionMatrix : public File
 {
 public:
@@ -21,12 +43,39 @@ public:
     /**
      * @param associatedCategoryDefinition Pass nullptr to unset the value.
      */
-    void setInfo(QString associatedCategoryDefinitionName );
+    void setInfo( QString associatedCategoryDefinitionName );
 
     /** Sets point set metadata from the accompaining .md file, if it exists.
-     Nothing happens if the metadata file does not exist.  If it exists, it calls
-     #setInfo() with the metadata read from the .md file.*/
+     * Nothing happens if the metadata file does not exist.  If it exists, it calls
+     * #setInfo() with the metadata read from the .md file.
+     */
     void setInfoFromMetadataFile();
+
+    /**
+     * This method populates m_columnHeadersFaciesNames and m_columnHeadersFaciesNames with
+     * the facies names of the category definition refered by m_associatedCategoryDefinitionName.
+     * It also populates m_transitionProbabilities with zeroes.
+     * This method is useful when building a FTM from scratch instead of reading from a file.
+     * You must set the category definition name with a call to setInfo() or to setInfoFromMetadataFile()
+     * prior to calling this method otherwise an error will ensue.
+     */
+    void initialize();
+
+    /**
+     * Increments by one unit the value in this matrix given two facies codes.
+     * Recalling that a FTM matrix is read as the transition count/probability
+     * from a facies in a line to a facies in a column.
+     * An error is printed to the program's message pane if the CategoryDefinition object
+     * this FTM refers to cannot be found for some reason.
+     * Nothing happens if the passed code does not exist in the CategoryDefinition.
+     */
+    void incrementCount( int faciesCodeFrom, int faciesCodeTo );
+
+    /**
+     * Adds the values of this matrix with those of the passed FTM.
+     * Nothing happens if both FTMs are not compatible for addition like mathematical matrices.
+     */
+    void add( const FaciesTransitionMatrix& otherFTM );
 
     /**
      * Returns the pointer to the CategoryDefinition object whose name is
@@ -62,11 +111,11 @@ public:
      */
     double getSumOfColumn( int columnIndex );
 
-    int getColumnCount();
-    int getRowCount();
+    int getColumnCount() const;
+    int getRowCount() const;
     QString getColumnHeader( int columnIndex );
     QString getRowHeader( int rowIndex );
-    double getValue( int rowIndex, int colIndex );
+    double getValue( int rowIndex, int colIndex ) const;
     double getValueMax();
 
     /** Returns the color assigned to the category of the given column.
@@ -182,7 +231,7 @@ protected:
     std::vector<QString> m_columnHeadersFaciesNames;
     std::vector<QString> m_lineHeadersFaciesNames;
     //outer vector: each line; inner vector: each value (columns)
-    std::vector< std::vector < double> > m_transitionProbabilities;
+    std::vector< std::vector < double > > m_transitionCounts;
 
     spectral::array toSpectralArray();
 };
