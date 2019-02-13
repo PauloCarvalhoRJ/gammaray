@@ -121,19 +121,19 @@ int SegmentSet::getZFinalIndex()
 
 double SegmentSet::getSegmentLenght(int iRecord)
 {
-    double dx = data( iRecord, getXFinalIndex() ) - data( iRecord, getXindex() );
-    double dy = data( iRecord, getYFinalIndex() ) - data( iRecord, getYindex() );
-    double dz = data( iRecord, getZFinalIndex() ) - data( iRecord, getZindex() );
+    double dx = data( iRecord, getXFinalIndex()-1 ) - data( iRecord, getXindex()-1 );
+    double dy = data( iRecord, getYFinalIndex()-1 ) - data( iRecord, getYindex()-1 );
+    double dz = data( iRecord, getZFinalIndex()-1 ) - data( iRecord, getZindex()-1 );
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
 double SegmentSet::getDistanceToNextSegment(int iRecord)
 {
-    if( iRecord = getDataLineCount() - 1 )
+    if( iRecord == getDataLineCount() - 1 )
         return 0.0;
-    double dx = data( iRecord+1, getXindex() ) - data( iRecord, getXFinalIndex() );
-    double dy = data( iRecord+1, getYindex() ) - data( iRecord, getYFinalIndex() );
-    double dz = data( iRecord+1, getZindex() ) - data( iRecord, getZFinalIndex() );
+    double dx = data( iRecord+1, getXindex()-1 ) - data( iRecord, getXFinalIndex()-1 );
+    double dy = data( iRecord+1, getYindex()-1 ) - data( iRecord, getYFinalIndex()-1 );
+    double dz = data( iRecord+1, getZindex()-1 ) - data( iRecord, getZFinalIndex()-1 );
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
