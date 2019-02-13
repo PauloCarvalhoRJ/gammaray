@@ -275,6 +275,16 @@ double FaciesTransitionMatrix::getDownwardTransitionProbability( int toFaciesRow
     return getValue( toFaciesRowIndex, fromFaciesColumnIndex ) / getSumOfColumn( fromFaciesColumnIndex );
 }
 
+double FaciesTransitionMatrix::getTransitionRate(int faciesRowIndex, int faciesColumnIndex, double h, bool upward)
+{
+    double transitionProbability;
+    if( upward )
+        transitionProbability = getUpwardTransitionProbability  ( faciesRowIndex, faciesColumnIndex );
+    else
+        transitionProbability = getDownwardTransitionProbability( faciesRowIndex, faciesColumnIndex );
+    return std::log( transitionProbability ) / h;
+}
+
 double FaciesTransitionMatrix::getPostDepositionalEntropy(int faciesIndex, bool normalize)
 {
     double sum = 0.0;
@@ -385,6 +395,35 @@ double FaciesTransitionMatrix::getChiSquared()
             }
         }
     return sum;
+}
+
+bool FaciesTransitionMatrix::isColumnZeroed( int j ) const
+{
+    for( int i = 0; i < m_lineHeadersFaciesNames.size(); ++i )
+        if( ! Util::almostEqual2sComplement( m_transitionCounts[i][j], 0.0, 1 ) )
+             return false;
+    return true;
+}
+
+bool FaciesTransitionMatrix::isRowZeroed(int i) const
+{
+    for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j )
+        if( ! Util::almostEqual2sComplement( m_transitionCounts[i][j], 0.0, 1 ) )
+             return false;
+    return true;
+}
+
+void FaciesTransitionMatrix::removeColumn(int j)
+{
+    for( int i = 0; i < m_lineHeadersFaciesNames.size(); ++i )
+        m_transitionCounts[i].erase( m_transitionCounts[i].begin() + j );
+    m_columnHeadersFaciesNames.erase( m_columnHeadersFaciesNames.begin() + j );
+}
+
+void FaciesTransitionMatrix::removeRow(int i)
+{
+    m_transitionCounts.erase( m_transitionCounts.begin() + i );
+    m_lineHeadersFaciesNames.erase( m_lineHeadersFaciesNames.begin() + i );
 }
 
 QIcon FaciesTransitionMatrix::getIcon()

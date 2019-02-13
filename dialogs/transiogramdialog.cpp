@@ -131,13 +131,13 @@ void TransiogramDialog::performCalculation()
     CategoryDefinition* CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
     CDofFirst->readFromFS();
 
-    //store a FTM for each h.
+    //one FTM per h.
     typedef std::pair<double, FaciesTransitionMatrix> hFTM;
     std::vector<hFTM> hFTMs;
 
     //for each separation h
     for( double h = hInitial; h <= hFinal; h += dh ){
-        //create a FTM for all categorical variables in different files for each h.
+        //create a FTM for all categorical variables for each h.
         FaciesTransitionMatrix ftmAll("");
         ftmAll.setInfo( CDofFirst->getName() );
         ftmAll.initialize();
@@ -148,6 +148,8 @@ void TransiogramDialog::performCalculation()
     for( Attribute* at : m_categoricalAttributes ){
         //get the data file
         DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+        Application::instance()->logInfo("Commencing work on " + dataFile->getName() + "/" + at->getName() + "...");
+        QApplication::processEvents();
         //if the data file is a segment set
         if( dataFile->getFileType() == "SEGMENTSET" ){
             //load data from file system
@@ -157,6 +159,8 @@ void TransiogramDialog::performCalculation()
                                                               at->getAttributeGEOEASgivenIndex()-1 );
             //for each separation h
             for( hFTM& hftm : hFTMs ){
+                Application::instance()->logInfo("   working on h = " + QString::number( hftm.first ) + "...");
+                QApplication::processEvents();
                 //make a Facies Transion Matrix for a given h
                 FaciesTransitionMatrix ftm = ftmMaker.makeAlongTrajectory( hftm.first, toleranceCoefficient * hftm.first );
                 //add its counts to the global FTM for a given h
@@ -164,13 +168,68 @@ void TransiogramDialog::performCalculation()
             }
         } else {
             Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
-                                               dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete.", true);
+                                               dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete or not done at all.", true);
+        }
+    }
+
+    //get a reference to one of the FTM (assumes the FTM for each h referes to the same facies after compression).
+    FaciesTransitionMatrix& firstFTM = hFTMs.front().second;
+
+    //----------------------------------------------COMPRESS FTMs---------------------------------------------------
+
+    Application::instance()->logInfo("Compressing FTMs...");
+    QApplication::processEvents();
+
+    //for each category (compress columns)
+    for( int i = 0; i < firstFTM.getColumnCount(); ++i ){
+        //assume all columns are full of zeroes
+        bool keepColumn = false;
+        //for each separation h, query whether we have columns with only zeroes in all the FTMs.
+        for( const hFTM& hftm : hFTMs ){
+            const FaciesTransitionMatrix& ftm = hftm.second;
+            if( ! ftm.isColumnZeroed( i ) )
+                keepColumn = true;
+        }
+        //if a column for all h's were full of zeros
+        if( !keepColumn ){
+            //removes all zeroed columns for each separation h
+            // so they all have the same facies
+            for( hFTM& hftm : hFTMs ){
+                FaciesTransitionMatrix& ftm = hftm.second;
+                ftm.removeColumn( i );
+            }
+            --i;
+        }
+    }
+
+    //for each category (compress rows)
+    for( int i = 0; i < firstFTM.getRowCount(); ++i ){
+        //assume all rows are full of zeroes
+        bool keepRow = false;
+        //for each separation h, query whether we have rows with only zeroes in all the FTMs.
+        for( const hFTM& hftm : hFTMs ){
+            const FaciesTransitionMatrix& ftm = hftm.second;
+            if( ! ftm.isRowZeroed( i ) )
+                keepRow = true;
+        }
+        //if a row for all h's were full of zeros
+        if( !keepRow ){
+            //removes all zeroed rows for each separation h
+            // so they all have the same facies
+            for( hFTM& hftm : hFTMs ){
+                FaciesTransitionMatrix& ftm = hftm.second;
+                ftm.removeRow( i );
+            }
+            --i;
         }
     }
 
     //----------------------------------------------MAKE THE TRANSIOGRAMS CHARTS -----------------------------------
 
-    //get pointer to the grid layout
+    Application::instance()->logInfo("Making transiograms...");
+    QApplication::processEvents();
+
+    //get pointer to the grid layout (assumes it is a grid layout)
     QGridLayout* gridLayout = static_cast<QGridLayout*>( ui->frmTransiograms->layout() );
 
     //place a frame in the top left corner of the grid
@@ -178,10 +237,10 @@ void TransiogramDialog::performCalculation()
     gridLayout->addWidget( topLeftCorner, 0, 0 );
 
     //the column headers.
-    for( int j = 0; j < CDofFirst->getCategoryCount(); ++j ){
-        QLabel* faciesLabel = new QLabel( CDofFirst->getCategoryName( j ) );
+    for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
+        QLabel* faciesLabel = new QLabel( firstFTM.getColumnHeader( j ) );
         faciesLabel->setAlignment( Qt::AlignCenter );
-        QColor color = CDofFirst->getCustomColor( j );
+        QColor color = firstFTM.getColorOfCategoryInColumnHeader( j );
         faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
                                                                    QString::number(color.red()) + "," +
                                                                    QString::number(color.green()) + "," +
@@ -189,31 +248,33 @@ void TransiogramDialog::performCalculation()
         gridLayout->addWidget( faciesLabel, 0, j+1 );
     }
 
-    for( int i = 0; i < CDofFirst->getCategoryCount(); ++i ){
+    for( int i = 0; i < firstFTM.getRowCount(); ++i ){
+
         //the line headers.
-        QLabel* faciesLabel = new QLabel( CDofFirst->getCategoryName( i ) );
+        QLabel* faciesLabel = new QLabel( firstFTM.getRowHeader( i ) );
         faciesLabel->setAlignment( Qt::AlignCenter );
-        QColor color = CDofFirst->getCustomColor( i );
+        QColor color = firstFTM.getColorOfCategoryInRowHeader( i );
         faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
                                                                    QString::number(color.red()) + "," +
                                                                    QString::number(color.green()) + "," +
                                                                    QString::number(color.blue()) +"); }");
         gridLayout->addWidget( faciesLabel, i+1, 0 );
-        for( int j = 0; j < CDofFirst->getCategoryCount(); ++j ){
+
+        for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
 
              QLineSeries *series = new QLineSeries();
-             series->append(0, 6);
-             series->append(2, 4);
-             series->append(3, 8);
-             series->append(7, 4);
-             series->append(10, 5);
-             *series << QPointF(11, 1) << QPointF(13, 3) << QPointF(17, 6) << QPointF(18, 3) << QPointF(20, 2);
+
+             //for each separation h
+             for( hFTM& hftm : hFTMs ){
+                 double rate = hftm.second.getTransitionRate( i, j, hftm.first, true );
+                 if( std::isfinite( rate ))
+                    series->append( hftm.first, rate );
+             }
 
              QChart *chart = new QChart();
              chart->legend()->hide();
              chart->addSeries(series);
              chart->createDefaultAxes();
-             chart->setTitle("toto");
 
              QChartView *chartView = new QChartView(chart);
              chartView->setRenderHint(QPainter::Antialiasing);
@@ -224,6 +285,9 @@ void TransiogramDialog::performCalculation()
              gridLayout->addWidget( chartView, i+1, j+1 );
         }
     }
+
+    Application::instance()->logInfo("Transiography completed.");
+    QApplication::processEvents();
 }
 
 void TransiogramDialog::onResetAttributesList()

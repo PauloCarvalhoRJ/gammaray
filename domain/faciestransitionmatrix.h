@@ -145,6 +145,19 @@ public:
     double getDownwardTransitionProbability(int toFaciesRowIndex , int fromFaciesColumnIndex);
 
     /**
+     * Returns the transition rate value as a function of the spatial separation.
+     * The value is computed as ln(TransitionProbability(h))/h, where TransitionProbability(h) is getUpwardTransitionProbability() or
+     * getDownwardTransitionProbability() computed from a TFM obtained with the FaciesTransitionMatrixMaker::makeAlongTrajectory() method.
+     * To make sense, the same h passed as parameter must be used to contruct the TFM.
+     * The value is useful to compute experimental transiograms.
+     * See Carle et al, 1998 (Conditional simulation of hydrofacies architecture: a transition probability/Markov approach.)
+     * @param h The separation in length units.
+     * @param upward If true, uses the transtion probability returned by getUpwardTransitionProbability(), otherwise,
+     *               by getDownwardTransitionProbability().
+     */
+    double getTransitionRate( int faciesRowIndex, int faciesColumnIndex, double h, bool upward );
+
+    /**
      * Returns the sum of post-depositional entropies for a given facies with respect to all other facies.
      * A value of zero with respect to one facies means that the given facies (faciesIndex) is always succeeded by the former.
      * A value greater than zero means that the target facies may be overlaid by other facies.
@@ -205,6 +218,18 @@ public:
      * over all rows (i's) and columns (j's).
      */
     double getChiSquared();
+
+    /** Informs whether the given column has only zeroes. */
+    bool isColumnZeroed( int j ) const;
+
+    /** Informs whether the given row has only zeroes. */
+    bool isRowZeroed( int i ) const;
+
+    /** Removes the given column from the FTM. */
+    void removeColumn( int j );
+
+    /** Removes the given row from the FTM. */
+    void removeRow( int i );
 
     // ProjectComponent interface
 public:
