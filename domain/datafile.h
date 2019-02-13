@@ -339,6 +339,7 @@ public:
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
+    virtual void readFromFS(){ loadData(); }
 
 // ICalcPropertyCollection interface
 public:
