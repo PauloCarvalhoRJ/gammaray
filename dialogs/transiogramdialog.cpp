@@ -7,6 +7,7 @@
 #include <QMessageBox>
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include <QGraphicsLayout>
 
 #include "domain/datafile.h"
 #include "domain/application.h"
@@ -238,28 +239,37 @@ void TransiogramDialog::performCalculation()
 
     //the column headers.
     for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
-        QLabel* faciesLabel = new QLabel( firstFTM.getColumnHeader( j ) );
+        QLabel* faciesLabel = new QLabel();
         faciesLabel->setAlignment( Qt::AlignCenter );
         QColor color = firstFTM.getColorOfCategoryInColumnHeader( j );
         faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
                                                                    QString::number(color.red()) + "," +
                                                                    QString::number(color.green()) + "," +
                                                                    QString::number(color.blue()) +"); }");
+        QString fontColor = "black";
+        if( color.lightnessF() < 0.6 )
+            fontColor = "white";
+        faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getColumnHeader( j ) + "</b></font>");
         gridLayout->addWidget( faciesLabel, 0, j+1 );
     }
 
     for( int i = 0; i < firstFTM.getRowCount(); ++i ){
 
         //the line headers.
-        QLabel* faciesLabel = new QLabel( firstFTM.getRowHeader( i ) );
+        QLabel* faciesLabel = new QLabel();
         faciesLabel->setAlignment( Qt::AlignCenter );
         QColor color = firstFTM.getColorOfCategoryInRowHeader( i );
         faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
                                                                    QString::number(color.red()) + "," +
                                                                    QString::number(color.green()) + "," +
-                                                                   QString::number(color.blue()) +"); }");
+                                                                   QString::number(color.blue()) +"); color: rgb(0.5,0.5,0.5); }");
+        QString fontColor = "black";
+        if( color.lightnessF() < 0.6 )
+            fontColor = "white";
+        faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getRowHeader( i ) + "</b></font>");
         gridLayout->addWidget( faciesLabel, i+1, 0 );
 
+        //loop to create a row of charts
         for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
 
              QLineSeries *series = new QLineSeries();
@@ -275,6 +285,10 @@ void TransiogramDialog::performCalculation()
              chart->legend()->hide();
              chart->addSeries(series);
              chart->createDefaultAxes();
+
+             //more space for the curves
+             chart->layout()->setContentsMargins(2, 2, 2, 2);
+             chart->setMargins(QMargins(2, 2, 2, 2));
 
              QChartView *chartView = new QChartView(chart);
              chartView->setRenderHint(QPainter::Antialiasing);
