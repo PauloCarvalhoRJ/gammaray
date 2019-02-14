@@ -37,6 +37,7 @@
 #include <vtkImageRFFT.h>
 #include <vtkLookupTable.h>
 #include <QProgressDialog>
+#include <QStringBuilder>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
@@ -1939,12 +1940,17 @@ bool Util::isIn(const QString &stringToTest, const QStringList &listOfValues)
     return listOfValues.contains( stringToTest );
 }
 
-QString Util::getHTMLColorFromValue(double value, ColorTable colorTableToUse, double min, double max )
+QColor Util::getColorFromValue(double value, ColorTable colorTableToUse, double min, double max)
 {
     vtkSmartPointer<vtkLookupTable> colorTable = View3dColorTables::getColorTable( colorTableToUse, min, max );
     double rgb[3];
     colorTable->GetColor( value, rgb );
-    QColor color( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+    return QColor( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+}
+
+QString Util::getHTMLColorFromValue(double value, ColorTable colorTableToUse, double min, double max )
+{
+    QColor color = getColorFromValue( value, colorTableToUse, min, max );
     return color.name( QColor::HexRgb );
 }
 
@@ -1966,4 +1972,17 @@ double Util::chiSquaredAreaToTheRight( double significanceLevel, int degreesOfFr
         if( sum > 1.0 - significanceLevel )
             return currentX;
     }
+}
+
+QColor Util::makeContrast(const QColor &color)
+{
+    if( color.greenF() < 0.6 )
+        return Qt::white;
+    else
+        return Qt::black;
+}
+
+QString Util::fontColorTag(const QString &text, const QColor &bgcolor)
+{
+    return "<font color='" % makeContrast(bgcolor).name(QColor::HexRgb) % "'>" % text % "</font>";
 }

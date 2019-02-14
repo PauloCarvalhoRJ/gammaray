@@ -59,6 +59,8 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
 
     //The % operator is a faster string opertation with the internal QStringBuilder class.
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
+
     reportHTML = reportHTML % "<H2>a) Transition count matrix (F):</H2>";
     //////////////////////////////// render a color table ///////////////////
     reportHTML = reportHTML % "<table><tr><td>0</td>";
@@ -75,8 +77,9 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "<tr>";
         reportHTML = reportHTML % "<td>&nbsp;</td>";
         for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j ).name(QColor::HexRgb) % "'>";
-            reportHTML = reportHTML % m_faciesTransitionMatrix->getColumnHeader( j );
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( m_faciesTransitionMatrix->getColumnHeader( j ), color ) % "</font>";
             reportHTML = reportHTML % "</td>";
         }
         reportHTML = reportHTML % "<td>S<sub>Ri</sub></td>";
@@ -84,13 +87,16 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "</tr>";
         //row headers and values
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i );
             reportHTML = reportHTML % "<tr>";
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
-                                                      % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( m_faciesTransitionMatrix->getRowHeader(i), color );
+            reportHTML = reportHTML % "</td>";
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 double e = m_faciesTransitionMatrix->getValue( i, j );
+                QColor color = Util::getColorFromValue( e, ColorTable::RAINBOW, 0.0, max );
                 reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::RAINBOW, 0.0, max ) % "'>";
-                reportHTML = reportHTML % QString::number( e );
+                reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
                 reportHTML = reportHTML % "</td>";
             }
             reportHTML = reportHTML % "<td>" % QString::number( m_faciesTransitionMatrix->getSumOfRow( i ) ) % "</td>";
@@ -110,6 +116,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     reportHTML = reportHTML % "<H2>b) Upward transition probability matrix (P):</H2>";
     //////////////////////////////// render a color table ///////////////////
@@ -126,20 +133,23 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "<tr>";
         reportHTML = reportHTML % "<td>&nbsp;</td>";
         for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j ).name(QColor::HexRgb) % "'>";
-            reportHTML = reportHTML % m_faciesTransitionMatrix->getColumnHeader( j );
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( m_faciesTransitionMatrix->getColumnHeader( j ), color );
             reportHTML = reportHTML % "</td>";
         }
         reportHTML = reportHTML % "</tr>";
         //row headers and values
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i );
             reportHTML = reportHTML % "<tr>";
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
-                                                      % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>"
+                                                      % Util::fontColorTag( m_faciesTransitionMatrix->getRowHeader(i), color ) % "</td>";
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 double e = m_faciesTransitionMatrix->getUpwardTransitionProbability( i, j );
+                QColor color = Util::getColorFromValue( e, ColorTable::RAINBOW );
                 reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::RAINBOW ) % "'>";
-                reportHTML = reportHTML % QString::number( e );
+                reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
                 reportHTML = reportHTML % "</td>";
             }
             reportHTML = reportHTML % "</tr>";
@@ -147,6 +157,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     reportHTML = reportHTML % "<H2>c) Downward transition probability matrix (Q):</H2>";
     //////////////////////////////// render a color table ///////////////////
@@ -163,20 +174,23 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "<tr>";
         reportHTML = reportHTML % "<td>&nbsp;</td>";
         for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j ).name(QColor::HexRgb) % "'>";
-            reportHTML = reportHTML % m_faciesTransitionMatrix->getColumnHeader( j );
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( m_faciesTransitionMatrix->getColumnHeader( j ), color );
             reportHTML = reportHTML % "</td>";
         }
         reportHTML = reportHTML % "</tr>";
         //row headers and values
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i );
             reportHTML = reportHTML % "<tr>";
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
-                                                      % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>"
+                                                      % Util::fontColorTag( m_faciesTransitionMatrix->getRowHeader(i), color ) % "</td>";
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 double e = m_faciesTransitionMatrix->getDownwardTransitionProbability( j, i );
+                QColor color = Util::getColorFromValue( e, ColorTable::RAINBOW );
                 reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::RAINBOW ) % "'>";
-                reportHTML = reportHTML % QString::number( e );
+                reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
                 reportHTML = reportHTML % "</td>";
             }
             reportHTML = reportHTML % "</tr>";
@@ -184,6 +198,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     reportHTML = reportHTML % "<H2>d) Entropies matrix:</H2>";
     //////////////////////////////// render a color table ///////////////////
@@ -227,27 +242,31 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "</tr>";
         //row headers and values
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i );
             reportHTML = reportHTML % "<tr>";
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
-                                                      % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>"
+                                                      % Util::fontColorTag( m_faciesTransitionMatrix->getRowHeader(i), color ) % "</td>";
             double diff = m_faciesTransitionMatrix->getPreDepositionalEntropy( i, false ) -
                           m_faciesTransitionMatrix->getPostDepositionalEntropy( i, false );
-            QString color = Util::getHTMLColorFromValue( diff, ColorTable::SEISMIC, -maxAbsDiff, maxAbsDiff );
-            reportHTML = reportHTML % "<td bgcolor='" % color % "'>";
-            reportHTML = reportHTML % QString::number( m_faciesTransitionMatrix->getPostDepositionalEntropy( i, false ) );
+            color             = Util::getColorFromValue    ( diff, ColorTable::SEISMIC, -maxAbsDiff, maxAbsDiff );
+            QString colorHTML = Util::getHTMLColorFromValue( diff, ColorTable::SEISMIC, -maxAbsDiff, maxAbsDiff );
+            reportHTML = reportHTML % "<td bgcolor='" % colorHTML % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( QString::number( m_faciesTransitionMatrix->getPostDepositionalEntropy( i, false ) ), color );
             reportHTML = reportHTML % "</td>";
-            reportHTML = reportHTML % "<td bgcolor='" % color % "'>";
-            reportHTML = reportHTML % QString::number( m_faciesTransitionMatrix->getPreDepositionalEntropy( i, false ) );
+            reportHTML = reportHTML % "<td bgcolor='" % colorHTML % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( QString::number( m_faciesTransitionMatrix->getPreDepositionalEntropy( i, false ) ), color );
             reportHTML = reportHTML % "</td>";
 
             double e = m_faciesTransitionMatrix->getPostDepositionalEntropy( i, true );
+            color = Util::getColorFromValue( e, ColorTable::RAINBOW );
             reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::RAINBOW ) % "'>";
-            reportHTML = reportHTML % QString::number( e );
+            reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
             reportHTML = reportHTML % "</td>";
 
             e = m_faciesTransitionMatrix->getPreDepositionalEntropy( i, true );
+            color = Util::getColorFromValue( e, ColorTable::RAINBOW );
             reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::RAINBOW ) % "'>";
-            reportHTML = reportHTML % QString::number( e );
+            reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
             reportHTML = reportHTML % "</td>";
 
             reportHTML = reportHTML % "</tr>";
@@ -255,6 +274,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     reportHTML = reportHTML % "<H2>e) Independent trail matrix (R):</H2>";
     //////////////////////////////// render a color table ///////////////////
@@ -271,20 +291,23 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "<tr>";
         reportHTML = reportHTML % "<td>&nbsp;</td>";
         for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j ).name(QColor::HexRgb) % "'>";
-            reportHTML = reportHTML % m_faciesTransitionMatrix->getColumnHeader( j );
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( m_faciesTransitionMatrix->getColumnHeader( j ), color );
             reportHTML = reportHTML % "</td>";
         }
         reportHTML = reportHTML % "</tr>";
         //row headers and values
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i );
             reportHTML = reportHTML % "<tr>";
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
-                                                      % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>"
+                                                      % Util::fontColorTag( m_faciesTransitionMatrix->getRowHeader(i), color ) % "</td>";
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 double e = m_faciesTransitionMatrix->getIndependentTrail( i, j );
+                QColor color = Util::getColorFromValue( e, ColorTable::RAINBOW );
                 reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::RAINBOW ) % "'>";
-                reportHTML = reportHTML % QString::number( e );
+                reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
                 reportHTML = reportHTML % "</td>";
             }
             reportHTML = reportHTML % "</tr>";
@@ -292,6 +315,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     reportHTML = reportHTML % "<H2>f) Difference matrix (D):</H2>";
     double maxAbs = m_faciesTransitionMatrix->getMaxAbsDifference();
@@ -309,20 +333,23 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "<tr>";
         reportHTML = reportHTML % "<td>&nbsp;</td>";
         for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j ).name(QColor::HexRgb) % "'>";
-            reportHTML = reportHTML % m_faciesTransitionMatrix->getColumnHeader( j );
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( m_faciesTransitionMatrix->getColumnHeader( j ), color );
             reportHTML = reportHTML % "</td>";
         }
         reportHTML = reportHTML % "</tr>";
         //row headers and values
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i );
             reportHTML = reportHTML % "<tr>";
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
-                                                      % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>"
+                                                      % Util::fontColorTag( m_faciesTransitionMatrix->getRowHeader(i), color ) % "</td>";
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 double e = m_faciesTransitionMatrix->getDifference( i, j );
+                QColor color = Util::getColorFromValue( e, ColorTable::SEISMIC, -maxAbs, maxAbs );
                 reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::SEISMIC, -maxAbs, maxAbs ) % "'>";
-                reportHTML = reportHTML % QString::number( e );
+                reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
                 reportHTML = reportHTML % "</td>";
             }
             reportHTML = reportHTML % "</tr>";
@@ -330,6 +357,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     reportHTML = reportHTML % "<H2>g) Expected frequency matrix (E):</H2>";
     max = m_faciesTransitionMatrix->getMaxExpectedFrequency();
@@ -347,20 +375,23 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
         reportHTML = reportHTML % "<tr>";
         reportHTML = reportHTML % "<td>&nbsp;</td>";
         for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j ).name(QColor::HexRgb) % "'>";
-            reportHTML = reportHTML % m_faciesTransitionMatrix->getColumnHeader( j );
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInColumnHeader( j );
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>";
+            reportHTML = reportHTML % Util::fontColorTag( m_faciesTransitionMatrix->getColumnHeader( j ), color );
             reportHTML = reportHTML % "</td>";
         }
         reportHTML = reportHTML % "</tr>";
         //row headers and values
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
+            QColor color = m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i );
             reportHTML = reportHTML % "<tr>";
-            reportHTML = reportHTML % "<td bgcolor='" % m_faciesTransitionMatrix->getColorOfCategoryInRowHeader( i ).name(QColor::HexRgb) % "'>"
-                                                      % m_faciesTransitionMatrix->getRowHeader(i) % "</td>";
+            reportHTML = reportHTML % "<td bgcolor='" % color.name(QColor::HexRgb) % "'>"
+                                                      % Util::fontColorTag( m_faciesTransitionMatrix->getRowHeader(i), color ) % "</td>";
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 double e = m_faciesTransitionMatrix->getExpectedFrequency( i, j );
+                QColor color = Util::getColorFromValue( e, ColorTable::RAINBOW, 0.0, max );
                 reportHTML = reportHTML % "<td bgcolor='" % Util::getHTMLColorFromValue( e, ColorTable::RAINBOW, 0.0, max ) % "'>";
-                reportHTML = reportHTML % QString::number( e );
+                reportHTML = reportHTML % Util::fontColorTag( QString::number( e ), color );
                 reportHTML = reportHTML % "</td>";
             }
             reportHTML = reportHTML % "</tr>";
@@ -368,6 +399,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     }
     reportHTML = reportHTML % "</table><BR/><BR/>";
 
+    //-------------------------------------------------------------------------------------------------------------------------------------------------------
 
     reportHTML = reportHTML % "<H2>h) Test of significance (E):</H2>";
     reportHTML = reportHTML % "<table class=\"countMatrix\">";

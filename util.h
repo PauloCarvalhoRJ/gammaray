@@ -620,6 +620,12 @@ public:
     static bool isIn( const QString& stringToTest, const QStringList& listOfValues );
 
     /**
+     * Returns the color mapped from the given value according to
+     * the passed color table.
+     */
+    static QColor getColorFromValue(double value, ColorTable colorTableToUse, double min = 0.0, double max = 1.0);
+
+    /**
      * Returns a string in the format "#RRGGBB" mapped from the given value according to
      * the passed color table.
      */
@@ -634,6 +640,18 @@ public:
      * @param step Step size used to compute the area under the cruve.
      */
     static double chiSquaredAreaToTheRight(double significanceLevel, int degreesOfFreedom, double step );
+
+    /**
+     * Returns a color that is contrasting with respect the input color.
+     * This is useful to set, for instance, bright letters over a dark barkground.
+     */
+    static QColor makeContrast( const QColor& color );
+
+    /**
+     * Makes a <font color='#nnnnnn'>text</font> HTML tag so that the text has constrasting letters against
+     * the given background color.
+     */
+    static QString fontColorTag( const QString& text, const QColor& bgcolor );
 };
 
 #endif // UTIL_H
