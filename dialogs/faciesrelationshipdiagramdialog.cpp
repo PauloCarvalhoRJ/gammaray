@@ -50,6 +50,8 @@ void FaciesRelationShipDiagramDialog::performCalculation()
 
     { //G = createGraph ();
         QString outputDOT = "digraph{\n";
+        outputDOT = outputDOT % "page=\"8.5,11\";\n";
+        outputDOT = outputDOT % "size=\"7.5,10\";\n";
         for( int i = 0; i < m_faciesTransitionMatrix->getRowCount(); ++i ){
             for( int j = 0; j < m_faciesTransitionMatrix->getColumnCount(); ++j ){
                 // Help about the DOT style language: https://graphviz.gitlab.io/_pages/pdf/dotguide.pdf
