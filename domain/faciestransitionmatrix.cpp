@@ -275,14 +275,18 @@ double FaciesTransitionMatrix::getDownwardTransitionProbability( int toFaciesRow
     return getValue( toFaciesRowIndex, fromFaciesColumnIndex ) / getSumOfColumn( fromFaciesColumnIndex );
 }
 
-double FaciesTransitionMatrix::getTransitionRate(int faciesRowIndex, int faciesColumnIndex, double h, bool upward)
+double FaciesTransitionMatrix::getTransitionRate(int faciesRowIndex, int faciesColumnIndex, double meanSizeForFaciesInRow, bool upward)
 {
-    double transitionProbability;
-    if( upward )
-        transitionProbability = getUpwardTransitionProbability  ( faciesRowIndex, faciesColumnIndex );
-    else
-        transitionProbability = getDownwardTransitionProbability( faciesRowIndex, faciesColumnIndex );
-    return std::log( transitionProbability ) / h;
+    if( faciesRowIndex == faciesColumnIndex )
+        return -1 / meanSizeForFaciesInRow;
+    else{
+        double probability;
+        if( upward )
+            probability = getUpwardTransitionProbability( faciesRowIndex, faciesColumnIndex );
+        else
+            probability = getDownwardTransitionProbability( faciesRowIndex, faciesColumnIndex );
+        return probability / meanSizeForFaciesInRow;
+    }
 }
 
 double FaciesTransitionMatrix::getPostDepositionalEntropy(int faciesIndex, bool normalize)

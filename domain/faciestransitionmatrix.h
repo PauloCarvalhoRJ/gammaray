@@ -145,17 +145,20 @@ public:
     double getDownwardTransitionProbability(int toFaciesRowIndex , int fromFaciesColumnIndex);
 
     /**
-     * Returns the transition rate value as a function of the spatial separation.
-     * The value is computed as ln(TransitionProbability(h))/h, where TransitionProbability(h) is getUpwardTransitionProbability() or
-     * getDownwardTransitionProbability() computed from a TFM obtained with the FaciesTransitionMatrixMaker::makeAlongTrajectory() method.
-     * To make sense, the same h passed as parameter must be used to contruct the TFM.
-     * The value is useful to compute experimental transiograms.
-     * See Carle et al, 1998 (Conditional simulation of hydrofacies architecture: a transition probability/Markov approach.)
-     * @param h The separation in length units.
+     * Returns the transition rate value as a function of transition probabilities.
+     * This value is caculated as:
+     * For faciesRowIndex == faciesColumnIndex (auto-transiography):
+     *         -1 * sqrt( meanSizeForFaciesInRow )
+     * For faciesRowIndex != faciesColumnIndex (cross-transiography):
+     *         transition_probability /
+     * See Li W., 2007 (Transiograms for Characterizing Spatial Variability of Soil Classes.)
+     * @param meanSizeForFaciesInRow The mean size of the units (e.g. length, thickness, etc.) where the facies
+     *                               specified by the faciesRowIndex parameter appears.  This parameter should be taken
+     *                               from another source, like a data set or some value entered by the user.
      * @param upward If true, uses the transtion probability returned by getUpwardTransitionProbability(), otherwise,
      *               by getDownwardTransitionProbability().
      */
-    double getTransitionRate( int faciesRowIndex, int faciesColumnIndex, double h, bool upward );
+    double getTransitionRate( int faciesRowIndex, int faciesColumnIndex, double meanSizeForFaciesInRow, bool upward );
 
     /**
      * Returns the sum of post-depositional entropies for a given facies with respect to all other facies.

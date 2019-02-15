@@ -72,8 +72,7 @@ public:
                                ( m_dataFileWithFacies, m_variableIndex, distance, tolerance );
             if( std::isfinite( readValue ) ){
                 faciesCode = static_cast<int>( readValue );
-                if( faciesCode != previousFaciesCode && previousFaciesCode != -9999 ){
-                    //std::cout << "zzzzzzzzzzzzzzzzz" << std::endl;
+                if( /*faciesCode != previousFaciesCode &&*/ previousFaciesCode != -9999 ){
                     ftm.incrementCount( previousFaciesCode, faciesCode );
                 }
                 previousFaciesCode = faciesCode;

@@ -8,6 +8,7 @@ class TransiogramDialog;
 }
 
 class Attribute;
+class FileSelectorWidget;
 
 class TransiogramDialog : public QDialog
 {
@@ -29,6 +30,11 @@ private:
     std::vector<Attribute*> m_categoricalAttributes;
 
     void tryToAddAttribute( Attribute* attribute );
+
+    std::vector<QWidget *> m_chartViews;
+    void clearCharts();
+
+    FileSelectorWidget* m_fsw;
 
 
 private Q_SLOTS:

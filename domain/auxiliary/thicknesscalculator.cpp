@@ -1,0 +1,2 @@
+#include "thicknesscalculator.h"
+

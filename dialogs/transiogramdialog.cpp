@@ -2,24 +2,28 @@
 #include "ui_transiogramdialog.h"
 
 #include <QChart>
-#include <QChartView>
 #include <QLineSeries>
 #include <QMessageBox>
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QGraphicsLayout>
+#include <QValueAxis>
+#include <QChartView>
 
 #include "domain/datafile.h"
 #include "domain/application.h"
-#include "domain/auxiliary/faciestransitionmatrixmaker.h"
 #include "domain/segmentset.h"
 #include "domain/project.h"
 #include "domain/attribute.h"
 #include "domain/categorydefinition.h"
+#include "domain/auxiliary/faciestransitionmatrixmaker.h"
+#include "domain/auxiliary/thicknesscalculator.h"
+#include "widgets/fileselectorwidget.h"
 
 TransiogramDialog::TransiogramDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::TransiogramDialog)
+    ui(new Ui::TransiogramDialog),
+    m_fsw( nullptr )
 {
     ui->setupUi(this);
 
@@ -27,6 +31,10 @@ TransiogramDialog::TransiogramDialog(QWidget *parent) :
 
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
+
+    m_fsw = new FileSelectorWidget( FileSelectorType::FaciesTransitionMatrices, true );
+
+    ui->frmMatrixChooserPlace->layout()->addWidget( m_fsw );
 
     setAcceptDrops(true);
 }
@@ -108,6 +116,13 @@ void TransiogramDialog::tryToAddAttribute(Attribute *attribute)
     ui->lblAttributesCount->setText( QString::number( m_categoricalAttributes.size() ) + " attribute(s)");
 }
 
+void TransiogramDialog::clearCharts()
+{
+    for( QWidget* qcv : m_chartViews )
+        delete qcv;
+    m_chartViews.clear();
+}
+
 void TransiogramDialog::performCalculation()
 {
     using namespace QtCharts;
@@ -117,6 +132,8 @@ void TransiogramDialog::performCalculation()
         Application::instance()->logError( "TransiogramDialog::performCalculation(): no categorical attributes to work with." );
         return;
     }
+
+    clearCharts();
 
     //----------------------------------------------GET USER SETTINGS-----------------------------------
     double hInitial = ui->dblSpinHIni->value();
@@ -253,6 +270,24 @@ void TransiogramDialog::performCalculation()
         gridLayout->addWidget( faciesLabel, 0, j+1 );
     }
 
+    //for each file (each categorical attribute)
+    STOPPED_HERE;
+    for( Attribute* at : m_categoricalAttributes ){
+        DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+        dataFile->readFromFS();
+        //if the data file is a segment set
+        if( dataFile->getFileType() == "SEGMENTSET" ){
+            //make an auxiliary object to perform thickness-related calculations.
+            ThicknessCalculator<SegmentSet> thicknessCalculator( dynamic_cast<SegmentSet*>(dataFile),
+                                                                 at->getAttributeGEOEASgivenIndex()-1 );
+        } else {
+            Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
+                                               dataFile->getFileType()+ " not currently supported for thickness calculation. "
+                                              "Mean thickness will be innacurate.", true);
+        }
+    }
+
+
     for( int i = 0; i < firstFTM.getRowCount(); ++i ){
 
         //the line headers.
@@ -269,34 +304,84 @@ void TransiogramDialog::performCalculation()
         faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getRowHeader( i ) + "</b></font>");
         gridLayout->addWidget( faciesLabel, i+1, 0 );
 
+        double meanThicknessForFromFacies = 666666666666;
+
         //loop to create a row of charts
         for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
 
-             QLineSeries *series = new QLineSeries();
+//            QLineSeries *seriesReferenceTransiogram = new QLineSeries();
+//            {
+//                //add the first point, the transriogram value at h = 0.
+//                //for auto-transiograms, its value is 1.0
+//                //for cross-transiograms, its value is 0.0
+//                // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
+//                if( i == j )
+//                    seriesReferenceTransiogram->append( 0.0, 1.0 );
+//                else
+//                    seriesReferenceTransiogram->append( 0.0, 0.0 );
 
-             //for each separation h
-             for( hFTM& hftm : hFTMs ){
-                 double rate = hftm.second.getTransitionRate( i, j, hftm.first, true );
-                 if( std::isfinite( rate ))
-                    series->append( hftm.first, rate );
-             }
+//                //for each separation h
+//                for( hFTM& hftm : hFTMs ){
+//                    double rate = hftm.second.getTransitionRate( i, j, , true );
+//                    if( std::isfinite( rate ) )
+//                        seriesReferenceTransiogram->append( hftm.first, probability );
+//                }
+//            }
 
-             QChart *chart = new QChart();
-             chart->legend()->hide();
-             chart->addSeries(series);
-             chart->createDefaultAxes();
+            QLineSeries *seriesExperimentalTransiogram = new QLineSeries();
+            {
+                //add the first point, the transriogram value at h = 0.
+                //for auto-transiograms, its value is 1.0
+                //for cross-transiograms, its value is 0.0
+                // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
+                if( i == j )
+                    seriesExperimentalTransiogram->append( 0.0, 1.0 );
+                else
+                    seriesExperimentalTransiogram->append( 0.0, 0.0 );
 
-             //more space for the curves
-             chart->layout()->setContentsMargins(2, 2, 2, 2);
-             chart->setMargins(QMargins(2, 2, 2, 2));
+                //for each separation h
+                for( hFTM& hftm : hFTMs ){
+                    double probability = hftm.second.getUpwardTransitionProbability( i, j );
+                    if( std::isfinite( probability ) && probability > 0.0)
+                        seriesExperimentalTransiogram->append( hftm.first, probability );
+                }
+            }
 
-             QChartView *chartView = new QChartView(chart);
-             chartView->setRenderHint(QPainter::Antialiasing);
+            QChart *chart = new QChart();
+            {
+                QValueAxis *axisY = new QValueAxis();
+                axisY->setRange( 0.0, 1.0 );
+                axisY->applyNiceNumbers();
+                //axisY->setLabelFormat("%f1.0");
 
-             chartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
-             gridLayout->setRowStretch( i+1, 1 );
-             gridLayout->setColumnStretch( j+1, 1 );
-             gridLayout->addWidget( chartView, i+1, j+1 );
+                QValueAxis *axisX = new QValueAxis();
+                axisX->setRange( hInitial, hFinal );
+                axisX->applyNiceNumbers();
+                //axisX->setLabelFormat("%f5.1");
+
+                chart->legend()->hide();
+                chart->addSeries(seriesExperimentalTransiogram);
+                //chart->createDefaultAxes();
+                //chart->axisX()->setRange( hInitial, hFinal );
+                //chart->axisY()->setRange( -1.0, 0.0 );
+                chart->setAxisX( axisX, seriesExperimentalTransiogram );
+                chart->setAxisY( axisY, seriesExperimentalTransiogram );
+
+                //more space for the curves
+                chart->layout()->setContentsMargins(2, 2, 2, 2);
+                chart->setMargins(QMargins(2, 2, 2, 2));
+            }
+
+            QChartView *chartView = new QChartView( chart );
+            {
+                chartView->setRenderHint(QPainter::Antialiasing);
+                chartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
+            }
+
+            gridLayout->setRowStretch( i+1, 1 );
+            gridLayout->setColumnStretch( j+1, 1 );
+            gridLayout->addWidget( chartView, i+1, j+1 );
+            m_chartViews.push_back( chartView );
         }
     }
 
