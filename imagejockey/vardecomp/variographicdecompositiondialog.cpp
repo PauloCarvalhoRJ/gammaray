@@ -10,6 +10,7 @@
 #include "../svd/svdfactor.h"
 #include "../svd/svdanalysisdialog.h"
 #include "../widgets/ijquick3dviewer.h"
+#include "imagejockey/gabor/gaborutils.h"
 
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -21,6 +22,7 @@
 #include <vtkPolyData.h>
 #include <vtkDelaunay2D.h>
 #include <vtkCleanPolyData.h>
+
 
 std::mutex mutexObjectiveFunction;
 
@@ -1146,7 +1148,8 @@ void VariographicDecompositionDialog::onSumOfFactorsWasComputed(spectral::array 
     emit saveArray( gridData, grid );
 }
 
-void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD )
+void VariographicDecompositionDialog::doVariographicDecomposition2(
+        FundamentalFactorType fundamentalFactorType )
 {
     // Get the data objects.
     IJAbstractCartesianGrid* grid = m_gridSelector->getSelectedGrid();
@@ -1190,6 +1193,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
         off.f7 = ui->spinOJFactor_7->value();
     }
 
+    GaborAnalysisParameters gaborParameters;
+    gaborParameters.initialFrequency = 0.003;
+    gaborParameters.finalFrequency = 0.09;
+    gaborParameters.frequencyStep = 0.01; //orig = 0.0001
+    gaborParameters.azimuthStep = 5.0;
+    gaborParameters.kernelSize = 50;
+
     //-------------------------------------------------------------------------------------------------
     //-----------------------------------PREPARATION STEPS---------------------------------------------
     //-------------------------------------------------------------------------------------------------
@@ -1199,7 +1209,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
     int n = 0;
     {
 		//Atom learning method: SVD of input variable.
-		if( useSVD ){
+        if( fundamentalFactorType == FundamentalFactorType::SVD_SINGULAR_FACTOR ){
 			//Get the number of usable fundamental factors.
 			QProgressDialog progressDialog;
 			progressDialog.setRange(0,0);
@@ -1211,7 +1221,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 			delete gridInputData;
 			n = fundamentalFactors.size();
 		//Atom learning method: frequency spectrum partitioning of input variable.
-		} else {
+        } else if ( fundamentalFactorType == FundamentalFactorType::FFT_SPECTRUM_PARTITION ) {
 			QProgressDialog progressDialog;
 			progressDialog.setRange(0,0);
 			progressDialog.setLabelText("Computing Fourier partitioning of input data...");
@@ -1221,7 +1231,18 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 			doFourierPartitioningOnData( gridInputData, fundamentalFactors, nTracks );
 			delete gridInputData;
 			n = fundamentalFactors.size();
-		}
+        //Atom learning method: Gabor analysis of input variable.
+        } else {
+            QProgressDialog progressDialog;
+            progressDialog.setRange(0,0);
+            progressDialog.setLabelText("Computing Gabor analysis of input data...");
+            progressDialog.show();
+            QCoreApplication::processEvents();
+            spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+            doGaborAnalysisOnData( gridInputData, fundamentalFactors, gaborParameters );
+            delete gridInputData;
+            n = fundamentalFactors.size();
+        }
     }
 
 	if( n == 0 ){
@@ -1597,7 +1618,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition2( bool useSVD 
 
 void VariographicDecompositionDialog::doVariographicDecomposition3()
 {
-	doVariographicDecomposition2( false );
+    doVariographicDecomposition2( FundamentalFactorType::FFT_SPECTRUM_PARTITION );
+}
+
+void VariographicDecompositionDialog::doVariographicDecomposition4()
+{
+    doVariographicDecomposition2( FundamentalFactorType::GABOR_ANALYSIS_FACTOR );
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
@@ -1880,7 +1906,114 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 
 }
 
+void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::array *gridInputData,
+                                                            std::vector<spectral::array> &frequencyFactors,
+                                                            const GaborAnalysisParameters &gaborParameters)
+{
+    ///Visualizing the results on the fly is optional/////////////
+    IJQuick3DViewer q3Dv;
+    q3Dv.show();
+    ///////////////////////////////////////////////////////////////
+
+    //get input grid sizes
+    spectral::index nI = gridInputData->M();
+    spectral::index nJ = gridInputData->N();
+
+    //compute the FFT of the input data in polar form (magnitude and phase).
+    spectral::complex_array inputFFTpolar;
+    {
+        spectral::complex_array inputFFT;
+        spectral::array inputData( *gridInputData );
+        spectral::foward( inputFFT, inputData );
+        inputFFTpolar = spectral::to_polar_form( inputFFT );
+    }
+
+    //for each frequency
+    for( double frequency = gaborParameters.initialFrequency;
+         frequency <= gaborParameters.finalFrequency;
+         frequency += gaborParameters.frequencyStep ){
+        //for each azimuth
+        for( double azimuth = 0.0; azimuth <= 180.0; azimuth += gaborParameters.azimuthStep ){
+
+            //compute the unitized (min. = 0.0, max. = 1.0) amplitude of FFT of the Gabor kernel of a given azimuth and frequency.
+            spectral::array kernelSPaddedFFTamplUnitized;
+            {
+                //make a Gabor kernel
+                GaborUtils::ImageTypePtr kernel = GaborUtils::createGaborKernel(frequency,
+                                                                                azimuth,
+                                                                                gaborParameters.kernelMeanMajorAxis,
+                                                                                gaborParameters.kernelMeanMinorAxis,
+                                                                                gaborParameters.kernelSigmaMajorAxis,
+                                                                                gaborParameters.kernelSigmaMinorAxis,
+                                                                                gaborParameters.kernelSize,
+                                                                                gaborParameters.kernelSize,
+                                                                                false );
+                //convert it to a spectral::array
+                spectral::array kernelS = GaborUtils::convertITKImageToSpectralArray( *kernel );
+
+                {
+                    q3Dv.clearScene();
+                    spectral::array a(kernelS);
+                    q3Dv.display( a, a.min(), a.max() );
+                    QApplication::processEvents(); //let Qt repaint GUI elements
+                }
+
+                //makes it compatible with inner multiplication with the input grid (same size)
+                spectral::array kernelSPadded = spectral::project( kernelS, nI, nJ, 1 );
+
+                //compute the FFT of the kernel
+                spectral::complex_array kernelSPaddedFFT;
+                spectral::foward( kernelSPaddedFFT, kernelSPadded );
+
+                //put the complex numbers into polar form
+                spectral::complex_array kernelSPaddedFFTpolar =
+                        spectral::to_polar_form( kernelSPaddedFFT );
+
+                //get the amplitde values.
+                spectral::array kernelSPaddedFFTampl = spectral::real( kernelSPaddedFFTpolar );
+
+                //rescale the amplitudes to 0.0-1.0
+                kernelSPaddedFFTamplUnitized = kernelSPaddedFFTampl / kernelSPaddedFFTampl.max();
+            }
+
+            //multiply the magnitude of the input with the magnitude of the kernel,
+            //effectivelly separating the desired frequency/azimuth
+            spectral::array filteredAmplitude = spectral::hadamard( spectral::real( inputFFTpolar ),
+                                                                    kernelSPaddedFFTamplUnitized );
+
+            //make a new FFT field by combining the filtered amplitudes with the untouched phase
+            //field of the input
+            spectral::complex_array filteredFFTpolar = spectral::to_complex_array(
+                                                          filteredAmplitude ,
+                                                          spectral::imag( inputFFTpolar) );
+
+            //convert the filtered FFT field to Cartesian form (real and imaginary parts)
+            spectral::complex_array filteredFFT = spectral::to_rectangular_form( filteredFFTpolar );
+
+
+            //performs inverse FFT to get the filtered result in spatial domain.
+            spectral::array fundamentalFactor( nI, nJ, 1, 0.0 );
+            spectral::backward( fundamentalFactor, filteredFFT );
+
+            //fftw3 requires that the result be divided by the number of grid cells to get
+            //the correct scale
+            fundamentalFactor = fundamentalFactor / ( nI * nJ );
+
+            ///Visualizing the results on the fly is optional/////////////
+//            {
+//                q3Dv.clearScene();
+//                q3Dv.display( fundamentalFactor, fundamentalFactor.min(), fundamentalFactor.max() );
+//                QApplication::processEvents(); //let Qt repaint GUI elements
+//            }
+            ////////////////////////////////////////////////////////////
+
+            frequencyFactors.push_back( fundamentalFactor );
+
+        }//for each azimuth
+    }//for each frequency
+}
+
 void VariographicDecompositionDialog::doVariographicDecomposition2( )
 {
-	doVariographicDecomposition2( true );
+    doVariographicDecomposition2( FundamentalFactorType::SVD_SINGULAR_FACTOR );
 }

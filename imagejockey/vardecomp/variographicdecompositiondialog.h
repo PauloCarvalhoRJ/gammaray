@@ -16,6 +16,24 @@ namespace spectral {
     class complex_array;
 }
 
+enum class FundamentalFactorType : int {
+    SVD_SINGULAR_FACTOR,
+    FFT_SPECTRUM_PARTITION,
+    GABOR_ANALYSIS_FACTOR
+};
+
+struct GaborAnalysisParameters{
+    double initialFrequency;
+    double finalFrequency;
+    double frequencyStep;
+    double azimuthStep;
+    int kernelSize;
+    double kernelMeanMajorAxis;
+    double kernelMeanMinorAxis;
+    double kernelSigmaMajorAxis;
+    double kernelSigmaMinorAxis;
+};
+
 class VariographicDecompositionDialog : public QDialog
 {
     Q_OBJECT
@@ -64,7 +82,16 @@ private:
 									 std::vector<spectral::array> & frequencyFactors,
 									 int nTracks);
 
-	void doVariographicDecomposition2( bool useSVD );
+    /** Computes the fundamental factors for the given variable of the given grid using
+     *  Gabor analysis.  The parameters for it are set in the passed GaborParameters
+     *  structure.
+     */
+    void doGaborAnalysisOnData( const spectral::array* gridInputData,
+                                std::vector<spectral::array> & frequencyFactors,
+                                const GaborAnalysisParameters& gaborParameters );
+
+    void doVariographicDecomposition2( FundamentalFactorType fundamentalFactorType );
+
 
 private Q_SLOTS:
 	void doVariographicDecomposition();
@@ -76,6 +103,7 @@ private Q_SLOTS:
     void onSumOfFactorsWasComputed(spectral::array *gridData); //called to save grid data as a Cartesian grid
     void doVariographicDecomposition2();
 	void doVariographicDecomposition3();
+    void doVariographicDecomposition4();
 };
 
 #endif // VARIOGRAPHICDECOMPOSITIONDIALOG_H
