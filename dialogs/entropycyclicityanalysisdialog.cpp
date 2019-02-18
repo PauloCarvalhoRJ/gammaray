@@ -404,7 +404,9 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
     reportHTML = reportHTML % "<H2>h) Test of significance (E):</H2>";
     reportHTML = reportHTML % "<table class=\"countMatrix\">";
     {
-        int rank = m_faciesTransitionMatrix->getRank();
+        //int n = m_faciesTransitionMatrix->getRank(); //rank is proposed by Sinha, S et al 2015 (Application of Markov Chain and Entropy Function for
+                                                       //  Cyclicity Analysis of a Lithostratigraphic Sequence - A Case History from the Kolhan Basin,
+                                                       // Jharkhand, Eastern India)
         int n = m_faciesTransitionMatrix->getColumnCount();
         int degreesOfFreedom = n*n - (n+n);
         //column headers
