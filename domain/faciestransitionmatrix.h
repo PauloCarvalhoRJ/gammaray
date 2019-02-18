@@ -146,15 +146,15 @@ public:
 
     /**
      * Returns the transition rate value as a function of transition probabilities.
-     * This value is caculated as:
+     * This value is calculated as:
      * For faciesRowIndex == faciesColumnIndex (auto-transiography):
-     *         -1 * sqrt( meanSizeForFaciesInRow )
+     *         -1 / meanSizeForFaciesInRow
      * For faciesRowIndex != faciesColumnIndex (cross-transiography):
-     *         transition_probability /
+     *         transition_probability / meanSizeForFaciesInRow
      * See Li W., 2007 (Transiograms for Characterizing Spatial Variability of Soil Classes.)
      * @param meanSizeForFaciesInRow The mean size of the units (e.g. length, thickness, etc.) where the facies
      *                               specified by the faciesRowIndex parameter appears.  This parameter should be taken
-     *                               from another source, like a data set or some value entered by the user.
+     *                               from another source (e.g. computed from a data set or entered by the user).
      * @param upward If true, uses the transtion probability returned by getUpwardTransitionProbability(), otherwise,
      *               by getDownwardTransitionProbability().
      */
@@ -233,6 +233,16 @@ public:
 
     /** Removes the given row from the FTM. */
     void removeRow( int i );
+
+    /** Returns the index of the row whose header equals the given name.
+     * Returns -1 if the name is not found.
+     */
+    int getRowIndexOfCategory( const QString& faciesName );
+
+    /** Returns the index of the column whose header equals the given name.
+     * Returns -1 if the name is not found.
+     */
+    int getColumnIndexOfCategory( const QString& faciesName );
 
     // ProjectComponent interface
 public:

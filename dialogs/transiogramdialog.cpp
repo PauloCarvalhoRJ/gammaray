@@ -23,7 +23,7 @@
 TransiogramDialog::TransiogramDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::TransiogramDialog),
-    m_fsw( nullptr )
+    m_fswReferenceFTM( nullptr )
 {
     ui->setupUi(this);
 
@@ -32,9 +32,9 @@ TransiogramDialog::TransiogramDialog(QWidget *parent) :
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
 
-    m_fsw = new FileSelectorWidget( FileSelectorType::FaciesTransitionMatrices, true );
+    m_fswReferenceFTM = new FileSelectorWidget( FileSelectorType::FaciesTransitionMatrices, true );
 
-    ui->frmMatrixChooserPlace->layout()->addWidget( m_fsw );
+    ui->frmMatrixChooserPlace->layout()->addWidget( m_fswReferenceFTM );
 
     setAcceptDrops(true);
 }
@@ -141,6 +141,9 @@ void TransiogramDialog::performCalculation()
     int nSteps = ui->spinNSteps->value();
     double toleranceCoefficient = ui->dblSpinTolCoeff->value();
     double dh = ( hFinal - hInitial ) / nSteps;
+    FaciesTransitionMatrix* referenceFTM = dynamic_cast< FaciesTransitionMatrix* >( m_fswReferenceFTM->getSelectedFile() );
+    if( referenceFTM )
+        referenceFTM->readFromFS();
 
     //----------------------------------------------COMPUTE FTMs FOR ALL h's-----------------------------------
 
@@ -254,7 +257,7 @@ void TransiogramDialog::performCalculation()
     QFrame* topLeftCorner = new QFrame();
     gridLayout->addWidget( topLeftCorner, 0, 0 );
 
-    //the column headers.
+    //lay out the column headers.
     for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
         QLabel* faciesLabel = new QLabel();
         faciesLabel->setAlignment( Qt::AlignCenter );
@@ -270,27 +273,10 @@ void TransiogramDialog::performCalculation()
         gridLayout->addWidget( faciesLabel, 0, j+1 );
     }
 
-    //for each file (each categorical attribute)
-    STOPPED_HERE;
-    for( Attribute* at : m_categoricalAttributes ){
-        DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
-        dataFile->readFromFS();
-        //if the data file is a segment set
-        if( dataFile->getFileType() == "SEGMENTSET" ){
-            //make an auxiliary object to perform thickness-related calculations.
-            ThicknessCalculator<SegmentSet> thicknessCalculator( dynamic_cast<SegmentSet*>(dataFile),
-                                                                 at->getAttributeGEOEASgivenIndex()-1 );
-        } else {
-            Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
-                                               dataFile->getFileType()+ " not currently supported for thickness calculation. "
-                                              "Mean thickness will be innacurate.", true);
-        }
-    }
-
-
+    // for each row (facies in the rows of the FTMs (one per h)
     for( int i = 0; i < firstFTM.getRowCount(); ++i ){
 
-        //the line headers.
+        //-------------------------------lay out the line headers.------------------------
         QLabel* faciesLabel = new QLabel();
         faciesLabel->setAlignment( Qt::AlignCenter );
         QColor color = firstFTM.getColorOfCategoryInRowHeader( i );
@@ -303,31 +289,85 @@ void TransiogramDialog::performCalculation()
             fontColor = "white";
         faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getRowHeader( i ) + "</b></font>");
         gridLayout->addWidget( faciesLabel, i+1, 0 );
+        //-------------------------------------------------------------------------
 
-        double meanThicknessForFromFacies = 666666666666;
+        //compute the mean thickness for the "from" facies (facies in the row of the FTM)
+        double meanThicknessForFromFacies = std::numeric_limits<double>::quiet_NaN();
+        {
+            //for each file (each categorical attribute)
+            for( Attribute* at : m_categoricalAttributes ){
+                DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+                //dataFile->readFromFS(); //assumes the file has been loaded before in this routine.
+                //if the data file is a segment set
+                if( dataFile->getFileType() == "SEGMENTSET" ){
+                    //make an auxiliary object to perform thickness-related calculations.
+                    ThicknessCalculator<SegmentSet> thicknessCalculator( dynamic_cast<SegmentSet*>(dataFile),
+                                                                         at->getAttributeGEOEASgivenIndex()-1 );
+                    //get the category definition object
+                    //assumes all FTMs for all h's refers to the same category definition
+                    CategoryDefinition* cd = firstFTM.getAssociatedCategoryDefinition();
+                    if( cd ){
+                        //get the mean thickness occupied by the facies
+                        meanThicknessForFromFacies = thicknessCalculator.getMeanThicknessForSingleValue(
+                                                     cd->getCategoryCodeByName( firstFTM.getRowHeader( i ) ) );
+                    } else {
+                        Application::instance()->logError( "TransiogramDialog::performCalculation(): null category definition. "
+                                                           "Mean thickness will be innacurate or invalid.");
+                    }
+                } else {
+                    Application::instance()->logError("TransiogramDialog::performCalculation(): Data files of type " +
+                                                       dataFile->getFileType()+ " not currently supported for thickness calculation. "
+                                                      "Mean thickness will be innacurate or invalid.");
+                }
+            }
+        }
 
-        //loop to create a row of charts
+        //loop to create a row of charts (for each column)
         for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
 
-//            QLineSeries *seriesReferenceTransiogram = new QLineSeries();
-//            {
-//                //add the first point, the transriogram value at h = 0.
-//                //for auto-transiograms, its value is 1.0
-//                //for cross-transiograms, its value is 0.0
-//                // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
-//                if( i == j )
-//                    seriesReferenceTransiogram->append( 0.0, 1.0 );
-//                else
-//                    seriesReferenceTransiogram->append( 0.0, 0.0 );
+            //create a data series (line in the chart) for the reference transiogram
+            QLineSeries *seriesReferenceTransiogram = new QLineSeries();
+            if( std::isfinite( meanThicknessForFromFacies ) && referenceFTM ){
+                Application::instance()->logErrorOff();
+                //add the first point, the transriogram value at h = 0.
+                //for auto-transiograms, its value is 1.0
+                //for cross-transiograms, its value is 0.0
+                // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
+                if( i == j )
+                    seriesReferenceTransiogram->append( 0.0, 1.0 );
+                else
+                    seriesReferenceTransiogram->append( 0.0, 0.0 );
 
-//                //for each separation h
-//                for( hFTM& hftm : hFTMs ){
-//                    double rate = hftm.second.getTransitionRate( i, j, , true );
-//                    if( std::isfinite( rate ) )
-//                        seriesReferenceTransiogram->append( hftm.first, probability );
-//                }
-//            }
+                //for each separation h
+                for( hFTM& hftm : hFTMs ){
+                    // -------- the row and column indexes of the reference FTM do not necessarily match-----
+                    //          the ones in the FTMs for each h
+                    int iInRefFTM = referenceFTM->getRowIndexOfCategory( hftm.second.getRowHeader(i) );
+                    int jInRefFTM = referenceFTM->getColumnIndexOfCategory( hftm.second.getColumnHeader(j) );
+                    //----------------------------------------------------------------------------------------
+                    if( iInRefFTM > 0 && jInRefFTM > 0 ){
+                        double rate = referenceFTM->getTransitionRate( iInRefFTM, jInRefFTM, meanThicknessForFromFacies, true );
+                        if( std::isfinite( rate ) ){
+                            //the idealized transiogram value as proposed by Li, W. 2007 (Transiograms for Characterizing Spatial Variability of Soil Classes -
+                            // Section "Idealized Transiograms Derived from Transition Rates")
+                            double idealizedTransiogramValue = std::exp( rate * hftm.first );
+                            seriesReferenceTransiogram->append( hftm.first, idealizedTransiogramValue );
+                        }
+                    } else {
+                        if( iInRefFTM < 0 )
+                            Application::instance()->logError("TransiogramDialog::performCalculation(): Facies [" +
+                                                               hftm.second.getRowHeader(i) + "] not found in " + referenceFTM->getName() +
+                                                              " reference FTM." );
+                        if( jInRefFTM < 0 )
+                            Application::instance()->logError("TransiogramDialog::performCalculation(): Facies [" +
+                                                               hftm.second.getColumnHeader(j) + "] not found in " + referenceFTM->getName() +
+                                                              " reference FTM." );
+                    }
+                }
+                Application::instance()->logErrorOn();
+            }
 
+            //create a data series (line in the chart) for the experimental transiogram
             QLineSeries *seriesExperimentalTransiogram = new QLineSeries();
             {
                 //add the first point, the transriogram value at h = 0.
@@ -347,6 +387,7 @@ void TransiogramDialog::performCalculation()
                 }
             }
 
+            //create a chart object
             QChart *chart = new QChart();
             {
                 QValueAxis *axisY = new QValueAxis();
@@ -361,6 +402,7 @@ void TransiogramDialog::performCalculation()
 
                 chart->legend()->hide();
                 chart->addSeries(seriesExperimentalTransiogram);
+                chart->addSeries( seriesReferenceTransiogram );
                 //chart->createDefaultAxes();
                 //chart->axisX()->setRange( hInitial, hFinal );
                 //chart->axisY()->setRange( -1.0, 0.0 );
@@ -372,12 +414,16 @@ void TransiogramDialog::performCalculation()
                 chart->setMargins(QMargins(2, 2, 2, 2));
             }
 
+            //create a chart widget
             QChartView *chartView = new QChartView( chart );
             {
                 chartView->setRenderHint(QPainter::Antialiasing);
+                chartView->setMinimumHeight( 100 );
                 chartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
             }
 
+            //lay out chart widget in the grid layout so it is in accordance to the pair of facies
+            //as set in the FTM.
             gridLayout->setRowStretch( i+1, 1 );
             gridLayout->setColumnStretch( j+1, 1 );
             gridLayout->addWidget( chartView, i+1, j+1 );

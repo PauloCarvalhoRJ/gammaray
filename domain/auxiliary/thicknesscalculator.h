@@ -15,7 +15,7 @@ namespace ThicknessCalculatorAdapters {
      * cell-centered grid is an example as it has vertical extent and has a
      * single value per variable in it.
      */
-    template <typename Klass> double getNumberOfIntervalUnits( Klass* dataFile );
+    template <typename Klass> int getNumberOfIntervalUnits( Klass* dataFile );
 
     /** Returns the thickness of the given interval unit. */
     template <typename Klass> double getThickness( Klass* dataFile,
@@ -55,14 +55,14 @@ public:
                                                                                               m_variableIndex,
                                                                                               i );
             if( Util::almostEqual2sComplement( valueInIntervalUnit, value, 1 ) ){
-                valueInIntervalUnit += ThicknessCalculatorAdapters::getThickness( m_dataFileWithFacies, i );
+                sumThickness += ThicknessCalculatorAdapters::getThickness( m_dataFileWithFacies, i );
                 ++count;
             }
         }
         if( count )
             return sumThickness / count;
         else
-            std::numeric_limits<double>::quiet_NaN();
+            return std::numeric_limits<double>::quiet_NaN();
     }
 
 private:

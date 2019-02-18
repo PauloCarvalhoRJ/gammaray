@@ -430,6 +430,28 @@ void FaciesTransitionMatrix::removeRow(int i)
     m_lineHeadersFaciesNames.erase( m_lineHeadersFaciesNames.begin() + i );
 }
 
+int FaciesTransitionMatrix::getRowIndexOfCategory(const QString &faciesName)
+{
+    int count = 0;
+    for( const QString& header : m_lineHeadersFaciesNames ){
+        if( header == faciesName )
+            return count;
+        ++count;
+    }
+    return -1;
+}
+
+int FaciesTransitionMatrix::getColumnIndexOfCategory(const QString &faciesName)
+{
+    int count = 0;
+    for( const QString& header : m_columnHeadersFaciesNames ){
+        if( header == faciesName )
+            return count;
+        ++count;
+    }
+    return -1;
+}
+
 QIcon FaciesTransitionMatrix::getIcon()
 {
     return QIcon(":icons32/transmat32");
