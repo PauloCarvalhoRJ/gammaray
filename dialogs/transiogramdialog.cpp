@@ -364,6 +364,9 @@ void TransiogramDialog::performCalculation()
                                                               " reference FTM." );
                     }
                 }
+                QPen pen( QRgb(0x0000FF) );
+                pen.setWidth( 1 );
+                seriesReferenceTransiogram->setPen( pen );
                 Application::instance()->logErrorOn();
             }
 
@@ -385,9 +388,43 @@ void TransiogramDialog::performCalculation()
                     if( std::isfinite( probability ) && probability > 0.0)
                         seriesExperimentalTransiogram->append( hftm.first, probability );
                 }
+                QPen pen( QRgb(0xFF0000) );
+                pen.setWidth( 3 );
+                seriesExperimentalTransiogram->setPen( pen );
             }
 
-            //create a chart object
+            //create a data series (line in the chart) for the sill of the transiogram
+            QLineSeries *seriesSill = new QLineSeries();
+            if( referenceFTM ){
+                //according to  Li, W (2007) "Transiograms for Characterizing Spatial Variability of Soil Classes"
+                //the sill of the transiogram is, ideally, the proportion of the tail facies for the cross-transiograms
+                //(and for the auto-transiograms in effect)
+                int catCode = CDofFirst->getCategoryCodeByName( (*(hFTMs.begin())).second.getColumnHeader( j ) );
+
+                //for each file (each categorical attribute)
+                double globalProportion = 0.0;
+                int globalCount = 0;
+                for( Attribute* at : m_categoricalAttributes ){
+                    //get the data file
+                    DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+                    //get the proportion for the facies code in one data file
+                    double proportion = dataFile->getProportion( at->getAttributeGEOEASgivenIndex()-1, catCode, catCode );
+                    //make the global proportion a weighted mean of the proportion for each file
+                    globalProportion += dataFile->getDataLineCount() * proportion;
+                    globalCount += dataFile->getDataLineCount();
+                }
+                globalProportion /= globalCount;
+
+                //make a single straight line to mark the sill in the graph
+                seriesSill->append( (*(hFTMs.begin())).first, globalProportion );
+                seriesSill->append( (*(hFTMs.end()-1)).first, globalProportion );
+                QPen pen( QRgb(0x008F00) );
+                pen.setWidth( 1 );
+                pen.setStyle( Qt::DashLine );
+                seriesSill->setPen( pen );
+            }
+
+            //create a chart object to contain all the data series in the same chart area
             QChart *chart = new QChart();
             {
                 QValueAxis *axisY = new QValueAxis();
@@ -401,8 +438,9 @@ void TransiogramDialog::performCalculation()
                 //axisX->setLabelFormat("%f5.1");
 
                 chart->legend()->hide();
-                chart->addSeries(seriesExperimentalTransiogram);
+                chart->addSeries( seriesExperimentalTransiogram );
                 chart->addSeries( seriesReferenceTransiogram );
+                chart->addSeries( seriesSill );
                 //chart->createDefaultAxes();
                 //chart->axisX()->setRange( hInitial, hFinal );
                 //chart->axisY()->setRange( -1.0, 0.0 );
@@ -414,7 +452,7 @@ void TransiogramDialog::performCalculation()
                 chart->setMargins(QMargins(2, 2, 2, 2));
             }
 
-            //create a chart widget
+            //create a chart widget to render the chart object
             QChartView *chartView = new QChartView( chart );
             {
                 chartView->setRenderHint(QPainter::Antialiasing);
