@@ -237,3 +237,23 @@ double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
             return 0.0; //returns z=0.0 for datasets in 2D.
     }
 }
+
+double SegmentSet::getProportion(int variableIndex, double value0, double value1)
+{
+    double lengthYES = 0.0;
+    double lengthNO = 0.0;
+    for( int i = 0; i < getDataLineCount(); ++i ){
+        double value = data( i, variableIndex );
+        if( ! isNDV( value ) ){
+            if( value >= value0 && value <= value1 ){
+                lengthYES += getSegmentLenght( i );
+            } else {
+                lengthNO += getSegmentLenght( i );
+            }
+        }
+    }
+    if( (lengthYES + lengthNO) > 0 )
+        return lengthYES / ( lengthYES + lengthNO );
+    else
+        return 0.0;
+}

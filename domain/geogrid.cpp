@@ -11,6 +11,7 @@
 #include "domain/project.h"
 #include "geometry/vector3d.h"
 #include "geometry/face3d.h"
+#include "exceptions/invalidmethodexception.h"
 
 #include <QCoreApplication>
 #include <QFile>
@@ -691,7 +692,12 @@ double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
 	case CartesianCoord::Y: return y;
 	case CartesianCoord::Z: return z;
 	default: return x;
-	}
+    }
+}
+
+double GeoGrid::getProportion(int variableIndex, double value0, double value1)
+{
+    throw new InvalidMethodException();
 }
 
 bool GeoGrid::canHaveMetaData()

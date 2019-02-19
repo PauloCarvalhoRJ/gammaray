@@ -176,6 +176,8 @@ public:
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
 	/** GeoGrids are assumed to be always 3D. */
 	virtual bool isTridimensional(){ return true; }
+    /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
+    virtual double getProportion(int variableIndex, double value0, double value1 );
 
 // File interface
 public:
