@@ -1197,8 +1197,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition2(
     gaborParameters.initialFrequency = 0.003;
     gaborParameters.finalFrequency = 0.09;
     gaborParameters.frequencyStep = 0.01; //orig = 0.0001
-    gaborParameters.azimuthStep = 5.0;
+    gaborParameters.azimuthStep = 15.0;
     gaborParameters.kernelSize = 50;
+    gaborParameters.kernelMeanMajorAxis = 127.5; //max. resolution size is 255, this 127.5 is in the middle
+    gaborParameters.kernelMeanMinorAxis = 127.5;
+    gaborParameters.kernelSigmaMajorAxis = 50.0;
+    gaborParameters.kernelSigmaMinorAxis = 50.0;
+
 
     //-------------------------------------------------------------------------------------------------
     //-----------------------------------PREPARATION STEPS---------------------------------------------
@@ -1929,11 +1934,18 @@ void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::arra
     }
 
     //for each frequency
+    int fCount = 0;
     for( double frequency = gaborParameters.initialFrequency;
          frequency <= gaborParameters.finalFrequency;
-         frequency += gaborParameters.frequencyStep ){
+         frequency += gaborParameters.frequencyStep, ++fCount ){
+
+        int azDiv = 1;
+        if( fCount > 0 )
+            azDiv = 2 * (fCount+1); //lowest frequency = 1 azimuth, then 4, then 6, then 8, then 10...
+        double azStep = 180.0 / azDiv;
+
         //for each azimuth
-        for( double azimuth = 0.0; azimuth <= 180.0; azimuth += gaborParameters.azimuthStep ){
+        for( double azimuth = 0.0; azimuth <= 180.0; azimuth += azStep ){
 
             //compute the unitized (min. = 0.0, max. = 1.0) amplitude of FFT of the Gabor kernel of a given azimuth and frequency.
             spectral::array kernelSPaddedFFTamplUnitized;
@@ -1956,6 +1968,7 @@ void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::arra
                     spectral::array a(kernelS);
                     q3Dv.display( a, a.min(), a.max() );
                     QApplication::processEvents(); //let Qt repaint GUI elements
+                    //QMessageBox::information( nullptr, "hhh", "aaa");
                 }
 
                 //makes it compatible with inner multiplication with the input grid (same size)

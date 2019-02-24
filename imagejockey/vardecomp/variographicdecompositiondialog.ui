@@ -442,11 +442,11 @@
      <item row="29" column="0" colspan="2">
       <widget class="QPushButton" name="btnProcess3">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="font">
         <font>
-         <strikeout>true</strikeout>
+         <strikeout>false</strikeout>
         </font>
        </property>
        <property name="text">
@@ -543,11 +543,11 @@
      <item row="5" column="0">
       <widget class="QLabel" name="label_20">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="font">
         <font>
-         <strikeout>true</strikeout>
+         <strikeout>false</strikeout>
         </font>
        </property>
        <property name="text">
@@ -768,11 +768,11 @@
      <item row="5" column="1">
       <widget class="QSpinBox" name="spinNumberOfSpectrumTracks">
        <property name="enabled">
-        <bool>false</bool>
+        <bool>true</bool>
        </property>
        <property name="font">
         <font>
-         <strikeout>true</strikeout>
+         <strikeout>false</strikeout>
         </font>
        </property>
        <property name="minimum">
