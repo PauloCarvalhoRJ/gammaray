@@ -635,7 +635,7 @@ void GaborFilterDialog::onPerformGaborFilter()
     double f1 = ui->txtFinalFrequency->text().toDouble();
 
     //this lambda interpolates between the initial frequency (f0)
-    //and final frequency(f1) logarithmically
+    //and final frequency(f1) logarithmically (concavity upwards)
     //
     // readable formula:
     //

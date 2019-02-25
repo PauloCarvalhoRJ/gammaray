@@ -1933,15 +1933,46 @@ void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::arra
         inputFFTpolar = spectral::to_polar_form( inputFFT );
     }
 
+
+    //this lambda interpolates between the initial frequency (f0)
+    //and final frequency(f1) logarithmically (concavity upwards)
+    //
+    // readable formula:
+    //
+    //    log(f1) - log(f0)       s1 - s0
+    //  --------------------- = -----------
+    //    log(f)  - log(f0)        s - s0
+    //
+    //  Where:
+    //
+    //  f: output interpolated frequency
+    //  s: input step number
+    //  s1 and s0: final and intial step numbers.
+    //  f1 and f0: final and initial frequencies.
+    //
+    int s1 = 10;
+    int s0 = 0;
+    double f1 = gaborParameters.finalFrequency;
+    double f0 = gaborParameters.initialFrequency;
+//    std::function<double (int)> f = [ s0, s1, f0, f1 ](int s)
+//                          { return std::pow(10.0,
+//                                  ( (s-s0)*(std::log10(f1)-std::log10(f0))/(s1-s0) ) + std::log10( f0 )
+//                                            ); };
+        std::function<double (int)> f = [ s0, s1, f0, f1 ](int s)
+                              { return f1 - f0 - std::pow(10.0,
+                                      ( (s-s0)*(std::log10(f0)-std::log10(f1))/(s1-s0) ) + std::log10( f1 )
+                                                ); };
+
+
     //for each frequency
     int fCount = 0;
-    for( double frequency = gaborParameters.initialFrequency;
-         frequency <= gaborParameters.finalFrequency;
-         frequency += gaborParameters.frequencyStep, ++fCount ){
+    for( int i = 0; i < s1; ++i, ++fCount ){
 
-        int azDiv = 1;
+        double frequency = f(i);
+
+        double azDiv = 1;
         if( fCount > 0 )
-            azDiv = 2 * (fCount+1); //lowest frequency = 1 azimuth, then 4, then 6, then 8, then 10...
+            azDiv = 1.0 * (fCount+1); //lowest frequency = 1 azimuth, then 4, then 6, then 8, then 10...
         double azStep = 180.0 / azDiv;
 
         //for each azimuth
