@@ -1976,7 +1976,25 @@ double Util::chiSquaredAreaToTheRight( double significanceLevel, int degreesOfFr
 
 QColor Util::makeContrast(const QColor &color)
 {
-    if( color.greenF() < 0.6 )
+    //compute luminance per the ITU-R recommendation BT.709
+    double L;
+    {
+        std::vector<double> rgb = { color.redF(), color.greenF(), color.blueF() };
+        for( double& c : rgb) {
+            if ( c <= 0.03928)
+                c = c / 12.92;
+            else
+                c = std::pow( ( c + 0.055) / 1.055, 2.4 );
+        }
+        L = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    }
+
+    // the threshold 0.179 for contrast comes from W3C Recommendations:
+    // (L1 + 0.05) / (L2 + 0.05), where L1 is the luminance of the lightest color and L2
+    // is the luminance of the darkest on a scale of 0.0-1.0.  Making L1 the luminance of white (1.0)
+    // and L2 the luminance of black (0.0), one arrives at the 0.179 figure.
+    // see discussion in: https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color/3943023#3943023
+    if( L <= 0.179 /*color.greenF() < 0.6*/ )
         return Qt::white;
     else
         return Qt::black;
