@@ -149,6 +149,7 @@ struct array {
 
 	double max() const;
 	double min() const;
+    double avg() const; //average or mean value
 
 	double euclideanLength() const;
 
