@@ -1974,7 +1974,7 @@ double Util::chiSquaredAreaToTheRight( double significanceLevel, int degreesOfFr
     }
 }
 
-QColor Util::makeContrast(const QColor &color)
+bool Util::isDark(const QColor &color)
 {
     //compute luminance per the ITU-R recommendation BT.709
     double L;
@@ -1995,6 +1995,14 @@ QColor Util::makeContrast(const QColor &color)
     // and L2 the luminance of black (0.0), one arrives at the 0.179 figure.
     // see discussion in: https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color/3943023#3943023
     if( L <= 0.179 /*color.greenF() < 0.6*/ )
+        return true;
+    else
+        return false;
+}
+
+QColor Util::makeContrast(const QColor &color)
+{
+    if( isDark( color ) )
         return Qt::white;
     else
         return Qt::black;

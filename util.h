@@ -641,6 +641,12 @@ public:
      */
     static double chiSquaredAreaToTheRight(double significanceLevel, int degreesOfFreedom, double step );
 
+    /** Returns whether the given color is dark.
+     * This function computes the luminance of the color according to the ITU-R recommendation BT.709,
+     * then it judges whether it is dark accoring to a threshold per W3C Recommendations.
+     */
+    static bool isDark( const QColor& color );
+
     /**
      * Returns a color that is contrasting with respect the input color.
      * This is useful to set, for instance, bright letters over a dark barkground.
