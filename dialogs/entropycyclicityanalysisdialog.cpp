@@ -408,7 +408,9 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
                                                        //  Cyclicity Analysis of a Lithostratigraphic Sequence - A Case History from the Kolhan Basin,
                                                        // Jharkhand, Eastern India)
         int n = m_faciesTransitionMatrix->getColumnCount();
-        int degreesOfFreedom = n*n - (n+n);
+        //int degreesOfFreedom = n*n - (n+n);
+        int degreesOfFreedom = (n-1)*(n-1) - 1; //number of degrees of freedom according to Powers and Stearling (1982) (IMPROVED METHODOLOGY
+                                                //FOR USING EMBEDDED MARKOV CHAINS TO DESCRIBE CYCLICAL SEDIMENTS)
         //column headers
         reportHTML = reportHTML % "<tr>";
         reportHTML = reportHTML % "<td><strong>Test of Equation</strong></td>";
