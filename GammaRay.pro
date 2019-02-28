@@ -247,7 +247,8 @@ SOURCES += main.cpp\
     dialogs/faciesrelationshipdiagramdialog.cpp \
     dialogs/transiogramdialog.cpp \
     domain/auxiliary/faciestransitionmatrixmaker.cpp \
-    domain/auxiliary/thicknesscalculator.cpp
+    domain/auxiliary/thicknesscalculator.cpp \
+    widgets/transiogramchartview.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -473,7 +474,8 @@ HEADERS  += mainwindow.h \
     dialogs/faciesrelationshipdiagramdialog.h \
     dialogs/transiogramdialog.h \
     domain/auxiliary/faciestransitionmatrixmaker.h \
-    domain/auxiliary/thicknesscalculator.h
+    domain/auxiliary/thicknesscalculator.h \
+    widgets/transiogramchartview.h
 
 
 FORMS    += mainwindow.ui \
