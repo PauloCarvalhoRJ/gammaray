@@ -409,7 +409,7 @@ void EntropyCyclicityAnalysisDialog::performCalculation()
                                                        // Jharkhand, Eastern India)
         int n = m_faciesTransitionMatrix->getColumnCount();
         //int degreesOfFreedom = n*n - (n+n);
-        int degreesOfFreedom = (n-1)*(n-1) - 1; //number of degrees of freedom according to Powers and Stearling (1982) (IMPROVED METHODOLOGY
+        int degreesOfFreedom = (n-1)*(n-1) - n; //number of degrees of freedom according to Powers and Stearling (1982) (IMPROVED METHODOLOGY
                                                 //FOR USING EMBEDDED MARKOV CHAINS TO DESCRIBE CYCLICAL SEDIMENTS)
         //column headers
         reportHTML = reportHTML % "<tr>";
