@@ -4,6 +4,7 @@
 #include "domain/application.h"
 #include "domain/project.h"
 #include "dialogs/displayplotdialog.h"
+#include "util.h"
 
 #include <QMessageBox>
 #include <QStringBuilder>
@@ -66,9 +67,9 @@ void FaciesRelationShipDiagramDialog::performCalculation()
                         hue *= -1.0;
                     QString hsv = QString::number( hue )   + " " +
                                   QString::number( color.saturationF() ) + " " +
-                                  QString::number( color.valueF() )        ;
+                                  QString::number( color.valueF() );
                     QString labelColor = "black";
-                    if( color.lightnessF() < 0.6 ) //if the facies color is too dark, use white letters for the labels
+                    if( Util::isDark( color ) ) //if the facies color is too dark, use white letters for the labels
                         labelColor = "white";
                     outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getRowHeader(i) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
                                           "label=<<FONT COLOR=\"" % labelColor % "\">" % m_faciesTransitionMatrix->getRowHeader(i) % "</FONT>>]\n";
@@ -79,9 +80,9 @@ void FaciesRelationShipDiagramDialog::performCalculation()
                         hue *= -1.0;
                     hsv = QString::number( hue )   + " " +
                           QString::number( color.saturationF() ) + " " +
-                          QString::number( color.valueF() )        ;
+                          QString::number( color.valueF() );
                     labelColor = "black";
-                    if( color.lightnessF() < 0.6 ) //if the facies color is too dark, use white letters for the labels
+                    if( Util::isDark( color ) ) //if the facies color is too dark, use white letters for the labels
                         labelColor = "white";
                     outputDOT = outputDOT % "\"" % m_faciesTransitionMatrix->getColumnHeader(j) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
                             "label=<<FONT COLOR=\"" % labelColor % "\">" % m_faciesTransitionMatrix->getColumnHeader(j) % "</FONT>>]\n";

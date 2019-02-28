@@ -19,6 +19,8 @@
 #include "domain/auxiliary/faciestransitionmatrixmaker.h"
 #include "domain/auxiliary/thicknesscalculator.h"
 #include "widgets/fileselectorwidget.h"
+#include "widgets/transiogramchartview.h"
+#include "geostats/geostatsutils.h"
 
 TransiogramDialog::TransiogramDialog(QWidget *parent) :
     QDialog(parent),
@@ -325,50 +327,26 @@ void TransiogramDialog::performCalculation()
         //loop to create a row of charts (for each column)
         for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
 
-            //create a data series (line in the chart) for the reference transiogram
-            QLineSeries *seriesReferenceTransiogram = new QLineSeries();
-            if( std::isfinite( meanThicknessForFromFacies ) && referenceFTM ){
-                Application::instance()->logErrorOff();
-                //add the first point, the transriogram value at h = 0.
-                //for auto-transiograms, its value is 1.0
-                //for cross-transiograms, its value is 0.0
-                // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
-                if( i == j )
-                    seriesReferenceTransiogram->append( 0.0, 1.0 );
-                else
-                    seriesReferenceTransiogram->append( 0.0, 0.0 );
+            //according to  Li, W (2007) "Transiograms for Characterizing Spatial Variability of Soil Classes"
+            //the sill of the transiogram is, ideally, the proportion of the tail facies for the cross-transiograms
+            //(and for the auto-transiograms in effect)
+            int tailFaciesCode = CDofFirst->getCategoryCodeByName( (*(hFTMs.begin())).second.getColumnHeader( j ) );
 
-                //for each separation h
-                for( hFTM& hftm : hFTMs ){
-                    // -------- the row and column indexes of the reference FTM do not necessarily match-----
-                    //          the ones in the FTMs for each h
-                    int iInRefFTM = referenceFTM->getRowIndexOfCategory( hftm.second.getRowHeader(i) );
-                    int jInRefFTM = referenceFTM->getColumnIndexOfCategory( hftm.second.getColumnHeader(j) );
-                    //----------------------------------------------------------------------------------------
-                    if( iInRefFTM > 0 && jInRefFTM > 0 ){
-                        double rate = referenceFTM->getTransitionRate( iInRefFTM, jInRefFTM, meanThicknessForFromFacies, true );
-                        if( std::isfinite( rate ) ){
-                            //the idealized transiogram value as proposed by Li, W. 2007 (Transiograms for Characterizing Spatial Variability of Soil Classes -
-                            // Section "Idealized Transiograms Derived from Transition Rates")
-                            double idealizedTransiogramValue = std::exp( rate * hftm.first );
-                            seriesReferenceTransiogram->append( hftm.first, idealizedTransiogramValue );
-                        }
-                    } else {
-                        if( iInRefFTM < 0 )
-                            Application::instance()->logError("TransiogramDialog::performCalculation(): Facies [" +
-                                                               hftm.second.getRowHeader(i) + "] not found in " + referenceFTM->getName() +
-                                                              " reference FTM." );
-                        if( jInRefFTM < 0 )
-                            Application::instance()->logError("TransiogramDialog::performCalculation(): Facies [" +
-                                                               hftm.second.getColumnHeader(j) + "] not found in " + referenceFTM->getName() +
-                                                              " reference FTM." );
-                    }
-                }
-                QPen pen( QRgb(0x0000FF) );
-                pen.setWidth( 1 );
-                seriesReferenceTransiogram->setPen( pen );
-                Application::instance()->logErrorOn();
+            //for each file (each categorical attribute)
+            //compute the tail facies proportion, then
+            //compute a proportion from all files
+            double globalProportionOfTailFacies = 0.0;
+            int globalCount = 0;
+            for( Attribute* at : m_categoricalAttributes ){
+                //get the data file
+                DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+                //get the proportion for the facies code in one data file
+                double proportion = dataFile->getProportion( at->getAttributeGEOEASgivenIndex()-1, tailFaciesCode, tailFaciesCode );
+                //make the global proportion a weighted mean of the proportion for each file
+                globalProportionOfTailFacies += dataFile->getDataLineCount() * proportion;
+                globalCount += dataFile->getDataLineCount();
             }
+            globalProportionOfTailFacies /= globalCount;
 
             //create a data series (line in the chart) for the experimental transiogram
             QLineSeries *seriesExperimentalTransiogram = new QLineSeries();
@@ -393,59 +371,76 @@ void TransiogramDialog::performCalculation()
                 seriesExperimentalTransiogram->setPen( pen );
             }
 
-            //create a data series (line in the chart) for the sill of the transiogram
+            //create a data series (line in the chart) to represent graphically the sill a priori of the transiogram
             QLineSeries *seriesSill = new QLineSeries();
             if( referenceFTM ){
-                //according to  Li, W (2007) "Transiograms for Characterizing Spatial Variability of Soil Classes"
-                //the sill of the transiogram is, ideally, the proportion of the tail facies for the cross-transiograms
-                //(and for the auto-transiograms in effect)
-                int catCode = CDofFirst->getCategoryCodeByName( (*(hFTMs.begin())).second.getColumnHeader( j ) );
-
-                //for each file (each categorical attribute)
-                double globalProportion = 0.0;
-                int globalCount = 0;
-                for( Attribute* at : m_categoricalAttributes ){
-                    //get the data file
-                    DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
-                    //get the proportion for the facies code in one data file
-                    double proportion = dataFile->getProportion( at->getAttributeGEOEASgivenIndex()-1, catCode, catCode );
-                    //make the global proportion a weighted mean of the proportion for each file
-                    globalProportion += dataFile->getDataLineCount() * proportion;
-                    globalCount += dataFile->getDataLineCount();
-                }
-                globalProportion /= globalCount;
-
                 //make a single straight line to mark the sill in the graph
-                seriesSill->append( (*(hFTMs.begin())).first, globalProportion );
-                seriesSill->append( (*(hFTMs.end()-1)).first, globalProportion );
+                seriesSill->append(                      0.0, globalProportionOfTailFacies );
+                seriesSill->append( (*(hFTMs.end()-1)).first, globalProportionOfTailFacies );
                 QPen pen( QRgb(0x008F00) );
                 pen.setWidth( 1 );
                 pen.setStyle( Qt::DashLine );
                 seriesSill->setPen( pen );
             }
 
+//            //create a data series (line in the chart) for the transiogram model
+//            QLineSeries *seriesTransiogramModel = new QLineSeries();
+//            if( std::isfinite( meanThicknessForFromFacies ) && referenceFTM ){
+
+//                //add the first point, the transriogram value at h = 0.
+//                //for auto-transiograms, its value is 1.0
+//                //for cross-transiograms, its value is 0.0
+//                // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
+//                if( i == j )
+//                    seriesTransiogramModel->append( 0.0, 1.0 );
+//                else
+//                    seriesTransiogramModel->append( 0.0, 0.0 );
+
+//                //for each separation h
+//                for( hFTM& hftm : hFTMs ){
+//                    double theorethicalValue;
+//                    if( i == j ) //for auto-transiograms
+//                        theorethicalValue = 1.0 - GeostatsUtils::getGamma(
+//                                                       VariogramStructureType::SPHERIC, hftm.first, 3.0, 1.0 - globalProportionOfTailFacies );
+//                    else         //for cross-transiograms
+//                        theorethicalValue = GeostatsUtils::getGamma(
+//                                                       VariogramStructureType::SPHERIC, hftm.first, 3.0, globalProportionOfTailFacies );
+//                    seriesTransiogramModel->append( hftm.first, theorethicalValue );
+//                }
+
+//                QPen pen( QRgb(0x0000FF) );
+//                pen.setWidth( 1 );
+//                seriesTransiogramModel->setPen( pen );
+//            }
+
+            //create the chart's axes
+            QValueAxis *axisY = new QValueAxis();
+            axisY->setRange( 0.0, 1.0 );
+            axisY->applyNiceNumbers();
+            //axisY->setLabelFormat("%f1.0");
+            QValueAxis *axisX = new QValueAxis();
+            axisX->setRange( hInitial, hFinal );
+            axisX->applyNiceNumbers();
+            //axisX->setLabelFormat("%f5.1");
+
             //create a chart object to contain all the data series in the same chart area
             QChart *chart = new QChart();
             {
-                QValueAxis *axisY = new QValueAxis();
-                axisY->setRange( 0.0, 1.0 );
-                axisY->applyNiceNumbers();
-                //axisY->setLabelFormat("%f1.0");
-
-                QValueAxis *axisX = new QValueAxis();
-                axisX->setRange( hInitial, hFinal );
-                axisX->applyNiceNumbers();
-                //axisX->setLabelFormat("%f5.1");
-
                 chart->legend()->hide();
                 chart->addSeries( seriesExperimentalTransiogram );
-                chart->addSeries( seriesReferenceTransiogram );
                 chart->addSeries( seriesSill );
+                //chart->addSeries( seriesTransiogramModel );
                 //chart->createDefaultAxes();
                 //chart->axisX()->setRange( hInitial, hFinal );
                 //chart->axisY()->setRange( -1.0, 0.0 );
+
+                //putting all series in the same scale
                 chart->setAxisX( axisX, seriesExperimentalTransiogram );
                 chart->setAxisY( axisY, seriesExperimentalTransiogram );
+                chart->setAxisX( axisX, seriesSill );
+                chart->setAxisY( axisY, seriesSill );
+                //chart->setAxisX( axisX, seriesTransiogramModel );
+                //chart->setAxisY( axisY, seriesTransiogramModel );
 
                 //more space for the curves
                 chart->layout()->setContentsMargins(2, 2, 2, 2);
@@ -453,11 +448,15 @@ void TransiogramDialog::performCalculation()
             }
 
             //create a chart widget to render the chart object
-            QChartView *chartView = new QChartView( chart );
+            TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
+            if( i == j )
+                transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
+            TransiogramChartView *chartView = new TransiogramChartView( chart, transiogramType, hFinal, axisX, axisY );
             {
                 chartView->setRenderHint(QPainter::Antialiasing);
                 chartView->setMinimumHeight( 100 );
                 chartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
+                chartView->setModelParameters( 3.0, globalProportionOfTailFacies );
             }
 
             //lay out chart widget in the grid layout so it is in accordance to the pair of facies
