@@ -1974,7 +1974,7 @@ void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::arra
 
         double azDiv = 1;
         if( fCount > 0 )
-            azDiv = ui->spinNumberOfSpectrumTracks->value()/10.0 * (fCount+1); //lowest frequency = 1 azimuth, then 4, then 6, then 8, then 10...
+            azDiv = ui->txtFatorParticaoAzimute->text().toDouble() * (fCount+1); //lowest frequency = 1 azimuth, then 4, then 6, then 8, then 10...
         double azStep = 180.0 / azDiv;
 
         //for each azimuth
@@ -2055,7 +2055,7 @@ void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::arra
 
             //discard factors averages values less than 1% of that of the original grid.
             double absAvg = std::abs( fundamentalFactor.avg() );
-            if( absAvg >= absAvgInput/200.0 )
+            if( absAvg >= absAvgInput/ui->txtThresholdFatoresGabor->text().toDouble() )
                 frequencyFactors.push_back( fundamentalFactor );
 
         }//for each azimuth
