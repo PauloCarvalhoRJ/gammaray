@@ -21,7 +21,8 @@ TransiogramChartView::TransiogramChartView(QtCharts::QChart *chart,
     m_axisX( axisX ),
     m_axisY( axisY ),
     m_hMax( hMax ),
-    m_seriesTransiogramModel( nullptr )
+    m_seriesTransiogramModel( nullptr ),
+    m_mouseDown( false )
 {
     //enable mouse move/hover events
     this->setMouseTracking( true );
@@ -38,13 +39,20 @@ void TransiogramChartView::mouseMoveEvent(QMouseEvent *event)
     x = std::min<int>( x, static_cast<int>( m_chart->plotArea().x() + m_chart->plotArea().width() ) );
     int y = std::max<int>( event->pos().y(), static_cast<int>( m_chart->plotArea().y() ) );
     y = std::min<int>( y, static_cast<int>( m_chart->plotArea().y() + m_chart->plotArea().height() ) );
-    m_rubberBandH->setGeometry( m_chart->plotArea().x(), y, m_chart->plotArea().width(),                            1 );
-    m_rubberBandV->setGeometry( x, m_chart->plotArea().y(),                           1, m_chart->plotArea().height() );
+    m_rubberBandH->setGeometry( m_chart->plotArea().x(), y,   m_chart->plotArea().width(),  1 );
+    m_rubberBandV->setGeometry( x, m_chart->plotArea().y(),   1, m_chart->plotArea().height() );
+
+    //update model parameters and redraw model curve while user drags the mouse
+    if( m_mouseDown ){
+        m_range = m_chart->mapToValue(event->pos()).x();
+        m_sill  = m_chart->mapToValue(event->pos()).y();
+        updateModelSeries();
+    }
 }
 
-void TransiogramChartView::showCrossHairs( bool value )
+void TransiogramChartView::showOrHideCrossHairs()
 {
-    if( value ){
+    if( m_mouseDown ){
         m_rubberBandH->show();
         m_rubberBandV->show();
     } else {
@@ -102,12 +110,14 @@ void TransiogramChartView::updateModelSeries()
 
 void TransiogramChartView::mousePressEvent(QMouseEvent *event)
 {
-    showCrossHairs( true );
+    m_mouseDown = true;
+    showOrHideCrossHairs();
 }
 
 void TransiogramChartView::mouseReleaseEvent(QMouseEvent *event)
 {
-    showCrossHairs( false );
+    m_mouseDown = false;
+    showOrHideCrossHairs();
 }
 
 void TransiogramChartView::setModelParameters(double range, double sill)

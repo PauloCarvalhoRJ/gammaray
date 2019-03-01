@@ -27,6 +27,9 @@ public:
 
     void setModelParameters( double range, double sill );
 
+    double getRange() const { return m_range; }
+    double getSill() const { return m_sill; }
+
 private:
     QtCharts::QChart* m_chart;
 
@@ -42,11 +45,12 @@ private:
     double m_range;
     double m_sill;
     TransiogramType m_type;
-    double m_hMax; //maximum h
     QtCharts::QValueAxis *m_axisX;
     QtCharts::QValueAxis *m_axisY;
+    double m_hMax; //maximum h
     QtCharts::QLineSeries *m_seriesTransiogramModel;
-    void showCrossHairs( bool value );
+    bool m_mouseDown;
+    void showOrHideCrossHairs();
     void updateModelSeries();
 };
 
