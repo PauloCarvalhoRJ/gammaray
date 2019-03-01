@@ -34,9 +34,6 @@ private:
     std::vector<QWidget *> m_chartViews;
     void clearCharts();
 
-    FileSelectorWidget* m_fswReferenceFTM;
-
-
 private Q_SLOTS:
     void onResetAttributesList();
     void performCalculation();

@@ -24,8 +24,7 @@
 
 TransiogramDialog::TransiogramDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::TransiogramDialog),
-    m_fswReferenceFTM( nullptr )
+    ui(new Ui::TransiogramDialog)
 {
     ui->setupUi(this);
 
@@ -33,10 +32,6 @@ TransiogramDialog::TransiogramDialog(QWidget *parent) :
 
     //deletes dialog from memory upon user closing it
     this->setAttribute(Qt::WA_DeleteOnClose);
-
-    m_fswReferenceFTM = new FileSelectorWidget( FileSelectorType::FaciesTransitionMatrices, true );
-
-    ui->frmMatrixChooserPlace->layout()->addWidget( m_fswReferenceFTM );
 
     setAcceptDrops(true);
 }
@@ -143,9 +138,6 @@ void TransiogramDialog::performCalculation()
     int nSteps = ui->spinNSteps->value();
     double toleranceCoefficient = ui->dblSpinTolCoeff->value();
     double dh = ( hFinal - hInitial ) / nSteps;
-    FaciesTransitionMatrix* referenceFTM = dynamic_cast< FaciesTransitionMatrix* >( m_fswReferenceFTM->getSelectedFile() );
-    if( referenceFTM )
-        referenceFTM->readFromFS();
 
     //----------------------------------------------COMPUTE FTMs FOR ALL h's-----------------------------------
 
@@ -373,7 +365,7 @@ void TransiogramDialog::performCalculation()
 
             //create a data series (line in the chart) to represent graphically the sill a priori of the transiogram
             QLineSeries *seriesSill = new QLineSeries();
-            if( referenceFTM ){
+            {
                 //make a single straight line to mark the sill in the graph
                 seriesSill->append(                      0.0, globalProportionOfTailFacies );
                 seriesSill->append( (*(hFTMs.end()-1)).first, globalProportionOfTailFacies );
@@ -382,36 +374,6 @@ void TransiogramDialog::performCalculation()
                 pen.setStyle( Qt::DashLine );
                 seriesSill->setPen( pen );
             }
-
-//            //create a data series (line in the chart) for the transiogram model
-//            QLineSeries *seriesTransiogramModel = new QLineSeries();
-//            if( std::isfinite( meanThicknessForFromFacies ) && referenceFTM ){
-
-//                //add the first point, the transriogram value at h = 0.
-//                //for auto-transiograms, its value is 1.0
-//                //for cross-transiograms, its value is 0.0
-//                // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
-//                if( i == j )
-//                    seriesTransiogramModel->append( 0.0, 1.0 );
-//                else
-//                    seriesTransiogramModel->append( 0.0, 0.0 );
-
-//                //for each separation h
-//                for( hFTM& hftm : hFTMs ){
-//                    double theorethicalValue;
-//                    if( i == j ) //for auto-transiograms
-//                        theorethicalValue = 1.0 - GeostatsUtils::getGamma(
-//                                                       VariogramStructureType::SPHERIC, hftm.first, 3.0, 1.0 - globalProportionOfTailFacies );
-//                    else         //for cross-transiograms
-//                        theorethicalValue = GeostatsUtils::getGamma(
-//                                                       VariogramStructureType::SPHERIC, hftm.first, 3.0, globalProportionOfTailFacies );
-//                    seriesTransiogramModel->append( hftm.first, theorethicalValue );
-//                }
-
-//                QPen pen( QRgb(0x0000FF) );
-//                pen.setWidth( 1 );
-//                seriesTransiogramModel->setPen( pen );
-//            }
 
             //create the chart's axes
             QValueAxis *axisY = new QValueAxis();
@@ -429,7 +391,6 @@ void TransiogramDialog::performCalculation()
                 chart->legend()->hide();
                 chart->addSeries( seriesExperimentalTransiogram );
                 chart->addSeries( seriesSill );
-                //chart->addSeries( seriesTransiogramModel );
                 //chart->createDefaultAxes();
                 //chart->axisX()->setRange( hInitial, hFinal );
                 //chart->axisY()->setRange( -1.0, 0.0 );
@@ -439,8 +400,6 @@ void TransiogramDialog::performCalculation()
                 chart->setAxisY( axisY, seriesExperimentalTransiogram );
                 chart->setAxisX( axisX, seriesSill );
                 chart->setAxisY( axisY, seriesSill );
-                //chart->setAxisX( axisX, seriesTransiogramModel );
-                //chart->setAxisY( axisY, seriesTransiogramModel );
 
                 //more space for the curves
                 chart->layout()->setContentsMargins(2, 2, 2, 2);

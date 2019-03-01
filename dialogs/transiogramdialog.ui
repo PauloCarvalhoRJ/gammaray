@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>779</width>
+    <width>833</width>
     <height>615</height>
    </rect>
   </property>
@@ -126,41 +126,27 @@
      <item>
       <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>* h   reference matrix:</string>
+        <string>* h</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QFrame" name="frmMatrixChooserPlace">
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>type:</string>
        </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="cmbTransiogramType">
+       <property name="enabled">
+        <bool>false</bool>
        </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QHBoxLayout" name="horizontalLayout_5">
-        <property name="spacing">
-         <number>0</number>
+       <item>
+        <property name="text">
+         <string>Markovian</string>
         </property>
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-       </layout>
+       </item>
       </widget>
      </item>
      <item>
@@ -189,7 +175,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>759</width>
+        <width>813</width>
         <height>531</height>
        </rect>
       </property>
@@ -301,8 +287,8 @@
   </layout>
  </widget>
  <resources>
-  <include location="../imagejockey/ijresources.qrc"/>
   <include location="../resources.qrc"/>
+  <include location="../imagejockey/ijresources.qrc"/>
  </resources>
  <connections>
   <connection>
