@@ -1405,15 +1405,24 @@ void VariographicDecompositionDialog::doVariographicDecomposition2(
                 break;
             //Randomly searches for a neighboring state with respect to current state.
             spectral::array L_wNew(L_wCurrent);
-			for( int i = 0; i < i_nPar; ++i ){ //for each parameter
+            for( int i = 0; i < i_nPar; ++i ){ //for each parameter
                //Ensures that the values randomly obtained are inside the domain.
                double f_tmp = 0.0;
                while( true ){
+                   //set the value interval for the draw
                   double LO = L_wCurrent[i] - (f_factorSearch * L_wDelta[i]);
                   double HI = L_wCurrent[i] + (f_factorSearch * L_wDelta[i]);
+                  // draw a value for the parameter
                   f_tmp = LO + std::rand() / (RAND_MAX/(HI-LO)) ;
-                  if ( f_tmp >= L_wMin[i] && f_tmp <= L_wMax[i] )
-                     break;
+                  //if the drawn parameter is within the domain.
+                  if ( f_tmp >= L_wMin[i] && f_tmp <= L_wMax[i] ){
+                      //if the resulting set of fundamental factor weights is valid.
+                      spectral::array L_wTest(L_wNew);
+                      L_wTest[i] = f_tmp;
+                      if( isSetOfFreeParametersValid( L_wTest, A, Adagger, B, I ) )
+                          //approve the new parameter draw
+                         break;
+                  }
                }
                //Updates the parameter value.
                L_wNew[i] = f_tmp;
@@ -1427,7 +1436,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2(
             //Changes states stochastically.  There is a probability of acceptance of a more energetic state so
             //the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
             double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
-            if( f_probMov >= ( (double)std::rand() / RAND_MAX ) ) {//draws a value between 0.0 and 1.0
+            if( f_probMov >= ( (double)std::rand() / RAND_MAX ) ) {//draws a value between 0.0 and 1.0 and tests whether is less than or equal to the acceptance probability of "going uphill"
                 L_wCurrent = L_wNew; //replaces the current state with the neighboring random state
                 emit info("  moved to energy level " + QString::number( f_eNew ));
                 //if the energy is the record low, store it, just in case the SA loop ends without converging.
@@ -1618,7 +1627,33 @@ void VariographicDecompositionDialog::doVariographicDecomposition2(
 
 	//Display the derived grid and its difference with respect to the original grid.
 	//Also display the geological factors and their resulting partial grids.
-	displayGrids( grids, titles, shiftByHalves );
+    displayGrids( grids, titles, shiftByHalves );
+}
+
+bool VariographicDecompositionDialog::isSetOfFreeParametersValid( const spectral::array &vectorOfParameters,
+                                                                  const spectral::array &A,
+                                                                  const spectral::array &Adagger,
+                                                                  const spectral::array &B,
+                                                                  const spectral::array &I) const
+{
+    //Compute the vector of weights [a] = Adagger.B + (I-Adagger.A)[w]
+    spectral::array va;
+    {
+        Eigen::MatrixXd eigenAdagger = spectral::to_2d( Adagger );
+        Eigen::MatrixXd eigenB = spectral::to_2d( B );
+        Eigen::MatrixXd eigenI = spectral::to_2d( I );
+        Eigen::MatrixXd eigenA = spectral::to_2d( A );
+        Eigen::MatrixXd eigenvw = spectral::to_2d( vectorOfParameters );
+        Eigen::MatrixXd eigenva = eigenAdagger * eigenB + ( eigenI - eigenAdagger * eigenA ) * eigenvw;
+        va = spectral::to_array( eigenva );
+    }
+
+    int nPar = va.size();
+    for( int i = 0; i < nPar; ++i ) //for each parameter
+      if ( va[i] < 0.0 || va[i] > 1.0 )
+         return false;
+
+    return true;
 }
 
 void VariographicDecompositionDialog::doVariographicDecomposition3()

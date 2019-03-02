@@ -92,6 +92,20 @@ private:
 
     void doVariographicDecomposition2( FundamentalFactorType fundamentalFactorType );
 
+    /** Tests whether the passed set of free parameters w result in a valid
+     * set of fundamental factors weights.
+     * @param vectorOfParameters The column-vector with the free paramateres to test.
+     * @param A The LHS of the linear system originated from the information conservation constraints.
+     * @param Adagger The pseudo-inverse of A.
+     * @param B The RHS of the linear system originated from the information conservation constraints.
+     * @param I The identity matrix compatible with the formula: [a] = Adagger.B + (I-Adagger.A)[w]
+     */
+    bool isSetOfFreeParametersValid( const spectral::array &vectorOfParameters,
+                                     const spectral::array &A,
+                                     const spectral::array &Adagger,
+                                     const spectral::array &B,
+                                     const spectral::array &I ) const;
+
 
 private Q_SLOTS:
 	void doVariographicDecomposition();
