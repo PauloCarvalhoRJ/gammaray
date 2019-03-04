@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>644</width>
-    <height>645</height>
+    <width>636</width>
+    <height>692</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -22,85 +22,6 @@
      <property name="verticalSpacing">
       <number>2</number>
      </property>
-     <item row="25" column="1">
-      <widget class="QSpinBox" name="spinMaxStepsAlphaReduction">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>10000</number>
-       </property>
-       <property name="singleStep">
-        <number>20</number>
-       </property>
-       <property name="value">
-        <number>60</number>
-       </property>
-      </widget>
-     </item>
-     <item row="26" column="1">
-      <widget class="QSpinBox" name="spinConvergenceCriterion">
-       <property name="prefix">
-        <string>1e</string>
-       </property>
-       <property name="minimum">
-        <number>-20</number>
-       </property>
-       <property name="maximum">
-        <number>0</number>
-       </property>
-       <property name="value">
-        <number>-3</number>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="0" colspan="2">
-      <widget class="QLabel" name="label_10">
-       <property name="text">
-        <string>Simulated Annealing control</string>
-       </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
-       </property>
-      </widget>
-     </item>
-     <item row="18" column="1">
-      <widget class="QDoubleSpinBox" name="spinMaxHopFactor">
-       <property name="minimum">
-        <double>0.010000000000000</double>
-       </property>
-       <property name="maximum">
-        <double>100.000000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.100000000000000</double>
-       </property>
-       <property name="value">
-        <double>0.100000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="25" column="0">
-      <widget class="QLabel" name="label_7">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of α reduction steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="12" column="0" colspan="2">
-      <widget class="Line" name="line">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="16" column="0">
-      <widget class="QLabel" name="label_12">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Final temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
      <item row="17" column="0">
       <widget class="QLabel" name="label_13">
        <property name="text">
@@ -108,182 +29,10 @@
        </property>
       </widget>
      </item>
-     <item row="16" column="1">
-      <widget class="QSpinBox" name="spinFinalTemperature">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>1000000</number>
-       </property>
-       <property name="singleStep">
-        <number>10</number>
-       </property>
-       <property name="value">
-        <number>20</number>
-       </property>
-      </widget>
-     </item>
-     <item row="19" column="0">
-      <widget class="QLabel" name="label_15">
+     <item row="16" column="0">
+      <widget class="QLabel" name="label_12">
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Seed for the random number generator:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="19" column="1">
-      <widget class="QSpinBox" name="spinSeed">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>999999999</number>
-       </property>
-       <property name="value">
-        <number>69069</number>
-       </property>
-      </widget>
-     </item>
-     <item row="28" column="0" colspan="2">
-      <widget class="QPushButton" name="btnProcess">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="font">
-        <font>
-         <strikeout>true</strikeout>
-        </font>
-       </property>
-       <property name="text">
-        <string>Process 1 (SVD on data's varmap)</string>
-       </property>
-      </widget>
-     </item>
-     <item row="10" column="1">
-      <widget class="QCheckBox" name="chkEnableOrthogonalityPenalty">
-       <property name="text">
-        <string>orthogonality</string>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="0">
-      <widget class="QLabel" name="label_11">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Initial temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="20" column="0" colspan="2">
-      <widget class="Line" name="line_2">
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="24" column="1">
-      <widget class="QDoubleSpinBox" name="spinInitialAlpha">
-       <property name="minimum">
-        <double>0.010000000000000</double>
-       </property>
-       <property name="singleStep">
-        <double>0.100000000000000</double>
-       </property>
-       <property name="value">
-        <double>1.000000000000000</double>
-       </property>
-      </widget>
-     </item>
-     <item row="15" column="1">
-      <widget class="QSpinBox" name="spinInitialTemperature">
-       <property name="minimum">
-        <number>20</number>
-       </property>
-       <property name="maximum">
-        <number>1000000</number>
-       </property>
-       <property name="singleStep">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>20000</number>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_16">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of parallel execution threads:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="23" column="1">
-      <widget class="QSpinBox" name="spinMaxSteps">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>10000000</number>
-       </property>
-       <property name="singleStep">
-        <number>10</number>
-       </property>
-       <property name="value">
-        <number>30</number>
-       </property>
-      </widget>
-     </item>
-     <item row="4" column="1">
-      <widget class="QSpinBox" name="spinInfoContentToKeepForSVD">
-       <property name="enabled">
-        <bool>false</bool>
-       </property>
-       <property name="font">
-        <font>
-         <strikeout>true</strikeout>
-        </font>
-       </property>
-       <property name="suffix">
-        <string>%</string>
-       </property>
-       <property name="minimum">
-        <number>50</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="singleStep">
-        <number>5</number>
-       </property>
-       <property name="value">
-        <number>95</number>
-       </property>
-      </widget>
-     </item>
-     <item row="26" column="0">
-      <widget class="QLabel" name="label_8">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Convergence criterion:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="1">
-      <widget class="QSpinBox" name="spinNumberOfThreads">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="0">
-      <widget class="QLabel" name="label_18">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Objective function penalties:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_3">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of geological factors:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Final temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
@@ -302,21 +51,54 @@
        </property>
       </widget>
      </item>
-     <item row="23" column="0">
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     <item row="10" column="2">
+      <widget class="QFrame" name="frame_2">
+       <property name="minimumSize">
+        <size>
+         <width>10</width>
+         <height>0</height>
+        </size>
        </property>
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="chkEnableOrthogonalityPenalty">
+          <property name="text">
+           <string>orthogonality</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="chkAllowNegativeWeights">
+          <property name="text">
+           <string>allow neg. w.</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Variable:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="0" column="1">
+     <item row="0" column="2">
       <widget class="QFrame" name="frmGridSelectorPlaceholder">
        <property name="frameShape">
         <enum>QFrame::StyledPanel</enum>
@@ -350,6 +132,124 @@
        </property>
       </widget>
      </item>
+     <item row="25" column="2">
+      <widget class="QSpinBox" name="spinMaxStepsAlphaReduction">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10000</number>
+       </property>
+       <property name="singleStep">
+        <number>20</number>
+       </property>
+       <property name="value">
+        <number>60</number>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="0" colspan="3">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Simulated Annealing control</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="23" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="26" column="2">
+      <widget class="QSpinBox" name="spinConvergenceCriterion">
+       <property name="prefix">
+        <string>1e</string>
+       </property>
+       <property name="minimum">
+        <number>-20</number>
+       </property>
+       <property name="maximum">
+        <number>0</number>
+       </property>
+       <property name="value">
+        <number>-3</number>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Variable:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="25" column="0">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of α reduction steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="2">
+      <widget class="QSpinBox" name="spinNumberOfIsolines">
+       <property name="minimum">
+        <number>5</number>
+       </property>
+       <property name="maximum">
+        <number>200</number>
+       </property>
+       <property name="singleStep">
+        <number>5</number>
+       </property>
+       <property name="value">
+        <number>30</number>
+       </property>
+      </widget>
+     </item>
+     <item row="18" column="2">
+      <widget class="QDoubleSpinBox" name="spinMaxHopFactor">
+       <property name="minimum">
+        <double>0.010000000000000</double>
+       </property>
+       <property name="maximum">
+        <double>100.000000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+       <property name="value">
+        <double>0.100000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="16" column="2">
+      <widget class="QSpinBox" name="spinFinalTemperature">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>1000000</number>
+       </property>
+       <property name="singleStep">
+        <number>10</number>
+       </property>
+       <property name="value">
+        <number>20</number>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="0" colspan="3">
+      <widget class="Line" name="line">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="text">
@@ -357,7 +257,7 @@
        </property>
       </widget>
      </item>
-     <item row="29" column="0" colspan="2">
+     <item row="29" column="0" colspan="3">
       <widget class="QPushButton" name="btnProcessSVDonOriginalData">
        <property name="enabled">
         <bool>false</bool>
@@ -372,7 +272,21 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="1">
+     <item row="2" column="2">
+      <widget class="QSpinBox" name="spinNumberOfGeologicalFactors">
+       <property name="minimum">
+        <number>2</number>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="label_21">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Ellipse fitting: skip the outermost n isolines (affects P2, P3, P4):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
       <widget class="QFrame" name="frmAttributeSelectorPlaceholder">
        <property name="frameShape">
         <enum>QFrame::StyledPanel</enum>
@@ -399,14 +313,7 @@
        </layout>
       </widget>
      </item>
-     <item row="2" column="1">
-      <widget class="QSpinBox" name="spinNumberOfGeologicalFactors">
-       <property name="minimum">
-        <number>2</number>
-       </property>
-      </widget>
-     </item>
-     <item row="22" column="1">
+     <item row="22" column="2">
       <widget class="QSpinBox" name="spinLogEpsilon">
        <property name="prefix">
         <string>1e</string>
@@ -422,13 +329,28 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
+     <item row="6" column="2">
       <widget class="QSpinBox" name="spinSkipOuterNIsolinesEllipseFitting">
        <property name="maximum">
         <number>50</number>
        </property>
        <property name="value">
         <number>5</number>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="label_20">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <strikeout>false</strikeout>
+        </font>
+       </property>
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Divide spectrum into number of tracks (affects P3):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
@@ -439,29 +361,20 @@
        </property>
       </widget>
      </item>
-     <item row="30" column="0" colspan="2">
-      <widget class="QPushButton" name="btnProcess3">
-       <property name="enabled">
-        <bool>true</bool>
+     <item row="8" column="2">
+      <widget class="QSpinBox" name="spinIsoMinVertexes">
+       <property name="minimum">
+        <number>3</number>
        </property>
-       <property name="font">
-        <font>
-         <strikeout>false</strikeout>
-        </font>
+       <property name="maximum">
+        <number>100</number>
        </property>
-       <property name="text">
-        <string>Process 3 (P2 but w/ spectrum partitioning on data)</string>
+       <property name="value">
+        <number>15</number>
        </property>
       </widget>
      </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="label_21">
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Ellipse fitting: skip the outermost n isolines (affects P2, P3, P4):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="9" column="1">
+     <item row="9" column="2">
       <widget class="QFrame" name="frame">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -533,34 +446,6 @@
        </layout>
       </widget>
      </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="label_20">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="font">
-        <font>
-         <strikeout>false</strikeout>
-        </font>
-       </property>
-       <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Divide spectrum into number of tracks (affects P3):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QSpinBox" name="spinIsoMinVertexes">
-       <property name="minimum">
-        <number>3</number>
-       </property>
-       <property name="maximum">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>15</number>
-       </property>
-      </widget>
-     </item>
      <item row="7" column="0">
       <widget class="QLabel" name="label_22">
        <property name="text">
@@ -575,19 +460,67 @@
        </property>
       </widget>
      </item>
-     <item row="7" column="1">
-      <widget class="QSpinBox" name="spinNumberOfIsolines">
+     <item row="17" column="2">
+      <widget class="QSpinBox" name="spinMaxStepsSA">
        <property name="minimum">
         <number>5</number>
        </property>
        <property name="maximum">
-        <number>200</number>
+        <number>1000000</number>
+       </property>
+       <property name="singleStep">
+        <number>100</number>
+       </property>
+       <property name="value">
+        <number>500</number>
+       </property>
+      </widget>
+     </item>
+     <item row="21" column="0" colspan="3">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Gradient Descent control</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignCenter</set>
+       </property>
+      </widget>
+     </item>
+     <item row="27" column="2">
+      <widget class="QLineEdit" name="txtThresholdGaborFactors">
+       <property name="text">
+        <string>500</string>
+       </property>
+      </widget>
+     </item>
+     <item row="27" column="0">
+      <widget class="QLineEdit" name="txtAzimuthPartitionFactorForGabor">
+       <property name="text">
+        <string>1.7</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
+      <widget class="QSpinBox" name="spinNumberOfSpectrumTracks">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <strikeout>false</strikeout>
+        </font>
+       </property>
+       <property name="minimum">
+        <number>5</number>
+       </property>
+       <property name="maximum">
+        <number>100</number>
        </property>
        <property name="singleStep">
         <number>5</number>
        </property>
        <property name="value">
-        <number>30</number>
+        <number>10</number>
        </property>
       </widget>
      </item>
@@ -765,18 +698,143 @@
        </item>
       </layout>
      </item>
-     <item row="5" column="1">
-      <widget class="QSpinBox" name="spinNumberOfSpectrumTracks">
+     <item row="22" column="0">
+      <widget class="QLabel" name="label_4">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="19" column="2">
+      <widget class="QSpinBox" name="spinSeed">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>999999999</number>
+       </property>
+       <property name="value">
+        <number>69069</number>
+       </property>
+      </widget>
+     </item>
+     <item row="28" column="0" colspan="3">
+      <widget class="QPushButton" name="btnProcess">
        <property name="enabled">
-        <bool>true</bool>
+        <bool>false</bool>
        </property>
        <property name="font">
         <font>
-         <strikeout>false</strikeout>
+         <strikeout>true</strikeout>
         </font>
        </property>
+       <property name="text">
+        <string>Process 1 (SVD on data's varmap)</string>
+       </property>
+      </widget>
+     </item>
+     <item row="19" column="0">
+      <widget class="QLabel" name="label_15">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Seed for the random number generator:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="24" column="2">
+      <widget class="QDoubleSpinBox" name="spinInitialAlpha">
        <property name="minimum">
-        <number>5</number>
+        <double>0.010000000000000</double>
+       </property>
+       <property name="singleStep">
+        <double>0.100000000000000</double>
+       </property>
+       <property name="value">
+        <double>1.000000000000000</double>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="2">
+      <widget class="QSpinBox" name="spinInitialTemperature">
+       <property name="minimum">
+        <number>20</number>
+       </property>
+       <property name="maximum">
+        <number>1000000</number>
+       </property>
+       <property name="singleStep">
+        <number>100</number>
+       </property>
+       <property name="value">
+        <number>20000</number>
+       </property>
+      </widget>
+     </item>
+     <item row="20" column="0" colspan="3">
+      <widget class="Line" name="line_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QSpinBox" name="spinNumberOfThreads">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of parallel execution threads:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="0">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Initial temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="26" column="0">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Convergence criterion:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="23" column="2">
+      <widget class="QSpinBox" name="spinMaxSteps">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10000000</number>
+       </property>
+       <property name="singleStep">
+        <number>10</number>
+       </property>
+       <property name="value">
+        <number>30</number>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="2">
+      <widget class="QSpinBox" name="spinInfoContentToKeepForSVD">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="font">
+        <font>
+         <strikeout>true</strikeout>
+        </font>
+       </property>
+       <property name="suffix">
+        <string>%</string>
+       </property>
+       <property name="minimum">
+        <number>50</number>
        </property>
        <property name="maximum">
         <number>100</number>
@@ -785,7 +843,29 @@
         <number>5</number>
        </property>
        <property name="value">
-        <number>10</number>
+        <number>95</number>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of geological factors:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+       </property>
+      </widget>
+     </item>
+     <item row="31" column="2">
+      <widget class="QPushButton" name="btnVariographicParametersAnalysisWithGabor">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+       <property name="font">
+        <font>
+         <strikeout>true</strikeout>
+        </font>
+       </property>
+       <property name="text">
+        <string>variographic par. analysis (Gabor)</string>
        </property>
       </widget>
      </item>
@@ -796,50 +876,47 @@
        </property>
       </widget>
      </item>
-     <item row="22" column="0">
-      <widget class="QLabel" name="label_4">
+     <item row="30" column="0" colspan="2">
+      <widget class="QPushButton" name="btnProcess3">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="font">
+        <font>
+         <strikeout>false</strikeout>
+        </font>
+       </property>
        <property name="text">
-        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        <string>Process 3 (P2 but w/ spectrum partitioning on data)</string>
        </property>
       </widget>
      </item>
-     <item row="17" column="1">
-      <widget class="QSpinBox" name="spinMaxStepsSA">
-       <property name="minimum">
-        <number>5</number>
-       </property>
-       <property name="maximum">
-        <number>1000000</number>
-       </property>
-       <property name="singleStep">
-        <number>100</number>
-       </property>
-       <property name="value">
-        <number>500</number>
+     <item row="9" column="0">
+      <widget class="QLabel" name="label_18">
+       <property name="text">
+        <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Objective function penalties:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
        </property>
       </widget>
      </item>
-     <item row="21" column="0" colspan="2">
-      <widget class="QLabel" name="label_9">
-       <property name="text">
-        <string>Gradient Descent control</string>
+     <item row="30" column="2">
+      <widget class="QPushButton" name="btnVariographicParametersAnalysisWithSpectumPart">
+       <property name="enabled">
+        <bool>false</bool>
        </property>
-       <property name="alignment">
-        <set>Qt::AlignCenter</set>
+       <property name="font">
+        <font>
+         <strikeout>true</strikeout>
+        </font>
        </property>
-      </widget>
-     </item>
-     <item row="27" column="0">
-      <widget class="QLineEdit" name="txtFatorParticaoAzimute">
        <property name="text">
-        <string>1.7</string>
+        <string>variographic par. analysis (sp. part.)</string>
        </property>
       </widget>
      </item>
-     <item row="27" column="1">
-      <widget class="QLineEdit" name="txtThresholdFatoresGabor">
+     <item row="32" column="0" colspan="3">
+      <widget class="QPushButton" name="pushButton">
        <property name="text">
-        <string>500</string>
+        <string>Process 5 (directly fitting of variographic surface)</string>
        </property>
       </widget>
      </item>
@@ -866,8 +943,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>284</x>
-     <y>635</y>
+     <x>293</x>
+     <y>682</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -882,8 +959,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>352</x>
-     <y>635</y>
+     <x>361</x>
+     <y>682</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -898,8 +975,8 @@
    <slot>doVariographicDecomposition()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>145</x>
-     <y>521</y>
+     <x>155</x>
+     <y>552</y>
     </hint>
     <hint type="destinationlabel">
      <x>204</x>
@@ -946,12 +1023,60 @@
    <slot>doVariographicDecomposition4()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>35</x>
-     <y>590</y>
+     <x>45</x>
+     <y>627</y>
     </hint>
     <hint type="destinationlabel">
      <x>6</x>
      <y>597</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnVariographicParametersAnalysisWithSpectumPart</sender>
+   <signal>clicked()</signal>
+   <receiver>VariographicDecompositionDialog</receiver>
+   <slot>doVariographicParametersAnalysisWithSpectrumPart()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>616</x>
+     <y>593</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>635</x>
+     <y>592</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnVariographicParametersAnalysisWithGabor</sender>
+   <signal>clicked()</signal>
+   <receiver>VariographicDecompositionDialog</receiver>
+   <slot>doVariographicParametersAnalysisWithGabor()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>623</x>
+     <y>615</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>635</x>
+     <y>622</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>VariographicDecompositionDialog</receiver>
+   <slot>doVariographicDecomposition5()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>474</x>
+     <y>643</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>525</x>
+     <y>656</y>
     </hint>
    </hints>
   </connection>
@@ -961,5 +1086,8 @@
   <slot>doVariographicDecomposition2()</slot>
   <slot>doVariographicDecomposition3()</slot>
   <slot>doVariographicDecomposition4()</slot>
+  <slot>doVariographicParametersAnalysisWithGabor()</slot>
+  <slot>doVariographicParametersAnalysisWithSpectrumPart()</slot>
+  <slot>doVariographicDecomposition5()</slot>
  </slots>
 </ui>

@@ -1182,6 +1182,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition2(
 	int nSkipOutermost = ui->spinSkipOuterNIsolinesEllipseFitting->value();
 	int nIsosurfs = ui->spinNumberOfIsolines->value();
     int nMinIsoVertexes = ui->spinIsoMinVertexes->value();
+    bool allowNegativeWeights = ui->chkAllowNegativeWeights->isChecked();
     objectiveFunctionFactors off;
     {
         off.f1 = ui->spinOJFactor_1->value();
@@ -1419,7 +1420,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition2(
                       //if the resulting set of fundamental factor weights is valid.
                       spectral::array L_wTest(L_wNew);
                       L_wTest[i] = f_tmp;
-                      if( isSetOfFreeParametersValid( L_wTest, A, Adagger, B, I ) )
+                      if( allowNegativeWeights ||
+                              isSetOfFreeParametersValid( L_wTest, A, Adagger, B, I ) )
                           //approve the new parameter draw
                          break;
                   }
@@ -1664,6 +1666,142 @@ void VariographicDecompositionDialog::doVariographicDecomposition3()
 void VariographicDecompositionDialog::doVariographicDecomposition4()
 {
     doVariographicDecomposition2( FundamentalFactorType::GABOR_ANALYSIS_FACTOR );
+}
+
+void VariographicDecompositionDialog::doVariographicParametersAnalysis(FundamentalFactorType fundamentalFactorType)
+{
+    ///Visualizing the results on the fly is optional/////////////
+    IJQuick3DViewer q3Dv;
+    q3Dv.show();
+    ///////////////////////////////////////////////////////////////
+
+    // Get the data objects.
+    IJAbstractCartesianGrid* grid = m_gridSelector->getSelectedGrid();
+    IJAbstractVariable* variable = m_variableSelector->getSelectedVariable();
+
+    // Get the grid's dimensions.
+    unsigned int nI = grid->getNI();
+    unsigned int nJ = grid->getNJ();
+    unsigned int nK = grid->getNK();
+
+    // Fetch data from the data source.
+    grid->dataWillBeRequested();
+
+    //get user settings
+    int nTracks = ui->spinNumberOfSpectrumTracks->value();
+    GaborAnalysisParameters gaborParameters;
+    gaborParameters.initialFrequency = 0.003;
+    gaborParameters.finalFrequency = 0.09;
+    gaborParameters.frequencyStep = 0.01; //orig = 0.0001
+    gaborParameters.azimuthStep = 15.0;
+    gaborParameters.kernelSize = 50;
+    gaborParameters.kernelMeanMajorAxis = 127.5; //max. resolution size is 255, this 127.5 is in the middle
+    gaborParameters.kernelMeanMinorAxis = 127.5;
+    gaborParameters.kernelSigmaMajorAxis = 50.0;
+    gaborParameters.kernelSigmaMinorAxis = 50.0;
+
+    // Get the fundamental factors of the input variable.
+    std::vector< spectral::array > fundamentalFactors;
+    int n = 0; //n is the number of fundamental factors
+    {
+        //Atom learning method: frequency spectrum partitioning of input variable.
+        if ( fundamentalFactorType == FundamentalFactorType::FFT_SPECTRUM_PARTITION ) {
+            QProgressDialog progressDialog;
+            progressDialog.setRange(0,0);
+            progressDialog.setLabelText("Computing Fourier partitioning of input data...");
+            progressDialog.show();
+            QCoreApplication::processEvents();
+            spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+            doFourierPartitioningOnData( gridInputData, fundamentalFactors, nTracks );
+            delete gridInputData;
+            n = fundamentalFactors.size();
+        //Atom learning method: Gabor analysis of input variable.
+        } else {
+            QProgressDialog progressDialog;
+            progressDialog.setRange(0,0);
+            progressDialog.setLabelText("Computing Gabor analysis of input data...");
+            progressDialog.show();
+            QCoreApplication::processEvents();
+            spectral::array* gridInputData = grid->createSpectralArray( variable->getIndexInParentGrid() );
+            doGaborAnalysisOnData( gridInputData, fundamentalFactors, gaborParameters );
+            delete gridInputData;
+            n = fundamentalFactors.size();
+        }
+    }
+
+    //make an array full of zeroes (useful for certain steps in the workflow)
+    spectral::array zeros( nI, nJ, nK, 0.0 );
+
+    //compute the FFT for each fundamental factor
+    // TODO: this loop is parallelizable
+    for( int iFF = 0; iFF < n; ++iFF ){
+        spectral::array& fundamentalFactor = fundamentalFactors[iFF];
+
+        //Compute FFT of the fundamentalFactor
+        spectral::array ffFFTrealPart;
+        spectral::array ffFFTimagPart;
+        {
+            spectral::complex_array ffFFT;
+            spectral::foward( ffFFT, fundamentalFactor );
+            ffFFTrealPart = spectral::real( ffFFT );
+            ffFFTimagPart = spectral::imag( ffFFT );
+        }
+
+        //do a^2 + b^2
+        // where a = real part of FFT; b = imaginary part of FFT.
+        spectral::array ffMagSquared = spectral::hadamard( ffFFTrealPart, ffFFTrealPart ) +
+                                       spectral::hadamard( ffFFTimagPart, ffFFTimagPart );
+
+        //make a complex array from a^2 + b^2 as magnitude and zeros as phase (polar form)
+        //this corresponds to the FFT of a variographic map
+        spectral::complex_array ffFFTVarMapPolarForm = spectral::to_complex_array( ffMagSquared, zeros );
+        ffMagSquared = spectral::array(); //keep memory usage at bay
+
+        //convert the previous complex array to the rectangular form
+        spectral::complex_array ffFFTVarMapRectangularForm = spectral::to_rectangular_form( ffFFTVarMapPolarForm );
+        ffFFTVarMapPolarForm = spectral::complex_array(); //keep memory usage at bay
+
+        //get the varmap of the fundamental factor by reverse FFT
+        spectral::array ffVarMap( nI, nJ, nK, 0.0 );
+        spectral::backward( ffVarMap, ffFFTVarMapRectangularForm );
+        ffFFTVarMapRectangularForm = spectral::complex_array(); //keep memory usage at bay
+
+        //put h=0 of the varmap at the center of the grid
+        {
+            spectral::array ffVarMapTMP = spectral::shiftByHalf( ffVarMap );
+            ffVarMap = ffVarMapTMP;
+        }
+
+        ///Visualizing the results on the fly is optional/////////////
+        {
+            q3Dv.clearScene();
+            q3Dv.display( ffVarMap, ffVarMap.min(), ffVarMap.max() );
+            QApplication::processEvents();
+            QMessageBox::information(this, "aaaa", "aaaa");
+        }
+        ////////////////////////////////////////////////////////////
+
+        //NOT DONE: apply marching squares to get varmap isocontours
+
+        //NOT DONE: discard open or not centered isocontours
+
+        //NOT DONE: fit ellipses to isocontours
+
+        //NOT DONE: get ellipse geometric parameters (axes and azimuth)
+
+    }
+
+    //NOT DONE: plot geometric parameters in feature space (e.g. cross plot)
+}
+
+void VariographicDecompositionDialog::doVariographicParametersAnalysisWithGabor()
+{
+    doVariographicParametersAnalysis( FundamentalFactorType::GABOR_ANALYSIS_FACTOR );
+}
+
+void VariographicDecompositionDialog::doVariographicParametersAnalysisWithSpectrumPart()
+{
+    doVariographicParametersAnalysis( FundamentalFactorType::FFT_SPECTRUM_PARTITION );
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
@@ -2009,7 +2147,7 @@ void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::arra
 
         double azDiv = 1;
         if( fCount > 0 )
-            azDiv = ui->txtFatorParticaoAzimute->text().toDouble() * (fCount+1); //lowest frequency = 1 azimuth, then 4, then 6, then 8, then 10...
+            azDiv = ui->txtAzimuthPartitionFactorForGabor->text().toDouble() * (fCount+1); //lowest frequency = 1 azimuth, then 4, then 6, then 8, then 10...
         double azStep = 180.0 / azDiv;
 
         //for each azimuth
@@ -2090,7 +2228,7 @@ void VariographicDecompositionDialog::doGaborAnalysisOnData(const spectral::arra
 
             //discard factors averages values less than 1% of that of the original grid.
             double absAvg = std::abs( fundamentalFactor.avg() );
-            if( absAvg >= absAvgInput/ui->txtThresholdFatoresGabor->text().toDouble() )
+            if( absAvg >= absAvgInput/ui->txtThresholdGaborFactors->text().toDouble() )
                 frequencyFactors.push_back( fundamentalFactor );
 
         }//for each azimuth
