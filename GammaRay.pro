@@ -236,7 +236,8 @@ SOURCES += main.cpp\
     imagejockey/gabor/gaborutils.cpp \
     imagejockey/gabor/gaborfrequencyazimuthselections.cpp \
     imagejockey/wavelet/wavelettransformdialog.cpp \
-    imagejockey/wavelet/waveletutils.cpp
+    imagejockey/wavelet/waveletutils.cpp \
+    imagejockey/ijvariographicmodel2d.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -451,7 +452,8 @@ HEADERS  += mainwindow.h \
     imagejockey/gabor/gaborutils.h \
     imagejockey/gabor/gaborfrequencyazimuthselections.h \
     imagejockey/wavelet/wavelettransformdialog.h \
-    imagejockey/wavelet/waveletutils.h
+    imagejockey/wavelet/waveletutils.h \
+    imagejockey/ijvariographicmodel2d.h
 
 
 FORMS    += mainwindow.ui \
