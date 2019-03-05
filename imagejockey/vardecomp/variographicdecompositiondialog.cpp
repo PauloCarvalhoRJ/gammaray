@@ -11,6 +11,7 @@
 #include "../svd/svdanalysisdialog.h"
 #include "../widgets/ijquick3dviewer.h"
 #include "imagejockey/gabor/gaborutils.h"
+#include "imagejockey/ijvariographicmodel2d.h"
 
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -22,6 +23,7 @@
 #include <vtkPolyData.h>
 #include <vtkDelaunay2D.h>
 #include <vtkCleanPolyData.h>
+#include <cassert>
 
 
 std::mutex mutexObjectiveFunction;
@@ -177,7 +179,7 @@ double F(const spectral::array &originalGrid,
 		   * orthogonalityPenalty;
 }
 
-/** The objective function for the optimization process (SVD on original data).
+/** The objective function for the optimization process (FFT on original data).
  * See complete theory in the program manual for in-depth explanation of the method's parameters below.
  * @param originalGrid  The grid with original data for comparison.
  * @param vectorOfParameters The column-vector with the free paramateres.
@@ -444,6 +446,85 @@ double F2(const spectral::array &originalGrid,
             std::pow( ratio_mean_variance,       off.f7 ) ;
 }
 
+/** The objective function for the optimization process (direct variographic fitting).
+ * See complete theory in the program manual for in-depth explanation of the method's parameters below.
+ * @param varmapOfInput The grid with the varmap of inpit data for comparison.
+ * @param vectorOfParameters The column-vector with the free paramateres.
+ * @param m The desired number of geological factors.
+ * @return A distance/difference measure.
+ */
+double F3( IJAbstractCartesianGrid& gridWithGeometry,
+           const spectral::array &varmapOfInput,
+           const spectral::array &vectorOfParameters,
+           const int m ){
+
+//    ///Visualizing the results on the fly is optional/////////////
+//    static IJQuick3DViewer* q3Dv = new IJQuick3DViewer();
+//    q3Dv->show();
+//    ///////////////////////////////////////////////////////////////
+
+    //get grid parameters
+    int nI = gridWithGeometry.getNI();
+    int nJ = gridWithGeometry.getNJ();
+    int nK = gridWithGeometry.getNK();
+
+    //create a grid compatible with the input varmap
+    spectral::array variographicSurface( nI, nJ, nK, 0.0 );
+
+    //create a grid with weights.  The closer to the center
+    //the more important a cell is.  We can use a variographic structure
+    //to set the weights to reflect that.
+    //TODO: performance.  This could be done just once.
+    spectral::array weights( nI, nJ, nK, 0.0 );
+    {
+        // make the weight decrease to zero at about 1/3rd of the grid radius.
+        double weightNullRadius = gridWithGeometry.getDiagonalLength() / 2.0 / 0.5;
+        IJVariographicStructure2D varStru( weightNullRadius, 1.0, 0.0, 1.0 );
+        varStru.addContributionToModelGrid( gridWithGeometry,
+                                            weights,
+                                            IJVariogramPermissiveModel::SPHERIC,
+                                            true );
+    }
+
+    //for each geological factor
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ){
+
+        //create a variographic structure
+        IJVariographicStructure2D varEllip(0.0, 0.0, 0.0, 0.0);
+
+        //for each variographic parameter
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i ){
+            //set it to the variographic ellipse
+            varEllip.setParameter( iPar, vectorOfParameters[i] );
+        }
+
+        //make the variographic surface
+        varEllip.addContributionToModelGrid( gridWithGeometry,
+                                             variographicSurface,
+                                             IJVariogramPermissiveModel::SPHERIC,
+                                             true );
+    }
+
+    //compute the objective function metric
+    double sum = 0.0;
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ){
+                sum += weights(i,j,k) * std::abs( varmapOfInput(i,j,k) - variographicSurface(i,j,k) );
+            }
+
+
+//    ///Visualizing the results on the fly is optional/////////////
+//    {
+//        q3Dv->clearScene();
+//        q3Dv->display( variographicSurface, variographicSurface.min(), variographicSurface.max() );
+//        QApplication::processEvents();
+//    }
+//    ////////////////////////////////////////////////////////////
+
+    return sum;
+}
+
 /**
  * The code for multithreaded gradient vector calculation for objective function F().
  */
@@ -523,6 +604,35 @@ void taskOnePartialDerivative2(
 	}
 }
 
+/**
+ * The code for multithreaded gradient vector calculation for objective function F3().
+ */
+void taskOnePartialDerivative3(
+                               const spectral::array& vw,
+                               const std::vector< int >& parameterIndexBin,
+                               const double epsilon,
+                               IJAbstractCartesianGrid* gridWithGeometry,
+                               const spectral::array& varMap,
+                               const int m,
+                               spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
+                               ){
+    std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
+    for(; it != parameterIndexBin.cend(); ++it ){
+        int iParameter = *it;
+        //Make a set of parameters slightly shifted to the right (more positive) along one parameter.
+        spectral::array vwFromRight( vw );
+        vwFromRight(iParameter) = vwFromRight(iParameter) + epsilon;
+        //Make a set of parameters slightly shifted to the left (more negative) along one parameter.
+        spectral::array vwFromLeft( vw );
+        vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
+        //Compute (numerically) the partial derivative with respect to one parameter.
+        (*gradient)(iParameter) = (F3( *gridWithGeometry, varMap, vwFromRight, m )
+                                     -
+                                   F3( *gridWithGeometry, varMap, vwFromLeft , m ))
+                                     /
+                                   ( 2 * epsilon );
+    }
+}
 
 
 VariographicDecompositionDialog::VariographicDecompositionDialog(const std::vector<IJAbstractCartesianGrid *> &&grids, QWidget *parent) :
@@ -1802,6 +1912,334 @@ void VariographicDecompositionDialog::doVariographicParametersAnalysisWithGabor(
 void VariographicDecompositionDialog::doVariographicParametersAnalysisWithSpectrumPart()
 {
     doVariographicParametersAnalysis( FundamentalFactorType::FFT_SPECTRUM_PARTITION );
+}
+
+void VariographicDecompositionDialog::doVariographicDecomposition5()
+{
+    ///Visualizing the results on the fly is optional/////////////
+    IJQuick3DViewer q3Dv;
+    q3Dv.show();
+    ///////////////////////////////////////////////////////////////
+
+    //get user configuration
+    int m = ui->spinNumberOfGeologicalFactors->value();
+    int maxNumberOfOptimizationSteps = ui->spinMaxSteps->value();
+    // The user-given epsilon (useful for numerical calculus).
+    double epsilon = std::pow(10, ui->spinLogEpsilon->value() );
+    double initialAlpha = ui->spinInitialAlpha->value();
+    double maxNumberOfAlphaReductionSteps = ui->spinMaxStepsAlphaReduction->value();
+    double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
+
+    // Get the data objects.
+    IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
+    IJAbstractVariable* variable = m_variableSelector->getSelectedVariable();
+
+    // Get the grid's dimensions.
+    unsigned int nI = inputGrid->getNI();
+    unsigned int nJ = inputGrid->getNJ();
+    unsigned int nK = inputGrid->getNK();
+
+    // Fetch data from the data source.
+    inputGrid->dataWillBeRequested();
+
+    //========================= GET VARMAP OF THE INPUT DATA =====================================
+
+    //make an array full of zeroes (useful for certain steps in the workflow)
+    spectral::array zeros( nI, nJ, nK, 0.0 );
+
+    // Get the input data as a spectral::array object
+    spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
+
+    //Compute FFT of input
+    spectral::array inputFFTrealPart;
+    spectral::array inputFFTimagPart;
+    {
+        spectral::complex_array inputFFT;
+        spectral::foward( inputFFT, *inputData );
+        inputFFTrealPart = spectral::real( inputFFT );
+        inputFFTimagPart = spectral::imag( inputFFT );
+    }
+
+    //do a^2 + b^2
+    // where a = real part of FFT; b = imaginary part of FFT.
+    spectral::array inputMagSquared = spectral::hadamard( inputFFTrealPart, inputFFTrealPart ) +
+                                      spectral::hadamard( inputFFTimagPart, inputFFTimagPart );
+
+    //make a complex array from a^2 + b^2 as magnitude and zeros as phase (polar form)
+    //this corresponds to the FFT of a variographic map
+    spectral::complex_array inputVarmapFFTPolarForm = spectral::to_complex_array( inputMagSquared, zeros );
+    inputMagSquared = spectral::array(); //garbage collection
+
+    //convert the previous complex array to the rectangular form
+    spectral::complex_array inputVarmapFFTRectangularForm = spectral::to_rectangular_form( inputVarmapFFTPolarForm );
+    inputVarmapFFTPolarForm = spectral::complex_array(); //garbage collection
+
+    //get the varmap of the input data by reverse FFT
+    spectral::array inputVarmap( nI, nJ, nK, 0.0 );
+    spectral::backward( inputVarmap, inputVarmapFFTRectangularForm );
+    inputVarmapFFTRectangularForm = spectral::complex_array(); //garbage collection
+
+    //fftw requires that the values of r-FFT be divided by the number of cells
+    inputVarmap = inputVarmap / (double)( nI * nJ * nK );
+
+    //put h=0 of the varmap at the center of the grid
+    {
+        spectral::array ffVarMapTMP = spectral::shiftByHalf( inputVarmap );
+        inputVarmap = ffVarMapTMP;
+    }
+
+    //================================== PREPARE OPTIMIZATION STEPS ==========================
+
+    //define the domain
+    double minAxis         = 0.0  ; double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
+    double minRatio        = 0.001; double maxRatio        = 1.0;
+    double minAzimuth      = 0.0  ; double maxAzimuth      = ImageJockeyUtils::PI;
+    double minContribution = 0.0  ; double maxContribution = inputVarmap.max();
+
+    //create one variographic ellipse for each geological factor wanted by the user
+    //the parameters are initialized near in the center of the domain
+    std::vector< IJVariographicStructure2D > variographicEllipses;
+    for( int i = 0; i < m; ++i )
+        variographicEllipses.push_back( IJVariographicStructure2D ( ( maxAxis         + minAxis         ) / 2.0,
+                                                                    ( maxRatio        + minRatio        ) / 2.0,
+                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
+                                                                    ( maxContribution - minContribution ) / 4.0 ) );
+
+    //Initialize the vector of linear system parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
+    spectral::array vw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            vw[i] = variographicEllipses[iGeoFactor].getParameter( iPar );
+
+    //---------------------------------------------------------------------------------------------------------------
+    //-------------------------SIMULATED ANNEALING TO INITIALIZE THE PARAMETERS [w] NEAR A GLOBAL MINIMUM------------
+    //---------------------------------------------------------------------------------------------------------------
+    {
+        //...................................Annealing Parameters.................................
+        //Intial temperature.
+        double f_Tinitial = ui->spinInitialTemperature->value();
+        //Final temperature.
+        double f_Tfinal = ui->spinFinalTemperature->value();
+        //Max number of SA steps.
+        int i_kmax = ui->spinMaxStepsSA->value();
+        //Minimum value allowed for the parameters w (see min* variables further up). DOMAIN CONSTRAINT
+        spectral::array L_wMin( vw.size(), 0.0d );
+        for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+            for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+                switch( iPar ){
+                case 0: L_wMin[i] = minAxis;         break;
+                case 1: L_wMin[i] = minRatio;        break;
+                case 2: L_wMin[i] = minAzimuth;      break;
+                case 3: L_wMin[i] = minContribution; break;
+                }
+        //Maximum value allowed for the parameters w (see max* variables further up). DOMAIN CONSTRAINT
+        spectral::array L_wMax( vw.size(), 1.0d );
+        for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+            for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+                switch( iPar ){
+                case 0: L_wMax[i] = maxAxis;         break;
+                case 1: L_wMax[i] = maxRatio;        break;
+                case 2: L_wMax[i] = maxAzimuth;      break;
+                case 3: L_wMax[i] = maxContribution; break;
+                }
+        /*Factor used to control the size of the random state “hop”.  For example, if the maximum “hop” must be
+         10% of domain size, set 0.1.  Small values (e.g. 0.001) result in slow, but more accurate convergence.
+         Large values (e.g. 100.0) covers more space faster, but falls outside the domain are more frequent,
+         resulting in more re-searches due to more invalid parameter value penalties. */
+        double f_factorSearch = ui->spinMaxHopFactor->value();
+        //Intialize the random number generator with the same seed
+        std::srand ((unsigned)ui->spinSeed->value());
+        //.................................End of Annealing Parameters.............................
+        //Returns the current “temperature” of the system.  It yields a log curve that decays as the step number increase.
+        // The initial temperature plays an important role: curve starting with 5.000 is steeper than another that starts with 1.000.
+        //  This means the the lower the temperature, the more linear the temperature decreases.
+        // i_stepNumber: the current step number of the annealing process ( 0 = first ).
+        auto temperature = [=](int i_stepNumber) { return f_Tinitial * std::exp( -i_stepNumber / (double)1000 * (1.5 * std::log10( f_Tinitial ) ) ); };
+        /*Returns the probability of acceptance of the energy state for the next iteration.
+          This allows acceptance of higher values to break free from local minima.
+          f_eCurrent: current energy of the system.
+          f_eNew: energy level of the next step.
+          f_T: current “temperature” of the system.*/
+        auto probAcceptance = [=]( double f_eCurrent, double f_eNewLocal, double f_T ) {
+           //If the new state is more energetic, calculates a probability of acceptance
+           //which is as high as the current “temperature” of the process.  The “temperature”
+           //diminishes with iterations.
+           if ( f_eNewLocal > f_eCurrent )
+              return ( f_T - f_Tfinal ) / ( f_Tinitial - f_Tfinal );
+           //If the new state is less energetic, the probability of acceptance is 100% (natural search for minima).
+           else
+              return 1.0;
+        };
+        //Get the number of parameters.
+        int i_nPar = vw.size();
+        //Make a copy of the initial state (parameter set.
+        spectral::array L_wCurrent( vw );
+        //The parameters variations (maxes - mins)
+        spectral::array L_wDelta = L_wMax - L_wMin;
+        //...................Main annealing loop...................
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Simulated Annealing in progress...");
+        QCoreApplication::processEvents();
+        double f_eNew = std::numeric_limits<double>::max();
+        double f_lowestEnergyFound = std::numeric_limits<double>::max();
+        spectral::array L_wOfLowestEnergyFound;
+        int k = 0;
+        for( ; k < i_kmax; ++k ){
+            emit info( "Commencing SA step #" + QString::number( k ) );
+            //Get current temperature.
+            double f_T = temperature( k );
+            //Quit if temperature is lower than the minimum annealing temperature.
+            if( f_T < f_Tfinal )
+                /*break*/;
+            //Randomly searches for a neighboring state with respect to current state.
+            spectral::array L_wNew(L_wCurrent);
+            for( int i = 0; i < i_nPar; ++i ){ //for each parameter
+               //Ensures that the values randomly obtained are inside the domain.
+               double f_tmp = 0.0;
+               while( true ){
+                  double LO = L_wCurrent[i] - (f_factorSearch * L_wDelta[i]);
+                  double HI = L_wCurrent[i] + (f_factorSearch * L_wDelta[i]);
+                  f_tmp = LO + std::rand() / (RAND_MAX/(HI-LO)) ;
+                  if ( f_tmp >= L_wMin[i] && f_tmp <= L_wMax[i] )
+                     break;
+               }
+               //Updates the parameter value.
+               L_wNew[i] = f_tmp;
+            }
+            //Computes the “energy” of the current state (set of parameters).
+            //The “energy” in this case is how different the image as given the parameters is with respect
+            //the data grid, considered the reference image.
+            double f_eCurrent = F3( *inputGrid, inputVarmap, L_wCurrent, m );
+            //Computes the “energy” of the neighboring state.
+            f_eNew = F3( *inputGrid, inputVarmap, L_wNew, m );
+            //Changes states stochastically.  There is a probability of acceptance of a more energetic state so
+            //the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
+            double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
+            if( f_probMov >= ( (double)std::rand() / RAND_MAX ) ) {//draws a value between 0.0 and 1.0
+                L_wCurrent = L_wNew; //replaces the current state with the neighboring random state
+                emit info("  moved to energy level " + QString::number( f_eNew ));
+                //if the energy is the record low, store it, just in case the SA loop ends without converging.
+                if( f_eNew < f_lowestEnergyFound ){
+                    f_lowestEnergyFound = f_eNew;
+                    L_wOfLowestEnergyFound = spectral::array( L_wCurrent );
+                }
+            }
+        }
+        // Delivers the set of parameters near the global minimum (hopefully) for the Gradient Descent algorithm.
+        // The SA loop may end in a higher energy state, so we return the lowest found in that case
+        if( k == i_kmax && f_lowestEnergyFound < f_eNew )
+            emit info( "SA completed by number of steps." );
+        else
+            emit info( "SA completed by reaching the lowest temperature." );
+        vw = L_wOfLowestEnergyFound;
+        emit info( "Using the state of lowest energy found (" + QString::number( f_lowestEnergyFound ) + ")" );
+    }
+
+    //---------------------------------------------------------------------------------------------------------
+    //--------------------------------------OPTIMIZATION LOOP (GRADIENT DESCENT)-------------------------------
+    //---------------------------------------------------------------------------------------------------------
+    unsigned int nThreads = ui->spinNumberOfThreads->value();
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Gradient Descent in progress...");
+    int iOptStep = 0;
+    for( ; iOptStep < maxNumberOfOptimizationSteps; ++iOptStep ){
+
+        emit info( "Commencing GD step #" + QString::number( iOptStep ) );
+
+        //Compute the gradient vector of objective function F with the current [w] parameters.
+        spectral::array gradient( vw.size() );
+        {
+
+            //distribute the parameter indexes among the n-threads
+            std::vector<int> parameterIndexBins[nThreads];
+            int parameterIndex = 0;
+            for( unsigned int iThread = 0; parameterIndex < vw.size(); ++parameterIndex, ++iThread)
+                parameterIndexBins[ iThread % nThreads ].push_back( parameterIndex );
+
+            //create and run the partial derivative calculation threads
+            std::thread threads[nThreads];
+            for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
+                threads[iThread] = std::thread( taskOnePartialDerivative3,
+                                                vw,
+                                                parameterIndexBins[iThread],
+                                                epsilon,
+                                                inputGrid,
+                                                inputVarmap,
+                                                m,
+                                                &gradient);
+            }
+
+            //wait for the threads to finish.
+            for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+                threads[iThread].join();
+
+        }
+
+        //Update the system's parameters according to gradient descent.
+        double currentF = std::numeric_limits<double>::max();
+        double nextF = 1.0;
+        {
+            spectral::array *gridData = inputGrid->createSpectralArray( variable->getIndexInParentGrid() );
+            double alpha = initialAlpha;
+            //halves alpha until we get a descent (current gradient vector may result in overshooting)
+            int iAlphaReductionStep = 0;
+            for( ; iAlphaReductionStep < maxNumberOfAlphaReductionSteps; ++iAlphaReductionStep ){
+                spectral::array new_vw = vw - gradient * alpha;
+                //Impose domain constraints to the parameters.
+                for( int i = 0; i < new_vw.size(); ++i){
+                    if( new_vw.d_[i] < 0.0 )
+                        new_vw.d_[i] = 0.0;
+                    if( new_vw.d_[i] > 1.0 )
+                        new_vw.d_[i] = 1.0;
+                }
+                currentF = F3( *inputGrid, inputVarmap, vw, m );
+                nextF = F3( *inputGrid, inputVarmap, new_vw, m );
+                if( nextF < currentF ){
+                    vw = new_vw;
+                    break;
+                }
+                alpha /= 2.0;
+            }
+            if( iAlphaReductionStep == maxNumberOfAlphaReductionSteps )
+                emit warning( "WARNING: reached maximum alpha reduction steps." );
+            delete gridData;
+        }
+
+        //Check the convergence criterion.
+        double ratio = currentF / nextF;
+        if( ratio  < (1.0 + convergenceCriterion) )
+            break;
+
+        emit info( "F2(k)/F2(k+1) ratio: " + QString::number( ratio ) );
+
+        if( ! ( iOptStep % 10) ) //to avoid excess calls to processEvents.
+            QCoreApplication::processEvents();
+    }
+    progressDialog.hide();
+
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variographicEllipses[iGeoFactor].setParameter( iPar, vw[i] );
+
+    ///Visualizing the results on the fly is optional/////////////
+    {
+        spectral::array finalVariogramModelSurface( nI, nJ, nK, 0.0 );
+        for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+            variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
+                                                                         finalVariogramModelSurface,
+                                                                         IJVariogramPermissiveModel::SPHERIC,
+                                                                         true );
+        q3Dv.clearScene();
+        q3Dv.display( finalVariogramModelSurface, finalVariogramModelSurface.min(), finalVariogramModelSurface.max() );
+        QApplication::processEvents();
+        QMessageBox::information(this, "aaaa", "aaaa");
+    }
+    ////////////////////////////////////////////////////////////
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)

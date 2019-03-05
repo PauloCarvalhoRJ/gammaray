@@ -121,6 +121,7 @@ private Q_SLOTS:
     void doVariographicParametersAnalysis( FundamentalFactorType fundamentalFactorType );
     void doVariographicParametersAnalysisWithGabor();
     void doVariographicParametersAnalysisWithSpectrumPart();
+    void doVariographicDecomposition5();
 };
 
 #endif // VARIOGRAPHICDECOMPOSITIONDIALOG_H
