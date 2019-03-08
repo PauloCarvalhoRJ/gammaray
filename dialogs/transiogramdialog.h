@@ -26,17 +26,17 @@ public:
 
 private:
     Ui::TransiogramDialog *ui;
-
     std::vector<Attribute*> m_categoricalAttributes;
+    std::vector<QWidget *> m_chartViews;
+    QString m_lastNameForSaving;
 
     void tryToAddAttribute( Attribute* attribute );
-
-    std::vector<QWidget *> m_chartViews;
     void clearCharts();
 
 private Q_SLOTS:
     void onResetAttributesList();
     void performCalculation();
+    void onSave();
 };
 
 #endif // TRANSIOGRAMDIALOG_H

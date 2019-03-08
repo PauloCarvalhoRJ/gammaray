@@ -30,6 +30,12 @@ public:
     VerticalTransiogramModel(QString path,
                              QString associatedCategoryDefinitionName);
 
+    /**
+     * Adds the transiographic parameters for a given a pair of facies by their names.
+     * For auto-transiograms both facies are the same.
+     */
+    void addParameters( QString headFacies, QString tailFacies, VTransiogramParameters verticalTransiogramParameters );
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
@@ -52,10 +58,15 @@ private:
     ///--------------data read from metadata file------------
     QString m_associatedCategoryDefinitionName;
     ///------------------data read from file-----------------
-    std::vector<QString> m_columnHeadersFaciesNames;
-    std::vector<QString> m_lineHeadersFaciesNames;
+    std::vector<QString> m_faciesNames;
     //outer vector: each line; inner vector: each transiogram model (columns)
     std::vector< std::vector < VTransiogramParameters > > m_verticalTransiogramsMatrix;
+
+    /** Makes room for a new facies with default transiogram parameters in the matrix.
+     * The client code must fill them accordingly.
+     * Default parameters: spheric strcuture, zero range, zero sill.
+     */
+    void addFacies(QString faciesName);
 };
 
 #endif // VERTICALTRANSIOGRAMMODEL_H

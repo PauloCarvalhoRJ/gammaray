@@ -18,6 +18,7 @@
 #include "domain/categorydefinition.h"
 #include "domain/auxiliary/faciestransitionmatrixmaker.h"
 #include "domain/auxiliary/thicknesscalculator.h"
+#include "domain/verticaltransiogrammodel.h"
 #include "widgets/fileselectorwidget.h"
 #include "widgets/transiogramchartview.h"
 #include "geostats/geostatsutils.h"
@@ -268,12 +269,12 @@ void TransiogramDialog::performCalculation()
     }
 
     // for each row (facies in the rows of the FTMs (one per h)
-    for( int i = 0; i < firstFTM.getRowCount(); ++i ){
+    for( int iHeadFacies = 0; iHeadFacies < firstFTM.getRowCount(); ++iHeadFacies ){
 
         //-------------------------------lay out the line headers.------------------------
         QLabel* faciesLabel = new QLabel();
         faciesLabel->setAlignment( Qt::AlignCenter );
-        QColor color = firstFTM.getColorOfCategoryInRowHeader( i );
+        QColor color = firstFTM.getColorOfCategoryInRowHeader( iHeadFacies );
         faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
                                                                    QString::number(color.red()) + "," +
                                                                    QString::number(color.green()) + "," +
@@ -281,8 +282,8 @@ void TransiogramDialog::performCalculation()
         QString fontColor = "black";
         if( color.lightnessF() < 0.6 )
             fontColor = "white";
-        faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getRowHeader( i ) + "</b></font>");
-        gridLayout->addWidget( faciesLabel, i+1, 0 );
+        faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getRowHeader( iHeadFacies ) + "</b></font>");
+        gridLayout->addWidget( faciesLabel, iHeadFacies+1, 0 );
         //-------------------------------------------------------------------------
 
         //compute the mean thickness for the "from" facies (facies in the row of the FTM)
@@ -303,7 +304,7 @@ void TransiogramDialog::performCalculation()
                     if( cd ){
                         //get the mean thickness occupied by the facies
                         meanThicknessForFromFacies = thicknessCalculator.getMeanThicknessForSingleValue(
-                                                     cd->getCategoryCodeByName( firstFTM.getRowHeader( i ) ) );
+                                                     cd->getCategoryCodeByName( firstFTM.getRowHeader( iHeadFacies ) ) );
                     } else {
                         Application::instance()->logError( "TransiogramDialog::performCalculation(): null category definition. "
                                                            "Mean thickness will be innacurate or invalid.");
@@ -317,12 +318,12 @@ void TransiogramDialog::performCalculation()
         }
 
         //loop to create a row of charts (for each column)
-        for( int j = 0; j < firstFTM.getColumnCount(); ++j ){
+        for( int jTailFacies = 0; jTailFacies < firstFTM.getColumnCount(); ++jTailFacies ){
 
             //according to  Li, W (2007) "Transiograms for Characterizing Spatial Variability of Soil Classes"
             //the sill of the transiogram is, ideally, the proportion of the tail facies for the cross-transiograms
             //(and for the auto-transiograms in effect)
-            int tailFaciesCode = CDofFirst->getCategoryCodeByName( (*(hFTMs.begin())).second.getColumnHeader( j ) );
+            int tailFaciesCode = CDofFirst->getCategoryCodeByName( (*(hFTMs.begin())).second.getColumnHeader( jTailFacies ) );
 
             //for each file (each categorical attribute)
             //compute the tail facies proportion, then
@@ -347,14 +348,14 @@ void TransiogramDialog::performCalculation()
                 //for auto-transiograms, its value is 1.0
                 //for cross-transiograms, its value is 0.0
                 // see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)
-                if( i == j )
+                if( iHeadFacies == jTailFacies )
                     seriesExperimentalTransiogram->append( 0.0, 1.0 );
                 else
                     seriesExperimentalTransiogram->append( 0.0, 0.0 );
 
                 //for each separation h
                 for( hFTM& hftm : hFTMs ){
-                    double probability = hftm.second.getUpwardTransitionProbability( i, j );
+                    double probability = hftm.second.getUpwardTransitionProbability( iHeadFacies, jTailFacies );
                     if( std::isfinite( probability ) && probability > 0.0)
                         seriesExperimentalTransiogram->append( hftm.first, probability );
                 }
@@ -408,9 +409,16 @@ void TransiogramDialog::performCalculation()
 
             //create a chart widget to render the chart object
             TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
-            if( i == j )
+            if( iHeadFacies == jTailFacies )
                 transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
-            TransiogramChartView *chartView = new TransiogramChartView( chart, transiogramType, hFinal, axisX, axisY );
+            TransiogramChartView *chartView = new TransiogramChartView( chart,
+                                                                        transiogramType,
+                                                                        hFinal,
+                                                                        axisX,
+                                                                        axisY,
+                                                                        firstFTM.getRowHeader( iHeadFacies ),
+                                                                        firstFTM.getColumnHeader( jTailFacies )
+                                                                      );
             {
                 chartView->setRenderHint(QPainter::Antialiasing);
                 chartView->setMinimumHeight( 100 );
@@ -420,15 +428,29 @@ void TransiogramDialog::performCalculation()
 
             //lay out chart widget in the grid layout so it is in accordance to the pair of facies
             //as set in the FTM.
-            gridLayout->setRowStretch( i+1, 1 );
-            gridLayout->setColumnStretch( j+1, 1 );
-            gridLayout->addWidget( chartView, i+1, j+1 );
+            gridLayout->setRowStretch( iHeadFacies+1, 1 );
+            gridLayout->setColumnStretch( jTailFacies+1, 1 );
+            gridLayout->addWidget( chartView, iHeadFacies+1, jTailFacies+1 );
             m_chartViews.push_back( chartView );
         }
     }
 
     Application::instance()->logInfo("Transiography completed.");
     QApplication::processEvents();
+}
+
+void TransiogramDialog::onSave()
+{
+    //open file rename dialog
+    bool ok;
+    QString new_dist_model_name = QInputDialog::getText(this, "Name the new file",
+                                             "New bivariate distribution model file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_dist_model_name.isEmpty()){
+
+
+    VerticalTransiogramModel* vtm = new VerticalTransiogramModel( "", cd->getName() );
 }
 
 void TransiogramDialog::onResetAttributesList()

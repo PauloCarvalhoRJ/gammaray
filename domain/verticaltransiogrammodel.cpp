@@ -14,6 +14,44 @@ VerticalTransiogramModel::VerticalTransiogramModel(QString path,
 
 }
 
+void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFacies, VTransiogramParameters verticalTransiogramParameters)
+{
+    //get the index of the head facies
+    int headFaciesIndex = -1;
+    {
+        std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), headFacies );
+        if (it != m_faciesNames.end())
+            headFaciesIndex = it - m_faciesNames.begin();
+    }
+
+    //head facies is new
+    if( headFaciesIndex < 0 ){
+        //register the new facies and adjusts the matrix
+        addFacies( headFacies );
+        //get the new index
+        headFaciesIndex = m_faciesNames.size() - 1;
+    }
+
+    //get the index of the tail facies
+    int tailFaciesIndex = -1;
+    {
+        std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), headFacies );
+        if (it != m_faciesNames.end())
+            tailFaciesIndex = it - m_faciesNames.begin();
+    }
+
+    //tail facies is new
+    if( tailFaciesIndex < 0 ){
+        //register the new facies and adjusts the matrix
+        addFacies( tailFacies );
+        //get the new index
+        tailFaciesIndex = m_faciesNames.size() - 1;
+    }
+
+    //finally, set the parameters
+    m_verticalTransiogramsMatrix[headFaciesIndex][tailFaciesIndex] = verticalTransiogramParameters;
+}
+
 QIcon VerticalTransiogramModel::getIcon()
 {
     return QIcon(":icons32/transiogram32");
@@ -62,12 +100,12 @@ void VerticalTransiogramModel::writeToFS()
     QTextStream out(&outputFile);
 
     //write the column headers
-    for( const QString& headerFacies : m_columnHeadersFaciesNames )
+    for( const QString& headerFacies : m_faciesNames )
         out << '\t' << headerFacies ;
 
     //write the lines ( headers and transiogram parameters)
     std::vector< std::vector< VTransiogramParameters > >::const_iterator itTransiogramsLines = m_verticalTransiogramsMatrix.cbegin();
-    for( const QString& headerFacies : m_lineHeadersFaciesNames ){
+    for( const QString& headerFacies : m_faciesNames ){
         out << headerFacies ;
         std::vector< VTransiogramParameters >::const_iterator itTransiograms = (*itTransiogramsLines).cbegin();
         for( ; itTransiograms != (*itTransiogramsLines).end() ; ++itTransiograms)
@@ -104,16 +142,33 @@ void VerticalTransiogramModel::readFromFS()
             // the column headers
             if( lineNumber == 1 ){
                 for( const std::string& token : tokens )
-                    m_columnHeadersFaciesNames.push_back( QString( token.c_str() ) );
+                    m_faciesNames.push_back( QString( token.c_str() ) );
             //the lines, each with a fascies name as their headers
             } else {
                 int columnNumber = 0;
                 std::vector< VTransiogramParameters > lineOfTransiogramParameters;
                 for( const std::string& token : tokens ){
                     ++columnNumber;
-                    if( columnNumber == 1)
-                        m_lineHeadersFaciesNames.push_back( QString( token.c_str() ) );
-                    else{
+                    if( columnNumber == 1){
+                        //sanity check: all facies names in the line headers must exist as column headers
+                        //              AND in the same order.
+                        {
+                            std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), QString( token.c_str() ) );
+                            if (it != m_faciesNames.end()){
+                                int headFaciesIndex = it - m_faciesNames.begin();
+                                if( headFaciesIndex+1 != lineNumber ){
+                                    Application::instance()->logError("VerticalTransiogramModel::readFromFS(): facies " + QString(token.c_str()) +
+                                                                      " in the line header of line " + QString::number(lineNumber) + ""
+                                                                      " found at unexpected position with respect to its position as column header"
+                                                                      " of matrix file " + this->getPath() + ".");
+                                }
+                            } else {
+                                Application::instance()->logError("VerticalTransiogramModel::readFromFS(): facies " + QString(token.c_str()) +
+                                                                  " in the line header of line " + QString::number(lineNumber) + ""
+                                                                  " not found as a column header of matrix file " + this->getPath() + ".");
+                            }
+                        }
+                    }else{
                         // get the string "<type>,<range>,<sill>"
                         QString verticalTransiogramParameters = QString( token.c_str() );
                         // get the tokens as separate itens
@@ -136,7 +191,7 @@ void VerticalTransiogramModel::readFromFS()
                         lineOfTransiogramParameters.push_back( { iStructureType, fRange, fSill } );
                     }
                 }
-                if( lineOfTransiogramParameters.size() != m_columnHeadersFaciesNames.size() ){
+                if( lineOfTransiogramParameters.size() != m_faciesNames.size() ){
                     Application::instance()->logWarn("VerticalTransiogramModel::readFromFS(): number of vertical transiograms differs from the "
                                                      "number of facies names in the header @ line " + QString::number(lineNumber) + ".");
                 }
@@ -152,8 +207,7 @@ void VerticalTransiogramModel::readFromFS()
 
 void VerticalTransiogramModel::clearLoadedContents()
 {
-    m_columnHeadersFaciesNames.clear();
-    m_lineHeadersFaciesNames.clear();
+    m_faciesNames.clear();
     m_verticalTransiogramsMatrix.clear();
 }
 
@@ -173,4 +227,33 @@ void VerticalTransiogramModel::deleteFromFS()
     //also deletes the metadata file
     QFile file( this->getMetaDataFilePath() );
     file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
+}
+
+void VerticalTransiogramModel::addFacies(QString faciesName)
+{
+    //add a new line of default transiogram parameters to the matrix
+    {
+        std::vector<VTransiogramParameters> newLine;
+        for( int i = 0; i < m_faciesNames.size();  ++i ){
+            newLine.emplace_back( static_cast<VTransiogramStructureType>( 1 ),
+                                  static_cast<VTransiogramRange>( 0.0 ),
+                                  static_cast<VTransiogramSill>( 0.0 ) );
+        }
+        m_verticalTransiogramsMatrix.push_back( newLine );
+    }
+
+    //Register the facies name.
+    //NOTE: do not move this code to before the previous block.
+    m_faciesNames.push_back( faciesName );
+
+    //append a new element with default transiogram parameters to each line, in effect adding a new column to the matrix
+    {
+        std::vector< std::vector < VTransiogramParameters > >::iterator itLines = m_verticalTransiogramsMatrix.begin();
+        for( ; itLines != m_verticalTransiogramsMatrix.end(); ++itLines ){
+            std::vector < VTransiogramParameters >& line = (*itLines);
+            line.emplace_back( static_cast<VTransiogramStructureType>( 1 ),
+                               static_cast<VTransiogramRange>( 0.0 ),
+                               static_cast<VTransiogramSill>( 0.0 ) );
+        }
+    }
 }

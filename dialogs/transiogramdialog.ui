@@ -163,6 +163,20 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="btnSave">
+       <property name="toolTip">
+        <string>Save current matrix of vertical transiograms.</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -238,14 +252,14 @@
      <item>
       <widget class="QPushButton" name="btnClearAttributeList">
        <property name="toolTip">
-        <string>Reset dropped attributes.</string>
+        <string>Clear attributes list.</string>
        </property>
        <property name="text">
         <string/>
        </property>
        <property name="icon">
-        <iconset resource="../imagejockey/ijresources.qrc">
-         <normaloff>:/ijicons32/ijupdate32</normaloff>:/ijicons32/ijupdate32</iconset>
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/clean32</normaloff>:/icons32/clean32</iconset>
        </property>
       </widget>
      </item>
@@ -288,7 +302,6 @@
  </widget>
  <resources>
   <include location="../resources.qrc"/>
-  <include location="../imagejockey/ijresources.qrc"/>
  </resources>
  <connections>
   <connection>
@@ -330,8 +343,8 @@
    <slot>performCalculation()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>744</x>
-     <y>30</y>
+     <x>788</x>
+     <y>33</y>
     </hint>
     <hint type="destinationlabel">
      <x>767</x>
@@ -339,9 +352,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnSave</sender>
+   <signal>clicked()</signal>
+   <receiver>TransiogramDialog</receiver>
+   <slot>onSave()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>808</x>
+     <y>23</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>830</x>
+     <y>64</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onResetAttributesList()</slot>
   <slot>performCalculation()</slot>
+  <slot>onSave()</slot>
  </slots>
 </ui>

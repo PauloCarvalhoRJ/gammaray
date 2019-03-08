@@ -23,6 +23,8 @@ public:
                          double hMax,
                          QtCharts::QValueAxis *axisX,
                          QtCharts::QValueAxis *axisY,
+                         QString headFaciesName,
+                         QString tailFaciesName,
                          QWidget *parent = nullptr);
 
     void setModelParameters( double range, double sill );
@@ -42,14 +44,19 @@ protected:
 private:
     QRubberBand* m_rubberBandH;
     QRubberBand* m_rubberBandV;
+    ////---------------- the transiogram model parameters-----------
+    /// currently only spheric type is supported
     double m_range;
     double m_sill;
-    TransiogramType m_type;
+    ////-------------------------------------------------------------
+    TransiogramType m_type; // auto- or cross-transiogram
     QtCharts::QValueAxis *m_axisX;
     QtCharts::QValueAxis *m_axisY;
     double m_hMax; //maximum h
     QtCharts::QLineSeries *m_seriesTransiogramModel;
     bool m_mouseDown;
+    QString m_headFaciesName;
+    QString m_tailFaciesName;
     void showOrHideCrossHairs();
     void updateModelSeries();
 };

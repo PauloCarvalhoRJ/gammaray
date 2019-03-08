@@ -10,6 +10,8 @@ TransiogramChartView::TransiogramChartView(QtCharts::QChart *chart,
                                            double hMax,
                                            QtCharts::QValueAxis *axisX,
                                            QtCharts::QValueAxis *axisY,
+                                           QString headFaciesName,
+                                           QString tailFaciesName,
                                            QWidget *parent) :
     QtCharts::QChartView(chart, parent),
     m_chart( chart ),
@@ -22,7 +24,9 @@ TransiogramChartView::TransiogramChartView(QtCharts::QChart *chart,
     m_axisY( axisY ),
     m_hMax( hMax ),
     m_seriesTransiogramModel( nullptr ),
-    m_mouseDown( false )
+    m_mouseDown( false ),
+    m_headFaciesName( headFaciesName ),
+    m_tailFaciesName( tailFaciesName )
 {
     //enable mouse move/hover events
     this->setMouseTracking( true );
