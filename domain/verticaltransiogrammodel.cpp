@@ -114,22 +114,63 @@ void VerticalTransiogramModel::readFromFS()
                     if( columnNumber == 1)
                         m_lineHeadersFaciesNames.push_back( QString( token.c_str() ) );
                     else{
+                        // get the string "<type>,<range>,<sill>"
                         QString verticalTransiogramParameters = QString( token.c_str() );
-                        bool ok;
-
-
-                        lineOfProbValues.push_back( probValue );
+                        // get the tokens as separate itens
+                        QStringList verticalTransiogramParametersTokens = verticalTransiogramParameters.split(',');
+                        //convert the tokens to numeric values
+                        bool ok = false;
+                        VTransiogramStructureType iStructureType;
+                        VTransiogramRange fRange;
+                        VTransiogramSill fSill;
+                        for( int i = 0; i < verticalTransiogramParametersTokens.size(); ++i )
+                            switch ( i ) {
+                            case 0: iStructureType = static_cast<VTransiogramStructureType>( verticalTransiogramParametersTokens[i].toInt( &ok ) ); break;
+                            case 1: fRange = verticalTransiogramParametersTokens[i].toDouble( &ok ); break;
+                            case 2: fSill = verticalTransiogramParametersTokens[i].toDouble( &ok ); break;
+                            }
+                        if( ! ok )
+                            Application::instance()->logError("VerticalTransiogramModel::readFromFS(): conversion to number failed @ line " + QString::number(lineNumber) + ""
+                                                              " of file " + this->getPath() + ".");
+                        //add the newly built tuple of variograph parameyters to the line vector.
+                        lineOfTransiogramParameters.push_back( { iStructureType, fRange, fSill } );
                     }
                 }
-                if( lineOfProbValues.size() != m_columnHeadersFaciesNames.size() ){
-                    Application::instance()->logWarn("VerticalTransiogramModel::readFromFS(): number of vertical transiograms values differs from the "
+                if( lineOfTransiogramParameters.size() != m_columnHeadersFaciesNames.size() ){
+                    Application::instance()->logWarn("VerticalTransiogramModel::readFromFS(): number of vertical transiograms differs from the "
                                                      "number of facies names in the header @ line " + QString::number(lineNumber) + ".");
                 }
-                m_transitionCounts.push_back( lineOfProbValues );
+                //add the line of transiograms to the outer vector, forming a matrix of vertical transiogram models.
+                m_verticalTransiogramsMatrix.push_back( lineOfTransiogramParameters );
             }
         }
         inputFile.close();
     } else {
         Application::instance()->logError("VerticalTransiogramModel::readFromFS(): file " + getPath() + " not found or is not accessible.");
     }
+}
+
+void VerticalTransiogramModel::clearLoadedContents()
+{
+    m_columnHeadersFaciesNames.clear();
+    m_lineHeadersFaciesNames.clear();
+    m_verticalTransiogramsMatrix.clear();
+}
+
+bool VerticalTransiogramModel::isDataFile()
+{
+    return false;
+}
+
+bool VerticalTransiogramModel::isDistribution()
+{
+    return false;
+}
+
+void VerticalTransiogramModel::deleteFromFS()
+{
+    File::deleteFromFS(); //delete the file itself.
+    //also deletes the metadata file
+    QFile file( this->getMetaDataFilePath() );
+    file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
 }
