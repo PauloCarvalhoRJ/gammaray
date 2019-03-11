@@ -9,6 +9,7 @@
 #include <QGraphicsLayout>
 #include <QValueAxis>
 #include <QChartView>
+#include <QInputDialog>
 
 #include "domain/datafile.h"
 #include "domain/application.h"
@@ -441,16 +442,51 @@ void TransiogramDialog::performCalculation()
 
 void TransiogramDialog::onSave()
 {
+    // get the category definition object and do some sanity checks
+    CategoryDefinition* CDofFirst = nullptr;
+    if( ! m_categoricalAttributes.empty() ){
+        //get info from the first attribute added
+        DataFile* parentOfFirst = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
+        CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
+    } else {
+        Application::instance()->logError( "TransiogramDialog::onSave(): no attributes.", true );
+        return;
+    }
+    if ( ! CDofFirst ){
+        Application::instance()->logError( "TransiogramDialog::onSave(): null category definition.", true );
+        return;
+    }
+
+    //propose a name for the new file
+    QString proposed_name = CDofFirst->getName() + "_Vertical_Transiogram_Model";
+
     //open file rename dialog
     bool ok;
-    QString new_dist_model_name = QInputDialog::getText(this, "Name the new file",
-                                             "New bivariate distribution model file name:", QLineEdit::Normal,
+    QString new_transiogram_model_name = QInputDialog::getText(this, "Name the new file",
+                                             "New vertical transiogram model file name:", QLineEdit::Normal,
                                              proposed_name, &ok);
 
-    if (ok && !new_dist_model_name.isEmpty()){
+    //create and populate the new object
+    if (ok && !new_transiogram_model_name.isEmpty()){
 
+        //creat the domain object
+        VerticalTransiogramModel* vtm = new VerticalTransiogramModel( Application::instance()->getProject()->getPath() + "/" + new_transiogram_model_name,
+                                                                      CDofFirst->getName() );
 
-    VerticalTransiogramModel* vtm = new VerticalTransiogramModel( "", cd->getName() );
+        //get the transiogram parameters from the transiogram chart widgets.
+        for( QWidget* w : m_chartViews ){
+            TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
+            vtm->addParameters( tcvAspect->getHeadFaciesName(), tcvAspect->getTailFaciesName(),
+                                  { tcvAspect->getTransiogramStructureType(), tcvAspect->getRange(), tcvAspect->getSill() } );
+        }
+
+        //save it to file
+        vtm->writeToFS();
+
+        //adds to the project tree
+        Application::instance()->getProject()->addVerticalTransiogramModel( vtm );
+        Application::instance()->refreshProjectTree();
+    }
 }
 
 void TransiogramDialog::onResetAttributesList()

@@ -31,6 +31,17 @@ public:
                              QString associatedCategoryDefinitionName);
 
     /**
+     * @param associatedCategoryDefinition Pass empty string to unset the value.
+     */
+    void setInfo( QString associatedCategoryDefinitionName );
+
+    /** Sets metadata from the accompaining .md file, if it exists.
+     * Nothing happens if the metadata file does not exist.  If it exists, it calls
+     * #setInfo() with the metadata read from the .md file.
+     */
+    void setInfoFromMetadataFile();
+
+    /**
      * Adds the transiographic parameters for a given a pair of facies by their names.
      * For auto-transiograms both facies are the same.
      */

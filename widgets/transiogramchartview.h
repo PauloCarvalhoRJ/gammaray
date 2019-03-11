@@ -1,6 +1,8 @@
 #ifndef TRANSIOGRAMCHARTVIEW_H
 #define TRANSIOGRAMCHARTVIEW_H
 
+#include "domain/verticaltransiogrammodel.h"
+
 #include <QChartView>
 
 class QGraphicsSimpleTextItem;
@@ -29,8 +31,12 @@ public:
 
     void setModelParameters( double range, double sill );
 
-    double getRange() const { return m_range; }
-    double getSill() const { return m_sill; }
+    VTransiogramStructureType getTransiogramStructureType() const { return VTransiogramStructureType::SPHERIC; } //currently only spheric is supported
+    VTransiogramRange getRange() const { return m_range; }
+    VTransiogramSill getSill() const { return m_sill; }
+
+    QString getHeadFaciesName() const { return m_headFaciesName; }
+    QString getTailFaciesName() const { return m_tailFaciesName; }
 
 private:
     QtCharts::QChart* m_chart;

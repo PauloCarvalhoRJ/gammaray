@@ -14,6 +14,31 @@ VerticalTransiogramModel::VerticalTransiogramModel(QString path,
 
 }
 
+void VerticalTransiogramModel::setInfo(QString associatedCategoryDefinitionName)
+{
+    m_associatedCategoryDefinitionName = associatedCategoryDefinitionName;
+}
+
+void VerticalTransiogramModel::setInfoFromMetadataFile()
+{
+    QString md_file_path( this->_path );
+    QFile md_file( md_file_path.append(".md") );
+    QString associatedCDname;
+    if( md_file.exists() ){
+        md_file.open( QFile::ReadOnly | QFile::Text );
+        QTextStream in(&md_file);
+        for (int i = 0; !in.atEnd(); ++i)
+        {
+           QString line = in.readLine();
+           if( line.startsWith( "ASSOCIATED_CATEGORY_DEFINITION:" ) ){
+               associatedCDname = line.split(":")[1];
+           }
+        }
+        md_file.close();
+    }
+    this->setInfo( associatedCDname );
+}
+
 void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFacies, VTransiogramParameters verticalTransiogramParameters)
 {
     //get the index of the head facies
@@ -35,7 +60,7 @@ void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFac
     //get the index of the tail facies
     int tailFaciesIndex = -1;
     {
-        std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), headFacies );
+        std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), tailFacies );
         if (it != m_faciesNames.end())
             tailFaciesIndex = it - m_faciesNames.begin();
     }
@@ -102,6 +127,7 @@ void VerticalTransiogramModel::writeToFS()
     //write the column headers
     for( const QString& headerFacies : m_faciesNames )
         out << '\t' << headerFacies ;
+    out << '\n';
 
     //write the lines ( headers and transiogram parameters)
     std::vector< std::vector< VTransiogramParameters > >::const_iterator itTransiogramsLines = m_verticalTransiogramsMatrix.cbegin();
@@ -112,6 +138,7 @@ void VerticalTransiogramModel::writeToFS()
             out << '\t' << static_cast<int>   (std::get<0>(*itTransiograms)) << ','  //structure type: spheric, exponential, gaussian, etc...
                         << static_cast<double>(std::get<1>(*itTransiograms)) << ','  //transiogram range:
                         << static_cast<double>(std::get<2>(*itTransiograms));        //transiogram sill:
+        out << '\n';
         ++itTransiogramsLines;
     }
 
