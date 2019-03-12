@@ -2375,52 +2375,110 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
     //Intialize the random number generator with the same seed
     std::srand ((unsigned)ui->spinSeed->value());
 
-    int nStartingPoints = 10;
+    int nStartingPoints = 40;
 
-    //generate sarting points randomly within the domain
-    std::vector< spectral::array > startingPoints;
-    for( int iSP = 0; iSP < nStartingPoints; ++iSP ){
-        spectral::array vw_StartingPoint( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
-        for( int i = 0; i < vw_StartingPoint.size(); ++i ){
-            double LO = L_wMin[i];
-            double HI = L_wMax[i];
-            vw_StartingPoint[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Line Search with Restart in progress...");
+
+    //the line search restarting loop
+    spectral::array vw_bestSolution( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int t = 0; t < 10; ++t){
+
+        //generate sarting points randomly within the domain
+        std::vector< spectral::array > startingPoints;
+        for( int iSP = 0; iSP < nStartingPoints; ++iSP ){
+            spectral::array vw_StartingPoint( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+            for( int i = 0; i < vw_StartingPoint.size(); ++i ){
+                double LO = L_wMin[i];
+                double HI = L_wMax[i];
+                vw_StartingPoint[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+            }
+            startingPoints.push_back( vw_StartingPoint );
         }
-        startingPoints.push_back( vw_StartingPoint );
+
+        //set the direction
+        double direction = -1.0; //according to Grosan and Abraham (2009) a random number between
+                                 //0.0 and 1.0 also yields good results for most obective functions.
+
+        //define the step as a function of iteration number (the alpha-k in Grosan and Abraham (2009))
+        //first iteration must be 1.
+        auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
+
+        //------------the main loop of line search algorithm----------------
+        double fOfBestSolution = std::numeric_limits<double>::max();
+        //for each step
+        for( int k = 1; k <= maxNumberOfOptimizationSteps; ++k ){
+            //for each starting point (in the parameter space).
+            for( int i = 0; i < nStartingPoints; ++i ){
+                //make a candidate point with a vector from the current point.
+                spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+                for( int j = 0; j < vw.size(); ++j ){
+                    double p_k = direction; //could be drawn from [0.0 1.0]
+                    vw_candidate[j] = startingPoints[i][j] + p_k * alpha_k( k );
+                }
+                //evaluate the objective function for the current point and for the candidate point
+                double fCurrent = F3( *inputGrid, inputVarmap, startingPoints[i], m );
+                double fCandidate = F3( *inputGrid, inputVarmap, vw_candidate, m );
+                //if the candidate point improves the objective function...
+                if( fCandidate < fCurrent ){
+                    //...make it the current point.
+                    startingPoints[i] = vw_candidate;
+                    //keep track of the best solution
+                    if( fCandidate < fOfBestSolution ){
+                        fOfBestSolution = fCandidate;
+                        vw_bestSolution = vw_candidate;
+                    }
+                }
+            } //for each starting point
+            QApplication::processEvents();
+        }//for each iteration
+
+        //for each parameter of the best solution
+        for( int iParameter = 0; iParameter < vw.size(); ++iParameter ){
+            //Make a set of parameters slightly shifted to the right (more positive) along one parameter.
+            spectral::array vwFromRight( vw_bestSolution );
+            vwFromRight(iParameter) = vwFromRight(iParameter) + epsilon;
+            //Make a set of parameters slightly shifted to the left (more negative) along one parameter.
+            spectral::array vwFromLeft( vw_bestSolution );
+            vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
+            //compute the partial derivative along one parameter
+            double partialDerivative =  F3( *inputGrid, inputVarmap, vwFromRight, m )
+                                        -
+                                        F3( *inputGrid, inputVarmap, vwFromLeft, m )
+                                        /
+                                        ( 2 * epsilon );
+            //update the domain limits depending on the partial derivative result
+            //this usually reduces the size of the domain so the next set of starting
+            //points have a higher probability to be drawn near a global optimum.
+            if( partialDerivative >= 0 )
+                L_wMax[ iParameter ] = vw_bestSolution[ iParameter ];
+            else
+                L_wMin[ iParameter ] = vw_bestSolution[ iParameter ];
+        }
     }
+    progressDialog.hide();
 
-    //set the direction
-    double direction = -1.0; //according to Grosan and Abraham (2009) a random number between
-                             //0.0 and 1.0 also yields good results for most obective functions.
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variographicEllipses[iGeoFactor].setParameter( iPar, vw_bestSolution[i] );
 
-    //define the step as a function of iteration number (the alpha-k in Grosan and Abraham (2009))
-    //first iteration must be 1.
-    auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
-
-    //------------the main loop of line search algorithm----------------
-    //for each step
-    for( int k = 1; k <= maxNumberOfOptimizationSteps; ++k ){
-        //for each starting point (in the parameter space).
-        for( int i = 0; i < nStartingPoints; ++i ){
-            //make a candidate point with a vector from the current point.
-            spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
-            for( int j = 0; j < vw.size(); ++j ){
-                double p_k = direction; //could be drawn from [0.0 1.0]
-                vw_candidate[j] = startingPoints[i][j] + p_k * alpha_k( k );
-            }
-            //evaluate the objective function for the current point and for the candidate point
-            double fCurrent = F3( *inputGrid, inputVarmap, startingPoints[i], m );
-            double fCandidate = F3( *inputGrid, inputVarmap, vw_candidate, m );
-            //if the candidate point improves the objective function...
-            if( fCandidate < fCurrent ){
-                //...make it the current point.
-                startingPoints[i] = vw_candidate;
-            }
-
-        } //for each starting point
-    }//for each iteration
-
-    //TODO: perfom the restart as described in Grosan and Abraham (2009)
+    ///Visualizing the results on the fly is optional/////////////
+    {
+        spectral::array finalVariogramModelSurface( nI, nJ, nK, 0.0 );
+        for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+            variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
+                                                                         finalVariogramModelSurface,
+                                                                         IJVariogramPermissiveModel::SPHERIC,
+                                                                         true );
+        q3Dv.clearScene();
+        q3Dv.display( finalVariogramModelSurface, finalVariogramModelSurface.min(), finalVariogramModelSurface.max() );
+        QApplication::processEvents();
+        QMessageBox::information(this, "aaaa", "aaaa");
+    }
+    ////////////////////////////////////////////////////////////
 
 }
 
