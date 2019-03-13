@@ -477,13 +477,13 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
     //TODO: performance.  This could be done just once.
     spectral::array weights( nI, nJ, nK, 0.0 );
     {
-        // make the weight decrease to zero at about 1/3rd of the grid radius.
-        double weightNullRadius = gridWithGeometry.getDiagonalLength() / 2.0 / 0.5;
+//        // make the weight decrease to zero at about 1/3rd of the grid radius.
+        double weightNullRadius = gridWithGeometry.getDiagonalLength() / 2.0 / 1.5;
         IJVariographicStructure2D varStru( weightNullRadius, 1.0, 0.0, 1.0 );
         varStru.addContributionToModelGrid( gridWithGeometry,
                                             weights,
                                             IJVariogramPermissiveModel::SPHERIC,
-                                            true );
+                                            false );
     }
 
     //for each geological factor
@@ -2444,15 +2444,15 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
             spectral::array vwFromLeft( vw_bestSolution );
             vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
             //compute the partial derivative along one parameter
-            double partialDerivative =  F3( *inputGrid, inputVarmap, vwFromRight, m )
-                                        -
-                                        F3( *inputGrid, inputVarmap, vwFromLeft, m )
-                                        /
-                                        ( 2 * epsilon );
+            double partialDerivative =  (F3( *inputGrid, inputVarmap, vwFromRight, m )
+                                         -
+                                         F3( *inputGrid, inputVarmap, vwFromLeft, m ))
+                                         /
+                                         ( 2 * epsilon );
             //update the domain limits depending on the partial derivative result
             //this usually reduces the size of the domain so the next set of starting
             //points have a higher probability to be drawn near a global optimum.
-            if( partialDerivative >= 0 )
+            if( partialDerivative > 0 )
                 L_wMax[ iParameter ] = vw_bestSolution[ iParameter ];
             else
                 L_wMin[ iParameter ] = vw_bestSolution[ iParameter ];
