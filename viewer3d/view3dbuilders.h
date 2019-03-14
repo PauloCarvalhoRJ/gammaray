@@ -97,6 +97,14 @@ private:
 
 	/** Specific builder for an Attribute in a GeoGrid. */
 	static View3DViewData buildForAttributeGeoGrid( GeoGrid* geoGrid, Attribute* attribute, View3DWidget* widget3D );
+
+    /** Specific builder for an Attribute in a 2D (nZ < 2) Cartesian grid.
+     *  The grid is displayed as a surface whose height is given by the variable.
+     */
+    static View3DViewData buildForSurfaceCartesianGrid2D(
+                                      CartesianGrid* cartesianGrid,
+                                      Attribute* attribute,
+                                      View3DWidget * widget3D);
 };
 
 #endif // VIEW3DBUILDERS_H

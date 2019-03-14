@@ -43,6 +43,12 @@ V3DCfgWidForAttributeInMapCartesianGrid::V3DCfgWidForAttributeInMapCartesianGrid
     ui->cmbScaling->addItem("Logarithmic", QVariant( (uint)ColorScaling::LOG ));
     ui->cmbScaling->blockSignals(false);
 
+    //if the subgrider came without a connection (e.g. the attribute has been displayed as a surface)
+    //disable the widgets that are ineffective without a functioning subgrider.
+    if( ! _viewObjects.subgrider->GetNumberOfInputConnections( 0 ) ){
+        ui->tabWidget->setEnabled( false );
+    }
+
 }
 
 V3DCfgWidForAttributeInMapCartesianGrid::~V3DCfgWidForAttributeInMapCartesianGrid()

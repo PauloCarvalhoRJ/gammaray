@@ -48,7 +48,11 @@
 #include <vtkLineSource.h>
 #include <vtkTubeFilter.h>
 #include <vtkLine.h>
+#include <vtkQuad.h>
+
 #include <QMessageBox>
+#include <QPushButton>
+
 
 void RefreshCallback( vtkObject* vtkNotUsed(caller),
                       long unsigned int vtkNotUsed(eventId),
@@ -143,7 +147,15 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
         CartesianGrid* cg = (CartesianGrid*)file;
 		if( ! cg->isUVWOfAGeoGrid() ){
 			if( cg->getNZ() < 2 ){
-				return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
+                QMessageBox msgBox;
+                msgBox.setText("Display 2D grid as?");
+                QAbstractButton* pButtonUseFlat = msgBox.addButton("Flat grid at z = 0.0", QMessageBox::YesRole);
+                msgBox.addButton("Surface w/ z = variable", QMessageBox::NoRole);
+                msgBox.exec();
+                if ( msgBox.clickedButton() == pButtonUseFlat )
+                    return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
+                else
+                    return buildForSurfaceCartesianGrid2D( cg, attribute, widget3D );
 			} else {
 				return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
 			}
@@ -1092,4 +1104,104 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	//actor->GetProperty()->EdgeVisibilityOn();
 
     return View3DViewData( actor, threshold );
+}
+
+View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *cartesianGrid,
+                                                              Attribute *attribute,
+                                                              View3DWidget *widget3D)
+{
+    Q_UNUSED( widget3D );
+
+    if( cartesianGrid->getNK() > 1){
+        Application::instance()->logError("View3DBuilders::buildForSurfaceCartesianGrid2D(): grid cannot have more than one depth slice.");
+        return View3DViewData();
+    }
+
+    if( cartesianGrid->getNI() < 2 || cartesianGrid->getNJ() < 2 ){
+        Application::instance()->logError("View3DBuilders::buildForSurfaceCartesianGrid2D(): grid must be at least 2x2.");
+        return View3DViewData();
+    }
+
+    //get the variable index in parent data file
+    uint var_index = cartesianGrid->getFieldGEOEASIndex( attribute->getName() );
+
+    //create a VTK array to store the sample values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("values");
+
+    //create a visibility array. Cells with visibility >= 1 will be
+    //visible, and < 1 will be invisible.
+    vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+    visibility->SetNumberOfComponents(1);
+    visibility->SetName("Visibility");
+
+    //get the max and min of the selected variable
+    cartesianGrid->loadData();
+    double min = cartesianGrid->min( var_index-1 );
+    double max = cartesianGrid->max( var_index-1 );
+
+    //get the grid dimension of the 2D grid
+    uint nI = cartesianGrid->getNI();
+    uint nJ = cartesianGrid->getNJ();
+
+    //read sample values
+    values->Allocate( nI * nJ );
+    visibility->Allocate( nI * nJ );
+    for( int j = 0; j < nJ; ++j){
+        for( int i = 0; i < nI; ++i){
+            // sample value
+            double value = cartesianGrid->dataIJK( var_index - 1, i, j, 0);
+            values->InsertNextValue( value );
+            // visibility flag
+            if( cartesianGrid->isNDV( value ) )
+                visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+            else
+                visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+        }
+    }
+
+    // Create a VTK container with the points (mesh vertexes)
+    vtkSmartPointer< vtkPoints > quadVertexes = vtkSmartPointer< vtkPoints >::New();
+    quadVertexes->SetNumberOfPoints( nI * nJ );
+    for( int i = 0;  i < quadVertexes->GetNumberOfPoints(); ++i ){
+        double x, y, z;
+        uint ii, jj, kk;
+        //convert sequential index to grid coordinates
+        cartesianGrid->indexToIJK( i, ii, jj, kk );
+        //get cell location in space
+        cartesianGrid->getCellLocation( ii, jj, 0, x, y, z );
+        //get sample value
+        double sampleValue = cartesianGrid->dataIJK( var_index - 1, ii, jj, 0);
+        //make vertex with sample value as z
+        quadVertexes->InsertPoint(i, x, y, sampleValue);
+    }
+
+    // Create a VTK unstructured grid object (unrestricted geometry)
+    vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    uint nCells = ( nI - 1 ) * ( nJ - 1 );
+    unstructuredGrid->Allocate( nCells );
+    for( uint i = 0; i < nCells; ++i ) {
+        uint cellJ = i / ( nI - 1 );
+        vtkSmartPointer< vtkQuad > quad = vtkSmartPointer< vtkQuad >::New();
+        quad->GetPointIds()->SetId(0, i + cellJ );
+        quad->GetPointIds()->SetId(1, i + cellJ + 1 );
+        quad->GetPointIds()->SetId(2, i + cellJ + nI + 1 );
+        quad->GetPointIds()->SetId(3, i + cellJ + nI );
+        unstructuredGrid->InsertNextCell( quad->GetCellType(), quad->GetPointIds() );
+    }
+    unstructuredGrid->SetPoints(quadVertexes);
+
+    // Create mapper (visualization parameters)
+    vtkSmartPointer<vtkDataSetMapper> mapper =
+            vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputData( unstructuredGrid );
+    mapper->Update();
+
+    // Finally, pass everything to the actor and return it.
+    vtkSmartPointer<vtkActor> actor =
+            vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    //actor->GetProperty()->EdgeVisibilityOn();
+
+    return View3DViewData( actor );
 }
