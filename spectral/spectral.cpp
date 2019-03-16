@@ -515,6 +515,14 @@ double array::avg() const
     return std::accumulate( d_.begin(), d_.end(), 0.0) / d_.size();
 }
 
+array array::sqrt() const
+{
+    array result( M_, N_, K_ );
+    for (size_t i = 0; i < d_.size(); ++i)
+        result.d_[i] = std::sqrt( d_[i] );
+    return result;
+}
+
 double array::euclideanLength() const
 {
     return std::sqrt( spectral::dot( *this, *this ) );

@@ -150,6 +150,7 @@ struct array {
 	double max() const;
 	double min() const;
     double avg() const; //average or mean value
+    array sqrt() const; //square root of each element of this array
 
 	double euclideanLength() const;
 
