@@ -458,11 +458,6 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
            const spectral::array &vectorOfParameters,
            const int m ){
 
-//    ///Visualizing the results on the fly is optional/////////////
-//    static IJQuick3DViewer* q3Dv = new IJQuick3DViewer();
-//    q3Dv->show();
-//    ///////////////////////////////////////////////////////////////
-
     //get grid parameters
     int nI = gridWithGeometry.getNI();
     int nJ = gridWithGeometry.getNJ();
@@ -470,21 +465,6 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
 
     //create a grid compatible with the input varmap
     spectral::array variographicSurface( nI, nJ, nK, 0.0 );
-
-    //create a grid with weights.  The closer to the center
-    //the more important a cell is.  We can use a variographic structure
-    //to set the weights to reflect that.
-    //TODO: performance.  This could be done just once.
-    spectral::array weights( nI, nJ, nK, 1.0 );
-    {
-//        // make the weight decrease to zero at about 1/3rd of the grid radius.
-//        double weightNullRadius = gridWithGeometry.getDiagonalLength() / 2.0 / 1.5;
-//        IJVariographicStructure2D varStru( weightNullRadius, 1.0, 0.0, 1.0 );
-//        varStru.addContributionToModelGrid( gridWithGeometry,
-//                                            weights,
-//                                            IJVariogramPermissiveModel::SPHERIC,
-//                                            false );
-    }
 
     //for each geological factor
     for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ){
@@ -510,18 +490,10 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
     for( int k = 0; k < nK; ++k )
         for( int j = 0; j < nJ; ++j )
             for( int i = 0; i < nI; ++i ){
-                sum += weights(i,j,k) * std::abs( varmapOfInput(i,j,k) - variographicSurface(i,j,k) );
+                sum += std::abs( varmapOfInput(i,j,k) - variographicSurface(i,j,k) );
             }
 
-
-//    ///Visualizing the results on the fly is optional/////////////
-//    {
-//        q3Dv->clearScene();
-//        q3Dv->display( variographicSurface, variographicSurface.min(), variographicSurface.max() );
-//        QApplication::processEvents();
-//    }
-//    ////////////////////////////////////////////////////////////
-
+    // Finally, return the objective function value.
     return sum;
 }
 
@@ -1914,7 +1886,7 @@ void VariographicDecompositionDialog::doVariographicParametersAnalysisWithSpectr
     doVariographicParametersAnalysis( FundamentalFactorType::FFT_SPECTRUM_PARTITION );
 }
 
-void VariographicDecompositionDialog::doVariographicDecomposition5_OLD()
+void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_GD()
 {
     ///Visualizing the results on the fly is optional/////////////
     IJQuick3DViewer q3Dv;
@@ -2244,6 +2216,19 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_OLD()
 
 void VariographicDecompositionDialog::doVariographicDecomposition5()
 {
+    QMessageBox msgBox;
+    msgBox.setText("Perform optimization with:");
+    QAbstractButton* pButtonUseSAandGS = msgBox.addButton("Simulated Annealing + Gradient Descent", QMessageBox::YesRole);
+    msgBox.addButton("Line Search with Restart", QMessageBox::NoRole);
+    msgBox.exec();
+    if ( msgBox.clickedButton() == pButtonUseSAandGS )
+        doVariographicDecomposition5_WITH_SA_AND_GD();
+    else
+        doVariographicDecomposition5_WITH_LSRS();
+}
+
+void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
+{
 
     ///Visualizing the results on the fly is optional/////////////
 //    IJQuick3DViewer q3Dv;
@@ -2258,6 +2243,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
     double initialAlpha = ui->spinInitialAlpha->value();
     double maxNumberOfAlphaReductionSteps = ui->spinMaxStepsAlphaReduction->value();
     double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
+    int nStartingPoints = 80; //number of random starting points in the domain
+    int nRestarts = 10; //number of restarts
 
     // Get the data objects.
     IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
@@ -2378,8 +2365,6 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
     //Intialize the random number generator with the same seed
     std::srand ((unsigned)ui->spinSeed->value());
 
-    int nStartingPoints = 40;
-
     QProgressDialog progressDialog;
     progressDialog.setRange(0,0);
     progressDialog.show();
@@ -2387,7 +2372,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
 
     //the line search restarting loop
     spectral::array vw_bestSolution( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
-    for( int t = 0; t < 10; ++t){
+    for( int t = 0; t < nRestarts; ++t){
 
         //generate sarting points randomly within the domain
         std::vector< spectral::array > startingPoints;
@@ -2409,7 +2394,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
         //first iteration must be 1.
         auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
 
-        //------------the main loop of line search algorithm----------------
+        //----------------loop of line search algorithm----------------
         double fOfBestSolution = std::numeric_limits<double>::max();
         //for each step
         for( int k = 1; k <= maxNumberOfOptimizationSteps; ++k ){
@@ -2418,8 +2403,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
                 //make a candidate point with a vector from the current point.
                 spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
                 for( int j = 0; j < vw.size(); ++j ){
-                    double p_k = direction; //could be drawn from [0.0 1.0]
+                    double p_k = std::rand() / ( RAND_MAX / 1.0);//direction; //could be drawn from [0.0 1.0]
                     vw_candidate[j] = startingPoints[i][j] + p_k * alpha_k( k );
+                    if( vw_candidate[j] > L_wMax[j] )
+                        vw_candidate[j] = L_wMax[j];
+                    if( vw_candidate[j] < L_wMin[j] )
+                        vw_candidate[j] = L_wMin[j];
                 }
                 //evaluate the objective function for the current point and for the candidate point
                 double fCurrent = F3( *inputGrid, inputVarmap, startingPoints[i], m );
@@ -2436,16 +2425,21 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
                 }
             } //for each starting point
             QApplication::processEvents();
-        }//for each iteration
+        }
+        //---------------------------------------------------------------------------
 
         //for each parameter of the best solution
         for( int iParameter = 0; iParameter < vw.size(); ++iParameter ){
             //Make a set of parameters slightly shifted to the right (more positive) along one parameter.
             spectral::array vwFromRight( vw_bestSolution );
             vwFromRight(iParameter) = vwFromRight(iParameter) + epsilon;
+            if( vwFromRight(iParameter) > L_wMax[ iParameter ] )
+                vwFromRight(iParameter) = L_wMax[ iParameter ];
             //Make a set of parameters slightly shifted to the left (more negative) along one parameter.
             spectral::array vwFromLeft( vw_bestSolution );
             vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
+            if( vwFromLeft(iParameter) < L_wMin[ iParameter ] )
+                vwFromLeft(iParameter) = L_wMin[ iParameter ];
             //compute the partial derivative along one parameter
             double partialDerivative =  (F3( *inputGrid, inputVarmap, vwFromRight, m )
                                          -
@@ -2457,10 +2451,11 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
             //points have a higher probability to be drawn near a global optimum.
             if( partialDerivative > 0 )
                 L_wMax[ iParameter ] = vw_bestSolution[ iParameter ];
-            else
+            else if( partialDerivative < 0 )
                 L_wMin[ iParameter ] = vw_bestSolution[ iParameter ];
-        }
-    }
+        } // search for best solution
+
+    } //restart loop
     progressDialog.hide();
 
     //Read the optimized variogram model parameters back to the variographic structures
@@ -2509,6 +2504,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
         //compute the reverse FFT to get the geological factor
         spectral::array geoFactor( nI, nJ, nK, 0.0 );
         spectral::backward( geoFactor, geoFactorFFT );
+
+        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+        geoFactor = geoFactor / (double)( nI * nJ * nK );
 
         geoFactors.push_back( geoFactor );
         titles.push_back( QString( "Factor " + QString::number( iGeoFactor ) ).toStdString() );
