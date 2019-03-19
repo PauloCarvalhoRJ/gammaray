@@ -110,6 +110,9 @@ void TransiogramChartView::updateModelSeries()
         m_chart->setAxisX( m_axisX, m_seriesTransiogramModel );
         m_chart->setAxisY( m_axisY, m_seriesTransiogramModel );
     }
+
+    //notify possibly monitoring clients of changes to the theoretical transiogram parameters
+    emit updated();
 }
 
 void TransiogramChartView::mousePressEvent(QMouseEvent *event)

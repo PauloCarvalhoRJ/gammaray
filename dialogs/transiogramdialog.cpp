@@ -269,6 +269,19 @@ void TransiogramDialog::performCalculation()
         gridLayout->addWidget( faciesLabel, 0, j+1 );
     }
 
+    //put a last label corresponding to the sum of transiograms
+    {
+        QLabel* faciesLabel = new QLabel();
+        faciesLabel->setAlignment( Qt::AlignCenter );
+        QColor color = Qt::black;
+        faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
+                                                                   QString::number(color.red()) + "," +
+                                                                   QString::number(color.green()) + "," +
+                                                                   QString::number(color.blue()) +"); }");
+        faciesLabel->setText( "<font color=\"white\"><b>SUM</b></font>");
+        gridLayout->addWidget( faciesLabel, 0, firstFTM.getColumnCount()+1 );
+    }
+
     // for each row (facies in the rows of the FTMs (one per h)
     for( int iHeadFacies = 0; iHeadFacies < firstFTM.getRowCount(); ++iHeadFacies ){
 
@@ -425,6 +438,8 @@ void TransiogramDialog::performCalculation()
                 chartView->setMinimumHeight( 100 );
                 chartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
                 chartView->setModelParameters( 3.0, globalProportionOfTailFacies );
+                //to be notified if transiogram model updates.
+                //connect( chartView, SIGNAL(updated()), this, SLOT(onTransiogramModelUpdated()) );
             }
 
             //lay out chart widget in the grid layout so it is in accordance to the pair of facies
@@ -433,8 +448,16 @@ void TransiogramDialog::performCalculation()
             gridLayout->setColumnStretch( jTailFacies+1, 1 );
             gridLayout->addWidget( chartView, iHeadFacies+1, jTailFacies+1 );
             m_chartViews.push_back( chartView );
+        }//loop to create a row of charts (for each column)
+
+        {
+            QtCharts::QChartView *chartView = new QtCharts::QChartView();
+            gridLayout->setRowStretch( iHeadFacies+1, 1 );
+            gridLayout->setColumnStretch( firstFTM.getColumnCount()+1, 1 );
+            gridLayout->addWidget( chartView, iHeadFacies+1, firstFTM.getColumnCount()+1 );
         }
-    }
+
+    }// for each row (facies in the rows of the FTMs (one per h)
 
     Application::instance()->logInfo("Transiography completed.");
     QApplication::processEvents();
@@ -487,6 +510,11 @@ void TransiogramDialog::onSave()
         Application::instance()->getProject()->addVerticalTransiogramModel( vtm );
         Application::instance()->refreshProjectTree();
     }
+}
+
+void TransiogramDialog::onTransiogramModelUpdated()
+{
+
 }
 
 void TransiogramDialog::onResetAttributesList()

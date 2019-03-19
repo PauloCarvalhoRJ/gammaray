@@ -37,6 +37,7 @@ private Q_SLOTS:
     void onResetAttributesList();
     void performCalculation();
     void onSave();
+    void onTransiogramModelUpdated();
 };
 
 #endif // TRANSIOGRAMDIALOG_H

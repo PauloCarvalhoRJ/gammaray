@@ -19,6 +19,8 @@ enum class TransiogramType : int {
 
 class TransiogramChartView : public QtCharts::QChartView
 {
+    Q_OBJECT
+
 public:
     TransiogramChartView(QtCharts::QChart* chart,
                          TransiogramType type,
@@ -37,6 +39,10 @@ public:
 
     QString getHeadFaciesName() const { return m_headFaciesName; }
     QString getTailFaciesName() const { return m_tailFaciesName; }
+
+Q_SIGNALS:
+    /** Listening clients must use the get*() methods to retrieve the updated model parameters. */
+    void updated();
 
 private:
     QtCharts::QChart* m_chart;
