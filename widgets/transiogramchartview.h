@@ -40,9 +40,13 @@ public:
     QString getHeadFaciesName() const { return m_headFaciesName; }
     QString getTailFaciesName() const { return m_tailFaciesName; }
 
+    /** Returns the values that make up the transiogram model curve
+     * This is useful to display the same curve in some other QChartView widget. */
+    QtCharts::QLineSeries *getSeriesTransiogramModel() const;
+
 Q_SIGNALS:
     /** Listening clients must use the get*() methods to retrieve the updated model parameters. */
-    void updated();
+    void modelWasUpdated();
 
 private:
     QtCharts::QChart* m_chart;

@@ -54,6 +54,11 @@ void TransiogramChartView::mouseMoveEvent(QMouseEvent *event)
     }
 }
 
+QtCharts::QLineSeries *TransiogramChartView::getSeriesTransiogramModel() const
+{
+    return m_seriesTransiogramModel;
+}
+
 void TransiogramChartView::showOrHideCrossHairs()
 {
     if( m_mouseDown ){
@@ -112,7 +117,7 @@ void TransiogramChartView::updateModelSeries()
     }
 
     //notify possibly monitoring clients of changes to the theoretical transiogram parameters
-    emit updated();
+    emit modelWasUpdated();
 }
 
 void TransiogramChartView::mousePressEvent(QMouseEvent *event)

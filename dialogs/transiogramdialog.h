@@ -7,6 +7,11 @@ namespace Ui {
 class TransiogramDialog;
 }
 
+namespace QtCharts{
+    class QValueAxis;
+    class QLineSeries;
+}
+
 class Attribute;
 class FileSelectorWidget;
 
@@ -27,7 +32,8 @@ public:
 private:
     Ui::TransiogramDialog *ui;
     std::vector<Attribute*> m_categoricalAttributes;
-    std::vector<QWidget *> m_chartViews;
+    std::vector<QWidget *> m_transiogramChartViews; //all the transiograms of the matrix, filled row-wise first.
+    std::vector<QWidget *> m_sumChartViews; //one per row of transiograms
     QString m_lastNameForSaving;
 
     void tryToAddAttribute( Attribute* attribute );

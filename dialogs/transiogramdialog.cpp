@@ -28,6 +28,8 @@ TransiogramDialog::TransiogramDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::TransiogramDialog)
 {
+    using namespace QtCharts;
+
     ui->setupUi(this);
 
     setWindowTitle("Transiogram Dialog");
@@ -117,9 +119,9 @@ void TransiogramDialog::tryToAddAttribute(Attribute *attribute)
 
 void TransiogramDialog::clearCharts()
 {
-    for( QWidget* qcv : m_chartViews )
+    for( QWidget* qcv : m_transiogramChartViews )
         delete qcv;
-    m_chartViews.clear();
+    m_transiogramChartViews.clear();
 }
 
 void TransiogramDialog::performCalculation()
@@ -425,36 +427,48 @@ void TransiogramDialog::performCalculation()
             TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
             if( iHeadFacies == jTailFacies )
                 transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
-            TransiogramChartView *chartView = new TransiogramChartView( chart,
-                                                                        transiogramType,
-                                                                        hFinal,
-                                                                        axisX,
-                                                                        axisY,
-                                                                        firstFTM.getRowHeader( iHeadFacies ),
-                                                                        firstFTM.getColumnHeader( jTailFacies )
-                                                                      );
+            TransiogramChartView *transiogramChartView = new TransiogramChartView( chart,
+                                                                                   transiogramType,
+                                                                                   hFinal,
+                                                                                   axisX,
+                                                                                   axisY,
+                                                                                   firstFTM.getRowHeader( iHeadFacies ),
+                                                                                   firstFTM.getColumnHeader( jTailFacies )
+                                                                                 );
             {
-                chartView->setRenderHint(QPainter::Antialiasing);
-                chartView->setMinimumHeight( 100 );
-                chartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
-                chartView->setModelParameters( 3.0, globalProportionOfTailFacies );
+                transiogramChartView->setRenderHint(QPainter::Antialiasing);
+                transiogramChartView->setMinimumHeight( 100 );
+                transiogramChartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
+                transiogramChartView->setModelParameters( 3.0, globalProportionOfTailFacies );
                 //to be notified if transiogram model updates.
-                //connect( chartView, SIGNAL(updated()), this, SLOT(onTransiogramModelUpdated()) );
+                connect( transiogramChartView, SIGNAL(modelWasUpdated()), this, SLOT(onTransiogramModelUpdated()) );
             }
 
             //lay out chart widget in the grid layout so it is in accordance to the pair of facies
             //as set in the FTM.
             gridLayout->setRowStretch( iHeadFacies+1, 1 );
             gridLayout->setColumnStretch( jTailFacies+1, 1 );
-            gridLayout->addWidget( chartView, iHeadFacies+1, jTailFacies+1 );
-            m_chartViews.push_back( chartView );
+            gridLayout->addWidget( transiogramChartView, iHeadFacies+1, jTailFacies+1 );
+            m_transiogramChartViews.push_back( transiogramChartView );
         }//loop to create a row of charts (for each column)
 
+        //append an additional chart so the user can check whether the transiogram models
+        //sum to 1.0 at all h's.  Recall the transiograms model probabilities.  This means
+        //that, for Markovian transiograms, they must sum up to 1.0 along a row.
         {
-            QtCharts::QChartView *chartView = new QtCharts::QChartView();
+            //create a chart object to contain all the data series in the same chart area
+            QChart *chart = new QChart();
+            {
+                chart->legend()->hide();
+                //more space for the curves
+                chart->layout()->setContentsMargins(2, 2, 2, 2);
+                chart->setMargins(QMargins(2, 2, 2, 2));
+            }
+            QtCharts::QChartView *sumChartView = new QtCharts::QChartView( chart );
             gridLayout->setRowStretch( iHeadFacies+1, 1 );
             gridLayout->setColumnStretch( firstFTM.getColumnCount()+1, 1 );
-            gridLayout->addWidget( chartView, iHeadFacies+1, firstFTM.getColumnCount()+1 );
+            gridLayout->addWidget( sumChartView, iHeadFacies+1, firstFTM.getColumnCount()+1 );
+            m_sumChartViews.push_back( sumChartView );
         }
 
     }// for each row (facies in the rows of the FTMs (one per h)
@@ -497,7 +511,7 @@ void TransiogramDialog::onSave()
                                                                       CDofFirst->getName() );
 
         //get the transiogram parameters from the transiogram chart widgets.
-        for( QWidget* w : m_chartViews ){
+        for( QWidget* w : m_transiogramChartViews ){
             TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
             vtm->addParameters( tcvAspect->getHeadFaciesName(), tcvAspect->getTailFaciesName(),
                                   { tcvAspect->getTransiogramStructureType(), tcvAspect->getRange(), tcvAspect->getSill() } );
@@ -514,7 +528,111 @@ void TransiogramDialog::onSave()
 
 void TransiogramDialog::onTransiogramModelUpdated()
 {
+    using namespace QtCharts;
 
+    //get user setting
+    double hInitial = ui->dblSpinHIni->value();
+    double hFinal = ui->dblSpinHFin->value();
+
+    //compute the number of columns of the matrix of transiogram chart views
+    //by counting how many times one facies name appear as head facies
+    int numberOfColumns = 0;
+    {
+        QString oneFaciesName;
+        for( QWidget* w : m_transiogramChartViews ){
+            TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
+            if( oneFaciesName.isEmpty() ){
+                oneFaciesName = tcvAspect->getHeadFaciesName();
+                ++numberOfColumns;
+            }else{
+                if( tcvAspect->getHeadFaciesName() == oneFaciesName )
+                    ++numberOfColumns;
+            }
+        }
+    }
+
+
+    //for each sum chart
+    for( int iSumChart = 0; iSumChart < m_sumChartViews.size(); ++iSumChart ){
+
+        QChartView *sumChartView = dynamic_cast<QChartView *>( m_sumChartViews[iSumChart] );
+
+        QChart *chart = sumChartView->chart();
+        {
+
+            //create an empty data series for the sum of transiogram model curve values
+            QLineSeries *seriesSum = new QLineSeries();
+
+            //for each transiogram chart of the sum chart's row
+            for( int iTransiogramChart = iSumChart * numberOfColumns;
+                     iTransiogramChart < ( iSumChart + 1 ) * numberOfColumns;
+                     ++iTransiogramChart
+               ){
+                //get the transiogram chart
+                TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( m_transiogramChartViews[iTransiogramChart] );
+
+                //get the transiogram model's data series
+                QLineSeries *seriesTransiogramSeries = tcvAspect->getSeriesTransiogramModel();
+
+                //traverse the transiogram model curve values
+                int iPoint = 0;
+                for( QPointF& point : seriesTransiogramSeries->pointsVector() ){
+                    //append or add-up values
+                    if( iTransiogramChart == iSumChart * numberOfColumns )
+                        seriesSum->append( point.x(), point.y() );
+                    else {
+                        if( iPoint < seriesSum->count() ){
+                            seriesSum->replace( iPoint, seriesSum->at(iPoint).x(), seriesSum->at(iPoint).y() + point.y() );
+                        } else
+                            Application::instance()->logError("TransiogramDialog::onTransiogramModelUpdated(): attempt to replace non-existent point. A graph is likely to be truncated.");
+                    }
+                    ++iPoint;
+                }
+            }
+
+
+            //create a data series (line in the chart) to represent graphically the 1.0 level for
+            //the transiograms sum charts between the h's configured by the user
+            QLineSeries *seriesOnes = new QLineSeries();
+            {
+                //make a single straight line to mark the sill in the graph
+                seriesOnes->append( hInitial, 1.0 );
+                seriesOnes->append( hFinal,   1.0 );
+                QPen pen( QRgb(0x008F00) );
+                pen.setWidth( 1 );
+                pen.setStyle( Qt::DashLine );
+                seriesOnes->setPen( pen );
+            }
+
+            //-------create the sum chart's axes once-----------------
+            QValueAxis *axisY = dynamic_cast<QValueAxis *>( chart->axisY() );
+            if( ! axisY ) {
+                axisY = new QValueAxis();
+                axisY->setRange( 0.0, 2.0 );
+                axisY->applyNiceNumbers();
+                //axisY->setLabelFormat("%f1.0");
+            }
+            QValueAxis *axisX = dynamic_cast<QValueAxis *>( chart->axisX() );
+            if( ! axisX ) {
+                axisX = new QValueAxis();
+                axisX->setRange( hInitial, hFinal );
+                axisX->applyNiceNumbers();
+                //axisX->setLabelFormat("%f3.1");
+            }
+            //-------------------------------------------------
+
+            chart->removeAllSeries();
+
+            chart->addSeries( seriesSum );
+            chart->addSeries( seriesOnes );
+
+//            //putting all series in the same scale
+            chart->setAxisX( axisX, seriesSum );
+            chart->setAxisY( axisY, seriesSum );
+            chart->setAxisX( axisX, seriesOnes );
+            chart->setAxisY( axisY, seriesOnes );
+        }
+    }
 }
 
 void TransiogramDialog::onResetAttributesList()
