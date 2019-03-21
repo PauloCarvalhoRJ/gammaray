@@ -20,6 +20,8 @@
 #include "domain/categorydefinition.h"
 #include "domain/pointset.h"
 #include "domain/variogrammodel.h"
+#include "domain/segmentset.h"
+#include "domain/auxiliary/faciestransitionmatrixmaker.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
@@ -2011,4 +2013,110 @@ QColor Util::makeContrast(const QColor &color)
 QString Util::fontColorTag(const QString &text, const QColor &bgcolor)
 {
     return "<font color='" % makeContrast(bgcolor).name(QColor::HexRgb) % "'>" % text % "</font>";
+}
+
+std::vector<hFTM> Util::computeFaciesTransitionMatrices(std::vector<Attribute*>& categoricalAttributes,
+                                                      double hInitial,
+                                                      double hFinal,
+                                                      int nSteps,
+                                                      double toleranceCoefficient )
+{
+    double dh = ( hFinal - hInitial ) / nSteps;
+
+    //get pointer to the category definition of the first variable (assumed the same for all variables).
+    DataFile* parentOfFirst = dynamic_cast<DataFile*>( categoricalAttributes.front()->getContainingFile() );
+    CategoryDefinition* CDofFirst = parentOfFirst->getCategoryDefinition( categoricalAttributes.front() );
+    CDofFirst->readFromFS();
+
+    std::vector<hFTM> hFTMs;
+
+    //for each separation h
+    for( double h = hInitial; h <= hFinal; h += dh ){
+        //create a FTM for all categorical variables for each h.
+        FaciesTransitionMatrix ftmAll("");
+        ftmAll.setInfo( CDofFirst->getName() );
+        ftmAll.initialize();
+        hFTMs.push_back( { h, ftmAll } );
+    }
+
+    //for each file (each categorical attribute)
+    for( Attribute* at : categoricalAttributes ){
+        //get the data file
+        DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+        Application::instance()->logInfo("Commencing work on " + dataFile->getName() + "/" + at->getName() + "...");
+        QApplication::processEvents();
+        //if the data file is a segment set
+        if( dataFile->getFileType() == "SEGMENTSET" ){
+            //load data from file system
+            dataFile->readFromFS();
+            //make an auxiliary object to count facies transitions at given separations
+            FaciesTransitionMatrixMaker<SegmentSet> ftmMaker( dynamic_cast<SegmentSet*>(dataFile),
+                                                              at->getAttributeGEOEASgivenIndex()-1 );
+            //for each separation h
+            for( hFTM& hftm : hFTMs ){
+                Application::instance()->logInfo("   working on h = " + QString::number( hftm.first ) + "...");
+                QApplication::processEvents();
+                //make a Facies Transion Matrix for a given h
+                FaciesTransitionMatrix ftm = ftmMaker.makeAlongTrajectory( hftm.first, toleranceCoefficient * hftm.first );
+                //add its counts to the global FTM for a given h
+                hftm.second.add( ftm );
+            }
+        } else {
+            Application::instance()->logError("Util::computeFaciesTransitionMatrix(): Data files of type " +
+                                               dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete or not done at all.", true);
+        }
+    }
+
+    return hFTMs;
+}
+
+void Util::compressFaciesTransitionMatrices( std::vector<hFTM>& hFTMs )
+{
+    //get a reference to one of the FTM (assumes the FTM for each h referes to the same facies after compression).
+    FaciesTransitionMatrix& firstFTM = hFTMs.front().second;
+
+    //for each category (compress columns)
+    for( int i = 0; i < firstFTM.getColumnCount(); ++i ){
+        //assume all columns are full of zeroes
+        bool keepColumn = false;
+        //for each separation h, query whether we have columns with only zeroes in all the FTMs.
+        for( const hFTM& hftm : hFTMs ){
+            const FaciesTransitionMatrix& ftm = hftm.second;
+            if( ! ftm.isColumnZeroed( i ) )
+                keepColumn = true;
+        }
+        //if a column for all h's were full of zeros
+        if( !keepColumn ){
+            //removes all zeroed columns for each separation h
+            // so they all have the same facies
+            for( hFTM& hftm : hFTMs ){
+                FaciesTransitionMatrix& ftm = hftm.second;
+                ftm.removeColumn( i );
+            }
+            --i;
+        }
+    }
+
+    //for each category (compress rows)
+    for( int i = 0; i < firstFTM.getRowCount(); ++i ){
+        //assume all rows are full of zeroes
+        bool keepRow = false;
+        //for each separation h, query whether we have rows with only zeroes in all the FTMs.
+        for( const hFTM& hftm : hFTMs ){
+            const FaciesTransitionMatrix& ftm = hftm.second;
+            if( ! ftm.isRowZeroed( i ) )
+                keepRow = true;
+        }
+        //if a row for all h's were full of zeros
+        if( !keepRow ){
+            //removes all zeroed rows for each separation h
+            // so they all have the same facies
+            for( hFTM& hftm : hFTMs ){
+                FaciesTransitionMatrix& ftm = hftm.second;
+                ftm.removeRow( i );
+            }
+            --i;
+        }
+    }
+
 }

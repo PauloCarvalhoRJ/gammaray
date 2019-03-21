@@ -44,6 +44,7 @@ private Q_SLOTS:
     void performCalculation();
     void onSave();
     void onTransiogramModelUpdated();
+    void onDynamicFRD();
 };
 
 #endif // TRANSIOGRAMDIALOG_H

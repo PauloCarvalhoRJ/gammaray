@@ -9,6 +9,7 @@
 #include <complex>
 #include "geometry/face3d.h"
 #include "viewer3d/view3dcolortables.h"
+#include "domain/faciestransitionmatrix.h"
 
 // macro used to do printf on QString for debugging purposes
 // it is safe to delete this.
@@ -63,6 +64,10 @@ enum class FFT1DDirection : int {
 enum class ColorScaling : uint { ARITHMETIC = 0, LOG };
 
 enum class ValueScaling : uint { DIRECT = 0, ABS };
+
+//one Facies Transition Matrix per h.
+typedef double Separation;
+typedef std::pair<Separation, FaciesTransitionMatrix> hFTM;
 
 /**
  * @brief The Util class organizes system-wide utilitary functions.
@@ -658,6 +663,28 @@ public:
      * the given background color.
      */
     static QString fontColorTag( const QString& text, const QColor& bgcolor );
+
+    /**
+     * Computes a series of Facies Transition Matrices for different separations (h) in space.
+     * @param categoricalAttributes The list with categorical attributes to compute FTMs for.
+     * @param hInitial The initial separation (e.g. 1m)
+     * @param hFinal The final separation (e.g. 30m)
+     * @param nSteps The number of separations between initial and final separations (e.g. 15).
+     * @param toleranceCoefficient The tolerance to be used for spatial searches (useful for point sets or other
+     *                             data sets with sparse small support).
+     */
+    static std::vector<hFTM> computeFaciesTransitionMatrices( std::vector<Attribute *> &categoricalAttributes,
+                                                              double hInitial,
+                                                              double hFinal,
+                                                              int nSteps,
+                                                              double toleranceCoefficient );
+
+    /**
+     *  Removes zero-only columns and rows from the passed Facies Transion Matrices.
+     *  This action is done such that all matrices in the list have columns
+     *  and rows refering to the same facies.
+     */
+    static void compressFaciesTransitionMatrices( std::vector<hFTM>& hFTMs );
 };
 
 #endif // UTIL_H
