@@ -119,9 +119,12 @@ void TransiogramDialog::tryToAddAttribute(Attribute *attribute)
 
 void TransiogramDialog::clearCharts()
 {
-    for( QWidget* qcv : m_transiogramChartViews )
-        delete qcv;
+    for( QWidget* cv : m_transiogramChartViews )
+        delete cv;
     m_transiogramChartViews.clear();
+    for( QWidget* cv : m_sumChartViews )
+        delete cv;
+    m_sumChartViews.clear();
 }
 
 void TransiogramDialog::performCalculation()
@@ -280,7 +283,7 @@ void TransiogramDialog::performCalculation()
                                                                    QString::number(color.red()) + "," +
                                                                    QString::number(color.green()) + "," +
                                                                    QString::number(color.blue()) +"); }");
-        faciesLabel->setText( "<font color=\"white\"><b>SUM</b></font>");
+        faciesLabel->setText( "<font color=\"white\"><b>BALANCE</b></font>");
         gridLayout->addWidget( faciesLabel, 0, firstFTM.getColumnCount()+1 );
     }
 
@@ -396,11 +399,11 @@ void TransiogramDialog::performCalculation()
             QValueAxis *axisY = new QValueAxis();
             axisY->setRange( 0.0, 1.0 );
             axisY->applyNiceNumbers();
-            //axisY->setLabelFormat("%f1.0");
+            axisY->setLabelFormat("%i");
             QValueAxis *axisX = new QValueAxis();
             axisX->setRange( hInitial, hFinal );
             axisX->applyNiceNumbers();
-            //axisX->setLabelFormat("%f5.1");
+            axisX->setLabelFormat("%i");
 
             //create a chart object to contain all the data series in the same chart area
             QChart *chart = new QChart();
@@ -558,10 +561,13 @@ void TransiogramDialog::onTransiogramModelUpdated()
         QChartView *sumChartView = dynamic_cast<QChartView *>( m_sumChartViews[iSumChart] );
 
         QChart *chart = sumChartView->chart();
-        {
 
-            //create an empty data series for the sum of transiogram model curve values
-            QLineSeries *seriesSum = new QLineSeries();
+        //create a data series for the sum of transiogram model curve values
+        QLineSeries *seriesSum = new QLineSeries();
+        {
+            QPen pen( QRgb(0x008F8F) );
+            pen.setWidth( 3 );
+            seriesSum->setPen( pen );
 
             //for each transiogram chart of the sum chart's row
             for( int iTransiogramChart = iSumChart * numberOfColumns;
@@ -589,49 +595,47 @@ void TransiogramDialog::onTransiogramModelUpdated()
                     ++iPoint;
                 }
             }
+        }
 
 
-            //create a data series (line in the chart) to represent graphically the 1.0 level for
-            //the transiograms sum charts between the h's configured by the user
-            QLineSeries *seriesOnes = new QLineSeries();
-            {
-                //make a single straight line to mark the sill in the graph
-                seriesOnes->append( hInitial, 1.0 );
-                seriesOnes->append( hFinal,   1.0 );
-                QPen pen( QRgb(0x008F00) );
-                pen.setWidth( 1 );
-                pen.setStyle( Qt::DashLine );
-                seriesOnes->setPen( pen );
-            }
+        //create a data series (line in the chart) to represent graphically the 1.0 level for
+        //the transiograms sum charts between the h's configured by the user
+        QLineSeries *seriesOnes = new QLineSeries();
+        {
+            //make a single straight line to mark the sill in the graph
+            seriesOnes->append( hInitial, 1.0 );
+            seriesOnes->append( hFinal,   1.0 );
+            QPen pen( QRgb(0x008F00) );
+            pen.setWidth( 1 );
+            pen.setStyle( Qt::DashLine );
+            seriesOnes->setPen( pen );
+        }
 
-            //-------create the sum chart's axes once-----------------
-            QValueAxis *axisY = dynamic_cast<QValueAxis *>( chart->axisY() );
-            if( ! axisY ) {
-                axisY = new QValueAxis();
-                axisY->setRange( 0.0, 2.0 );
-                axisY->applyNiceNumbers();
-                //axisY->setLabelFormat("%f1.0");
-            }
-            QValueAxis *axisX = dynamic_cast<QValueAxis *>( chart->axisX() );
-            if( ! axisX ) {
-                axisX = new QValueAxis();
-                axisX->setRange( hInitial, hFinal );
-                axisX->applyNiceNumbers();
-                //axisX->setLabelFormat("%f3.1");
-            }
-            //-------------------------------------------------
+        //-------create the sum chart's axes once-----------------
+        QValueAxis *axisY = dynamic_cast<QValueAxis *>( chart->axisY() );
+        if( ! axisY )
+            axisY = new QValueAxis();
+        axisY->setRange( 0.0, 2.0 );
+        axisY->applyNiceNumbers();
+        axisY->setLabelFormat("%i");
+        QValueAxis *axisX = dynamic_cast<QValueAxis *>( chart->axisX() );
+        if( ! axisX )
+            axisX = new QValueAxis();
+        axisX->setRange( hInitial, hFinal );
+        axisX->applyNiceNumbers();
+        axisX->setLabelFormat("%i");
+        //-------------------------------------------------
 
-            chart->removeAllSeries();
+        chart->removeAllSeries();
 
-            chart->addSeries( seriesSum );
-            chart->addSeries( seriesOnes );
+        chart->addSeries( seriesSum );
+        chart->addSeries( seriesOnes );
 
 //            //putting all series in the same scale
-            chart->setAxisX( axisX, seriesSum );
-            chart->setAxisY( axisY, seriesSum );
-            chart->setAxisX( axisX, seriesOnes );
-            chart->setAxisY( axisY, seriesOnes );
-        }
+        chart->setAxisX( axisX, seriesSum );
+        chart->setAxisY( axisY, seriesSum );
+        chart->setAxisX( axisX, seriesOnes );
+        chart->setAxisY( axisY, seriesOnes );
     }
 }
 
