@@ -3,20 +3,38 @@
 
 #include <QDialog>
 
+#include "util.h"
+
 namespace Ui {
 class DynamicFaciesRelationshipDiagramDialog;
 }
+
+class Attribute;
 
 class DynamicFaciesRelationshipDiagramDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit DynamicFaciesRelationshipDiagramDialog(QWidget *parent = nullptr);
+    explicit DynamicFaciesRelationshipDiagramDialog( std::vector<Attribute*>& categoricalAttributes,
+                                                     double hInitial,
+                                                     double hFinal,
+                                                     int nSteps,
+                                                     double toleranceCoefficient,
+                                                     QWidget *parent = nullptr );
     ~DynamicFaciesRelationshipDiagramDialog();
 
 private:
     Ui::DynamicFaciesRelationshipDiagramDialog *ui;
+
+    std::vector<Attribute*>& m_categoricalAttributes;
+
+    double m_hInitial;
+    double m_hFinal;
+    int    m_nSteps;
+    double m_toleranceCoefficient;
+
+    std::vector<hFTM> m_hFTMs;
 };
 
 #endif // DYNAMICFACIESRELATIONSHIPDIAGRAMDIALOG_H

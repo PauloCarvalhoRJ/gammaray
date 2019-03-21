@@ -145,7 +145,6 @@ void TransiogramDialog::performCalculation()
     double hFinal = ui->dblSpinHFin->value();
     int nSteps = ui->spinNSteps->value();
     double toleranceCoefficient = ui->dblSpinTolCoeff->value();
-    double dh = ( hFinal - hInitial ) / nSteps;
 
     //----------------------------------------------COMPUTE FTMs FOR ALL h's-----------------------------------
 

@@ -150,6 +150,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="btnDynamicFRD">
+       <property name="toolTip">
+        <string>Dynamic Facies Relationship Diagram</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/frd32</normaloff>:/icons32/frd32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnExecute">
        <property name="toolTip">
         <string>Compute transiograms</string>
@@ -368,10 +382,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnDynamicFRD</sender>
+   <signal>clicked()</signal>
+   <receiver>TransiogramDialog</receiver>
+   <slot>onDynamicFRD()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>744</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>706</x>
+     <y>37</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onResetAttributesList()</slot>
   <slot>performCalculation()</slot>
   <slot>onSave()</slot>
+  <slot>onDynamicFRD()</slot>
  </slots>
 </ui>
