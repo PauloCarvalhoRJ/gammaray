@@ -249,7 +249,8 @@ SOURCES += main.cpp\
     domain/auxiliary/faciestransitionmatrixmaker.cpp \
     domain/auxiliary/thicknesscalculator.cpp \
     widgets/transiogramchartview.cpp \
-    domain/verticaltransiogrammodel.cpp
+    domain/verticaltransiogrammodel.cpp \
+    dialogs/dynamicfaciesrelationshipdiagramdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -477,7 +478,8 @@ HEADERS  += mainwindow.h \
     domain/auxiliary/faciestransitionmatrixmaker.h \
     domain/auxiliary/thicknesscalculator.h \
     widgets/transiogramchartview.h \
-    domain/verticaltransiogrammodel.h
+    domain/verticaltransiogrammodel.h \
+    dialogs/dynamicfaciesrelationshipdiagramdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -565,7 +567,8 @@ FORMS    += mainwindow.ui \
     dialogs/projectfilechoosedialog.ui \
     dialogs/entropycyclicityanalysisdialog.ui \
     dialogs/faciesrelationshipdiagramdialog.ui \
-    dialogs/transiogramdialog.ui
+    dialogs/transiogramdialog.ui \
+    dialogs/dynamicfaciesrelationshipdiagramdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
