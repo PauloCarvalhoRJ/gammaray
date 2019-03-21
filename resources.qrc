@@ -122,5 +122,6 @@
         <file alias="transmat32">art/iconsHD/transmat32.png</file>
         <file alias="transiogram32">art/iconsHD/transiogram32.png</file>
         <file alias="clean32">art/iconsHD/clean32.png</file>
+        <file alias="frd32">art/iconsHD/frd32.png</file>
     </qresource>
 </RCC>
