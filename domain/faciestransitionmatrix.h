@@ -82,7 +82,7 @@ public:
      * in m_associatedCategoryDefinitionName.  Returns nullptr it the name
      * is not set or the object with the name does not exist.
      */
-    CategoryDefinition* getAssociatedCategoryDefinition();
+    CategoryDefinition* getAssociatedCategoryDefinition() const;
 
     /** Sums all the values in the matrix and returns it.
      * This value makes sense if this matrix is storing facies
@@ -90,14 +90,14 @@ public:
      * Do not forget to load the matrix previously with readFromFS(), otherwise
      * zero will be returned.
      */
-    double getTotal();
+    double getTotal() const;
 
     /**
      * Sums all values in a row.  First row has index 0.
      * Do not forget to load the matrix previously with readFromFS(), otherwise
      * zero will be returned.
      */
-    double getSumOfRow( int rowIndex );
+    double getSumOfRow( int rowIndex ) const;
 
     /**
      * Shortcut to getTotal() - getSumOfRow(rowIndex).
@@ -109,12 +109,12 @@ public:
      * Do not forget to load the matrix previously with readFromFS(), otherwise
      * zero will be returned.
      */
-    double getSumOfColumn( int columnIndex );
+    double getSumOfColumn( int columnIndex ) const;
 
     int getColumnCount() const;
     int getRowCount() const;
-    QString getColumnHeader( int columnIndex );
-    QString getRowHeader( int rowIndex );
+    QString getColumnHeader( int columnIndex ) const;
+    QString getRowHeader( int rowIndex ) const;
     double getValue( int rowIndex, int colIndex ) const;
     double getValueMax();
 
@@ -122,20 +122,20 @@ public:
      * A default color is returned if no category definition is associated
      * or the category name is not found.
      */
-    QColor getColorOfCategoryInColumnHeader( int columnIndex );
+    QColor getColorOfCategoryInColumnHeader( int columnIndex ) const;
 
     /** Returns the color assigned to the category of the given row.
      * A default color is returned if no category definition is associated
      * or the category name is not found.
      */
-    QColor getColorOfCategoryInRowHeader( int rowIndex );
+    QColor getColorOfCategoryInRowHeader( int rowIndex ) const;
 
     /**
      * Returns the upward transition probability from one facies to another.  This value makes sense
      * for transition values stored as counts (count matrix).
      * The value is computed as getValue( fromFaciesRowIndex, toFaciesColIndex ) / getSumOfRow( fromFaciesRowIndex )
      */
-    double getUpwardTransitionProbability( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getUpwardTransitionProbability( int fromFaciesRowIndex, int toFaciesColIndex ) const;
 
     /**
      * Returns the downward transition probability from one facies to another.  This value makes sense
@@ -188,7 +188,7 @@ public:
      * Returns the probability of the transition from one facies to another that occur in a random manner.
      * The value is computed as getSumOfColumn( toFaciesColIndex ) / ( getTotal() - getSumOfRow( fromFaciesRowIndex ) )
      */
-    double getIndependentTrail( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getIndependentTrail( int fromFaciesRowIndex, int toFaciesColIndex ) const;
 
     /**
      * This value highlight probabilities of occurrence greater than if the sequence were random.
@@ -196,7 +196,7 @@ public:
      * Great negative values indicate a downward correlation (less random downward sequence).
      * It is computed as getUpwardTransitionProbability(fromFaciesRowIndex, toFaciesColIndex) - getIndependentTrail(fromFaciesRowIndex, toFaciesColIndex)
      */
-    double getDifference( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getDifference( int fromFaciesRowIndex, int toFaciesColIndex ) const;
     double getMaxAbsDifference( );
 
     /**

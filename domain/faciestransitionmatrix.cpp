@@ -150,7 +150,7 @@ void FaciesTransitionMatrix::add(const FaciesTransitionMatrix &otherFTM)
         Application::instance()->logWarn( "FaciesTransitionMatrix::add(): FTMs not compatible for addition.  Nothing done." );
 }
 
-CategoryDefinition *FaciesTransitionMatrix::getAssociatedCategoryDefinition()
+CategoryDefinition *FaciesTransitionMatrix::getAssociatedCategoryDefinition() const
 {
     CategoryDefinition* result = dynamic_cast<CategoryDefinition*>( Application::instance()->
                                                                                getProject()->
@@ -161,7 +161,7 @@ CategoryDefinition *FaciesTransitionMatrix::getAssociatedCategoryDefinition()
     return result;
 }
 
-double FaciesTransitionMatrix::getTotal()
+double FaciesTransitionMatrix::getTotal() const
 {
     double result = 0.0;
     for( const std::vector<double>& row : m_transitionCounts )
@@ -170,7 +170,7 @@ double FaciesTransitionMatrix::getTotal()
     return result;
 }
 
-double FaciesTransitionMatrix::getSumOfRow( int rowIndex )
+double FaciesTransitionMatrix::getSumOfRow( int rowIndex ) const
 {
     double result = 0.0;
     int rowCount = 0;
@@ -190,7 +190,7 @@ double FaciesTransitionMatrix::getTotalMinusSumOfRow(int rowIndex)
     return getTotal() - getSumOfRow( rowIndex );
 }
 
-double FaciesTransitionMatrix::getSumOfColumn(int columnIndex)
+double FaciesTransitionMatrix::getSumOfColumn(int columnIndex) const
 {
     double result = 0.0;
     for( const std::vector<double>& row : m_transitionCounts ){
@@ -214,12 +214,12 @@ int FaciesTransitionMatrix::getRowCount() const
     return m_lineHeadersFaciesNames.size();
 }
 
-QString FaciesTransitionMatrix::getColumnHeader(int columnIndex)
+QString FaciesTransitionMatrix::getColumnHeader(int columnIndex) const
 {
     return m_columnHeadersFaciesNames[columnIndex];
 }
 
-QString FaciesTransitionMatrix::getRowHeader(int rowIndex)
+QString FaciesTransitionMatrix::getRowHeader(int rowIndex) const
 {
     return m_lineHeadersFaciesNames[rowIndex];
 }
@@ -241,7 +241,7 @@ double FaciesTransitionMatrix::getValueMax()
     return max;
 }
 
-QColor FaciesTransitionMatrix::getColorOfCategoryInColumnHeader(int columnIndex)
+QColor FaciesTransitionMatrix::getColorOfCategoryInColumnHeader(int columnIndex) const
 {
     QColor result;
     CategoryDefinition* cd = getAssociatedCategoryDefinition();
@@ -253,7 +253,7 @@ QColor FaciesTransitionMatrix::getColorOfCategoryInColumnHeader(int columnIndex)
     return cd->getCustomColor( cd->getCategoryIndex( catCode ) );
 }
 
-QColor FaciesTransitionMatrix::getColorOfCategoryInRowHeader(int rowIndex)
+QColor FaciesTransitionMatrix::getColorOfCategoryInRowHeader(int rowIndex) const
 {
     QColor result;
     CategoryDefinition* cd = getAssociatedCategoryDefinition();
@@ -265,7 +265,7 @@ QColor FaciesTransitionMatrix::getColorOfCategoryInRowHeader(int rowIndex)
     return cd->getCustomColor( cd->getCategoryIndex( catCode ) );
 }
 
-double FaciesTransitionMatrix::getUpwardTransitionProbability(int fromFaciesRowIndex, int toFaciesColIndex)
+double FaciesTransitionMatrix::getUpwardTransitionProbability(int fromFaciesRowIndex, int toFaciesColIndex) const
 {
     return getValue( fromFaciesRowIndex, toFaciesColIndex ) / getSumOfRow( fromFaciesRowIndex );
 }
@@ -317,14 +317,14 @@ double FaciesTransitionMatrix::getPreDepositionalEntropy(int faciesIndex, bool n
     return sum;
 }
 
-double FaciesTransitionMatrix::getIndependentTrail(int fromFaciesRowIndex, int toFaciesColIndex)
+double FaciesTransitionMatrix::getIndependentTrail(int fromFaciesRowIndex, int toFaciesColIndex) const
 {
     if( fromFaciesRowIndex == toFaciesColIndex )
         return 0.0;
     return getSumOfColumn( toFaciesColIndex ) / ( getTotal() - getSumOfRow( fromFaciesRowIndex ) );
 }
 
-double FaciesTransitionMatrix::getDifference(int fromFaciesRowIndex, int toFaciesColIndex)
+double FaciesTransitionMatrix::getDifference(int fromFaciesRowIndex, int toFaciesColIndex) const
 {
     if( fromFaciesRowIndex == toFaciesColIndex )
         return 0.0;
