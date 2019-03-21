@@ -685,6 +685,21 @@ public:
      *  and rows refering to the same facies.
      */
     static void compressFaciesTransitionMatrices( std::vector<hFTM>& hFTMs );
+
+    /**
+     * Plots the Facies Relationship Diagram for the passed Facies Transition Matrix.
+     * @param tmpPostscriptFilePath Output parameter: the path to the resulted Postscript temporary file.
+     * @param cutoff Probability values below this value are not plotted.
+     * @param makeLinesProportionalToProbabilities The thickness of the lines in the graph are proportional to the transition probabilities.
+     * @param numberOfDecimalDigits The number of decimal places in the labels of the graph.
+     * @param maxLineThickness The maximum line thickness to be used if makeLinesProportionalToProbabilities is true.
+     */
+    static void makeFaciesRelationShipDiagramPlot( const FaciesTransitionMatrix &faciesTransitionMatrix,
+                                                   QString &tmpPostscriptFilePath,
+                                                   double cutoff,
+                                                   bool makeLinesProportionalToProbabilities ,
+                                                   int numberOfDecimalDigits,
+                                                   int maxLineThickness );
 };
 
 #endif // UTIL_H

@@ -40,6 +40,7 @@
 #include <vtkLookupTable.h>
 #include <QProgressDialog>
 #include <QStringBuilder>
+#include <gvc.h>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
@@ -2119,4 +2120,88 @@ void Util::compressFaciesTransitionMatrices( std::vector<hFTM>& hFTMs )
         }
     }
 
+}
+
+void Util::makeFaciesRelationShipDiagramPlot( const FaciesTransitionMatrix &faciesTransitionMatrix,
+                                              QString& tmpPostscriptFilePath,
+                                              double cutoff,
+                                              bool makeLinesProportionalToProbabilities,
+                                              int numberOfDecimalDigits,
+                                              int maxLineThickness )
+{
+    Agraph_t* G;
+    GVC_t* gvc;
+
+    //create a GVC library context
+    gvc = gvContext();
+
+    { //G = createGraph ();
+        QString outputDOT = "digraph{\n";
+        outputDOT = outputDOT % "page=\"8.5,11\";\n";
+        outputDOT = outputDOT % "size=\"7.5,10\";\n";
+        for( int i = 0; i < faciesTransitionMatrix.getRowCount(); ++i ){
+            for( int j = 0; j < faciesTransitionMatrix.getColumnCount(); ++j ){
+                // Help about the DOT style language: https://graphviz.gitlab.io/_pages/pdf/dotguide.pdf
+                // Help about GraphViz API:           https://graphviz.gitlab.io/_pages/pdf/libguide.pdf
+                // GraphViz general documentation:    https://www.graphviz.org/documentation/
+                double diff = faciesTransitionMatrix.getDifference( i, j );
+                if( diff > cutoff ){
+                    //style for the "from" facies
+                    QColor color = faciesTransitionMatrix.getColorOfCategoryInRowHeader( i ).toHsv();
+                    double hue = color.hueF();
+                    if( hue < 0 )
+                        hue *= -1.0;
+                    QString hsv = QString::number( hue )   + " " +
+                                  QString::number( color.saturationF() ) + " " +
+                                  QString::number( color.valueF() );
+                    QString labelColor = "black";
+                    if( Util::isDark( color ) ) //if the facies color is too dark, use white letters for the labels
+                        labelColor = "white";
+                    outputDOT = outputDOT % "\"" % faciesTransitionMatrix.getRowHeader(i) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
+                                          "label=<<FONT COLOR=\"" % labelColor % "\">" % faciesTransitionMatrix.getRowHeader(i) % "</FONT>>]\n";
+                    //style for the "to" facies
+                    color = faciesTransitionMatrix.getColorOfCategoryInColumnHeader( j ).toHsv();
+                    hue = color.hueF();
+                    if( hue < 0 )
+                        hue *= -1.0;
+                    hsv = QString::number( hue )   + " " +
+                          QString::number( color.saturationF() ) + " " +
+                          QString::number( color.valueF() );
+                    labelColor = "black";
+                    if( Util::isDark( color ) ) //if the facies color is too dark, use white letters for the labels
+                        labelColor = "white";
+                    outputDOT = outputDOT % "\"" % faciesTransitionMatrix.getColumnHeader(j) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
+                            "label=<<FONT COLOR=\"" % labelColor % "\">" % faciesTransitionMatrix.getColumnHeader(j) % "</FONT>>]\n";
+                    //style for the edge connecting both facies
+                    outputDOT = outputDOT % "\"" % faciesTransitionMatrix.getRowHeader(i) % "\" -> \"" %
+                                                   faciesTransitionMatrix.getColumnHeader(j) % "\"" %
+                                                   "[label=\"" % QString::number(diff,'g',numberOfDecimalDigits) % "\"";
+                    if( makeLinesProportionalToProbabilities )
+                        outputDOT = outputDOT % ",style=\"setlinewidth(" % QString::number((int)( diff * maxLineThickness )) % ")\"";
+                    outputDOT = outputDOT % "]\n";
+                }
+            }
+        }
+        outputDOT = outputDOT % "}\n";
+
+        //std::cout << outputDOT.toStdString() << std::endl;
+
+        G = agmemread( outputDOT.toStdString().c_str() );
+    }
+
+    //layout the graph
+    gvLayout (gvc, G, "dot");
+
+    //make a tmp PostScript file
+    tmpPostscriptFilePath = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+    { //drawGraph (G) to some output device;
+        const char* format = "ps";
+        gvRenderFilename( gvc, G, format, tmpPostscriptFilePath.toStdString().c_str() );
+    }
+
+    //free resources
+    gvFreeLayout(gvc, G);
+    agclose (G);
+    gvFreeContext(gvc);
 }
