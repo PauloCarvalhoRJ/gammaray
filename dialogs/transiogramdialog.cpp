@@ -572,7 +572,7 @@ void TransiogramDialog::onDynamicFRD()
                 nSteps,
                 toleranceCoefficient,
                 this );
-    dfrdd->exec();
+    dfrdd->show();
 }
 
 void TransiogramDialog::onResetAttributesList()

@@ -35,6 +35,14 @@ private:
     double m_toleranceCoefficient;
 
     std::vector<hFTM> m_hFTMs;
+
+    std::vector<QPixmap> m_images;
+
+private Q_SLOTS:
+    void onDisplayDiagram( int index );
+    void onGenerateDiagrams();
+    void onCapture();
+    void onSave();
 };
 
 #endif // DYNAMICFACIESRELATIONSHIPDIAGRAMDIALOG_H
