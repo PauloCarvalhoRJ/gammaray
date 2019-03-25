@@ -489,9 +489,9 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
     double sum = 0.0;
     for( int k = 0; k < nK; ++k )
         for( int j = 0; j < nJ; ++j )
-            for( int i = 0; i < nI; ++i ){
-                sum += std::abs( varmapOfInput(i,j,k) - variographicSurface(i,j,k) );
-            }
+            for( int i = 0; i < nI; ++i )
+                if( ! ImageJockeyUtils::almostEqual2sComplement( varmapOfInput(i,j,k), 0.0, 1 ) )
+                    sum += std::abs( ( varmapOfInput(i,j,k) - variographicSurface(i,j,k) ) / varmapOfInput(i,j,k) );
 
     // Finally, return the objective function value.
     return sum;
@@ -2240,11 +2240,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
     int maxNumberOfOptimizationSteps = ui->spinMaxSteps->value();
     // The user-given epsilon (useful for numerical calculus).
     double epsilon = std::pow(10, ui->spinLogEpsilon->value() );
-    double initialAlpha = ui->spinInitialAlpha->value();
-    double maxNumberOfAlphaReductionSteps = ui->spinMaxStepsAlphaReduction->value();
-    double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
-    int nStartingPoints = 80; //number of random starting points in the domain
-    int nRestarts = 10; //number of restarts
+    int nStartingPoints = 20; //number of random starting points in the domain
+    int nRestarts = 40; //number of restarts
 
     // Get the data objects.
     IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
@@ -2310,10 +2307,15 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
     //================================== PREPARE OPTIMIZATION STEPS ==========================
 
     //define the domain
-    double minAxis         = 0.0  ; double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
-    double minRatio        = 0.001; double maxRatio        = 1.0;
-    double minAzimuth      = 0.0  ; double maxAzimuth      = ImageJockeyUtils::PI;
-    double minContribution = 0.0  ; double maxContribution = inputVarmap.max();
+    double minCellSize = std::min( inputGrid->getCellSizeI(), inputGrid->getCellSizeJ() );
+    double minAxis         = minCellSize;               double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
+    double minRatio        = 0.001;                     double maxRatio        = 1.0;
+    double minAzimuth      = 0.0  ;                     double maxAzimuth      = ImageJockeyUtils::PI;
+    double minContribution = inputVarmap.max() / 100.0; double maxContribution = inputVarmap.max();
+    double deltaAxis = maxAxis - minAxis;
+    double deltaRatio = maxRatio - minRatio;
+    double deltaAzimuth = maxAzimuth - minAzimuth;
+    double deltaContribution = maxContribution - minContribution;
 
     //create one variographic ellipse for each geological factor wanted by the user
     //the parameters are initialized near in the center of the domain
@@ -2323,7 +2325,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
         variographicEllipses.push_back( IJVariographicStructure2D ( ( maxAxis         + minAxis         ) / 2.0,
                                                                     ( maxRatio        + minRatio        ) / 2.0,
                                                                     ( minAzimuth      + maxAzimuth      ) / 2.0,
-                                                                    ( maxContribution - minContribution ) / 4.0 ) );
+                                                                    maxContribution / m ) ); //split evenly the total contribution among the geologic factors
 
     //Initialize the vector of linear system parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
     // from the variographic parameters for each geological factor
@@ -2386,10 +2388,6 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
             startingPoints.push_back( vw_StartingPoint );
         }
 
-        //set the direction
-        double direction = -1.0; //according to Grosan and Abraham (2009) a random number between
-                                 //0.0 and 1.0 also yields good results for most obective functions.
-
         //define the step as a function of iteration number (the alpha-k in Grosan and Abraham (2009))
         //first iteration must be 1.
         auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
@@ -2403,12 +2401,22 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
                 //make a candidate point with a vector from the current point.
                 spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
                 for( int j = 0; j < vw.size(); ++j ){
-                    double p_k = std::rand() / ( RAND_MAX / 1.0);//direction; //could be drawn from [0.0 1.0]
-                    vw_candidate[j] = startingPoints[i][j] + p_k * alpha_k( k );
+                    double p_k = -1.0 + std::rand() / ( RAND_MAX / 2.0);//author suggests -1 or drawn from [0.0 1.0] for best results
+
+                    double delta = 0.0;
+                    switch( j % IJVariographicStructure2D::getNumberOfParameters() ){
+                    case 0: delta = deltaAxis;         break;
+                    case 1: delta = deltaRatio;        break;
+                    case 2: delta = deltaAzimuth;      break;
+                    case 3: delta = deltaContribution; break;
+                    }
+
+                    vw_candidate[j] = startingPoints[i][j] + p_k * delta * alpha_k( k );
                     if( vw_candidate[j] > L_wMax[j] )
                         vw_candidate[j] = L_wMax[j];
                     if( vw_candidate[j] < L_wMin[j] )
                         vw_candidate[j] = L_wMin[j];
+
                 }
                 //evaluate the objective function for the current point and for the candidate point
                 double fCurrent = F3( *inputGrid, inputVarmap, startingPoints[i], m );
@@ -2425,21 +2433,17 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
                 }
             } //for each starting point
             QApplication::processEvents();
-        }
+        } // search for best solution
         //---------------------------------------------------------------------------
 
         //for each parameter of the best solution
         for( int iParameter = 0; iParameter < vw.size(); ++iParameter ){
             //Make a set of parameters slightly shifted to the right (more positive) along one parameter.
-            spectral::array vwFromRight( vw_bestSolution );
-            vwFromRight(iParameter) = vwFromRight(iParameter) + epsilon;
-            if( vwFromRight(iParameter) > L_wMax[ iParameter ] )
-                vwFromRight(iParameter) = L_wMax[ iParameter ];
+            spectral::array vwFromRight = vw_bestSolution;
+            vwFromRight(iParameter) = vw_bestSolution(iParameter) + epsilon;
             //Make a set of parameters slightly shifted to the left (more negative) along one parameter.
-            spectral::array vwFromLeft( vw_bestSolution );
-            vwFromLeft(iParameter) = vwFromLeft(iParameter) - epsilon;
-            if( vwFromLeft(iParameter) < L_wMin[ iParameter ] )
-                vwFromLeft(iParameter) = L_wMin[ iParameter ];
+            spectral::array vwFromLeft = vw_bestSolution;
+            vwFromLeft(iParameter) = vw_bestSolution(iParameter) - epsilon;
             //compute the partial derivative along one parameter
             double partialDerivative =  (F3( *inputGrid, inputVarmap, vwFromRight, m )
                                          -
@@ -2453,7 +2457,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
                 L_wMax[ iParameter ] = vw_bestSolution[ iParameter ];
             else if( partialDerivative < 0 )
                 L_wMin[ iParameter ] = vw_bestSolution[ iParameter ];
-        } // search for best solution
+        } // reduce the domain to a smaller hyper volume around the suspected optimum
 
     } //restart loop
     progressDialog.hide();
