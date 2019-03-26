@@ -44,6 +44,8 @@ public:
      * This is useful to display the same curve in some other QChartView widget. */
     QtCharts::QLineSeries *getSeriesTransiogramModel() const;
 
+    void setModelVisible( bool value );
+
 Q_SIGNALS:
     /** Listening clients must use the get*() methods to retrieve the updated model parameters. */
     void modelWasUpdated();
@@ -73,6 +75,7 @@ private:
     bool m_mouseDown;
     QString m_headFaciesName;
     QString m_tailFaciesName;
+    bool m_modelVisible;
     void showOrHideCrossHairs();
     void updateModelSeries();
 };

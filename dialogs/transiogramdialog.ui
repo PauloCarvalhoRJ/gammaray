@@ -164,6 +164,20 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="btnCapture">
+       <property name="toolTip">
+        <string>Capture image of experimental transiography only</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/snapshot32</normaloff>:/icons32/snapshot32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnExecute">
        <property name="toolTip">
         <string>Compute transiograms</string>
@@ -389,12 +403,28 @@
    <slot>onDynamicFRD()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>744</x>
-     <y>22</y>
+     <x>721</x>
+     <y>32</y>
     </hint>
     <hint type="destinationlabel">
      <x>706</x>
      <y>37</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnCapture</sender>
+   <signal>clicked()</signal>
+   <receiver>TransiogramDialog</receiver>
+   <slot>onCaptureExperimentalTransiography()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>743</x>
+     <y>19</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>750</x>
+     <y>38</y>
     </hint>
    </hints>
   </connection>
@@ -404,5 +434,6 @@
   <slot>performCalculation()</slot>
   <slot>onSave()</slot>
   <slot>onDynamicFRD()</slot>
+  <slot>onCaptureExperimentalTransiography()</slot>
  </slots>
 </ui>

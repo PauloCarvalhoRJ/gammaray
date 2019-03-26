@@ -45,6 +45,7 @@ private Q_SLOTS:
     void onSave();
     void onTransiogramModelUpdated();
     void onDynamicFRD();
+    void onCaptureExperimentalTransiography();
 };
 
 #endif // TRANSIOGRAMDIALOG_H

@@ -10,6 +10,7 @@
 #include <QValueAxis>
 #include <QChartView>
 #include <QInputDialog>
+#include <QClipboard>
 
 #include "domain/datafile.h"
 #include "domain/application.h"
@@ -481,6 +482,8 @@ void TransiogramDialog::onTransiogramModelUpdated()
 
         QChart *chart = sumChartView->chart();
 
+        Application::instance()->logErrorOff();
+
         //create a data series for the sum of transiogram model curve values
         QLineSeries *seriesSum = new QLineSeries();
         {
@@ -516,6 +519,7 @@ void TransiogramDialog::onTransiogramModelUpdated()
             }
         }
 
+        Application::instance()->logErrorOn();
 
         //create a data series (line in the chart) to represent graphically the 1.0 level for
         //the transiograms sum charts between the h's configured by the user
@@ -573,6 +577,31 @@ void TransiogramDialog::onDynamicFRD()
                 toleranceCoefficient,
                 this );
     dfrdd->show();
+}
+
+void TransiogramDialog::onCaptureExperimentalTransiography()
+{
+//    //turn off model visibility
+//    for( QWidget* w : m_transiogramChartViews ){
+//        TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
+//        tcvAspect->setModelVisible( false );
+//    }
+
+    //capture the transiogram widgets image
+    QRect rectangle = ui->frmTransiograms->frameRect();
+    QPixmap pixmap(rectangle.size());
+    ui->frmTransiograms->render(&pixmap, QPoint(), QRegion(rectangle));
+
+    //copy the image to clipboard
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setPixmap( pixmap,  QClipboard::Clipboard );
+    QMessageBox::information(this, "Plot snapshot", "The transiograms image has been copied to the clipboard. You can paste it to any application.");
+
+//    //turn back on model visibility
+//    for( QWidget* w : m_transiogramChartViews ){
+//        TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
+//        tcvAspect->setModelVisible( true );
+//    }
 }
 
 void TransiogramDialog::onResetAttributesList()

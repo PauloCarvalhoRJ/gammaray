@@ -26,7 +26,8 @@ TransiogramChartView::TransiogramChartView(QtCharts::QChart *chart,
     m_seriesTransiogramModel( nullptr ),
     m_mouseDown( false ),
     m_headFaciesName( headFaciesName ),
-    m_tailFaciesName( tailFaciesName )
+    m_tailFaciesName( tailFaciesName ),
+    m_modelVisible( true )
 {
     //enable mouse move/hover events
     this->setMouseTracking( true );
@@ -59,6 +60,12 @@ QtCharts::QLineSeries *TransiogramChartView::getSeriesTransiogramModel() const
     return m_seriesTransiogramModel;
 }
 
+void TransiogramChartView::setModelVisible(bool value)
+{
+    m_modelVisible = value;
+    updateModelSeries();
+}
+
 void TransiogramChartView::showOrHideCrossHairs()
 {
     if( m_mouseDown ){
@@ -79,6 +86,7 @@ void TransiogramChartView::updateModelSeries()
         if( m_seriesTransiogramModel ){
             m_chart->removeSeries( m_seriesTransiogramModel );
             delete m_seriesTransiogramModel;
+            m_seriesTransiogramModel = nullptr;
         }
 
         //create a data series (line in the chart) for the transiogram model
@@ -93,17 +101,19 @@ void TransiogramChartView::updateModelSeries()
             else
                 m_seriesTransiogramModel->append( 0.0, 0.0 );
 
-            //for each separation h
-            double dh = m_hMax / 30.0;
-            for( double h = 0.0; h < m_hMax; h += dh ){
-                double theorethicalValue;
-                if( m_type == TransiogramType::AUTO_TRANSIOGRAM )
-                    theorethicalValue = 1.0 - GeostatsUtils::getGamma(
-                                                   VariogramStructureType::SPHERIC, h, m_range, 1.0 - m_sill );
-                else         //for cross-transiograms
-                    theorethicalValue = GeostatsUtils::getGamma(
-                                                   VariogramStructureType::SPHERIC, h, m_range, m_sill );
-                m_seriesTransiogramModel->append( h, theorethicalValue );
+            if( m_modelVisible ) {
+                //for each separation h
+                double dh = m_hMax / 30.0;
+                for( double h = 0.0; h < m_hMax; h += dh ){
+                    double theorethicalValue;
+                    if( m_type == TransiogramType::AUTO_TRANSIOGRAM )
+                        theorethicalValue = 1.0 - GeostatsUtils::getGamma(
+                                                       VariogramStructureType::SPHERIC, h, m_range, 1.0 - m_sill );
+                    else         //for cross-transiograms
+                        theorethicalValue = GeostatsUtils::getGamma(
+                                                       VariogramStructureType::SPHERIC, h, m_range, m_sill );
+                    m_seriesTransiogramModel->append( h, theorethicalValue );
+                }
             }
 
             QPen pen( QRgb(0x0000FF) );
