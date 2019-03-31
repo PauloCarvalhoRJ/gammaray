@@ -916,7 +916,7 @@
      <item row="32" column="0" colspan="3">
       <widget class="QPushButton" name="pushButton">
        <property name="text">
-        <string>Process 5 (directly fitting of variographic surface - SA+GD or LSRS)</string>
+        <string>Process 5 (directly fitting of variographic surface - SA+GD or LSRS or PSO)</string>
        </property>
       </widget>
      </item>

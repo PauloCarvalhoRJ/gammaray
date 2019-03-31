@@ -123,6 +123,7 @@ private Q_SLOTS:
     void doVariographicParametersAnalysisWithSpectrumPart();
     void doVariographicDecomposition5_WITH_SA_AND_GD();
     void doVariographicDecomposition5_WITH_LSRS();
+    void doVariographicDecomposition5_WITH_PSO();
     void doVariographicDecomposition5();
 };
 

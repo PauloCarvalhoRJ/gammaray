@@ -2219,10 +2219,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
     QMessageBox msgBox;
     msgBox.setText("Perform optimization with:");
     QAbstractButton* pButtonUseSAandGS = msgBox.addButton("Simulated Annealing + Gradient Descent", QMessageBox::YesRole);
+    QAbstractButton* pButtonUsePSO = msgBox.addButton("Particle Swarm Opt.", QMessageBox::ApplyRole);
     msgBox.addButton("Line Search with Restart", QMessageBox::NoRole);
     msgBox.exec();
     if ( msgBox.clickedButton() == pButtonUseSAandGS )
         doVariographicDecomposition5_WITH_SA_AND_GD();
+    if ( msgBox.clickedButton() == pButtonUsePSO )
+        doVariographicDecomposition5_WITH_PSO();
     else
         doVariographicDecomposition5_WITH_LSRS();
 }
@@ -2533,6 +2536,213 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
 //        QMessageBox::information(this, "aaaa", "aaaa");
 //    }
     ////////////////////////////////////////////////////////////
+
+}
+
+void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
+{
+    //get user configuration
+    int m = ui->spinNumberOfGeologicalFactors->value();
+    int maxNumberOfOptimizationSteps = ui->spinMaxSteps->value();
+    // The user-given epsilon (useful for numerical calculus).
+    int nParticles = 20; //number of wandering particles
+    double intertia_weight = 1.0;
+    double acceleration_constant_1 = 1.0;
+    double acceleration_constant_2 = 1.0;
+
+    // Get the data objects.
+    IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
+    IJAbstractVariable* variable = m_variableSelector->getSelectedVariable();
+
+    // Get the grid's dimensions.
+    unsigned int nI = inputGrid->getNI();
+    unsigned int nJ = inputGrid->getNJ();
+    unsigned int nK = inputGrid->getNK();
+
+    // Fetch data from the data source.
+    inputGrid->dataWillBeRequested();
+
+    //========================= GET VARMAP OF THE INPUT DATA =====================================
+
+    //make an array full of zeroes (useful for certain steps in the workflow)
+    spectral::array zeros( nI, nJ, nK, 0.0 );
+
+    // Get the input data as a spectral::array object
+    spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
+
+    //Compute FFT of input
+    spectral::array inputFFTrealPart;
+    spectral::array inputFFTimagPart;
+    spectral::array inputFFTimagPhase;
+    {
+        spectral::complex_array inputFFT;
+        spectral::foward( inputFFT, *inputData );
+        inputFFTrealPart = spectral::real( inputFFT );
+        inputFFTimagPart = spectral::imag( inputFFT );
+        spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+        inputFFTimagPhase = spectral::imag( inputFFTpolar );
+    }
+
+    //do a^2 + b^2
+    // where a = real part of FFT; b = imaginary part of FFT.
+    spectral::array inputMagSquared = spectral::hadamard( inputFFTrealPart, inputFFTrealPart ) +
+                                      spectral::hadamard( inputFFTimagPart, inputFFTimagPart );
+
+    //make a complex array from a^2 + b^2 as magnitude and zeros as phase (polar form)
+    //this corresponds to the FFT of a variographic map
+    spectral::complex_array inputVarmapFFTPolarForm = spectral::to_complex_array( inputMagSquared, zeros );
+    inputMagSquared = spectral::array(); //garbage collection
+
+    //convert the previous complex array to the rectangular form
+    spectral::complex_array inputVarmapFFTRectangularForm = spectral::to_rectangular_form( inputVarmapFFTPolarForm );
+    inputVarmapFFTPolarForm = spectral::complex_array(); //garbage collection
+
+    //get the varmap of the input data by reverse FFT
+    spectral::array inputVarmap( nI, nJ, nK, 0.0 );
+    spectral::backward( inputVarmap, inputVarmapFFTRectangularForm );
+    inputVarmapFFTRectangularForm = spectral::complex_array(); //garbage collection
+
+    //fftw requires that the values of r-FFT be divided by the number of cells
+    inputVarmap = inputVarmap / (double)( nI * nJ * nK );
+
+    //put h=0 of the varmap at the center of the grid
+    {
+        spectral::array ffVarMapTMP = spectral::shiftByHalf( inputVarmap );
+        inputVarmap = ffVarMapTMP;
+    }
+
+    //================================== PREPARE OPTIMIZATION STEPS ==========================
+
+    //define the domain
+    double minCellSize = std::min( inputGrid->getCellSizeI(), inputGrid->getCellSizeJ() );
+    double minAxis         = minCellSize;               double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
+    double minRatio        = 0.001;                     double maxRatio        = 1.0;
+    double minAzimuth      = 0.0  ;                     double maxAzimuth      = ImageJockeyUtils::PI;
+    double minContribution = inputVarmap.max() / 100.0; double maxContribution = inputVarmap.max();
+    double deltaAxis = maxAxis - minAxis;
+    double deltaRatio = maxRatio - minRatio;
+    double deltaAzimuth = maxAzimuth - minAzimuth;
+    double deltaContribution = maxContribution - minContribution;
+
+    //create one variographic ellipse for each geological factor wanted by the user
+    //the parameters are initialized near in the center of the domain
+    //the starting values are not particuarly important.
+    std::vector< IJVariographicStructure2D > variographicEllipses;
+    for( int i = 0; i < m; ++i )
+        variographicEllipses.push_back( IJVariographicStructure2D ( ( maxAxis         + minAxis         ) / 2.0,
+                                                                    ( maxRatio        + minRatio        ) / 2.0,
+                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
+                                                                    maxContribution / m ) ); //split evenly the total contribution among the geologic factors
+
+    //Initialize the vector of linear system parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
+    // from the variographic parameters for each geological factor
+    //the starting values are not particuarly important.
+    spectral::array vw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            vw[i] = variographicEllipses[iGeoFactor].getParameter( iPar );
+
+    //Create a vector with the minimum values allowed for the parameters w
+    //(see min* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMin( vw.size(), 0.0d );
+    for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMin[i] = minAxis;         break;
+            case 1: L_wMin[i] = minRatio;        break;
+            case 2: L_wMin[i] = minAzimuth;      break;
+            case 3: L_wMin[i] = minContribution; break;
+            }
+
+    //Create a vector with the maximum values allowed for the parameters w
+    //(see max* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMax( vw.size(), 1.0d );
+    for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMax[i] = maxAxis;         break;
+            case 1: L_wMax[i] = maxRatio;        break;
+            case 2: L_wMax[i] = maxAzimuth;      break;
+            case 3: L_wMax[i] = maxContribution; break;
+            }
+
+    //-------------------------------------------------------------------------------------------------------------
+    //------------------------------------- THE PARTICLE SWARM OPTIMIZATION ALGORITHM -----------------------------
+    //-------------------------------------------------------------------------------------------------------------
+
+    //Intialize the random number generator with the same seed
+    std::srand ((unsigned)ui->spinSeed->value());
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Line Search with Restart in progress...");
+
+    //Init the population of particles, their velocity vectors and their best position
+    std::vector< spectral::array > particles_pw;
+    std::vector< spectral::array > velocities_vw;
+    std::vector< spectral::array > pbests_pbw;
+    for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
+        //create a particle (one array of parameters)
+        spectral::array pw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+        //create a velocity vector (one array of velocities)
+        spectral::array vw( pw.size() );
+        //randomize the particle's position in the domain.
+        for( int i = 0; i < pw.size(); ++i ){
+            double LO = L_wMin[i];
+            double HI = L_wMax[i];
+            pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+        }
+        particles_pw.push_back( pw );
+        //the velocities are initialized with zeros
+        velocities_vw.push_back( vw );
+        //the best position of a particle is initialized as the starting position
+        spectral::array pbw( pw );
+        pbests_pbw.push_back( pbw );
+    }
+
+    //Init the global best postion (best of the best positions amongst the particles)
+    spectral::array gbest_pw;
+    {
+        double fOfBest = std::numeric_limits<double>::max();
+        for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
+            //get the best postition of a particle
+            spectral::array& pbw = pbests_pbw[ iParticle ] ;
+            //evaluate the objective function with the best position of a particle
+            double f = F3( *inputGrid, inputVarmap, pbw, m );
+            //if it improves the value so far...
+            if( f < fOfBest ){
+                //...updates the best value record
+                fOfBest = f;
+                //...assigns the best of a particle as the global best
+                gbest_pw = pbw;
+            }
+        }
+    }
+
+    //optimization steps
+    for( int iStep = 0; iStep < maxNumberOfOptimizationSteps; ++iStep){
+        //for each particle (vector of parameters)
+        for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
+            //get the particle, its velocity and its best postion so far
+            spectral::array& pw = particles_pw[ iParticle ];
+            spectral::array& vw = velocities_vw[ iParticle ];
+            spectral::array& pbw = pbests_pbw[ iParticle ];
+            //get a candidate position and velocity of a particle
+            spectral::array candidate_particle( pw.size() );
+            spectral::array candidate_velocity( pw.size() );
+            for( int i = 0; i < pw.size(); ++i ){
+                candidate_velocity[i] = intertia_weight * vw[i] +
+                                        acceleration_constant_1 * std::rand() * ( pbw[i] - pw[i] ) +
+                                        acceleration_constant_2 * std::rand() * ( gbest_pw[i] - pw[i] );
+                candidate_particle[i] = pw[i] + candidate_velocity[i];
+            }
+        }
+    }
+
+    //-------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
 
 }
 
