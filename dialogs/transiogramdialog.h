@@ -36,6 +36,9 @@ private:
     std::vector<QWidget *> m_sumChartViews; //one per row of transiograms
     QString m_lastNameForSaving;
 
+    int m_vSizePerTransiogram;
+    int m_hSizePerTransiogram;
+
     void tryToAddAttribute( Attribute* attribute );
     void clearCharts();
 
@@ -46,6 +49,8 @@ private Q_SLOTS:
     void onTransiogramModelUpdated();
     void onDynamicFRD();
     void onCaptureExperimentalTransiography();
+    void onZoomIn();
+    void onZoomOut();
 };
 
 #endif // TRANSIOGRAMDIALOG_H

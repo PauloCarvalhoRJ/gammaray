@@ -28,7 +28,9 @@
 
 TransiogramDialog::TransiogramDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::TransiogramDialog)
+    ui(new Ui::TransiogramDialog),
+    m_vSizePerTransiogram( 100 ),
+    m_hSizePerTransiogram( 200 )
 {
     using namespace QtCharts;
 
@@ -396,6 +398,9 @@ void TransiogramDialog::performCalculation()
 
     }// for each row (facies in the rows of the FTMs (one per h)
 
+    ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * firstFTM.getColumnCount() ,
+                                                m_vSizePerTransiogram * firstFTM.getColumnCount() );
+
     Application::instance()->logInfo("Transiography completed.");
     QApplication::processEvents();
 }
@@ -601,7 +606,24 @@ void TransiogramDialog::onCaptureExperimentalTransiography()
 //    for( QWidget* w : m_transiogramChartViews ){
 //        TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
 //        tcvAspect->setModelVisible( true );
-//    }
+    //    }
+}
+
+void TransiogramDialog::onZoomIn()
+{
+
+    m_hSizePerTransiogram *= 1.25;
+    m_vSizePerTransiogram *= 1.25;
+    ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * m_sumChartViews.size() ,
+                                                m_vSizePerTransiogram * m_sumChartViews.size() );
+}
+
+void TransiogramDialog::onZoomOut()
+{
+    m_hSizePerTransiogram /= 1.25;
+    m_vSizePerTransiogram /= 1.25;
+    ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * m_sumChartViews.size() ,
+                                                m_vSizePerTransiogram * m_sumChartViews.size() );
 }
 
 void TransiogramDialog::onResetAttributesList()

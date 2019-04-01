@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>833</width>
+    <width>859</width>
     <height>615</height>
    </rect>
   </property>
@@ -178,6 +178,34 @@
       </widget>
      </item>
      <item>
+      <widget class="QPushButton" name="btnZoomIn">
+       <property name="toolTip">
+        <string>Zoom in</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/zoomin32</normaloff>:/icons32/zoomin32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnZoomOut">
+       <property name="toolTip">
+        <string>Zoom out</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/zoomout32</normaloff>:/icons32/zoomout32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnExecute">
        <property name="toolTip">
         <string>Compute transiograms</string>
@@ -217,7 +245,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>813</width>
+        <width>839</width>
         <height>531</height>
        </rect>
       </property>
@@ -387,8 +415,8 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>808</x>
-     <y>23</y>
+     <x>848</x>
+     <y>33</y>
     </hint>
     <hint type="destinationlabel">
      <x>830</x>
@@ -403,8 +431,8 @@
    <slot>onDynamicFRD()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>721</x>
-     <y>32</y>
+     <x>678</x>
+     <y>33</y>
     </hint>
     <hint type="destinationlabel">
      <x>706</x>
@@ -419,12 +447,44 @@
    <slot>onCaptureExperimentalTransiography()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>743</x>
-     <y>19</y>
+     <x>712</x>
+     <y>29</y>
     </hint>
     <hint type="destinationlabel">
      <x>750</x>
      <y>38</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnZoomIn</sender>
+   <signal>clicked()</signal>
+   <receiver>TransiogramDialog</receiver>
+   <slot>onZoomIn()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>739</x>
+     <y>17</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>852</x>
+     <y>89</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnZoomOut</sender>
+   <signal>clicked()</signal>
+   <receiver>TransiogramDialog</receiver>
+   <slot>onZoomOut()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>766</x>
+     <y>19</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>855</x>
+     <y>140</y>
     </hint>
    </hints>
   </connection>
@@ -435,5 +495,7 @@
   <slot>onSave()</slot>
   <slot>onDynamicFRD()</slot>
   <slot>onCaptureExperimentalTransiography()</slot>
+  <slot>onZoomIn()</slot>
+  <slot>onZoomOut()</slot>
  </slots>
 </ui>
