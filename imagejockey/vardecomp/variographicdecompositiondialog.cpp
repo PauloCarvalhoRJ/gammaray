@@ -2682,6 +2682,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
     std::vector< spectral::array > particles_pw;
     std::vector< spectral::array > velocities_vw;
     std::vector< spectral::array > pbests_pbw;
+    std::vector< double > fOfpbests;
     for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
         //create a particle (one array of parameters)
         spectral::array pw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
@@ -2699,10 +2700,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
         //the best position of a particle is initialized as the starting position
         spectral::array pbw( pw );
         pbests_pbw.push_back( pbw );
+        //initialize the objective function value of the particle best as +inifinite
+        fOfpbests.push_back( std::numeric_limits<double>::max() );
     }
 
     //Init the global best postion (best of the best positions amongst the particles)
     spectral::array gbest_pw;
+    double fOfgbest = std::numeric_limits<double>::max();
     {
         double fOfBest = std::numeric_limits<double>::max();
         for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
@@ -2724,10 +2728,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
     for( int iStep = 0; iStep < maxNumberOfOptimizationSteps; ++iStep){
         //for each particle (vector of parameters)
         for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
+
             //get the particle, its velocity and its best postion so far
             spectral::array& pw = particles_pw[ iParticle ];
             spectral::array& vw = velocities_vw[ iParticle ];
             spectral::array& pbw = pbests_pbw[ iParticle ];
+
             //get a candidate position and velocity of a particle
             spectral::array candidate_particle( pw.size() );
             spectral::array candidate_velocity( pw.size() );
@@ -2737,13 +2743,98 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
                                         acceleration_constant_2 * std::rand() * ( gbest_pw[i] - pw[i] );
                 candidate_particle[i] = pw[i] + candidate_velocity[i];
             }
-        }
+
+            //evaluate the objective function for current and candidate positions
+            double fCurrent = F3( *inputGrid, inputVarmap, pw, m );
+            double fCandidate = F3( *inputGrid, inputVarmap, candidate_particle, m );
+
+            //if the candidate position improves the objective function
+            if( fCandidate < fCurrent ){
+                //update the postion
+                pw = candidate_particle;
+                //update the velocity
+                vw = candidate_velocity;
+            }
+
+            //if the candidate position improves over the best of the particle
+            if( fCandidate < fOfpbests[iParticle] ){
+                //keep track of the best value of the objective function so far for the particle
+                fOfpbests[iParticle] = fCandidate;
+                //update the best position so far for the particle
+                pbw = candidate_particle;
+            }
+
+            //if the candidate position improves over the global best
+            if( fCandidate < fOfgbest ){
+                //keep track of the global best value of the objective function
+                fOfgbest = fCandidate;
+                //update the global best position
+                gbest_pw = candidate_particle;
+            }
+
+        } // for each particle
+    } // for each step
+
+    //-------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
+    progressDialog.hide();
+
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variographicEllipses[iGeoFactor].setParameter( iPar, gbest_pw[i] );
+
+
+    //Apply the principle of the Fourier Integral Method
+    //use a variographic map as the magnitudes and the FFT phases of
+    //the original data to a reverse FFT in polar form to achieve a
+    //Factorial Kriging-like separation
+    std::vector< spectral::array > geoFactors;
+    std::vector< std::string > titles;
+    std::vector< bool > shiftFlags;
+    for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ) {
+        //compute the varmap of the theoretical varmap for one geologic factor
+        spectral::array geoFactorVarMap( nI, nJ, nK, 0.0 );
+        variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
+                                                                     geoFactorVarMap,
+                                                                     IJVariogramPermissiveModel::SPHERIC,
+                                                                     true );
+
+        //collect the theoretical varmap for display
+        geoFactors.push_back( geoFactorVarMap );
+        titles.push_back( QString( "Varmap " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
+
+        //compute FFT of the theoretical varmap (into polar form)
+        spectral::complex_array geoFactorVarMapFFT( nI, nJ, nK );
+        spectral::array tmp = spectral::shiftByHalf( geoFactorVarMap );
+        spectral::foward( geoFactorVarMapFFT, tmp );
+        spectral::complex_array geoFactorVarMapFFTpolar = spectral::to_polar_form( geoFactorVarMapFFT );
+        spectral::array geoFactorVarMapFFTamplitudes = spectral::real( geoFactorVarMapFFTpolar );
+
+        //get the square root of the amplitudes of the varmap FFT
+        spectral::array geoFactorVarmapFFTamplitudesSQRT = geoFactorVarMapFFTamplitudes.sqrt();
+
+        //convert sqrt(varmap) and the phases of the input to rectangular form
+        spectral::complex_array geoFactorFFTpolar = spectral::to_complex_array(
+                                                       geoFactorVarmapFFTamplitudesSQRT,
+                                                       inputFFTimagPhase
+                                                    );
+        spectral::complex_array geoFactorFFT = spectral::to_rectangular_form( geoFactorFFTpolar );
+
+        //compute the reverse FFT to get the geological factor
+        spectral::array geoFactor( nI, nJ, nK, 0.0 );
+        spectral::backward( geoFactor, geoFactorFFT );
+
+        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+        geoFactor = geoFactor / (double)( nI * nJ * nK );
+
+        geoFactors.push_back( geoFactor );
+        titles.push_back( QString( "Factor " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
     }
-
-    //-------------------------------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------------------------------
-    //-------------------------------------------------------------------------------------------------------------
-
+    displayGrids( geoFactors, titles, shiftFlags );
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
