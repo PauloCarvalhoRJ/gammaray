@@ -117,7 +117,18 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
             ui->sldKHighClip->setValue( ui->sldKLowClip->value() );
     }
 
-    if( m_gridFile && m_gridFile->isRegular() ){
+    //tell whether the Attribute belongs to a GeoGrid but it is being displayed
+    //in a UVW (depositional space) Cartesian grid.
+    bool isAttributeInGeoGridButDisplayedInUVWCartesianGrid = false;
+    {
+        //if this cast fails, then the Attribute is being displayed in the GeoGrid's UVW Cartesian grid.
+        vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid =
+                dynamic_cast<vtkUnstructuredGrid*>(_viewObjects.threshold->GetInputDataObject(0,0));
+        if( ! unstructuredGrid )
+            isAttributeInGeoGridButDisplayedInUVWCartesianGrid = true;
+    }
+
+    if( m_gridFile &&  ( m_gridFile->isRegular() || isAttributeInGeoGridButDisplayedInUVWCartesianGrid ) ){
         //Since we are in a V3DCfgWidForAttributeIn3DCartesianGrid (data cube with clipping)
         //assumes a vtkStructuredGridClip and a vtkDataSetMapper exist in the View3DViewData object
         vtkSmartPointer<vtkExtractGrid> subgrider = _viewObjects.subgrider;
