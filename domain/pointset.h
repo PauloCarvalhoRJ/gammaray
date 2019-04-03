@@ -35,7 +35,7 @@ public:
     /** Sets point set metadata from the passed point set. This is useful to make
      * duplicates of or to extend existing point sets.
      */
-    void setInfoFromOtherPointSet( PointSet* otherPS );
+    virtual void setInfoFromOtherPointSet( PointSet* otherPS );
 
     /** First index is 1 (GEO-EAS indexes) */
     int getXindex();

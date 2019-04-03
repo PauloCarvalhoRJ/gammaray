@@ -8,6 +8,7 @@
 class CartesianGrid;
 class SpatialIndexPoints;
 class PointSet;
+class SegmentSet;
 
 /** The data record holding the spatial position of a vertex.
  * It's id is the index in the m_vertexes container.
@@ -139,11 +140,17 @@ public:
     /** Returns, via output parameter, the indexes of mesh vertexes of a cell given its id (index). */
 	void getMeshCellDefinition( uint index, uint (&vIds)[8] );
 
-    /** Returns a new point set by transforming the input point from XYZ space to UVW space.
+    /** Returns a new point set by transforming the input point set from XYZ space to UVW space.
      * Returns null pointer if unfold fails for any reason.
      * Points outside the grid mesh are removed from the result.
      */
     PointSet* unfold( PointSet* inputPS, QString nameForNewPointSet );
+
+    /** Returns a new segment set by transforming the input segment set from XYZ space to UVW space.
+     * Returns null pointer if unfold fails for any reason.
+     * Segments with an end falling outside the grid mesh are removed from the result.
+     */
+    SegmentSet* unfold( SegmentSet* inputSS, QString nameForNewSegmentSet );
 
     /**
      * Converts a global XYZ coordinate into the grid's homogeneous (values between [0, 1])

@@ -3,6 +3,7 @@
 #include "viewer3d/view3dbuilders.h"
 #include <QFile>
 #include <QTextStream>
+#include <cassert>
 
 SegmentSet::SegmentSet(QString path) : PointSet ( path )
 {
@@ -102,6 +103,33 @@ void SegmentSet::setInfoFromMetadataFile()
                  x_final_index, y_final_index, z_final_index,
                  ndv, wgt_var_pairs, nsvar_var_trn, categorical_attributes );
     }
+}
+
+void SegmentSet::setInfoFromAnotherSegmentSet(SegmentSet *otherSS)
+{
+    QString md_file_path( this->_path );
+    QFile md_file( md_file_path.append(".md") );
+    int x_initial_index = 0, y_initial_index = 0, z_initial_index = 0;
+    int x_final_index = 0, y_final_index = 0, z_final_index = 0;
+    QMap<uint, uint> wgt_var_pairs;
+    QMap<uint, QPair<uint,QString> > nsvar_var_trn;
+    QList< QPair<uint,QString> > categorical_attributes;
+    QString ndv;
+
+    x_initial_index = otherSS->getXindex();
+    y_initial_index = otherSS->getYindex();
+    z_initial_index = otherSS->getZindex();
+    x_final_index = otherSS->getXFinalIndex(); //the only metadata not already present in PointSet
+    y_final_index = otherSS->getYFinalIndex(); //the only metadata not already present in PointSet
+    z_final_index = otherSS->getZFinalIndex(); //the only metadata not already present in PointSet
+    ndv = otherSS->getNoDataValue();
+    wgt_var_pairs = otherSS->getWeightsVariablesPairs();
+    nsvar_var_trn = otherSS->getNSVarVarTrnTriads();
+    categorical_attributes = otherSS->getCategoricalAttributes();
+
+    setInfo( x_initial_index, y_initial_index, z_initial_index,
+             x_final_index,   y_final_index,   z_final_index,
+             ndv, wgt_var_pairs, nsvar_var_trn, categorical_attributes );
 }
 
 int SegmentSet::getXFinalIndex()
@@ -256,4 +284,10 @@ double SegmentSet::getProportion(int variableIndex, double value0, double value1
         return lengthYES / ( lengthYES + lengthNO );
     else
         return 0.0;
+}
+
+void SegmentSet::setInfoFromOtherPointSet(PointSet *otherPS)
+{
+    Q_UNUSED( otherPS );
+    assert( false && "Calling setInfoFromOtherPointSet() for a SegmentSet is illegal.");
 }

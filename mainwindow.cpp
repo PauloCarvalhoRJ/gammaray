@@ -672,13 +672,13 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             PointSet* pointSet = nullptr;
             GeoGrid* geoGrid = nullptr;
             if( file1 ){
-                if( file1->getFileType() == "POINTSET" )
+                if( Util::isIn( file1->getFileType(), { "POINTSET", "SEGMENTSET" } ) )
                     pointSet = dynamic_cast<PointSet*>( file1 );
                 else if( file1->getFileType() == "GEOGRID" )
                     geoGrid = dynamic_cast<GeoGrid*>( file1 );
             }
             if( file2 ){
-                if( file2->getFileType() == "POINTSET" )
+                if( Util::isIn( file2->getFileType(), { "POINTSET", "SEGMENTSET" } ) )
                     pointSet = dynamic_cast<PointSet*>( file2 );
                 else if( file2->getFileType() == "GEOGRID" )
                     geoGrid = dynamic_cast<GeoGrid*>( file2 );
@@ -2599,24 +2599,31 @@ void MainWindow::onUnfold()
 
     //open the renaming dialog
     bool ok;
-    QString new_file_name = QInputDialog::getText(this, "New point set file",
-                                             "New point set file name:", QLineEdit::Normal, suggested_name, &ok);
+    QString new_file_name = QInputDialog::getText(this, "New " + _right_clicked_point_set->getFileType() + " file",
+                                             "New " + _right_clicked_point_set->getFileType() + " file name:", QLineEdit::Normal, suggested_name, &ok);
     if( ! ok )
         return;
 
-    //create a new point set file
-    PointSet* psUVW = _right_clicked_geo_grid->unfold( _right_clicked_point_set, new_file_name );
+    PointSet* psUVW = nullptr;
+    if( _right_clicked_point_set->getFileType() == "POINTSET" )
+        //create a new point set file
+        psUVW = _right_clicked_geo_grid->unfold( _right_clicked_point_set, new_file_name );
+    else if( _right_clicked_point_set->getFileType() == "SEGMENTSET" ){
+        //create a new segment set file
+        psUVW = _right_clicked_geo_grid->unfold( dynamic_cast<SegmentSet*>(_right_clicked_point_set), new_file_name );
+    }else
+        Application::instance()->logError("MainWindow::onUnfold(): cannot unfold data of type " + psUVW->getFileType() + ".");
 
     if( ! psUVW ){
         QMessageBox::critical( this, "Error", "Unfolding failed.  Check the messages panel.");
         return;
     }
 
-	//update the metadata file of the unfolded point set
-	psUVW->updateMetaDataFile();
+    //update the metadata file of the unfolded data set
+    psUVW->updateMetaDataFile();
 
 	//attach the object to the project tree
-	Application::instance()->getProject()->addDataFile( psUVW );
+    Application::instance()->getProject()->addDataFile( psUVW );
 
 	//show the newly created object in main window's project tree
 	Application::instance()->refreshProjectTree();

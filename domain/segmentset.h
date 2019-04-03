@@ -29,6 +29,12 @@ public:
      #setInfo() with the metadata read from the .md file.*/
     void setInfoFromMetadataFile();
 
+    /**
+     * Sets segment set metadata from the passed segment set. This is useful to make
+     * duplicates of or to extend existing segment sets.
+     */
+    void setInfoFromAnotherSegmentSet( SegmentSet* otherSS );
+
     /** The inherited getXindex(), getYindex() and getZindex() from PointSet are the
      * coordinates of the initial segment. First index is 1 (GEO-EAS indexes).
      */
@@ -69,6 +75,10 @@ public:
     virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
+
+    // PointSet interface
+public:
+    virtual void setInfoFromOtherPointSet( PointSet* otherPS );
 
 protected:
     int _x_final_field_index; //index start at 1. Zero means not set.

@@ -7,6 +7,7 @@
 #include "domain/application.h"
 #include "auxiliary/meshloader.h"
 #include "domain/pointset.h"
+#include "domain/segmentset.h"
 #include "util.h"
 #include "domain/project.h"
 #include "geometry/vector3d.h"
@@ -520,7 +521,8 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
     }
 
 	//changed the assigned X, Y, Z fields of the unfolded point set to the new U, V, W columns
-	result->setInfo( nColumns - 2, nColumns - 1, nColumns, result->getNoDataValue() );
+    result->setInfo( nColumns - 2, nColumns - 1, nColumns, result->getNoDataValue(),
+                     result->getWeightsVariablesPairs(), result->getNSVarVarTrnTriads(), result->getCategoricalAttributes() );
 
 	//remove the samples with invalid UVW coordinates
 	std::vector<uint>::iterator it = samplesToRemove.begin();
@@ -535,7 +537,7 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
 		resultFile.remove();
 		//de-allocate the object
 		delete result;
-		Application::instance()->logError("GeoGrid::unfold(): Unfolding resulted in empty data set. Canceled.");
+        Application::instance()->logError("GeoGrid::unfold(): Unfolding resulted in an empty point set. Canceled.");
 		//return null pointer
 		return nullptr;
 	}
@@ -543,7 +545,115 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
 	//commit changes to filesystem
 	result->writeToFS();
 
-	return result;
+    return result;
+}
+
+SegmentSet *GeoGrid::unfold(SegmentSet *inputSS, QString nameForNewSegmentSet)
+{
+
+    if( ! inputSS->is3D() ){
+        Application::instance()->logError("GeoGrid::unfold(): input segment set is not 3D.");
+        return nullptr;
+    }
+
+    //create the new segment set object
+    SegmentSet* result = new SegmentSet( Application::instance()->getProject()->getPath() +
+                                        '/' + nameForNewSegmentSet );
+
+    //make a duplicate of the input segment set
+    {
+        //copy the physical data file
+        Util::copyFile( inputSS->getPath(), result->getPath() );
+        //copy metadata from the input point set
+        result->setInfoFromAnotherSegmentSet( inputSS );
+    }
+
+    //load the data
+    result->loadData();
+
+    //get the number of samples in the input point set
+    uint nSamples = result->getDataLineCount();
+
+    //append six new columns to the samples (output):
+    //the initial and final UVW segment coordinates
+    result->addEmptyDataColumn( "U_i", nSamples );
+    result->addEmptyDataColumn( "V_i", nSamples );
+    result->addEmptyDataColumn( "W_i", nSamples );
+    result->addEmptyDataColumn( "U_f", nSamples );
+    result->addEmptyDataColumn( "V_f", nSamples );
+    result->addEmptyDataColumn( "W_f", nSamples );
+    result->writeToFS();
+
+    uint nColumns = result->getDataColumnCount();
+
+    //iterate over the samples in the point set
+    uint xIIndex = result->getXindex() - 1; //first GEO-EAS index = 1
+    uint yIIndex = result->getYindex() - 1;
+    uint zIIndex = result->getZindex() - 1;
+    uint xFIndex = result->getXFinalIndex() - 1;
+    uint yFIndex = result->getYFinalIndex() - 1;
+    uint zFIndex = result->getZFinalIndex() - 1;
+    std::vector<uint> samplesToRemove;
+    bool empty = true;
+    for( uint iSample = 0; iSample < nSamples; ++iSample ){
+        //get the XYZ locations of the sample
+        double xi = result->data( iSample, xIIndex );
+        double yi = result->data( iSample, yIIndex );
+        double zi = result->data( iSample, zIIndex );
+        double xf = result->data( iSample, xFIndex );
+        double yf = result->data( iSample, yFIndex );
+        double zf = result->data( iSample, zFIndex );
+        //get the UVW coordinates
+        double ui = -1.0;
+        double vi = -1.0;
+        double wi = -1.0;
+        double uf = -1.0;
+        double vf = -1.0;
+        double wf = -1.0;
+        if( XYZtoUVW( xi, yi, zi, ui, vi, wi ) &&
+            XYZtoUVW( xf, yf, zf, uf, vf, wf ) ){
+            empty = false;
+            //assign them to the point set
+            result->setData( iSample, nColumns - 6, ui );
+            result->setData( iSample, nColumns - 5, vi );
+            result->setData( iSample, nColumns - 4, wi );
+            result->setData( iSample, nColumns - 3, uf );
+            result->setData( iSample, nColumns - 2, vf );
+            result->setData( iSample, nColumns - 1, wf );
+        } else {
+            //a cell was not found (likely one or both ends of a sample is outside the grid)
+            //so mark the sample for removal
+            samplesToRemove.push_back( iSample );
+        }
+    }
+
+    //changed the assigned X, Y, Z fields of the unfolded point set to the new U, V, W columns
+    result->setInfo( nColumns - 5, nColumns - 4, nColumns - 3,
+                     nColumns - 2, nColumns - 1, nColumns    , result->getNoDataValue(),
+                     result->getWeightsVariablesPairs(), result->getNSVarVarTrnTriads(), result->getCategoricalAttributes() );
+
+    //remove the samples with invalid UVW coordinates
+    std::vector<uint>::iterator it = samplesToRemove.begin();
+    uint offset = 0; //adjust for previously deleted lines.
+    for( ; it != samplesToRemove.end(); ++it, ++offset )
+        result->removeDataLine( *it - offset );
+
+    //if no data remained
+    if( empty ){
+        //remove the file with partial data
+        QFile resultFile( result->getPath() );
+        resultFile.remove();
+        //de-allocate the object
+        delete result;
+        Application::instance()->logError("GeoGrid::unfold(): Unfolding resulted in an empty segment set. Canceled.");
+        //return null pointer
+        return nullptr;
+    }
+
+    //commit changes to filesystem
+    result->writeToFS();
+
+    return result;
 }
 
 bool GeoGrid::XYZtoUVW(double x, double y, double z, double &u, double &v, double &w)
