@@ -779,9 +779,11 @@ View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianG
     for(int k = 0; k <= nZ; ++k)
         for(int j = 0; j <= nY; ++j)
             for(int i = 0; i <= nX; ++i)
-                points->InsertNextPoint( X0frame + i * dX,
-                                         Y0frame + j * dY,
-                                         Z0frame + k * dZ );
+                //the ( d* + d*/n* ) is to account for the extra cells in each direction due
+                //due to cell-centered-to-corner-point conversion
+                points->InsertNextPoint( X0frame + i * ( dX + dX/nX ),
+                                         Y0frame + j * ( dY + dY/nY ),
+                                         Z0frame + k * ( dZ + dZ/nZ ) );
     structuredGrid->SetDimensions( nX+1, nY+1, nZ+1 );
     structuredGrid->SetPoints(points);
 
@@ -907,9 +909,9 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     for(int k = 0; k <= nZsub; ++k)
         for(int j = 0; j <= nYsub; ++j)
             for(int i = 0; i <= nXsub; ++i)
-                points->InsertNextPoint( X0frame + i * dX * srate,
-                                         Y0frame + j * dY * srate,
-                                         Z0frame + k * dZ * srate );
+                points->InsertNextPoint( X0frame + i * ( dX + dX/nXsub ) * srate,
+                                         Y0frame + j * ( dY + dY/nYsub ) * srate,
+                                         Z0frame + k * ( dZ + dZ/nZsub ) * srate );
     structuredGrid->SetDimensions( nXsub+1, nYsub+1, nZsub+1 );
     structuredGrid->SetPoints(points);
 
