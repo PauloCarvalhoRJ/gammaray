@@ -5,8 +5,10 @@
 #include "domain/file.h"
 #include "domain/cartesiangrid.h"
 #include "domain/geogrid.h"
+#include "domain/segmentset.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h"
+#include "view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h"
 
 View3DConfigWidgetsBuilder::View3DConfigWidgetsBuilder()
 {
@@ -40,6 +42,9 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute, View
             GeoGrid* gg = dynamic_cast<GeoGrid*>( cg->getParent() );
             return buildForAttributeGeoGrid( gg, attribute, viewObjects );
         }
+    } else if( fileType == "SEGMENTSET" ) {
+        SegmentSet* ss = dynamic_cast<SegmentSet*>( file );
+        return buildForAttributeInSegmentSet( ss, attribute, viewObjects );
     } else {
         Application::instance()->logError("View3DConfigWidgetsBuilder::build(Attribute *): Config widget unavailable for Attributes of file type: " + fileType);
         return nullptr;
@@ -63,4 +68,11 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeGeoGrid(GeoGrid
                                                                          View3DViewData viewObjects)
 {
     return new V3DCfgWidForAttributeIn3DCartesianGrid( geoGrid, attribute, viewObjects );
+}
+
+View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeInSegmentSet(SegmentSet *segmentSet,
+                                                                              Attribute *attribute,
+                                                                              View3DViewData viewObjects)
+{
+    return new V3DCfgWidForAttributeInSegmentSet( segmentSet, attribute, viewObjects );
 }

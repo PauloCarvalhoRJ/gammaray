@@ -345,7 +345,9 @@ View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segme
     tubeActor->GetProperty()->SetOpacity(1.0); //Make the tube have some transparency.
     tubeActor->SetMapper(tubeMapper);
 
-    return View3DViewData( tubeActor );
+    View3DViewData v3dd( tubeActor );
+    v3dd.tubeFilter = tubeFilter;
+    return v3dd;
 }
 
 View3DViewData View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid, View3DWidget */*widget3D*/)

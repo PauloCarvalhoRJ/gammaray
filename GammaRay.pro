@@ -250,7 +250,8 @@ SOURCES += main.cpp\
     domain/auxiliary/thicknesscalculator.cpp \
     widgets/transiogramchartview.cpp \
     domain/verticaltransiogrammodel.cpp \
-    dialogs/dynamicfaciesrelationshipdiagramdialog.cpp
+    dialogs/dynamicfaciesrelationshipdiagramdialog.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -479,7 +480,8 @@ HEADERS  += mainwindow.h \
     domain/auxiliary/thicknesscalculator.h \
     widgets/transiogramchartview.h \
     domain/verticaltransiogrammodel.h \
-    dialogs/dynamicfaciesrelationshipdiagramdialog.h
+    dialogs/dynamicfaciesrelationshipdiagramdialog.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h
 
 
 FORMS    += mainwindow.ui \
@@ -568,7 +570,8 @@ FORMS    += mainwindow.ui \
     dialogs/entropycyclicityanalysisdialog.ui \
     dialogs/faciesrelationshipdiagramdialog.ui \
     dialogs/transiogramdialog.ui \
-    dialogs/dynamicfaciesrelationshipdiagramdialog.ui
+    dialogs/dynamicfaciesrelationshipdiagramdialog.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
