@@ -159,8 +159,16 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
 			} else {
 				return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
 			}
-		} else {
-			return buildForAttributeGeoGrid( dynamic_cast<GeoGrid*>(cg->getParent()), attribute, widget3D );
+        } else { //attribute belongs to a GeoGrid
+            QMessageBox msgBox;
+            msgBox.setText("Which way to display the attribute?");
+            QAbstractButton* pButtonUseGeoGrid = msgBox.addButton("In XYZ GeoGrid", QMessageBox::YesRole);
+            msgBox.addButton("In UVW Cartesian grid", QMessageBox::NoRole);
+            msgBox.exec();
+            if ( msgBox.clickedButton() == pButtonUseGeoGrid )
+                return buildForAttributeGeoGrid( dynamic_cast<GeoGrid*>(cg->getParent()), attribute, widget3D );
+            else
+                return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
 		}
     } else {
         Application::instance()->logError("View3DBuilders::build(Attribute *): Attribute belongs to unsupported file type: " + fileType);
@@ -909,6 +917,8 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     for(int k = 0; k <= nZsub; ++k)
         for(int j = 0; j <= nYsub; ++j)
             for(int i = 0; i <= nXsub; ++i)
+                //the ( d* + d*/n*sub ) is to account for the extra cells in each direction
+                //due to the corner-point-to-cell-centered conversion
                 points->InsertNextPoint( X0frame + i * ( dX + dX/nXsub ) * srate,
                                          Y0frame + j * ( dY + dY/nYsub ) * srate,
                                          Z0frame + k * ( dZ + dZ/nZsub ) * srate );
