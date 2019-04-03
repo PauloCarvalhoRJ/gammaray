@@ -91,7 +91,6 @@ void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_d
     _categorical_attributes.clear();
     _categorical_attributes << categorical_attributes;
     this->updatePropertyCollection();
-    std::cout << "SIZE2>>>>>>>>> " << _categorical_attributes.size() << std::endl;
 }
 
 
