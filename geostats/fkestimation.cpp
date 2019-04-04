@@ -5,10 +5,12 @@
 #include "domain/pointset.h"
 #include "domain/attribute.h"
 #include "domain/application.h"
+#include "domain/segmentset.h"
 #include "fkestimationrunner.h"
 #include "datacell.h"
 #include "gridcell.h"
 #include "pointsetcell.h"
+#include "geostats/segmentsetcell.h"
 #include "spatialindex/spatialindexpoints.h"
 
 #include <QCoreApplication>
@@ -102,12 +104,21 @@ DataCellPtrMultiset FKEstimation::getSamples(const GridCell & estimationCell )
 				p->computeCartesianDistance( estimationCell );
 				result.insert( p );
 			}
-		} else { //TODO: this currently assumes the irregular data is a PointSet object.
-			for( ; it != samplesIndexes.end(); ++it ){
-				DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
-				p->computeCartesianDistance( estimationCell );
-				result.insert( p );
-			}
+        } else { //irregular data sets
+            SegmentSet* segmentSet = dynamic_cast<SegmentSet*>( m_inputDataFile );
+            if( ! segmentSet ){
+                for( ; it != samplesIndexes.end(); ++it ){
+                    DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
+                    p->computeCartesianDistance( estimationCell );
+                    result.insert( p );
+                }
+            } else {
+                for( ; it != samplesIndexes.end(); ++it ){
+                    DataCellPtr p(new SegmentSetCell( static_cast<SegmentSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
+                    p->computeCartesianDistance( estimationCell );
+                    result.insert( p );
+                }
+            }
 		}
 
 	} else {

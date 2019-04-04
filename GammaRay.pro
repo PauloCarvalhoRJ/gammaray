@@ -251,7 +251,8 @@ SOURCES += main.cpp\
     widgets/transiogramchartview.cpp \
     domain/verticaltransiogrammodel.cpp \
     dialogs/dynamicfaciesrelationshipdiagramdialog.cpp \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.cpp
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.cpp \
+    geostats/segmentsetcell.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -481,7 +482,8 @@ HEADERS  += mainwindow.h \
     widgets/transiogramchartview.h \
     domain/verticaltransiogrammodel.h \
     dialogs/dynamicfaciesrelationshipdiagramdialog.h \
-    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h \
+    geostats/segmentsetcell.h
 
 
 FORMS    += mainwindow.ui \
