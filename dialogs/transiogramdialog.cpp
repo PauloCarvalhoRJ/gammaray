@@ -364,7 +364,7 @@ void TransiogramDialog::performCalculation()
                 transiogramChartView->setRenderHint(QPainter::Antialiasing);
                 transiogramChartView->setMinimumHeight( 100 );
                 transiogramChartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
-                transiogramChartView->setModelParameters( 3.0, globalProportionOfTailFacies );
+                transiogramChartView->setModelParameters( (hFinal-hInitial) * 0.33, globalProportionOfTailFacies ); //init model range with 1/3rd of the total experimental range
                 //to be notified if transiogram model updates.
                 connect( transiogramChartView, SIGNAL(modelWasUpdated()), this, SLOT(onTransiogramModelUpdated()) );
             }
