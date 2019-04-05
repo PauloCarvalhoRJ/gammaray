@@ -145,7 +145,7 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
         return buildForAttributeFromSegmentSet( static_cast<SegmentSet*>(file), attribute, widget3D );
     } else if( fileType == "CARTESIANGRID" ) {
         CartesianGrid* cg = (CartesianGrid*)file;
-		if( ! cg->isUVWOfAGeoGrid() ){
+        if( ! cg->isUVWOfAGeoGrid() ){ //cg is a stand-alone Cartesian grid
 			if( cg->getNZ() < 2 ){
                 QMessageBox msgBox;
                 msgBox.setText("Display 2D grid as?");
@@ -159,7 +159,7 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
 			} else {
 				return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
 			}
-        } else { //attribute belongs to a GeoGrid
+        } else { //cg is the UVW aspect of a GeoGrid: present the option to display it either with true geometry or as UVW cube
             QMessageBox msgBox;
             msgBox.setText("Which way to display the attribute?");
             QAbstractButton* pButtonUseGeoGrid = msgBox.addButton("In XYZ GeoGrid", QMessageBox::YesRole);
@@ -736,8 +736,12 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
     threshold->Update();
 
-    //assign a color table
-    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( cartesianGrid->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
     // Create mappers (visualization parameters) for each level-of-detail
     vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
@@ -951,8 +955,12 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
     threshold->Update();
 
-    //assign a color table
-    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( cartesianGrid->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
     // Create mapper (visualization parameters)
     vtkSmartPointer<vtkDataSetMapper> mapper =
