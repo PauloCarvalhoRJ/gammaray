@@ -533,6 +533,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
+            }
+            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET","GEOGRID"} ) ){
                 makeMenuCategorize();
                 _projectContextMenu->addMenu( m_subMenuCategorize );
             }
