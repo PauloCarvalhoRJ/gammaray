@@ -823,12 +823,18 @@ void DataFile::convertToCategorical(uint column, CategoryDefinition *cd, int fal
         //...get the input value
         int candidateCode = static_cast<int>( (*it).at(column) );
         //...check whether the value is a valid category code
-        if ( cd->codeExists(  candidateCode ) )
+        if ( cd->codeExists( candidateCode ) )
             //...append the code to the current row.
             (*it).push_back( candidateCode );
-        else
-            //...use the fallback code if the value is an invalid code
-            (*it).push_back( fallbackCode );
+        else {
+            //...if the invalid value is a no-data-value...
+            if( hasNoDataValue() && isNDV( candidateCode ) )
+                //...result is also no-data-value
+                (*it).push_back( getNoDataValueAsDouble() );
+            else
+                //...use the fallback code if the value is an invalid code
+                (*it).push_back( fallbackCode );
+        }
     }
 
     // create and add a new Attribute object the represents the new column
