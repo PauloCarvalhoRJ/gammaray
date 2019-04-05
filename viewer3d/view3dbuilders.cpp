@@ -1108,8 +1108,12 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
 	threshold->Update();
 
-	//assign a color table
-	vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( geoGrid->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
 	// Create mapper (visualization parameters)
 	vtkSmartPointer<vtkDataSetMapper> mapper =
