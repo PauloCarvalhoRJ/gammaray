@@ -2545,10 +2545,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
     int m = ui->spinNumberOfGeologicalFactors->value();
     int maxNumberOfOptimizationSteps = ui->spinMaxSteps->value();
     // The user-given epsilon (useful for numerical calculus).
-    int nParticles = 20; //number of wandering particles
-    double intertia_weight = 1.0;
-    double acceleration_constant_1 = 1.0;
-    double acceleration_constant_2 = 1.0;
+    int nParticles = 80; //number of wandering particles
+    double intertia_weight = 0.1;
+    double acceleration_constant_1 = 10;
+    double acceleration_constant_2 = 10;
 
     // Get the data objects.
     IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
@@ -2726,6 +2726,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
 
     //optimization steps
     for( int iStep = 0; iStep < maxNumberOfOptimizationSteps; ++iStep){
+
+        //let Qt repaint the GUI every opt. step.
+        QApplication::processEvents();
+
         //for each particle (vector of parameters)
         for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
 
@@ -2737,11 +2741,23 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
             //get a candidate position and velocity of a particle
             spectral::array candidate_particle( pw.size() );
             spectral::array candidate_velocity( pw.size() );
+
+            double rand1 = (std::rand()/(double)RAND_MAX);
+            double rand2 = (std::rand()/(double)RAND_MAX);
+
             for( int i = 0; i < pw.size(); ++i ){
                 candidate_velocity[i] = intertia_weight * vw[i] +
-                                        acceleration_constant_1 * std::rand() * ( pbw[i] - pw[i] ) +
-                                        acceleration_constant_2 * std::rand() * ( gbest_pw[i] - pw[i] );
+                                        acceleration_constant_1 * rand1 * ( pbw[i] - pw[i] ) +
+                                        acceleration_constant_2 * rand2 * ( gbest_pw[i] - pw[i] );
                 candidate_particle[i] = pw[i] + candidate_velocity[i];
+
+                //performs a "bounce" of the particle if it "hits" the boundaries of the domain
+                double overshoot = candidate_particle[i] - L_wMax[i];
+                if( overshoot > 0 )
+                    candidate_particle[i] = L_wMax[i] - overshoot;
+                double undershoot = L_wMin[i] - candidate_particle[i];
+                if( undershoot > 0 )
+                    candidate_particle[i] = L_wMin[i] + undershoot;
             }
 
             //evaluate the objective function for current and candidate positions
@@ -2770,6 +2786,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
                 fOfgbest = fCandidate;
                 //update the global best position
                 gbest_pw = candidate_particle;
+
+                std::cout << fOfgbest << std::endl;
             }
 
         } // for each particle
