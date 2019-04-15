@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>859</width>
+    <width>961</width>
     <height>615</height>
    </rect>
   </property>
@@ -166,7 +166,7 @@
      <item>
       <widget class="QPushButton" name="btnCapture">
        <property name="toolTip">
-        <string>Capture image of experimental transiography only</string>
+        <string>Capture image of all transiograms.</string>
        </property>
        <property name="text">
         <string/>
@@ -174,6 +174,20 @@
        <property name="icon">
         <iconset resource="../resources.qrc">
          <normaloff>:/icons32/snapshot32</normaloff>:/icons32/snapshot32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnCaptureZ">
+       <property name="toolTip">
+        <string>Capture image of visible transiograms.</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/snapshotz32</normaloff>:/icons32/snapshotz32</iconset>
        </property>
       </widget>
      </item>
@@ -245,7 +259,7 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>839</width>
+        <width>941</width>
         <height>531</height>
        </rect>
       </property>
@@ -367,7 +381,7 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>474</x>
+     <x>552</x>
      <y>603</y>
     </hint>
     <hint type="destinationlabel">
@@ -399,7 +413,7 @@
    <slot>performCalculation()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>788</x>
+     <x>882</x>
      <y>33</y>
     </hint>
     <hint type="destinationlabel">
@@ -415,7 +429,7 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>848</x>
+     <x>916</x>
      <y>33</y>
     </hint>
     <hint type="destinationlabel">
@@ -431,7 +445,7 @@
    <slot>onDynamicFRD()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>678</x>
+     <x>712</x>
      <y>33</y>
     </hint>
     <hint type="destinationlabel">
@@ -447,8 +461,8 @@
    <slot>onCaptureExperimentalTransiography()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>712</x>
-     <y>29</y>
+     <x>746</x>
+     <y>33</y>
     </hint>
     <hint type="destinationlabel">
      <x>750</x>
@@ -463,8 +477,8 @@
    <slot>onZoomIn()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>739</x>
-     <y>17</y>
+     <x>814</x>
+     <y>27</y>
     </hint>
     <hint type="destinationlabel">
      <x>852</x>
@@ -479,12 +493,28 @@
    <slot>onZoomOut()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>766</x>
-     <y>19</y>
+     <x>848</x>
+     <y>29</y>
     </hint>
     <hint type="destinationlabel">
      <x>855</x>
      <y>140</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnCaptureZ</sender>
+   <signal>clicked()</signal>
+   <receiver>TransiogramDialog</receiver>
+   <slot>onCaptureExperimentalTransiographyWithoutOffscreen()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>773</x>
+     <y>22</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>784</x>
+     <y>25</y>
     </hint>
    </hints>
   </connection>
@@ -497,5 +527,6 @@
   <slot>onCaptureExperimentalTransiography()</slot>
   <slot>onZoomIn()</slot>
   <slot>onZoomOut()</slot>
+  <slot>onCaptureExperimentalTransiographyWithoutOffscreen()</slot>
  </slots>
 </ui>

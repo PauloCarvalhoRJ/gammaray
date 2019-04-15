@@ -11,6 +11,7 @@
 #include <QChartView>
 #include <QInputDialog>
 #include <QClipboard>
+#include <QScrollBar>
 
 #include "domain/datafile.h"
 #include "domain/application.h"
@@ -624,6 +625,25 @@ void TransiogramDialog::onZoomOut()
     m_vSizePerTransiogram /= 1.25;
     ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * m_sumChartViews.size() ,
                                                 m_vSizePerTransiogram * m_sumChartViews.size() );
+}
+
+void TransiogramDialog::onCaptureExperimentalTransiographyWithoutOffscreen()
+{
+    //capture the transiogram widgets image
+    QRect rectangle = ui->scrollAreaTransiograms->frameRect();
+
+    //scrolls to the bottom of plot for convenience
+    int y = ui->scrollAreaTransiograms->verticalScrollBar()->value();
+    int x = ui->scrollAreaTransiograms->horizontalScrollBar()->value();
+    rectangle.moveTo( x, y );
+
+    QPixmap pixmap(rectangle.size());
+    ui->frmTransiograms->render(&pixmap, QPoint(), QRegion(rectangle));
+
+    //copy the image to clipboard
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setPixmap( pixmap,  QClipboard::Clipboard );
+    QMessageBox::information(this, "Plot snapshot", "The transiograms image (only visible ones) has been copied to the clipboard. You can paste it to any application.");
 }
 
 void TransiogramDialog::onResetAttributesList()

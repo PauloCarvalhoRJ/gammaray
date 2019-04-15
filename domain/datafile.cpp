@@ -840,6 +840,7 @@ void DataFile::convertToCategorical(uint column, CategoryDefinition *cd, int fal
     // create and add a new Attribute object the represents the new column
     uint newIndexGEOEAS = Util::getFieldNames(this->getPath()).count() + 1;
     Attribute *at = new Attribute(name_for_new_column, newIndexGEOEAS, true);
+
     // adds the attribute's GEO-EAS index (with the name of the category definition file)
     // to the metadata as a categorical attribute
     _categorical_attributes.append(

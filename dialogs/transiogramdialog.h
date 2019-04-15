@@ -51,6 +51,7 @@ private Q_SLOTS:
     void onCaptureExperimentalTransiography();
     void onZoomIn();
     void onZoomOut();
+    void onCaptureExperimentalTransiographyWithoutOffscreen();
 };
 
 #endif // TRANSIOGRAMDIALOG_H
