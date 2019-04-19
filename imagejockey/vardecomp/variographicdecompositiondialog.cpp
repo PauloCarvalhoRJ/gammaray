@@ -32,6 +32,35 @@ struct objectiveFunctionFactors{
     double f1, f2, f3, f4, f5, f6, f7;
 };
 
+
+//////////////////////////////CLASS FOR THE GENETIC ALGORITHM//////////////////////////////
+
+class Individual{
+public:
+    Individual( spectral::array& pparameters ) :
+        parameters( pparameters ),
+        fValue( std::numeric_limits<double>::max() )
+    {}
+    Individual( const Individual& otherIndividual ) :
+        parameters( otherIndividual.parameters ),
+        fValue( otherIndividual.fValue )
+    {}
+
+    spectral::array& parameters;
+    double fValue;
+
+    Individual& operator=( Individual&& otherIndividual ){
+        parameters = otherIndividual.parameters;
+        fValue = fValue;
+        return *this;
+    }
+    bool operator<( Individual& otherIndividual ){
+        return fValue < otherIndividual.fValue;
+    }
+};
+
+///////////////////////////////////////////////////////////////////////////////////////////
+
 /** The objective function for the optimization process (SVD on varmap).
  * See complete theory in the program manual for in-depth explanation of the method's parameters below.
  * @param originalGrid  The grid with original data for comparison.
@@ -2220,12 +2249,15 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
     msgBox.setText("Perform optimization with:");
     QAbstractButton* pButtonUseSAandGS = msgBox.addButton("Simulated Annealing + Gradient Descent", QMessageBox::YesRole);
     QAbstractButton* pButtonUsePSO = msgBox.addButton("Particle Swarm Opt.", QMessageBox::ApplyRole);
+    QAbstractButton* pButtonUseGenetic = msgBox.addButton("Gentic Algorithm.", QMessageBox::AcceptRole);
     msgBox.addButton("Line Search with Restart", QMessageBox::NoRole);
     msgBox.exec();
     if ( msgBox.clickedButton() == pButtonUseSAandGS )
         doVariographicDecomposition5_WITH_SA_AND_GD();
     if ( msgBox.clickedButton() == pButtonUsePSO )
         doVariographicDecomposition5_WITH_PSO();
+    if ( msgBox.clickedButton() == pButtonUseGenetic )
+        doVariographicDecomposition5_WITH_Genetic();
     else
         doVariographicDecomposition5_WITH_LSRS();
 }
@@ -2546,9 +2578,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
     int maxNumberOfOptimizationSteps = ui->spinMaxSteps->value();
     // The user-given epsilon (useful for numerical calculus).
     int nParticles = 80; //number of wandering particles
-    double intertia_weight = 0.1;
-    double acceleration_constant_1 = 10;
-    double acceleration_constant_2 = 10;
+    double intertia_weight = 0.3;
+    double acceleration_constant_1 = 5;
+    double acceleration_constant_2 = 5;
 
     // Get the data objects.
     IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
@@ -2853,6 +2885,181 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
         shiftFlags.push_back( false );
     }
     displayGrids( geoFactors, titles, shiftFlags );
+}
+
+void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic()
+{
+    //get user configuration
+    int m = ui->spinNumberOfGeologicalFactors->value();
+    int maxNumberOfGenerations = ui->spinMaxSteps->value();
+    int nIndividuals = 80; //number of individuals (sets of parameters)
+    //selection pressure. 1.0 means only the best individual is selected during
+    //the binary tournaments.  Lower values mean that the 2nd, 3rd, etc. best ones
+    //have a chance to be selected
+    double selectionPressure = 0.7;
+
+    // Get the data objects.
+    IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
+    IJAbstractVariable* variable = m_variableSelector->getSelectedVariable();
+
+    // Get the grid's dimensions.
+    unsigned int nI = inputGrid->getNI();
+    unsigned int nJ = inputGrid->getNJ();
+    unsigned int nK = inputGrid->getNK();
+
+    // Fetch data from the data source.
+    inputGrid->dataWillBeRequested();
+
+    //========================= GET VARMAP OF THE INPUT DATA =====================================
+
+    //make an array full of zeroes (useful for certain steps in the workflow)
+    spectral::array zeros( nI, nJ, nK, 0.0 );
+
+    // Get the input data as a spectral::array object
+    spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
+
+    //Compute FFT of input
+    spectral::array inputFFTrealPart;
+    spectral::array inputFFTimagPart;
+    spectral::array inputFFTimagPhase;
+    {
+        spectral::complex_array inputFFT;
+        spectral::foward( inputFFT, *inputData );
+        inputFFTrealPart = spectral::real( inputFFT );
+        inputFFTimagPart = spectral::imag( inputFFT );
+        spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+        inputFFTimagPhase = spectral::imag( inputFFTpolar );
+    }
+
+    //do a^2 + b^2
+    // where a = real part of FFT; b = imaginary part of FFT.
+    spectral::array inputMagSquared = spectral::hadamard( inputFFTrealPart, inputFFTrealPart ) +
+                                      spectral::hadamard( inputFFTimagPart, inputFFTimagPart );
+
+    //make a complex array from a^2 + b^2 as magnitude and zeros as phase (polar form)
+    //this corresponds to the FFT of a variographic map
+    spectral::complex_array inputVarmapFFTPolarForm = spectral::to_complex_array( inputMagSquared, zeros );
+    inputMagSquared = spectral::array(); //garbage collection
+
+    //convert the previous complex array to the rectangular form
+    spectral::complex_array inputVarmapFFTRectangularForm = spectral::to_rectangular_form( inputVarmapFFTPolarForm );
+    inputVarmapFFTPolarForm = spectral::complex_array(); //garbage collection
+
+    //get the varmap of the input data by reverse FFT
+    spectral::array inputVarmap( nI, nJ, nK, 0.0 );
+    spectral::backward( inputVarmap, inputVarmapFFTRectangularForm );
+    inputVarmapFFTRectangularForm = spectral::complex_array(); //garbage collection
+
+    //fftw requires that the values of r-FFT be divided by the number of cells
+    inputVarmap = inputVarmap / (double)( nI * nJ * nK );
+
+    //put h=0 of the varmap at the center of the grid
+    {
+        spectral::array ffVarMapTMP = spectral::shiftByHalf( inputVarmap );
+        inputVarmap = ffVarMapTMP;
+    }
+
+    //================================== PREPARE OPTIMIZATION STEPS ==========================
+
+    //define the domain
+    double minCellSize = std::min( inputGrid->getCellSizeI(), inputGrid->getCellSizeJ() );
+    double minAxis         = minCellSize;               double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
+    double minRatio        = 0.001;                     double maxRatio        = 1.0;
+    double minAzimuth      = 0.0  ;                     double maxAzimuth      = ImageJockeyUtils::PI;
+    double minContribution = inputVarmap.max() / 100.0; double maxContribution = inputVarmap.max();
+
+    //create one variographic ellipse for each geological factor wanted by the user
+    //the parameters are initialized near in the center of the domain
+    //the starting values are not particuarly important.
+    std::vector< IJVariographicStructure2D > variographicEllipses;
+    for( int i = 0; i < m; ++i )
+        variographicEllipses.push_back( IJVariographicStructure2D ( ( maxAxis         + minAxis         ) / 2.0,
+                                                                    ( maxRatio        + minRatio        ) / 2.0,
+                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
+                                                                    maxContribution / m ) ); //split evenly the total contribution among the geologic factors
+
+    //Initialize the vector of linear system parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
+    // from the variographic parameters for each geological factor
+    //the starting values are not particuarly important.
+    spectral::array vw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            vw[i] = variographicEllipses[iGeoFactor].getParameter( iPar );
+
+    //Create a vector with the minimum values allowed for the parameters w
+    //(see min* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMin( vw.size(), 0.0d );
+    for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMin[i] = minAxis;         break;
+            case 1: L_wMin[i] = minRatio;        break;
+            case 2: L_wMin[i] = minAzimuth;      break;
+            case 3: L_wMin[i] = minContribution; break;
+            }
+
+    //Create a vector with the maximum values allowed for the parameters w
+    //(see max* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMax( vw.size(), 1.0d );
+    for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMax[i] = maxAxis;         break;
+            case 1: L_wMax[i] = maxRatio;        break;
+            case 2: L_wMax[i] = maxAzimuth;      break;
+            case 3: L_wMax[i] = maxContribution; break;
+            }
+
+    //=========================================THE GENETIC ALGORITHM==================================================
+
+    //Intialize the random number generator with the same seed
+    std::srand ((unsigned)ui->spinSeed->value());
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Line Search with Restart in progress...");
+
+    //Init the population.
+    std::vector< Individual > population;
+    for( int iIndividual = 0; iIndividual < nIndividuals; ++iIndividual ){
+        //create an individual (one array of parameters)
+        spectral::array pw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+        //randomize the individual's position in the domain.
+        for( int i = 0; i < pw.size(); ++i ){
+            double LO = L_wMin[i];
+            double HI = L_wMax[i];
+            pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+        }
+        population.push_back( Individual( pw ) );
+    }
+
+    //the main algorithm loop
+    for( int iGen = 0; iGen < maxNumberOfGenerations; ++iGen ){
+
+        //evaluate the individuals
+        for( int iInd = 0; iInd < population.size(); ++iInd ){
+            Individual& ind = population[iInd];
+            ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
+        }
+
+        //-----SELECTION (by binary tournament)-------
+
+        //sort the individuals
+        std::sort( population.begin(), population.end() );
+
+        //get the best half of the population (selection)
+        std::vector< Individual > selection;
+        for( Individual& individual : population ){
+            selection.push_back( individual );
+            if( selection.size() >= population.size() / 2 )
+                break;
+        }
+
+        //--------------------------------------------
+
+    }
+
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
