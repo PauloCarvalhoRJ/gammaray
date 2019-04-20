@@ -96,7 +96,7 @@ public:
     double fValue;
 
     //operators
-    Individual& operator=( Individual&& otherIndividual ){
+    Individual& operator=( const Individual& otherIndividual ){
         parameters = otherIndividual.parameters;
         fValue = fValue;
         return *this;
@@ -3097,22 +3097,23 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     progressDialog.show();
     progressDialog.setLabelText("Genetic Algorithm in progress...");
 
-    //Init the population.
-    std::vector< Individual > population;
-    for( int iIndividual = 0; iIndividual < nPopulationSize; ++iIndividual ){
-        //create an individual (one array of parameters)
-        spectral::array pw( (spectral::index)totalNumberOfParameters );
-        //randomize the individual's position in the domain.
-        for( int i = 0; i < pw.size(); ++i ){
-            double LO = L_wMin[i];
-            double HI = L_wMax[i];
-            pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
-        }
-        population.push_back( Individual( pw ) );
-    }
 
     //the main algorithm loop
+    std::vector< Individual > population;
     for( int iGen = 0; iGen < maxNumberOfGenerations; ++iGen ){
+
+        //Init or refill the population with randomly generated individuals.
+        for( int iIndividual = population.size(); iIndividual < nPopulationSize; ++iIndividual ){
+            //create an individual (one array of parameters)
+            spectral::array pw( (spectral::index)totalNumberOfParameters );
+            //randomize the individual's position in the domain.
+            for( int i = 0; i < pw.size(); ++i ){
+                double LO = L_wMin[i];
+                double HI = L_wMax[i];
+                pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+            }
+            population.push_back( Individual( pw ) );
+        }
 
         //evaluate the individuals of current population
         for( int iInd = 0; iInd < population.size(); ++iInd ){
@@ -3122,6 +3123,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
 
         //sort the population in ascending order (lower value == better fitness)
         std::sort( population.begin(), population.end() );
+
+        //clip the population (the excessive worst fit individuals die)
+        while( population.size() > nPopulationSize )
+            population.pop_back();
 
         //perform selection by binary tournament
         std::vector< Individual > selection;
@@ -3135,7 +3140,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
                 //to their probabilities of taking part in the tournament.
                 //this probability is given by sp*(1.0-sp)^i where:
                 // sp == selection pressure; i == order of the individual
-                int nthIndividualToParticipate = nPopulationSize-1; //0 == 1st
+                int nthIndividualToParticipate = population.size()-1; //0 == 1st
                 double cummProb = 0.0;
                 for( ; nthIndividualToParticipate >= 0; --nthIndividualToParticipate ){
                     double probabilityOfSelection = selectionPressure * std::pow(1.0 - selectionPressure, nthIndividualToParticipate);
@@ -3152,7 +3157,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
             selection.push_back( tournament.front() );
         }
 
-        //perform crossover
+        //perform crossover and mutation on the selected individuals
+        std::vector< Individual > nextGenPool;
         while( ! selection.empty() ){
             //draw two selected individuals at random for crossover.
             int parentIndex1 = std::rand() / (double)RAND_MAX * selection.size();
@@ -3163,18 +3169,33 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
             double p = std::rand() / (double)RAND_MAX;
             //if crossover is due...
             if( p < probabilityOfCrossOver ){
+                //crossover
                 std::pair< Individual, Individual> offspring = parent1.crossOver( parent2, pointOfCrossover );
                 Individual child1 = offspring.first;
                 Individual child2 = offspring.second;
-                //evaluate the children
-                child1.fValue = F3( *inputGrid, inputVarmap, child1.parameters, m );
-                child2.fValue = F3( *inputGrid, inputVarmap, child2.parameters, m );
-                //perform survival (best two of the four)
-                std::vector< Individual > survivalPool = { parent1, parent2, child1, child2 };
+                //mutate all
+                child1.mutate( mutationRate, L_wMin, L_wMax );
+                child2.mutate( mutationRate, L_wMin, L_wMax );
+                parent1.mutate( mutationRate, L_wMin, L_wMax );
+                parent2.mutate( mutationRate, L_wMin, L_wMax );
+                //add them to the next generation pool
+                nextGenPool.push_back( child1 );
+                nextGenPool.push_back( child2 );
+                nextGenPool.push_back( parent1 );
+                nextGenPool.push_back( parent2 );
+            } else { //no crossover took place
+                //simply mutate and insert the parents into the next generation pool
+                parent1.mutate( mutationRate, L_wMin, L_wMax );
+                parent2.mutate( mutationRate, L_wMin, L_wMax );
+                nextGenPool.push_back( parent1 );
+                nextGenPool.push_back( parent2 );
             }
         }
 
-    }
+        //make the next generation
+        population = nextGenPool;
+
+    } //main algorithm loop
 
 }
 
