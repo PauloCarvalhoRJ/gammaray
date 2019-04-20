@@ -37,7 +37,13 @@ struct objectiveFunctionFactors{
 
 class Individual{
 public:
-    Individual( spectral::array& pparameters ) :
+    //constructors
+    Individual() = delete;
+    Individual( int nNumberOfParameters ) :
+        parameters( nNumberOfParameters ),
+        fValue( std::numeric_limits<double>::max() )
+    {}
+    Individual( const spectral::array& pparameters ) :
         parameters( pparameters ),
         fValue( std::numeric_limits<double>::max() )
     {}
@@ -46,15 +52,56 @@ public:
         fValue( otherIndividual.fValue )
     {}
 
-    spectral::array& parameters;
+    //methods
+    std::pair<Individual, Individual> crossOver( const Individual& otherIndividual,
+                                                 int pointOfCrossOver ) const {
+        Individual child1( parameters.size() ), child2( parameters.size() );
+        for( int iParameter = 0; iParameter < parameters.size(); ++iParameter ){
+            if( iParameter < pointOfCrossOver ){
+                child1.parameters[iParameter] = parameters[iParameter];
+                child2.parameters[iParameter] = otherIndividual.parameters[iParameter];
+            } else {
+                child1.parameters[iParameter] = otherIndividual.parameters[iParameter];
+                child2.parameters[iParameter] = parameters[iParameter];
+            }
+        }
+    }
+    void mutate( double mutationRate,
+                 const spectral::array& lowBoundaries,
+                 const spectral::array& highBoundaries ){
+        //sanity checks
+        if( lowBoundaries.size() != parameters.size() ||
+            highBoundaries.size() != parameters.size() ){
+            QMessageBox::critical( nullptr, "Error", "Individual::mutate(): Either the high or low boundaries have different number of elements than the parameters member. Operation canceled.");
+            return;
+        }
+        //compute the mutation probability for a single gene (parameter)
+        double probOfMutation = 1.0 / parameters.size() * mutationRate;
+        //traverse all genes (parameters)
+        for( int iPar = 0.0; iPar < parameters.size(); ++iPar ){
+            //draw a value between 0.0 and 1.0 from an uniform distribution
+            double p = std::rand() / (double)RAND_MAX;
+            //if a mutation is due...
+            if( p < probOfMutation ) {
+                //perform mutation by randomly sorting a value within the domain.
+                double LO = lowBoundaries[iPar];
+                double HI = highBoundaries[iPar];
+                parameters[iPar] = LO + std::rand() / (RAND_MAX/(HI-LO));
+            }
+        }
+    }
+
+    //member variables
+    spectral::array parameters;
     double fValue;
 
+    //operators
     Individual& operator=( Individual&& otherIndividual ){
         parameters = otherIndividual.parameters;
         fValue = fValue;
         return *this;
     }
-    bool operator<( Individual& otherIndividual ){
+    bool operator<( Individual& otherIndividual ) const {
         return fValue < otherIndividual.fValue;
     }
 };
@@ -2892,11 +2939,41 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     //get user configuration
     int m = ui->spinNumberOfGeologicalFactors->value();
     int maxNumberOfGenerations = ui->spinMaxSteps->value();
-    int nIndividuals = 80; //number of individuals (sets of parameters)
+    int nPopulationSize = 80; //number of individuals (sets of parameters)
     //selection pressure. 1.0 means only the best individual is selected during
     //the binary tournaments.  Lower values mean that the 2nd, 3rd, etc. best ones
     //have a chance to be selected
     double selectionPressure = 0.7;
+    int nTournamentSize = 40; //the size of the tournament (must be < nPopulationSize)
+    int nSelectionSize = 40; //the size of the selection pool (must be < nPopulationSize)
+    double probabilityOfCrossOver = 0.7;
+    int pointOfCrossover = 6; //the index where crossover switches (must be less than the total number of parameters per individual)
+    //mutation rate means how many paramaters are expected to change per mutation
+    //the probability of any parameter parameter (gene) to be changed is 1/nParameters * mutationRate
+    //thus, 1.0 means that one gene will surely be mutated per mutation on average.  Fractionary
+    //values are possible. 0.0 means no mutation will take place.
+    double mutationRate = 1.0;
+
+    //the total number of genes (parameters) per individual.
+    int totalNumberOfParameters = m * IJVariographicStructure2D::getNumberOfParameters();
+
+    //sanity checks
+    if( nTournamentSize >= nPopulationSize ){
+        QMessageBox::critical( this, "Error", "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): Tournament size must be less than population size.");
+        return;
+    }
+    if( nSelectionSize >= nPopulationSize ){
+        QMessageBox::critical( this, "Error", "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): Selection pool size must be less than population size.");
+        return;
+    }
+    if( nPopulationSize % 2 + nTournamentSize % 2 + nSelectionSize % 2 ){
+        QMessageBox::critical( this, "Error", "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): Sizes must be even numbers.");
+        return;
+    }
+    if( pointOfCrossover >= totalNumberOfParameters  ){
+        QMessageBox::critical( this, "Error", "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): Point of crossover must be less than the number of parameters.");
+        return;
+    }
 
     // Get the data objects.
     IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
@@ -2981,7 +3058,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     //Initialize the vector of linear system parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
     // from the variographic parameters for each geological factor
     //the starting values are not particuarly important.
-    spectral::array vw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    spectral::array vw( (spectral::index)totalNumberOfParameters );
     for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             vw[i] = variographicEllipses[iGeoFactor].getParameter( iPar );
@@ -3018,13 +3095,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     QProgressDialog progressDialog;
     progressDialog.setRange(0,0);
     progressDialog.show();
-    progressDialog.setLabelText("Line Search with Restart in progress...");
+    progressDialog.setLabelText("Genetic Algorithm in progress...");
 
     //Init the population.
     std::vector< Individual > population;
-    for( int iIndividual = 0; iIndividual < nIndividuals; ++iIndividual ){
+    for( int iIndividual = 0; iIndividual < nPopulationSize; ++iIndividual ){
         //create an individual (one array of parameters)
-        spectral::array pw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+        spectral::array pw( (spectral::index)totalNumberOfParameters );
         //randomize the individual's position in the domain.
         for( int i = 0; i < pw.size(); ++i ){
             double LO = L_wMin[i];
@@ -3037,26 +3114,65 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     //the main algorithm loop
     for( int iGen = 0; iGen < maxNumberOfGenerations; ++iGen ){
 
-        //evaluate the individuals
+        //evaluate the individuals of current population
         for( int iInd = 0; iInd < population.size(); ++iInd ){
             Individual& ind = population[iInd];
             ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
         }
 
-        //-----SELECTION (by binary tournament)-------
-
-        //sort the individuals
+        //sort the population in ascending order (lower value == better fitness)
         std::sort( population.begin(), population.end() );
 
-        //get the best half of the population (selection)
+        //perform selection by binary tournament
         std::vector< Individual > selection;
-        for( Individual& individual : population ){
-            selection.push_back( individual );
-            if( selection.size() >= population.size() / 2 )
-                break;
+        for( int iSel = 0; iSel < nSelectionSize; ++iSel ){
+            //perform binary tournament
+            std::vector< Individual > tournament;
+            for( int iTourn = 0; iTourn < nTournamentSize; ++iTourn ){
+                //draw a value between 0.0 and 1.0 from an uniform distribution
+                double p = std::rand() / (double)RAND_MAX;
+                //get either the 1st, 2nd, 3rd, etc. best individual acoording
+                //to their probabilities of taking part in the tournament.
+                //this probability is given by sp*(1.0-sp)^i where:
+                // sp == selection pressure; i == order of the individual
+                int nthIndividualToParticipate = nPopulationSize-1; //0 == 1st
+                double cummProb = 0.0;
+                for( ; nthIndividualToParticipate >= 0; --nthIndividualToParticipate ){
+                    double probabilityOfSelection = selectionPressure * std::pow(1.0 - selectionPressure, nthIndividualToParticipate);
+                    cummProb += probabilityOfSelection;
+                    if( p < cummProb )
+                        break;
+                }
+                //add the participant in the tournament
+                tournament.push_back( population[nthIndividualToParticipate] );
+            }
+            //sort the tournament
+            std::sort( tournament.begin(), tournament.end());
+            //add the best of tournament to the selection pool
+            selection.push_back( tournament.front() );
         }
 
-        //--------------------------------------------
+        //perform crossover
+        while( ! selection.empty() ){
+            //draw two selected individuals at random for crossover.
+            int parentIndex1 = std::rand() / (double)RAND_MAX * selection.size();
+            int parentIndex2 = std::rand() / (double)RAND_MAX * selection.size();
+            Individual parent1 = *( selection.erase( selection.begin() + parentIndex1 ) );
+            Individual parent2 = *( selection.erase( selection.begin() + parentIndex2 ) );
+            //draw a value between 0.0 and 1.0 from an uniform distribution
+            double p = std::rand() / (double)RAND_MAX;
+            //if crossover is due...
+            if( p < probabilityOfCrossOver ){
+                std::pair< Individual, Individual> offspring = parent1.crossOver( parent2, pointOfCrossover );
+                Individual child1 = offspring.first;
+                Individual child2 = offspring.second;
+                //evaluate the children
+                child1.fValue = F3( *inputGrid, inputVarmap, child1.parameters, m );
+                child2.fValue = F3( *inputGrid, inputVarmap, child2.parameters, m );
+                //perform survival (best two of the four)
+                std::vector< Individual > survivalPool = { parent1, parent2, child1, child2 };
+            }
+        }
 
     }
 
