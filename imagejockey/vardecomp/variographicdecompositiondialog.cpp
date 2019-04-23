@@ -25,7 +25,6 @@
 #include <vtkCleanPolyData.h>
 #include <cassert>
 
-
 std::mutex mutexObjectiveFunction;
 
 struct objectiveFunctionFactors{
@@ -55,6 +54,8 @@ public:
     //methods
     std::pair<Individual, Individual> crossOver( const Individual& otherIndividual,
                                                  int pointOfCrossOver ) const {
+        assert( parameters.size() && otherIndividual.parameters.size() &&
+            "Individual::crossOver(): Either operands have zero parameters.") ;
         Individual child1( parameters.size() ), child2( parameters.size() );
         for( int iParameter = 0; iParameter < parameters.size(); ++iParameter ){
             if( iParameter < pointOfCrossOver ){
@@ -65,6 +66,7 @@ public:
                 child2.parameters[iParameter] = parameters[iParameter];
             }
         }
+        return { child1, child2 };
     }
     void mutate( double mutationRate,
                  const spectral::array& lowBoundaries,
@@ -72,7 +74,14 @@ public:
         //sanity checks
         if( lowBoundaries.size() != parameters.size() ||
             highBoundaries.size() != parameters.size() ){
-            QMessageBox::critical( nullptr, "Error", "Individual::mutate(): Either the high or low boundaries have different number of elements than the parameters member. Operation canceled.");
+            QString message ("Individual::mutate(): Either low boundary (n=");
+            message.append( QString::number( lowBoundaries.size() ) );
+            message.append( ") or the high boundary (n=" );
+            message.append( QString::number( highBoundaries.size() ) );
+            message.append( ") have a different number of elements than the parameters member (n=" );
+            message.append( QString::number( parameters.size() ) );
+            message.append( "). Operation canceled.") ;
+            QMessageBox::critical( nullptr, "Error", message);
             return;
         }
         //compute the mutation probability for a single gene (parameter)
@@ -98,10 +107,10 @@ public:
     //operators
     Individual& operator=( const Individual& otherIndividual ){
         parameters = otherIndividual.parameters;
-        fValue = fValue;
+        fValue = otherIndividual.fValue;
         return *this;
     }
-    bool operator<( Individual& otherIndividual ) const {
+    bool operator<( const Individual& otherIndividual ) const {
         return fValue < otherIndividual.fValue;
     }
 };
@@ -2296,7 +2305,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
     msgBox.setText("Perform optimization with:");
     QAbstractButton* pButtonUseSAandGS = msgBox.addButton("Simulated Annealing + Gradient Descent", QMessageBox::YesRole);
     QAbstractButton* pButtonUsePSO = msgBox.addButton("Particle Swarm Opt.", QMessageBox::ApplyRole);
-    QAbstractButton* pButtonUseGenetic = msgBox.addButton("Gentic Algorithm.", QMessageBox::AcceptRole);
+    QAbstractButton* pButtonUseGenetic = msgBox.addButton("Genetic Algorithm.", QMessageBox::AcceptRole);
     msgBox.addButton("Line Search with Restart", QMessageBox::NoRole);
     msgBox.exec();
     if ( msgBox.clickedButton() == pButtonUseSAandGS )
@@ -3097,10 +3106,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     progressDialog.show();
     progressDialog.setLabelText("Genetic Algorithm in progress...");
 
-
     //the main algorithm loop
     std::vector< Individual > population;
     for( int iGen = 0; iGen < maxNumberOfGenerations; ++iGen ){
+
+        //let Qt do repainting and respond to events during processing
+        QApplication::processEvents();
 
         //Init or refill the population with randomly generated individuals.
         for( int iIndividual = population.size(); iIndividual < nPopulationSize; ++iIndividual ){
@@ -3158,7 +3169,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         }
 
         //perform crossover and mutation on the selected individuals
-        std::vector< Individual > nextGenPool;
+        std::vector< Individual > nextGen;
         while( ! selection.empty() ){
             //draw two selected individuals at random for crossover.
             int parentIndex1 = std::rand() / (double)RAND_MAX * selection.size();
@@ -3170,6 +3181,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
             //if crossover is due...
             if( p < probabilityOfCrossOver ){
                 //crossover
+                assert( parent1.parameters.size() && "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): zero parameters in 1st parent." );
+                assert( parent2.parameters.size() && "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): zero parameters in 2nd parent." );
                 std::pair< Individual, Individual> offspring = parent1.crossOver( parent2, pointOfCrossover );
                 Individual child1 = offspring.first;
                 Individual child2 = offspring.second;
@@ -3179,24 +3192,93 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
                 parent1.mutate( mutationRate, L_wMin, L_wMax );
                 parent2.mutate( mutationRate, L_wMin, L_wMax );
                 //add them to the next generation pool
-                nextGenPool.push_back( child1 );
-                nextGenPool.push_back( child2 );
-                nextGenPool.push_back( parent1 );
-                nextGenPool.push_back( parent2 );
+                nextGen.push_back( child1 );
+                nextGen.push_back( child2 );
+                nextGen.push_back( parent1 );
+                nextGen.push_back( parent2 );
             } else { //no crossover took place
                 //simply mutate and insert the parents into the next generation pool
                 parent1.mutate( mutationRate, L_wMin, L_wMax );
                 parent2.mutate( mutationRate, L_wMin, L_wMax );
-                nextGenPool.push_back( parent1 );
-                nextGenPool.push_back( parent2 );
+                nextGen.push_back( parent1 );
+                nextGen.push_back( parent2 );
             }
         }
 
         //make the next generation
-        population = nextGenPool;
+        population = nextGen;
 
     } //main algorithm loop
 
+    //=====================================GET RESULTS========================================
+    progressDialog.hide();
+
+    //evaluate the individuals of final population
+    for( int iInd = 0; iInd < population.size(); ++iInd ){
+        Individual& ind = population[iInd];
+        ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
+    }
+
+    //sort the population in ascending order (lower value == better fitness)
+    std::sort( population.begin(), population.end() );
+
+    //get the parameters of the best individual (set of parameters)
+    spectral::array gbest_pw = population[0].parameters;
+
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variographicEllipses[iGeoFactor].setParameter( iPar, gbest_pw[i] );
+
+    //Apply the principle of the Fourier Integral Method
+    //use a variographic map as the magnitudes and the FFT phases of
+    //the original data to a reverse FFT in polar form to achieve a
+    //Factorial Kriging-like separation
+    std::vector< spectral::array > geoFactors;
+    std::vector< std::string > titles;
+    std::vector< bool > shiftFlags;
+    for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ) {
+        //compute the varmap of the theoretical varmap for one geologic factor
+        spectral::array geoFactorVarMap( nI, nJ, nK, 0.0 );
+        variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
+                                                                     geoFactorVarMap,
+                                                                     IJVariogramPermissiveModel::SPHERIC,
+                                                                     true );
+
+        //collect the theoretical varmap for display
+        geoFactors.push_back( geoFactorVarMap );
+        titles.push_back( QString( "Varmap " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
+
+        //compute FFT of the theoretical varmap (into polar form)
+        spectral::complex_array geoFactorVarMapFFT( nI, nJ, nK );
+        spectral::array tmp = spectral::shiftByHalf( geoFactorVarMap );
+        spectral::foward( geoFactorVarMapFFT, tmp );
+        spectral::complex_array geoFactorVarMapFFTpolar = spectral::to_polar_form( geoFactorVarMapFFT );
+        spectral::array geoFactorVarMapFFTamplitudes = spectral::real( geoFactorVarMapFFTpolar );
+
+        //get the square root of the amplitudes of the varmap FFT
+        spectral::array geoFactorVarmapFFTamplitudesSQRT = geoFactorVarMapFFTamplitudes.sqrt();
+
+        //convert sqrt(varmap) and the phases of the input to rectangular form
+        spectral::complex_array geoFactorFFTpolar = spectral::to_complex_array(
+                                                       geoFactorVarmapFFTamplitudesSQRT,
+                                                       inputFFTimagPhase
+                                                    );
+        spectral::complex_array geoFactorFFT = spectral::to_rectangular_form( geoFactorFFTpolar );
+
+        //compute the reverse FFT to get the geological factor
+        spectral::array geoFactor( nI, nJ, nK, 0.0 );
+        spectral::backward( geoFactor, geoFactorFFT );
+
+        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+        geoFactor = geoFactor / (double)( nI * nJ * nK );
+
+        geoFactors.push_back( geoFactor );
+        titles.push_back( QString( "Factor " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
+    }
+    displayGrids( geoFactors, titles, shiftFlags );
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
