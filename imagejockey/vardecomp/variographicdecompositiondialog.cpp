@@ -3171,18 +3171,20 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         //perform crossover and mutation on the selected individuals
         std::vector< Individual > nextGen;
         while( ! selection.empty() ){
-            //draw two selected individuals at random for crossover.
-            int parentIndex1 = std::rand() / (double)RAND_MAX * selection.size();
-            int parentIndex2 = std::rand() / (double)RAND_MAX * selection.size();
-            Individual parent1 = *( selection.erase( selection.begin() + parentIndex1 ) );
-            Individual parent2 = *( selection.erase( selection.begin() + parentIndex2 ) );
+            //draw two different selected individuals at random for crossover.
+            int parentIndex1 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
+            int parentIndex2 = parentIndex1;
+            while( parentIndex2 == parentIndex1 )
+                parentIndex2 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
+            Individual parent1 = selection[ parentIndex1 ];
+            Individual parent2 = selection[ parentIndex2 ];
+            selection.erase( selection.begin() + parentIndex1 );
+            selection.erase( selection.begin() + parentIndex2 );
             //draw a value between 0.0 and 1.0 from an uniform distribution
             double p = std::rand() / (double)RAND_MAX;
             //if crossover is due...
             if( p < probabilityOfCrossOver ){
                 //crossover
-                assert( parent1.parameters.size() && "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): zero parameters in 1st parent." );
-                assert( parent2.parameters.size() && "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): zero parameters in 2nd parent." );
                 std::pair< Individual, Individual> offspring = parent1.crossOver( parent2, pointOfCrossover );
                 Individual child1 = offspring.first;
                 Individual child2 = offspring.second;
