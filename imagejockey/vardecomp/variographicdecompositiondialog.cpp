@@ -3114,7 +3114,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         QApplication::processEvents();
 
         //Init or refill the population with randomly generated individuals.
-        for( int iIndividual = population.size(); iIndividual < nPopulationSize; ++iIndividual ){
+        while( population.size() < nPopulationSize ){
             //create an individual (one array of parameters)
             spectral::array pw( (spectral::index)totalNumberOfParameters );
             //randomize the individual's position in the domain.
@@ -3123,8 +3123,16 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
                 double HI = L_wMax[i];
                 pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
             }
-            population.push_back( Individual( pw ) );
+            Individual ind( pw );
+            population.push_back( ind );
         }
+
+        ////////////////////////////////////////////////////////////
+        for( int i = 0; i < population.size(); ++i){
+            if( population[i].parameters.size() < totalNumberOfParameters )
+                std::cout << "AAAAAAAAAAAAAAAAAA" << std::endl;
+        }
+        ///////////////////////////////////////////////////////////
 
         //evaluate the individuals of current population
         for( int iInd = 0; iInd < population.size(); ++iInd ){
@@ -3135,9 +3143,23 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         //sort the population in ascending order (lower value == better fitness)
         std::sort( population.begin(), population.end() );
 
+        ////////////////////////////////////////////////////////////
+        for( int i = 0; i < population.size(); ++i){
+            if( population[i].parameters.size() < totalNumberOfParameters )
+                std::cout << "BBBBBBBBBBBBBBBBBBBBBBBB" << std::endl;
+        }
+        ///////////////////////////////////////////////////////////
+
         //clip the population (the excessive worst fit individuals die)
         while( population.size() > nPopulationSize )
             population.pop_back();
+
+        ////////////////////////////////////////////////////////////
+        for( int i = 0; i < population.size(); ++i){
+            if( population[i].parameters.size() < totalNumberOfParameters )
+                std::cout << "CCCCCCCCCCCCCCCCCCCCC" << std::endl;
+        }
+        ///////////////////////////////////////////////////////////
 
         //perform selection by binary tournament
         std::vector< Individual > selection;
@@ -3159,14 +3181,42 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
                     if( p < cummProb )
                         break;
                 }
+
+                ////////////////////////////////////////////////////////////
+                std::cout << nthIndividualToParticipate << std::endl;
+                if( population.size() < nPopulationSize )
+                    std::cout << "DDDDDDDDDDDDD.44444444" << std::endl;
+                if( nthIndividualToParticipate < 0 )
+                    std::cout << "DDDDDDDDDDDDD.555555" << std::endl;
+                if( nthIndividualToParticipate >= population.size() )
+                    std::cout << "DDDDDDDDDDDDD.666666" << std::endl;
+                if( population[nthIndividualToParticipate].parameters.size() < totalNumberOfParameters )
+                    std::cout << "DDDDDDDDDDDDD.333333333333" << std::endl;
+                ////////////////////////////////////////////////////////////
+
                 //add the participant in the tournament
                 tournament.push_back( population[nthIndividualToParticipate] );
             }
             //sort the tournament
             std::sort( tournament.begin(), tournament.end());
+
+            ////////////////////////////////////////////////////////////
+            for( int i = 0; i < tournament.size(); ++i){
+                if( tournament[i].parameters.size() < totalNumberOfParameters )
+                    std::cout << "DDDDDDDDD.2222222" << std::endl;
+            }
+            ///////////////////////////////////////////////////////////
+
             //add the best of tournament to the selection pool
             selection.push_back( tournament.front() );
         }
+
+        ////////////////////////////////////////////////////////////
+        for( int i = 0; i < selection.size(); ++i){
+            if( selection[i].parameters.size() < totalNumberOfParameters )
+                std::cout << "DDDDDDDDDDDDDDDDDDD" << std::endl;
+        }
+        ///////////////////////////////////////////////////////////
 
         //perform crossover and mutation on the selected individuals
         std::vector< Individual > nextGen;
@@ -3206,6 +3256,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
                 nextGen.push_back( parent2 );
             }
         }
+
+        ///////////////////////////////////////////////////////////
+        for( int i = 0; i < nextGen.size(); ++i){
+            if( nextGen[i].parameters.size() < totalNumberOfParameters )
+                std::cout << "EEEEEEEEEEEEEEEEEEEEEE" << std::endl;
+        }
+        ///////////////////////////////////////////////////////////
 
         //make the next generation
         population = nextGen;
