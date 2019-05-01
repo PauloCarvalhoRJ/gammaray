@@ -2954,7 +2954,6 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     //the binary tournaments.  Lower values mean that the 2nd, 3rd, etc. best ones
     //have a chance to be selected
     double selectionPressure = 0.7;
-    uint nTournamentSize = 40; //the size of the tournament (must be < nPopulationSize)
     uint nSelectionSize = 40; //the size of the selection pool (must be < nPopulationSize)
     double probabilityOfCrossOver = 0.7;
     uint pointOfCrossover = 6; //the index where crossover switches (must be less than the total number of parameters per individual)
@@ -2968,15 +2967,11 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     uint totalNumberOfParameters = m * IJVariographicStructure2D::getNumberOfParameters();
 
     //sanity checks
-    if( nTournamentSize >= nPopulationSize ){
-        QMessageBox::critical( this, "Error", "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): Tournament size must be less than population size.");
-        return;
-    }
     if( nSelectionSize >= nPopulationSize ){
         QMessageBox::critical( this, "Error", "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): Selection pool size must be less than population size.");
         return;
     }
-    if( nPopulationSize % 2 + nTournamentSize % 2 + nSelectionSize % 2 ){
+    if( nPopulationSize % 2 + nSelectionSize % 2 ){
         QMessageBox::critical( this, "Error", "VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(): Sizes must be even numbers.");
         return;
     }
@@ -3146,26 +3141,18 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         for( uint iSel = 0; iSel < nSelectionSize; ++iSel ){
             //perform binary tournament
             std::vector< Individual > tournament;
-            for( uint iTourn = 0; iTourn < nTournamentSize; ++iTourn ){
-                //draw a value between 0.0 and 1.0 from an uniform distribution
-                double p = std::rand() / (double)RAND_MAX;
-                //get either the 1st, 2nd, 3rd, etc. best individual acoording
-                //to their probabilities of taking part in the tournament.
-                //this probability is given by sp*(1.0-sp)^i where:
-                // sp == selection pressure; i == order of the individual
-                uint nthIndividualToParticipate = population.size()-1; //0 == 1st
-                double cummProb = 0.0;
-                for( ; nthIndividualToParticipate > 0; --nthIndividualToParticipate ){
-                    double probabilityOfSelection = selectionPressure * std::pow(1.0 - selectionPressure, nthIndividualToParticipate);
-                    cummProb += probabilityOfSelection;
-                    if( p < cummProb )
-                        break;
-                }
-                //add the participant in the tournament
-                tournament.push_back( population[nthIndividualToParticipate] );
+            {
+                //draw two different individuals at random from the population for the tournament.
+                int tournCandidate1 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
+                int tournCandidate2 = tournCandidate1;
+                while( tournCandidate2 == tournCandidate1 )
+                    tournCandidate2 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
+                //add the participants in the tournament
+                tournament.push_back( population[tournCandidate1] );
+                tournament.push_back( population[tournCandidate2] );
+                //sort the binary tournament
+                std::sort( tournament.begin(), tournament.end());
             }
-            //sort the tournament
-            std::sort( tournament.begin(), tournament.end());
             //add the best of tournament to the selection pool
             selection.push_back( tournament.front() );
         }
