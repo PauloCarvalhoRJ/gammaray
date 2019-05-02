@@ -965,6 +965,12 @@ QColor Util::getGSLibColor(uint color_code)
     QList<QColor> colors;
     Util::makeGSLibColorsList( colors );
 
+    //sanity check
+    if( color_code < 1 || (color_code-1) >= colors.size()  ){
+        Application::instance()->logError("Util::getGSLibColor(): Invalid GSLib color code: " + QString::number(color_code) + ". Returning white.");
+        return Qt::white;
+    }
+
     return colors.at( color_code - 1 );
 }
 
