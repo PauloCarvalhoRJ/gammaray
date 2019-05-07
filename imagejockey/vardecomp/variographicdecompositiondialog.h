@@ -125,6 +125,7 @@ private Q_SLOTS:
     void doVariographicDecomposition5_WITH_LSRS();
     void doVariographicDecomposition5_WITH_PSO();
     void doVariographicDecomposition5_WITH_Genetic();
+    void doVariographicDecomposition5_WITH_BruteForce();
     void doVariographicDecomposition5();
 };
 

@@ -115,6 +115,7 @@ public:
     }
 
 };
+typedef Individual Solution; //make a synonym just for code readbility
 
 ///////////////////////////////////////////////////////////////////////////////////////////
 
@@ -2304,17 +2305,20 @@ void VariographicDecompositionDialog::doVariographicDecomposition5()
 {
     QMessageBox msgBox;
     msgBox.setText("Perform optimization with:");
-    QAbstractButton* pButtonUseSAandGS = msgBox.addButton("Simulated Annealing + Gradient Descent", QMessageBox::YesRole);
-    QAbstractButton* pButtonUsePSO = msgBox.addButton("Particle Swarm Opt.", QMessageBox::ApplyRole);
-    QAbstractButton* pButtonUseGenetic = msgBox.addButton("Genetic Algorithm.", QMessageBox::AcceptRole);
-    msgBox.addButton("Line Search with Restart", QMessageBox::NoRole);
+    QAbstractButton* pButtonUseSAandGS = msgBox.addButton("SA + GD", QMessageBox::YesRole);
+    QAbstractButton* pButtonUsePSO = msgBox.addButton("PSO", QMessageBox::ApplyRole);
+    QAbstractButton* pButtonUseGenetic = msgBox.addButton("Genetic.", QMessageBox::AcceptRole);
+    QAbstractButton* pButtonUseBrute = msgBox.addButton("Brute Force.", QMessageBox::HelpRole);
+    msgBox.addButton("LSRS", QMessageBox::NoRole);
     msgBox.exec();
     if ( msgBox.clickedButton() == pButtonUseSAandGS )
         doVariographicDecomposition5_WITH_SA_AND_GD();
-    if ( msgBox.clickedButton() == pButtonUsePSO )
+    else if ( msgBox.clickedButton() == pButtonUsePSO )
         doVariographicDecomposition5_WITH_PSO();
-    if ( msgBox.clickedButton() == pButtonUseGenetic )
+    else if ( msgBox.clickedButton() == pButtonUseGenetic )
         doVariographicDecomposition5_WITH_Genetic();
+    else if ( msgBox.clickedButton() == pButtonUseBrute )
+        doVariographicDecomposition5_WITH_BruteForce();
     else
         doVariographicDecomposition5_WITH_LSRS();
 }
@@ -2949,19 +2953,18 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     //get user configuration
     int m = ui->spinNumberOfGeologicalFactors->value();
     int maxNumberOfGenerations = ui->spinMaxSteps->value();
-    uint nPopulationSize = 80; //number of individuals (sets of parameters)
+    uint nPopulationSize = ui->spinMaxStepsAlphaReduction->value(); //number of individuals (sets of parameters)
     //selection pressure. 1.0 means only the best individual is selected during
     //the binary tournaments.  Lower values mean that the 2nd, 3rd, etc. best ones
     //have a chance to be selected
-    double selectionPressure = 0.7;
-    uint nSelectionSize = 40; //the size of the selection pool (must be < nPopulationSize)
-    double probabilityOfCrossOver = 0.7;
-    uint pointOfCrossover = 6; //the index where crossover switches (must be less than the total number of parameters per individual)
+    uint nSelectionSize = ui->spinMaxStepsSA->value(); //the size of the selection pool (must be < nPopulationSize)
+    double probabilityOfCrossOver = ui->spinMaxHopFactor->value();
+    uint pointOfCrossover = ui->spinFinalTemperature->value(); //the index where crossover switches (must be less than the total number of parameters per individual)
     //mutation rate means how many paramaters are expected to change per mutation
     //the probability of any parameter parameter (gene) to be changed is 1/nParameters * mutationRate
     //thus, 1.0 means that one gene will surely be mutated per mutation on average.  Fractionary
     //values are possible. 0.0 means no mutation will take place.
-    double mutationRate = 1.0;
+    double mutationRate = ui->spinInitialAlpha->value();
 
     //the total number of genes (parameters) per individual.
     uint totalNumberOfParameters = m * IJVariographicStructure2D::getNumberOfParameters();
@@ -3216,6 +3219,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     //get the parameters of the best individual (set of parameters)
     spectral::array gbest_pw = population[0].parameters;
 
+    std::cout << population[0].fValue << std::endl;
+
     //Read the optimized variogram model parameters back to the variographic structures
     for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
@@ -3270,6 +3275,239 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         shiftFlags.push_back( false );
     }
     displayGrids( geoFactors, titles, shiftFlags );
+}
+
+void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_BruteForce()
+{
+    //get user configuration
+    int m = ui->spinNumberOfGeologicalFactors->value();
+    int maxNumberOfSteps = ui->spinMaxSteps->value();
+    uint nPopulationSize = ui->spinMaxStepsAlphaReduction->value(); //number of solutions (sets of parameters)
+
+    //the total number of genes (parameters) per individual.
+    uint totalNumberOfParameters = m * IJVariographicStructure2D::getNumberOfParameters();
+
+    // Get the data objects.
+    IJAbstractCartesianGrid* inputGrid = m_gridSelector->getSelectedGrid();
+    IJAbstractVariable* variable = m_variableSelector->getSelectedVariable();
+
+    // Get the grid's dimensions.
+    unsigned int nI = inputGrid->getNI();
+    unsigned int nJ = inputGrid->getNJ();
+    unsigned int nK = inputGrid->getNK();
+
+    // Fetch data from the data source.
+    inputGrid->dataWillBeRequested();
+
+    //========================= GET VARMAP OF THE INPUT DATA =====================================
+
+    //make an array full of zeroes (useful for certain steps in the workflow)
+    spectral::array zeros( nI, nJ, nK, 0.0 );
+
+    // Get the input data as a spectral::array object
+    spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
+
+    //Compute FFT of input
+    spectral::array inputFFTrealPart;
+    spectral::array inputFFTimagPart;
+    spectral::array inputFFTimagPhase;
+    {
+        spectral::complex_array inputFFT;
+        spectral::foward( inputFFT, *inputData );
+        inputFFTrealPart = spectral::real( inputFFT );
+        inputFFTimagPart = spectral::imag( inputFFT );
+        spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+        inputFFTimagPhase = spectral::imag( inputFFTpolar );
+    }
+
+    //do a^2 + b^2
+    // where a = real part of FFT; b = imaginary part of FFT.
+    spectral::array inputMagSquared = spectral::hadamard( inputFFTrealPart, inputFFTrealPart ) +
+                                      spectral::hadamard( inputFFTimagPart, inputFFTimagPart );
+
+    //make a complex array from a^2 + b^2 as magnitude and zeros as phase (polar form)
+    //this corresponds to the FFT of a variographic map
+    spectral::complex_array inputVarmapFFTPolarForm = spectral::to_complex_array( inputMagSquared, zeros );
+    inputMagSquared = spectral::array(); //garbage collection
+
+    //convert the previous complex array to the rectangular form
+    spectral::complex_array inputVarmapFFTRectangularForm = spectral::to_rectangular_form( inputVarmapFFTPolarForm );
+    inputVarmapFFTPolarForm = spectral::complex_array(); //garbage collection
+
+    //get the varmap of the input data by reverse FFT
+    spectral::array inputVarmap( nI, nJ, nK, 0.0 );
+    spectral::backward( inputVarmap, inputVarmapFFTRectangularForm );
+    inputVarmapFFTRectangularForm = spectral::complex_array(); //garbage collection
+
+    //fftw requires that the values of r-FFT be divided by the number of cells
+    inputVarmap = inputVarmap / (double)( nI * nJ * nK );
+
+    //put h=0 of the varmap at the center of the grid
+    {
+        spectral::array ffVarMapTMP = spectral::shiftByHalf( inputVarmap );
+        inputVarmap = ffVarMapTMP;
+    }
+
+    //================================== PREPARE OPTIMIZATION STEPS ==========================
+
+    //define the domain
+    double minCellSize = std::min( inputGrid->getCellSizeI(), inputGrid->getCellSizeJ() );
+    double minAxis         = minCellSize;               double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
+    double minRatio        = 0.001;                     double maxRatio        = 1.0;
+    double minAzimuth      = 0.0  ;                     double maxAzimuth      = ImageJockeyUtils::PI;
+    double minContribution = inputVarmap.max() / 100.0; double maxContribution = inputVarmap.max();
+
+    //create one variographic ellipse for each geological factor wanted by the user
+    //the parameters are initialized near in the center of the domain
+    //the starting values are not particuarly important.
+    std::vector< IJVariographicStructure2D > variographicEllipses;
+    for( int i = 0; i < m; ++i )
+        variographicEllipses.push_back( IJVariographicStructure2D ( ( maxAxis         + minAxis         ) / 2.0,
+                                                                    ( maxRatio        + minRatio        ) / 2.0,
+                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
+                                                                    maxContribution / m ) ); //split evenly the total contribution among the geologic factors
+
+    //Initialize the vector of linear system parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
+    // from the variographic parameters for each geological factor
+    //the starting values are not particuarly important.
+    spectral::array vw( (spectral::index)totalNumberOfParameters );
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            vw[i] = variographicEllipses[iGeoFactor].getParameter( iPar );
+
+    //Create a vector with the minimum values allowed for the parameters w
+    //(see min* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMin( vw.size(), 0.0d );
+    for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMin[i] = minAxis;         break;
+            case 1: L_wMin[i] = minRatio;        break;
+            case 2: L_wMin[i] = minAzimuth;      break;
+            case 3: L_wMin[i] = minContribution; break;
+            }
+
+    //Create a vector with the maximum values allowed for the parameters w
+    //(see max* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMax( vw.size(), 1.0d );
+    for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMax[i] = maxAxis;         break;
+            case 1: L_wMax[i] = maxRatio;        break;
+            case 2: L_wMax[i] = maxAzimuth;      break;
+            case 3: L_wMax[i] = maxContribution; break;
+            }
+
+    //=========================================THE BRUTE FORCE ALGORITHM==================================================
+
+    //Intialize the random number generator with the same seed
+    std::srand ((unsigned)ui->spinSeed->value());
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Brute force algorithm in progress...");
+
+    //the main algorithm loop
+    Solution bestSolution( totalNumberOfParameters );
+    for( int iStep = 0; iStep < maxNumberOfSteps; ++iStep ){
+        //let Qt do repainting and respond to events during processing
+        QApplication::processEvents();
+
+        std::vector< Solution > solutions;
+
+        //Init the randomly generated solutions within the domain.
+        while( solutions.size() < nPopulationSize ){
+            //create a solution (one array of parameters)
+            spectral::array parameters( (spectral::index)totalNumberOfParameters );
+            //randomize the solution's parameters in the domain.
+            for( int i = 0; i < parameters.size(); ++i ){
+                double LO = L_wMin[i];
+                double HI = L_wMax[i];
+                parameters[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+            }
+            solutions.push_back( Solution( parameters ) );
+        }
+
+        //evaluate the solutions of current set
+        for( uint iSol = 0; iSol < solutions.size(); ++iSol ){
+            Solution& solution = solutions[iSol];
+            solution.fValue = F3( *inputGrid, inputVarmap, solution.parameters, m );
+        }
+
+        //sort the solution set in ascending order (lower value == better fitness)
+        std::sort( solutions.begin(), solutions.end() );
+
+        //saves the best solution if it was improved
+        if( bestSolution.fValue > solutions[0].fValue ){
+            bestSolution = solutions[0];
+            std::cout << bestSolution.fValue << std::endl;
+        }
+
+    } //main algorithm loop
+
+    //=====================================GET RESULTS========================================
+    progressDialog.hide();
+
+    //get the parameters of the best solution (set of parameters)
+    spectral::array gbest_pw = bestSolution.parameters;
+
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variographicEllipses[iGeoFactor].setParameter( iPar, gbest_pw[i] );
+
+    //Apply the principle of the Fourier Integral Method
+    //use a variographic map as the magnitudes and the FFT phases of
+    //the original data to a reverse FFT in polar form to achieve a
+    //Factorial Kriging-like separation
+    std::vector< spectral::array > geoFactors;
+    std::vector< std::string > titles;
+    std::vector< bool > shiftFlags;
+    for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ) {
+        //compute the varmap of the theoretical varmap for one geologic factor
+        spectral::array geoFactorVarMap( nI, nJ, nK, 0.0 );
+        variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
+                                                                     geoFactorVarMap,
+                                                                     IJVariogramPermissiveModel::SPHERIC,
+                                                                     true );
+
+        //collect the theoretical varmap for display
+        geoFactors.push_back( geoFactorVarMap );
+        titles.push_back( QString( "Varmap " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
+
+        //compute FFT of the theoretical varmap (into polar form)
+        spectral::complex_array geoFactorVarMapFFT( nI, nJ, nK );
+        spectral::array tmp = spectral::shiftByHalf( geoFactorVarMap );
+        spectral::foward( geoFactorVarMapFFT, tmp );
+        spectral::complex_array geoFactorVarMapFFTpolar = spectral::to_polar_form( geoFactorVarMapFFT );
+        spectral::array geoFactorVarMapFFTamplitudes = spectral::real( geoFactorVarMapFFTpolar );
+
+        //get the square root of the amplitudes of the varmap FFT
+        spectral::array geoFactorVarmapFFTamplitudesSQRT = geoFactorVarMapFFTamplitudes.sqrt();
+
+        //convert sqrt(varmap) and the phases of the input to rectangular form
+        spectral::complex_array geoFactorFFTpolar = spectral::to_complex_array(
+                                                       geoFactorVarmapFFTamplitudesSQRT,
+                                                       inputFFTimagPhase
+                                                    );
+        spectral::complex_array geoFactorFFT = spectral::to_rectangular_form( geoFactorFFTpolar );
+
+        //compute the reverse FFT to get the geological factor
+        spectral::array geoFactor( nI, nJ, nK, 0.0 );
+        spectral::backward( geoFactor, geoFactorFFT );
+
+        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+        geoFactor = geoFactor / (double)( nI * nJ * nK );
+
+        geoFactors.push_back( geoFactor );
+        titles.push_back( QString( "Factor " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
+    }
+    displayGrids( geoFactors, titles, shiftFlags );
+
 }
 
 void VariographicDecompositionDialog::displayGrid(const spectral::array & grid, const std::string & title, bool shiftByHalf)
