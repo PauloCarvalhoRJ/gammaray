@@ -89,7 +89,7 @@ QWidget *CategoryDefinition::createContentElementWidget()
     par->_parameters.append( pint );
 
     GSLibParColor *pcol = new GSLibParColor("","","");
-    pcol->_color_code = ( num_cats % 24 ) + 1; //max. color code is 24. First is 1.
+    pcol->_color_code = ( (num_cats-1) % 24 ) + 1; //max. color code is 24. First is 1.
     par->_parameters.append( pcol );
 
     GSLibParString *pstr = new GSLibParString("","","");
