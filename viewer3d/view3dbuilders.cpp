@@ -1206,9 +1206,9 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *car
     vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
     uint nCells = ( nI - 1 ) * ( nJ - 1 );
     unstructuredGrid->Allocate( nCells );
+    vtkSmartPointer< vtkQuad > quad = vtkSmartPointer< vtkQuad >::New();
     for( uint i = 0; i < nCells; ++i ) {
         uint cellJ = i / ( nI - 1 );
-        vtkSmartPointer< vtkQuad > quad = vtkSmartPointer< vtkQuad >::New();
         quad->GetPointIds()->SetId(0, i + cellJ );
         quad->GetPointIds()->SetId(1, i + cellJ + 1 );
         quad->GetPointIds()->SetId(2, i + cellJ + nI + 1 );
