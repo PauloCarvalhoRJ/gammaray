@@ -995,10 +995,10 @@ View3DViewData View3DBuilders::buildForGeoGridMesh( GeoGrid * geoGrid, View3DWid
 	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	uint nCells = geoGrid->getMeshNumberOfCells();
 	unstructuredGrid->Allocate( nCells );
-	for( uint i = 0; i < nCells; ++i ) {
+    vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+    for( uint i = 0; i < nCells; ++i ) {
 		uint vIds[8];
 		geoGrid->getMeshCellDefinition( i, vIds );
-		vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
 		hexa->GetPointIds()->SetId(0, vIds[0]);
 		hexa->GetPointIds()->SetId(1, vIds[1]);
 		hexa->GetPointIds()->SetId(2, vIds[2]);
@@ -1081,21 +1081,21 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	uint nCells = geoGrid->getMeshNumberOfCells();
 	unstructuredGrid->Allocate( nCells );
-	for( uint i = 0; i < nCells; ++i ) {
-		uint vIds[8];
-		geoGrid->getMeshCellDefinition( i, vIds );
-		vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
-		hexa->GetPointIds()->SetId(0, vIds[0]);
-		hexa->GetPointIds()->SetId(1, vIds[1]);
-		hexa->GetPointIds()->SetId(2, vIds[2]);
-		hexa->GetPointIds()->SetId(3, vIds[3]);
-		hexa->GetPointIds()->SetId(4, vIds[4]);
-		hexa->GetPointIds()->SetId(5, vIds[5]);
-		hexa->GetPointIds()->SetId(6, vIds[6]);
-		hexa->GetPointIds()->SetId(7, vIds[7]);
-		unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
+    vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+    for( uint i = 0; i < nCells; ++i ) {
+        uint vIds[8];
+        geoGrid->getMeshCellDefinition( i, vIds );
+        hexa->GetPointIds()->SetId(0, vIds[0]);
+        hexa->GetPointIds()->SetId(1, vIds[1]);
+        hexa->GetPointIds()->SetId(2, vIds[2]);
+        hexa->GetPointIds()->SetId(3, vIds[3]);
+        hexa->GetPointIds()->SetId(4, vIds[4]);
+        hexa->GetPointIds()->SetId(5, vIds[5]);
+        hexa->GetPointIds()->SetId(6, vIds[6]);
+        hexa->GetPointIds()->SetId(7, vIds[7]);
+        unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
 	}
-	unstructuredGrid->SetPoints(hexaPoints);
+    unstructuredGrid->SetPoints(hexaPoints);
 
 	//assign the grid values to the grid cells
 	unstructuredGrid->GetCellData()->SetScalars( values );
