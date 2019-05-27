@@ -22,7 +22,8 @@ enum class FileSelectorType : uint {
     PointSets,                   /*!< Data files of point set type can be selected. */
     CartesianGrids,              /*!< Data files of Cartesian grid type can be selected. */
     Bidistributions,             /*!< Bidistributions can be selected. */
-    FaciesTransitionMatrices     /*!< Facies transitions matrices can be selected. */
+    FaciesTransitionMatrices,    /*!< Facies transitions matrices can be selected. */
+    GridFiles,                   /*!< Cartesian and Geo- grids can be selected. */
 };
 
 /**

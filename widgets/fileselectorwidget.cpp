@@ -42,13 +42,15 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
     //adds files from the Data Files Group of type according to the types specified in m_filesOfTypes
     if( m_filesOfTypes == FileSelectorType::DataFiles ||
         m_filesOfTypes == FileSelectorType::CartesianGrids ||
-        m_filesOfTypes == FileSelectorType::PointSets ){
+        m_filesOfTypes == FileSelectorType::PointSets ||
+        m_filesOfTypes == FileSelectorType::GridFiles ){
         og = project->getDataFilesGroup();
         for( int i = 0; i < og->getChildCount(); ++i){
             File* varFile = (File*)og->getChildByIndex( i );
             bool toAdd = ( m_filesOfTypes == FileSelectorType::DataFiles ) ||
                          ( m_filesOfTypes == FileSelectorType::PointSets && varFile->getFileType() == "POINTSET" ) ||
-                         ( m_filesOfTypes == FileSelectorType::CartesianGrids && varFile->getFileType() == "CARTESIANGRID" );
+                         ( m_filesOfTypes == FileSelectorType::CartesianGrids && varFile->getFileType() == "CARTESIANGRID" ) ||
+                         ( m_filesOfTypes == FileSelectorType::GridFiles && ( varFile->getFileType() == "CARTESIANGRID" || varFile->getFileType() == "GEOGRID" ) );
             if( toAdd )
                 ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }
