@@ -233,7 +233,7 @@ public:
     void convertToCategorical(uint column, CategoryDefinition* cd, int fallbackCode, const QString name_for_new_column);
 
     /** De-allocates the data loaded with loadData(). */
-    void freeLoadedData();
+    virtual void freeLoadedData();
 
     /** Sets the data page (first and last data line to load).
      * Setting a page, causes a reload in next calls to data() or loadData().  The interval is inclusive,

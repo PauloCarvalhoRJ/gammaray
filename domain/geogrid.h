@@ -202,6 +202,7 @@ public:
 	virtual bool isTridimensional(){ return true; }
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
+    virtual void freeLoadedData();
 
 // File interface
 public:

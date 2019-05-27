@@ -913,6 +913,27 @@ double GeoGrid::getProportion(int variableIndex, double value0, double value1)
     throw new InvalidMethodException();
 }
 
+void GeoGrid::freeLoadedData()
+{
+    // free the sample data from the underlying cartesian grid (data in UVW domain)
+    CartesianGrid* UVW_aspect = getUnderlyingCartesianGrid();
+    if( UVW_aspect )
+        UVW_aspect->clearLoadedData();
+
+    // free cell geometry data
+    m_vertexesPart.clear();
+    m_cellDefsPart.clear();
+    //clear() does not guarantee memory is actually freed.
+    std::vector< VertexRecordPtr >().swap( m_vertexesPart );
+    std::vector< CellDefRecordPtr >().swap( m_cellDefsPart );
+
+    // free spatial index data
+    m_spatialIndex->clear();
+
+    // call superclass's free data method.
+    DataFile::freeLoadedData();
+}
+
 bool GeoGrid::canHaveMetaData()
 {
 	return true;
