@@ -109,7 +109,7 @@ protected:
 public:
 	virtual QString getName() const;
     virtual QIcon getIcon() = 0;
-	virtual bool isFile();
+    virtual bool isFile() const;
 	virtual bool isAttribute();
     virtual QString getObjectLocator();
     virtual QString getTypeName(){ return getFileType(); }

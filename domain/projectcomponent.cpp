@@ -36,7 +36,7 @@ void ProjectComponent::removeChild(ProjectComponent *child)
       }
 }
 
-bool ProjectComponent::hasParent()
+bool ProjectComponent::hasParent() const
 {
     return this->_parent;
 }
@@ -51,7 +51,7 @@ ProjectComponent *ProjectComponent::getChildByIndex(int index)
     return this->_children[index];
 }
 
-ProjectComponent *ProjectComponent::getParent()
+ProjectComponent *ProjectComponent::getParent() const
 {
     return this->_parent;
 }

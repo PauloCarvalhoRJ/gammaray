@@ -1042,8 +1042,8 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 
 	//get the max and min of the selected variable
 	geoGrid->loadData();
-	double min = geoGrid->min( var_index-1 );
-	double max = geoGrid->max( var_index-1 );
+    double min = -1000000.0; //geoGrid->min( var_index-1 );
+    double max =  1000000.0; //geoGrid->max( var_index-1 );
 
 	//get the grid dimension of the GeoGrid
 	uint nI = geoGrid->getNI();

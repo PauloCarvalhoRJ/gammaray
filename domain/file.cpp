@@ -113,7 +113,7 @@ QString File::getName() const
 }
 
 
-bool File::isFile()
+bool File::isFile() const
 {
     return true;
 }

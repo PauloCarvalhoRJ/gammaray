@@ -15,13 +15,13 @@ Attribute::Attribute(QString name, int index_in_file, bool categorical) :
     _categorical = categorical;
 }
 
-File *Attribute::getContainingFile()
+File *Attribute::getContainingFile() const
 {
-    ProjectComponent *pc = this;
+    const ProjectComponent *pc = this;
     while( pc->hasParent() ){
         pc = pc->getParent();
         if( pc->isFile() )
-            return (File*)pc;
+            return (File*)pc; //surely pc is not this if execution reaches this line, so it is safe to cast const ponter to non-const poitner here.
     }
     return nullptr;
 }
@@ -95,7 +95,7 @@ QIcon Attribute::getIcon()
 }
 
 
-bool Attribute::isFile()
+bool Attribute::isFile() const
 {
     return false;
 }

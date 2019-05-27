@@ -16,7 +16,7 @@ QIcon ProjectRoot::getIcon()
 }
 
 
-bool ProjectRoot::isFile()
+bool ProjectRoot::isFile() const
 {
     return false;
 }

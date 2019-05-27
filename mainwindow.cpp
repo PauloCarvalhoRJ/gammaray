@@ -89,6 +89,7 @@
 #include "imagejockey/emd/emdanalysisdialog.h"
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/gabor/gaborfilterdialog.h"
+#include "domain/auxiliary/valuestransferer.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -726,6 +727,38 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     menu_caption.append(" onto ");
                     menu_caption.append( cg->getName());
                     _projectContextMenu->addAction(menu_caption, this, SLOT(onProjectGrids()));
+                }
+            }
+        }
+        //if one object is a property of any data set and the other is another data set then transfer property can be used.
+        //The values are transfered in spatial (XYZ) domain.
+        if( index1.isValid() && index2.isValid() ){
+            File* file = nullptr;
+            Attribute* at = nullptr;
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+                file = static_cast<File*>( index2.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isAttribute() ){
+                at = static_cast<Attribute*>( index1.internalPointer() );
+            }
+            //determine the destination data set of the transfer operation
+            DataFile* ds = nullptr;
+            ds = dynamic_cast<DataFile*>( file );
+            //if user selected an attribute of a file
+            if( at && ds && at->getContainingFile() != file ){
+                //determine the origin data set.
+                DataFile* dsOrigin = nullptr;
+                File* parentFileOfSelectedAttribute = at->getContainingFile();
+                if( parentFileOfSelectedAttribute->isDataFile() )
+                    dsOrigin = static_cast<DataFile*>( parentFileOfSelectedAttribute );
+                if( dsOrigin ){
+                    _right_clicked_attribute = at;
+                    _right_clicked_data_file = ds;
+                    QString menu_caption = "Transfer ";
+                    menu_caption.append( dsOrigin->getName() + "/" + at->getName() );
+                    menu_caption.append(" to ");
+                    menu_caption.append( ds->getName());
+                    _projectContextMenu->addAction(menu_caption, this, SLOT(onTransferProperty()));
                 }
             }
         }
@@ -2555,6 +2588,25 @@ void MainWindow::onCreateGeoGridMultiZone()
         Application::instance()->refreshProjectTree();
     }
 
+}
+
+void MainWindow::onTransferProperty()
+{
+    //open the renaming dialog
+    bool ok;
+    QString new_attribute_name = QInputDialog::getText(this, "Name the new attribute",
+                                             "New attribute for destination data file:",
+                                             QLineEdit::Normal,
+                                             _right_clicked_attribute->getName(),
+                                             &ok);
+    if( ! ok )
+        return;
+
+    ValuesTransferer vt( new_attribute_name, _right_clicked_data_file, _right_clicked_attribute );
+    ok = vt.transfer();
+
+    if( ! ok )
+        QMessageBox::critical( this, "Error", "Transfer of values failed.  Check the messages panel.");
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

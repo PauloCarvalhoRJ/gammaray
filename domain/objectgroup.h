@@ -29,7 +29,7 @@ public:
 	QString getName() const;
     QIcon getIcon();
     void save(QTextStream *txt_stream);
-    bool isFile();
+    bool isFile() const;
     bool isAttribute();
     virtual QString getObjectLocator();
     virtual QString getTypeName(){ return "ObjectGroup"; }

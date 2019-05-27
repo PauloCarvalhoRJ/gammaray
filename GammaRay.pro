@@ -252,7 +252,8 @@ SOURCES += main.cpp\
     domain/verticaltransiogrammodel.cpp \
     dialogs/dynamicfaciesrelationshipdiagramdialog.cpp \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.cpp \
-    geostats/segmentsetcell.cpp
+    geostats/segmentsetcell.cpp \
+    domain/auxiliary/valuestransferer.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -483,7 +484,8 @@ HEADERS  += mainwindow.h \
     domain/verticaltransiogrammodel.h \
     dialogs/dynamicfaciesrelationshipdiagramdialog.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h \
-    geostats/segmentsetcell.h
+    geostats/segmentsetcell.h \
+    domain/auxiliary/valuestransferer.h
 
 
 FORMS    += mainwindow.ui \

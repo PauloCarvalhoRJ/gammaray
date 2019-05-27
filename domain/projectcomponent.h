@@ -22,7 +22,7 @@ public:
 	virtual QString getName() const = 0; //user-given name to identify the object
     virtual QString getPresentationName(); //text composition, by default equals getName(), but may include other information such as parameter index
     virtual QIcon getIcon() = 0;
-    virtual bool isFile() = 0;
+    virtual bool isFile() const = 0;
     virtual bool isAttribute() = 0;
     virtual QString getTypeName() = 0;
 
@@ -34,10 +34,10 @@ public:
 
     virtual void addChild( ProjectComponent* child );
     virtual void removeChild( ProjectComponent* child );
-    virtual bool hasParent();
+    virtual bool hasParent() const;
     virtual void setParent( ProjectComponent* parent );
     virtual ProjectComponent* getChildByIndex( int index );
-    virtual ProjectComponent* getParent();
+    virtual ProjectComponent* getParent() const;
     virtual int getChildCount();
     virtual int getIndexInParent();
     virtual int getChildIndex( ProjectComponent* child );
