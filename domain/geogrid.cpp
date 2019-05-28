@@ -146,7 +146,10 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
     //allocate the vertex list
     m_vertexesPart.reserve( nVertexes );
 
-    for( const GeoGridZone zone : zones ){
+    //traverse the collection of zones from bottommost to topmost (reverse of user-entered order)
+    for ( std::vector<GeoGridZone>::const_reverse_iterator iZone = zones.crbegin(); iZone != zones.crend(); ++iZone ) {
+        const GeoGridZone& zone = *(iZone);
+
         //get the indexes of the properties holding the top and base values.
         uint columnIndexBase = zone.base->getAttributeGEOEASgivenIndex()-1;
         uint columnIndexTop = zone.top->getAttributeGEOEASgivenIndex()-1;
