@@ -6,6 +6,9 @@
 #include "domain/geogrid.h"
 #include "domain/cartesiangrid.h"
 
+#include <QProgressDialog>
+#include <QApplication>
+
 ValuesTransferer::ValuesTransferer(const QString newAttributeName,
                                    DataFile *dfDestination,
                                    const Attribute *atOrigin) :
@@ -61,6 +64,17 @@ bool ValuesTransferer::transferFromCGtoGG()
     std::vector< double > collocatedValues;
     collocatedValues.reserve( rowCount );
 
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Transfering collocated values...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setValue( 0 );
+    progressDialog.setMaximum( rowCount );
+    /////////////////////////////////
+
+    int progressUpdateStep = rowCount / 100;
+
     //loop over the GeoGrid cells (one cell == one data record)
     for( int iRow = 0; iRow < rowCount; ++iRow ){
         uint i, j, k;
@@ -72,8 +86,15 @@ bool ValuesTransferer::transferFromCGtoGG()
             collocatedValues.push_back( collocatedValue );
         else
             collocatedValues.push_back( NDVofDest );
+
+        if( ! ( iRow % progressUpdateStep ) ){
+            progressDialog.setValue( iRow );
+            QApplication::processEvents();
+        }
     }
 
     //adds the collocated values a new attribute to the destination data file
     ggDest->addNewDataColumn( m_newAttributeName, collocatedValues );
+
+    return true;
 }
