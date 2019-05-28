@@ -1129,7 +1129,7 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	actor->SetMapper(mapper);
 	//actor->GetProperty()->EdgeVisibilityOn();
 
-    return View3DViewData( actor, threshold );
+    return View3DViewData( actor, mapper, threshold );
 }
 
 View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *cartesianGrid,

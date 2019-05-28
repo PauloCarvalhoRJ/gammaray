@@ -4,6 +4,7 @@
 #include "domain/cartesiangrid.h"
 #include "domain/application.h"
 #include "../view3dbuilders.h" // for the InvisibilityFlag enum
+#include "util.h"
 #include <vtkAlgorithmOutput.h>
 #include <vtkInformation.h>
 #include <vtkStreamingDemandDrivenPipeline.h>
@@ -12,6 +13,8 @@
 #include <vtkIntArray.h>
 #include <vtkThreshold.h>
 #include <vtkCellData.h>
+#include <vtkDataSetMapper.h>
+#include <vtkLookupTable.h>
 
 V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(GridFile *gridFile,
         Attribute */*attribute*/,
@@ -71,6 +74,23 @@ V3DCfgWidForAttributeIn3DCartesianGrid::V3DCfgWidForAttributeIn3DCartesianGrid(G
 
     updateLabels();
 
+    //prevent signals from being fired while configuring the spinners
+    ui->spinColorMin->blockSignals(true);
+    ui->spinColorMax->blockSignals(true);
+    double *scale = _viewObjects.mapper->GetScalarRange();
+    ui->spinColorMin->setValue( scale[0] );
+    ui->spinColorMax->setValue( scale[1] );
+    //restore signal emiting for the spinners
+    ui->spinColorMin->blockSignals(false);
+    ui->spinColorMax->blockSignals(false);
+
+    //setup the dropdown menu with the color scaling options.
+    ui->cmbScaling->blockSignals(true);
+    ui->cmbScaling->addItem("Arithmetic", QVariant( (uint)ColorScaling::ARITHMETIC ));
+    ui->cmbScaling->addItem("Logarithmic", QVariant( (uint)ColorScaling::LOG ));
+    ui->cmbScaling->blockSignals(false);
+
+
     //restore signal processing
     ui->sldILowClip->blockSignals(false);
     ui->sldIHighClip->blockSignals(false);
@@ -87,6 +107,20 @@ V3DCfgWidForAttributeIn3DCartesianGrid::~V3DCfgWidForAttributeIn3DCartesianGrid(
 
 void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
 {
+    vtkSmartPointer<vtkMapper> mapper = _viewObjects.mapper;
+
+    //change color map min and max
+    mapper->SetScalarRange( ui->spinColorMin->value(),
+                            ui->spinColorMax->value());
+
+    //change the color scaling
+    //downcasting to vtkLookupTable (assuming the color table was built in one of the View3dColorTables functions)
+    if( ui->cmbScaling->currentData().toUInt() == (uint)ColorScaling::ARITHMETIC )
+        ((vtkLookupTable*)mapper->GetLookupTable())->SetScaleToLinear();
+    if( ui->cmbScaling->currentData().toUInt() == (uint)ColorScaling::LOG )
+        ((vtkLookupTable*)mapper->GetLookupTable())->SetScaleToLog10();
+
+
     //get the object that triggered the call to this slot
     QObject* obj = sender();
     //check which slider was changed by the user
@@ -196,6 +230,7 @@ void V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges()
     } else {
         Application::instance()->logError("V3DCfgWidForAttributeIn3DCartesianGrid::onUserMadeChanges(): null grid file.");
     }
+
 
     //update the GUI label readout.
     updateLabels();
