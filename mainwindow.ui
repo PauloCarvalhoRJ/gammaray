@@ -297,6 +297,7 @@
     <addaction name="actionSGSIM"/>
     <addaction name="actionSequential_Indicator_Simulation_continuous"/>
     <addaction name="actionSequential_Indicator_Simulation_categorical"/>
+    <addaction name="actionMarkov_Chain_Random_Field_Simulation"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEstimation"/>
@@ -373,6 +374,9 @@
    </property>
   </action>
   <action name="actionImage_Jockey">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="text">
     <string>Image Jockey</string>
    </property>
@@ -418,6 +422,11 @@
   <action name="actionTransiography">
    <property name="text">
     <string>Transiography</string>
+   </property>
+  </action>
+  <action name="actionMarkov_Chain_Random_Field_Simulation">
+   <property name="text">
+    <string>Markov Chain Random Field Simulation</string>
    </property>
   </action>
  </widget>
@@ -737,6 +746,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionMarkov_Chain_Random_Field_Simulation</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onMCRFSim()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -757,5 +782,6 @@
   <slot>onSISIMContinuous()</slot>
   <slot>onSISIMCategorical()</slot>
   <slot>openTransiography()</slot>
+  <slot>onMCRFSim()</slot>
  </slots>
 </ui>

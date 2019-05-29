@@ -205,6 +205,7 @@ private slots:
     void onFaciesRelationShipDiagram();
     void onCreateGeoGridMultiZone();
     void onTransferProperty();
+    void onMCRFSim();
 
 private:
     /**

@@ -75,6 +75,7 @@
 #include "dialogs/entropycyclicityanalysisdialog.h"
 #include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "dialogs/transiogramdialog.h"
+#include "dialogs/mcrfsimdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -2607,6 +2608,12 @@ void MainWindow::onTransferProperty()
 
     if( ! ok )
         QMessageBox::critical( this, "Error", "Transfer of values failed.  Check the messages panel.");
+}
+
+void MainWindow::onMCRFSim()
+{
+    MCRFSimDialog* mcrfd = new MCRFSimDialog( this );
+    mcrfd->show();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
