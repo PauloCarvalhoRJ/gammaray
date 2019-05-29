@@ -4,11 +4,12 @@
 #include "../domain/datafile.h"
 #include "domain/attribute.h"
 
-VariableSelector::VariableSelector(bool show_not_set, QWidget *parent) :
+VariableSelector::VariableSelector(bool show_not_set, VariableSelectorType selectorType, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::VariableSelector),
     m_hasNotSetItem( show_not_set ),
-    m_dataFile( nullptr )
+    m_dataFile( nullptr ),
+    m_selectorType( selectorType )
 {
     ui->setupUi(this);
 
@@ -95,7 +96,11 @@ void VariableSelector::onListVariables(DataFile *file)
     for(; it != all_contained_objects.end(); ++it){
         ProjectComponent* pc = *it;
         if( pc->isAttribute() ){
-			ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
+            Attribute* attributeAspect = static_cast< Attribute* >( pc );
+            bool canBeAdded =  m_selectorType == VariableSelectorType::ALL ||
+                              (m_selectorType == VariableSelectorType::CATEGORICAL && attributeAspect->isCategorical());
+            if( canBeAdded )
+                ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
         }
     }
 }
