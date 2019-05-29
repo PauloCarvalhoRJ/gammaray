@@ -43,14 +43,16 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
     if( m_filesOfTypes == FileSelectorType::DataFiles ||
         m_filesOfTypes == FileSelectorType::CartesianGrids ||
         m_filesOfTypes == FileSelectorType::PointSets ||
-        m_filesOfTypes == FileSelectorType::GridFiles ){
+        m_filesOfTypes == FileSelectorType::GridFiles ||
+        m_filesOfTypes == FileSelectorType::PointAndSegmentSets ){
         og = project->getDataFilesGroup();
         for( int i = 0; i < og->getChildCount(); ++i){
             File* varFile = (File*)og->getChildByIndex( i );
             bool toAdd = ( m_filesOfTypes == FileSelectorType::DataFiles ) ||
                          ( m_filesOfTypes == FileSelectorType::PointSets && varFile->getFileType() == "POINTSET" ) ||
                          ( m_filesOfTypes == FileSelectorType::CartesianGrids && varFile->getFileType() == "CARTESIANGRID" ) ||
-                         ( m_filesOfTypes == FileSelectorType::GridFiles && ( varFile->getFileType() == "CARTESIANGRID" || varFile->getFileType() == "GEOGRID" ) );
+                         ( m_filesOfTypes == FileSelectorType::GridFiles && ( varFile->getFileType() == "CARTESIANGRID" || varFile->getFileType() == "GEOGRID" ) ) ||
+                         ( m_filesOfTypes == FileSelectorType::PointAndSegmentSets && ( varFile->getFileType() == "POINTSET" || varFile->getFileType() == "SEGMENTSET" ) );
             if( toAdd )
                 ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }
@@ -66,6 +68,17 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
 				ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
 		}
 	}
+
+    //adds files from the Distributions Group of type according to the types specified in m_filesOfTypes
+    if( m_filesOfTypes == FileSelectorType::VerticalTransiogramModels ){
+        og = project->getVariogramsGroup(); //the transiogram models are organized in the "Variograms" section of the project
+        for( int i = 0; i < og->getChildCount(); ++i){
+            File* varFile = (File*)og->getChildByIndex( i );
+            bool toAdd = ( ( m_filesOfTypes == FileSelectorType::VerticalTransiogramModels && varFile->getFileType() == "VERTICALTRANSIOGRAMMODEL" ) );
+            if( toAdd )
+                ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
+        }
+    }
 }
 
 FileSelectorWidget::~FileSelectorWidget()
@@ -77,10 +90,11 @@ File *FileSelectorWidget::getSelectedFile()
 {
     Project* project = Application::instance()->getProject();
 
-	const uint nogs = 3;
+    const uint nogs = 4;
     ObjectGroup* ogs[nogs] = {project->getResourcesGroup(),
 							  project->getDataFilesGroup(),
-							  project->getDistributionsGroup()
+                              project->getDistributionsGroup(),
+                              project->getVariogramsGroup()
 							 };
 
     for( uint j = 0; j < nogs; ++j){
@@ -105,10 +119,11 @@ void FileSelectorWidget::onSelection(int /*index*/)
     m_File = nullptr;
     Project* project = Application::instance()->getProject();
 
-	const uint nogs = 3;
+    const uint nogs = 4;
     ObjectGroup* ogs[nogs] = {project->getResourcesGroup(),
 							  project->getDataFilesGroup(),
-							  project->getDistributionsGroup()
+                              project->getDistributionsGroup(),
+                              project->getVariogramsGroup()
                              };
 
     for( uint j = 0; j < nogs; ++j){
