@@ -206,6 +206,7 @@ private slots:
     void onCreateGeoGridMultiZone();
     void onTransferProperty();
     void onMCRFSim();
+    void onSegmentLengths();
 
 private:
     /**

@@ -495,6 +495,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
                 _projectContextMenu->addAction("Facies relationship diagram", this, SLOT(onFaciesRelationShipDiagram()));
             }
+            if( _right_clicked_file->getFileType() == "SEGMENTSET" ){
+                _projectContextMenu->addAction("Compute segment lengths", this, SLOT(onSegmentLengths()));
+            }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
         //build context menu for an attribute
@@ -2614,6 +2617,20 @@ void MainWindow::onMCRFSim()
 {
     MCRFSimDialog* mcrfd = new MCRFSimDialog( this );
     mcrfd->show();
+}
+
+void MainWindow::onSegmentLengths()
+{
+    SegmentSet* ss = dynamic_cast<SegmentSet*>( _right_clicked_file );
+    if( ss ){
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with segment lenghts:", QLineEdit::Normal, "segment_lengths", &ok);
+        if( ! ok )
+            return;
+        ss->computeSegmentLenghts( var_name );
+    }
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
