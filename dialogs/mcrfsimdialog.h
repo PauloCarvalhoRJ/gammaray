@@ -29,6 +29,15 @@ private:
     VariableSelector* m_primVarSelector;
     CartesianGridSelector* m_simGridSelector;
     FileSelectorWidget* m_verticalTransiogramSelector;
+    FileSelectorWidget* m_globalPDFSelector;
+    VariableSelector* m_gradationalFieldVarSelector;
+    std::vector< VariableSelector* > m_probFieldsSelectors;
+
+    void onRemakeProbabilityFieldsCombos();
+
+private Q_SLOTS:
+    void onCmbLateralGradationChanged();
+    void onPrimaryVariableChanged();
 };
 
 #endif // MCRFSIMDIALOG_H
