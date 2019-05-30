@@ -165,6 +165,26 @@ double SegmentSet::getDistanceToNextSegment(int iRecord)
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
+void SegmentSet::computeSegmentLenghts(QString variable_name)
+{
+    //load the data
+    loadData();
+
+    //appends a new variable
+    addEmptyDataColumn( variable_name, getDataLineCount() );
+
+    //get the current data column count
+    uint columnCount = getDataColumnCount();
+
+    //compute the lengths
+    uint rowCount = getDataLineCount();
+    for( int iRow = 0; iRow < rowCount; ++iRow )
+        setData( iRow, columnCount-1, getSegmentLenght( iRow ) );
+
+    //commit results to file system
+    writeToFS();
+}
+
 
 QIcon SegmentSet::getIcon()
 {

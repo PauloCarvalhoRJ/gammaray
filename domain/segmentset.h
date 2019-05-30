@@ -51,6 +51,12 @@ public:
      */
     double getDistanceToNextSegment( int iRecord );
 
+    /**
+     * Adds a new variable containing the lengths of the segments.  The values can be useful
+     * for debiasing, for instance.
+     */
+    void computeSegmentLenghts( QString variable_name );
+
 
     // ProjectComponent interface
 public:
