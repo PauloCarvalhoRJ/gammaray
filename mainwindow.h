@@ -207,6 +207,7 @@ private slots:
     void onTransferProperty();
     void onMCRFSim();
     void onSegmentLengths();
+    void onLVADataSet();
 
 private:
     /**

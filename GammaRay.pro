@@ -254,7 +254,8 @@ SOURCES += main.cpp\
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.cpp \
     geostats/segmentsetcell.cpp \
     domain/auxiliary/valuestransferer.cpp \
-    dialogs/mcrfsimdialog.cpp
+    dialogs/mcrfsimdialog.cpp \
+    dialogs/lvadatasetdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -487,7 +488,8 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h \
     geostats/segmentsetcell.h \
     domain/auxiliary/valuestransferer.h \
-    dialogs/mcrfsimdialog.h
+    dialogs/mcrfsimdialog.h \
+    dialogs/lvadatasetdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -578,7 +580,8 @@ FORMS    += mainwindow.ui \
     dialogs/transiogramdialog.ui \
     dialogs/dynamicfaciesrelationshipdiagramdialog.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.ui \
-    dialogs/mcrfsimdialog.ui
+    dialogs/mcrfsimdialog.ui \
+    dialogs/lvadatasetdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

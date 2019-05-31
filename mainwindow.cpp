@@ -76,6 +76,7 @@
 #include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/mcrfsimdialog.h"
+#include "dialogs/lvadatasetdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -551,7 +552,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
-				CartesianGrid* cg = (CartesianGrid*)parent_file;
+                _projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
+                CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
@@ -2631,6 +2633,12 @@ void MainWindow::onSegmentLengths()
             return;
         ss->computeSegmentLenghts( var_name );
     }
+}
+
+void MainWindow::onLVADataSet()
+{
+    LVADataSetDialog* lvad = new LVADataSetDialog( _right_clicked_attribute );
+    lvad->show();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
