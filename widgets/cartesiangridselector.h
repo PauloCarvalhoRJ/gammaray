@@ -21,6 +21,9 @@ public:
     /** Returns null pointer if no file is selected. */
     DataFile* getSelectedDataFile(){ return m_dataFile; }
 
+    /** Shortcut to the widget's combobox's currentIndex() method. */
+    int getCurrentIndex();
+
 signals:
     void cartesianGridSelected( DataFile* ps );
 
