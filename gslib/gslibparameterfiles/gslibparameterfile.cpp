@@ -58,6 +58,12 @@ GSLibParameterFile::GSLibParameterFile()
    _last_repeat = nullptr;
 }
 
+GSLibParameterFile::GSLibParameterFile( const std::vector<QString>& linesOfTemplateSyntax )
+{
+    for( const QString& line : linesOfTemplateSyntax )
+        this->parseTemplateLine( line );
+}
+
 GSLibParameterFile::~GSLibParameterFile()
 {
     //TODO: Delete the objects in _params
