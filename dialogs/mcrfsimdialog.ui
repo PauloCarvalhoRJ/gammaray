@@ -446,7 +446,7 @@
      <property name="title">
       <string>Secondary data</string>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout_12">
+     <layout class="QVBoxLayout" name="verticalLayout_7">
       <property name="spacing">
        <number>6</number>
       </property>
@@ -557,28 +557,42 @@
     </widget>
    </item>
    <item>
-    <widget class="QGroupBox" name="grpBoxCommonSimulationProperties">
-     <property name="title">
-      <string>Common simulation parameters</string>
+    <layout class="QHBoxLayout" name="horizontalLayout_12">
+     <property name="topMargin">
+      <number>0</number>
      </property>
-     <layout class="QVBoxLayout" name="verticalLayout_6">
-      <property name="spacing">
-       <number>6</number>
-      </property>
-      <property name="leftMargin">
-       <number>6</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>6</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-     </layout>
-    </widget>
+     <item>
+      <widget class="QLabel" name="label_14">
+       <property name="text">
+        <string>Configure common simulation parameters:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnCommonSimulationParameters">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/setting32</normaloff>:/icons32/setting32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="horizontalSpacer_2">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+    </layout>
    </item>
    <item>
     <spacer name="verticalSpacer">
@@ -619,7 +633,9 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>btnDismiss</sender>
@@ -653,9 +669,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnCommonSimulationParameters</sender>
+   <signal>clicked()</signal>
+   <receiver>MCRFSimDialog</receiver>
+   <slot>onCommonSimParams()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>240</x>
+     <y>236</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>272</x>
+     <y>237</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onCmbLateralGradationChanged()</slot>
   <slot>onPrimaryVariableChanged()</slot>
+  <slot>onCommonSimParams()</slot>
  </slots>
 </ui>

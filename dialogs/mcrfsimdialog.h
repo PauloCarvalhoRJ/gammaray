@@ -32,12 +32,16 @@ private:
     FileSelectorWidget* m_globalPDFSelector;
     VariableSelector* m_gradationalFieldVarSelector;
     std::vector< VariableSelector* > m_probFieldsSelectors;
+    VariableSelector* m_LVAazVarSelector;
+    VariableSelector* m_LVAsemiMajorAxisVarSelector;
+    VariableSelector* m_LVAsemiMinorAxisVarSelector;
 
     void onRemakeProbabilityFieldsCombos();
 
 private Q_SLOTS:
     void onCmbLateralGradationChanged();
     void onPrimaryVariableChanged();
+    void onCommonSimParams();
 };
 
 #endif // MCRFSIMDIALOG_H
