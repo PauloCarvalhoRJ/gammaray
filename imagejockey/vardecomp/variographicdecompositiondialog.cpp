@@ -577,8 +577,15 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
     for( int k = 0; k < nK; ++k )
         for( int j = 0; j < nJ; ++j )
             for( int i = 0; i < nI; ++i )
-                if( ! ImageJockeyUtils::almostEqual2sComplement( varmapOfInput(i,j,k), 0.0, 1 ) )
-                    sum += std::abs( ( varmapOfInput(i,j,k) - variographicSurface(i,j,k) ) / varmapOfInput(i,j,k) );
+//                if( std::abs( varmapOfInput(i,j,k) - variographicSurface(i,j,k) ) > 10.0 )
+//                    sum += 1.0;
+
+//                if( ! ImageJockeyUtils::almostEqual2sComplement( varmapOfInput(i,j,k), 0.0, 1 ) )
+//                    sum += std::abs( ( varmapOfInput(i,j,k) - variographicSurface(i,j,k) ) / varmapOfInput(i,j,k) );
+
+                  sum += std::abs( ( varmapOfInput(i,j,k) - variographicSurface(i,j,k) ) );
+
+    sum /= varmapOfInput.size();
 
     // Finally, return the objective function value.
     return sum;
@@ -3036,7 +3043,13 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     inputVarmapFFTRectangularForm = spectral::complex_array(); //garbage collection
 
     //fftw requires that the values of r-FFT be divided by the number of cells
-    inputVarmap = inputVarmap / (double)( nI * nJ * nK );
+    inputVarmap =  inputVarmap / (double)( nI * nJ * nK );
+
+    ///////////////////////////////////////////////////
+    for( int i = 0; i < inputVarmap.size(); ++i )
+        if( inputVarmap[i] < 0.0 )
+            inputVarmap[i] = 0.0;
+    ///////////////////////////////////////////////////
 
     //put h=0 of the varmap at the center of the grid
     {
@@ -3210,6 +3223,16 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
     //evaluate the individuals of final population
     for( uint iInd = 0; iInd < population.size(); ++iInd ){
         Individual& ind = population[iInd];
+        //////////////////////////////
+//        ind.parameters[0] = 1.0;
+//        ind.parameters[1] = 1.0;
+//        ind.parameters[2] = 0.0;
+//        ind.parameters[3] = 0.0;
+//        ind.parameters[4] = 30.0;
+//        ind.parameters[5] = 1.0/3.0;
+//        ind.parameters[6] = - ImageJockeyUtils::PI * 41 / 180.0 ;
+//        ind.parameters[7] = inputVarmap.max();
+        //////////////////////////////
         ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
     }
 
@@ -3274,6 +3297,11 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         titles.push_back( QString( "Factor " + QString::number( iGeoFactor ) ).toStdString() );
         shiftFlags.push_back( false );
     }
+    ////////////////////////////////////////
+    geoFactors.push_back( inputVarmap );
+    titles.push_back( QString( "Varmap of input" ).toStdString() );
+    shiftFlags.push_back( false );
+    ////////////////////////////////////////
     displayGrids( geoFactors, titles, shiftFlags );
 }
 
