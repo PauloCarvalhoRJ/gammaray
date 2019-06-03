@@ -24,6 +24,8 @@ private:
 
     void updateSummary();
 
+    void computeLVA2D();
+
 private Q_SLOTS:
     void onComputeLVA();
 };
