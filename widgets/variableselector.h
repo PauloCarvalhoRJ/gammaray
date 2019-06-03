@@ -49,6 +49,12 @@ public:
     /** Sets an optional caption text. */
     void setCaption( QString caption );
 
+    /** Sets an optional background color for the caption text.
+     * Text color is automatically set to either black or white depending on how dark or light
+     * is the background color according to the criterion defined in Util::isDark().
+     */
+    void setCaptionBGColor( const QColor& color );
+
 signals:
     void variableSelected( Attribute* at );
     void currentIndexChanged( int index );
