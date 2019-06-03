@@ -255,7 +255,8 @@ SOURCES += main.cpp\
     geostats/segmentsetcell.cpp \
     domain/auxiliary/valuestransferer.cpp \
     dialogs/mcrfsimdialog.cpp \
-    dialogs/lvadatasetdialog.cpp
+    dialogs/lvadatasetdialog.cpp \
+    geostats/mcrfsim.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -489,7 +490,8 @@ HEADERS  += mainwindow.h \
     geostats/segmentsetcell.h \
     domain/auxiliary/valuestransferer.h \
     dialogs/mcrfsimdialog.h \
-    dialogs/lvadatasetdialog.h
+    dialogs/lvadatasetdialog.h \
+    geostats/mcrfsim.h
 
 
 FORMS    += mainwindow.ui \

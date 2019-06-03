@@ -36,12 +36,13 @@ private:
     VariableSelector* m_LVAsemiMajorAxisVarSelector;
     VariableSelector* m_LVAsemiMinorAxisVarSelector;
 
-    void onRemakeProbabilityFieldsCombos();
 
 private Q_SLOTS:
+    void onRemakeProbabilityFieldsCombos();
     void onCmbLateralGradationChanged();
     void onPrimaryVariableChanged();
     void onCommonSimParams();
+    void onRun();
 };
 
 #endif // MCRFSIMDIALOG_H

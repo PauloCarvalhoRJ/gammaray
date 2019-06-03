@@ -37,7 +37,7 @@ MCRFSimDialog::MCRFSimDialog(QWidget *parent) :
 
     setWindowTitle( "Markov Chains Random Field Simulation" );
 
-    connect( ui->chkUseProbabilityFields, SIGNAL(clicked()), this, SLOT(onPrimaryVariableChanged()));
+    connect( ui->chkUseProbabilityFields, SIGNAL(clicked()), this, SLOT(onRemakeProbabilityFieldsCombos()));
 
     m_primFileSelector = new FileSelectorWidget( FileSelectorType::PointAndSegmentSets );
     ui->frmCmbPrimFile->layout()->addWidget( m_primFileSelector );
@@ -193,5 +193,10 @@ void MCRFSimDialog::onCommonSimParams()
     GSLibParametersDialog gpd( &gpf, this );
     gpd.setWindowTitle( "Common simulation parameters for MCRF" );
     gpd.exec();
+}
+
+void MCRFSimDialog::onRun()
+{
+
 }
 

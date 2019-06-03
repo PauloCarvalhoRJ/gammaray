@@ -610,6 +610,20 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_4">
      <item>
+      <widget class="QPushButton" name="btnRun">
+       <property name="toolTip">
+        <string>Run MCRF simulation</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../resources.qrc">
+         <normaloff>:/icons32/play32</normaloff>:/icons32/play32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <spacer name="horizontalSpacer">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -645,7 +659,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>780</x>
-     <y>409</y>
+     <y>408</y>
     </hint>
     <hint type="destinationlabel">
      <x>553</x>
@@ -685,10 +699,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnRun</sender>
+   <signal>clicked()</signal>
+   <receiver>MCRFSimDialog</receiver>
+   <slot>onRun()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>35</x>
+     <y>403</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>57</x>
+     <y>402</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onCmbLateralGradationChanged()</slot>
   <slot>onPrimaryVariableChanged()</slot>
   <slot>onCommonSimParams()</slot>
+  <slot>onRun()</slot>
  </slots>
 </ui>
