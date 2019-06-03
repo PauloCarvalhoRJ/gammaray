@@ -121,6 +121,8 @@ void MCRFSimDialog::onRemakeProbabilityFieldsCombos()
                 cd->loadQuintuplets(); //loads the C.D. data from the filesystem.
                 for( uint iCatIndex = 0; iCatIndex < cd->getCategoryCount(); ++iCatIndex ){
                     VariableSelector* probFieldSelector = new VariableSelector( );
+                    probFieldSelector->setCaption( "   " + cd->getCategoryName( iCatIndex ) + "   " );
+                    probFieldSelector->setCaptionBGColor( cd->getCustomColor( iCatIndex ) );
                     ui->grpBoxSecondaryData->layout()->addWidget( probFieldSelector );
                     connect( m_simGridSelector, SIGNAL(cartesianGridSelected(DataFile*)),
                              probFieldSelector, SLOT(onListVariables(DataFile*)) );
@@ -139,6 +141,9 @@ void MCRFSimDialog::onRemakeProbabilityFieldsCombos()
 void MCRFSimDialog::onCmbLateralGradationChanged()
 {
     m_gradationalFieldVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() == 3 );
+    if(m_LVAazVarSelector) m_LVAazVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() != 3 );
+    if(m_LVAsemiMajorAxisVarSelector) m_LVAsemiMajorAxisVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() != 3 );
+    if(m_LVAsemiMinorAxisVarSelector) m_LVAsemiMinorAxisVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() != 3 );
 }
 
 void MCRFSimDialog::onPrimaryVariableChanged()
