@@ -94,14 +94,14 @@ public:
     /**
      * Returns the user-given no-data value text when this data file were added to the project.
      */
-    virtual QString getNoDataValue();
+    virtual QString getNoDataValue() const;
 
     /**
      * Returns the user-given no-data value as a double value.
      * @note This method performs a conversion from the original text value entered by the user.  If it
      * cannot be converted to a double, a generic NaN is returned (std::nan("")).
      */
-    virtual double getNoDataValueAsDouble();
+    virtual double getNoDataValueAsDouble() const;
 
     /**
      * Sets the new no-data value.  Empty string means not set.

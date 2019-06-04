@@ -331,9 +331,9 @@ uint DataFile::getLastFieldGEOEASIndex()
     return field_names.count();
 }
 
-QString DataFile::getNoDataValue() { return this->_no_data_value; }
+QString DataFile::getNoDataValue() const { return this->_no_data_value; }
 
-double DataFile::getNoDataValueAsDouble()
+double DataFile::getNoDataValueAsDouble() const
 {
     bool OK;
     double result = getNoDataValue().toDouble(&OK);
