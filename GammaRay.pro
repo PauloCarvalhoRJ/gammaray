@@ -256,7 +256,8 @@ SOURCES += main.cpp\
     domain/auxiliary/valuestransferer.cpp \
     dialogs/mcrfsimdialog.cpp \
     dialogs/lvadatasetdialog.cpp \
-    geostats/mcrfsim.cpp
+    geostats/mcrfsim.cpp \
+    gslib/gslibparameterfiles/commonsimulationparameters.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -491,7 +492,8 @@ HEADERS  += mainwindow.h \
     domain/auxiliary/valuestransferer.h \
     dialogs/mcrfsimdialog.h \
     dialogs/lvadatasetdialog.h \
-    geostats/mcrfsim.h
+    geostats/mcrfsim.h \
+    gslib/gslibparameterfiles/commonsimulationparameters.h
 
 
 FORMS    += mainwindow.ui \

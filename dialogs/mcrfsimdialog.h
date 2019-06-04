@@ -11,6 +11,7 @@ class Attribute;
 class FileSelectorWidget;
 class VariableSelector;
 class CartesianGridSelector;
+class CommonSimulationParameters;
 
 /** The Markov Chains Random Field Simulation Dialog. */
 class MCRFSimDialog : public QDialog
@@ -25,6 +26,7 @@ public:
 private:
     Ui::MCRFSimDialog *ui;
 
+    //------- pointers managed by Qt --------------
     FileSelectorWidget* m_primFileSelector;
     VariableSelector* m_primVarSelector;
     CartesianGridSelector* m_simGridSelector;
@@ -35,6 +37,9 @@ private:
     VariableSelector* m_LVAazVarSelector;
     VariableSelector* m_LVAsemiMajorAxisVarSelector;
     VariableSelector* m_LVAsemiMinorAxisVarSelector;
+    //----------------------------------------------
+
+    CommonSimulationParameters* m_commonSimulationParameters;
 
 
 private Q_SLOTS:
