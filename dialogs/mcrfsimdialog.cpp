@@ -3,6 +3,7 @@
 
 #include <QDragEnterEvent>
 #include <QMimeData>
+#include <QMessageBox>
 
 #include "domain/application.h"
 #include "domain/projectcomponent.h"
@@ -10,11 +11,15 @@
 #include "domain/project.h"
 #include "domain/categorydefinition.h"
 #include "domain/datafile.h"
+#include "domain/cartesiangrid.h"
+#include "domain/categorypdf.h"
+#include "domain/verticaltransiogrammodel.h"
 #include "widgets/fileselectorwidget.h"
 #include "widgets/variableselector.h"
 #include "widgets/cartesiangridselector.h"
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslibparameterfiles/commonsimulationparameters.h"
+#include "geostats/mcrfsim.h"
 
 MCRFSimDialog::MCRFSimDialog(QWidget *parent) :
     QDialog(parent),
@@ -150,6 +155,7 @@ void MCRFSimDialog::onCmbLateralGradationChanged()
 void MCRFSimDialog::onPrimaryVariableChanged()
 {
     onRemakeProbabilityFieldsCombos();
+    m_commonSimulationParameters->setBaseNameForRealizationVariables( m_primVarSelector->getSelectedVariableName() + "_real" );
 }
 
 void MCRFSimDialog::onCommonSimParams()
@@ -161,6 +167,34 @@ void MCRFSimDialog::onCommonSimParams()
 
 void MCRFSimDialog::onRun()
 {
+    //------------------------------------------------ Build a MCRFSim object ----------------------------------------------------------------
+    MCRFSim markovSim;
+    markovSim.m_atPrimary                     = m_primVarSelector->getSelectedVariable();
+    markovSim.m_cgSim                         = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
+    markovSim.m_pdf                           = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
+    markovSim.m_transiogramModel              = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
+    switch ( ui->cmbLateralGradation->currentIndex() ) {
+        case 0: markovSim.m_lateralGradationType = LateralGradationType::TAIL_TRANSIOGRAMS_ONLY; break;
+        case 1: markovSim.m_lateralGradationType = LateralGradationType::HEAD_TRANSIOGRAMS_ONLY; break;
+        case 2: markovSim.m_lateralGradationType = LateralGradationType::HEAD_AND_TAIL_TRANSIOGRAMS_AT_RANDOM; break;
+        case 3: markovSim.m_lateralGradationType = LateralGradationType::USE_GRADATIONAL_FIELD; break;
+    }
+    markovSim.m_gradationField                = m_gradationalFieldVarSelector->getSelectedVariable();
+    markovSim.m_LVAazimuth                    = m_LVAazVarSelector->getSelectedVariable();
+    markovSim.m_LVAsemiMajorAxis              = m_LVAsemiMajorAxisVarSelector->getSelectedVariable();
+    markovSim.m_LVAsemiMinorAxis              = m_LVAsemiMinorAxisVarSelector->getSelectedVariable();
+    for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
+        markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
+    markovSim.m_tauFactorForGlobalPDF         = ui->dblSpinTauPDF->value();
+    markovSim.m_tauFactorForTransiography     = ui->dblSpinTauTransiography->value();
+    markovSim.m_tauFactorForProbabilityFields = ui->dblSpinTauSecondary->value();
+    markovSim.m_commonSimulationParameters    = m_commonSimulationParameters;
+    //----------------------------------------------------------------------------------------------------------------------------------------
 
+    if( ! markovSim.run() ){
+        QMessageBox::critical( this, "Error", QString("Simulation failed.  Check the messages panel for more details of the error."));
+        Application::instance()->logError( "MCRFSimDialog::onRun(): Simulation ended with error: ");
+        Application::instance()->logError( "    " + markovSim.getLastError() );
+    }
 }
 

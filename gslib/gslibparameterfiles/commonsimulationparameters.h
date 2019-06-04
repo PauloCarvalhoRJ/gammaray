@@ -10,6 +10,12 @@ class CommonSimulationParameters : public GSLibParameterFile
 {
 public:
     CommonSimulationParameters();
+
+    void setBaseNameForRealizationVariables( const QString baseName );
+
+    QString getBaseNameForRealizationVariables();
+    uint getSeed();
+    uint getNumberOfRealizations();
 };
 
 #endif // COMMONSIMULATIONPARAMETERS_H
