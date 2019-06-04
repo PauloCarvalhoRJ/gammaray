@@ -1,5 +1,8 @@
 #include "verticaltransiogrammodel.h"
 #include "domain/application.h"
+#include "domain/project.h"
+#include "domain/objectgroup.h"
+#include "domain/categorydefinition.h"
 
 #include <cassert>
 #include <QTextStream>
@@ -75,6 +78,14 @@ void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFac
 
     //finally, set the parameters
     m_verticalTransiogramsMatrix[headFaciesIndex][tailFaciesIndex] = verticalTransiogramParameters;
+}
+
+CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition()
+{
+    return dynamic_cast<CategoryDefinition*>( Application::instance()
+                                                       ->getProject()
+                                                       ->getResourcesGroup()
+                                                       ->getChildByName( m_associatedCategoryDefinitionName ) );
 }
 
 QIcon VerticalTransiogramModel::getIcon()

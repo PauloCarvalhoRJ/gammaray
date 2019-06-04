@@ -47,6 +47,13 @@ public:
      */
     void addParameters( QString headFacies, QString tailFacies, VTransiogramParameters verticalTransiogramParameters );
 
+    /**
+     * Returns the pointer to the CategoryDefinition object whose name matches the name in m_associatedCategoryDefinitionName.
+     * A null pointer will be returned if the search in the project structure fails for any reason (object is not actually a
+     * CategoryDefintion, metadata is missing, etc.).
+     */
+    CategoryDefinition* getCategoryDefinition();
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
