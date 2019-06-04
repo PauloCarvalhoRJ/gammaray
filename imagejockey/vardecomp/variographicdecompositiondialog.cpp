@@ -533,8 +533,42 @@ double F2(const spectral::array &originalGrid,
             std::pow( ratio_mean_variance,       off.f7 ) ;
 }
 
+/** Utilitary function that encapsulates variographic surface generation from
+ * variogram model parameters.
+ * @param gridWithGeometry A grid object whose geometry will be copied to the generated grid.
+ * @param vectorOfParameters The column-vector with the free paramateres.
+ * @param m The desired number of geological factors.
+ */
+spectral::array generateVariographicSurface(IJAbstractCartesianGrid& gridWithGeometry,
+                                            const spectral::array &vectorOfParameters,
+                                            const int m ){
+    //get grid parameters
+    int nI = gridWithGeometry.getNI();
+    int nJ = gridWithGeometry.getNJ();
+    int nK = gridWithGeometry.getNK();
+    //create a grid compatible with the input varmap
+    spectral::array variographicSurface( nI, nJ, nK, 0.0 );
+    //for each geological factor
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ){
+        //create a variographic structure
+        IJVariographicStructure2D varEllip(0.0, 0.0, 0.0, 0.0);
+        //for each variographic parameter
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i ){
+            //set it to the variographic ellipse
+            varEllip.setParameter( iPar, vectorOfParameters[i] );
+        }
+        //make the variographic surface
+        varEllip.addContributionToModelGrid( gridWithGeometry,
+                                             variographicSurface,
+                                             IJVariogramPermissiveModel::SPHERIC,
+                                             true );
+    }
+    return variographicSurface;
+}
+
 /** The objective function for the optimization process (direct variographic fitting).
  * See complete theory in the program manual for in-depth explanation of the method's parameters below.
+ * @param gridWithGeometry A grid object whose geometry will be copied to the generated grid with the varmap for objective function evaluation.
  * @param varmapOfInput The grid with the varmap of inpit data for comparison.
  * @param vectorOfParameters The column-vector with the free paramateres.
  * @param m The desired number of geological factors.
@@ -550,27 +584,10 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
     int nJ = gridWithGeometry.getNJ();
     int nK = gridWithGeometry.getNK();
 
-    //create a grid compatible with the input varmap
-    spectral::array variographicSurface( nI, nJ, nK, 0.0 );
-
-    //for each geological factor
-    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ){
-
-        //create a variographic structure
-        IJVariographicStructure2D varEllip(0.0, 0.0, 0.0, 0.0);
-
-        //for each variographic parameter
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i ){
-            //set it to the variographic ellipse
-            varEllip.setParameter( iPar, vectorOfParameters[i] );
-        }
-
-        //make the variographic surface
-        varEllip.addContributionToModelGrid( gridWithGeometry,
-                                             variographicSurface,
-                                             IJVariogramPermissiveModel::SPHERIC,
-                                             true );
-    }
+    //generate the variogram model surface
+    spectral::array variographicSurface = generateVariographicSurface( gridWithGeometry,
+                                                                       vectorOfParameters,
+                                                                       m );
 
     //compute the objective function metric
     double sum = 0.0;
@@ -590,6 +607,84 @@ double F3( IJAbstractCartesianGrid& gridWithGeometry,
     // Finally, return the objective function value.
     return sum;
 }
+
+/** The objective function for the optimization process (indirect variographic fitting).
+ * See complete theory in the program manual for in-depth explanation of the method's parameters below.
+ * @param gridWithGeometry A grid object whose geometry will be copied to the generated grid with the varmap for objective function evaluation.
+ * @param inputData The grid data for comparison.
+ * @param vectorOfParameters The column-vector with the free paramateres (variogram parameters).
+ * @param m The desired number of variographic nested structures.
+ * @return A distance/difference measure.
+ */
+double F4( IJAbstractCartesianGrid& gridWithGeometry,
+           const spectral::array &inputGridData,
+           const spectral::array &vectorOfParameters,
+           const int m ){
+
+    //get grid parameters
+    int nI = gridWithGeometry.getNI();
+    int nJ = gridWithGeometry.getNJ();
+    int nK = gridWithGeometry.getNK();
+
+    //generate the variogram model surface
+    spectral::array theoreticalVariographicSurface = generateVariographicSurface( gridWithGeometry,
+                                                                       vectorOfParameters,
+                                                                       m );
+
+    //Compute FFT of input
+    spectral::array inputFFTrealPart;
+    spectral::array inputFFTimagPart;
+    spectral::array inputFFTimagPhase;
+    {
+        spectral::array tmp( inputGridData );
+        spectral::complex_array inputFFT;
+        spectral::foward( inputFFT, tmp );
+        inputFFTrealPart = spectral::real( inputFFT );
+        inputFFTimagPart = spectral::imag( inputFFT );
+        spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+        inputFFTimagPhase = spectral::imag( inputFFTpolar );
+    }
+
+    //Apply the principle of the Fourier Integral Method to obtain what would the map be
+    //if it actually had the theoretical variogram model
+    spectral::array mapFromTheoreticalVariogramModel( nI, nJ, nK, 0.0 );
+    {
+        //compute FFT of the theoretical varmap (into polar form)
+        spectral::complex_array theoreticalVarMapFFT( nI, nJ, nK );
+        spectral::array tmp = spectral::shiftByHalf( theoreticalVariographicSurface );
+        spectral::foward( theoreticalVarMapFFT, tmp );
+        spectral::complex_array theoreticalVarMapFFTpolar = spectral::to_polar_form( theoreticalVarMapFFT );
+        spectral::array theoreticalVarMapFFTamplitudes = spectral::real( theoreticalVarMapFFTpolar );
+
+        //get the square root of the amplitudes of the varmap FFT
+        spectral::array theoreticalVarmapFFTamplitudesSQRT = theoreticalVarMapFFTamplitudes.sqrt();
+
+        //convert sqrt(varmap) and the phases of the input to rectangular form
+        spectral::complex_array mapFFTpolar = spectral::to_complex_array(
+                                                       theoreticalVarmapFFTamplitudesSQRT,
+                                                       inputFFTimagPhase
+                                                    );
+        spectral::complex_array mapFFT = spectral::to_rectangular_form( mapFFTpolar );
+
+        //compute the reverse FFT to get the geological factor
+        spectral::backward( mapFromTheoreticalVariogramModel, mapFFT );
+
+        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+        mapFromTheoreticalVariogramModel = mapFromTheoreticalVariogramModel / (double)( nI * nJ * nK );
+    }
+
+    //compute the objective function metric
+    double sum = 0.0;
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i )
+                sum += std::abs( ( inputGridData(i,j,k) - mapFromTheoreticalVariogramModel(i,j,k) ) );
+    sum /= inputGridData.size();
+
+    // Finally, return the objective function value.
+    return sum;
+}
+
 
 /**
  * The code for multithreaded gradient vector calculation for objective function F().
@@ -2134,7 +2229,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_G
               return ( f_T - f_Tfinal ) / ( f_Tinitial - f_Tfinal );
            //If the new state is less energetic, the probability of acceptance is 100% (natural search for minima).
            else
-              return 1.0;
+              return 1.0 - ( f_T - f_Tfinal ) / ( f_Tinitial - f_Tfinal );
         };
         //Get the number of parameters.
         int i_nPar = vw.size();
@@ -2177,9 +2272,12 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_G
             //Computes the “energy” of the current state (set of parameters).
             //The “energy” in this case is how different the image as given the parameters is with respect
             //the data grid, considered the reference image.
-            double f_eCurrent = F3( *inputGrid, inputVarmap, L_wCurrent, m );
+            //double f_eCurrent = F3( *inputGrid, inputVarmap, L_wCurrent, m );
+            double f_eCurrent = F4( *inputGrid, *inputData, L_wCurrent, m );
+
             //Computes the “energy” of the neighboring state.
-            f_eNew = F3( *inputGrid, inputVarmap, L_wNew, m );
+            //f_eNew = F3( *inputGrid, inputVarmap, L_wNew, m );
+            f_eNew = F4( *inputGrid, *inputData, L_wNew, m );
             //Changes states stochastically.  There is a probability of acceptance of a more energetic state so
             //the optimization search starts near the global minimum and is not trapped in local minima (hopefully).
             double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
@@ -2262,8 +2360,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_G
                     if( new_vw.d_[i] > 1.0 )
                         new_vw.d_[i] = 1.0;
                 }
-                currentF = F3( *inputGrid, inputVarmap, vw, m );
-                nextF = F3( *inputGrid, inputVarmap, new_vw, m );
+//                currentF = F3( *inputGrid, inputVarmap, vw, m );
+//                nextF = F3( *inputGrid, inputVarmap, new_vw, m );
+                currentF = F4( *inputGrid, *inputData, vw, m );
+                nextF = F4( *inputGrid, *inputData, new_vw, m );
                 if( nextF < currentF ){
                     vw = new_vw;
                     break;
@@ -3297,6 +3397,15 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         titles.push_back( QString( "Factor " + QString::number( iGeoFactor ) ).toStdString() );
         shiftFlags.push_back( false );
     }
+    ////////////////////////////////////////
+    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
+    for( spectral::array& geoFactor : geoFactors ){
+        variograficSurface += geoFactor;
+    }
+    geoFactors.push_back( variograficSurface );
+    titles.push_back( QString( "variogram model surface" ).toStdString() );
+    shiftFlags.push_back( false );
+    ////////////////////////////////////////
     ////////////////////////////////////////
     geoFactors.push_back( inputVarmap );
     titles.push_back( QString( "Varmap of input" ).toStdString() );
