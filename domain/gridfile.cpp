@@ -95,7 +95,7 @@ void GridFile::setDataIJK(uint column, uint i, uint j, uint k, double value)
 	_data[dataRow][column] = value;
 }
 
-void GridFile::indexToIJK(uint index, uint & i, uint & j, uint & k)
+void GridFile::indexToIJK(uint index, uint & i, uint & j, uint & k) const
 {
 	uint val = index;
 	uint nynx = m_nJ * m_nI;

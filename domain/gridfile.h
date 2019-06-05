@@ -77,7 +77,7 @@ public:
 	long append( const QString columnName, const spectral::array& array );
 
 	/** Converts a data row index into topological coordinates (output parameters). */
-	void indexToIJK(uint index, uint & i, uint & j, uint & k );
+    void indexToIJK(uint index, uint & i, uint & j, uint & k ) const;
 
 	/** Replaces the data in the column with the data in passed data array. */
 	void setColumnData( uint dataColumn, spectral::array& array );
