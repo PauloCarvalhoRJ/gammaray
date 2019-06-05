@@ -1,14 +1,16 @@
 #ifndef MCRFSIM_H
 #define MCRFSIM_H
 
-#include <vector>
 #include <QString>
+#include <vector>
+#include <mutex>
 
 class Attribute;
 class CartesianGrid;
 class CategoryPDF;
 class VerticalTransiogramModel;
 class CommonSimulationParameters;
+class QProgressDialog;
 
 /** This enums controls how the vertical transiography is translated to lateral transiography. */
 enum class LateralGradationType : int {
@@ -84,9 +86,18 @@ public:
 
     QString getLastError() const{ return m_lastError; }
 
+    /** Sets or increases the current simulation progress counter to the given ammount.
+     * Mind that this function updates a progress bar, which is a costly operation.
+     */
+    void setOrIncreaseProgress( ulong ammount, bool increase = true );
+
 private:
 
     QString m_lastError;
+
+    ulong m_progress;
+    std::mutex m_mutexMCRF;
+    QProgressDialog* m_progressDialog;
 
     bool isOKtoRun();
 
