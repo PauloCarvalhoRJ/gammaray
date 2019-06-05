@@ -30,6 +30,7 @@ enum class LateralGradationType : int {
 */
 class MCRFSim
 {
+
 public:
     MCRFSim();
 
@@ -86,6 +87,16 @@ public:
 
     QString getLastError() const{ return m_lastError; }
 
+    /** Simulates one cell.
+     * It retuns a double because the double is the basic data element in DataFile object
+     * even though one expect just integers (category codes) in a Markov Chain Simulation.
+     * The simulation may result in no-data-value, which is not necessarily integer.
+     * ATTENTION: this method may be called from multiple threads, so be careful when
+     *            writing to objects other than "this" here.  So it is advisable to call
+     *            const methods or encase non-const ones in mutex locks (degrades performance).
+     */
+    double simulateOneCell( uint i, uint k, uint l ) const;
+
     /** Sets or increases the current simulation progress counter to the given ammount.
      * Mind that this function updates a progress bar, which is a costly operation.
      */
@@ -95,13 +106,15 @@ private:
 
     QString m_lastError;
 
-    ulong m_progress;
     std::mutex m_mutexMCRF;
     QProgressDialog* m_progressDialog;
+    ulong m_progress;
 
     bool isOKtoRun();
 
     bool useSecondaryData();
+
+    void updateProgessUI();
 };
 
 #endif // MCRFSIM_H

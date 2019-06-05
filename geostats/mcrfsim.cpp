@@ -135,11 +135,17 @@ bool MCRFSim::useSecondaryData()
     return ! m_probFields.empty();
 }
 
+double MCRFSim::simulateOneCell(uint i, uint k, uint l) const
+{
+    return m_cgSim->getNoDataValueAsDouble();
+}
+
 /** The code to simulate some realizations in a separate thread *////////////////////////
 void simulateSomeRealizationsThread( uint nRealsForOneThread,
                                      const CartesianGrid* cgSim,
                                      uint seed,
                                      MCRFSim* mcrfSim,
+                                     bool* completedFlag,
                                      std::vector< spectral::arrayPtr >* realizationsOutput ){
 
     //initialize the thread-local random number generator with the seed reserved for this thread
@@ -166,10 +172,10 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
     };
 
     //for each realization of this thread
-    for( uint iRealization = 0; iRealization < 2 /*nRealsForOneThread*/; ++iRealization ){
+    for( uint iRealization = 0; iRealization < nRealsForOneThread; ++iRealization ){
 
         //init realization data with the sim grid's NDV
-        spectral::array simulatedData( nI, nJ, nK, cgSim->getNoDataValueAsDouble() );
+        spectral::arrayPtr simulatedData = spectral::arrayPtr( new spectral::array( nI, nJ, nK, cgSim->getNoDataValueAsDouble() ) );
 
         //prepare a vector with the random walk (sequence of linear cell indexes to simulate)
         std::vector<ulong> linearIndexesRandomWalk;
@@ -186,17 +192,23 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             //get the IJK cell index
             uint i, j, k;
             cgSim->indexToIJK( iCellLinearIndex, i, j, k );
-            /////////////////////////////////
-            //TODO: simulate the cell
-            ////////////////////////////////
+            //simulate the cell (attention: may return the simulation grid's no-data value)
+            double catCode = mcrfSim->simulateOneCell( i, j, k );
+            //save the value to the data array of the realization
+            (*simulatedData)( i, j, k ) = catCode;
             //keep track of simulation progress
             ++numberOfSimulationsExecuted;
             if( ! ( numberOfSimulationsExecuted % reportProgressEveryNumberOfSimulations ) )
                 mcrfSim->setOrIncreaseProgress( numberOfSimulationsExecuted );
-        }
+        } //grid traversal (random walk)
 
-       //realizationsOutput->push_back( simulatedData );
+        //return the realization data
+        realizationsOutput->push_back( simulatedData );
+
     } // for each reazation of this thread
+
+    //signals the client code that this thread finished
+    *completedFlag = true;
 }
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -206,6 +218,8 @@ bool MCRFSim::run()
     //check whether everything is ok
     if( !isOKtoRun() )
         return false;
+
+    m_progress = 0;
 
     //get simulation grid dimensions
     uint nI = m_cgSim->getNI();
@@ -222,7 +236,7 @@ bool MCRFSim::run()
 
     //distribute the realizations among the n-threads
     uint numberOfRealizationsForAThread[nThreads];
-    for( uint iThread = 0; iThread < nRealizations; ++iThread )
+    for( uint iThread = 0; iThread < nThreads; ++iThread )
         numberOfRealizationsForAThread[ iThread ] = 0; //initialize the numbers of realizations with zeros
     for( uint iReal = 0; iReal < nRealizations; ++iReal )
         ++numberOfRealizationsForAThread[ iReal % nThreads ];
@@ -239,6 +253,12 @@ bool MCRFSim::run()
     m_progressDialog->setMaximum( nI * nJ * nK * nRealizations );
     /////////////////////////////////
 
+    //create an array of flags that tells whether a thread is completed.
+    // intialize it with all false
+    bool completed[ nThreads ];
+    for( uint iThread = 0; iThread < nThreads; ++iThread )
+        completed[ iThread ] = false;
+
     //create and run the simulation threads
     std::thread threads[nThreads];
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
@@ -252,11 +272,28 @@ bool MCRFSim::run()
                                         m_cgSim,
                                         m_commonSimulationParameters->getSeed() * 100 + iThread,
                                         this,
+                                        &(completed[ iThread ]),
                                         &realizationDepot
                                         );
     }
 
-    //wait for the threads to finish.
+    //this non-locking loop allows the progress dialog to update (Qt runs in this thread)
+    //while the worker threads run
+    bool allThreadsFinised = false;
+    int count = 0;
+    while( ! allThreadsFinised ){
+        allThreadsFinised = true;
+        for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+            if( ! completed[iThread] )
+                allThreadsFinised = false;
+        ++count;
+        if( count > 1000000 ){
+            updateProgessUI();
+            count = 0;
+        }
+    }
+
+    //lock-wait for the threads to finish their execution contexts.
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
         threads[iThread].join();
 
@@ -280,7 +317,11 @@ void MCRFSim::setOrIncreaseProgress(ulong ammount, bool increase)
         m_progress += ammount;
     else
         m_progress = ammount;
+    lck.unlock();
+}
+
+void MCRFSim::updateProgessUI()
+{
     m_progressDialog->setValue( m_progress );
     QApplication::processEvents();
-    lck.unlock();
 }
