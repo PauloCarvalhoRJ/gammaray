@@ -14,8 +14,20 @@ public:
     void setBaseNameForRealizationVariables( const QString baseName );
 
     QString getBaseNameForRealizationVariables();
-    uint getSeed();
-    uint getNumberOfRealizations();
+    uint    getSeed();
+    uint    getNumberOfRealizations();
+    double  getSearchEllipHMax();
+    double  getSearchEllipHMin();
+    double  getSearchEllipHVert();
+    double  getSearchEllipAzimuth();
+    double  getSearchEllipDip();
+    double  getSearchEllipRoll();
+    uint    getNumberOfSamples();
+    uint    getMinNumberOfSamples();
+    uint    getNumberOfSectors();
+    uint    getMinNumberOfSamplesPerSector();
+    uint    getMaxNumberOfSamplesPerSector();
+    double  getMinDistanceBetweenSecondaryDataSamples();
 };
 
 #endif // COMMONSIMULATIONPARAMETERS_H
