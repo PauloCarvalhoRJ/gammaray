@@ -6,6 +6,7 @@
 #include <mutex>
 
 #include "spectral/spectral.h"
+#include "geostats/searchstrategy.h"
 
 class Attribute;
 class CartesianGrid;
@@ -123,6 +124,8 @@ private:
     double m_simGridNDV;
 
     std::vector< spectral::arrayPtr > m_realizations;
+
+    SearchStrategyPtr m_searchStrategy;
 
     bool isOKtoRun();
 

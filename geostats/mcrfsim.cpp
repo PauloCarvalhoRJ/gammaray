@@ -7,7 +7,8 @@
 #include "domain/verticaltransiogrammodel.h"
 #include "domain/categorydefinition.h"
 #include "domain/application.h"
-#include "spectral/spectral.h"
+#include "geostats/searchneighborhood.h"
+#include "geostats/searchellipsoid.h"
 
 #include <thread>
 #include <random>
@@ -276,6 +277,29 @@ bool MCRFSim::run()
     bool completed[ nThreads ];
     for( uint iThread = 0; iThread < nThreads; ++iThread )
         completed[ iThread ] = false;
+
+    // Build the search strategy.
+    {
+        double hMax              =         m_commonSimulationParameters->getSearchEllipHMax();
+        double hMin              =         m_commonSimulationParameters->getSearchEllipHMin();
+        double hVert             =         m_commonSimulationParameters->getSearchEllipHVert();
+        double azimuth           =         m_commonSimulationParameters->getSearchEllipAzimuth();
+        double dip               =         m_commonSimulationParameters->getSearchEllipDip();
+        double roll              =         m_commonSimulationParameters->getSearchEllipRoll();
+        uint nb_samples          =         m_commonSimulationParameters->getNumberOfSamples();
+        uint min_nb_samples      =         m_commonSimulationParameters->getMinNumberOfSamples();
+        uint numberOfSectors     =         m_commonSimulationParameters->getNumberOfSectors();
+        uint minSamplesPerSector =         m_commonSimulationParameters->getMinNumberOfSamplesPerSector();
+        uint maxSamplesPerSector =         m_commonSimulationParameters->getMaxNumberOfSamplesPerSector();
+        double minDistanceBetweensamples = m_commonSimulationParameters->getMinDistanceBetweenSecondaryDataSamples();
+        SearchNeighborhoodPtr searchNeighborhood(
+                    new SearchEllipsoid(hMax, hMin, hVert,
+                                        azimuth, dip, roll,
+                                        numberOfSectors, minSamplesPerSector, maxSamplesPerSector
+                                        )
+                    );
+        m_searchStrategy = SearchStrategyPtr( new SearchStrategy( searchNeighborhood, nb_samples, minDistanceBetweensamples, min_nb_samples ) );
+    }
 
     //create and run the simulation threads
     std::thread threads[nThreads];
