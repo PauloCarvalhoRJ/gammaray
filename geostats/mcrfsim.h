@@ -5,6 +5,8 @@
 #include <vector>
 #include <mutex>
 
+#include "spectral/spectral.h"
+
 class Attribute;
 class CartesianGrid;
 class CategoryPDF;
@@ -23,11 +25,15 @@ enum class LateralGradationType : int {
                                                 are far apart in space.*/
 };
 
-/** The Markov Chains Random Field Simulations.
-* REF: Markov Chai Random Fields for Estimation of Categorical Variables.
-*      Weidong Li, Math Geol (2007), 39: 321-335
-*      DOI: 10.1007/s11004-007-9081-0
-*/
+/** A mulithreaded implementation of the Markov Chains Random Field Simulations with secondary data and
+ * probability integration with the Tau Model.  This algorithm uses the Mersenne Twister pseudo-random generator
+ * of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to generate its
+ * random path and Monte Carlo draw.
+ *
+ * REF: Markov Chai Random Fields for Estimation of Categorical Variables.
+ *      Weidong Li, Math Geol (2007), 39: 321-335
+ *      DOI: 10.1007/s11004-007-9081-0
+ */
 class MCRFSim
 {
 
@@ -85,15 +91,19 @@ public:
     /** Runs the algorithm.  If false is returned, the call failed.  Call getLastError() to obtain the reasons. */
     bool run();
 
+    /** Returns a text explaining the cause of the last failure during the simulation. */
     QString getLastError() const{ return m_lastError; }
 
     /** Simulates one cell.
      * It retuns a double because the double is the basic data element in DataFile object
      * even though one expect just integers (category codes) in a Markov Chain Simulation.
-     * The simulation may result in no-data-value, which is not necessarily integer.
+     * The simulation may result in no-data-value, which is not necessarily an integer.
      * ATTENTION: this method may be called from multiple threads, so be careful when
      *            writing to objects other than "this" here.  So it is advisable to call
      *            const methods or encase non-const ones in mutex locks (degrades performance).
+     * NOTE ON PERFORMANCE: this method has potential to be called a billion times, so optmization
+     *                      is critical in every line of code of this method as well as of every
+     *                      method it calls.
      */
     double simulateOneCell( uint i, uint k, uint l ) const;
 
@@ -109,6 +119,10 @@ private:
     std::mutex m_mutexMCRF;
     QProgressDialog* m_progressDialog;
     ulong m_progress;
+
+    double m_simGridNDV;
+
+    std::vector< spectral::arrayPtr > m_realizations;
 
     bool isOKtoRun();
 
