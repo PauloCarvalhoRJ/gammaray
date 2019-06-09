@@ -2113,11 +2113,14 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_G
     //Compute FFT of input
     spectral::array inputFFTrealPart;
     spectral::array inputFFTimagPart;
+    spectral::array inputFFTimagPhase;
     {
         spectral::complex_array inputFFT;
         spectral::foward( inputFFT, *inputData );
         inputFFTrealPart = spectral::real( inputFFT );
         inputFFTimagPart = spectral::imag( inputFFT );
+        spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+        inputFFTimagPhase = spectral::imag( inputFFTpolar );
     }
 
     //do a^2 + b^2
@@ -2391,20 +2394,87 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_G
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             variographicEllipses[iGeoFactor].setParameter( iPar, vw[i] );
 
-    ///Visualizing the results on the fly is optional/////////////
-    {
-        spectral::array finalVariogramModelSurface( nI, nJ, nK, 0.0 );
-        for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
-            variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
-                                                                         finalVariogramModelSurface,
-                                                                         IJVariogramPermissiveModel::SPHERIC,
-                                                                         true );
-        q3Dv.clearScene();
-        q3Dv.display( finalVariogramModelSurface, finalVariogramModelSurface.min(), finalVariogramModelSurface.max() );
-        QApplication::processEvents();
-        QMessageBox::information(this, "aaaa", "aaaa");
+//    ///Visualizing the results on the fly is optional/////////////
+//    {
+//        spectral::array finalVariogramModelSurface( nI, nJ, nK, 0.0 );
+//        for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+//            variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
+//                                                                         finalVariogramModelSurface,
+//                                                                         IJVariogramPermissiveModel::SPHERIC,
+//                                                                         true );
+//        q3Dv.clearScene();
+//        q3Dv.display( finalVariogramModelSurface, finalVariogramModelSurface.min(), finalVariogramModelSurface.max() );
+//        QApplication::processEvents();
+//        QMessageBox::information(this, "aaaa", "aaaa");
+//    }
+//    ////////////////////////////////////////////////////////////
+
+    //=====================================GET RESULTS========================================
+
+    //Apply the principle of the Fourier Integral Method
+    //use a variographic map as the magnitudes and the FFT phases of
+    //the original data to a reverse FFT in polar form to achieve a
+    //Factorial Kriging-like separation
+    std::vector< spectral::array > geoFactors;
+    std::vector< std::string > titles;
+    std::vector< bool > shiftFlags;
+    for( int iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor ) {
+        //compute the varmap of the theoretical varmap for one geologic factor
+        spectral::array geoFactorVarMap( nI, nJ, nK, 0.0 );
+        variographicEllipses[iGeoFactor].addContributionToModelGrid( *inputGrid,
+                                                                     geoFactorVarMap,
+                                                                     IJVariogramPermissiveModel::SPHERIC,
+                                                                     true );
+
+        //collect the theoretical varmap for display
+        geoFactors.push_back( geoFactorVarMap );
+        titles.push_back( QString( "Varmap " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
+
+        //compute FFT of the theoretical varmap (into polar form)
+        spectral::complex_array geoFactorVarMapFFT( nI, nJ, nK );
+        spectral::array tmp = spectral::shiftByHalf( geoFactorVarMap );
+        spectral::foward( geoFactorVarMapFFT, tmp );
+        spectral::complex_array geoFactorVarMapFFTpolar = spectral::to_polar_form( geoFactorVarMapFFT );
+        spectral::array geoFactorVarMapFFTamplitudes = spectral::real( geoFactorVarMapFFTpolar );
+
+        //get the square root of the amplitudes of the varmap FFT
+        spectral::array geoFactorVarmapFFTamplitudesSQRT = geoFactorVarMapFFTamplitudes.sqrt();
+
+        //convert sqrt(varmap) and the phases of the input to rectangular form
+        spectral::complex_array geoFactorFFTpolar = spectral::to_complex_array(
+                                                       geoFactorVarmapFFTamplitudesSQRT,
+                                                       inputFFTimagPhase
+                                                    );
+        spectral::complex_array geoFactorFFT = spectral::to_rectangular_form( geoFactorFFTpolar );
+
+        //compute the reverse FFT to get the geological factor
+        spectral::array geoFactor( nI, nJ, nK, 0.0 );
+        spectral::backward( geoFactor, geoFactorFFT );
+
+        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+        geoFactor = geoFactor / (double)( nI * nJ * nK );
+
+        geoFactors.push_back( geoFactor );
+        titles.push_back( QString( "Factor " + QString::number( iGeoFactor ) ).toStdString() );
+        shiftFlags.push_back( false );
     }
-    ////////////////////////////////////////////////////////////
+    ////////////////////////////////////////
+    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
+    for( spectral::array& geoFactor : geoFactors ){
+        variograficSurface += geoFactor;
+    }
+    geoFactors.push_back( variograficSurface );
+    titles.push_back( QString( "variogram model surface" ).toStdString() );
+    shiftFlags.push_back( false );
+    ////////////////////////////////////////
+    ////////////////////////////////////////
+    geoFactors.push_back( inputVarmap );
+    titles.push_back( QString( "Varmap of input" ).toStdString() );
+    shiftFlags.push_back( false );
+    ////////////////////////////////////////
+    displayGrids( geoFactors, titles, shiftFlags );
+
 }
 
 void VariographicDecompositionDialog::doVariographicDecomposition5()
