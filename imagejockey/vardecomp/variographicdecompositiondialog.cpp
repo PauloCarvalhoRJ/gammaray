@@ -631,16 +631,12 @@ double F4( IJAbstractCartesianGrid& gridWithGeometry,
                                                                        vectorOfParameters,
                                                                        m );
 
-    //Compute FFT of input
-    spectral::array inputFFTrealPart;
-    spectral::array inputFFTimagPart;
+    //Compute FFT of input to get its phase map
     spectral::array inputFFTimagPhase;
     {
         spectral::array tmp( inputGridData );
         spectral::complex_array inputFFT;
         spectral::foward( inputFFT, tmp );
-        inputFFTrealPart = spectral::real( inputFFT );
-        inputFFTimagPart = spectral::imag( inputFFT );
         spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
         inputFFTimagPhase = spectral::imag( inputFFTpolar );
     }
@@ -679,7 +675,10 @@ double F4( IJAbstractCartesianGrid& gridWithGeometry,
         for( int j = 0; j < nJ; ++j )
             for( int i = 0; i < nI; ++i )
                 sum += std::abs( ( inputGridData(i,j,k) - mapFromTheoreticalVariogramModel(i,j,k) ) );
-    sum /= inputGridData.size();
+//    sum /= inputGridData.size();
+
+//    VariographicDecompositionDialog::displayGrid( inputGridData, "input data", false );
+//    VariographicDecompositionDialog::displayGrid( mapFromTheoreticalVariogramModel, "FIM", false );
 
     // Finally, return the objective function value.
     return sum;
@@ -3242,7 +3241,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
         //evaluate the individuals of current population
         for( uint iInd = 0; iInd < population.size(); ++iInd ){
             Individual& ind = population[iInd];
-            ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
+            //ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
+            ind.fValue = F4( *inputGrid, *inputData, ind.parameters, m );
         }
 
         //sort the population in ascending order (lower value == better fitness)
@@ -3333,7 +3333,8 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
 //        ind.parameters[6] = - ImageJockeyUtils::PI * 41 / 180.0 ;
 //        ind.parameters[7] = inputVarmap.max();
         //////////////////////////////
-        ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
+        //ind.fValue = F3( *inputGrid, inputVarmap, ind.parameters, m );
+        ind.fValue = F4( *inputGrid, *inputData, ind.parameters, m );
     }
 
     //sort the population in ascending order (lower value == better fitness)
