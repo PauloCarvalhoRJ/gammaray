@@ -38,6 +38,8 @@ void SpatialIndex::fill(PointSet *ps, double tolerance)
 
     //for each data line...
     uint totlines = ps->getDataLineCount();
+    if( totlines == 0 )
+        Application::instance()->logWarn("SpatialIndex::fill(PointSet *, double): no data.  Make sure data was loaded prior to indexing.");
     for( uint iLine = 0; iLine < totlines; ++iLine){
         //...make a Point3D for the index
 		double x = ps->getDataSpatialLocation( iLine, CartesianCoord::X );
@@ -65,7 +67,9 @@ void SpatialIndex::fill(CartesianGrid * cg)
 
 	//for each data line...
 	uint totlines = cg->getDataLineCount();
-	for( uint iLine = 0; iLine < totlines; ++iLine){
+    if( totlines == 0 )
+        Application::instance()->logWarn("SpatialIndex::fill(CartesianGrid *): no data.  Make sure data was loaded prior to indexing.");
+    for( uint iLine = 0; iLine < totlines; ++iLine){
 		//...make a Point3D for the index
 		double x = cg->getDataSpatialLocation( iLine, CartesianCoord::X );
 		double y = cg->getDataSpatialLocation( iLine, CartesianCoord::Y );
@@ -91,7 +95,9 @@ void SpatialIndex::fill(GeoGrid * gg)
 
 	//for each data line...
 	uint totlines = gg->getDataLineCount();
-	for( uint iLine = 0; iLine < totlines; ++iLine){
+    if( totlines == 0 )
+        Application::instance()->logWarn("SpatialIndex::fill(GeoGrid *): no data.  Make sure data was loaded prior to indexing.");
+    for( uint iLine = 0; iLine < totlines; ++iLine){
 		//get the cell's bounding box (each line corresponds to a cell)
 		double minX, minY, minZ, maxX, maxY, maxZ;
 		gg->getBoundingBox( iLine, minX, minY, minZ, maxX, maxY, maxZ );
@@ -113,6 +119,8 @@ void SpatialIndex::fill( SegmentSet *ss, double tolerance )
 
     //for each data line...
     uint totlines = ss->getDataLineCount();
+    if( totlines == 0 )
+        Application::instance()->logWarn("SpatialIndex::fill(SegmentSet *, double): no data.  Make sure data was loaded prior to indexing.");
     for( uint iLine = 0; iLine < totlines; ++iLine){
         //get the segment's bounding box (each line corresponds to a segment)
         double minX, minY, minZ, maxX, maxY, maxZ;
@@ -127,7 +135,7 @@ void SpatialIndex::fill( SegmentSet *ss, double tolerance )
 
 QList<uint> SpatialIndex::getNearest(uint index, uint n)
 {
-	assert( m_dataFile && "SpatialIndexPoints::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
+    assert( m_dataFile && "SpatialIndex::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
     QList<uint> result;
 
@@ -154,7 +162,7 @@ QList<uint> SpatialIndex::getNearest(uint index, uint n)
 
 QList<uint> SpatialIndex::getNearest(double x, double y, double z, uint n)
 {
-	assert( m_dataFile && "SpatialIndexPoints::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
+    assert( m_dataFile && "SpatialIndex::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
 	QList<uint> result;
 
@@ -174,7 +182,7 @@ QList<uint> SpatialIndex::getNearest(double x, double y, double z, uint n)
 
 QList<uint> SpatialIndex::getNearestWithin(uint index, uint n, double distance )
 {
-	assert( m_dataFile && "SpatialIndexPoints::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
+    assert( m_dataFile && "SpatialIndex::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
 	QList<uint> result;
 
@@ -206,7 +214,7 @@ QList<uint> SpatialIndex::getNearestWithin(uint index, uint n, double distance )
 
 QList<uint> SpatialIndex::getNearestWithin(const DataCell& dataCell, const SearchStrategy & searchStrategy)
 {
-	assert( m_dataFile && "SpatialIndexPoints::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
+    assert( m_dataFile && "SpatialIndex::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 	//TODO: Possible Refactoring: some of the logic in here may in fact belong to the SearchStrategy class.
 
 	QList<uint> result;
