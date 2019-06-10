@@ -38,9 +38,9 @@ public:
     virtual void setInfoFromOtherPointSet( PointSet* otherPS );
 
     /** First index is 1 (GEO-EAS indexes) */
-    int getXindex();
-    int getYindex();
-    int getZindex();
+    int getXindex() const;
+    int getYindex() const;
+    int getZindex() const;
 
     /**
      * Returns whether the Z coordinate was defined.

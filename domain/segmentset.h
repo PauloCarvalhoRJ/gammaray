@@ -38,9 +38,9 @@ public:
     /** The inherited getXindex(), getYindex() and getZindex() from PointSet are the
      * coordinates of the initial segment. First index is 1 (GEO-EAS indexes).
      */
-    int getXFinalIndex();
-    int getYFinalIndex();
-    int getZFinalIndex();
+    int getXFinalIndex() const;
+    int getYFinalIndex() const;
+    int getZFinalIndex() const;
 
     /** Returns the length of the iRecord-th segment. */
     double getSegmentLenght( int iRecord );
@@ -57,6 +57,12 @@ public:
      */
     void computeSegmentLenghts( QString variable_name );
 
+    /**
+     * Returns (via output parameters) the bounding box of a segment given the corresponding data line index.
+     */
+    void getBoundingBox( uint dataLineIndex,
+                         double& minX, double& minY, double& minZ,
+                         double& maxX, double& maxY, double& maxZ ) const;
 
     // ProjectComponent interface
 public:

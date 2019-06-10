@@ -235,17 +235,17 @@ void PointSet::setInfoFromOtherPointSet(PointSet *otherPS)
                    ndv, wgt_var_pairs, nsvar_var_trn_triads, categorical_attributes);
 }
 
-int PointSet::getXindex()
+int PointSet::getXindex() const
 {
     return this->_x_field_index;
 }
 
-int PointSet::getYindex()
+int PointSet::getYindex() const
 {
     return this->_y_field_index;
 }
 
-int PointSet::getZindex()
+int PointSet::getZindex() const
 {
     return this->_z_field_index;
 }

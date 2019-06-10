@@ -132,17 +132,17 @@ void SegmentSet::setInfoFromAnotherSegmentSet(SegmentSet *otherSS)
              ndv, wgt_var_pairs, nsvar_var_trn, categorical_attributes );
 }
 
-int SegmentSet::getXFinalIndex()
+int SegmentSet::getXFinalIndex() const
 {
     return _x_final_field_index;
 }
 
-int SegmentSet::getYFinalIndex()
+int SegmentSet::getYFinalIndex() const
 {
     return _y_final_field_index;
 }
 
-int SegmentSet::getZFinalIndex()
+int SegmentSet::getZFinalIndex() const
 {
     return _z_final_field_index;
 }
@@ -183,6 +183,26 @@ void SegmentSet::computeSegmentLenghts(QString variable_name)
 
     //commit results to file system
     writeToFS();
+}
+
+void SegmentSet::getBoundingBox(uint dataLineIndex, double &minX, double &minY, double &minZ, double &maxX, double &maxY, double &maxZ) const
+{
+    //initialize the results to ensure the returned extrema are those of the segment.
+    minX = minY = minZ = std::numeric_limits<double>::max();
+    maxX = maxY = maxZ = std::numeric_limits<double>::min();
+    //set the max's and min's
+    minX = std::min( minX, dataConst( dataLineIndex, getXindex() ) );
+    minY = std::min( minY, dataConst( dataLineIndex, getYindex() ) );
+    minZ = std::min( minZ, dataConst( dataLineIndex, getZindex() ) );
+    minX = std::min( minX, dataConst( dataLineIndex, getXFinalIndex() ) );
+    minY = std::min( minY, dataConst( dataLineIndex, getYFinalIndex() ) );
+    minZ = std::min( minZ, dataConst( dataLineIndex, getZFinalIndex() ) );
+    maxX = std::max( maxX, dataConst( dataLineIndex, getXindex() ) );
+    maxY = std::max( maxY, dataConst( dataLineIndex, getYindex() ) );
+    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZindex() ) );
+    maxX = std::max( maxX, dataConst( dataLineIndex, getXFinalIndex() ) );
+    maxY = std::max( maxY, dataConst( dataLineIndex, getYFinalIndex() ) );
+    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZFinalIndex() ) );
 }
 
 
