@@ -209,6 +209,15 @@ double DataFile::data(uint line, uint column)
     return (this->_data.at(line)).at(column);
 }
 
+double DataFile::dataConst(uint line, uint column) const
+{
+    switch (_data.size()) { // if _data is empty
+    case 0:
+        assert( false && "DataFile::dataConst(): data not loaded.  Make sure you call loadData() prior to fetching data with dataConst()." );
+    }
+    return (this->_data.at(line)).at(column);
+}
+
 // TODO: consider adding a flag to disable NDV checking (applicable to coordinates)
 double DataFile::max(uint column)
 {

@@ -45,6 +45,13 @@ public:
     double data(uint line, uint column);
 
     /**
+      * Does the same as data() but allows to be called with constness.
+      * ATTENTION: Due to constness, it doesn't load the data automatically !!!
+      *            Make sure to call loadData() before !!!
+      */
+    double dataConst(uint line, uint column) const;
+
+    /**
      * Returns the maximum value in the given column.
      * First column is 0.
      */
