@@ -3,7 +3,7 @@
 #include "viewer3d/view3dbuilders.h"
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
-#include "spatialindex/spatialindexpoints.h"
+#include "spatialindex/spatialindex.h"
 #include "domain/application.h"
 #include "auxiliary/meshloader.h"
 #include "domain/pointset.h"
@@ -25,7 +25,7 @@
 
 GeoGrid::GeoGrid( QString path ) :
 	GridFile( path ),
-	m_spatialIndex( new SpatialIndexPoints() ),
+	m_spatialIndex( new SpatialIndex() ),
 	m_lastModifiedDateTimeLastMeshLoad()
 {
 	this->_no_data_value = "";
@@ -37,7 +37,7 @@ GeoGrid::GeoGrid( QString path ) :
 
 GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHorizonSlices) :
 	GridFile( path ),
-	m_spatialIndex( new SpatialIndexPoints() ),
+	m_spatialIndex( new SpatialIndex() ),
 	m_lastModifiedDateTimeLastMeshLoad()
 {
 	CartesianGrid *cgTop = dynamic_cast<CartesianGrid*>( atTop->getContainingFile() );
@@ -119,7 +119,7 @@ GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHori
 
 GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
     GridFile( path ),
-    m_spatialIndex( new SpatialIndexPoints() ),
+    m_spatialIndex( new SpatialIndex() ),
     m_lastModifiedDateTimeLastMeshLoad()
 {
     //get origin Cartesian grid and do some sanity checks

@@ -109,7 +109,6 @@ SOURCES += main.cpp\
     domain/univariatecategoryclassification.cpp \
     widgets/categoryselector.cpp \
     widgets/intervalandcategorywidget.cpp \
-    spatialindex/spatialindexpoints.cpp \
     softindiccalib/softindicatorcalibrationdialog.cpp \
     softindiccalib/softindicatorcalibplot.cpp \
     softindiccalib/softindicatorcalibcanvaspicker.cpp \
@@ -257,7 +256,8 @@ SOURCES += main.cpp\
     dialogs/mcrfsimdialog.cpp \
     dialogs/lvadatasetdialog.cpp \
     geostats/mcrfsim.cpp \
-    gslib/gslibparameterfiles/commonsimulationparameters.cpp
+    gslib/gslibparameterfiles/commonsimulationparameters.cpp \
+    spatialindex/spatialindex.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -342,7 +342,6 @@ HEADERS  += mainwindow.h \
     domain/univariatecategoryclassification.h \
     widgets/categoryselector.h \
     widgets/intervalandcategorywidget.h \
-    spatialindex/spatialindexpoints.h \
     softindiccalib/softindicatorcalibrationdialog.h \
     softindiccalib/softindicatorcalibplot.h \
     softindiccalib/softindicatorcalibcanvaspicker.h \
@@ -493,7 +492,8 @@ HEADERS  += mainwindow.h \
     dialogs/mcrfsimdialog.h \
     dialogs/lvadatasetdialog.h \
     geostats/mcrfsim.h \
-    gslib/gslibparameterfiles/commonsimulationparameters.h
+    gslib/gslibparameterfiles/commonsimulationparameters.h \
+    spatialindex/spatialindex.h
 
 
 FORMS    += mainwindow.ui \

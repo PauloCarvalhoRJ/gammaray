@@ -23,53 +23,52 @@ typedef std::pair<Box, size_t> Value;
 
 /**
  * This class exposes functionalities related to spatial indexes and queries with GammaRay objects.
- * Despite the "Points" in the name, this class became a generic spatial index.
  */
-class SpatialIndexPoints
+class SpatialIndex
 {
 public:
-    SpatialIndexPoints();
-	virtual ~SpatialIndexPoints();
+    SpatialIndex();
+    virtual ~SpatialIndex();
 
     /** Fills the index with the PointSet points (bulk load).
-     * It erases any previously indexed points.
+     * It erases current index.
      * @param tolerance Sets the size of the bounding boxes around each point.
      */
 	void fill( PointSet* ps, double tolerance );
 
 	/** Fills the index with the CartesianGrid cells (bulk load).
-	 * It erases any previously indexed points.
-	 */
+     * It erases current index.
+     */
 	void fill( CartesianGrid* cg );
 
 	/** Fills the index with the GeoGrid cells (bulk load).
-	 * It erases any previously indexed points.
+     * It erases current index.
 	 */
 	void fill( GeoGrid* gg );
 
     /** Fills the index with the SegmentSet segments (bulk load).
-     * It erases any previously indexed points.
+     * It erases current index.
      * @param tolerance Sets the size of the bounding boxes around each segment.
      */
     void fill( SegmentSet* ss, double tolerance );
 
 	/**
-     * Returns the indexes of the n-nearest points to the point given by its index.
+     * Returns the indexes of the n-nearest (in space) data lines to some data line given by its index.
 	 * The indexes are the data record indexes (file data lines) of the DataFile used to fill
      * the index.
      */
 	QList<uint> getNearest( uint index, uint n );
 
 	/**
-	 * Returns the indexes of the n-nearest points to a point in space.
+     * Returns the indexes of the n-nearest (in space) data lines to a point in space.
 	 * The indexes are the data record indexes (file data lines) of the DataFile used to fill
 	 * the index.
 	 */
 	QList<uint> getNearest( double x, double y, double z, uint n );
 
     /**
-	 * Returns the data line indexes of the n-nearest points within the given distance
-     * to the point given by its index. The indexes are the point indexes
+     * Returns the data line indexes of the n-nearest (in space) data lines within the given distance
+     * to the point given by its index. The indexes are the data line indexes
      * (file data lines) of the DataFile used fill the index.  May return
      * an empty list.
      * @param distance The distance the returned points must be within.
@@ -77,8 +76,8 @@ public:
 	QList<uint> getNearestWithin(uint index, uint n, double distance);
 
 	/**
-	 * Returns the data line indexes of the n-nearest points within the given neighborhood
-	 * centered at given data cell (e.g. grid cell). The indexes are the point indexes
+     * Returns the data line indexes of the n-nearest (in space) data lines within the given neighborhood
+     * centered at given data cell (e.g. grid cell). The indexes are the data line indexes
      * (file data lines) of the DataFile used fill the index.  May return
 	 * an empty list.
 	 */

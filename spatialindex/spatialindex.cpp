@@ -1,4 +1,4 @@
-#include "spatialindexpoints.h"
+#include "spatialindex.h"
 
 #include "domain/pointset.h"
 #include "domain/application.h"
@@ -12,24 +12,24 @@
 #include <cassert>
 
 
-void SpatialIndexPoints::setDataFile( DataFile* df ){
+void SpatialIndex::setDataFile( DataFile* df ){
 	m_dataFile = df;
     //loads the PointSet data.
 	df->loadData();
 }
 
-SpatialIndexPoints::SpatialIndexPoints() :
+SpatialIndex::SpatialIndex() :
 	m_dataFile( nullptr )
 {
 }
 
-SpatialIndexPoints::~SpatialIndexPoints()
+SpatialIndex::~SpatialIndex()
 {
     //clears the global variable with the index after usage
     clear();
 }
 
-void SpatialIndexPoints::fill(PointSet *ps, double tolerance)
+void SpatialIndex::fill(PointSet *ps, double tolerance)
 {
     //first clear the index.
     clear();
@@ -51,7 +51,7 @@ void SpatialIndexPoints::fill(PointSet *ps, double tolerance)
 	}
 }
 
-void SpatialIndexPoints::fill(CartesianGrid * cg)
+void SpatialIndex::fill(CartesianGrid * cg)
 {
 	//first clear the index.
 	clear();
@@ -78,7 +78,7 @@ void SpatialIndexPoints::fill(CartesianGrid * cg)
 	}
 }
 
-void SpatialIndexPoints::fill(GeoGrid * gg)
+void SpatialIndex::fill(GeoGrid * gg)
 {
 	//first clear the index.
 	clear();
@@ -103,7 +103,7 @@ void SpatialIndexPoints::fill(GeoGrid * gg)
     }
 }
 
-void SpatialIndexPoints::fill( SegmentSet *ss, double tolerance )
+void SpatialIndex::fill( SegmentSet *ss, double tolerance )
 {
     //first clear the index.
     clear();
@@ -125,7 +125,7 @@ void SpatialIndexPoints::fill( SegmentSet *ss, double tolerance )
     }
 }
 
-QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
+QList<uint> SpatialIndex::getNearest(uint index, uint n)
 {
 	assert( m_dataFile && "SpatialIndexPoints::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
@@ -152,7 +152,7 @@ QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
 	return result;
 }
 
-QList<uint> SpatialIndexPoints::getNearest(double x, double y, double z, uint n)
+QList<uint> SpatialIndex::getNearest(double x, double y, double z, uint n)
 {
 	assert( m_dataFile && "SpatialIndexPoints::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
@@ -172,7 +172,7 @@ QList<uint> SpatialIndexPoints::getNearest(double x, double y, double z, uint n)
 	return result;
 }
 
-QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double distance )
+QList<uint> SpatialIndex::getNearestWithin(uint index, uint n, double distance )
 {
 	assert( m_dataFile && "SpatialIndexPoints::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
@@ -185,7 +185,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
     Point3D qPoint(qx, qy, qz);
 
     //get the n-nearest points
-    QList<uint> nearestSamples = SpatialIndexPoints::getNearest( index, n );
+    QList<uint> nearestSamples = SpatialIndex::getNearest( index, n );
 
     //test the distance to each of the n-nearest points
     QList<uint>::iterator it = nearestSamples.begin();
@@ -204,7 +204,7 @@ QList<uint> SpatialIndexPoints::getNearestWithin(uint index, uint n, double dist
 	return result;
 }
 
-QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const SearchStrategy & searchStrategy)
+QList<uint> SpatialIndex::getNearestWithin(const DataCell& dataCell, const SearchStrategy & searchStrategy)
 {
 	assert( m_dataFile && "SpatialIndexPoints::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 	//TODO: Possible Refactoring: some of the logic in here may in fact belong to the SearchStrategy class.
@@ -320,13 +320,13 @@ QList<uint> SpatialIndexPoints::getNearestWithin(const DataCell& dataCell, const
 	return result;
 }
 
-void SpatialIndexPoints::clear()
+void SpatialIndex::clear()
 {
 	m_rtree.clear();
 	m_dataFile = nullptr;
 }
 
-bool SpatialIndexPoints::isEmpty()
+bool SpatialIndex::isEmpty()
 {
 	return m_rtree.empty();
 }

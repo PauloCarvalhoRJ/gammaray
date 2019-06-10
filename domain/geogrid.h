@@ -6,7 +6,7 @@
 #include "geometry/hexahedron.h"
 
 class CartesianGrid;
-class SpatialIndexPoints;
+class SpatialIndex;
 class PointSet;
 class SegmentSet;
 
@@ -98,7 +98,7 @@ public:
 	/**
 	 * Returns (via output parameters) the bounding box of a cell given its cell index.
 	 */
-	void getBoundingBox(uint cellIndex,
+    void getBoundingBox(uint cellIndex,
 						 double& minX, double& minY, double& minZ,
 						 double& maxX, double& maxY, double& maxZ );
 
@@ -229,7 +229,7 @@ private:
 	std::vector< VertexRecordPtr > m_vertexesPart;
 	std::vector< CellDefRecordPtr > m_cellDefsPart;
 	//----------------------------------------------
-	std::unique_ptr< SpatialIndexPoints > m_spatialIndex;
+    std::unique_ptr< SpatialIndex > m_spatialIndex;
 
 	/**
 	 * Stores the file timestamp in the last call to loadMesh().

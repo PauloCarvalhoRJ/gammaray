@@ -9,7 +9,7 @@ class VariogramModel;
 class Attribute;
 class CartesianGrid;
 class DataCell;
-class SpatialIndexPoints;
+class SpatialIndex;
 
 
 /** This class encpsulates the factorial kriging estimation.
@@ -74,7 +74,7 @@ private:
     CartesianGrid* m_cg_estimation;
     double m_NDV_of_input;
     double m_NDV_of_output;
-	SpatialIndexPoints* m_spatialIndexPoints;
+    SpatialIndex* m_spatialIndexPoints;
 	DataFile* m_inputDataFile;
 	double m_variogramSill;
     int m_factorNumber;

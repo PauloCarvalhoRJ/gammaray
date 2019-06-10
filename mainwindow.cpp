@@ -61,7 +61,7 @@
 #include "dialogs/valuespairsdialog.h"
 #include "dialogs/indicatorkrigingdialog.h"
 #include "dialogs/gridresampledialog.h"
-#include "spatialindex/spatialindexpoints.h"
+#include "spatialindex/spatialindex.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
 #include "dialogs/multivariogramdialog.h"
@@ -1409,7 +1409,7 @@ void MainWindow::onLookForDuplicates()
                                              0.001, 0.0, 1000.0, 3, &ok);
     if( ok ){
         PointSet* ps = (PointSet*)_right_clicked_file;
-		SpatialIndexPoints sip;
+		SpatialIndex sip;
 		sip.fill( ps, tolerance );
         uint totFileDataLines = ps->getDataLineCount();
         uint headerLineCount = Util::getHeaderLineCount( ps->getPath() );

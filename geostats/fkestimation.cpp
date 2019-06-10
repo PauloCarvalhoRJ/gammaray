@@ -11,7 +11,7 @@
 #include "gridcell.h"
 #include "pointsetcell.h"
 #include "geostats/segmentsetcell.h"
-#include "spatialindex/spatialindexpoints.h"
+#include "spatialindex/spatialindex.h"
 
 #include <QCoreApplication>
 #include <QProgressDialog>
@@ -25,7 +25,7 @@ FKEstimation::FKEstimation() :
     m_ktype( KrigingType::OK ),
     m_at_input( nullptr ),
 	m_cg_estimation( nullptr ),
-	m_spatialIndexPoints( new SpatialIndexPoints() ),
+    m_spatialIndexPoints( new SpatialIndex() ),
     m_inputDataFile( nullptr ),
     m_factorNumber( 0 ) //0 == nugget effect.
 {
