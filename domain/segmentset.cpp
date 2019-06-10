@@ -191,18 +191,18 @@ void SegmentSet::getBoundingBox(uint dataLineIndex, double &minX, double &minY, 
     minX = minY = minZ = std::numeric_limits<double>::max();
     maxX = maxY = maxZ = std::numeric_limits<double>::min();
     //set the max's and min's
-    minX = std::min( minX, dataConst( dataLineIndex, getXindex() ) );
-    minY = std::min( minY, dataConst( dataLineIndex, getYindex() ) );
-    minZ = std::min( minZ, dataConst( dataLineIndex, getZindex() ) );
-    minX = std::min( minX, dataConst( dataLineIndex, getXFinalIndex() ) );
-    minY = std::min( minY, dataConst( dataLineIndex, getYFinalIndex() ) );
-    minZ = std::min( minZ, dataConst( dataLineIndex, getZFinalIndex() ) );
-    maxX = std::max( maxX, dataConst( dataLineIndex, getXindex() ) );
-    maxY = std::max( maxY, dataConst( dataLineIndex, getYindex() ) );
-    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZindex() ) );
-    maxX = std::max( maxX, dataConst( dataLineIndex, getXFinalIndex() ) );
-    maxY = std::max( maxY, dataConst( dataLineIndex, getYFinalIndex() ) );
-    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZFinalIndex() ) );
+    minX = std::min( minX, dataConst( dataLineIndex, getXindex()-1 ) );
+    minY = std::min( minY, dataConst( dataLineIndex, getYindex()-1 ) );
+    minZ = std::min( minZ, dataConst( dataLineIndex, getZindex()-1 ) );
+    minX = std::min( minX, dataConst( dataLineIndex, getXFinalIndex()-1 ) );
+    minY = std::min( minY, dataConst( dataLineIndex, getYFinalIndex()-1 ) );
+    minZ = std::min( minZ, dataConst( dataLineIndex, getZFinalIndex()-1 ) );
+    maxX = std::max( maxX, dataConst( dataLineIndex, getXindex()-1 ) );
+    maxY = std::max( maxY, dataConst( dataLineIndex, getYindex()-1 ) );
+    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZindex()-1 ) );
+    maxX = std::max( maxX, dataConst( dataLineIndex, getXFinalIndex()-1 ) );
+    maxY = std::max( maxY, dataConst( dataLineIndex, getYFinalIndex()-1 ) );
+    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZFinalIndex()-1 ) );
 }
 
 
