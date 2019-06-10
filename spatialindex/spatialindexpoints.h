@@ -12,6 +12,7 @@ class DataCell;
 class SearchStrategy;
 class DataFile;
 class GeoGrid;
+class SegmentSet;
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -32,7 +33,7 @@ public:
 
     /** Fills the index with the PointSet points (bulk load).
      * It erases any previously indexed points.
-     * @param tolerance Sets the size of the bouding boxes around each point.
+     * @param tolerance Sets the size of the bounding boxes around each point.
      */
 	void fill( PointSet* ps, double tolerance );
 
@@ -45,6 +46,12 @@ public:
 	 * It erases any previously indexed points.
 	 */
 	void fill( GeoGrid* gg );
+
+    /** Fills the index with the SegmentSet segments (bulk load).
+     * It erases any previously indexed points.
+     * @param tolerance Sets the size of the bounding boxes around each segment.
+     */
+    void fill( SegmentSet* ss, double tolerance );
 
 	/**
      * Returns the indexes of the n-nearest points to the point given by its index.

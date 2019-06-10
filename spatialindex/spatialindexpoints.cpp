@@ -7,6 +7,7 @@
 #include "geostats/searchstrategy.h"
 #include "domain/cartesiangrid.h"
 #include "domain/geogrid.h"
+#include "domain/segmentset.h"
 
 #include <cassert>
 
@@ -99,7 +100,29 @@ void SpatialIndexPoints::fill(GeoGrid * gg)
 				 Point3D(maxX, maxY, maxZ) );
 		//insert the box representing the point into the spatial index.
 		m_rtree.insert( std::make_pair(box, iLine) );
-	}
+    }
+}
+
+void SpatialIndexPoints::fill( SegmentSet *ss, double tolerance )
+{
+    //first clear the index.
+    clear();
+
+    //set the data file as the passed SegmentSet
+    setDataFile( ss );
+
+    //for each data line...
+    uint totlines = ss->getDataLineCount();
+    for( uint iLine = 0; iLine < totlines; ++iLine){
+        //get the segment's bounding box (each line corresponds to a segment)
+        double minX, minY, minZ, maxX, maxY, maxZ;
+        ss->getBoundingBox( iLine, minX, minY, minZ, maxX, maxY, maxZ );
+        //make the bounding box object
+        Box box( Point3D(minX-tolerance, minY-tolerance, minZ-tolerance),
+                 Point3D(maxX+tolerance, maxY+tolerance, maxZ+tolerance) );
+        //insert the box representing the segment into the spatial index.
+        m_rtree.insert( std::make_pair(box, iLine) );
+    }
 }
 
 QList<uint> SpatialIndexPoints::getNearest(uint index, uint n)
