@@ -7,6 +7,7 @@
 
 #include "spectral/spectral.h"
 #include "geostats/searchstrategy.h"
+#include "geostats/gridcell.h"
 
 class Attribute;
 class CartesianGrid;
@@ -30,6 +31,8 @@ enum class LateralGradationType : int {
  * probability integration with the Tau Model.  This algorithm uses the Mersenne Twister pseudo-random generator
  * of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to generate its
  * random path and Monte Carlo draw.
+ *
+ * ATTENTION: The methods named *MT() run from multiple threads.
  *
  * REF: Markov Chai Random Fields for Estimation of Categorical Variables.
  *      Weidong Li, Math Geol (2007), 39: 321-335
@@ -106,12 +109,12 @@ public:
      *                      is critical in every line of code of this method as well as of every
      *                      method it calls.
      */
-    double simulateOneCell( uint i, uint k, uint l ) const;
+    double simulateOneCellMT(uint i, uint j , uint k) const;
 
     /** Sets or increases the current simulation progress counter to the given ammount.
      * Mind that this function updates a progress bar, which is a costly operation.
      */
-    void setOrIncreaseProgress( ulong ammount, bool increase = true );
+    void setOrIncreaseProgressMT( ulong ammount, bool increase = true );
 
 private:
 
@@ -127,11 +130,20 @@ private:
 
     SearchStrategyPtr m_searchStrategy;
 
+//    SpatialIndexPoints* m_spatialIndexPoints;
+
     bool isOKtoRun();
 
     bool useSecondaryData();
 
     void updateProgessUI();
+
+    /** Returns a container with the primary data samples around the estimation cell to be used in the estimation.
+     * The resulting collection depends on the SearchStrategy object set.  Returns an empty object if any
+     * required parameter for the search to work (e.g. input data) is missing.  The data cells are ordered
+     * by their distance to the passed simulation cell.
+     */
+    DataCellPtrMultiset getSamplesFromPrimaryMT( const GridCell& simulationCell ) const;
 };
 
 #endif // MCRFSIM_H

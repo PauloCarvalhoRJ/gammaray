@@ -136,8 +136,14 @@ bool MCRFSim::useSecondaryData()
     return ! m_probFields.empty();
 }
 
-double MCRFSim::simulateOneCell( uint i, uint k, uint l ) const
+double MCRFSim::simulateOneCellMT( uint i, uint j, uint k ) const
 {
+    GridCell simulationCell( m_cgSim, -1, i, j, k );
+
+    //collects samples from the input data set ordered by their distance with respect
+    //to the estimation cell.
+    DataCellPtrMultiset vSamplesPrimary = getSamplesFromPrimaryMT( simulationCell );
+
     return m_simGridNDV;
 }
 
@@ -203,13 +209,13 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             uint i, j, k;
             cgSim->indexToIJK( iCellLinearIndex, i, j, k );
             //simulate the cell (attention: may return the simulation grid's no-data value)
-            double catCode = mcrfSim->simulateOneCell( i, j, k );
+            double catCode = mcrfSim->simulateOneCellMT( i, j, k );
             //save the value to the data array of the realization
             (*simulatedData)( i, j, k ) = catCode;
             //keep track of simulation progress
             ++numberOfSimulationsExecuted;
             if( ! ( numberOfSimulationsExecuted % reportProgressEveryNumberOfSimulations ) )
-                mcrfSim->setOrIncreaseProgress( reportProgressEveryNumberOfSimulations );
+                mcrfSim->setOrIncreaseProgressMT( reportProgressEveryNumberOfSimulations );
         } //grid traversal (random walk)
 
         //return the realization data
@@ -357,7 +363,7 @@ bool MCRFSim::run()
     return true;
 }
 
-void MCRFSim::setOrIncreaseProgress(ulong ammount, bool increase)
+void MCRFSim::setOrIncreaseProgressMT(ulong ammount, bool increase)
 {
     std::unique_lock<std::mutex> lck ( m_mutexMCRF, std::defer_lock );
     lck.lock(); //this code is expected to be called concurrently from multiple simulation threads
@@ -372,4 +378,46 @@ void MCRFSim::updateProgessUI()
 {
     m_progressDialog->setValue( m_progress );
     QApplication::processEvents();
+}
+
+DataCellPtrMultiset MCRFSim::getSamplesFromPrimaryMT(const GridCell &simulationCell) const
+{
+    DataCellPtrMultiset result;
+    if( m_searchStrategy && m_atPrimary ){
+
+//        //Fetch the indexes of the samples to be used in the estimation.
+//        QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
+//        QList<uint>::iterator it = samplesIndexes.begin();
+
+//        //Create and return the sample objects, which depend on the type of the input file.
+//        if( m_inputDataFile->isRegular() ){ //TODO: this currently assumes the regular data is a CartesianGrid object.
+//            for( ; it != samplesIndexes.end(); ++it ){
+//                CartesianGrid* cg = static_cast<CartesianGrid*>( m_inputDataFile );
+//                uint i, j, k;
+//                cg->indexToIJK( *it, i, j, k );
+//                DataCellPtr p(new GridCell( cg, m_at_input->getAttributeGEOEASgivenIndex()-1, i, j, k ));
+//                p->computeCartesianDistance( estimationCell );
+//                result.insert( p );
+//            }
+//        } else { //irregular data sets
+//            SegmentSet* segmentSet = dynamic_cast<SegmentSet*>( m_inputDataFile );
+//            if( ! segmentSet ){
+//                for( ; it != samplesIndexes.end(); ++it ){
+//                    DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
+//                    p->computeCartesianDistance( estimationCell );
+//                    result.insert( p );
+//                }
+//            } else {
+//                for( ; it != samplesIndexes.end(); ++it ){
+//                    DataCellPtr p(new SegmentSetCell( static_cast<SegmentSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
+//                    p->computeCartesianDistance( estimationCell );
+//                    result.insert( p );
+//                }
+//            }
+//        }
+
+    } else {
+        Application::instance()->logError( "MCRFSim::getSamplesFromPrimary(): sample search failed.  Search strategy and/or primary data not set." );
+    }
+    return result;
 }
