@@ -15,6 +15,7 @@ class CategoryPDF;
 class VerticalTransiogramModel;
 class CommonSimulationParameters;
 class QProgressDialog;
+class SpatialIndex;
 
 /** This enums controls how the vertical transiography is translated to lateral transiography. */
 enum class LateralGradationType : int {
@@ -130,7 +131,7 @@ private:
 
     SearchStrategyPtr m_searchStrategy;
 
-//    SpatialIndexPoints* m_spatialIndexPoints;
+    std::shared_ptr<SpatialIndex> m_spatialIndexOfPrimaryData;
 
     bool isOKtoRun();
 

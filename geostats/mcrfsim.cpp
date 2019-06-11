@@ -7,8 +7,11 @@
 #include "domain/verticaltransiogrammodel.h"
 #include "domain/categorydefinition.h"
 #include "domain/application.h"
+#include "domain/pointset.h"
+#include "domain/segmentset.h"
 #include "geostats/searchneighborhood.h"
 #include "geostats/searchellipsoid.h"
+#include "spatialindex/spatialindex.h"
 
 #include <thread>
 #include <random>
@@ -30,7 +33,8 @@ MCRFSim::MCRFSim() :
     m_tauFactorForTransiography( 1.0 ),
     m_tauFactorForProbabilityFields( 1.0 ),
     m_commonSimulationParameters( nullptr ),
-    m_progressDialog( nullptr )
+    m_progressDialog( nullptr ),
+    m_spatialIndexOfPrimaryData( new SpatialIndex() )
 { }
 
 bool MCRFSim::isOKtoRun()
@@ -307,6 +311,23 @@ bool MCRFSim::run()
         m_searchStrategy = SearchStrategyPtr( new SearchStrategy( searchNeighborhood, nb_samples, minDistanceBetweensamples, min_nb_samples ) );
     }
 
+    // Biuld spatial indexes
+    m_spatialIndexOfPrimaryData->clear();
+    {
+        //for the primary data
+        DataFile* dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
+        if( dfPrimary->getFileType() == "POINTSET" ){
+            PointSet* psPrimary = dynamic_cast<PointSet*>( dfPrimary );
+            m_spatialIndexOfPrimaryData->fill( psPrimary, m_cgSim->getDX() ); //use cell size as tolerance
+        } else if (dfPrimary->getFileType() == "SEGMENTSET") {
+            SegmentSet* ssPrimary = dynamic_cast<SegmentSet*>( dfPrimary );
+            m_spatialIndexOfPrimaryData->fill( ssPrimary, m_cgSim->getDX() ); //use cell size as tolerance
+        } else {
+            m_lastError = "Error building spatial indexes: primary data of type " + dfPrimary->getFileType() + " are not currently supported.";
+            return false;
+        }
+    }
+
     //create and run the simulation threads
     std::thread threads[nThreads];
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
@@ -385,8 +406,8 @@ DataCellPtrMultiset MCRFSim::getSamplesFromPrimaryMT(const GridCell &simulationC
     DataCellPtrMultiset result;
     if( m_searchStrategy && m_atPrimary ){
 
-//        //Fetch the indexes of the samples to be used in the estimation.
-//        QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
+        //Fetch the indexes of the samples to be used in the estimation.
+//        QList<uint> samplesIndexes = m_spatialIndexOfPrimaryData->getNearestWithin( simulationCell, *m_searchStrategy );
 //        QList<uint>::iterator it = samplesIndexes.begin();
 
 //        //Create and return the sample objects, which depend on the type of the input file.
