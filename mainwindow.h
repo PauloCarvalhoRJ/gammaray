@@ -208,6 +208,9 @@ private slots:
     void onMCRFSim();
     void onSegmentLengths();
     void onLVADataSet();
+    void onFlipEastWest();
+    void onFlipNorthSouth();
+    void onFlipTopBottom();
 
 private:
     /**
@@ -257,6 +260,15 @@ private:
      * The pointer to the dynamic sub-menu "Map as" of the project tree context menu.
      */
     QMenu* m_subMenuMapAs;
+
+    /**
+     * The pointer to the sub-menu "Flip Data" of the project tree context menu.
+     */
+    QMenu* m_subMenuFlipData;
+    /**
+      * Creates the items of sub-menu "Flip data".
+      */
+    void makeMenuFlipData();
 
 	/**
 	 * Lists the attributes currently being viewed in the quick view dialog.

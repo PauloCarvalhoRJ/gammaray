@@ -8,6 +8,12 @@ namespace spectral{
    class array;
 }
 
+enum class FlipDataDirection : uint {
+    U_DIRECTION,
+    V_DIRECTION,
+    W_DIRECTION
+};
+
 /** Abstract class for all domain classes that have grid topology (IJK coordinates). */
 class GridFile : public DataFile
 {
@@ -89,6 +95,12 @@ public:
 
 	/** Returns the data row index corresponding to the given topological coordinate (cell address). */
 	uint IJKtoIndex( uint i, uint j, uint k );
+
+    /** Flips data in U, V or W direction.  This is useful for gridded data that have been imported
+     *  or computed in scan order different than GSLib's convention.  The result is deposited in a new
+     *  variable.
+     */
+    void flipData( uint iVariable, QString newVariableName, FlipDataDirection direction );
 
 // ICalcPropertyCollection interface
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );

@@ -99,7 +99,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_subMenuClassifyInto( new QMenu("Classify into",       this) ),
     m_subMenuClassifyWith( new QMenu("Classify with",       this) ),
     m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
-    m_subMenuMapAs( new QMenu("Map as", this) )
+    m_subMenuMapAs( new QMenu("Map as", this) ),
+    m_subMenuFlipData( new QMenu("Flip data", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -552,12 +553,16 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
-                _projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
+                //_projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
                 }
+            }
+            if( Util::isIn( parent_file->getFileType(), {"CARTESIANGRID","GEOGRID"} ) ){
+                makeMenuFlipData();
+                _projectContextMenu->addMenu( m_subMenuFlipData );
             }
             if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
                 _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
@@ -2641,6 +2646,51 @@ void MainWindow::onLVADataSet()
     lvad->show();
 }
 
+void MainWindow::onFlipEastWest()
+{
+    GridFile* gf = dynamic_cast<GridFile*>( _right_clicked_attribute->getContainingFile() );
+    if( gf ){
+        QString suggested_name = _right_clicked_attribute->getName() + "_flippedU";
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with flipped data:", QLineEdit::Normal, suggested_name, &ok);
+        if( ! ok )
+            return;
+        gf->flipData( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, var_name, FlipDataDirection::U_DIRECTION );
+    }
+}
+
+void MainWindow::onFlipNorthSouth()
+{
+    GridFile* gf = dynamic_cast<GridFile*>( _right_clicked_attribute->getContainingFile() );
+    if( gf ){
+        QString suggested_name = _right_clicked_attribute->getName() + "_flippedV";
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with flipped data:", QLineEdit::Normal, suggested_name, &ok);
+        if( ! ok )
+            return;
+        gf->flipData( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, var_name, FlipDataDirection::V_DIRECTION );
+    }
+}
+
+void MainWindow::onFlipTopBottom()
+{
+    GridFile* gf = dynamic_cast<GridFile*>( _right_clicked_attribute->getContainingFile() );
+    if( gf ){
+        QString suggested_name = _right_clicked_attribute->getName() + "_flippedW";
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with flipped data:", QLineEdit::Normal, suggested_name, &ok);
+        if( ! ok )
+            return;
+        gf->flipData( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, var_name, FlipDataDirection::W_DIRECTION );
+    }
+}
+
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
@@ -2986,6 +3036,14 @@ void MainWindow::makeMenuCategorize()
             }
         }
     }
+}
+
+void MainWindow::makeMenuFlipData()
+{
+    m_subMenuFlipData->clear(); //remove any previously added item actions
+    m_subMenuFlipData->addAction( "in U direction (East-West)", this,   SLOT(onFlipEastWest()));
+    m_subMenuFlipData->addAction( "in V direction (North-South)", this, SLOT(onFlipNorthSouth()));
+    m_subMenuFlipData->addAction( "in W direction (Top-Bottom)", this,  SLOT(onFlipTopBottom()));
 }
 
 void MainWindow::makeMenuMapAs()

@@ -140,7 +140,42 @@ void GridFile::setColumnData(uint dataColumn, spectral::array & array)
 
 uint GridFile::IJKtoIndex(uint i, uint j, uint k)
 {
-	return k * m_nJ * m_nI + j * m_nI + i;
+    return k * m_nJ * m_nI + j * m_nI + i;
+}
+
+void GridFile::flipData(uint iVariable, QString newVariableName, FlipDataDirection direction)
+{
+    loadData();
+
+    addEmptyDataColumn( newVariableName, m_nI * m_nJ * m_nK );
+
+    //get the index of the newly added data column
+    uint lastColumnIndex = getDataColumnCount()-1;
+
+    //data flipping loop
+    ulong idx = 0;
+    for (ulong k = 0; k < m_nK; ++k) {
+        for (ulong j = 0; j < m_nJ; ++j) {
+            for (ulong i = 0; i < m_nI; ++i) {
+                ulong target_i = i;
+                ulong target_j = j;
+                ulong target_k = k;
+                switch ( direction ) {
+                    case FlipDataDirection::U_DIRECTION: target_i = m_nI - 1 - i; break;
+                    case FlipDataDirection::V_DIRECTION: target_j = m_nJ - 1 - j; break;
+                    case FlipDataDirection::W_DIRECTION: target_k = m_nK - 1 - k; break;
+                }
+                double value = dataIJK( iVariable, i, j, k );
+                setDataIJK( lastColumnIndex, target_i, target_j, target_k, value );
+                ++idx;
+            }
+        }
+    }
+
+    writeToFS();
+
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
 }
 
 double GridFile::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
