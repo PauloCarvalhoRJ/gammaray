@@ -95,7 +95,7 @@ public:
     /**
       *  Returns the file size in bytes.  Returns -1 if file does not exist.
       */
-    virtual long getFileSize();
+    virtual qint64 getFileSize();
 
 	/**
 	  *  Returns whether this file as a distribution.

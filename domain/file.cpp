@@ -98,12 +98,12 @@ bool File::exists()
     return path.exists();
 }
 
-long File::getFileSize()
+qint64 File::getFileSize()
 {
     if( ! exists() )
         return -1;
     QFileInfo info( _path );
-    return info.size(); //assumes long is 64-bit integer
+    return info.size(); //returned type must be a 64-bit integer
 }
 
 
