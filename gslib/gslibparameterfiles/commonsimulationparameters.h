@@ -28,6 +28,7 @@ public:
     uint    getMinNumberOfSamplesPerSector();
     uint    getMaxNumberOfSamplesPerSector();
     double  getMinDistanceBetweenSecondaryDataSamples();
+    uint    getNumberOfSimulatedNodesForConditioning();
 };
 
 #endif // COMMONSIMULATIONPARAMETERS_H

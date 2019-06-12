@@ -132,3 +132,8 @@ double CommonSimulationParameters::getMinDistanceBetweenSecondaryDataSamples()
 {
     return getParameter<GSLibParDouble*>(4)->_value;
 }
+
+uint CommonSimulationParameters::getNumberOfSimulatedNodesForConditioning()
+{
+    return getParameter<GSLibParUInt*>(5)->_value;
+}

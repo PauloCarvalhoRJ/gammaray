@@ -11,6 +11,9 @@
 #include "domain/segmentset.h"
 #include "geostats/searchneighborhood.h"
 #include "geostats/searchellipsoid.h"
+#include "geostats/pointsetcell.h"
+#include "geostats/segmentsetcell.h"
+#include "geostats/pointsetcell.h"
 #include "spatialindex/spatialindex.h"
 
 #include <thread>
@@ -34,7 +37,10 @@ MCRFSim::MCRFSim() :
     m_tauFactorForProbabilityFields( 1.0 ),
     m_commonSimulationParameters( nullptr ),
     m_progressDialog( nullptr ),
-    m_spatialIndexOfPrimaryData( new SpatialIndex() )
+    m_spatialIndexOfPrimaryData( new SpatialIndex() ),
+    m_spatialIndexOfSimGrid( new SpatialIndex() ),
+    m_primaryDataType( PrimaryDataType::UNDEFINED ),
+    m_primaryDataFile( nullptr )
 { }
 
 bool MCRFSim::isOKtoRun()
@@ -60,6 +66,16 @@ bool MCRFSim::isOKtoRun()
         if( ! dfPrimary ){
             m_lastError = "The file of input categorical variable is not a DataFile object.";
             return false;
+        } else {
+            m_primaryDataFile = dfPrimary;
+            if( dfPrimary->getFileType() == "POINTSET" )
+                m_primaryDataType = PrimaryDataType::POINTSET;
+            if( dfPrimary->getFileType() == "CARTESIANGRID" )
+                m_primaryDataType = PrimaryDataType::CARTESIANGRID;
+            if( dfPrimary->getFileType() == "GEOGRID" )
+                m_primaryDataType = PrimaryDataType::GEOGRID;
+            if( dfPrimary->getFileType() == "SEGMENTSET" )
+                m_primaryDataType = PrimaryDataType::SEGMENTSET;
         }
         CategoryDefinition* cdOfPrimData = dfPrimary->getCategoryDefinition( m_atPrimary );
         if( ! cdOfPrimData ){
@@ -142,11 +158,32 @@ bool MCRFSim::useSecondaryData()
 
 double MCRFSim::simulateOneCellMT( uint i, uint j, uint k ) const
 {
+    //get the facies to be simulated
+    CategoryDefinition* cd = m_pdf->getCategoryDefinition();
+
+    //initialize the probabiliities for the Monte Carlo with the ones in the global PDF
+    double probabilitiesForSimulation[ 100 ];
+    for( int i = 0; i < cd->getCategoryCount(); ++i )
+        probabilitiesForSimulation[i] = m_pdf->get2ndValue( i );
+
+    //define a cell object that represents the current simulation cell
     GridCell simulationCell( m_cgSim, -1, i, j, k );
 
-    //collects samples from the input data set ordered by their distance with respect
-    //to the estimation cell.
+    //collect samples from the input data set ordered by their distance with respect
+    //to the simulation cell.
     DataCellPtrMultiset vSamplesPrimary = getSamplesFromPrimaryMT( simulationCell );
+
+    //collect neighboring simulation grid cells ordered by their distance with respect
+    //to the simulation cell.
+    DataCellPtrMultiset vNeighboringSimGridCells = getNeighboringSimGridCellsMT( simulationCell );
+
+    //for each primary datum found
+    DataCellPtrMultiset::iterator itSamples = vSamplesPrimary.begin();
+    for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSamples){
+
+
+
+    }
 
     return m_simGridNDV;
 }
@@ -272,16 +309,6 @@ bool MCRFSim::run()
     //create vectors of data arrays for each thread, so they deposit their realizations in them.
     std::vector< spectral::arrayPtr > realizationDepots[nThreads];
 
-    //configure and display a progress bar
-    //////////////////////////////////
-    m_progressDialog = new QProgressDialog;
-    m_progressDialog->show();
-    m_progressDialog->setLabelText("Running MCRF...");
-    m_progressDialog->setMinimum(0);
-    m_progressDialog->setValue(0);
-    m_progressDialog->setMaximum( nI * nJ * nK * nRealizations );
-    /////////////////////////////////
-
     //create an array of flags that tells whether a thread is completed.
     // intialize all with false
     bool completed[ nThreads ];
@@ -302,31 +329,56 @@ bool MCRFSim::run()
         uint minSamplesPerSector =         m_commonSimulationParameters->getMinNumberOfSamplesPerSector();
         uint maxSamplesPerSector =         m_commonSimulationParameters->getMaxNumberOfSamplesPerSector();
         double minDistanceBetweensamples = m_commonSimulationParameters->getMinDistanceBetweenSecondaryDataSamples();
+        uint nbSimNodesConditioning      = m_commonSimulationParameters->getNumberOfSimulatedNodesForConditioning();
         SearchNeighborhoodPtr searchNeighborhood(
                     new SearchEllipsoid(hMax, hMin, hVert,
                                         azimuth, dip, roll,
                                         numberOfSectors, minSamplesPerSector, maxSamplesPerSector
                                         )
                     );
-        m_searchStrategy = SearchStrategyPtr( new SearchStrategy( searchNeighborhood, nb_samples, minDistanceBetweensamples, min_nb_samples ) );
+        m_searchStrategyPrimary = SearchStrategyPtr( new SearchStrategy( searchNeighborhood, nb_samples, 0.0, min_nb_samples ) );
+        m_searchStrategySimGrid = SearchStrategyPtr( new SearchStrategy( searchNeighborhood, nbSimNodesConditioning, minDistanceBetweensamples, 0 ) );
     }
 
-    // Biuld spatial indexes
-    m_spatialIndexOfPrimaryData->clear();
+    // Build spatial indexes
     {
-        //for the primary data
-        DataFile* dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
-        if( dfPrimary->getFileType() == "POINTSET" ){
-            PointSet* psPrimary = dynamic_cast<PointSet*>( dfPrimary );
-            m_spatialIndexOfPrimaryData->fill( psPrimary, m_cgSim->getDX() ); //use cell size as tolerance
-        } else if (dfPrimary->getFileType() == "SEGMENTSET") {
-            SegmentSet* ssPrimary = dynamic_cast<SegmentSet*>( dfPrimary );
-            m_spatialIndexOfPrimaryData->fill( ssPrimary, m_cgSim->getDX() ); //use cell size as tolerance
-        } else {
-            m_lastError = "Error building spatial indexes: primary data of type " + dfPrimary->getFileType() + " are not currently supported.";
-            return false;
+        //////////////////////////////////
+        QProgressDialog progressDialog;
+        progressDialog.show();
+        progressDialog.setLabelText("Building spatial indexes...");
+        progressDialog.setMinimum(0);
+        progressDialog.setValue(0);
+        progressDialog.setMaximum( 0 );
+        QApplication::processEvents();
+        /////////////////////////////////
+        m_spatialIndexOfPrimaryData->clear();
+        {
+            //for the primary data
+            DataFile* dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
+            if( dfPrimary->getFileType() == "POINTSET" ){
+                PointSet* psPrimary = dynamic_cast<PointSet*>( dfPrimary );
+                m_spatialIndexOfPrimaryData->fill( psPrimary, m_cgSim->getDX() ); //use cell size as tolerance
+            } else if (dfPrimary->getFileType() == "SEGMENTSET") {
+                SegmentSet* ssPrimary = dynamic_cast<SegmentSet*>( dfPrimary );
+                m_spatialIndexOfPrimaryData->fill( ssPrimary, m_cgSim->getDX() ); //use cell size as tolerance
+            } else {
+                m_lastError = "Error building spatial indexes: primary data of type " + dfPrimary->getFileType() + " are not currently supported.";
+                return false;
+            }
         }
+        m_spatialIndexOfSimGrid->clear();
+        m_spatialIndexOfSimGrid->fill( m_cgSim );
     }
+
+    //configure and display a progress bar for the simulation task
+    //////////////////////////////////
+    m_progressDialog = new QProgressDialog;
+    m_progressDialog->show();
+    m_progressDialog->setLabelText("Running MCRF...");
+    m_progressDialog->setMinimum(0);
+    m_progressDialog->setValue(0);
+    m_progressDialog->setMaximum( nI * nJ * nK * nRealizations );
+    /////////////////////////////////
 
     //create and run the simulation threads
     std::thread threads[nThreads];
@@ -404,41 +456,75 @@ void MCRFSim::updateProgessUI()
 DataCellPtrMultiset MCRFSim::getSamplesFromPrimaryMT(const GridCell &simulationCell) const
 {
     DataCellPtrMultiset result;
-    if( m_searchStrategy && m_atPrimary ){
+    if( m_searchStrategyPrimary && m_atPrimary ){
 
-        //Fetch the indexes of the samples to be used in the estimation.
-//        QList<uint> samplesIndexes = m_spatialIndexOfPrimaryData->getNearestWithin( simulationCell, *m_searchStrategy );
-//        QList<uint>::iterator it = samplesIndexes.begin();
+        //Fetch the indexes of the samples to be used in the simulation.
+        QList<uint> samplesIndexes = m_spatialIndexOfPrimaryData->getNearestWithin( simulationCell, *m_searchStrategyPrimary );
+        QList<uint>::iterator it = samplesIndexes.begin();
 
-//        //Create and return the sample objects, which depend on the type of the input file.
-//        if( m_inputDataFile->isRegular() ){ //TODO: this currently assumes the regular data is a CartesianGrid object.
-//            for( ; it != samplesIndexes.end(); ++it ){
-//                CartesianGrid* cg = static_cast<CartesianGrid*>( m_inputDataFile );
-//                uint i, j, k;
-//                cg->indexToIJK( *it, i, j, k );
-//                DataCellPtr p(new GridCell( cg, m_at_input->getAttributeGEOEASgivenIndex()-1, i, j, k ));
-//                p->computeCartesianDistance( estimationCell );
-//                result.insert( p );
-//            }
-//        } else { //irregular data sets
-//            SegmentSet* segmentSet = dynamic_cast<SegmentSet*>( m_inputDataFile );
-//            if( ! segmentSet ){
-//                for( ; it != samplesIndexes.end(); ++it ){
-//                    DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
-//                    p->computeCartesianDistance( estimationCell );
-//                    result.insert( p );
-//                }
-//            } else {
-//                for( ; it != samplesIndexes.end(); ++it ){
-//                    DataCellPtr p(new SegmentSetCell( static_cast<SegmentSet*>( m_inputDataFile ), m_at_input->getAttributeGEOEASgivenIndex()-1, *it ));
-//                    p->computeCartesianDistance( estimationCell );
-//                    result.insert( p );
-//                }
-//            }
-//        }
+        //Create and collect the searched sample objects, which depend on the type of the input file.
+        for( ; it != samplesIndexes.end(); ++it ){
+            switch ( m_primaryDataType ) {
+            case PrimaryDataType::POINTSET:
+            {
+                DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_primaryDataFile ), m_atPrimary->getAttributeGEOEASgivenIndex()-1, *it ));
+                p->computeCartesianDistance( simulationCell );
+                result.insert( p );
+            }
+                break;
+            case PrimaryDataType::CARTESIANGRID:
+            {
+                CartesianGrid* cg = static_cast<CartesianGrid*>( m_primaryDataFile );
+                uint i, j, k;
+                cg->indexToIJK( *it, i, j, k );
+                DataCellPtr p(new GridCell( cg, m_atPrimary->getAttributeGEOEASgivenIndex()-1, i, j, k ));
+                p->computeCartesianDistance( simulationCell );
+                result.insert( p );
+            }
+                break;
+            case PrimaryDataType::GEOGRID:
+            {
+                Application::instance()->logError( "MCRFSim::getSamplesFromPrimary(): GeoGrids cannot be used as primary data yet.  Must create a class like GeoGridCell inheriting from DataCell." );
+            }
+                break;
+            case PrimaryDataType::SEGMENTSET:
+            {
+                DataCellPtr p(new SegmentSetCell( static_cast<SegmentSet*>( m_primaryDataFile ), m_atPrimary->getAttributeGEOEASgivenIndex()-1, *it ));
+                p->computeCartesianDistance( simulationCell );
+                result.insert( p );
+            }
+                break;
+            default:
+                Application::instance()->logError( "MCRFSim::getSamplesFromPrimary(): Primary data file type not recognized or undefined." );
+            }
+        }
 
     } else {
         Application::instance()->logError( "MCRFSim::getSamplesFromPrimary(): sample search failed.  Search strategy and/or primary data not set." );
+    }
+    return result;
+}
+
+DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simulationCell) const
+{
+    DataCellPtrMultiset result;
+    if( m_searchStrategySimGrid && m_cgSim ){
+
+        //Fetch the indexes of the samples to be used in the simulation.
+        QList<uint> samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithin( simulationCell, *m_searchStrategySimGrid );
+        QList<uint>::iterator it = samplesIndexes.begin();
+
+        //Create and collect the searched sample objects, which depend on the type of the input file.
+        for( ; it != samplesIndexes.end(); ++it ){
+            uint i, j, k;
+            m_cgSim->indexToIJK( *it, i, j, k );
+            DataCellPtr p(new GridCell( m_cgSim, -1, i, j, k ));
+            p->computeCartesianDistance( simulationCell );
+            result.insert( p );
+        }
+
+    } else {
+        Application::instance()->logError( "MCRFSim::getNeighboringSimGridCellsMT(): simulation grid search failed.  Search strategy and/or simulation grid not set." );
     }
     return result;
 }

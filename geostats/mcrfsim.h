@@ -28,6 +28,15 @@ enum class LateralGradationType : int {
                                                 are far apart in space.*/
 };
 
+/** Enum used to avoid the slow File::getFileType() in performance-critical code. */
+enum class PrimaryDataType : int {
+    UNDEFINED,
+    POINTSET,
+    CARTESIANGRID,
+    GEOGRID,
+    SEGMENTSET
+};
+
 /** A mulithreaded implementation of the Markov Chains Random Field Simulations with secondary data and
  * probability integration with the Tau Model.  This algorithm uses the Mersenne Twister pseudo-random generator
  * of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to generate its
@@ -129,9 +138,15 @@ private:
 
     std::vector< spectral::arrayPtr > m_realizations;
 
-    SearchStrategyPtr m_searchStrategy;
+    SearchStrategyPtr m_searchStrategyPrimary;
+    SearchStrategyPtr m_searchStrategySimGrid;
 
     std::shared_ptr<SpatialIndex> m_spatialIndexOfPrimaryData;
+    std::shared_ptr<SpatialIndex> m_spatialIndexOfSimGrid;
+
+    PrimaryDataType m_primaryDataType;
+
+    DataFile* m_primaryDataFile;
 
     bool isOKtoRun();
 
@@ -145,6 +160,8 @@ private:
      * by their distance to the passed simulation cell.
      */
     DataCellPtrMultiset getSamplesFromPrimaryMT( const GridCell& simulationCell ) const;
+
+    DataCellPtrMultiset getNeighboringSimGridCellsMT( const GridCell& simulationCell ) const;
 };
 
 #endif // MCRFSIM_H
