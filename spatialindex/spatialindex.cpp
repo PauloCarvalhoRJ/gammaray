@@ -40,6 +40,10 @@ void SpatialIndex::fill(PointSet *ps, double tolerance)
     uint totlines = ps->getDataLineCount();
     if( totlines == 0 )
         Application::instance()->logWarn("SpatialIndex::fill(PointSet *, double): no data.  Make sure data was loaded prior to indexing.");
+
+    std::vector< Value > boxes;
+    boxes.reserve( totlines );
+
     for( uint iLine = 0; iLine < totlines; ++iLine){
         //...make a Point3D for the index
 		double x = ps->getDataSpatialLocation( iLine, CartesianCoord::X );
@@ -49,8 +53,12 @@ void SpatialIndex::fill(PointSet *ps, double tolerance)
         Box box( Point3D(x-tolerance, y-tolerance, z-tolerance),
                  Point3D(x+tolerance, y+tolerance, z+tolerance));
         //insert the box representing the point into the spatial index.
-		m_rtree.insert( std::make_pair(box, iLine) );
-	}
+        //m_rtree.insert( std::make_pair(box, iLine) );
+        boxes.push_back( std::make_pair(box, iLine) );
+    }
+
+    //building the tree like this makes use of the packing algorithm (faster bulk load)
+    m_rtree = RStarRtree( boxes );
 }
 
 void SpatialIndex::fill(CartesianGrid * cg)
@@ -86,7 +94,7 @@ void SpatialIndex::fill(CartesianGrid * cg)
         boxes.push_back( std::make_pair(box, iLine) );
 	}
 
-    m_rtree.insert( boxes.begin(), boxes.end() );
+    m_rtree = RStarRtree( boxes );
 }
 
 void SpatialIndex::fill(GeoGrid * gg)
@@ -104,6 +112,10 @@ void SpatialIndex::fill(GeoGrid * gg)
 	uint totlines = gg->getDataLineCount();
     if( totlines == 0 )
         Application::instance()->logWarn("SpatialIndex::fill(GeoGrid *): no data.  Make sure data was loaded prior to indexing.");
+
+    std::vector< Value > boxes;
+    boxes.reserve( totlines );
+
     for( uint iLine = 0; iLine < totlines; ++iLine){
 		//get the cell's bounding box (each line corresponds to a cell)
 		double minX, minY, minZ, maxX, maxY, maxZ;
@@ -112,8 +124,11 @@ void SpatialIndex::fill(GeoGrid * gg)
 		Box box( Point3D(minX, minY, minZ),
 				 Point3D(maxX, maxY, maxZ) );
 		//insert the box representing the point into the spatial index.
-		m_rtree.insert( std::make_pair(box, iLine) );
+        //m_rtree.insert( std::make_pair(box, iLine) );
+        boxes.push_back( std::make_pair(box, iLine) );
     }
+
+    m_rtree = RStarRtree( boxes );
 }
 
 void SpatialIndex::fill( SegmentSet *ss, double tolerance )
@@ -128,6 +143,10 @@ void SpatialIndex::fill( SegmentSet *ss, double tolerance )
     uint totlines = ss->getDataLineCount();
     if( totlines == 0 )
         Application::instance()->logWarn("SpatialIndex::fill(SegmentSet *, double): no data.  Make sure data was loaded prior to indexing.");
+
+    std::vector< Value > boxes;
+    boxes.reserve( totlines );
+
     for( uint iLine = 0; iLine < totlines; ++iLine){
         //get the segment's bounding box (each line corresponds to a segment)
         double minX, minY, minZ, maxX, maxY, maxZ;
@@ -136,8 +155,11 @@ void SpatialIndex::fill( SegmentSet *ss, double tolerance )
         Box box( Point3D(minX-tolerance, minY-tolerance, minZ-tolerance),
                  Point3D(maxX+tolerance, maxY+tolerance, maxZ+tolerance) );
         //insert the box representing the segment into the spatial index.
-        m_rtree.insert( std::make_pair(box, iLine) );
+        //m_rtree.insert( std::make_pair(box, iLine) );
+        boxes.push_back( std::make_pair(box, iLine) );
     }
+
+    m_rtree = RStarRtree( boxes );
 }
 
 QList<uint> SpatialIndex::getNearest(uint index, uint n)

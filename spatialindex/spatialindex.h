@@ -19,7 +19,7 @@ namespace bgi = boost::geometry::index;
 typedef bg::model::point<double, 3, bg::cs::cartesian> Point3D;
 typedef bg::model::box<Point3D> Box;
 typedef std::pair<Box, size_t> Value;
-
+typedef bgi::rtree< Value, bgi::rstar<16,5,5,32> > RStarRtree;
 
 /**
  * This class exposes functionalities related to spatial indexes and queries with GammaRay objects.
@@ -97,7 +97,7 @@ private:
 	/** The R* variant of the rtree
 	* WARNING: incorrect R-Tree parameter may lead to crashes with element insertions
 	*/
-	bgi::rtree< Value, bgi::rstar<16,5,5,32> > m_rtree; //TODO: make these parameters variable (passed in the constructor?)
+    RStarRtree m_rtree; //TODO: make these parameters variable (passed in the constructor?)
 
 	/** The data file which is being indexed. */
 	DataFile* m_dataFile;
