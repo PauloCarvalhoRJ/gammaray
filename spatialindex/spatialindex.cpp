@@ -69,6 +69,10 @@ void SpatialIndex::fill(CartesianGrid * cg)
 	uint totlines = cg->getDataLineCount();
     if( totlines == 0 )
         Application::instance()->logWarn("SpatialIndex::fill(CartesianGrid *): no data.  Make sure data was loaded prior to indexing.");
+
+    std::vector< Value > boxes;
+    boxes.reserve( totlines );
+
     for( uint iLine = 0; iLine < totlines; ++iLine){
 		//...make a Point3D for the index
 		double x = cg->getDataSpatialLocation( iLine, CartesianCoord::X );
@@ -78,8 +82,11 @@ void SpatialIndex::fill(CartesianGrid * cg)
 		Box box( Point3D(x-tX, y-tY, z-tZ),
 				 Point3D(x+tX, y+tY, z+tZ) );
 		//insert the box representing the point into the spatial index.
-		m_rtree.insert( std::make_pair(box, iLine) );
+        //m_rtree.insert( std::make_pair(box, iLine) );
+        boxes.push_back( std::make_pair(box, iLine) );
 	}
+
+    m_rtree.insert( boxes.begin(), boxes.end() );
 }
 
 void SpatialIndex::fill(GeoGrid * gg)
@@ -138,6 +145,7 @@ QList<uint> SpatialIndex::getNearest(uint index, uint n)
     assert( m_dataFile && "SpatialIndex::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
     QList<uint> result;
+    result.reserve( n );
 
     //get the location of the point.
 	double x = m_dataFile->getDataSpatialLocation( index, CartesianCoord::X );
@@ -146,6 +154,7 @@ QList<uint> SpatialIndex::getNearest(uint index, uint n)
 
     // find n nearest values to a point
     std::vector<Value> result_n;
+    result_n.reserve( n );
 	m_rtree.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(result_n));
 
     // collect the point indexes
@@ -165,9 +174,11 @@ QList<uint> SpatialIndex::getNearest(double x, double y, double z, uint n)
     assert( m_dataFile && "SpatialIndex::getNearest(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
 	QList<uint> result;
+    result.reserve( n );
 
 	// find n nearest values to a point
 	std::vector<Value> result_n;
+    result_n.reserve( n );
 	m_rtree.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(result_n));
 
 	// collect the point indexes
@@ -185,6 +196,7 @@ QList<uint> SpatialIndex::getNearestWithin(uint index, uint n, double distance )
     assert( m_dataFile && "SpatialIndex::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 
 	QList<uint> result;
+    result.reserve( n );
 
     //get the location of the query point.
 	double qx = m_dataFile->getDataSpatialLocation( index, CartesianCoord::X );
@@ -217,10 +229,11 @@ QList<uint> SpatialIndex::getNearestWithin(const DataCell& dataCell, const Searc
     assert( m_dataFile && "SpatialIndex::getNearestWithin(): No data file.  Make sure you have made a call to fill() prior to making queries.");
 	//TODO: Possible Refactoring: some of the logic in here may in fact belong to the SearchStrategy class.
 
-	QList<uint> result;
-
 	//get the desired number of samples.
 	uint n = searchStrategy.m_nb_samples;
+
+    QList<uint> result;
+    result.reserve( n );
 
 	//get the search neighboorhood (e.g. an ellipsoid).
 	const SearchNeighborhood& searchNeighborhood = *(searchStrategy.m_searchNB);
@@ -247,16 +260,19 @@ QList<uint> SpatialIndex::getNearestWithin(const DataCell& dataCell, const Searc
     //Get all the points within the bounding box of the search neighborhood.
     //This step improves performance because the actual inside/outside test of the search
     //neighborhood implementation may be slow.
-	std::vector<Value> poinsInSearchBB;
-	m_rtree.query( bgi::intersects( searchBB ), std::back_inserter(poinsInSearchBB) );
+    std::vector<Value> pointsInSearchBB;
+    pointsInSearchBB.reserve( 1000000 ); //make enormous room just in case the user set a big search neighborhood for a dense data set
+    m_rtree.query( bgi::intersects( searchBB ), std::back_inserter(pointsInSearchBB) );
+
+    return result;
 
     //Get all the samples actually inside the search neighborhood.
-	std::vector<Value>::iterator it = poinsInSearchBB.begin();
+    std::vector<Value>::iterator it = pointsInSearchBB.begin();
     typedef bgi::rtree< Value, bgi::rstar<16,5,5,32> > RTreeLocal;
     RTreeLocal rtreeLocal;
 	std::vector<Value> resultMinDist;
 	resultMinDist.reserve( 1 );
-	for(; it != poinsInSearchBB.end(); ++it){
+    for(; it != pointsInSearchBB.end(); ++it){
 		uint indexP = (*it).second;
 		//get the location of the point in the result set.
 		double xP = m_dataFile->getDataSpatialLocation( indexP, CartesianCoord::X );
@@ -313,7 +329,8 @@ QList<uint> SpatialIndex::getNearestWithin(const DataCell& dataCell, const Searc
 	//Otherwise, simply get the n-nearest of those found inside the neighborhood.
 	} else {
 		std::vector<Value> resultNNearest;
-		rtreeLocal.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(resultNNearest));
+        resultNNearest.reserve( 1000000 ); //make enormous room just in case the user set a big search neighborhood for a dense data set
+        rtreeLocal.query(bgi::nearest(Point3D(x, y, z), n), std::back_inserter(resultNNearest));
 		//If the number of n-neares samples found is greater than or equal the minimum number of samples
 		//set in search strategy...
 		if( resultNNearest.size() >= searchStrategy.m_minNumberOfSamples ) {
