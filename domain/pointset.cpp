@@ -158,7 +158,17 @@ double PointSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
 			return data( line, _z_field_index - 1 ); //x,y,z is in data file directly
 		else
 			return 0.0; //returns z=0.0 for datasets in 2D.
-	}
+    }
+}
+
+void PointSet::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+{
+    x = data( line, _x_field_index - 1 ); //x,y,z is in data file directly
+    y = data( line, _y_field_index - 1 ); //x,y,z is in data file directly
+    if( isTridimensional() )
+        z = data( line, _z_field_index - 1 ); //x,y,z is in data file directly
+    else
+        z = 0.0; //returns z=0.0 for datasets in 2D.
 }
 
 bool PointSet::isTridimensional()

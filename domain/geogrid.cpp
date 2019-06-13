@@ -911,6 +911,13 @@ double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
     }
 }
 
+void GeoGrid::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+{
+    uint i, j, k;
+    indexToIJK( line, i, j, k );
+    IJKtoXYZ( i, j, k, x, y, z);
+}
+
 double GeoGrid::getProportion(int variableIndex, double value0, double value1)
 {
     throw new InvalidMethodException();

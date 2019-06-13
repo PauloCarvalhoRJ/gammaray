@@ -306,6 +306,16 @@ double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
     }
 }
 
+void SegmentSet::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+{
+    x = ( data( line, _x_field_index - 1 ) + data( line, _x_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    y = ( data( line, _y_field_index - 1 ) + data( line, _y_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    if( isTridimensional() )
+        z = ( data( line, _z_field_index - 1 ) + data( line, _z_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    else
+        z = 0.0; //returns z=0.0 for datasets in 2D.
+}
+
 double SegmentSet::getProportion(int variableIndex, double value0, double value1)
 {
     double lengthYES = 0.0;

@@ -85,6 +85,7 @@ public:
 public:
     /** NOTE: this returns the middle point of the segment. */
     virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
 

@@ -695,7 +695,14 @@ double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoor
 	case CartesianCoord::Y: return y;
 	case CartesianCoord::Z: return z;
 	default: return x;
-	}
+    }
+}
+
+void CartesianGrid::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+{
+    uint i, j, k;
+    indexToIJK( line, i, j, k );
+    IJKtoXYZ( i, j, k, x, y, z);
 }
 
 bool CartesianGrid::isTridimensional()

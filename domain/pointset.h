@@ -75,7 +75,8 @@ public:
     virtual void deleteVariable( uint columnToDelete );
 	virtual bool isRegular() { return false; }
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-	virtual bool isTridimensional();
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
+    virtual bool isTridimensional();
 
     // File interface
 public:
