@@ -12,7 +12,8 @@ CommonSimulationParameters::CommonSimulationParameters() :
                           "<uint>                                                -Number of sectors (8==octants; 1==no sectors actually)",      // 6
                           "<uint><uint>                                          -Data per sector: min. and max. (0=not used)",                 // 7
                           "<double><double><double>                              -Search ellipsoid: radii (hmax,hmin,vert)",                    // 8
-                          "<double><double><double>                              -Search ellipsoid: angles (az, dip, roll)"                     // 9
+                          "<double><double><double>                              -Search ellipsoid: angles (az, dip, roll)",                    // 9
+                          "<option [0:generic rtree based] [1:tuned for large data sets]>   -Search algorithm option for the simulation grid"   // 10
                           //"<option [0:no] [1:yes]>                             -Assign data to nodes",                                        // --
                           //"<option [0:no] [1:yes]><uint>                       -Use multigrid search (0=no, 1=yes), number",                  // --
                       })
@@ -41,6 +42,8 @@ CommonSimulationParameters::CommonSimulationParameters() :
         par9->getParameter<GSLibParDouble*>(1)->_value = 0.0;
         par9->getParameter<GSLibParDouble*>(2)->_value = 0.0;
     }
+    GSLibParOption* par10 = getParameter<GSLibParOption*>(10);
+    par10->_selected_value = 0;
 }
 
 void CommonSimulationParameters::setBaseNameForRealizationVariables(const QString baseName)
@@ -136,4 +139,9 @@ double CommonSimulationParameters::getMinDistanceBetweenSecondaryDataSamples()
 uint CommonSimulationParameters::getNumberOfSimulatedNodesForConditioning()
 {
     return getParameter<GSLibParUInt*>(5)->_value;
+}
+
+uint CommonSimulationParameters::getSearchAlgorithmOptionForSimGrid()
+{
+    return getParameter<GSLibParOption*>(10)->_selected_value;
 }

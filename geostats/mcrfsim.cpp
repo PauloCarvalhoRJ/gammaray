@@ -181,7 +181,7 @@ double MCRFSim::simulateOneCellMT( uint i, uint j, uint k ) const
     DataCellPtrMultiset::iterator itSamples = vSamplesPrimary.begin();
     for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSamples){
 
-
+        //TODO: ROAD WORK.
 
     }
 
@@ -459,7 +459,7 @@ DataCellPtrMultiset MCRFSim::getSamplesFromPrimaryMT(const GridCell &simulationC
     if( m_searchStrategyPrimary && m_atPrimary ){
 
         //Fetch the indexes of the samples to be used in the simulation.
-        QList<uint> samplesIndexes = m_spatialIndexOfPrimaryData->getNearestWithin( simulationCell, *m_searchStrategyPrimary );
+        QList<uint> samplesIndexes = m_spatialIndexOfPrimaryData->getNearestWithinGenericRTreeBased( simulationCell, *m_searchStrategyPrimary );
         QList<uint>::iterator it = samplesIndexes.begin();
 
         //Create and collect the searched sample objects, which depend on the type of the input file.
@@ -511,7 +511,11 @@ DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simula
     if( m_searchStrategySimGrid && m_cgSim ){
 
         //Fetch the indexes of the samples to be used in the simulation.
-        QList<uint> samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithin( simulationCell, *m_searchStrategySimGrid );
+        QList<uint> samplesIndexes;
+        if( m_commonSimulationParameters->getSearchAlgorithmOptionForSimGrid() == 0 )
+            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinGenericRTreeBased( simulationCell, *m_searchStrategySimGrid );
+        else
+            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinTunedForLargeDataSets( simulationCell, *m_searchStrategySimGrid );
         QList<uint>::iterator it = samplesIndexes.begin();
 
         //Create and collect the searched sample objects, which depend on the type of the input file.

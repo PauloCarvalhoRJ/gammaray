@@ -29,6 +29,7 @@ public:
     uint    getMaxNumberOfSamplesPerSector();
     double  getMinDistanceBetweenSecondaryDataSamples();
     uint    getNumberOfSimulatedNodesForConditioning();
+    uint    getSearchAlgorithmOptionForSimGrid();
 };
 
 #endif // COMMONSIMULATIONPARAMETERS_H
