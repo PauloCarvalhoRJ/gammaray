@@ -11,6 +11,10 @@ class CartesianGrid;
 class DataCell;
 class SpatialIndex;
 
+enum class SearchAlogorithmOption : uint {
+    GENERIC_RTREE_BASED,
+    OPTIMIZED_FOR_LARGE_HIGH_DENSITY_DATASETS
+};
 
 /** This class encpsulates the factorial kriging estimation.
  */
@@ -29,6 +33,7 @@ public:
     void setInputVariable( Attribute* at_input );
     void setEstimationGrid( CartesianGrid* cg_estimation );
     void setFactorNumber( int factorNumber );
+    void setSearchAlogorithmOption( SearchAlogorithmOption searchAlogorithmOption );
     //@}
 
     //@{
@@ -40,6 +45,7 @@ public:
 	KrigingType getKrigingType(){ return m_ktype; }
     int getFactorNumber(){ return m_factorNumber; }
 	double getMeanForSimpleKriging(){ return m_meanSK; }
+    SearchAlogorithmOption getSearchAlogorithmOption() const;
     //@}
 
 	/** Returns a container with the samples around the estimation cell to be used in the estimation.
@@ -69,7 +75,7 @@ private:
     SearchStrategyPtr m_searchStrategy;
     VariogramModel *m_variogramModel;
     double m_meanSK;
-	KrigingType m_ktype;
+    KrigingType m_ktype;
     Attribute *m_at_input;
     CartesianGrid* m_cg_estimation;
     double m_NDV_of_input;
@@ -79,6 +85,7 @@ private:
 	double m_variogramSill;
     int m_factorNumber;
 	std::vector< uint > m_numberOfSamples;
+    SearchAlogorithmOption m_searchAlogorithmOption;
 };
 
 #endif // FKESTIMATION_H

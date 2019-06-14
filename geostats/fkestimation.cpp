@@ -27,7 +27,8 @@ FKEstimation::FKEstimation() :
 	m_cg_estimation( nullptr ),
     m_spatialIndexPoints( new SpatialIndex() ),
     m_inputDataFile( nullptr ),
-    m_factorNumber( 0 ) //0 == nugget effect.
+    m_factorNumber( 0 ), //0 == nugget effect.
+    m_searchAlogorithmOption( SearchAlogorithmOption::GENERIC_RTREE_BASED )
 {
 }
 
@@ -91,7 +92,15 @@ DataCellPtrMultiset FKEstimation::getSamples(const GridCell & estimationCell )
 	if( m_searchStrategy && m_at_input ){
 
         //Fetch the indexes of the samples to be used in the estimation.
-        QList<uint> samplesIndexes = m_spatialIndexPoints->getNearestWithin( estimationCell, *m_searchStrategy );
+        QList<uint> samplesIndexes;
+        switch ( m_searchAlogorithmOption ) {
+        case SearchAlogorithmOption::GENERIC_RTREE_BASED:
+            samplesIndexes = m_spatialIndexPoints->getNearestWithinGenericRTreeBased( estimationCell, *m_searchStrategy );
+            break;
+        case SearchAlogorithmOption::OPTIMIZED_FOR_LARGE_HIGH_DENSITY_DATASETS:
+            samplesIndexes = m_spatialIndexPoints->getNearestWithinTunedForLargeDataSets( estimationCell, *m_searchStrategy );
+            break;
+        }
         QList<uint>::iterator it = samplesIndexes.begin();
 
         //Create and return the sample objects, which depend on the type of the input file.
@@ -233,6 +242,16 @@ std::vector<double> FKEstimation::run( )
     Application::instance()->logInfo("Factorial Kriging completed.");
 
     return results;
+}
+
+SearchAlogorithmOption FKEstimation::getSearchAlogorithmOption() const
+{
+    return m_searchAlogorithmOption;
+}
+
+void FKEstimation::setSearchAlogorithmOption(SearchAlogorithmOption searchAlogorithmOption)
+{
+    m_searchAlogorithmOption = searchAlogorithmOption;
 }
 
 
