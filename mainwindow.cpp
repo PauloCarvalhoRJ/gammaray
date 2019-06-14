@@ -553,6 +553,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
+                // TODO: ROAD WORK
                 //_projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
