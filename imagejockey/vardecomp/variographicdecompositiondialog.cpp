@@ -2691,8 +2691,10 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
 
                 }
                 //evaluate the objective function for the current point and for the candidate point
-                double fCurrent = F3( *inputGrid, inputVarmap, startingPoints[i], m );
-                double fCandidate = F3( *inputGrid, inputVarmap, vw_candidate, m );
+//                double fCurrent = F3( *inputGrid, inputVarmap, startingPoints[i], m );
+//                double fCandidate = F3( *inputGrid, inputVarmap, vw_candidate, m );
+                double fCurrent = F4( *inputGrid, *inputData, startingPoints[i], m );
+                double fCandidate = F4( *inputGrid, *inputData, vw_candidate, m );
                 //if the candidate point improves the objective function...
                 if( fCandidate < fCurrent ){
                     //...make it the current point.
@@ -2717,9 +2719,14 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
             spectral::array vwFromLeft = vw_bestSolution;
             vwFromLeft(iParameter) = vw_bestSolution(iParameter) - epsilon;
             //compute the partial derivative along one parameter
-            double partialDerivative =  (F3( *inputGrid, inputVarmap, vwFromRight, m )
+//            double partialDerivative =  (F3( *inputGrid, inputVarmap, vwFromRight, m )
+//                                         -
+//                                         F3( *inputGrid, inputVarmap, vwFromLeft, m ))
+//                                         /
+//                                         ( 2 * epsilon );
+            double partialDerivative =  (F4( *inputGrid, *inputData, vwFromRight, m )
                                          -
-                                         F3( *inputGrid, inputVarmap, vwFromLeft, m ))
+                                         F4( *inputGrid, *inputData, vwFromLeft, m ))
                                          /
                                          ( 2 * epsilon );
             //update the domain limits depending on the partial derivative result
