@@ -338,7 +338,7 @@ QList<uint> SpatialIndex::getNearestWithinGenericRTreeBased(const DataCell& data
         searchStrategy.m_searchNB->performSpatialFilter( x, y, z, locationsToFilter, searchStrategy );
         //...Collect the indexes of the samples spatially filtered.
         std::vector<IndexedSpatialLocationPtr>::iterator it = locationsToFilter.begin();
-        for(; it != locationsToFilter.end(); ++it)
+        for( int count = 0; it != locationsToFilter.end() && count < n ; ++it, ++count)
             result.push_back( (*it)->_index );
     //Otherwise, simply get the n-nearest of those found inside the neighborhood.
     } else {
@@ -349,12 +349,17 @@ QList<uint> SpatialIndex::getNearestWithinGenericRTreeBased(const DataCell& data
         if( resultNNearest.size() >= searchStrategy.m_minNumberOfSamples ) {
             //...Collect the n-nearest point indexes found inside the ellipsoid.
             it = resultNNearest.begin();
-            for(; it != resultNNearest.end(); ++it)
+            for( int count = 0; it != resultNNearest.end() && count < n ; ++it, ++count)
                 result.push_back( (*it).second );
         }
     }
 
     return result;
+}
+
+inline bool operator< (const BoxAndDataIndexAndDistance& boxAndDataIndexAndDistance1,
+                        const BoxAndDataIndexAndDistance& boxAndDataIndexAndDistance2) {
+    return boxAndDataIndexAndDistance1.second < boxAndDataIndexAndDistance2.second ;
 }
 
 
@@ -394,9 +399,8 @@ QList<uint> SpatialIndex::getNearestWithinTunedForLargeDataSets(const DataCell& 
     //Get all the points within the bounding box of the search neighborhood.
     //This step improves performance because the actual inside/outside test of the search
     //neighborhood implementation may be slow.
-    typedef std::pair< BoxAndDataIndex, double > BoxAndDataIndexAndDistance;
-    //typedef std::shared_ptr< BoxAndDataIndexAndDistance > BoxAndDataIndexAndDistancePtr;
-    std::list< BoxAndDataIndexAndDistance > pointsInSearchBB;
+    std::vector< BoxAndDataIndexAndDistance > pointsInSearchBB;
+    pointsInSearchBB.reserve( 1000 );
     BOOST_FOREACH(const BoxAndDataIndex & v, m_rtree | bgi::adaptors::queried(bgi::intersects(searchBB)))
     {
         uint indexP = v.second;
@@ -404,65 +408,66 @@ QList<uint> SpatialIndex::getNearestWithinTunedForLargeDataSets(const DataCell& 
         double xP, yP, zP;
         m_dataFile->getDataSpatialLocation( indexP, xP, yP, zP );
         //Test whether the point is actually inside the search neighborhood (not only inside its bounding box).
-//        if( searchNeighborhood.isInside( x, y, z, xP, yP, zP ) ){
-//            //if it necessary to impose a minimum distance between samples...
-//            if( useMinDist ){
-//                //traverse the current collection of points in the neighborhood
-//                for( const BoxAndDataIndexAndDistance& neighboring_v : pointsInSearchBB ){
-//                    //get the location of a neighboring sample already collected.
-//                    uint indexNeighP = neighboring_v.first.second;
-//                    double xNeighP, yNeighP, zNeighP;
-//                    m_dataFile->getDataSpatialLocation( indexNeighP, xNeighP, yNeighP, zNeighP );
-//                    //compute the distance between the current sample and a neighboring sample collected
-//                    double dist = boost::geometry::distance( Point3D(xP, yP, zP), Point3D(xNeighP, yNeighP, zNeighP) );
-//                    //if the current sample is closer to a sample previously collected than allowed...
-//                    if( dist < minDist ){
-//                        //...skip to the next sample (current sample is not collected).
-//                        continue;
-//                    }
-//                }
-//            }
-//            //compute the distance between the cell and the sample collected
-//            double distCellToSample = boost::geometry::distance( Point3D(xP, yP, zP), Point3D(x, y, z) );
-//            //collect the location
-//            pointsInSearchBB.push_back( { v, distCellToSample } );
-//        }
+        if( searchNeighborhood.isInside( x, y, z, xP, yP, zP ) ){
+            //if it necessary to impose a minimum distance between samples...
+            if( useMinDist ){
+                //traverse the current collection of points in the neighborhood
+                for( const BoxAndDataIndexAndDistance& neighboring_v : pointsInSearchBB ){
+                    //get the location of a neighboring sample already collected.
+                    uint indexNeighP = neighboring_v.first.second;
+                    double xNeighP, yNeighP, zNeighP;
+                    m_dataFile->getDataSpatialLocation( indexNeighP, xNeighP, yNeighP, zNeighP );
+                    //compute the distance between the current sample and a neighboring sample collected
+                    double dist = boost::geometry::distance( Point3D(xP, yP, zP), Point3D(xNeighP, yNeighP, zNeighP) );
+                    //if the current sample is closer to a sample previously collected than allowed...
+                    if( dist < minDist ){
+                        //...skip to the next sample (current sample is not collected).
+                        continue;
+                    }
+                }
+            }
+            //compute the distance between the cell and the sample collected
+            double distCellToSample = boost::geometry::distance( Point3D(xP, yP, zP), Point3D(x, y, z) );
+            //collect the location
+            pointsInSearchBB.push_back( { v, distCellToSample } );
+        }
     }
 
-//    //sort the vector containing the samples in the search neighborhood by their distances to
-//    //the cell
-//    struct less_than_key {
-//        inline bool operator() (const BoxAndDataIndexAndDistance& boxAndDataIndexAndDistance1,
-//                                const BoxAndDataIndexAndDistance& boxAndDataIndexAndDistance2) {
-//            return ( boxAndDataIndexAndDistance1.second < boxAndDataIndexAndDistance2.second );
-//        }
-//    };
-//    std::sort( pointsInSearchBB.begin(), pointsInSearchBB.end(), less_than_key() );
+    //sort the vector containing the samples in the search neighborhood by their distances to
+    //the cell
+    struct less_than_key {
+        inline bool operator() (const BoxAndDataIndexAndDistance& boxAndDataIndexAndDistance1,
+                                const BoxAndDataIndexAndDistance& boxAndDataIndexAndDistance2) {
+            return ( boxAndDataIndexAndDistance1.second < boxAndDataIndexAndDistance2.second );
+        }
+    };
+    std::sort( pointsInSearchBB.begin(), pointsInSearchBB.end(), less_than_key() );
 
-//    //The search strategy may need to perform spatial filtering (e.g. octant/sector search) of the samples found
-//    //in the search neighborhood.
-//    if( searchStrategy.NBhasSpatialFiltering() ){
-//        //Copy all sample locations found inside the neighborhood to a vector.
-//        std::vector<IndexedSpatialLocationPtr> locationsToFilter;
-//        locationsToFilter.reserve( pointsInSearchBB.size() );
-//        for ( std::vector< BoxAndDataIndexAndDistance >::const_iterator it = pointsInSearchBB.cbegin(); it != pointsInSearchBB.cend() ; ++it ){
-//            //Get sample's location given the index stored in the r-tree.
-//            double x, y, z;
-//            m_dataFile->getDataSpatialLocation( (*it).first.second, x, y, z );
-//            locationsToFilter.push_back( IndexedSpatialLocationPtr( new IndexedSpatialLocation( x, y, z, (*it).first.second ) ) );
-//        }
-//        //Perform spatial filter with respect to the center of the current estimation cell.
-//        searchStrategy.m_searchNB->performSpatialFilter( x, y, z, locationsToFilter, searchStrategy );
-//        //...Collect the indexes of the samples spatially filtered.
-//        std::vector<IndexedSpatialLocationPtr>::iterator it = locationsToFilter.begin();
-//        for(; it != locationsToFilter.end(); ++it)
-//            result.push_back( (*it)->_index );
-//    //Otherwise, simply get the n-nearest of those found inside the neighborhood.
-//    } else {
-//        //Copy all sample indexes found inside the neighborhood to the vector to be returned.
-//        for ( std::vector< BoxAndDataIndexAndDistance >::const_iterator it = pointsInSearchBB.cbegin(); it != pointsInSearchBB.cend() ; ++it )
-//            result.push_back( (*it).first.second );
-//    }
+    //The search strategy may need to perform spatial filtering (e.g. octant/sector search) of the samples found
+    //in the search neighborhood.
+    if( searchStrategy.NBhasSpatialFiltering() ){
+        //Copy all sample locations found inside the neighborhood to a vector.
+        std::vector<IndexedSpatialLocationPtr> locationsToFilter;
+        locationsToFilter.reserve( pointsInSearchBB.size() );
+        for ( std::vector< BoxAndDataIndexAndDistance >::const_iterator it = pointsInSearchBB.cbegin(); it != pointsInSearchBB.cend() ; ++it ){
+            //Get sample's location given the index stored in the r-tree.
+            double x, y, z;
+            m_dataFile->getDataSpatialLocation( (*it).first.second, x, y, z );
+            locationsToFilter.push_back( IndexedSpatialLocationPtr( new IndexedSpatialLocation( x, y, z, (*it).first.second ) ) );
+        }
+        //Perform spatial filter with respect to the center of the current estimation cell.
+        searchStrategy.m_searchNB->performSpatialFilter( x, y, z, locationsToFilter, searchStrategy );
+        //...Collect the indexes of the samples spatially filtered.
+        std::vector<IndexedSpatialLocationPtr>::const_iterator it = locationsToFilter.cbegin();
+        for( int count = 0; it != locationsToFilter.cend()  && count < n ; ++it, ++count )
+            result.push_back( (*it)->_index );
+    //Otherwise, simply get the n-nearest of those found inside the neighborhood.
+    } else {
+        //Copy all sample indexes found inside the neighborhood to the vector to be returned.
+        std::vector< BoxAndDataIndexAndDistance >::const_iterator it = pointsInSearchBB.cbegin();
+        for ( int count = 0 ; it != pointsInSearchBB.cend() && count < n ; ++it, ++count )
+            result.push_back( (*it).first.second );
+    }
 
 	return result;
 }

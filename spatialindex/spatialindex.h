@@ -20,6 +20,7 @@ typedef bg::model::point<double, 3, bg::cs::cartesian> Point3D;
 typedef bg::model::box<Point3D> Box;
 typedef std::pair<Box, size_t> BoxAndDataIndex;
 typedef bgi::rtree< BoxAndDataIndex, bgi::rstar<16,5,5,32> > RStarRtree;
+typedef std::pair< BoxAndDataIndex, double > BoxAndDataIndexAndDistance;
 
 /**
  * This class exposes functionalities related to spatial indexes and queries with GammaRay objects.
