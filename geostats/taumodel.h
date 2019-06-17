@@ -2,6 +2,7 @@
 #define TAUMODEL_H
 
 #include <vector>
+#include <memory>
 
 /** This is an implementation of the Tau Model according to Krishnan (2004).  The Tau Model
  *  is a type of probability integration model.  In other words, it is a way to integrate
@@ -67,5 +68,7 @@ private:
     std::vector< std::vector<double> > m_probsOtherSources;
     std::vector<double> m_TauFactors;
 };
+
+typedef std::shared_ptr< TauModel > TauModelPtr;
 
 #endif // TAUMODEL_H

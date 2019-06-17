@@ -8,6 +8,7 @@
 #include "spectral/spectral.h"
 #include "geostats/searchstrategy.h"
 #include "geostats/gridcell.h"
+#include "geostats/taumodel.h"
 
 class Attribute;
 class CartesianGrid;
@@ -35,6 +36,14 @@ enum class PrimaryDataType : int {
     CARTESIANGRID,
     GEOGRID,
     SEGMENTSET
+};
+
+/** Enum used for clarity when addressing the source index in Tau Model.
+ * The values are used as array indexes, so they must start at 0 and increase by 1.
+ */
+enum class ProbabilitySource : unsigned int {
+    FROM_TRANSIOGRAM = 0,
+    FROM_SECONDARY_DATA = 1
 };
 
 /** A mulithreaded implementation of the Markov Chains Random Field Simulations with secondary data and
@@ -89,9 +98,6 @@ public:
      * of categories as present in the m_atPrimary's CategoryDefinition object.
      */
     std::vector< Attribute* > m_probFields;
-
-    /** The Tau (a model of probability integration) factor for the probabilities given by the global PDF. */
-    double m_tauFactorForGlobalPDF;
 
     /** The Tau factor for the probabilities given by the transiogram model. */
     double m_tauFactorForTransiography;
@@ -148,9 +154,11 @@ private:
 
     DataFile* m_primaryDataFile;
 
+    TauModelPtr m_tauModel;
+
     bool isOKtoRun();
 
-    bool useSecondaryData();
+    bool useSecondaryData() const;
 
     void updateProgessUI();
 

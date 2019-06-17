@@ -32,7 +32,6 @@ MCRFSim::MCRFSim() :
     m_LVAsemiMajorAxis( nullptr ),
     m_LVAsemiMinorAxis( nullptr ),
     m_probFields( std::vector< Attribute*>() ),
-    m_tauFactorForGlobalPDF( 1.0 ),
     m_tauFactorForTransiography( 1.0 ),
     m_tauFactorForProbabilityFields( 1.0 ),
     m_commonSimulationParameters( nullptr ),
@@ -151,38 +150,68 @@ bool MCRFSim::isOKtoRun()
     return true;
 }
 
-bool MCRFSim::useSecondaryData()
+bool MCRFSim::useSecondaryData() const
 {
     return ! m_probFields.empty();
 }
 
 double MCRFSim::simulateOneCellMT( uint i, uint j, uint k ) const
 {
-    //get the facies to be simulated
-    CategoryDefinition* cd = m_pdf->getCategoryDefinition();
 
-    //initialize the probabiliities for the Monte Carlo with the ones in the global PDF
-    double probabilitiesForSimulation[ 100 ];
-    for( int i = 0; i < cd->getCategoryCount(); ++i )
-        probabilitiesForSimulation[i] = m_pdf->get2ndValue( i );
+    //get the facies set to be simulated
+    CategoryDefinition* cd = m_pdf->getCategoryDefinition();
 
     //define a cell object that represents the current simulation cell
     GridCell simulationCell( m_cgSim, -1, i, j, k );
 
-    //collect samples from the input data set ordered by their distance with respect
-    //to the simulation cell.
-    DataCellPtrMultiset vSamplesPrimary = getSamplesFromPrimaryMT( simulationCell );
+    //make a local copy of the Tau Model (this is potentially a multi-threaded code)
+    TauModel tauModelCopy( *m_tauModel );
 
-    //collect neighboring simulation grid cells ordered by their distance with respect
-    //to the simulation cell.
-    DataCellPtrMultiset vNeighboringSimGridCells = getNeighboringSimGridCellsMT( simulationCell );
+    //get the probabilities from the global PDF, they're the marginal
+    //probabilities for the Tau Model
+    for( int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex )
+        tauModelCopy.setMarginalProbability( categoryIndex, m_pdf->get2ndValue( categoryIndex ) );
 
-    //for each primary datum found
-    DataCellPtrMultiset::iterator itSamples = vSamplesPrimary.begin();
-    for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSamples){
+    //conditioning to primary data
+    {
+        //collect samples from the input data set ordered by their distance with respect
+        //to the simulation cell.
+        DataCellPtrMultiset vSamplesPrimary = getSamplesFromPrimaryMT( simulationCell );
 
-        //TODO: ROAD WORK.
+        //for each primary datum found in the search neighborhood
+        DataCellPtrMultiset::iterator itSamples = vSamplesPrimary.begin();
+        for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSamples){
 
+            //TODO: ROAD WORK.
+
+        }
+    }
+
+    //conditioning to previously simulated cells
+    {
+        //collect neighboring simulation grid cells ordered by their distance with respect
+        //to the simulation cell.
+        DataCellPtrMultiset vNeighboringSimGridCells = getNeighboringSimGridCellsMT( simulationCell );
+
+        //for each previously simulated cells found in the search neighborhood
+        DataCellPtrMultiset::iterator itSamples = vNeighboringSimGridCells.begin();
+        for( uint i = 0; i < vNeighboringSimGridCells.size(); ++i, ++itSamples){
+
+            //TODO: ROAD WORK.
+
+        }
+    }
+
+    //get the probabilities of facies from secondary data (in simulation grid) for the Tau Model
+    if( useSecondaryData() ){
+        //for each category
+        for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
+            uint probColumnIndex = m_probFields[ categoryIndex ]->getAttributeGEOEASgivenIndex() - 1;
+            double probabilityFromSecondary = simulationCell.readValueFromDataSet(  );
+            tauModelCopy.setProbabilityFromSource( categoryIndex,
+                                                  static_cast<uint>( ProbabilitySource::FROM_SECONDARY_DATA ),
+                                                  probabilityFromSecondary );
+        }
     }
 
     return m_simGridNDV;
@@ -368,6 +397,22 @@ bool MCRFSim::run()
         }
         m_spatialIndexOfSimGrid->clear();
         m_spatialIndexOfSimGrid->fill( m_cgSim );
+    }
+
+
+    // Build an appropriate Tau Model object
+    {
+        CategoryDefinition* cd = m_pdf->getCategoryDefinition();
+        uint nSourcesOfInformation = 1; //assumes only transiograms will provide probabilities for the facies
+        if( useSecondaryData() )
+            nSourcesOfInformation = 2;
+        m_tauModel = TauModelPtr( new TauModel( cd->getCategoryCount(), nSourcesOfInformation ) );
+        //set the tau factors
+        m_tauModel->setTauFactor( static_cast<uint>(ProbabilitySource::FROM_TRANSIOGRAM),
+                                  m_tauFactorForTransiography );
+        if( useSecondaryData() )
+            m_tauModel->setTauFactor( static_cast<uint>(ProbabilitySource::FROM_SECONDARY_DATA),
+                                      m_tauFactorForProbabilityFields );
     }
 
     //configure and display a progress bar for the simulation task
