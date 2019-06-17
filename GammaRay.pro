@@ -257,7 +257,8 @@ SOURCES += main.cpp\
     dialogs/lvadatasetdialog.cpp \
     geostats/mcrfsim.cpp \
     gslib/gslibparameterfiles/commonsimulationparameters.cpp \
-    spatialindex/spatialindex.cpp
+    spatialindex/spatialindex.cpp \
+    geostats/taumodel.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -493,7 +494,8 @@ HEADERS  += mainwindow.h \
     dialogs/lvadatasetdialog.h \
     geostats/mcrfsim.h \
     gslib/gslibparameterfiles/commonsimulationparameters.h \
-    spatialindex/spatialindex.h
+    spatialindex/spatialindex.h \
+    geostats/taumodel.h
 
 
 FORMS    += mainwindow.ui \
