@@ -29,6 +29,7 @@ public:
 
     // DataCell	interface
     virtual double readValueFromDataSet() const;
+    virtual double readValueFromDataSet( uint dataColumnIndex ) const;
 
     SegmentSet* m_segmentSet;
     uint m_sampleIndex;

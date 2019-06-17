@@ -40,10 +40,14 @@ public:
 	double _cartesianDistance;
 
 	/** Returns the data value this cell refers to.
-	 * @note This should have been a pure virtual method, but it was not possible to
-	 *       make std::multiset<DataCell> objects.
 	 */
 	virtual double readValueFromDataSet() const = 0;
+
+    /** Returns the data value this cell refers to.
+     * It accepts a column index of any variable the data set this data cell
+     * refers to.
+     */
+    virtual double readValueFromDataSet( unsigned int dataColumnIndex ) const = 0;
 
 protected:
 	inline DataCell( int dataIndex ) :

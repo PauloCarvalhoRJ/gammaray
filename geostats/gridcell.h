@@ -55,10 +55,19 @@ public:
     */
     double readValueFromGrid() const;
 
+    /** Returns the value from the grid associated with this cell given the index
+     * of anu variable.
+     * It assumes all cell info are correct (_dataIndex does not need to be set).
+     */
+    double readValueFromGrid( uint dataColumnIndex ) const;
+
 // DataCell	interface
 	virtual double readValueFromDataSet() const{
 		return readValueFromGrid();
 	}
+    virtual double readValueFromDataSet( unsigned int dataColumnIndex ) const{
+        return readValueFromGrid( dataColumnIndex );
+    }
 };
 
 typedef std::shared_ptr<GridCell> GridCellPtr;
