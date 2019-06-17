@@ -185,7 +185,6 @@ void MCRFSimDialog::onRun()
     markovSim.m_LVAsemiMinorAxis              = m_LVAsemiMinorAxisVarSelector->getSelectedVariable();
     for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
         markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
-    markovSim.m_tauFactorForGlobalPDF         = ui->dblSpinTauPDF->value();
     markovSim.m_tauFactorForTransiography     = ui->dblSpinTauTransiography->value();
     markovSim.m_tauFactorForProbabilityFields = ui->dblSpinTauSecondary->value();
     markovSim.m_commonSimulationParameters    = m_commonSimulationParameters;
