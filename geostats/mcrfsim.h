@@ -124,8 +124,13 @@ public:
      * NOTE ON PERFORMANCE: this method has potential to be called a billion times, so optmization
      *                      is critical in every line of code of this method as well as of every
      *                      method it calls.
+     * @param i Topologic coordinate of the cell to simulate.
+     * @param j Topologic coordinate of the cell to simulate.
+     * @param k Topologic coordinate of the cell to simulate.
+     * @param simulatedData Pointer to the realization data so it is possible to retrieve the previous
+     *                      simulated values.
      */
-    double simulateOneCellMT(uint i, uint j , uint k) const;
+    double simulateOneCellMT( uint i, uint j , uint k, const spectral::array& simulatedData ) const;
 
     /** Sets or increases the current simulation progress counter to the given ammount.
      * Mind that this function updates a progress bar, which is a costly operation.

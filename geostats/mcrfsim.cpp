@@ -15,6 +15,7 @@
 #include "geostats/segmentsetcell.h"
 #include "geostats/pointsetcell.h"
 #include "spatialindex/spatialindex.h"
+#include "util.h"
 
 #include <thread>
 #include <random>
@@ -155,14 +156,27 @@ bool MCRFSim::useSecondaryData() const
     return ! m_probFields.empty();
 }
 
-double MCRFSim::simulateOneCellMT( uint i, uint j, uint k ) const
+double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array& simulatedData ) const
 {
 
     //get the facies set to be simulated
     CategoryDefinition* cd = m_pdf->getCategoryDefinition();
 
+    double anisoVerticalAxis = 0.0;
+    {
+
+    }
+
     //define a cell object that represents the current simulation cell
     GridCell simulationCell( m_cgSim, -1, i, j, k );
+
+    //collect samples from the input data set ordered by their distance with respect
+    //to the simulation cell.
+    DataCellPtrMultiset vSamplesPrimary = getSamplesFromPrimaryMT( simulationCell );
+
+    //collect neighboring simulation grid cells ordered by their distance with respect
+    //to the simulation cell.
+    DataCellPtrMultiset vNeighboringSimGridCells = getNeighboringSimGridCellsMT( simulationCell );
 
     //make a local copy of the Tau Model (this is potentially a multi-threaded code)
     TauModel tauModelCopy( *m_tauModel );
@@ -172,34 +186,34 @@ double MCRFSim::simulateOneCellMT( uint i, uint j, uint k ) const
     for( int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex )
         tauModelCopy.setMarginalProbability( categoryIndex, m_pdf->get2ndValue( categoryIndex ) );
 
-    //conditioning to primary data
-    {
-        //collect samples from the input data set ordered by their distance with respect
-        //to the simulation cell.
-        DataCellPtrMultiset vSamplesPrimary = getSamplesFromPrimaryMT( simulationCell );
+    //for each primary datum found in the search neighborhood
+    DataCellPtrMultiset::iterator itSamples = vSamplesPrimary.begin();
+    for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSamples){
 
-        //for each primary datum found in the search neighborhood
-        DataCellPtrMultiset::iterator itSamples = vSamplesPrimary.begin();
-        for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSamples){
+        //TODO: ROAD WORK.
 
-            //TODO: ROAD WORK.
-
-        }
     }
 
-    //conditioning to previously simulated cells
-    {
-        //collect neighboring simulation grid cells ordered by their distance with respect
-        //to the simulation cell.
-        DataCellPtrMultiset vNeighboringSimGridCells = getNeighboringSimGridCellsMT( simulationCell );
+    //for each grid cells found in the search neighborhood
+    DataCellPtrMultiset::iterator itSimGridCells = vNeighboringSimGridCells.begin();
+    for( uint i = 0; i < vNeighboringSimGridCells.size(); ++i, ++itSimGridCells){
+        DataCellPtr dataCell = *itSimGridCells;
+        //we know the data cell is a grid cell
+        const GridCell* gridCellAspect = dynamic_cast<GridCell*>(dataCell.get());
 
-        //for each previously simulated cells found in the search neighborhood
-        DataCellPtrMultiset::iterator itSamples = vNeighboringSimGridCells.begin();
-        for( uint i = 0; i < vNeighboringSimGridCells.size(); ++i, ++itSamples){
+        //get the realization value in the neighboring cell (may be NDV)
+        double realizationValue = simulatedData( gridCellAspect->_indexIJK._i,
+                                                 gridCellAspect->_indexIJK._j,
+                                                 gridCellAspect->_indexIJK._k );
 
-            //TODO: ROAD WORK.
+        //if there is a previously simulated data in the neighboring cell
+        // DataFile::isNDV() is non-const and has a slow string-to-double conversion
+        if( ! Util::almostEqual2sComplement( m_simGridNDV, realizationValue, 1 ) ){
 
         }
+
+        //TODO: ROAD WORK.
+
     }
 
     //get the probabilities of facies from secondary data (in simulation grid) for the Tau Model
@@ -279,7 +293,7 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             uint i, j, k;
             cgSim->indexToIJK( iCellLinearIndex, i, j, k );
             //simulate the cell (attention: may return the simulation grid's no-data value)
-            double catCode = mcrfSim->simulateOneCellMT( i, j, k );
+            double catCode = mcrfSim->simulateOneCellMT( i, j, k, *simulatedData );
             //save the value to the data array of the realization
             (*simulatedData)( i, j, k ) = catCode;
             //keep track of simulation progress
