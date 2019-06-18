@@ -149,11 +149,6 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
     //get the facies set to be simulated
     CategoryDefinition* cd = m_pdf->getCategoryDefinition();
 
-    double anisoVerticalAxis = 0.0;
-    {
-
-    }
-
     //define a cell object that represents the current simulation cell
     GridCell simulationCell( m_cgSim, -1, i, j, k );
 
@@ -196,7 +191,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
         //if there is a previously simulated data in the neighboring cell
         // DataFile::isNDV() is non-const and has a slow string-to-double conversion
         if( ! Util::almostEqual2sComplement( m_simGridNDV, realizationValue, 1 ) ){
-
+            //To preserve Markovian property, we cannot use data in the "future".
         }
 
         //TODO: ROAD WORK.

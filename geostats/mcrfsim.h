@@ -35,14 +35,14 @@ enum class ProbabilitySource : unsigned int {
     FROM_SECONDARY_DATA = 1
 };
 
-/** A mulithreaded implementation of the Markov Chains Random Field Simulations with secondary data and
+/** A multithreaded implementation of the Markov Chains Random Field Simulations with secondary data and
  * probability integration with the Tau Model.  This algorithm uses the Mersenne Twister pseudo-random generator
  * of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to generate its
  * random path and Monte Carlo draw.
  *
  * ATTENTION: The methods named *MT() are called from multiple threads.
  *
- * REF: Markov Chai Random Fields for Estimation of Categorical Variables.
+ * REF: Markov Chain Random Fields for Estimation of Categorical Variables.
  *      Weidong Li, Math Geol (2007), 39: 321-335
  *      DOI: 10.1007/s11004-007-9081-0
  */
