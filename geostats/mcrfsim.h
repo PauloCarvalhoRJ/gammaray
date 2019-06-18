@@ -18,17 +18,6 @@ class CommonSimulationParameters;
 class QProgressDialog;
 class SpatialIndex;
 
-/** This enums controls how the vertical transiography is translated to lateral transiography. */
-enum class LateralGradationType : int {
-    TAIL_TRANSIOGRAMS_ONLY = 0,            /*!< Facies to be simulated is always prior to a known/simulated location in lateral sequence. */
-    HEAD_TRANSIOGRAMS_ONLY,                /*!< Facies to be simulated is always posterior to a known/simulated location in lateral sequence. */
-    HEAD_AND_TAIL_TRANSIOGRAMS_AT_RANDOM,  /*!< Facies to be simulated can be randomly prior or posterior to a known/simulated location in lateral sequence. */
-    USE_GRADATIONAL_FIELD,                 /*!< Uses an attribute in the simulation grid to compute the separation from for the lateral transiography instead
-                                                of transiogram ranges (vertical range and the LVA fields).
-                                                E.g.: two locations with the same value have zero separation stratigraphically speaking, even if they
-                                                are far apart in space.*/
-};
-
 /** Enum used to avoid the slow File::getFileType() in performance-critical code. */
 enum class PrimaryDataType : int {
     UNDEFINED,
@@ -75,23 +64,8 @@ public:
     /** The vertical transiogram model. */
     VerticalTransiogramModel* m_transiogramModel;
 
-    /** How to translate vertical transiography to lateral. See documentation of the LateralGradationType enum. */
-    LateralGradationType m_lateralGradationType;
-
     /** The optional attribute of the simulation grid that contains the gradation field. See documentation of the LateralGradationType enum. */
     Attribute* m_gradationField;
-
-    /** The optional attribute of the simulation grid that contains the locally varying anisotropy azimuth.
-     * See documentation of the LateralGradationType enum. */
-    Attribute* m_LVAazimuth;
-
-    /** The optional attribute of the simulation grid that contains the locally varying anisotropy semi-major axis.
-     * See documentation of the LateralGradationType enum. */
-    Attribute* m_LVAsemiMajorAxis;
-
-    /** The optional attribute of the simulation grid that contains the locally varying anisotropy semi-minor axis.
-     * See documentation of the LateralGradationType enum. */
-    Attribute* m_LVAsemiMinorAxis;
 
     /** The optional probability fields (attributes of the simulation grid).
      * An empty vector means no probability field will be used.  Otherwise, the fields must match the number and order

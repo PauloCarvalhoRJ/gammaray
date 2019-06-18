@@ -27,11 +27,7 @@ MCRFSim::MCRFSim() :
     m_cgSim( nullptr ),
     m_pdf( nullptr ),
     m_transiogramModel( nullptr ),
-    m_lateralGradationType( LateralGradationType::TAIL_TRANSIOGRAMS_ONLY ),
     m_gradationField( nullptr ),
-    m_LVAazimuth( nullptr ),
-    m_LVAsemiMajorAxis( nullptr ),
-    m_LVAsemiMinorAxis( nullptr ),
     m_probFields( std::vector< Attribute*>() ),
     m_tauFactorForTransiography( 1.0 ),
     m_tauFactorForProbabilityFields( 1.0 ),
@@ -110,17 +106,8 @@ bool MCRFSim::isOKtoRun()
         }
     }
 
-    if( m_lateralGradationType == LateralGradationType::USE_GRADATIONAL_FIELD && ! m_gradationField ){
-        m_lastError = "Use of a gradation field was selected for lateral transiography ranging, but none was provided.";
-        return false;
-    }
-
-    if( ( m_lateralGradationType == LateralGradationType::TAIL_TRANSIOGRAMS_ONLY ||
-          m_lateralGradationType == LateralGradationType::HEAD_TRANSIOGRAMS_ONLY ||
-          m_lateralGradationType == LateralGradationType::HEAD_AND_TAIL_TRANSIOGRAMS_AT_RANDOM )
-           && ( ! m_LVAazimuth || ! m_LVAsemiMajorAxis || ! m_LVAsemiMinorAxis ) ){
-        m_lastError = "Use of lateral transiogram ranges was selected, which requires three additional fields"
-                      " in the simulation grid: azimuth, semi-major axis and semi-minor axis.";
+    if( ! m_gradationField ){
+        m_lastError = "Use of a gradation field is required to stablish a correlation between vertical (time) and lateral facies succession in 3D Markov Chain.";
         return false;
     }
 

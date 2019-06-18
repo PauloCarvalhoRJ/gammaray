@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>791</width>
-    <height>420</height>
+    <width>787</width>
+    <height>386</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -250,44 +250,7 @@
      <item>
       <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>Lateral gradation:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QComboBox" name="cmbLateralGradation">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <item>
-        <property name="text">
-         <string>tail transiograms only</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>head transiograms only</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>tail and head at random</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>use gradational field</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_9">
-       <property name="text">
-        <string>field:</string>
+        <string>Lateral gradation field:</string>
        </property>
       </widget>
      </item>
@@ -306,124 +269,6 @@
         <enum>QFrame::Raised</enum>
        </property>
        <layout class="QHBoxLayout" name="horizontalLayout_10">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-       </layout>
-      </widget>
-     </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_11">
-     <property name="topMargin">
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QLabel" name="label_6">
-       <property name="text">
-        <string>Lateral LVA fields: azimuth:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QFrame" name="frmCmbLVAazSelector">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_3">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_7">
-       <property name="text">
-        <string>semi-major axis:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QFrame" name="frmCmbLVAmajorSelector">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_4">
-        <property name="leftMargin">
-         <number>0</number>
-        </property>
-        <property name="topMargin">
-         <number>0</number>
-        </property>
-        <property name="rightMargin">
-         <number>0</number>
-        </property>
-        <property name="bottomMargin">
-         <number>0</number>
-        </property>
-       </layout>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_8">
-       <property name="text">
-        <string>semi-minor axis:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QFrame" name="frmCmbLVAminorSelector">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::StyledPanel</enum>
-       </property>
-       <property name="frameShadow">
-        <enum>QFrame::Raised</enum>
-       </property>
-       <layout class="QVBoxLayout" name="verticalLayout_5">
         <property name="leftMargin">
          <number>0</number>
         </property>
@@ -641,22 +486,6 @@
     <hint type="destinationlabel">
      <x>553</x>
      <y>397</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>cmbLateralGradation</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>MCRFSimDialog</receiver>
-   <slot>onCmbLateralGradationChanged()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>203</x>
-     <y>100</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>225</x>
-     <y>118</y>
     </hint>
    </hints>
   </connection>

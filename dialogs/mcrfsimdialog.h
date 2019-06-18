@@ -34,9 +34,6 @@ private:
     FileSelectorWidget* m_globalPDFSelector;
     VariableSelector* m_gradationalFieldVarSelector;
     std::vector< VariableSelector* > m_probFieldsSelectors;
-    VariableSelector* m_LVAazVarSelector;
-    VariableSelector* m_LVAsemiMajorAxisVarSelector;
-    VariableSelector* m_LVAsemiMinorAxisVarSelector;
     //----------------------------------------------
 
     CommonSimulationParameters* m_commonSimulationParameters;
@@ -44,7 +41,6 @@ private:
 
 private Q_SLOTS:
     void onRemakeProbabilityFieldsCombos();
-    void onCmbLateralGradationChanged();
     void onPrimaryVariableChanged();
     void onCommonSimParams();
     void onRun();

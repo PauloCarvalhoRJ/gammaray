@@ -30,9 +30,6 @@ MCRFSimDialog::MCRFSimDialog(QWidget *parent) :
     m_verticalTransiogramSelector( nullptr ),
     m_globalPDFSelector( nullptr ),
     m_gradationalFieldVarSelector( nullptr ),
-    m_LVAazVarSelector( nullptr ),
-    m_LVAsemiMajorAxisVarSelector( nullptr ),
-    m_LVAsemiMinorAxisVarSelector( nullptr ),
     m_commonSimulationParameters( new CommonSimulationParameters() )
 {
     ui->setupUi(this);
@@ -73,20 +70,6 @@ MCRFSimDialog::MCRFSimDialog(QWidget *parent) :
     ui->frmCmbLatGradFieldSelector->layout()->addWidget( m_gradationalFieldVarSelector );
     connect( m_simGridSelector,             SIGNAL(cartesianGridSelected(DataFile*)),
              m_gradationalFieldVarSelector,   SLOT(onListVariables(DataFile*)) );
-    onCmbLateralGradationChanged();
-
-    m_LVAazVarSelector = new VariableSelector( );
-    m_LVAsemiMajorAxisVarSelector = new VariableSelector( );
-    m_LVAsemiMinorAxisVarSelector = new VariableSelector( );
-    ui->frmCmbLVAazSelector->layout()->addWidget( m_LVAazVarSelector );
-    ui->frmCmbLVAmajorSelector->layout()->addWidget( m_LVAsemiMajorAxisVarSelector );
-    ui->frmCmbLVAminorSelector->layout()->addWidget( m_LVAsemiMinorAxisVarSelector );
-    connect( m_simGridSelector,             SIGNAL(cartesianGridSelected(DataFile*)),
-             m_LVAazVarSelector,              SLOT(onListVariables(DataFile*)) );
-    connect( m_simGridSelector,             SIGNAL(cartesianGridSelected(DataFile*)),
-             m_LVAsemiMajorAxisVarSelector,   SLOT(onListVariables(DataFile*)) );
-    connect( m_simGridSelector,             SIGNAL(cartesianGridSelected(DataFile*)),
-             m_LVAsemiMinorAxisVarSelector,   SLOT(onListVariables(DataFile*)) );
 
     //calling this slot causes the sec. variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
@@ -144,14 +127,6 @@ void MCRFSimDialog::onRemakeProbabilityFieldsCombos()
     }
 }
 
-void MCRFSimDialog::onCmbLateralGradationChanged()
-{
-    m_gradationalFieldVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() == 3 );
-    if(m_LVAazVarSelector) m_LVAazVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() != 3 );
-    if(m_LVAsemiMajorAxisVarSelector) m_LVAsemiMajorAxisVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() != 3 );
-    if(m_LVAsemiMinorAxisVarSelector) m_LVAsemiMinorAxisVarSelector->setEnabled( ui->cmbLateralGradation->currentIndex() != 3 );
-}
-
 void MCRFSimDialog::onPrimaryVariableChanged()
 {
     onRemakeProbabilityFieldsCombos();
@@ -173,16 +148,7 @@ void MCRFSimDialog::onRun()
     markovSim.m_cgSim                         = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
     markovSim.m_pdf                           = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
     markovSim.m_transiogramModel              = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
-    switch ( ui->cmbLateralGradation->currentIndex() ) {
-        case 0: markovSim.m_lateralGradationType = LateralGradationType::TAIL_TRANSIOGRAMS_ONLY; break;
-        case 1: markovSim.m_lateralGradationType = LateralGradationType::HEAD_TRANSIOGRAMS_ONLY; break;
-        case 2: markovSim.m_lateralGradationType = LateralGradationType::HEAD_AND_TAIL_TRANSIOGRAMS_AT_RANDOM; break;
-        case 3: markovSim.m_lateralGradationType = LateralGradationType::USE_GRADATIONAL_FIELD; break;
-    }
     markovSim.m_gradationField                = m_gradationalFieldVarSelector->getSelectedVariable();
-    markovSim.m_LVAazimuth                    = m_LVAazVarSelector->getSelectedVariable();
-    markovSim.m_LVAsemiMajorAxis              = m_LVAsemiMajorAxisVarSelector->getSelectedVariable();
-    markovSim.m_LVAsemiMinorAxis              = m_LVAsemiMinorAxisVarSelector->getSelectedVariable();
     for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
         markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
     markovSim.m_tauFactorForTransiography     = ui->dblSpinTauTransiography->value();
