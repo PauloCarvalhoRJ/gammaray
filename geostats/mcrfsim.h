@@ -40,7 +40,7 @@ enum class ProbabilitySource : unsigned int {
  * of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to generate its
  * random path and Monte Carlo draw.
  *
- * ATTENTION: The methods named *MT() run from multiple threads.
+ * ATTENTION: The methods named *MT() are called from multiple threads.
  *
  * REF: Markov Chai Random Fields for Estimation of Categorical Variables.
  *      Weidong Li, Math Geol (2007), 39: 321-335
@@ -52,37 +52,34 @@ class MCRFSim
 public:
     MCRFSim();
 
+    /**
+     * \defgroup MCRFSimParameters The simulation parameters.
+     */
+    /*@{*/
     /** The categorical attribute to simulate. */
     Attribute* m_atPrimary;
-
     /** The simulation grid. */
     CartesianGrid* m_cgSim;
-
     /** The PDF with the target global distribution of facies. */
     CategoryPDF* m_pdf;
-
     /** The vertical transiogram model. */
     VerticalTransiogramModel* m_transiogramModel;
-
     /** The optional attribute of the simulation grid that contains the gradation field. See documentation of the LateralGradationType enum. */
     Attribute* m_gradationField;
-
     /** The optional probability fields (attributes of the simulation grid).
      * An empty vector means no probability field will be used.  Otherwise, the fields must match the number and order
      * of categories as present in the m_atPrimary's CategoryDefinition object.
      */
     std::vector< Attribute* > m_probFields;
-
     /** The Tau factor for the probabilities given by the transiogram model. */
     double m_tauFactorForTransiography;
-
     /** The Tau factor for the probabilities given by the secondary data. */
     double m_tauFactorForProbabilityFields;
-
     /** The common simulation parameters (e.g. random seed number, number of realizations, search parameters, etc.) */
     CommonSimulationParameters* m_commonSimulationParameters;
+    /*@}*/
 
-    /** Runs the algorithm.  If false is returned, the call failed.  Call getLastError() to obtain the reasons. */
+    /** Runs the algorithm.  If false is returned, the simulation failed.  Call getLastError() to obtain the reasons. */
     bool run();
 
     /** Returns a text explaining the cause of the last failure during the simulation. */
@@ -101,7 +98,7 @@ public:
      * @param i Topologic coordinate of the cell to simulate.
      * @param j Topologic coordinate of the cell to simulate.
      * @param k Topologic coordinate of the cell to simulate.
-     * @param simulatedData Pointer to the realization data so it is possible to retrieve the previous
+     * @param simulatedData Pointer to the realization data so it is possible to retrieve the previously
      *                      simulated values.
      */
     double simulateOneCellMT( uint i, uint j , uint k, const spectral::array& simulatedData ) const;
@@ -113,41 +110,66 @@ public:
 
 private:
 
+    /** The description of the cause of the last failure during simulation. */
     QString m_lastError;
 
+    //!@{
+    //! Objects used in the progress bar updating during multithreaded execution.
     std::mutex m_mutexMCRF;
     QProgressDialog* m_progressDialog;
     ulong m_progress;
+    //!@}
 
+    /** The no-data-value as a double value to avoid unnecessary iterative calls to DataFile::getNoDataValue*(). */
     double m_simGridNDV;
 
+    /** The set of simulated data.  Each spectral::array object is a string of doubles that matches the
+     * scan order of the simulation grid.
+     */
     std::vector< spectral::arrayPtr > m_realizations;
 
+    //!@{
+    //! The search strategies for the primary data and the simulation grid.
     SearchStrategyPtr m_searchStrategyPrimary;
     SearchStrategyPtr m_searchStrategySimGrid;
+    //!@}
 
+    //!@{
+    //! The spatial indexes for the primary data and the simulation grid.
     std::shared_ptr<SpatialIndex> m_spatialIndexOfPrimaryData;
     std::shared_ptr<SpatialIndex> m_spatialIndexOfSimGrid;
+    //!@}
 
+    /** An enum value to avoid iterative calls to slow File::getFileType(). */
     PrimaryDataType m_primaryDataType;
 
+    /** The input data. */
     DataFile* m_primaryDataFile;
 
+    /** The Tau Model used to integrate different sources of facies probabilities. */
     TauModelPtr m_tauModel;
 
+    /** Returns whether the simulation parameters are valid and consistent. */
     bool isOKtoRun();
 
+    /** Returns whether the simulation will use collocated facies probability fields. */
     bool useSecondaryData() const;
 
+    /** Causes the progress window to repaint (slows down execution if called many times unnecessarily). */
     void updateProgessUI();
 
     /** Returns a container with the primary data samples around the estimation cell to be used in the estimation.
-     * The resulting collection depends on the SearchStrategy object set.  Returns an empty object if any
+     * The resulting collection depends on the SearchStrategy object set for the primary data.  Returns an empty object if any
      * required parameter for the search to work (e.g. input data) is missing.  The data cells are ordered
      * by their distance to the passed simulation cell.
      */
     DataCellPtrMultiset getSamplesFromPrimaryMT( const GridCell& simulationCell ) const;
 
+    /** Returns a container with the simulation grid cells around the estimation cell.
+     * The resulting collection depends on the SearchStrategy object set for the simulation grid.  Returns an empty object if any
+     * required parameter for the search to work is missing.  The data cells are ordered
+     * by their distance to the passed simulation cell.
+     */
     DataCellPtrMultiset getNeighboringSimGridCellsMT( const GridCell& simulationCell ) const;
 };
 
