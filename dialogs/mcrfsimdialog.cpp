@@ -4,6 +4,7 @@
 #include <QDragEnterEvent>
 #include <QMimeData>
 #include <QMessageBox>
+#include <thread> //for std::thread::hardware_concurrency()
 
 #include "domain/application.h"
 #include "domain/projectcomponent.h"
@@ -76,6 +77,9 @@ MCRFSimDialog::MCRFSimDialog(QWidget *parent) :
     //if the desired sample file happens to be the first one in the list.
     m_simGridSelector->onSelection( 0 );
 
+    //init the spin box for the number of threads with the number of logical processors
+    ui->spinNumberOfThreads->setValue( std::thread::hardware_concurrency() );
+
     onRemakeProbabilityFieldsCombos();
 }
 
@@ -144,16 +148,18 @@ void MCRFSimDialog::onRun()
 {
     //------------------------------------------------ Build a MCRFSim object ----------------------------------------------------------------
     MCRFSim markovSim;
-    markovSim.m_atPrimary                     = m_primVarSelector->getSelectedVariable();
-    markovSim.m_cgSim                         = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
-    markovSim.m_pdf                           = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
-    markovSim.m_transiogramModel              = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
-    markovSim.m_gradationField                = m_gradationalFieldVarSelector->getSelectedVariable();
+    markovSim.m_atPrimary                      = m_primVarSelector->getSelectedVariable();
+    markovSim.m_cgSim                          = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
+    markovSim.m_pdf                            = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
+    markovSim.m_transiogramModel               = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
+    markovSim.m_gradationField                 = m_gradationalFieldVarSelector->getSelectedVariable();
     for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
         markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
-    markovSim.m_tauFactorForTransiography     = ui->dblSpinTauTransiography->value();
-    markovSim.m_tauFactorForProbabilityFields = ui->dblSpinTauSecondary->value();
-    markovSim.m_commonSimulationParameters    = m_commonSimulationParameters;
+    markovSim.m_tauFactorForTransiography      = ui->dblSpinTauTransiography->value();
+    markovSim.m_tauFactorForProbabilityFields  = ui->dblSpinTauSecondary->value();
+    markovSim.m_commonSimulationParameters     = m_commonSimulationParameters;
+    markovSim.m_invertGradationFieldConvention = ui->chkInvertGradationFieldConvention->isChecked();
+    markovSim.m_maxNumberOfThreads             = ui->spinNumberOfThreads->value();
     //----------------------------------------------------------------------------------------------------------------------------------------
 
     if( ! markovSim.run() ){

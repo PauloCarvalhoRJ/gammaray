@@ -77,6 +77,10 @@ public:
     double m_tauFactorForProbabilityFields;
     /** The common simulation parameters (e.g. random seed number, number of realizations, search parameters, etc.) */
     CommonSimulationParameters* m_commonSimulationParameters;
+    /** Sets whether the algorithm should invert the gradation field convention. */
+    bool m_invertGradationFieldConvention;
+    /** Sets the maximum number of threads the simulation will execute in. */
+    uint m_maxNumberOfThreads;
     /*@}*/
 
     /** Runs the algorithm.  If false is returned, the simulation failed.  Call getLastError() to obtain the reasons. */
@@ -171,6 +175,7 @@ private:
      * by their distance to the passed simulation cell.
      */
     DataCellPtrMultiset getNeighboringSimGridCellsMT( const GridCell& simulationCell ) const;
+
 };
 
 #endif // MCRFSIM_H

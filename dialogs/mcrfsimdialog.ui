@@ -284,6 +284,13 @@
        </layout>
       </widget>
      </item>
+     <item>
+      <widget class="QCheckBox" name="chkInvertGradationFieldConvention">
+       <property name="text">
+        <string>Invert lateral gradation field convention</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -398,6 +405,23 @@
        <property name="icon">
         <iconset resource="../resources.qrc">
          <normaloff>:/icons32/setting32</normaloff>:/icons32/setting32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>number of execution threads:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSpinBox" name="spinNumberOfThreads">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="value">
+        <number>1</number>
        </property>
       </widget>
      </item>

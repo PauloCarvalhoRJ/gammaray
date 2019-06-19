@@ -23,6 +23,7 @@
 #include <QProgressDialog>
 
 MCRFSim::MCRFSim() :
+    //---------simulation parameters----------------
     m_atPrimary( nullptr),
     m_cgSim( nullptr ),
     m_pdf( nullptr ),
@@ -32,6 +33,9 @@ MCRFSim::MCRFSim() :
     m_tauFactorForTransiography( 1.0 ),
     m_tauFactorForProbabilityFields( 1.0 ),
     m_commonSimulationParameters( nullptr ),
+    m_invertGradationFieldConvention( false ),
+    m_maxNumberOfThreads( 1 ),
+    //------other member variables--------------------
     m_progressDialog( nullptr ),
     m_spatialIndexOfPrimaryData( new SpatialIndex() ),
     m_spatialIndexOfSimGrid( new SpatialIndex() ),
@@ -163,6 +167,12 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
     //make a local copy of the Tau Model (this is potentially a multi-threaded code)
     TauModel tauModelCopy( *m_tauModel );
 
+    //get relevant information of the simulation cell
+    uint simCellLinearIndex           = m_cgSim->IJKtoIndex( i, j, k );
+    double simCellZ                   = m_cgSim->getDataSpatialLocation( simCellLinearIndex, CartesianCoord::Z );
+    double simCellGradationFieldValue = m_cgSim->dataIJKConst( m_gradationField->getAttributeGEOEASgivenIndex()-1,
+                                                         i, j, k );
+
     //get the probabilities from the global PDF, they're the marginal
     //probabilities for the Tau Model
     for( int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex )
@@ -179,19 +189,45 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
     //for each grid cells found in the search neighborhood
     DataCellPtrMultiset::iterator itSimGridCells = vNeighboringSimGridCells.begin();
     for( uint i = 0; i < vNeighboringSimGridCells.size(); ++i, ++itSimGridCells){
-        DataCellPtr dataCell = *itSimGridCells;
+        DataCellPtr neighborDataCell = *itSimGridCells;
         //we know the data cell is a grid cell
-        const GridCell* gridCellAspect = dynamic_cast<GridCell*>(dataCell.get());
+        const GridCell* neighborGridCellAspect = dynamic_cast<GridCell*>(neighborDataCell.get());
+
+        //get the topological coordinates of the neighnoring cell
+        uint neighI = neighborGridCellAspect->_indexIJK._i;
+        uint neighJ = neighborGridCellAspect->_indexIJK._j;
+        uint neighK = neighborGridCellAspect->_indexIJK._k;
 
         //get the realization value in the neighboring cell (may be NDV)
-        double realizationValue = simulatedData( gridCellAspect->_indexIJK._i,
-                                                 gridCellAspect->_indexIJK._j,
-                                                 gridCellAspect->_indexIJK._k );
+        double realizationValue = simulatedData( neighI, neighJ, neighK );
 
         //if there is a previously simulated data in the neighboring cell
         // DataFile::isNDV() is non-const and has a slow string-to-double conversion
         if( ! Util::almostEqual2sComplement( m_simGridNDV, realizationValue, 1 ) ){
             //To preserve Markovian property, we cannot use data in the "future".
+            bool isInMarkovFuture = false;
+            {
+                isInMarkovFuture = isInMarkovFuture || ( neighK > k ); // a grid cell above the current cell is considered "future"
+                double neighborGradationFieldValue = m_cgSim->dataIJKConst( m_gradationField->getAttributeGEOEASgivenIndex()-1,
+                                                                             neighI, neighJ, neighK );
+                //a grid cell ahead in the lateral facies succession is also considered "future"
+                isInMarkovFuture = isInMarkovFuture || ( neighborGradationFieldValue >  simCellGradationFieldValue && ! m_invertGradationFieldConvention );
+                isInMarkovFuture = isInMarkovFuture || ( neighborGradationFieldValue <= simCellGradationFieldValue &&   m_invertGradationFieldConvention );
+            }
+
+            if( ! isInMarkovFuture ){
+                //get the facies code that was simulated in the neighboring cell
+                uint faciesCodeInPreviouslySimulatedData = static_cast< uint >( realizationValue );
+                //compute the resulting succession distance ( vector resulting from vertical separation and
+                // variation in the gradation field - lateral succession separation )
+                double successionDistance = 0.0;
+                {
+                    uint neighborLinearIndex = m_cgSim->IJKtoIndex( neighI, neighJ, neighK );
+                    double verticalSeparation = simCellZ - m_cgSim->getDataSpatialLocation( neighborLinearIndex, CartesianCoord::Z );
+                }
+                //select the set of transiograms in a row of the transiogram model (past-to-future)
+                //corresponding to the
+            }
         }
 
         //TODO: ROAD WORK.
@@ -318,8 +354,9 @@ bool MCRFSim::run()
     //get the number of realizations the user wants to simulate
     uint nRealizations = m_commonSimulationParameters->getNumberOfRealizations();
 
-    //get the number of threads from logical CPUs or number of realizations (whichever is the lowest)
-    unsigned int nThreads = std::min( std::thread::hardware_concurrency(), nRealizations );
+    //get the number of threads from max number of threads set by the user
+    //or number of realizations (whichever is the lowest)
+    unsigned int nThreads = std::min( m_maxNumberOfThreads, nRealizations );
 
     //announce the simulation has begun.
     Application::instance()->logInfo("Commencing MCRF simulation with " + QString::number(nThreads) + " thread(s).");
