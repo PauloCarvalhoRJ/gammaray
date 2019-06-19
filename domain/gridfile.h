@@ -31,6 +31,16 @@ public:
 		return data( dataRow, column );
 	}
 
+    /**
+      * Does the same as dataIJK() but allows to be called with constness.
+      * ATTENTION: Due to constness, it doesn't load the data automatically !!!
+      *            Make sure to call loadData() before !!!
+      */
+    inline double dataIJKConst( uint column, uint i, uint j, uint k ) const {
+        uint dataRow = i + j*m_nI + k*m_nJ*m_nI;
+        return dataConst( dataRow, column );
+    }
+
 	/** Creates a vector of complex numbers with the values taken from data columns.
 	 *  Specify -1 to omit a column, which causes the repective part to be filled with zeros.
 	 *  getArray(-1,-1) returns an array filled with zeroes.  The dimension of the array is that
