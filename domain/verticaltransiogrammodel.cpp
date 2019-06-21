@@ -72,7 +72,7 @@ void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFac
     m_verticalTransiogramsMatrix[headFaciesIndex][tailFaciesIndex] = verticalTransiogramParameters;
 }
 
-CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition()
+CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition() const
 {
     return dynamic_cast<CategoryDefinition*>( Application::instance()
                                                        ->getProject()
@@ -80,30 +80,40 @@ CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition()
                                               ->getChildByName( m_associatedCategoryDefinitionName ) );
 }
 
-uint VerticalTransiogramModel::getFaciesIndex(const QString faciesName)
+uint VerticalTransiogramModel::getFaciesIndex(const QString faciesName) const
 {
     //get the index of the head facies
     int faciesIndex = -1;
-    std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), faciesName );
+    std::vector<QString>::const_iterator it = std::find ( m_faciesNames.cbegin(), m_faciesNames.cend(), faciesName );
     if (it != m_faciesNames.end())
         faciesIndex = it - m_faciesNames.begin();
     return faciesIndex;
 }
 
-double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesIndex, uint toFaciesIndex, double h) const
+double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesCode, uint toFaciesCode, double h) const
 {
-    const std::vector< VTransiogramParameters >& transriogramsRow = m_verticalTransiogramsMatrix[ fromFaciesIndex ];
-    const VTransiogramParameters& transiogram = transriogramsRow[ toFaciesIndex ];
+    try {
 
-    TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
-    if( fromFaciesIndex == toFaciesIndex )
-        transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
+        uint fromFaciesIndex = m_faciesCodeToIndex.at( fromFaciesCode );
+        uint toFaciesIndex   = m_faciesCodeToIndex.at(  toFaciesCode  );
+        const std::vector< VTransiogramParameters >& transriogramsRow = m_verticalTransiogramsMatrix[ fromFaciesIndex ];
+        const VTransiogramParameters& transiogram = transriogramsRow[ toFaciesIndex ];
 
-    return GeostatsUtils::getTransiogramProbability( transiogramType,
-                                                     std::get<0>( transiogram ),
-                                                     h,
-                                                     std::get<1>( transiogram ),
-                                                     std::get<2>( transiogram ) );
+        TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
+        if( fromFaciesCode == toFaciesCode )
+            transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
+
+        return GeostatsUtils::getTransiogramProbability( transiogramType,
+                                                         std::get<0>( transiogram ),
+                                                         h,
+                                                         std::get<1>( transiogram ),
+                                                         std::get<2>( transiogram ) );
+
+    } catch ( std::out_of_range& e ) {
+        assert( false && "VerticalTransiogramModel::getTransitionProbability(): facies code not in m_faciesCodeToIndex. "
+                         "Could not resolve transiogram rol/col index for the given facies code. "
+                         "Perhaps a prior call to VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap() is missing." );
+    }
 }
 
 QIcon VerticalTransiogramModel::getIcon()
@@ -256,6 +266,7 @@ void VerticalTransiogramModel::readFromFS()
             }
         }
         inputFile.close();
+        updateInternalFaciesCodeToIndexMap();
     } else {
         Application::instance()->logError("VerticalTransiogramModel::readFromFS(): file " + getPath() + " not found or is not accessible.");
     }
@@ -265,6 +276,7 @@ void VerticalTransiogramModel::clearLoadedContents()
 {
     m_faciesNames.clear();
     m_verticalTransiogramsMatrix.clear();
+    updateInternalFaciesCodeToIndexMap();
 }
 
 bool VerticalTransiogramModel::isDataFile()
@@ -311,5 +323,18 @@ void VerticalTransiogramModel::addFacies(QString faciesName)
                                static_cast<VTransiogramRange>( 0.0 ),
                                static_cast<VTransiogramSill>( 0.0 ) );
         }
+    }
+
+    updateInternalFaciesCodeToIndexMap();
+}
+
+void VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap()
+{
+    CategoryDefinition* cd = getCategoryDefinition();
+    m_faciesCodeToIndex.clear();
+    for( uint i = 0; i < cd->getCategoryCount(); ++i ){
+        uint faciesIndex = getFaciesIndex( cd->getCategoryName( i ) );
+        uint faciesCode = cd->getCategoryCode( i );
+        m_faciesCodeToIndex.insert( faciesCode, faciesIndex );
     }
 }

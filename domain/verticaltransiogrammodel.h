@@ -52,16 +52,20 @@ public:
      * A null pointer will be returned if the search in the project structure fails for any reason (object is not actually a
      * CategoryDefintion, metadata is missing, etc.).
      */
-    CategoryDefinition* getCategoryDefinition();
+    CategoryDefinition* getCategoryDefinition() const;
 
-    /** Returns the index of a facies given its name.
+    /** Returns the row/col index of a facies given its name.
      * The index is the same for both the rows (head facies) and the columns (tail facies).
      * If the facies name does not exist, it returns -1.
+     * NOTE: this is not necessarily the same index of the category in the refered CategoryDefinition object.
      */
-    uint getFaciesIndex( const QString faciesName );
+    uint getFaciesIndex( const QString faciesName ) const;
 
-    /** Returns the probability of the transition from one facies to another at a given separation h. */
-    double getTransitionProbability( uint fromFaciesIndex, uint toFaciesIndex, double h ) const;
+    /** Returns the probability of the transition from one facies to another at a given separation h.
+     * Make sure all transiography information was loaded wither with the data loading/updating methods
+     * before making queries, otherwise an error followed by a crash will ensue.
+     */
+    double getTransitionProbability( uint fromFaciesCode, uint toFaciesCode, double h ) const;
 
     // ProjectComponent interface
 public:
@@ -94,6 +98,10 @@ private:
      * Default parameters: spheric strcuture, zero range, zero sill.
      */
     void addFacies(QString faciesName);
+
+    /** Internal facies code-to-index for fast index resolution. */
+    std::map< uint, uint > m_faciesCodeToIndex;
+    void updateInternalFaciesCodeToIndexMap();
 };
 
 #endif // VERTICALTRANSIOGRAMMODEL_H
