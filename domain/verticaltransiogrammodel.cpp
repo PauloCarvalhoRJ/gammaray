@@ -3,11 +3,13 @@
 #include "domain/project.h"
 #include "domain/objectgroup.h"
 #include "domain/categorydefinition.h"
+#include "util.h"
+#include "geostats/geostatsutils.h"
 
 #include <cassert>
 #include <QTextStream>
 #include <QFile>
-#include "util.h"
+#include <tuple>
 
 VerticalTransiogramModel::VerticalTransiogramModel(QString path,
                                                    QString associatedCategoryDefinitionName ) :
@@ -45,12 +47,7 @@ void VerticalTransiogramModel::setInfoFromMetadataFile()
 void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFacies, VTransiogramParameters verticalTransiogramParameters)
 {
     //get the index of the head facies
-    int headFaciesIndex = -1;
-    {
-        std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), headFacies );
-        if (it != m_faciesNames.end())
-            headFaciesIndex = it - m_faciesNames.begin();
-    }
+    int headFaciesIndex = getFaciesIndex( headFacies );
 
     //head facies is new
     if( headFaciesIndex < 0 ){
@@ -61,12 +58,7 @@ void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFac
     }
 
     //get the index of the tail facies
-    int tailFaciesIndex = -1;
-    {
-        std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), tailFacies );
-        if (it != m_faciesNames.end())
-            tailFaciesIndex = it - m_faciesNames.begin();
-    }
+    int tailFaciesIndex = getFaciesIndex( tailFacies );
 
     //tail facies is new
     if( tailFaciesIndex < 0 ){
@@ -85,7 +77,33 @@ CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition()
     return dynamic_cast<CategoryDefinition*>( Application::instance()
                                                        ->getProject()
                                                        ->getResourcesGroup()
-                                                       ->getChildByName( m_associatedCategoryDefinitionName ) );
+                                              ->getChildByName( m_associatedCategoryDefinitionName ) );
+}
+
+uint VerticalTransiogramModel::getFaciesIndex(const QString faciesName)
+{
+    //get the index of the head facies
+    int faciesIndex = -1;
+    std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), faciesName );
+    if (it != m_faciesNames.end())
+        faciesIndex = it - m_faciesNames.begin();
+    return faciesIndex;
+}
+
+double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesIndex, uint toFaciesIndex, double h) const
+{
+    const std::vector< VTransiogramParameters >& transriogramsRow = m_verticalTransiogramsMatrix[ fromFaciesIndex ];
+    const VTransiogramParameters& transiogram = transriogramsRow[ toFaciesIndex ];
+
+    TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
+    if( fromFaciesIndex == toFaciesIndex )
+        transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
+
+    return GeostatsUtils::getTransiogramProbability( transiogramType,
+                                                     std::get<0>( transiogram ),
+                                                     h,
+                                                     std::get<1>( transiogram ),
+                                                     std::get<2>( transiogram ) );
 }
 
 QIcon VerticalTransiogramModel::getIcon()

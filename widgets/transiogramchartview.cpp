@@ -105,13 +105,11 @@ void TransiogramChartView::updateModelSeries()
                 //for each separation h
                 double dh = m_hMax / 30.0;
                 for( double h = 0.0; h < m_hMax; h += dh ){
-                    double theorethicalValue;
-                    if( m_type == TransiogramType::AUTO_TRANSIOGRAM )
-                        theorethicalValue = 1.0 - GeostatsUtils::getGamma(
-                                                       VariogramStructureType::SPHERIC, h, m_range, 1.0 - m_sill );
-                    else         //for cross-transiograms
-                        theorethicalValue = GeostatsUtils::getGamma(
-                                                       VariogramStructureType::SPHERIC, h, m_range, m_sill );
+                    double theorethicalValue = GeostatsUtils::getTransiogramProbability( m_type,
+                                                                                         VariogramStructureType::SPHERIC,
+                                                                                         h,
+                                                                                         m_range,
+                                                                                         m_sill );
                     m_seriesTransiogramModel->append( h, theorethicalValue );
                 }
             }

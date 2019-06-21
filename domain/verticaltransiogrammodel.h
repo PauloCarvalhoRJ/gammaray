@@ -21,7 +21,7 @@ typedef std::tuple< VTransiogramStructureType, VTransiogramRange, VTransiogramSi
  *ESF	1,1.2,0.51	1,0.8,0.45	1,1.7,0.33
  *CRT	1,0.7,0.74	1,1.9,0.67	1,2.6,0.19
  *
- *  Each tuple is: <GSLIB model code>,<vertical range>,<sill - normally between 0.0 and 1.0>
+ *  Each tuple is: <GSLIB model code>,<vertical range>,<sill - normally between 0.0 and 1.0 as these values are probabilities>
  */
 
 class VerticalTransiogramModel : public File
@@ -53,6 +53,15 @@ public:
      * CategoryDefintion, metadata is missing, etc.).
      */
     CategoryDefinition* getCategoryDefinition();
+
+    /** Returns the index of a facies given its name.
+     * The index is the same for both the rows (head facies) and the columns (tail facies).
+     * If the facies name does not exist, it returns -1.
+     */
+    uint getFaciesIndex( const QString faciesName );
+
+    /** Returns the probability of the transition from one facies to another at a given separation h. */
+    double getTransitionProbability( uint fromFaciesIndex, uint toFaciesIndex, double h ) const;
 
     // ProjectComponent interface
 public:

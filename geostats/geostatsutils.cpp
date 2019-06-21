@@ -148,6 +148,20 @@ double GeostatsUtils::getGamma(VariogramModel *model, const SpatialLocation &loc
     return result;
 }
 
+double GeostatsUtils::getTransiogramProbability( TransiogramType transiogramType,
+                                                 VariogramStructureType permissiveModel,
+                                                 double h,
+                                                 double range,
+                                                 double contribution )
+{
+    double probabilityValue = 0.0;
+    if( transiogramType == TransiogramType::AUTO_TRANSIOGRAM )
+        probabilityValue = 1.0 - GeostatsUtils::getGamma( permissiveModel, h, range, 1.0 - contribution );
+    else         //for cross-transiograms
+        probabilityValue = GeostatsUtils::getGamma( permissiveModel, h, range, contribution );
+    return probabilityValue;
+}
+
 MatrixNXM<double> GeostatsUtils::makeCovMatrix(DataCellPtrMultiset &samples,
 											   VariogramModel *variogramModel,
 											   double variogramSill,

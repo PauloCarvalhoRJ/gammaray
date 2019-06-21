@@ -12,11 +12,6 @@ namespace QtCharts {
     class QLineSeries;
 }
 
-enum class TransiogramType : int {
-    AUTO_TRANSIOGRAM,
-    CROSS_TRANSIOGRAM
-};
-
 class TransiogramChartView : public QtCharts::QChartView
 {
     Q_OBJECT

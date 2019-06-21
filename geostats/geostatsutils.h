@@ -16,6 +16,10 @@ enum class KrigingType : unsigned {
     OK      /*!< Originary kriging. */
 };
 
+enum class TransiogramType : int {
+    AUTO_TRANSIOGRAM,
+    CROSS_TRANSIOGRAM
+};
 
 /**
  * The GeostatsUtils class contains static utilitary functions common to geostatistics algorithms.
@@ -61,6 +65,20 @@ public:
      * Includes the nugget effet contribution, if any.
      */
 	static double getGamma(VariogramModel* model, const SpatialLocation& locA, const SpatialLocation& locB );
+
+    /**
+     * Returns a facies transition probability as a function of a separation.
+     * @param transiogramType Sets whether it is an auto- or cross-transiogram
+     * @param permissiveModel One of the known variogram models (spheric, gaussian, etc.)
+     * @param h The separation.
+     * @param range The range.
+     * @param contribution The sill.
+     */
+    static double getTransiogramProbability( TransiogramType transiogramType,
+                                             VariogramStructureType permissiveModel,
+                                             double h,
+                                             double range,
+                                             double contribution );
 
     /**
      * Creates a covariance matrix for the given set of samples.
