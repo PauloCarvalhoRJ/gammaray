@@ -171,7 +171,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
     uint simCellLinearIndex           = m_cgSim->IJKtoIndex( i, j, k );
     double simCellZ                   = m_cgSim->getDataSpatialLocation( simCellLinearIndex, CartesianCoord::Z );
     double simCellGradationFieldValue = m_cgSim->dataIJKConst( m_gradationField->getAttributeGEOEASgivenIndex()-1,
-                                                         i, j, k );
+                                                               i, j, k );
 
     //get the probabilities from the global PDF, they're the marginal
     //probabilities for the Tau Model
@@ -198,35 +198,41 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
         uint neighJ = neighborGridCellAspect->_indexIJK._j;
         uint neighK = neighborGridCellAspect->_indexIJK._k;
 
-        //get the realization value in the neighboring cell (may be NDV)
+        //get the realization value (a facies code) in the neighboring cell (may be NDV)
         double realizationValue = simulatedData( neighI, neighJ, neighK );
 
         //if there is a previously simulated data in the neighboring cell
         // DataFile::isNDV() is non-const and has a slow string-to-double conversion
         if( ! Util::almostEqual2sComplement( m_simGridNDV, realizationValue, 1 ) ){
-            //To preserve Markovian property, we cannot use data in the "future".
-            bool isInMarkovFuture = false;
+
+            // get the neighboring cell's gradation field value
+            double neighborGradationFieldValue = m_cgSim->dataIJKConst( m_gradationField->getAttributeGEOEASgivenIndex()-1,
+                                                                         neighI, neighJ, neighK );
+
+            //To preserve Markovian property, we cannot use data ahead in the facies succession.
+            bool isAheadInSuccession = false;
             {
-                isInMarkovFuture = isInMarkovFuture || ( neighK > k ); // a grid cell above the current cell is considered "future"
-                double neighborGradationFieldValue = m_cgSim->dataIJKConst( m_gradationField->getAttributeGEOEASgivenIndex()-1,
-                                                                             neighI, neighJ, neighK );
-                //a grid cell ahead in the lateral facies succession is also considered "future"
-                isInMarkovFuture = isInMarkovFuture || ( neighborGradationFieldValue >  simCellGradationFieldValue && ! m_invertGradationFieldConvention );
-                isInMarkovFuture = isInMarkovFuture || ( neighborGradationFieldValue <= simCellGradationFieldValue &&   m_invertGradationFieldConvention );
+                isAheadInSuccession = isAheadInSuccession || ( neighK > k ); // a grid cell above the current cell is considered ahead (in time)
+                //a grid cell ahead in the lateral facies succession should not be computed (Walther's Law)
+                isAheadInSuccession = isAheadInSuccession || ( ! m_invertGradationFieldConvention && neighborGradationFieldValue >  simCellGradationFieldValue );
+                isAheadInSuccession = isAheadInSuccession || (   m_invertGradationFieldConvention && neighborGradationFieldValue <= simCellGradationFieldValue );
             }
 
-            if( ! isInMarkovFuture ){
+            if( ! isAheadInSuccession ){
                 //get the facies code that was simulated in the neighboring cell
                 uint faciesCodeInPreviouslySimulatedData = static_cast< uint >( realizationValue );
                 //compute the resulting succession distance ( vector resulting from vertical separation and
                 // variation in the gradation field - lateral succession separation )
-                double successionDistance = 0.0;
+                double faciesSuccessionDistance = 0.0;
                 {
                     uint neighborLinearIndex = m_cgSim->IJKtoIndex( neighI, neighJ, neighK );
                     double verticalSeparation = simCellZ - m_cgSim->getDataSpatialLocation( neighborLinearIndex, CartesianCoord::Z );
+                    double lateralSuccessionSeparation = std::abs( neighborGradationFieldValue - simCellGradationFieldValue );
+                    faciesSuccessionDistance = std::sqrt( verticalSeparation*verticalSeparation + lateralSuccessionSeparation*lateralSuccessionSeparation );
                 }
                 //select the set of transiograms in a row of the transiogram model (past-to-future)
-                //corresponding to the
+                //corresponding to the resulting facies succession distance
+
             }
         }
 
