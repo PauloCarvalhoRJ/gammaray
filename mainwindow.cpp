@@ -66,6 +66,7 @@
 #include "dialogs/machinelearningdialog.h"
 #include "dialogs/factorialkrigingdialog.h"
 #include "dialogs/sisimdialog.h"
+#include "dialogs/automaticvarfitdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -513,7 +514,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
-				CartesianGrid* cg = (CartesianGrid*)parent_file;
+                _projectContextMenu->addAction("Automatic variogram fitting", this, SLOT(onAutoVarFit()));
+                CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
@@ -2386,6 +2388,12 @@ void MainWindow::onRequestGrid( const QString name, IJAbstractCartesianGrid *&po
         }
     Application::instance()->logWarn("MainWindow::onRequestGrid(): Cartesian grid named [" + name + "] not found.");
     pointer = nullptr;
+}
+
+void MainWindow::onAutoVarFit()
+{
+    AutomaticVarFitDialog* avfd = new AutomaticVarFitDialog( _right_clicked_attribute );
+    avfd->show();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

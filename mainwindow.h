@@ -199,6 +199,7 @@ private slots:
                             const spectral::array &scaleField,
                             const spectral::array &orientationField );
     void onRequestGrid( const QString name, IJAbstractCartesianGrid*& pointer );
+    void onAutoVarFit();
 
 private:
     /**

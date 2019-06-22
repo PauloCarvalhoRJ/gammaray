@@ -237,7 +237,8 @@ SOURCES += main.cpp\
     imagejockey/gabor/gaborfrequencyazimuthselections.cpp \
     imagejockey/wavelet/wavelettransformdialog.cpp \
     imagejockey/wavelet/waveletutils.cpp \
-    imagejockey/ijvariographicmodel2d.cpp
+    imagejockey/ijvariographicmodel2d.cpp \
+    dialogs/automaticvarfitdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -453,7 +454,8 @@ HEADERS  += mainwindow.h \
     imagejockey/gabor/gaborfrequencyazimuthselections.h \
     imagejockey/wavelet/wavelettransformdialog.h \
     imagejockey/wavelet/waveletutils.h \
-    imagejockey/ijvariographicmodel2d.h
+    imagejockey/ijvariographicmodel2d.h \
+    dialogs/automaticvarfitdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -535,7 +537,8 @@ FORMS    += mainwindow.ui \
     imagejockey/emd/emdanalysisdialog.ui \
     imagejockey/gabor/gaborfilterdialog.ui \
     imagejockey/gabor/gaborscandialog.ui \
-    imagejockey/wavelet/wavelettransformdialog.ui
+    imagejockey/wavelet/wavelettransformdialog.ui \
+    dialogs/automaticvarfitdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
