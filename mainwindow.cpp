@@ -2392,7 +2392,7 @@ void MainWindow::onRequestGrid( const QString name, IJAbstractCartesianGrid *&po
 
 void MainWindow::onAutoVarFit()
 {
-    AutomaticVarFitDialog* avfd = new AutomaticVarFitDialog( _right_clicked_attribute );
+    AutomaticVarFitDialog* avfd = new AutomaticVarFitDialog( _right_clicked_attribute, this );
     avfd->show();
 }
 
