@@ -25,6 +25,12 @@ private:
 
     IJGridViewerWidget* m_gridViewerInput;
     IJGridViewerWidget* m_gridViewerVarmap;
+
+private Q_SLOTS:
+    void onDoWithSAandGD();
+    void onDoWithLSRS();
+    void onDoWithPSO();
+    void onDoWithGenetic();
 };
 
 #endif // AUTOMATICVARFITDIALOG_H

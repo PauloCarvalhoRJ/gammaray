@@ -8,6 +8,7 @@
 #include "spectral/spectral.h"
 
 #include <cassert>
+#include <thread>
 
 AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -23,8 +24,12 @@ AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
 
     this->setWindowTitle( "Automatic variogram model fitting" );
 
+    //display the selected input data names
     File* dataFile = at->getContainingFile();
     ui->lblFileAttribute->setText( dataFile->getName() + "/" + at->getName() );
+
+    //get the number of threads from logical CPUs
+    ui->spinNumberOfThreads->setValue( (int)std::thread::hardware_concurrency() );
 
     // these pointers will be managed by Qt
     m_gridViewerInput = new IJGridViewerWidget( true, false, false );
@@ -90,4 +95,58 @@ AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
 AutomaticVarFitDialog::~AutomaticVarFitDialog()
 {
     delete ui;
+}
+
+void AutomaticVarFitDialog::onDoWithSAandGD()
+{
+    /////-----------------GET USER CONFIGURATIONS-----------------------------------------------------------
+    //.......................Global Parameters................................................
+    // Number of parallel execution threads
+    unsigned int nThreads = ui->spinNumberOfThreads->value();
+    // Number of variogram structures to fit.
+    int m = ui->spinNumberOfGeologicalFactors->value();
+    // Intialize the random number generator with the same seed
+    std::srand ((unsigned)ui->spinSeed->value());
+    //...................................Annealing Parameters.................................
+    // Intial temperature.
+    double f_Tinitial = ui->spinInitialTemperature->value();
+    // Final temperature.
+    double f_Tfinal = ui->spinFinalTemperature->value();
+    // Max number of SA steps.
+    int i_kmax = ui->spinMaxStepsSA->value();
+    /*Factor used to control the size of the random state “hop”.  For example, if the maximum “hop” must be
+     10% of domain size, set 0.1.  Small values (e.g. 0.001) result in slow, but more accurate convergence.
+     Large values (e.g. 100.0) covers more space faster, but falls outside the domain are more frequent,
+     resulting in more re-searches due to more invalid parameter value penalties. */
+    double f_factorSearch = ui->spinMaxHopFactor->value();
+    //........................Gradient Descent Parameters.....................................
+    // Max number of GD steps
+    int maxNumberOfOptimizationSteps = ui->spinMaxSteps->value();
+    // User-given epsilon (useful for numerical calculus).
+    double epsilon = std::pow(10, ui->spinLogEpsilon->value() );
+    // Alpha is the factor by which the gradient value is multiplied
+    // a small value prevents overshooting.
+    double initialAlpha = ui->spinInitialAlpha->value();
+    // Alpha is reduced iteratively until a descent is detected (no overshoot)
+    double maxNumberOfAlphaReductionSteps = ui->spinMaxStepsAlphaReduction->value();
+    // GD stops after two consecutive steps yield two objective function values whose
+    // difference is less than this value.
+    double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
+    /////----------------END OF USER CONFIGURATIONS---------------------------------------------------------
+
+}
+
+void AutomaticVarFitDialog::onDoWithLSRS()
+{
+
+}
+
+void AutomaticVarFitDialog::onDoWithPSO()
+{
+
+}
+
+void AutomaticVarFitDialog::onDoWithGenetic()
+{
+
 }
