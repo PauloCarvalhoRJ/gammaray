@@ -122,7 +122,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QSpinBox" name="spinNumberOfGeologicalFactors">
+       <widget class="QSpinBox" name="spinNumberOfVariogramStructures">
         <property name="minimum">
          <number>1</number>
         </property>
@@ -176,7 +176,7 @@
    <item>
     <widget class="QTabWidget" name="tabMethods">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabInputAndVarmap">
       <attribute name="title">
@@ -490,6 +490,9 @@
       </layout>
      </widget>
      <widget class="QWidget" name="tabLSRS">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <attribute name="title">
        <string>LSRS</string>
       </attribute>
@@ -537,6 +540,9 @@
       </widget>
      </widget>
      <widget class="QWidget" name="tabPSO">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <attribute name="title">
        <string>PSO</string>
       </attribute>
@@ -584,6 +590,9 @@
       </widget>
      </widget>
      <widget class="QWidget" name="tabGenetic">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <attribute name="title">
        <string>Genetic</string>
       </attribute>
