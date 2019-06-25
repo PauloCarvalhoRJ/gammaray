@@ -60,7 +60,7 @@ public:
     void setTauFactor( unsigned int sourceIndex,
                        double tauFactor );
 
-    double getProbability( unsigned int categoryIndex );
+    double getFinalProbability( unsigned int categoryIndex ) const;
 
 private:
     unsigned int m_nCategories;

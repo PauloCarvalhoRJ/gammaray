@@ -28,7 +28,7 @@ void TauModel::setTauFactor(unsigned int sourceIndex,
     m_TauFactors[sourceIndex] = tauFactor;
 }
 
-double TauModel::getProbability(unsigned int categoryIndex)
+double TauModel::getFinalProbability(unsigned int categoryIndex) const
 {
     //get marginal ratio
     double pa = m_probsMarginal[ categoryIndex ];
