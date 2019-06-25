@@ -18,17 +18,17 @@
 #include "util.h"
 
 #include <thread>
-#include <random>
 #include <QApplication>
 #include <QProgressDialog>
 
 MCRFSim::MCRFSim() :
     //---------simulation parameters----------------
     m_atPrimary( nullptr),
+    m_gradationFieldOfPrimaryData( nullptr ),
     m_cgSim( nullptr ),
     m_pdf( nullptr ),
     m_transiogramModel( nullptr ),
-    m_gradationField( nullptr ),
+    m_gradationFieldOfSimGrid( nullptr ),
     m_probFields( std::vector< Attribute*>() ),
     m_tauFactorForTransiography( 1.0 ),
     m_tauFactorForProbabilityFields( 1.0 ),
@@ -50,6 +50,11 @@ bool MCRFSim::isOKtoRun()
         return false;
     }
 
+    if( ! m_gradationFieldOfPrimaryData ){
+        m_lastError = "Gradation field value in input data not provided.";
+        return false;
+    }
+
     if( ! m_cgSim ){
         m_lastError = "Simulation grid not provided.";
         return false;
@@ -62,22 +67,22 @@ bool MCRFSim::isOKtoRun()
         m_lastError = "Global PDF not provided.";
         return false;
     } else {
-        DataFile* dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
-        if( ! dfPrimary ){
+        m_dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
+        if( ! m_dfPrimary ){
             m_lastError = "The file of input categorical variable is not a DataFile object.";
             return false;
         } else {
-            m_primaryDataFile = dfPrimary;
-            if( dfPrimary->getFileType() == "POINTSET" )
+            m_primaryDataFile = m_dfPrimary;
+            if( m_dfPrimary->getFileType() == "POINTSET" )
                 m_primaryDataType = PrimaryDataType::POINTSET;
-            if( dfPrimary->getFileType() == "CARTESIANGRID" )
+            if( m_dfPrimary->getFileType() == "CARTESIANGRID" )
                 m_primaryDataType = PrimaryDataType::CARTESIANGRID;
-            if( dfPrimary->getFileType() == "GEOGRID" )
+            if( m_dfPrimary->getFileType() == "GEOGRID" )
                 m_primaryDataType = PrimaryDataType::GEOGRID;
-            if( dfPrimary->getFileType() == "SEGMENTSET" )
+            if( m_dfPrimary->getFileType() == "SEGMENTSET" )
                 m_primaryDataType = PrimaryDataType::SEGMENTSET;
         }
-        CategoryDefinition* cdOfPrimData = dfPrimary->getCategoryDefinition( m_atPrimary );
+        CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
         if( ! cdOfPrimData ){
             m_lastError = "Category definition of input variable not found (nullptr).";
             return false;
@@ -97,8 +102,7 @@ bool MCRFSim::isOKtoRun()
         m_lastError = "Vertical transiogram model not provided.";
         return false;
     } else {
-        DataFile* dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
-        CategoryDefinition* cdOfPrimData = dfPrimary->getCategoryDefinition( m_atPrimary );
+        CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
         CategoryDefinition* cdOfTransiogramModel = m_transiogramModel->getCategoryDefinition();
         if( ! cdOfTransiogramModel ){
             m_lastError = "Category definition of vertical transiogram model not found (nullptr).";
@@ -110,14 +114,14 @@ bool MCRFSim::isOKtoRun()
         }
     }
 
-    if( ! m_gradationField ){
-        m_lastError = "Use of a gradation field is required to stablish a correlation between vertical (time) and lateral facies succession in 3D Markov Chain.";
+    if( ! m_gradationFieldOfSimGrid ){
+        m_lastError = "Use of a gradation field in the simulation grid is required to stablish a correlation"
+                      " between vertical (time) and lateral facies succession in 3D Markov Chain.";
         return false;
     }
 
     if( useSecondaryData() ){
-        DataFile* dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
-        CategoryDefinition* cdOfPrimData = dfPrimary->getCategoryDefinition( m_atPrimary );
+        CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
         int nProbFields = m_probFields.size();
         int nCategories = cdOfPrimData->getCategoryCount();
         if( nProbFields != nCategories ){
@@ -147,7 +151,8 @@ bool MCRFSim::useSecondaryData() const
     return ! m_probFields.empty();
 }
 
-double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array& simulatedData ) const
+double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
+                                  std::mt19937 &randomNumberGenerator, const spectral::array& simulatedData ) const
 {
 
     //get the facies set to be simulated
@@ -170,7 +175,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
     //get relevant information of the simulation cell
     uint simCellLinearIndex           = m_cgSim->IJKtoIndex( i, j, k );
     double simCellZ                   = m_cgSim->getDataSpatialLocation( simCellLinearIndex, CartesianCoord::Z );
-    double simCellGradationFieldValue = m_cgSim->dataIJKConst( m_gradationField->getAttributeGEOEASgivenIndex()-1,
+    double simCellGradationFieldValue = m_cgSim->dataIJKConst( m_gradationFieldOfSimGrid->getAttributeGEOEASgivenIndex()-1,
                                                                i, j, k );
 
     //get the probabilities from the global PDF, they're the marginal
@@ -178,15 +183,65 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
     for( int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex )
         tauModelCopy.setMarginalProbability( categoryIndex, m_pdf->get2ndValue( categoryIndex ) );
 
-    //for each primary datum found in the search neighborhood
-    DataCellPtrMultiset::iterator itSamples = vSamplesPrimary.begin();
-    for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSamples){
 
-        //TODO: ROAD WORK.
+    //To compute the facies probabilities for the Monte Carlo draw we only need to collect the codes of the
+    //facies found in the search neighborhood along with their distances to the simulation cell.
+    //the facies codes and distances are taken from the primary data and the previously simulated cells
+    //found in search neighborhood
+    typedef double FaciesCodeFrom;
+    typedef double SuccessionSeparation;
+    std::vector< std::pair< FaciesCodeFrom, SuccessionSeparation > > faciesFromCodesAndSuccessionSeparations;
+    faciesFromCodesAndSuccessionSeparations.reserve( m_commonSimulationParameters->getNumberOfSamples() +
+                                                     m_commonSimulationParameters->getNumberOfSimulatedNodesForConditioning() );
 
+    ///======================================== PROCESSING OF EACH PRIMARY DATUM  FOUND IN THE SEARCH NEIGHBORHOOD=============================================
+    DataCellPtrMultiset::iterator itSampleCells = vSamplesPrimary.begin();
+    for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSampleCells){
+        DataCellPtr sampleDataCell = *itSampleCells;
+
+        //get the facies value (it is a double due to DataFile API, but it is an integer value).
+        double sampleFaciesValue = m_dfPrimary->data( sampleDataCell->_dataIndex,
+                                                      m_atPrimary->getAttributeGEOEASgivenIndex()-1 );
+
+        // Sanity check against No-data-values
+        // DataFile::isNDV() is non-const and has a slow string-to-double conversion
+        if( ! Util::almostEqual2sComplement( m_simGridNDV, sampleFaciesValue, 1 ) ){
+
+            // get the sample's gradation field value
+            double sampleGradationValue = m_dfPrimary->data( sampleDataCell->_dataIndex,
+                                                          m_gradationFieldOfPrimaryData->getAttributeGEOEASgivenIndex()-1 );
+
+            //To preserve Markovian property, we cannot use data ahead in the facies succession.
+            bool isAheadInSuccession = false;
+            {
+                isAheadInSuccession = isAheadInSuccession || ( sampleDataCell->_center._z > simCellZ ); // a sample location above the current cell is considered ahead (in time)
+                //a sampple location ahead in the lateral facies succession should not be computed (Walther's Law)
+                isAheadInSuccession = isAheadInSuccession || ( ! m_invertGradationFieldConvention && sampleGradationValue >  simCellGradationFieldValue );
+                isAheadInSuccession = isAheadInSuccession || (   m_invertGradationFieldConvention && sampleGradationValue <= simCellGradationFieldValue );
+            }
+
+            if( ! isAheadInSuccession ){
+                //get the facies code that was simulated in the neighboring cell
+                uint faciesCodeInSample = static_cast< uint >( sampleGradationValue );
+                //compute the resulting succession distance ( vector resulting from vertical separation and
+                // variation in the gradation field - lateral succession separation )
+                double faciesSuccessionDistance = 0.0;
+                {
+                    double verticalSeparation = simCellZ - sampleDataCell->_center._z;
+                    double lateralSuccessionSeparation = std::abs( sampleGradationValue - simCellGradationFieldValue );
+                    faciesSuccessionDistance = std::sqrt( verticalSeparation*verticalSeparation + lateralSuccessionSeparation*lateralSuccessionSeparation );
+                }
+                //Finally, collect the facies code and the succession separation for the ensuing transiogram
+                //query for the facies transition probability
+                faciesFromCodesAndSuccessionSeparations.push_back( { faciesCodeInSample, faciesSuccessionDistance } );
+            }
+
+        } else {
+            Application::instance()->logWarn("MCRFSim::simulateOneCellMT(): Primary data is not supposed to have no-data values.");
+        }
     }
 
-    //for each grid cells found in the search neighborhood
+    ///======================================== PROCESSING OF EACH GRID CELL FOUND IN THE SEARCH NEIGHBORHOOD=============================================
     DataCellPtrMultiset::iterator itSimGridCells = vNeighboringSimGridCells.begin();
     for( uint i = 0; i < vNeighboringSimGridCells.size(); ++i, ++itSimGridCells){
         DataCellPtr neighborDataCell = *itSimGridCells;
@@ -206,7 +261,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
         if( ! Util::almostEqual2sComplement( m_simGridNDV, realizationValue, 1 ) ){
 
             // get the neighboring cell's gradation field value
-            double neighborGradationFieldValue = m_cgSim->dataIJKConst( m_gradationField->getAttributeGEOEASgivenIndex()-1,
+            double neighborGradationFieldValue = m_cgSim->dataIJKConst( m_gradationFieldOfSimGrid->getAttributeGEOEASgivenIndex()-1,
                                                                          neighI, neighJ, neighK );
 
             //To preserve Markovian property, we cannot use data ahead in the facies succession.
@@ -225,22 +280,64 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
                 // variation in the gradation field - lateral succession separation )
                 double faciesSuccessionDistance = 0.0;
                 {
-                    uint neighborLinearIndex = m_cgSim->IJKtoIndex( neighI, neighJ, neighK );
-                    double verticalSeparation = simCellZ - m_cgSim->getDataSpatialLocation( neighborLinearIndex, CartesianCoord::Z );
+                    double verticalSeparation = simCellZ - neighborGridCellAspect->_center._z;
                     double lateralSuccessionSeparation = std::abs( neighborGradationFieldValue - simCellGradationFieldValue );
                     faciesSuccessionDistance = std::sqrt( verticalSeparation*verticalSeparation + lateralSuccessionSeparation*lateralSuccessionSeparation );
                 }
-                //select the set of transiograms in a row of the transiogram model (past-to-future)
-                //corresponding to the resulting facies succession distance
 
+                //Finally, collect the facies code and the succession separation for the ensuing transiogram
+                //query for the facies transition probability
+                faciesFromCodesAndSuccessionSeparations.push_back( { faciesCodeInPreviouslySimulatedData, faciesSuccessionDistance } );
             }
         }
-
-        //TODO: ROAD WORK.
-
     }
 
-    //get the probabilities of facies from secondary data (in simulation grid) for the Tau Model
+
+    //////////////// COMPUTE THE PROBABILITIES OF THIS SIMULATION CELL BEING EACH CANDIDATE FACIES//////////////////////
+    /////// FOR THEORY AND FORMULATION, SEE PROGRAM MANUAL IN THE SECTION "MARKOV CHAIN RANDOM FIELD SIMULATION" ///////
+
+    // A lambda function to reuse the multiplaction operator over all the facies found in
+    // samples and previously simulated cells.
+    const VerticalTransiogramModel& transiogramModel = *m_transiogramModel;
+    auto lambdaMultiplicationProbs = [ faciesFromCodesAndSuccessionSeparations, transiogramModel ] ( uint faciesCodeTo ) {
+        double result = 1.0;
+        std::vector< std::pair< FaciesCodeFrom, SuccessionSeparation > >::const_iterator it =
+                faciesFromCodesAndSuccessionSeparations.cbegin();
+        //iterate over all "from" facies codes, which reside in the primary data samples and previously simulated nodes
+        //found in the search neighborhood
+        for( ; it != faciesFromCodesAndSuccessionSeparations.cend(); ++it ){
+            uint faciesCodeFrom = (*it).first;
+            double h = (*it).second;
+            double probability = transiogramModel.getTransitionProbability( faciesCodeFrom, faciesCodeTo, h );
+            result *= probability;
+        }
+        return result;
+    };
+
+    //compute the denominator (a summation of multiplications) part of the MCRF equation
+    double denominator = 0.0;
+    for( uint iFaciesTo = 0; iFaciesTo < cd->getCategoryCount(); ++iFaciesTo ){
+        //get the "to" facies code
+        uint toFaciesCode = cd->getCategoryCode( iFaciesTo );
+        denominator += lambdaMultiplicationProbs( toFaciesCode );
+    }
+
+    //for each possible facies that can be assigned to the simulation cell
+    for( uint iCandidateFacies = 0; iCandidateFacies < cd->getCategoryCount(); ++iCandidateFacies ){
+        //get the candidate facies code
+        uint candidateFaciesCode = cd->getCategoryCode( iCandidateFacies );
+        //compute the numerator (a multiplication) part of the MCRF equation
+        double numerator = lambdaMultiplicationProbs( candidateFaciesCode );
+        //finaly compute the probability according to transiography (primary data and previously simulated cells)
+        double probabilityFromTransiography = numerator / denominator;
+        //set the probability in the Tau Model
+        tauModelCopy.setProbabilityFromSource( iCandidateFacies,
+                                              static_cast<uint>( ProbabilitySource::FROM_TRANSIOGRAM ),
+                                              probabilityFromTransiography );
+    }
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //get the probabilities of facies from secondary data (collocated in simulation grid) for the Tau Model
     if( useSecondaryData() ){
         //for each category
         for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
@@ -252,6 +349,37 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k, const spectral::array&
         }
     }
 
+    ///====================================MONTE CARLO DRAW=============================================
+
+    //make a cumulative probability function
+    typedef double CumulativeProbability;
+    std::vector< CumulativeProbability > cdf;
+    cdf.reserve( cd->getCategoryCount() );
+    double cumulativeProbability = 0.0;
+    for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
+        cumulativeProbability += tauModelCopy.getFinalProbability( categoryIndex );
+        cdf.push_back( cumulativeProbability );
+    }
+
+    //sanity check
+    double tolerance = 0.1;
+    if( cumulativeProbability + tolerance < 1.0 || cumulativeProbability - tolerance > 1.0 ){
+        return m_simGridNDV;
+    }
+
+    //Draw a cumulative probability from an uniform distribution
+    std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
+    double drawnCumulativeProbability = uniformDistributionBetween0and1( randomNumberGenerator );
+
+    //return the facies code
+    for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount()-1; ++categoryIndex ){
+        if( drawnCumulativeProbability > cdf[ categoryIndex ] && drawnCumulativeProbability <= cdf[ categoryIndex+1 ] )
+            return cd->getCategoryCode( categoryIndex+1 );
+        else if( drawnCumulativeProbability <= cdf[ 0 ] )
+            return cd->getCategoryCode( 0 );
+    }
+
+    //execution is not supposed to reach this point
     return m_simGridNDV;
 }
 
@@ -276,7 +404,7 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
     std::mt19937 randomNumberGenerator;
     randomNumberGenerator.seed( seed );
 
-    //define a uniform distribution
+    //define a uniform distribution between 0 and an integer called RAND_MAX
     std::uniform_int_distribution<long> distribution( 0, RAND_MAX );
 
     //get simulation grid dimensions
@@ -317,7 +445,7 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             uint i, j, k;
             cgSim->indexToIJK( iCellLinearIndex, i, j, k );
             //simulate the cell (attention: may return the simulation grid's no-data value)
-            double catCode = mcrfSim->simulateOneCellMT( i, j, k, *simulatedData );
+            double catCode = mcrfSim->simulateOneCellMT( i, j, k, randomNumberGenerator, *simulatedData );
             //save the value to the data array of the realization
             (*simulatedData)( i, j, k ) = catCode;
             //keep track of simulation progress
@@ -422,15 +550,14 @@ bool MCRFSim::run()
         m_spatialIndexOfPrimaryData->clear();
         {
             //for the primary data
-            DataFile* dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
-            if( dfPrimary->getFileType() == "POINTSET" ){
-                PointSet* psPrimary = dynamic_cast<PointSet*>( dfPrimary );
+            if( m_dfPrimary->getFileType() == "POINTSET" ){
+                PointSet* psPrimary = dynamic_cast<PointSet*>( m_dfPrimary );
                 m_spatialIndexOfPrimaryData->fill( psPrimary, m_cgSim->getDX() ); //use cell size as tolerance
-            } else if (dfPrimary->getFileType() == "SEGMENTSET") {
-                SegmentSet* ssPrimary = dynamic_cast<SegmentSet*>( dfPrimary );
+            } else if (m_dfPrimary->getFileType() == "SEGMENTSET") {
+                SegmentSet* ssPrimary = dynamic_cast<SegmentSet*>( m_dfPrimary );
                 m_spatialIndexOfPrimaryData->fill( ssPrimary, m_cgSim->getDX() ); //use cell size as tolerance
             } else {
-                m_lastError = "Error building spatial indexes: primary data of type " + dfPrimary->getFileType() + " are not currently supported.";
+                m_lastError = "Error building spatial indexes: primary data of type " + m_dfPrimary->getFileType() + " are not currently supported.";
                 return false;
             }
         }

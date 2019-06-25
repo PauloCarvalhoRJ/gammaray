@@ -29,6 +29,7 @@ private:
     //------- pointers managed by Qt --------------
     FileSelectorWidget* m_primFileSelector;
     VariableSelector* m_primVarSelector;
+    VariableSelector* m_primGradationValueSelector;
     CartesianGridSelector* m_simGridSelector;
     FileSelectorWidget* m_verticalTransiogramSelector;
     FileSelectorWidget* m_globalPDFSelector;

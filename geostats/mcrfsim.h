@@ -4,6 +4,7 @@
 #include <QString>
 #include <vector>
 #include <mutex>
+#include <random>
 
 #include "spectral/spectral.h"
 #include "geostats/searchstrategy.h"
@@ -58,14 +59,20 @@ public:
     /*@{*/
     /** The categorical attribute to simulate. */
     Attribute* m_atPrimary;
+    /** The attribute of the input data set that contains the gradation field values.  See the program manual for
+     *  detailed explanation on the role of the gradation field. */
+    Attribute* m_gradationFieldOfPrimaryData;
+    /** The primary data set. */
+    DataFile* m_dfPrimary;
     /** The simulation grid. */
     CartesianGrid* m_cgSim;
     /** The PDF with the target global distribution of facies. */
     CategoryPDF* m_pdf;
     /** The vertical transiogram model. */
     VerticalTransiogramModel* m_transiogramModel;
-    /** The optional attribute of the simulation grid that contains the gradation field. See documentation of the LateralGradationType enum. */
-    Attribute* m_gradationField;
+    /** The attribute of the simulation grid that contains the gradation field.  See the program manual for
+     *  detailed explanation on the role of the gradation field. */
+    Attribute* m_gradationFieldOfSimGrid;
     /** The optional probability fields (attributes of the simulation grid).
      * An empty vector means no probability field will be used.  Otherwise, the fields must match the number and order
      * of categories as present in the m_atPrimary's CategoryDefinition object.
@@ -102,10 +109,12 @@ public:
      * @param i Topologic coordinate of the cell to simulate.
      * @param j Topologic coordinate of the cell to simulate.
      * @param k Topologic coordinate of the cell to simulate.
+     * @param randomNumberGenerator The random number generator ( one per thread is advisable ).
      * @param simulatedData Pointer to the realization data so it is possible to retrieve the previously
      *                      simulated values.
      */
-    double simulateOneCellMT( uint i, uint j , uint k, const spectral::array& simulatedData ) const;
+    double simulateOneCellMT( uint i, uint j , uint k,
+                              std::mt19937& randomNumberGenerator, const spectral::array& simulatedData ) const;
 
     /** Sets or increases the current simulation progress counter to the given ammount.
      * Mind that this function updates a progress bar, which is a costly operation.

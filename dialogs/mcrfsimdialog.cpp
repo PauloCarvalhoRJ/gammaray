@@ -52,6 +52,11 @@ MCRFSimDialog::MCRFSimDialog(QWidget *parent) :
     connect( m_primVarSelector,  SIGNAL(currentIndexChanged(int)),
              this,               SLOT(onPrimaryVariableChanged()) );
 
+    m_primGradationValueSelector = new VariableSelector();
+    ui->frmPrimGradationValue->layout()->addWidget( m_primGradationValueSelector );
+    connect( m_primFileSelector,           SIGNAL(dataFileSelected(DataFile*)),
+             m_primGradationValueSelector, SLOT(onListVariables(DataFile*))  );
+
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
@@ -149,10 +154,11 @@ void MCRFSimDialog::onRun()
     //------------------------------------------------ Build a MCRFSim object ----------------------------------------------------------------
     MCRFSim markovSim;
     markovSim.m_atPrimary                      = m_primVarSelector->getSelectedVariable();
+    markovSim.m_gradationFieldOfPrimaryData    = m_primGradationValueSelector->getSelectedVariable();
     markovSim.m_cgSim                          = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
     markovSim.m_pdf                            = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
     markovSim.m_transiogramModel               = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
-    markovSim.m_gradationField                 = m_gradationalFieldVarSelector->getSelectedVariable();
+    markovSim.m_gradationFieldOfSimGrid                 = m_gradationalFieldVarSelector->getSelectedVariable();
     for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
         markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
     markovSim.m_tauFactorForTransiography      = ui->dblSpinTauTransiography->value();
