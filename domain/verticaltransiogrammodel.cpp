@@ -335,6 +335,6 @@ void VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap()
     for( uint i = 0; i < cd->getCategoryCount(); ++i ){
         uint faciesIndex = getFaciesIndex( cd->getCategoryName( i ) );
         uint faciesCode = cd->getCategoryCode( i );
-        m_faciesCodeToIndex.insert( faciesCode, faciesIndex );
+        m_faciesCodeToIndex.insert( { faciesCode, faciesIndex } );
     }
 }
