@@ -14,13 +14,16 @@ namespace QtCharts{
 
 class Attribute;
 class FileSelectorWidget;
+class VerticalTransiogramModel;
 
 class TransiogramDialog : public QDialog
 {
     Q_OBJECT
 
 public:
-    explicit TransiogramDialog( QWidget *parent = nullptr );
+    /** If vtm is null, a new Vertical Transiogram Model will be created and added to the Project. */
+    explicit TransiogramDialog( VerticalTransiogramModel* vtm = nullptr,
+                                QWidget *parent = nullptr );
     ~TransiogramDialog();
 
     void dragEnterEvent(QDragEnterEvent *e);
@@ -39,8 +42,13 @@ private:
     int m_vSizePerTransiogram;
     int m_hSizePerTransiogram;
 
+    VerticalTransiogramModel* m_vtm;
+
     void tryToAddAttribute( Attribute* attribute );
     void clearCharts();
+
+    /** This method is called to create the charts for model review (no experimental transiography). */
+    void makeChartsForModelReview();
 
 private Q_SLOTS:
     void onResetAttributesList();
