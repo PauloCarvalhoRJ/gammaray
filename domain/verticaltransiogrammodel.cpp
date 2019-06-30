@@ -72,6 +72,13 @@ void VerticalTransiogramModel::addParameters(QString headFacies, QString tailFac
     m_verticalTransiogramsMatrix[headFaciesIndex][tailFaciesIndex] = verticalTransiogramParameters;
 }
 
+void VerticalTransiogramModel::clearParameters()
+{
+    m_faciesNames.clear();
+    m_verticalTransiogramsMatrix.clear();
+    updateInternalFaciesCodeToIndexMap();
+}
+
 CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition() const
 {
     return dynamic_cast<CategoryDefinition*>( Application::instance()
@@ -80,7 +87,7 @@ CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition() const
                                               ->getChildByName( m_associatedCategoryDefinitionName ) );
 }
 
-uint VerticalTransiogramModel::getFaciesIndex(const QString faciesName) const
+int VerticalTransiogramModel::getFaciesIndex(const QString faciesName) const
 {
     //get the index of the head facies
     int faciesIndex = -1;
@@ -114,6 +121,65 @@ double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesCode, u
                          "Could not resolve transiogram rol/col index for the given facies code. "
                          "Perhaps a prior call to VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap() is missing." );
     }
+}
+
+uint VerticalTransiogramModel::getRowOrColCount() const
+{
+    return m_faciesNames.size();
+}
+
+QColor VerticalTransiogramModel::getColorOfCategory(uint index) const
+{
+    int faciesCode = getCodeOfCategory( index );
+    CategoryDefinition* cd = getCategoryDefinition();
+    int faciesIndex = cd->getCategoryIndex( faciesCode );
+    if( faciesIndex < 0 )
+        Application::instance()->logWarn("VerticalTransiogramModel::getColorOfCategory(): category index -1.  Returning default color.");
+    return cd->getCustomColor( faciesIndex );
+}
+
+QString VerticalTransiogramModel::getNameOfCategory(uint index) const
+{
+    return m_faciesNames[index];
+}
+
+int VerticalTransiogramModel::getCodeOfCategory(uint index) const
+{
+    QString faciesName = getNameOfCategory( index );
+    CategoryDefinition* cd = getCategoryDefinition();
+    return cd->getCategoryCodeByName( faciesName );
+}
+
+double VerticalTransiogramModel::getLongestRange() const
+{
+    double result = -1.0;
+    std::vector< std::vector< VTransiogramParameters > >::const_iterator itTransiogramsLines = m_verticalTransiogramsMatrix.cbegin();
+    for(; itTransiogramsLines != m_verticalTransiogramsMatrix.cend(); ++itTransiogramsLines ){
+        std::vector< VTransiogramParameters >::const_iterator itTransiograms = (*itTransiogramsLines).cbegin();
+        for( ; itTransiograms != (*itTransiogramsLines).end() ; ++itTransiograms) {
+            const VTransiogramParameters& vTransiogramParams = *itTransiograms;
+            double range = std::get<INDEX_OF_RANGE_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( vTransiogramParams ); //range is the second value in the VTransiogramParameters tuple
+            if( range > result )
+                result = range;
+        }
+    }
+    if( result < 0 ){
+        Application::instance()->logWarn( "VerticalTransiogramModel::getLongestRange(): no transiograms.  "
+                                          "Perhaps you forgot a prior call to VerticalTransiogramModel::readFromFS().  "
+                                          "Returning 10.0 by default." );
+        return 10.0;
+    }
+    return result;
+}
+
+double VerticalTransiogramModel::getRange( uint iRow, uint iCol )
+{
+    return std::get<INDEX_OF_RANGE_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] );
+}
+
+double VerticalTransiogramModel::getSill(uint iRow, uint iCol)
+{
+    return std::get<INDEX_OF_SILL_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] );
 }
 
 QIcon VerticalTransiogramModel::getIcon()
@@ -200,70 +266,70 @@ void VerticalTransiogramModel::readFromFS()
         QTextStream in(&inputFile);
         int lineNumber = 0;
         while ( !in.atEnd() ){
-            ++lineNumber;
-            // get the text file line
-            QString line = in.readLine();
-            // tokenize the line
-            std::vector<std::string> tokens = Util::tokenizeWithDoubleQuotes( line.toStdString(), false );
-            // the column headers
-            if( lineNumber == 1 ){
-                for( const std::string& token : tokens )
-                    m_faciesNames.push_back( QString( token.c_str() ) );
-            //the lines, each with a fascies name as their headers
-            } else {
-                int columnNumber = 0;
-                std::vector< VTransiogramParameters > lineOfTransiogramParameters;
-                for( const std::string& token : tokens ){
-                    ++columnNumber;
-                    if( columnNumber == 1){
-                        //sanity check: all facies names in the line headers must exist as column headers
-                        //              AND in the same order.
-                        {
-                            std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), QString( token.c_str() ) );
-                            if (it != m_faciesNames.end()){
-                                int headFaciesIndex = it - m_faciesNames.begin();
-                                if( headFaciesIndex+1 != lineNumber ){
-                                    Application::instance()->logError("VerticalTransiogramModel::readFromFS(): facies " + QString(token.c_str()) +
-                                                                      " in the line header of line " + QString::number(lineNumber) + ""
-                                                                      " found at unexpected position with respect to its position as column header"
-                                                                      " of matrix file " + this->getPath() + ".");
-                                }
-                            } else {
-                                Application::instance()->logError("VerticalTransiogramModel::readFromFS(): facies " + QString(token.c_str()) +
-                                                                  " in the line header of line " + QString::number(lineNumber) + ""
-                                                                  " not found as a column header of matrix file " + this->getPath() + ".");
-                            }
-                        }
-                    }else{
-                        // get the string "<type>,<range>,<sill>"
-                        QString verticalTransiogramParameters = QString( token.c_str() );
-                        // get the tokens as separate itens
-                        QStringList verticalTransiogramParametersTokens = verticalTransiogramParameters.split(',');
-                        //convert the tokens to numeric values
-                        bool ok = false;
-                        VTransiogramStructureType iStructureType;
-                        VTransiogramRange fRange;
-                        VTransiogramSill fSill;
-                        for( int i = 0; i < verticalTransiogramParametersTokens.size(); ++i )
-                            switch ( i ) {
-                            case 0: iStructureType = static_cast<VTransiogramStructureType>( verticalTransiogramParametersTokens[i].toInt( &ok ) ); break;
-                            case 1: fRange = verticalTransiogramParametersTokens[i].toDouble( &ok ); break;
-                            case 2: fSill = verticalTransiogramParametersTokens[i].toDouble( &ok ); break;
-                            }
-                        if( ! ok )
-                            Application::instance()->logError("VerticalTransiogramModel::readFromFS(): conversion to number failed @ line " + QString::number(lineNumber) + ""
-                                                              " of file " + this->getPath() + ".");
-                        //add the newly built tuple of variograph parameyters to the line vector.
-                        lineOfTransiogramParameters.push_back( { iStructureType, fRange, fSill } );
-                    }
-                }
-                if( lineOfTransiogramParameters.size() != m_faciesNames.size() ){
-                    Application::instance()->logWarn("VerticalTransiogramModel::readFromFS(): number of vertical transiograms differs from the "
-                                                     "number of facies names in the header @ line " + QString::number(lineNumber) + ".");
-                }
-                //add the line of transiograms to the outer vector, forming a matrix of vertical transiogram models.
-                m_verticalTransiogramsMatrix.push_back( lineOfTransiogramParameters );
-            }
+//            ++lineNumber;
+//            // get the text file line
+//            QString line = in.readLine();
+//            // tokenize the line
+//            std::vector<std::string> tokens = Util::tokenizeWithDoubleQuotes( line.toStdString(), false );
+//            // the column headers
+//            if( lineNumber == 1 ){
+//                for( const std::string& token : tokens )
+//                    m_faciesNames.push_back( QString( token.c_str() ) );
+//            //the lines, each with a fascies name as their headers
+//            } else {
+//                int columnNumber = 0;
+//                std::vector< VTransiogramParameters > lineOfTransiogramParameters;
+//                for( const std::string& token : tokens ){
+//                    ++columnNumber;
+//                    if( columnNumber == 1){
+//                        //sanity check: all facies names in the line headers must exist as column headers
+//                        //              AND in the same order.
+//                        {
+//                            std::vector<QString>::iterator it = std::find ( m_faciesNames.begin(), m_faciesNames.end(), QString( token.c_str() ) );
+//                            if (it != m_faciesNames.end()){
+//                                int headFaciesIndex = it - m_faciesNames.begin();
+//                                if( headFaciesIndex+1 != lineNumber ){
+//                                    Application::instance()->logError("VerticalTransiogramModel::readFromFS(): facies " + QString(token.c_str()) +
+//                                                                      " in the line header of line " + QString::number(lineNumber) + ""
+//                                                                      " found at unexpected position with respect to its position as column header"
+//                                                                      " of matrix file " + this->getPath() + ".");
+//                                }
+//                            } else {
+//                                Application::instance()->logError("VerticalTransiogramModel::readFromFS(): facies " + QString(token.c_str()) +
+//                                                                  " in the line header of line " + QString::number(lineNumber) + ""
+//                                                                  " not found as a column header of matrix file " + this->getPath() + ".");
+//                            }
+//                        }
+//                    }else{
+//                        // get the string "<type>,<range>,<sill>"
+//                        QString verticalTransiogramParameters = QString( token.c_str() );
+//                        // get the tokens as separate itens
+//                        QStringList verticalTransiogramParametersTokens = verticalTransiogramParameters.split(',');
+//                        //convert the tokens to numeric values
+//                        bool ok = false;
+//                        VTransiogramStructureType iStructureType;
+//                        VTransiogramRange fRange;
+//                        VTransiogramSill fSill;
+//                        for( int i = 0; i < verticalTransiogramParametersTokens.size(); ++i )
+//                            switch ( i ) {
+//                            case 0: iStructureType = static_cast<VTransiogramStructureType>( verticalTransiogramParametersTokens[i].toInt( &ok ) ); break;
+//                            case 1: fRange = verticalTransiogramParametersTokens[i].toDouble( &ok ); break;
+//                            case 2: fSill = verticalTransiogramParametersTokens[i].toDouble( &ok ); break;
+//                            }
+//                        if( ! ok )
+//                            Application::instance()->logError("VerticalTransiogramModel::readFromFS(): conversion to number failed @ line " + QString::number(lineNumber) + ""
+//                                                              " of file " + this->getPath() + ".");
+//                        //add the newly built tuple of variograph parameyters to the line vector.
+//                        lineOfTransiogramParameters.push_back( { iStructureType, fRange, fSill } );
+//                    }
+//                }
+//                if( lineOfTransiogramParameters.size() != m_faciesNames.size() ){
+//                    Application::instance()->logWarn("VerticalTransiogramModel::readFromFS(): number of vertical transiograms differs from the "
+//                                                     "number of facies names in the header @ line " + QString::number(lineNumber) + ".");
+//                }
+//                //add the line of transiograms to the outer vector, forming a matrix of vertical transiogram models.
+//                m_verticalTransiogramsMatrix.push_back( lineOfTransiogramParameters );
+//            }
         }
         inputFile.close();
         updateInternalFaciesCodeToIndexMap();
@@ -335,6 +401,7 @@ void VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap()
     for( uint i = 0; i < cd->getCategoryCount(); ++i ){
         uint faciesIndex = getFaciesIndex( cd->getCategoryName( i ) );
         uint faciesCode = cd->getCategoryCode( i );
-        m_faciesCodeToIndex.insert( { faciesCode, faciesIndex } );
+        if( faciesIndex >= 0)
+            m_faciesCodeToIndex.insert( { faciesCode, faciesIndex } );
     }
 }

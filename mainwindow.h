@@ -24,6 +24,7 @@ class SVDFactor;
 class IJAbstractCartesianGrid;
 class GeoGrid;
 class DataFile;
+class VerticalTransiogramModel;
 
 class MainWindow : public QMainWindow
 {
@@ -279,6 +280,12 @@ private:
       * Creates the dynamic items of sub-menu "Map as".
       */
     void makeMenuMapAs();
+
+    /**
+     * This method is used to create (vtm == nullptr) or review (vtm != nullptr)
+     * an existing vertical transiogram model.
+     */
+    void createOrReviewVerticalTransiogramModel( VerticalTransiogramModel* vtm );
 };
 
 #endif // MAINWINDOW_H

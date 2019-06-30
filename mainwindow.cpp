@@ -77,6 +77,7 @@
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/mcrfsimdialog.h"
 #include "dialogs/lvadatasetdialog.h"
+#include "dialogs/transiogramdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -92,6 +93,7 @@
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/gabor/gaborfilterdialog.h"
 #include "domain/auxiliary/valuestransferer.h"
+#include "domain/verticaltransiogrammodel.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -468,7 +470,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Plot", this, SLOT(onDisplayExperimentalVariogram()));
                 _projectContextMenu->addAction("Fit variogram model...", this, SLOT(onFitVModelToExperimentalVariogram()));
             }
-            if( _right_clicked_file->getFileType() == "VMODEL" ){
+            if( Util::isIn( _right_clicked_file->getFileType(), {"VMODEL","VERTICALTRANSIOGRAMMODEL"} ) ){
                 _projectContextMenu->addAction("Review", this, SLOT(onDisplayVariogramModel()));
             }
             if( _right_clicked_file->getFileType() == "POINTSET" ){
@@ -1233,9 +1235,16 @@ void MainWindow::onFitVModelToExperimentalVariogram()
 
 void MainWindow::onDisplayVariogramModel()
 {
-    //get pointer to the variogram model object right-clicked by the user
-    VariogramModel* vm = (VariogramModel*)_right_clicked_file;
-    this->createOrReviewVariogramModel( vm );
+    if( _right_clicked_file->getFileType() == "VMODEL" ){
+        //get pointer to the variogram model object right-clicked by the user
+        VariogramModel* vm = (VariogramModel*)_right_clicked_file;
+        this->createOrReviewVariogramModel( vm );
+    }
+    if( _right_clicked_file->getFileType() == "VERTICALTRANSIOGRAMMODEL" ){
+        //get pointer to the variogram model object right-clicked by the user
+        VerticalTransiogramModel* vtm = dynamic_cast<VerticalTransiogramModel*>( _right_clicked_file );
+        this->createOrReviewVerticalTransiogramModel( vtm );
+    }
 }
 
 void MainWindow::onCreateVariogramModel()
@@ -3065,6 +3074,12 @@ void MainWindow::makeMenuMapAs()
     }
 }
 
+void MainWindow::createOrReviewVerticalTransiogramModel(VerticalTransiogramModel *vtm)
+{
+    TransiogramDialog* td = new TransiogramDialog( vtm, this );
+    td->show();
+}
+
 void MainWindow::doAddDataFile(const QString filePath )
 {
     if( ! filePath .isEmpty() && Application::instance()->hasOpenProject() ){
@@ -3221,6 +3236,6 @@ void MainWindow::openCokrigingNewcokb3d()
 
 void MainWindow::openTransiography()
 {
-    TransiogramDialog* td = new TransiogramDialog( this );
+    TransiogramDialog* td = new TransiogramDialog( nullptr, this );
     td->show();
 }

@@ -9,6 +9,10 @@ typedef double VTransiogramRange;
 typedef double VTransiogramSill;
 typedef std::tuple< VTransiogramStructureType, VTransiogramRange, VTransiogramSill > VTransiogramParameters;
 
+#define INDEX_OF_STRUCTURE_TYPE_IN_TRANSIOGRAM_PARAMETERS_TUPLE 0
+#define INDEX_OF_RANGE_IN_TRANSIOGRAM_PARAMETERS_TUPLE 1
+#define INDEX_OF_SILL_IN_TRANSIOGRAM_PARAMETERS_TUPLE 2
+
 /**
  * A vertical transiogram model is a file containing the comma-separated tuples of model parameters in
  * a matrix of facies.
@@ -48,24 +52,46 @@ public:
     void addParameters( QString headFacies, QString tailFacies, VTransiogramParameters verticalTransiogramParameters );
 
     /**
+     * Restores this transiogram model to its default state: empty transiogram matrix.
+     */
+    void clearParameters();
+
+    /**
      * Returns the pointer to the CategoryDefinition object whose name matches the name in m_associatedCategoryDefinitionName.
      * A null pointer will be returned if the search in the project structure fails for any reason (object is not actually a
      * CategoryDefintion, metadata is missing, etc.).
      */
     CategoryDefinition* getCategoryDefinition() const;
 
-    /** Returns the row/col index of a facies given its name.
-     * The index is the same for both the rows (head facies) and the columns (tail facies).
-     * If the facies name does not exist, it returns -1.
-     * NOTE: this is not necessarily the same index of the category in the refered CategoryDefinition object.
-     */
-    uint getFaciesIndex( const QString faciesName ) const;
-
     /** Returns the probability of the transition from one facies to another at a given separation h.
      * Make sure all transiography information was loaded wither with the data loading/updating methods
      * before making queries, otherwise an error followed by a crash will ensue.
      */
     double getTransitionProbability( uint fromFaciesCode, uint toFaciesCode, double h ) const;
+
+    /** Returns the number of rows/columns of transiograms in this models.
+     * The number is the same because the transiogram model is necessarily made of
+     * a square matrix of transiograms.
+     */
+    uint getRowOrColCount() const;
+
+    /** Returns the color of the category in the index-th facies of row/col. */
+    QColor getColorOfCategory( uint index ) const;
+
+    /** Returns the name of the category in the index-th facies of row/col. */
+    QString getNameOfCategory( uint index ) const;
+
+    /** Returns the code the category in the index-th facies of row/col. */
+    int getCodeOfCategory( uint index ) const;
+
+    /** Returns the longest range of all transiograms in the model. */
+    double getLongestRange() const;
+
+    /** Returns the range for the transiogram curve in the given row and column of the model. */
+    double getRange( uint iRow, uint iCol );
+
+    /** Returns the sill for the transiogram curve in the given row and column of the model. */
+    double getSill( uint iRow, uint iCol );
 
     // ProjectComponent interface
 public:
@@ -92,6 +118,13 @@ private:
     std::vector<QString> m_faciesNames;
     //outer vector: each line; inner vector: each transiogram model (columns)
     std::vector< std::vector < VTransiogramParameters > > m_verticalTransiogramsMatrix;
+
+    /** Returns the row/col index of a facies given its name.
+     * The index is the same for both the rows (head facies) and the columns (tail facies).
+     * If the facies name does not exist, it returns -1.
+     * NOTE: this is not necessarily the same index of the category in the refered CategoryDefinition object.
+     */
+    int getFaciesIndex( const QString faciesName ) const;
 
     /** Makes room for a new facies with default transiogram parameters in the matrix.
      * The client code must fill them accordingly.
