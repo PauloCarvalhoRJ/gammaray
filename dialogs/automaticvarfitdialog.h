@@ -33,7 +33,7 @@ public:
     double objectiveFunction ( IJAbstractCartesianGrid& gridWithGeometry,
                                const spectral::array &inputGridData,
                                const spectral::array &vectorOfParameters,
-                               const int m ) const;
+                               const int m );
 
 private:
     Ui::AutomaticVarFitDialog *ui;
@@ -64,7 +64,7 @@ private:
     /**
      * Returns the FFT phase map of the input data.
      */
-    spectral::array getInputPhaseMap() const;
+    spectral::array getInputPhaseMap();
 
     /**
      * Displays a series of grids in a dialog.

@@ -14,6 +14,12 @@
 #include <QProgressDialog>
 #include <cassert>
 #include <thread>
+#include <mutex>
+
+/** This is a mutex to restrict access to the FFTW routines from
+ * multiple threads.  Some of its routines are not thread safe.*/
+
+std::mutex myMutexFFTW; //ATTENTION NAME CLASH: there is a variable called mutexFFTW defined somewhere out there.
 
 /**
  * The code for multithreaded gradient vector calculation for objective function.
@@ -181,7 +187,7 @@ spectral::array AutomaticVarFitDialog::generateVariographicSurface(
 double AutomaticVarFitDialog::objectiveFunction( IJAbstractCartesianGrid& gridWithGeometry,
            const spectral::array &inputGridData,
            const spectral::array &vectorOfParameters,
-           const int m ) const {
+           const int m )  {
 
     //get grid parameters
     int nI = gridWithGeometry.getNI();
@@ -193,8 +199,13 @@ double AutomaticVarFitDialog::objectiveFunction( IJAbstractCartesianGrid& gridWi
                                                                        vectorOfParameters,
                                                                        m );
 
+    ///////////////////////////////////////////////////////
+
     //Get input's FFT phase map
     spectral::array inputFFTimagPhase = getInputPhaseMap();
+
+    return 1.0;
+    ///////////////////////////////////////////////////////////
 
     //Apply the principle of the Fourier Integral Method to obtain what would the map be
     //if it actually had the theoretical variogram model
@@ -239,12 +250,15 @@ double AutomaticVarFitDialog::objectiveFunction( IJAbstractCartesianGrid& gridWi
     return sum;
 }
 
-spectral::array AutomaticVarFitDialog::getInputPhaseMap() const
+spectral::array AutomaticVarFitDialog::getInputPhaseMap()
 {
+    std::unique_lock<std::mutex> FFTWlock ( myMutexFFTW, std::defer_lock );
     spectral::arrayPtr inputGridData( m_cg->createSpectralArray( m_at->getAttributeGEOEASgivenIndex()-1 ) );
     spectral::array tmp( *inputGridData );
     spectral::complex_array inputFFT;
-    spectral::foward( inputFFT, tmp );
+    FFTWlock.lock();                //
+    spectral::foward( inputFFT, tmp ); // FFTW crashes when called concurrently
+    FFTWlock.unlock();              //
     spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
     return spectral::imag( inputFFTpolar );
 }
@@ -497,119 +511,119 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
 
         }
 
-        //Update the system's parameters according to gradient descent.
-        double currentF = std::numeric_limits<double>::max();
-        double nextF = 1.0;
-        {
-            double alpha = initialAlpha;
-            //halves alpha until we get a descent (current gradient vector may result in overshooting)
-            int iAlphaReductionStep = 0;
-            for( ; iAlphaReductionStep < maxNumberOfAlphaReductionSteps; ++iAlphaReductionStep ){
-                spectral::array new_vw = vw - gradient * alpha;
-                //Impose domain constraints to the parameters.
-                for( int i = 0; i < new_vw.size(); ++i){
-                    if( new_vw.d_[i] < 0.0 )
-                        new_vw.d_[i] = 0.0;
-                    if( new_vw.d_[i] > 1.0 )
-                        new_vw.d_[i] = 1.0;
-                }
-                currentF = objectiveFunction( *m_cg, *inputData, vw,     m );
-                nextF =    objectiveFunction( *m_cg, *inputData, new_vw, m );
-                if( nextF < currentF ){
-                    vw = new_vw;
-                    break;
-                }
-                alpha /= 2.0;
-            }
-            if( iAlphaReductionStep == maxNumberOfAlphaReductionSteps )
-                Application::instance()->logWarn( "WARNING: reached maximum alpha reduction steps." );
-        }
+//        //Update the system's parameters according to gradient descent.
+//        double currentF = std::numeric_limits<double>::max();
+//        double nextF = 1.0;
+//        {
+//            double alpha = initialAlpha;
+//            //halves alpha until we get a descent (current gradient vector may result in overshooting)
+//            int iAlphaReductionStep = 0;
+//            for( ; iAlphaReductionStep < maxNumberOfAlphaReductionSteps; ++iAlphaReductionStep ){
+//                spectral::array new_vw = vw - gradient * alpha;
+//                //Impose domain constraints to the parameters.
+//                for( int i = 0; i < new_vw.size(); ++i){
+//                    if( new_vw.d_[i] < 0.0 )
+//                        new_vw.d_[i] = 0.0;
+//                    if( new_vw.d_[i] > 1.0 )
+//                        new_vw.d_[i] = 1.0;
+//                }
+//                currentF = objectiveFunction( *m_cg, *inputData, vw,     m );
+//                nextF =    objectiveFunction( *m_cg, *inputData, new_vw, m );
+//                if( nextF < currentF ){
+//                    vw = new_vw;
+//                    break;
+//                }
+//                alpha /= 2.0;
+//            }
+//            if( iAlphaReductionStep == maxNumberOfAlphaReductionSteps )
+//                Application::instance()->logWarn( "WARNING: reached maximum alpha reduction steps." );
+//        }
 
-        //Check the convergence criterion.
-        double ratio = currentF / nextF;
-        if( ratio  < (1.0 + convergenceCriterion) )
-            break;
+//        //Check the convergence criterion.
+//        double ratio = currentF / nextF;
+//        if( ratio  < (1.0 + convergenceCriterion) )
+//            break;
 
-        Application::instance()->logInfo( "F(k)/F(k+1) ratio: " + QString::number( ratio ) );
+//        Application::instance()->logInfo( "F(k)/F(k+1) ratio: " + QString::number( ratio ) );
 
-        if( ! ( iOptStep % 10) ) //to avoid excess calls to processEvents.
-            QCoreApplication::processEvents();
+//        if( ! ( iOptStep % 10) ) //to avoid excess calls to processEvents.
+//            QCoreApplication::processEvents();
     }
     progressDialog.hide();
 
-    //Read the optimized variogram model parameters back to the variographic structures
-    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            variographicEllipses[iStructure].setParameter( iPar, vw[i] );
+//    //Read the optimized variogram model parameters back to the variographic structures
+//    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+//        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+//            variographicEllipses[iStructure].setParameter( iPar, vw[i] );
 
-    //=====================================GET RESULTS========================================
+//    //=====================================GET RESULTS========================================
 
-    //Apply the principle of the Fourier Integral Method
-    //use a variographic map as the magnitudes and the FFT phases of
-    //the original data to a reverse FFT in polar form to achieve a
-    //Factorial Kriging-like separation
-    std::vector< spectral::array > maps;
-    std::vector< std::string > titles;
-    std::vector< bool > shiftFlags;
-    uint nI = m_cg->getNI();
-    uint nJ = m_cg->getNJ();
-    uint nK = m_cg->getNK();
-    for( int iStructure = 0; iStructure < m; ++iStructure ) {
-        //compute the theoretical varmap for one structure
-        spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
-        variographicEllipses[iStructure].addContributionToModelGrid( *m_cg,
-                                                                     oneStructureVarmap,
-                                                                     IJVariogramPermissiveModel::SPHERIC,
-                                                                     true );
+//    //Apply the principle of the Fourier Integral Method
+//    //use a variographic map as the magnitudes and the FFT phases of
+//    //the original data to a reverse FFT in polar form to achieve a
+//    //Factorial Kriging-like separation
+//    std::vector< spectral::array > maps;
+//    std::vector< std::string > titles;
+//    std::vector< bool > shiftFlags;
+//    uint nI = m_cg->getNI();
+//    uint nJ = m_cg->getNJ();
+//    uint nK = m_cg->getNK();
+//    for( int iStructure = 0; iStructure < m; ++iStructure ) {
+//        //compute the theoretical varmap for one structure
+//        spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
+//        variographicEllipses[iStructure].addContributionToModelGrid( *m_cg,
+//                                                                     oneStructureVarmap,
+//                                                                     IJVariogramPermissiveModel::SPHERIC,
+//                                                                     true );
 
-        //collect the theoretical varmap for display
-        maps.push_back( oneStructureVarmap );
-        titles.push_back( QString( "Varmap " + QString::number( iStructure ) ).toStdString() );
-        shiftFlags.push_back( false );
+//        //collect the theoretical varmap for display
+//        maps.push_back( oneStructureVarmap );
+//        titles.push_back( QString( "Varmap " + QString::number( iStructure ) ).toStdString() );
+//        shiftFlags.push_back( false );
 
-        //compute FFT of the theoretical varmap (into polar form)
-        spectral::complex_array oneStructureVarmapFFT( nI, nJ, nK );
-        spectral::array tmp = spectral::shiftByHalf( oneStructureVarmap );
-        spectral::foward( oneStructureVarmapFFT, tmp );
-        spectral::complex_array oneStructureVarmapFFTpolar = spectral::to_polar_form( oneStructureVarmapFFT );
-        spectral::array oneStructureVarmapFFTamplitudes = spectral::real( oneStructureVarmapFFTpolar );
+//        //compute FFT of the theoretical varmap (into polar form)
+//        spectral::complex_array oneStructureVarmapFFT( nI, nJ, nK );
+//        spectral::array tmp = spectral::shiftByHalf( oneStructureVarmap );
+//        spectral::foward( oneStructureVarmapFFT, tmp );
+//        spectral::complex_array oneStructureVarmapFFTpolar = spectral::to_polar_form( oneStructureVarmapFFT );
+//        spectral::array oneStructureVarmapFFTamplitudes = spectral::real( oneStructureVarmapFFTpolar );
 
-        //get the square root of the amplitudes of the varmap FFT
-        spectral::array oneStructureVarmapFFTamplitudesSQRT = oneStructureVarmapFFTamplitudes.sqrt();
+//        //get the square root of the amplitudes of the varmap FFT
+//        spectral::array oneStructureVarmapFFTamplitudesSQRT = oneStructureVarmapFFTamplitudes.sqrt();
 
-        //convert sqrt(varmap) and the phases of the input to rectangular form
-        spectral::complex_array oneStructureFFTpolar = spectral::to_complex_array(
-                                                       oneStructureVarmapFFTamplitudesSQRT,
-                                                       inputFFTimagPhase
-                                                    );
-        spectral::complex_array oneStructureFFT = spectral::to_rectangular_form( oneStructureFFTpolar );
+//        //convert sqrt(varmap) and the phases of the input to rectangular form
+//        spectral::complex_array oneStructureFFTpolar = spectral::to_complex_array(
+//                                                       oneStructureVarmapFFTamplitudesSQRT,
+//                                                       inputFFTimagPhase
+//                                                    );
+//        spectral::complex_array oneStructureFFT = spectral::to_rectangular_form( oneStructureFFTpolar );
 
-        //compute the reverse FFT to get the map corresponding to one structure
-        spectral::array oneStructure( nI, nJ, nK, 0.0 );
-        spectral::backward( oneStructure, oneStructureFFT );
+//        //compute the reverse FFT to get the map corresponding to one structure
+//        spectral::array oneStructure( nI, nJ, nK, 0.0 );
+//        spectral::backward( oneStructure, oneStructureFFT );
 
-        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
-        oneStructure = oneStructure / (double)( nI * nJ * nK );
+//        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+//        oneStructure = oneStructure / (double)( nI * nJ * nK );
 
-        maps.push_back( oneStructure );
-        titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
-        shiftFlags.push_back( false );
-    }
-    ////////////////////////////////////////
-    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
-    for( spectral::array& oneStructure : maps ){
-        variograficSurface += oneStructure;
-    }
-    maps.push_back( variograficSurface );
-    titles.push_back( QString( "variogram model surface" ).toStdString() );
-    shiftFlags.push_back( false );
-    ////////////////////////////////////////
-    ////////////////////////////////////////
-    maps.push_back( inputVarmap );
-    titles.push_back( QString( "Varmap of input" ).toStdString() );
-    shiftFlags.push_back( false );
-    ////////////////////////////////////////
-    displayGrids( maps, titles, shiftFlags );
+//        maps.push_back( oneStructure );
+//        titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
+//        shiftFlags.push_back( false );
+//    }
+//    ////////////////////////////////////////
+//    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
+//    for( spectral::array& oneStructure : maps ){
+//        variograficSurface += oneStructure;
+//    }
+//    maps.push_back( variograficSurface );
+//    titles.push_back( QString( "variogram model surface" ).toStdString() );
+//    shiftFlags.push_back( false );
+//    ////////////////////////////////////////
+//    ////////////////////////////////////////
+//    maps.push_back( inputVarmap );
+//    titles.push_back( QString( "Varmap of input" ).toStdString() );
+//    shiftFlags.push_back( false );
+//    ////////////////////////////////////////
+//    displayGrids( maps, titles, shiftFlags );
 }
 
 void AutomaticVarFitDialog::onDoWithLSRS()
