@@ -8,6 +8,7 @@ class Attribute;
 class CartesianGrid;
 class IJGridViewerWidget;
 class IJAbstractCartesianGrid;
+class IJVariographicStructure2D;
 
 namespace Ui {
 class AutomaticVarFitDialog;
@@ -83,6 +84,13 @@ private:
      */
     spectral::array computeFIM( const spectral::array& gridWithVariographicStructure,
                                 const spectral::array& gridWithFFTphases ) const;
+
+    /** Method called to display a dialog with relevant results from the variogram structures passed.
+     * This method is not particularly useful to any client code.  It is used internally to reuse code.
+     */
+    void displayResults(const std::vector< IJVariographicStructure2D >& variogramStructures ,
+                        const spectral::array &fftPhaseMapOfInput,
+                        const spectral::array &varmapOfInput);
 
 private Q_SLOTS:
     void onDoWithSAandGD();

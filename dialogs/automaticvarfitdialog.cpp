@@ -376,7 +376,8 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
 
         //Give visual feedback to the user (processing may take a while)
         QProgressDialog progressDialog;
-        progressDialog.setRange(0,0);
+        progressDialog.setRange(0, i_kmax);
+        progressDialog.setValue( 0 );
         progressDialog.show();
         progressDialog.setLabelText("Simulated Annealing in progress...");
         QCoreApplication::processEvents();
@@ -429,6 +430,7 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
             }
 
             //Let Qt repaint the GUI
+            progressDialog.setValue( k );
             QCoreApplication::processEvents();
         } //.........................end of main annealing loop.................
 
@@ -446,8 +448,9 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
     //-------------------------------------- GRADIENT DESCENT PART --------------------------------------------
     //---------------------------------------------------------------------------------------------------------
     QProgressDialog progressDialog;
-    progressDialog.setRange(0,0);
+    progressDialog.setRange(0, maxNumberOfOptimizationSteps );
     progressDialog.show();
+    progressDialog.setValue( 0 );
     progressDialog.setLabelText("Gradient Descent in progress...");
     int iOptStep = 0;
     for( ; iOptStep < maxNumberOfOptimizationSteps; ++iOptStep ){
@@ -519,8 +522,10 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
 
         Application::instance()->logInfo( "F(k)/F(k+1) ratio: " + QString::number( ratio ) );
 
-        if( ! ( iOptStep % 10) ) //to avoid excess calls to processEvents.
+        if( ! ( iOptStep % 10) ) { //to avoid excess calls to processEvents.
+            progressDialog.setValue( iOptStep );
             QCoreApplication::processEvents();
+        }
     } //--------GD's main loop-------
     progressDialog.hide();
 
@@ -531,68 +536,269 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
 
     //=====================================GET RESULTS========================================
 
-    //Apply the principle of the Fourier Integral Method
-    //use a variographic map as the magnitudes and the FFT phases of
-    //the original data to a reverse FFT in polar form to achieve a
-    //Factorial Kriging-like separation
-    std::vector< spectral::array > maps;
-    std::vector< std::string > titles;
-    std::vector< bool > shiftFlags;
-    uint nI = m_cg->getNI();
-    uint nJ = m_cg->getNJ();
-    uint nK = m_cg->getNK();
-    for( int iStructure = 0; iStructure < m; ++iStructure ) {
-        //compute the theoretical varmap for one structure
-        spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
-        variographicEllipses[iStructure].addContributionToModelGrid( *m_cg,
-                                                                     oneStructureVarmap,
-                                                                     IJVariogramPermissiveModel::SPHERIC,
-                                                                     true );
+//    //Apply the principle of the Fourier Integral Method
+//    //use a variographic map as the magnitudes and the FFT phases of
+//    //the original data to a reverse FFT in polar form to achieve a
+//    //Factorial Kriging-like separation
+//    std::vector< spectral::array > maps;
+//    std::vector< std::string > titles;
+//    std::vector< bool > shiftFlags;
+//    uint nI = m_cg->getNI();
+//    uint nJ = m_cg->getNJ();
+//    uint nK = m_cg->getNK();
+//    for( int iStructure = 0; iStructure < m; ++iStructure ) {
+//        //compute the theoretical varmap for one structure
+//        spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
+//        variographicEllipses[iStructure].addContributionToModelGrid( *m_cg,
+//                                                                     oneStructureVarmap,
+//                                                                     IJVariogramPermissiveModel::SPHERIC,
+//                                                                     true );
 
-        //collect the theoretical varmap for display
-        //oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
-        //display inverted so it appears with 0.0 at center (h=0)
-        maps.push_back( oneStructureVarmap.max() - oneStructureVarmap );
-        titles.push_back( QString( "Varmap " + QString::number( iStructure ) ).toStdString() );
-        shiftFlags.push_back( false );
+//        //collect the theoretical varmap for display
+//        //oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
+//        //display inverted so it appears with 0.0 at center (h=0)
+//        maps.push_back( oneStructureVarmap.max() - oneStructureVarmap );
+//        titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
+//        shiftFlags.push_back( false );
 
-        //compute FIM to obtain the map from a variographic structure
-        spectral::array oneStructure( nI, nJ, nK, 0.0 );
-        oneStructure = computeFIM( oneStructureVarmap, inputFFTimagPhase );
+//        //compute FIM to obtain the map from a variographic structure
+//        spectral::array oneStructure( nI, nJ, nK, 0.0 );
+//        oneStructure = computeFIM( oneStructureVarmap, inputFFTimagPhase );
 
-        //collect the "FK factor"
-        maps.push_back( oneStructure );
-        titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
-        shiftFlags.push_back( false );
-    }
+//        //collect the "FK factor"
+//        maps.push_back( oneStructure );
+//        titles.push_back( QString( "Map " + QString::number( iStructure ) ).toStdString() );
+//        shiftFlags.push_back( false );
+//    }
 
-    // Prepare the display the variogram model surface
-    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
-    for( spectral::array& oneStructure : maps ){
-        variograficSurface += oneStructure;
-    }
-    maps.push_back( variograficSurface );
-    titles.push_back( QString( "Variogram model surface" ).toStdString() );
-    shiftFlags.push_back( false );
+//    // Prepare the display the variogram model surface
+//    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
+//    for( spectral::array& oneStructure : maps ){
+//        variograficSurface += oneStructure;
+//    }
+//    maps.push_back( variograficSurface );
+//    titles.push_back( QString( "Variogram model surface" ).toStdString() );
+//    shiftFlags.push_back( false );
 
-    // Prepare the display the experimental varmap of the input
-    maps.push_back( inputVarmap );
-    titles.push_back( QString( "Varmap of input" ).toStdString() );
-    shiftFlags.push_back( false );
+//    // Prepare the display the experimental varmap of the input
+//    maps.push_back( inputVarmap );
+//    titles.push_back( QString( "Varmap of input" ).toStdString() );
+//    shiftFlags.push_back( false );
 
-    // Prepare the display experimental - model
-    spectral::array diff = inputVarmap - variograficSurface;
-    maps.push_back( diff );
-    titles.push_back( QString( "Difference" ).toStdString() );
-    shiftFlags.push_back( false );
+//    // Prepare the display experimental - model
+//    spectral::array diff = inputVarmap - variograficSurface;
+//    maps.push_back( diff );
+//    titles.push_back( QString( "Difference" ).toStdString() );
+//    shiftFlags.push_back( false );
 
-    // Display all the grids in a dialog
-    displayGrids( maps, titles, shiftFlags );
+//    // Display all the grids in a dialog
+//    displayGrids( maps, titles, shiftFlags );
+
+
+    // Display the results in a window.
+    displayResults( variographicEllipses, inputFFTimagPhase, inputVarmap );
 }
 
 void AutomaticVarFitDialog::onDoWithLSRS()
 {
+    //get user configuration
+    int m = ui->spinNumberOfVariogramStructures->value();
+    int maxNumberOfOptimizationSteps = ui->spinMaxStepsLSRS->value();
+    // The user-given epsilon (useful for numerical calculus).
+    double epsilon = std::pow(10, ui->spinLogEpsilonLSRS->value() );
+    int nStartingPoints = ui->spinNumberOfStartingPoints->value(); //number of random starting points in the domain
+    int nRestarts = ui->spinNumberOfRestarts->value(); //number of restarts
 
+    //Intialize the random number generator with the same seed
+    std::srand ((unsigned)ui->spinSeed->value());
+
+    // Get the data objects.
+    IJAbstractCartesianGrid* inputGrid = m_cg;
+    IJAbstractVariable* variable = m_at;
+
+    // Get the grid's dimensions.
+    unsigned int nI = inputGrid->getNI();
+    unsigned int nJ = inputGrid->getNJ();
+    unsigned int nK = inputGrid->getNK();
+
+    // Fetch data from the data source.
+    inputGrid->dataWillBeRequested();
+
+    //================================== PREPARE DATA ==========================
+
+    // Get the input data as a spectral::array object
+    spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
+
+    // Compute FFT phase map of input
+    spectral::array inputFFTimagPhase = getInputPhaseMap();
+
+    // Compute input's varmap
+    spectral::array inputVarmap = computeVarmap();
+
+    //define the domain for the optimization
+    double minCellSize = std::min( inputGrid->getCellSizeI(), inputGrid->getCellSizeJ() );
+    double minAxis         = minCellSize;               double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
+    double minRatio        = 0.001;                     double maxRatio        = 1.0;
+    double minAzimuth      = 0.0  ;                     double maxAzimuth      = ImageJockeyUtils::PI;
+    double minContribution = inputVarmap.max() / 100.0; double maxContribution = inputVarmap.max();
+    double deltaAxis = maxAxis - minAxis;
+    double deltaRatio = maxRatio - minRatio;
+    double deltaAzimuth = maxAzimuth - minAzimuth;
+    double deltaContribution = maxContribution - minContribution;
+
+    //create the parameters are initialized near in the center of the domain
+    //the starting values are not particuarly important.
+    std::vector< IJVariographicStructure2D > variogramStructures;
+    for( int i = 0; i < m; ++i )
+        variogramStructures.push_back( IJVariographicStructure2D (  ( maxAxis         + minAxis         ) / 2.0,
+                                                                    ( maxRatio        + minRatio        ) / 2.0,
+                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
+                                                                     maxContribution / m ) ); //split evenly the total contribution among the geologic factors
+
+    //Initialize the linear vector of parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
+    // from the variographic parameters for each structure
+    // the starting values are not particuarly important.
+    spectral::array vw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            vw[i] = variogramStructures[iStructure].getParameter( iPar );
+
+    //Create a vector with the minimum values allowed for the parameters w
+    //(see min* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMin( vw.size(), 0.0 );
+    for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMin[i] = minAxis;         break;
+            case 1: L_wMin[i] = minRatio;        break;
+            case 2: L_wMin[i] = minAzimuth;      break;
+            case 3: L_wMin[i] = minContribution; break;
+            }
+
+    //Create a vector with the maximum values allowed for the parameters w
+    //(see max* variables further up). DOMAIN CONSTRAINT
+    spectral::array L_wMax( vw.size(), 1.0 );
+    for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMax[i] = maxAxis;         break;
+            case 1: L_wMax[i] = maxRatio;        break;
+            case 2: L_wMax[i] = maxAzimuth;      break;
+            case 3: L_wMax[i] = maxContribution; break;
+            }
+
+    //-------------------------------------------------------------------------------------------------------------
+    //------------------------- THE MODIFIED LINE SEARCH ALGORITH AS PROPOSED BY Grosan and Abraham (2009)---------
+    //---------------------------A Novel Global Optimization Technique for High Dimensional Functions--------------
+    //-------------------------------------------------------------------------------------------------------------
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0, nRestarts * maxNumberOfOptimizationSteps );
+    progressDialog.show();
+    progressDialog.setValue( 0 );
+    progressDialog.setLabelText("Line Search with Restart in progress...");
+
+    //the line search restarting loop
+    spectral::array vw_bestSolution( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int t = 0; t < nRestarts; ++t){
+
+        //generate sarting points randomly within the domain
+        // each starting point is a potential solution (set of parameters)
+        std::vector< spectral::array > startingPoints;
+        for( int iSP = 0; iSP < nStartingPoints; ++iSP ){
+            spectral::array vw_StartingPoint( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+            for( int i = 0; i < vw_StartingPoint.size(); ++i ){
+                double LO = L_wMin[i];
+                double HI = L_wMax[i];
+                vw_StartingPoint[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+            }
+            startingPoints.push_back( vw_StartingPoint );
+        }
+
+        //lambda to define the step as a function of iteration number (the alpha-k in Grosan and Abraham (2009))
+        //first iteration must be 1.
+        auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
+
+        //----------------loop of line search algorithm----------------
+        double fOfBestSolution = std::numeric_limits<double>::max();
+        //for each step
+        for( int k = 1; k <= maxNumberOfOptimizationSteps; ++k ){
+            //for each starting point (in the parameter space).
+            for( int i = 0; i < nStartingPoints; ++i ){
+                //make a candidate point with a vector from the current point.
+                spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+                for( int j = 0; j < vw.size(); ++j ){
+                    double p_k = -1.0 + std::rand() / ( RAND_MAX / 2.0);//author suggests -1 or drawn from [0.0 1.0] for best results
+
+                    double delta = 0.0;
+                    switch( j % IJVariographicStructure2D::getNumberOfParameters() ){
+                    case 0: delta = deltaAxis;         break;
+                    case 1: delta = deltaRatio;        break;
+                    case 2: delta = deltaAzimuth;      break;
+                    case 3: delta = deltaContribution; break;
+                    }
+
+                    vw_candidate[j] = startingPoints[i][j] + p_k * delta * alpha_k( k );
+                    if( vw_candidate[j] > L_wMax[j] )
+                        vw_candidate[j] = L_wMax[j];
+                    if( vw_candidate[j] < L_wMin[j] )
+                        vw_candidate[j] = L_wMin[j];
+
+                }
+                //evaluate the objective function for the current point and for the candidate point
+                double fCurrent   = objectiveFunction( *inputGrid, *inputData, startingPoints[i], m );
+                double fCandidate = objectiveFunction( *inputGrid, *inputData, vw_candidate,      m );
+                //if the candidate point improves the objective function...
+                if( fCandidate < fCurrent ){
+                    //...make it the current point.
+                    startingPoints[i] = vw_candidate;
+                    //keep track of the best solution
+                    if( fCandidate < fOfBestSolution ){
+                        fOfBestSolution = fCandidate;
+                        vw_bestSolution = vw_candidate;
+                    }
+                }
+            } //for each starting point
+
+            progressDialog.setValue( t * maxNumberOfOptimizationSteps + k );
+            QApplication::processEvents(); // let Qt update the UI
+
+        } // search for best solution
+        //---------------------------------------------------------------------------
+
+        //for each parameter of the best solution
+        for( int iParameter = 0; iParameter < vw.size(); ++iParameter ){
+            //Make a set of parameters slightly shifted to the right (more positive) along one parameter.
+            spectral::array vwFromRight = vw_bestSolution;
+            vwFromRight(iParameter) = vw_bestSolution(iParameter) + epsilon;
+            //Make a set of parameters slightly shifted to the left (more negative) along one parameter.
+            spectral::array vwFromLeft = vw_bestSolution;
+            vwFromLeft(iParameter) = vw_bestSolution(iParameter) - epsilon;
+            //compute the partial derivative along one parameter
+            double partialDerivative =  ( objectiveFunction( *inputGrid, *inputData, vwFromRight, m )
+                                          -
+                                          objectiveFunction( *inputGrid, *inputData, vwFromLeft, m ))
+                                          /
+                                          ( 2 * epsilon );
+            //update the domain limits depending on the partial derivative result
+            //this usually reduces the size of the domain so the next set of starting
+            //points have a higher probability to be drawn near a global optimum.
+            if( partialDerivative > 0 )
+                L_wMax[ iParameter ] = vw_bestSolution[ iParameter ];
+            else if( partialDerivative < 0 )
+                L_wMin[ iParameter ] = vw_bestSolution[ iParameter ];
+        } // reduce the domain to a smaller hyper volume around the suspected optimum
+
+    } //restart loop
+    progressDialog.hide();
+
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variogramStructures[iStructure].setParameter( iPar, vw_bestSolution[i] );
+
+    // Display the results in a window.
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
 }
 
 void AutomaticVarFitDialog::onDoWithPSO()
@@ -684,5 +890,69 @@ spectral::array AutomaticVarFitDialog::computeFIM( const spectral::array &gridWi
 
     //return the result
     return result;
+}
+
+void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStructure2D> &variogramStructures,
+                                            const spectral::array& fftPhaseMapOfInput,
+                                            const spectral::array& varmapOfInput )
+{
+    int m = variogramStructures.size();
+    //Apply the principle of the Fourier Integral Method
+    //use a variographic map as the magnitudes and the FFT phases of
+    //the original data to a reverse FFT in polar form to achieve a
+    //Factorial Kriging-like separation
+    std::vector< spectral::array > maps;
+    std::vector< std::string > titles;
+    std::vector< bool > shiftFlags;
+    uint nI = m_cg->getNI();
+    uint nJ = m_cg->getNJ();
+    uint nK = m_cg->getNK();
+    for( int iStructure = 0; iStructure < m; ++iStructure ) {
+        //compute the theoretical varmap for one structure
+        spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
+        variogramStructures[iStructure].addContributionToModelGrid( *m_cg,
+                                                                     oneStructureVarmap,
+                                                                     IJVariogramPermissiveModel::SPHERIC,
+                                                                     true );
+
+        //collect the theoretical varmap for display
+        //oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
+        //display inverted so it appears with 0.0 at center (h=0)
+        maps.push_back( oneStructureVarmap.max() - oneStructureVarmap );
+        titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
+        shiftFlags.push_back( false );
+
+        //compute FIM to obtain the map from a variographic structure
+        spectral::array oneStructure( nI, nJ, nK, 0.0 );
+        oneStructure = computeFIM( oneStructureVarmap, fftPhaseMapOfInput );
+
+        //collect the "FK factor"
+        maps.push_back( oneStructure );
+        titles.push_back( QString( "Map " + QString::number( iStructure ) ).toStdString() );
+        shiftFlags.push_back( false );
+    }
+
+    // Prepare the display the variogram model surface
+    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
+    for( spectral::array& oneStructure : maps ){
+        variograficSurface += oneStructure;
+    }
+    maps.push_back( variograficSurface );
+    titles.push_back( QString( "Variogram model surface" ).toStdString() );
+    shiftFlags.push_back( false );
+
+    // Prepare the display the experimental varmap of the input
+    maps.push_back( varmapOfInput );
+    titles.push_back( QString( "Varmap of input" ).toStdString() );
+    shiftFlags.push_back( false );
+
+    // Prepare the display experimental - model
+    spectral::array diff = varmapOfInput - variograficSurface;
+    maps.push_back( diff );
+    titles.push_back( QString( "Difference" ).toStdString() );
+    shiftFlags.push_back( false );
+
+    // Display all the grids in a dialog
+    displayGrids( maps, titles, shiftFlags );
 }
 
