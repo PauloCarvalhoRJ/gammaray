@@ -187,7 +187,7 @@ spectral::array AutomaticVarFitDialog::generateVariographicSurface(
 double AutomaticVarFitDialog::objectiveFunction( IJAbstractCartesianGrid& gridWithGeometry,
            const spectral::array &inputGridData,
            const spectral::array &vectorOfParameters,
-           const int m )  {
+           const int m ) const  {
     std::unique_lock<std::mutex> FFTWlock ( myMutexFFTW, std::defer_lock );
 
     //get grid parameters
@@ -206,34 +206,7 @@ double AutomaticVarFitDialog::objectiveFunction( IJAbstractCartesianGrid& gridWi
     //Apply the principle of the Fourier Integral Method to obtain what would the map be
     //if it actually had the theoretical variogram model
     spectral::array mapFromTheoreticalVariogramModel( nI, nJ, nK, 0.0 );
-    {
-        //compute FFT of the theoretical varmap (into polar form)
-        spectral::complex_array theoreticalVarMapFFT( nI, nJ, nK );
-        spectral::array tmp = spectral::shiftByHalf( theoreticalVariographicSurface );
-        FFTWlock.lock();                                //
-        spectral::foward( theoreticalVarMapFFT, tmp );  // FFTW crashes when called concurrently
-        FFTWlock.unlock();                              //
-        spectral::complex_array theoreticalVarMapFFTpolar = spectral::to_polar_form( theoreticalVarMapFFT );
-        spectral::array theoreticalVarMapFFTamplitudes = spectral::real( theoreticalVarMapFFTpolar );
-
-        //get the square root of the amplitudes of the varmap FFT
-        spectral::array theoreticalVarmapFFTamplitudesSQRT = theoreticalVarMapFFTamplitudes.sqrt();
-
-        //convert sqrt(varmap) and the phases of the input to rectangular form
-        spectral::complex_array mapFFTpolar = spectral::to_complex_array(
-                                                       theoreticalVarmapFFTamplitudesSQRT,
-                                                       inputFFTimagPhase
-                                                    );
-        spectral::complex_array mapFFT = spectral::to_rectangular_form( mapFFTpolar );
-
-        //compute the reverse FFT to get "factorial kriging"
-        FFTWlock.lock();                                                //
-        spectral::backward( mapFromTheoreticalVariogramModel, mapFFT ); // FFTW crashes when called concurrently
-        FFTWlock.unlock();                                              //
-
-        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
-        mapFromTheoreticalVariogramModel = mapFromTheoreticalVariogramModel / (double)( nI * nJ * nK );
-    }
+    mapFromTheoreticalVariogramModel = computeFIM( theoreticalVariographicSurface, inputFFTimagPhase );
 
     //compute the objective function metric
     double sum = 0.0;
@@ -250,7 +223,7 @@ double AutomaticVarFitDialog::objectiveFunction( IJAbstractCartesianGrid& gridWi
     return sum;
 }
 
-spectral::array AutomaticVarFitDialog::getInputPhaseMap()
+spectral::array AutomaticVarFitDialog::getInputPhaseMap() const
 {
     std::unique_lock<std::mutex> FFTWlock ( myMutexFFTW, std::defer_lock );
     spectral::arrayPtr inputGridData( m_cg->createSpectralArray( m_at->getAttributeGEOEASgivenIndex()-1 ) );
@@ -577,35 +550,17 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
                                                                      true );
 
         //collect the theoretical varmap for display
-        oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
-        maps.push_back( oneStructureVarmap );
+        //oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
+        //display inverted so it appears with 0.0 at center (h=0)
+        maps.push_back( oneStructureVarmap.max() - oneStructureVarmap );
         titles.push_back( QString( "Varmap " + QString::number( iStructure ) ).toStdString() );
         shiftFlags.push_back( false );
 
-        //compute FFT of the theoretical varmap (into polar form)
-        spectral::complex_array oneStructureVarmapFFT( nI, nJ, nK );
-        spectral::array tmp = spectral::shiftByHalf( oneStructureVarmap );
-        spectral::foward( oneStructureVarmapFFT, tmp );
-        spectral::complex_array oneStructureVarmapFFTpolar = spectral::to_polar_form( oneStructureVarmapFFT );
-        spectral::array oneStructureVarmapFFTamplitudes = spectral::real( oneStructureVarmapFFTpolar );
-
-        //get the square root of the amplitudes of the varmap FFT
-        spectral::array oneStructureVarmapFFTamplitudesSQRT = oneStructureVarmapFFTamplitudes.sqrt();
-
-        //convert sqrt(varmap) and the phases of the input to rectangular form
-        spectral::complex_array oneStructureFFTpolar = spectral::to_complex_array(
-                                                       oneStructureVarmapFFTamplitudesSQRT,
-                                                       inputFFTimagPhase
-                                                    );
-        spectral::complex_array oneStructureFFT = spectral::to_rectangular_form( oneStructureFFTpolar );
-
-        //compute the reverse FFT to get the map corresponding to one structure
+        //compute FIM to obtain the map from a variographic structure
         spectral::array oneStructure( nI, nJ, nK, 0.0 );
-        spectral::backward( oneStructure, oneStructureFFT );
+        oneStructure = computeFIM( oneStructureVarmap, inputFFTimagPhase );
 
-        //fftw3's reverse FFT requires that the values of output be divided by the number of cells
-        oneStructure = oneStructure / (double)( nI * nJ * nK );
-
+        //collect the "FK factor"
         maps.push_back( oneStructure );
         titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
         shiftFlags.push_back( false );
@@ -684,6 +639,50 @@ void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &gri
     svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
     connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
              this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
-    svdad->exec(); //open the dialog modally
+    svdad->show();
+}
+
+spectral::array AutomaticVarFitDialog::computeFIM( const spectral::array &gridWithVariographicStructure,
+                                                   const spectral::array &gridWithFFTphases ) const
+{
+    std::unique_lock<std::mutex> FFTWlock ( myMutexFFTW, std::defer_lock );
+
+    //get grid dimensions
+    size_t nI = gridWithVariographicStructure.M();
+    size_t nJ = gridWithVariographicStructure.N();
+    size_t nK = gridWithVariographicStructure.K();
+
+    //prepare the result
+    spectral::array result( nI, nJ, nK, 0.0 );
+
+    //compute FFT of the variographic surface (into polar form)
+    spectral::complex_array variographicSurfaceFFT( nI, nJ, nK );
+    spectral::array tmp = spectral::shiftByHalf( gridWithVariographicStructure );
+    FFTWlock.lock();                                  //
+    spectral::foward( variographicSurfaceFFT, tmp );  // FFTW crashes when called concurrently
+    FFTWlock.unlock();                                //
+    spectral::complex_array variographicSurfaceFFTpolar = spectral::to_polar_form( variographicSurfaceFFT );
+    spectral::array variographicSurfaceFFTamplitudes = spectral::real( variographicSurfaceFFTpolar );
+
+    //get the square root of the amplitudes of the varmap FFT
+    spectral::array variographicSurfaceFFTamplitudesSQRT = variographicSurfaceFFTamplitudes.sqrt();
+
+    //convert sqrt(varmap) and the phases of the input to rectangular form
+    spectral::complex_array mapFFTpolar = spectral::to_complex_array(
+                                                   variographicSurfaceFFTamplitudesSQRT,
+                                                   gridWithFFTphases
+                                                );
+    spectral::complex_array mapFFT = spectral::to_rectangular_form( mapFFTpolar );
+
+    //compute the reverse FFT to get "factorial kriging"
+    FFTWlock.lock();                      //
+    spectral::backward( result, mapFFT ); // FFTW crashes when called concurrently
+    FFTWlock.unlock();                    //
+
+    //fftw3's reverse FFT requires that the values of output be divided by the number of cells
+    result = result / (double)( nI * nJ * nK );
+
+    //return the result
+    return result;
 }
 

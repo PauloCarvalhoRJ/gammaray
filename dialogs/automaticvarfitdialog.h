@@ -33,7 +33,7 @@ public:
     double objectiveFunction ( IJAbstractCartesianGrid& gridWithGeometry,
                                const spectral::array &inputGridData,
                                const spectral::array &vectorOfParameters,
-                               const int m );
+                               const int m ) const;
 
 private:
     Ui::AutomaticVarFitDialog *ui;
@@ -64,15 +64,25 @@ private:
     /**
      * Returns the FFT phase map of the input data.
      */
-    spectral::array getInputPhaseMap();
+    spectral::array getInputPhaseMap() const;
 
     /**
      * Displays a series of grids in a dialog.
      * TIP C++11: use displayGrids({A}, {"A matrix"}, {false}); to display a single grid.
      */
-    void displayGrids(const std::vector< spectral::array >& grids,
-                      const std::vector< std::string >& titles,
-                      const std::vector< bool >& shiftByHalves ) ;
+    void displayGrids( const std::vector< spectral::array >& grids,
+                       const std::vector< std::string >& titles,
+                       const std::vector< bool >& shiftByHalves ) ;
+
+    /**
+     * Applies the principle of the Fourier Integral Method to obtain the map in spatial domain
+     * from a variographic map (theoretical or experimental) and a map of FFT phases.
+     * @param gridWithVariographicStructure The grid data with the variographic surface.  It must be actually a correlographic surface,
+     *                                      that is, with max value at the center and decrasing with distance from the center.
+     * @param gridWithFFTphases The grid data with the FFT phases in radians.  Must vary between -PI and +PI.
+     */
+    spectral::array computeFIM( const spectral::array& gridWithVariographicStructure,
+                                const spectral::array& gridWithFFTphases ) const;
 
 private Q_SLOTS:
     void onDoWithSAandGD();
