@@ -46,7 +46,7 @@ void IJVariographicStructure2D::setParameter( int index, double value )
 void IJVariographicStructure2D::addContributionToModelGrid(IJAbstractCartesianGrid& gridWithGeometry,
                                                             spectral::array &targetGrid,
                                                             IJVariogramPermissiveModel model,
-                                                            bool invert )
+                                                            bool invert ) const
 {
     //assess grid geometry
     int nI = gridWithGeometry.getNI();

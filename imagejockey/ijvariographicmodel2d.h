@@ -48,7 +48,7 @@ public:
     void addContributionToModelGrid(IJAbstractCartesianGrid &gridWithGeometry,
                                      spectral::array& targetGrid,
                                      IJVariogramPermissiveModel model,
-                                     bool invert );
+                                     bool invert ) const;
 };
 
 /**
