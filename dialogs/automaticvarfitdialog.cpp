@@ -11,6 +11,7 @@
 #include "imagejockey/svd/svdanalysisdialog.h"
 
 #include <QProgressDialog>
+#include <QMessageBox>
 #include <cassert>
 #include <thread>
 #include <mutex>
@@ -59,6 +60,91 @@ void taskOnePartialDerivative (
     }
 }
 
+////////////////////////////////////////CLASS FOR THE GENETIC ALGORITHM//////////////////////////////////////////
+
+class Individual{
+public:
+    //constructors
+    Individual() = delete;
+    Individual( int nNumberOfParameters ) :
+        parameters( nNumberOfParameters ),
+        fValue( std::numeric_limits<double>::max() )
+    {}
+    Individual( const spectral::array& pparameters ) :
+        parameters( pparameters ),
+        fValue( std::numeric_limits<double>::max() )
+    {}
+    Individual( const Individual& otherIndividual ) :
+        parameters( otherIndividual.parameters ),
+        fValue( otherIndividual.fValue )
+    {}
+
+    //methods
+    std::pair<Individual, Individual> crossOver( const Individual& otherIndividual,
+                                                 int pointOfCrossOver ) const {
+        assert( parameters.size() && otherIndividual.parameters.size() &&
+            "Individual::crossOver(): Either operands have zero parameters.") ;
+        Individual child1( parameters.size() ), child2( parameters.size() );
+        for( int iParameter = 0; iParameter < parameters.size(); ++iParameter ){
+            if( iParameter < pointOfCrossOver ){
+                child1.parameters[iParameter] = parameters[iParameter];
+                child2.parameters[iParameter] = otherIndividual.parameters[iParameter];
+            } else {
+                child1.parameters[iParameter] = otherIndividual.parameters[iParameter];
+                child2.parameters[iParameter] = parameters[iParameter];
+            }
+        }
+        return { child1, child2 };
+    }
+    void mutate( double mutationRate,
+                 const spectral::array& lowBoundaries,
+                 const spectral::array& highBoundaries ){
+        //sanity checks
+        if( lowBoundaries.size() != parameters.size() ||
+            highBoundaries.size() != parameters.size() ){
+            QString message ("Individual::mutate(): Either low boundary (n=");
+            message.append( QString::number( lowBoundaries.size() ) );
+            message.append( ") or the high boundary (n=" );
+            message.append( QString::number( highBoundaries.size() ) );
+            message.append( ") have a different number of elements than the parameters member (n=" );
+            message.append( QString::number( parameters.size() ) );
+            message.append( "). Operation canceled.") ;
+            QMessageBox::critical( nullptr, "Error", message);
+            return;
+        }
+        //compute the mutation probability for a single gene (parameter)
+        double probOfMutation = 1.0 / parameters.size() * mutationRate;
+        //traverse all genes (parameters)
+        for( int iPar = 0.0; iPar < parameters.size(); ++iPar ){
+            //draw a value between 0.0 and 1.0 from an uniform distribution
+            double p = std::rand() / (double)RAND_MAX;
+            //if a mutation is due...
+            if( p < probOfMutation ) {
+                //perform mutation by randomly sorting a value within the domain.
+                double LO = lowBoundaries[iPar];
+                double HI = highBoundaries[iPar];
+                parameters[iPar] = LO + std::rand() / (RAND_MAX/(HI-LO));
+            }
+        }
+    }
+
+    //member variables
+    spectral::array parameters;
+    double fValue;
+
+    //operators
+    Individual& operator=( const Individual& otherIndividual ){
+        parameters = otherIndividual.parameters;
+        fValue = otherIndividual.fValue;
+        return *this;
+    }
+    bool operator<( const Individual& otherIndividual ) const {
+        return fValue < otherIndividual.fValue;
+    }
+
+};
+typedef Individual Solution; //make a synonym just for code readbility
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -237,7 +323,7 @@ spectral::array AutomaticVarFitDialog::getInputPhaseMap() const
 
 void AutomaticVarFitDialog::onDoWithSAandGD()
 {
-    /////-----------------GET USER CONFIGURATIONS-----------------------------------------------------------
+    //////////////////////////////USER CONFIGURATION////////////////////////////////////
     //.......................Global Parameters................................................
     // Number of parallel execution threads
     unsigned int nThreads = ui->spinNumberOfThreads->value();
@@ -270,7 +356,7 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
     // GD stops after two consecutive steps yield two objective function values whose
     // difference is less than this value.
     double convergenceCriterion = std::pow(10, ui->spinConvergenceCriterion->value() );
-    /////----------------END OF USER CONFIGURATIONS---------------------------------------------------------
+    ///////////////////////////////////////////////////////////////////////////////////////////
 
 
     //================================== PREPARE OPTIMIZATION =============================================
@@ -501,13 +587,14 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
 
 void AutomaticVarFitDialog::onDoWithLSRS()
 {
-    //get user configuration
+    //////////////////////////////USER CONFIGURATION////////////////////////////////////
     int m = ui->spinNumberOfVariogramStructures->value();
     int maxNumberOfOptimizationSteps = ui->spinMaxStepsLSRS->value();
     // The user-given epsilon (useful for numerical calculus).
     double epsilon = std::pow(10, ui->spinLogEpsilonLSRS->value() );
     int nStartingPoints = ui->spinNumberOfStartingPoints->value(); //number of random starting points in the domain
     int nRestarts = ui->spinNumberOfRestarts->value(); //number of restarts
+    ////////////////////////////////////////////////////////////////////////////////////
 
     //Intialize the random number generator with the same seed
     std::srand ((unsigned)ui->spinSeed->value());
@@ -670,7 +757,7 @@ void AutomaticVarFitDialog::onDoWithLSRS()
 
 void AutomaticVarFitDialog::onDoWithPSO()
 {
-    //get user configuration
+    //////////////////////////////USER CONFIGURATION////////////////////////////////////
     int m = ui->spinNumberOfVariogramStructures->value();
     int maxNumberOfOptimizationSteps = ui->spinMaxStepsPSO->value();
     // The user-given epsilon (useful for numerical calculus).
@@ -680,6 +767,7 @@ void AutomaticVarFitDialog::onDoWithPSO()
     double acceleration_constant_2 = ui->dblSpinAccelerationConstant2->value();
     //Intialize the random number generator with the same seed
     std::srand ((unsigned)ui->spinSeed->value());
+    /////////////////////////////////////////////////////////////////////////////////////
 
     // Get the data objects.
     IJAbstractCartesianGrid* inputGrid = m_cg;
@@ -692,9 +780,6 @@ void AutomaticVarFitDialog::onDoWithPSO()
 
     // Fetch data from the data source.
     inputGrid->dataWillBeRequested();
-
-    //make an array full of zeroes (useful for certain steps in the workflow)
-    spectral::array zeros( nI, nJ, nK, 0.0 );
 
     // Get the input data as a spectral::array object
     spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
@@ -871,7 +956,205 @@ void AutomaticVarFitDialog::onDoWithPSO()
 
 void AutomaticVarFitDialog::onDoWithGenetic()
 {
+    //////////////////////////////USER CONFIGURATION////////////////////////////////////
+    int m = ui->spinNumberOfVariogramStructures->value();
+    int maxNumberOfGenerations = ui->spinNumberOfGenerations->value();
+    uint nPopulationSize = ui->spinPopulationSize->value(); //number of individuals (sets of parameters)
+    uint nSelectionSize = ui->spinSelectionSize->value(); //the size of the selection pool (must be < nPopulationSize)
+    double probabilityOfCrossOver = ui->dblSpinProbabilityOfCrossover->value();
+    uint pointOfCrossover = ui->spinPointOfCrossover->value(); //the index where crossover switches (must be less than the total number of parameters per individual)
+    //mutation rate means how many paramaters are expected to change per mutation
+    //the probability of any parameter parameter (gene) to be changed is 1/nParameters * mutationRate
+    //thus, 1.0 means that one gene will surely be mutated per mutation on average.  Fractionary
+    //values are possible. 0.0 means no mutation will take place.
+    double mutationRate = ui->dblSpinMutationRate->value();
+    //Intialize the random number generator with the same seed
+    std::srand ((unsigned)ui->spinSeed->value());
+    //////////////////////////////////////////////////////////////////////////////////////
 
+    //the total number of genes (parameters) per individual.
+    uint totalNumberOfParameters = m * IJVariographicStructure2D::getNumberOfParameters();
+
+    //sanity checks
+    if( nSelectionSize >= nPopulationSize ){
+        QMessageBox::critical( this, "Error", "AutomaticVarFitDialog::onDoWithGenetic(): Selection pool size must be less than population size.");
+        return;
+    }
+    if( nPopulationSize % 2 + nSelectionSize % 2 ){
+        QMessageBox::critical( this, "Error", "AutomaticVarFitDialog::onDoWithGenetic(): Sizes must be even numbers.");
+        return;
+    }
+    if( pointOfCrossover >= totalNumberOfParameters  ){
+        QMessageBox::critical( this, "Error", "AutomaticVarFitDialog::onDoWithGenetic(): Point of crossover must be less than the number of parameters.");
+        return;
+    }
+
+    // Get the data objects.
+    IJAbstractCartesianGrid* inputGrid = m_cg;
+    IJAbstractVariable* variable = m_at;
+
+    // Get the grid's dimensions.
+    unsigned int nI = inputGrid->getNI();
+    unsigned int nJ = inputGrid->getNJ();
+    unsigned int nK = inputGrid->getNK();
+
+    // Fetch data from the data source.
+    inputGrid->dataWillBeRequested();
+
+    // Get the input data as a spectral::array object
+    spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
+
+    //Compute FFT phase map of input
+    spectral::array inputFFTimagPhase = getInputPhaseMap();
+
+    //Compute varmap of input
+    spectral::array inputVarmap = computeVarmap();
+
+    //Initialize the optimization domain (boundary conditions) and
+    //the sets of variogram paramaters (both linear and structured)
+    VariogramParametersDomain domain;
+    spectral::array vw;
+    spectral::array L_wMin;
+    spectral::array L_wMax;
+    std::vector< IJVariographicStructure2D > variogramStructures;
+    initDomainAndParameters( inputVarmap,
+                             m,
+                             domain,
+                             vw,
+                             L_wMin,
+                             L_wMax,
+                             variogramStructures );
+
+    //=========================================THE GENETIC ALGORITHM==================================================
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0, maxNumberOfGenerations);
+    progressDialog.setValue( 0 );
+    progressDialog.show();
+    progressDialog.setLabelText("Genetic Algorithm in progress...");
+
+    //the main algorithm loop
+    std::vector< Individual > population;
+    for( int iGen = 0; iGen < maxNumberOfGenerations; ++iGen ){
+
+        //Init or refill the population with randomly generated individuals.
+        while( population.size() < nPopulationSize ){
+            //create an individual (one array of parameters)
+            spectral::array pw( (spectral::index)totalNumberOfParameters );
+            //randomize the individual's position in the domain.
+            for( int i = 0; i < pw.size(); ++i ){
+                double LO = L_wMin[i];
+                double HI = L_wMax[i];
+                pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+            }
+            Individual ind( pw );
+            population.push_back( ind );
+        }
+
+        //evaluate the individuals of current population
+        for( uint iInd = 0; iInd < population.size(); ++iInd ){
+            Individual& ind = population[iInd];
+            ind.fValue = objectiveFunction( *inputGrid, *inputData, ind.parameters, m );
+        }
+
+        //sort the population in ascending order (lower value == better fitness)
+        std::sort( population.begin(), population.end() );
+
+        //clip the population (the excessive worst fit individuals die)
+        while( population.size() > nPopulationSize )
+            population.pop_back();
+
+        //perform selection by binary tournament
+        std::vector< Individual > selection;
+        for( uint iSel = 0; iSel < nSelectionSize; ++iSel ){
+            //perform binary tournament
+            std::vector< Individual > tournament;
+            {
+                //draw two different individuals at random from the population for the tournament.
+                int tournCandidate1 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
+                int tournCandidate2 = tournCandidate1;
+                while( tournCandidate2 == tournCandidate1 )
+                    tournCandidate2 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
+                //add the participants in the tournament
+                tournament.push_back( population[tournCandidate1] );
+                tournament.push_back( population[tournCandidate2] );
+                //sort the binary tournament
+                std::sort( tournament.begin(), tournament.end());
+            }
+            //add the best of tournament to the selection pool
+            selection.push_back( tournament.front() );
+        }
+
+        //perform crossover and mutation on the selected individuals
+        std::vector< Individual > nextGen;
+        while( ! selection.empty() ){
+            //draw two different selected individuals at random for crossover.
+            int parentIndex1 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
+            int parentIndex2 = parentIndex1;
+            while( parentIndex2 == parentIndex1 )
+                parentIndex2 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
+            Individual parent1 = selection[ parentIndex1 ];
+            Individual parent2 = selection[ parentIndex2 ];
+            selection.erase( selection.begin() + parentIndex1 );
+            selection.erase( selection.begin() + parentIndex2 );
+            //draw a value between 0.0 and 1.0 from an uniform distribution
+            double p = std::rand() / (double)RAND_MAX;
+            //if crossover is due...
+            if( p < probabilityOfCrossOver ){
+                //crossover
+                std::pair< Individual, Individual> offspring = parent1.crossOver( parent2, pointOfCrossover );
+                Individual child1 = offspring.first;
+                Individual child2 = offspring.second;
+                //mutate all
+                child1.mutate( mutationRate, L_wMin, L_wMax );
+                child2.mutate( mutationRate, L_wMin, L_wMax );
+                parent1.mutate( mutationRate, L_wMin, L_wMax );
+                parent2.mutate( mutationRate, L_wMin, L_wMax );
+                //add them to the next generation pool
+                nextGen.push_back( child1 );
+                nextGen.push_back( child2 );
+                nextGen.push_back( parent1 );
+                nextGen.push_back( parent2 );
+            } else { //no crossover took place
+                //simply mutate and insert the parents into the next generation pool
+                parent1.mutate( mutationRate, L_wMin, L_wMax );
+                parent2.mutate( mutationRate, L_wMin, L_wMax );
+                nextGen.push_back( parent1 );
+                nextGen.push_back( parent2 );
+            }
+        }
+
+        //make the next generation
+        population = nextGen;
+
+        //update progress bar
+        progressDialog.setValue( iGen );
+        QApplication::processEvents(); // let Qt update the UI
+
+    } //main algorithm loop
+
+    //=====================================GET RESULTS========================================
+    progressDialog.hide();
+
+    //evaluate the individuals of final population
+    for( uint iInd = 0; iInd < population.size(); ++iInd ){
+        Individual& ind = population[iInd];
+        ind.fValue = objectiveFunction( *inputGrid, *inputData, ind.parameters, m );
+    }
+
+    //sort the population in ascending order (lower value == better fitness)
+    std::sort( population.begin(), population.end() );
+
+    //get the parameters of the best individual (set of parameters)
+    spectral::array gbest_pw = population[0].parameters;
+
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variogramStructures[iGeoFactor].setParameter( iPar, gbest_pw[i] );
+
+    // Display the results in a window.
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
 }
 
 void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &grids,
@@ -906,8 +1189,8 @@ void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &gri
     SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
     svdad->setTree( factorTree );
     svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
-    connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
-             this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
+//    connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
+//             this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
     svdad->show();
 }
 
