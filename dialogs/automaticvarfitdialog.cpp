@@ -352,7 +352,6 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
         spectral::array L_wOfLowestEnergyFound;
         int k = 0;
         for( ; k < i_kmax; ++k ){
-            Application::instance()->logInfo( "Commencing SA step #" + QString::number( k ) );
             //Get current temperature.
             double f_T = temperature( k );
             //Quit if temperature is lower than the minimum annealing temperature.
@@ -418,8 +417,6 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
     progressDialog.setLabelText("Gradient Descent in progress...");
     int iOptStep = 0;
     for( ; iOptStep < maxNumberOfOptimizationSteps; ++iOptStep ){
-
-        Application::instance()->logInfo( "Commencing GD step #" + QString::number( iOptStep ) );
 
         //Compute the gradient vector of objective function F with the current [w] parameters.
         spectral::array gradient( vw.size() );
@@ -673,7 +670,203 @@ void AutomaticVarFitDialog::onDoWithLSRS()
 
 void AutomaticVarFitDialog::onDoWithPSO()
 {
+    //get user configuration
+    int m = ui->spinNumberOfVariogramStructures->value();
+    int maxNumberOfOptimizationSteps = ui->spinMaxStepsPSO->value();
+    // The user-given epsilon (useful for numerical calculus).
+    int nParticles = ui->spinNumberOfParticles->value(); //number of wandering particles
+    double intertia_weight = ui->dblSpinInertiaWeight->value();
+    double acceleration_constant_1 = ui->dblSpinAccelerationConstant1->value();
+    double acceleration_constant_2 = ui->dblSpinAccelerationConstant2->value();
+    //Intialize the random number generator with the same seed
+    std::srand ((unsigned)ui->spinSeed->value());
 
+    // Get the data objects.
+    IJAbstractCartesianGrid* inputGrid = m_cg;
+    IJAbstractVariable* variable = m_at;
+
+    // Get the grid's dimensions.
+    unsigned int nI = inputGrid->getNI();
+    unsigned int nJ = inputGrid->getNJ();
+    unsigned int nK = inputGrid->getNK();
+
+    // Fetch data from the data source.
+    inputGrid->dataWillBeRequested();
+
+    //make an array full of zeroes (useful for certain steps in the workflow)
+    spectral::array zeros( nI, nJ, nK, 0.0 );
+
+    // Get the input data as a spectral::array object
+    spectral::arrayPtr inputData( inputGrid->createSpectralArray( variable->getIndexInParentGrid() ) );
+
+    //Compute FFT phase map of input
+    spectral::array inputFFTimagPhase = getInputPhaseMap();
+
+    //Compute varmap of input
+    spectral::array inputVarmap = computeVarmap();
+
+    //Initialize the optimization domain (boundary conditions) and
+    //the sets of variogram paramaters (both linear and structured)
+    VariogramParametersDomain domain;
+    spectral::array vw;
+    spectral::array L_wMin;
+    spectral::array L_wMax;
+    std::vector< IJVariographicStructure2D > variogramStructures;
+    initDomainAndParameters( inputVarmap,
+                             m,
+                             domain,
+                             vw,
+                             L_wMin,
+                             L_wMax,
+                             variogramStructures );
+
+    //-------------------------------------------------------------------------------------------------------------
+    //------------------------------------- THE PARTICLE SWARM OPTIMIZATION ALGORITHM -----------------------------
+    //-------------------------------------------------------------------------------------------------------------
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Init particles...");
+    QApplication::processEvents(); //let Qt update UI
+
+    //Init the population of particles, their velocity vectors and their best position
+    std::vector< spectral::array > particles_pw;
+    std::vector< spectral::array > velocities_vw;
+    std::vector< spectral::array > pbests_pbw;
+    std::vector< double > fOfpbests;
+    for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
+        //create a particle (one array of parameters)
+        spectral::array pw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+        //create a velocity vector (one array of velocities)
+        spectral::array vw( pw.size() );
+        //randomize the particle's position in the domain.
+        for( int i = 0; i < pw.size(); ++i ){
+            double LO = L_wMin[i];
+            double HI = L_wMax[i];
+            pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+        }
+        particles_pw.push_back( pw );
+        //the velocities are initialized with zeros
+        velocities_vw.push_back( vw );
+        //the best position of a particle is initialized as the starting position
+        spectral::array pbw( pw );
+        pbests_pbw.push_back( pbw );
+        //initialize the objective function value of the particle best as +inifinite
+        fOfpbests.push_back( std::numeric_limits<double>::max() );
+    }
+
+    progressDialog.setLabelText("Get first global best position...");
+    QApplication::processEvents(); //let Qt update UI
+
+    //Init the global best postion (best of the best positions amongst the particles)
+    spectral::array gbest_pw;
+    double fOfgbest = std::numeric_limits<double>::max();
+    {
+        double fOfBest = std::numeric_limits<double>::max();
+        for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
+            //get the best postition of a particle
+            spectral::array& pbw = pbests_pbw[ iParticle ] ;
+            //evaluate the objective function with the best position of a particle
+            double f = objectiveFunction( *inputGrid, *inputData, pbw, m );
+            //if it improves the value so far...
+            if( f < fOfBest ){
+                //...updates the best value record
+                fOfBest = f;
+                //...assigns the best of a particle as the global best
+                gbest_pw = pbw;
+            }
+        }
+    }
+
+    progressDialog.setLabelText("Particle Swarm Optimization in progress...");
+    progressDialog.setRange(0, maxNumberOfOptimizationSteps * nParticles );
+    progressDialog.setValue( 0 );
+    QApplication::processEvents(); //let Qt update UI
+
+    //optimization steps
+    for( int iStep = 0; iStep < maxNumberOfOptimizationSteps; ++iStep){
+
+        //let Qt repaint the GUI every opt. step.
+        QApplication::processEvents();
+
+        //for each particle (vector of parameters)
+        for( int iParticle = 0; iParticle < nParticles; ++iParticle ){
+
+            //get the particle, its velocity and its best postion so far
+            spectral::array& pw = particles_pw[ iParticle ];
+            spectral::array& vw = velocities_vw[ iParticle ];
+            spectral::array& pbw = pbests_pbw[ iParticle ];
+
+            //get a candidate position and velocity of a particle
+            spectral::array candidate_particle( pw.size() );
+            spectral::array candidate_velocity( pw.size() );
+
+            double rand1 = (std::rand()/(double)RAND_MAX);
+            double rand2 = (std::rand()/(double)RAND_MAX);
+
+            for( int i = 0; i < pw.size(); ++i ){
+                candidate_velocity[i] = intertia_weight * vw[i] +
+                                        acceleration_constant_1 * rand1 * ( pbw[i] - pw[i] ) +
+                                        acceleration_constant_2 * rand2 * ( gbest_pw[i] - pw[i] );
+                candidate_particle[i] = pw[i] + candidate_velocity[i];
+
+                //performs a "bounce" of the particle if it "hits" the boundaries of the domain
+                double overshoot = candidate_particle[i] - L_wMax[i];
+                if( overshoot > 0 )
+                    candidate_particle[i] = L_wMax[i] - overshoot;
+                double undershoot = L_wMin[i] - candidate_particle[i];
+                if( undershoot > 0 )
+                    candidate_particle[i] = L_wMin[i] + undershoot;
+            }
+
+            //evaluate the objective function for current and candidate positions
+            double fCurrent = objectiveFunction( *inputGrid, *inputData, pw, m );
+            double fCandidate = objectiveFunction( *inputGrid, *inputData, candidate_particle, m );
+
+            //if the candidate position improves the objective function
+            if( fCandidate < fCurrent ){
+                //update the postion
+                pw = candidate_particle;
+                //update the velocity
+                vw = candidate_velocity;
+            }
+
+            //if the candidate position improves over the best of the particle
+            if( fCandidate < fOfpbests[iParticle] ){
+                //keep track of the best value of the objective function so far for the particle
+                fOfpbests[iParticle] = fCandidate;
+                //update the best position so far for the particle
+                pbw = candidate_particle;
+            }
+
+            //if the candidate position improves over the global best
+            if( fCandidate < fOfgbest ){
+                //keep track of the global best value of the objective function
+                fOfgbest = fCandidate;
+                //update the global best position
+                gbest_pw = candidate_particle;
+            }
+
+            //update progress bar
+            progressDialog.setValue( iStep * nParticles + iParticle );
+            QApplication::processEvents(); //let Qt update UI
+
+        } // for each particle
+    } // for each step
+
+    //-------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
+    progressDialog.hide();
+
+    //Read the optimized variogram model parameters back to the variographic structures
+    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            variogramStructures[iGeoFactor].setParameter( iPar, gbest_pw[i] );
+
+    // Display the results in a window.
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
 }
 
 void AutomaticVarFitDialog::onDoWithGenetic()
