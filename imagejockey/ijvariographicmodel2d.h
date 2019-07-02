@@ -17,10 +17,15 @@ enum class IJVariogramPermissiveModel : int {
 
 /**
  * The IJVariographicStructure2D class models a single 2D variograaphic structure model.
+ * Axis: the variographic range along the main axis of the anisotropy ellipsis
+ * Ratio: the ratio between semi-minor axis and Axis.
+ * Azimuth: the azimuth of Axis.
+ * Contribution: the semi-variance contribution of the nested structure
  */
 class IJVariographicStructure2D
 {
 public:
+    IJVariographicStructure2D();
     IJVariographicStructure2D( double pRange,
                                double pRangeRatio,
                                double pAzimuth,

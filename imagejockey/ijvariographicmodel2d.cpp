@@ -4,6 +4,11 @@
 #include <cassert>
 
 
+IJVariographicStructure2D::IJVariographicStructure2D()
+{
+    IJVariographicStructure2D(1.0, 1.0, 0.0, 1.0);
+}
+
 IJVariographicStructure2D::IJVariographicStructure2D(double pRange,
                                                      double pRangeRatio,
                                                      double pAzimuth,
