@@ -3,16 +3,22 @@
 
 #include <QDialog>
 #include "spectral/spectral.h"
+#include "imagejockey/ijvariographicmodel2d.h"
 
 class Attribute;
 class CartesianGrid;
 class IJGridViewerWidget;
 class IJAbstractCartesianGrid;
-class IJVariographicStructure2D;
 
 namespace Ui {
 class AutomaticVarFitDialog;
 }
+
+/** The parameters domain for the optimization methods (bound conditions). */
+struct VariogramParametersDomain {
+    IJVariographicStructure2D min;
+    IJVariographicStructure2D max;
+};
 
 /** TODO: Refactor: transfer varfit specific code to a domain class called AutomaticVarFit. */
 class AutomaticVarFitDialog : public QDialog
@@ -87,10 +93,32 @@ private:
 
     /** Method called to display a dialog with relevant results from the variogram structures passed.
      * This method is not particularly useful to any client code.  It is used internally to reuse code.
+     * @param variogramStructures The nested variogram structures as parameters (azimuth, axis, etc.).
+     * @param fftPhaseMapOfInput The FFT phase map of the input grid data.
+     * @param varmapOfInput Varmap fo the input grid data.
      */
     void displayResults(const std::vector< IJVariographicStructure2D >& variogramStructures ,
                         const spectral::array &fftPhaseMapOfInput,
                         const spectral::array &varmapOfInput);
+
+    /** Method called by the several methods of optimization to initialize the
+     *  parameter domain (boundary conditions) and the set of parameters.
+     * All non-const method parameters are output parameters.
+     * @param inputVarmap The varmap of the input grid data.
+     * @param m The number of wanted variogram nested structures.
+     * @param domain The domain boundaries as a VariogramParamateresDomainObject
+     * @param vw The set of parameters as a linear array.
+     * @param L_wMin The lower parameters boundaries as a linear array.
+     * @param L_wMax The upper parameters boundaries as a linear array.
+     * @param variogramStructures The set of parameters as a structured object.
+     */
+    void initDomainAndParameters( const spectral::array &inputVarmap,
+                                  int m,
+                                  VariogramParametersDomain& domain,
+                                  spectral::array& vw,
+                                  spectral::array& L_wMin,
+                                  spectral::array& L_wMax,
+                                  std::vector<IJVariographicStructure2D> &variogramStructures ) const;
 
 private Q_SLOTS:
     void onDoWithSAandGD();

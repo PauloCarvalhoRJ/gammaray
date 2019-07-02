@@ -7,7 +7,6 @@
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "imagejockey/svd/svdfactor.h"
 #include "imagejockey/imagejockeyutils.h"
-#include "imagejockey/ijvariographicmodel2d.h"
 #include "imagejockey/svd/svdfactortree.h"
 #include "imagejockey/svd/svdanalysisdialog.h"
 
@@ -286,60 +285,25 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
     //Get input's FFT phase map
     spectral::array inputFFTimagPhase = getInputPhaseMap();
 
-    //.... The paramaters (for each nested structure)
-    // Axis: the variographic range along the main axis of the anisotropy ellipsis
-    // Ratio: the ratio between semi-minor axis and Axis.
-    // Azimuth: the azimuth of Axis.
-    // Contribution: the semi-variance contribution of the nested structure
-
-    //define the domain
-    double minAxis         = 0.0  ; double maxAxis         = m_cg->getDiagonalLength() / 2.0;
-    double minRatio        = 0.001; double maxRatio        = 1.0;
-    double minAzimuth      = 0.0  ; double maxAzimuth      = ImageJockeyUtils::PI;
-    double minContribution = 0.0  ; double maxContribution = inputVarmap.max();
-
-    //create the nested structures wanted by the user
-    //the parameters are initialized near in the center of the domain
-    std::vector< IJVariographicStructure2D > variographicEllipses;
-    for( int i = 0; i < m; ++i )
-        variographicEllipses.push_back( IJVariographicStructure2D ( ( maxAxis         + minAxis         ) / 2.0,
-                                                                    ( maxRatio        + minRatio        ) / 2.0,
-                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
-                                                                    ( maxContribution - minContribution ) / 4.0 ) );
-
-    //Initialize the vector of all variographic parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
-    //this vector is used in optimization steps (SA and then GD).
-    spectral::array vw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
-    for( int iLinearIndex = 0, iNestedStructure = 0; iNestedStructure < m; ++iNestedStructure )
-        for( int iIndexInStructure = 0; iIndexInStructure < IJVariographicStructure2D::getNumberOfParameters(); ++iIndexInStructure, ++iLinearIndex )
-            vw[iLinearIndex] = variographicEllipses[iNestedStructure].getParameter( iIndexInStructure );
+    //Initialize the optimization domain (boundary conditions) and
+    //the sets of variogram paramaters (both linear and structured)
+    VariogramParametersDomain domain;
+    spectral::array vw;
+    spectral::array L_wMin;
+    spectral::array L_wMax;
+    std::vector< IJVariographicStructure2D > variogramStructures;
+    initDomainAndParameters( inputVarmap,
+                             m,
+                             domain,
+                             vw,
+                             L_wMin,
+                             L_wMax,
+                             variogramStructures );
 
     //-------------------------------------------------------------------------------------------------------------
     //-------------------------SIMULATED ANNEALING TO INITIALIZE THE PARAMETERS [w] NEAR A GLOBAL MINIMUM------------
     //---------------------------------------------------------------------------------------------------------------
     {
-
-        //Minimum value allowed for the parameters w (see min* variables further up). DOMAIN CONSTRAINT
-        spectral::array L_wMin( vw.size(), 0.0 );
-        for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
-            for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-                switch( iPar ){
-                case 0: L_wMin[i] = minAxis;         break;
-                case 1: L_wMin[i] = minRatio;        break;
-                case 2: L_wMin[i] = minAzimuth;      break;
-                case 3: L_wMin[i] = minContribution; break;
-                }
-
-        //Maximum value allowed for the parameters w (see max* variables further up). DOMAIN CONSTRAINT
-        spectral::array L_wMax( vw.size(), 1.0 );
-        for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
-            for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-                switch( iPar ){
-                case 0: L_wMax[i] = maxAxis;         break;
-                case 1: L_wMax[i] = maxRatio;        break;
-                case 2: L_wMax[i] = maxAzimuth;      break;
-                case 3: L_wMax[i] = maxContribution; break;
-                }
 
         /* This lambda returns the current “temperature” of the system.  It yields a log curve that decays as the step number increase.
            The initial temperature plays an important role: curve starting with 5.000 is steeper than another that starts with 1.000.
@@ -532,71 +496,10 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
     //Read the optimized variogram model parameters back to the variographic structures
     for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            variographicEllipses[iStructure].setParameter( iPar, vw[i] );
-
-    //=====================================GET RESULTS========================================
-
-//    //Apply the principle of the Fourier Integral Method
-//    //use a variographic map as the magnitudes and the FFT phases of
-//    //the original data to a reverse FFT in polar form to achieve a
-//    //Factorial Kriging-like separation
-//    std::vector< spectral::array > maps;
-//    std::vector< std::string > titles;
-//    std::vector< bool > shiftFlags;
-//    uint nI = m_cg->getNI();
-//    uint nJ = m_cg->getNJ();
-//    uint nK = m_cg->getNK();
-//    for( int iStructure = 0; iStructure < m; ++iStructure ) {
-//        //compute the theoretical varmap for one structure
-//        spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
-//        variographicEllipses[iStructure].addContributionToModelGrid( *m_cg,
-//                                                                     oneStructureVarmap,
-//                                                                     IJVariogramPermissiveModel::SPHERIC,
-//                                                                     true );
-
-//        //collect the theoretical varmap for display
-//        //oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
-//        //display inverted so it appears with 0.0 at center (h=0)
-//        maps.push_back( oneStructureVarmap.max() - oneStructureVarmap );
-//        titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
-//        shiftFlags.push_back( false );
-
-//        //compute FIM to obtain the map from a variographic structure
-//        spectral::array oneStructure( nI, nJ, nK, 0.0 );
-//        oneStructure = computeFIM( oneStructureVarmap, inputFFTimagPhase );
-
-//        //collect the "FK factor"
-//        maps.push_back( oneStructure );
-//        titles.push_back( QString( "Map " + QString::number( iStructure ) ).toStdString() );
-//        shiftFlags.push_back( false );
-//    }
-
-//    // Prepare the display the variogram model surface
-//    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
-//    for( spectral::array& oneStructure : maps ){
-//        variograficSurface += oneStructure;
-//    }
-//    maps.push_back( variograficSurface );
-//    titles.push_back( QString( "Variogram model surface" ).toStdString() );
-//    shiftFlags.push_back( false );
-
-//    // Prepare the display the experimental varmap of the input
-//    maps.push_back( inputVarmap );
-//    titles.push_back( QString( "Varmap of input" ).toStdString() );
-//    shiftFlags.push_back( false );
-
-//    // Prepare the display experimental - model
-//    spectral::array diff = inputVarmap - variograficSurface;
-//    maps.push_back( diff );
-//    titles.push_back( QString( "Difference" ).toStdString() );
-//    shiftFlags.push_back( false );
-
-//    // Display all the grids in a dialog
-//    displayGrids( maps, titles, shiftFlags );
-
+            variogramStructures[iStructure].setParameter( iPar, vw[i] );
 
     // Display the results in a window.
-    displayResults( variographicEllipses, inputFFTimagPhase, inputVarmap );
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
 }
 
 void AutomaticVarFitDialog::onDoWithLSRS()
@@ -635,62 +538,29 @@ void AutomaticVarFitDialog::onDoWithLSRS()
     // Compute input's varmap
     spectral::array inputVarmap = computeVarmap();
 
-    //define the domain for the optimization
-    double minCellSize = std::min( inputGrid->getCellSizeI(), inputGrid->getCellSizeJ() );
-    double minAxis         = minCellSize;               double maxAxis         = inputGrid->getDiagonalLength() / 2.0;
-    double minRatio        = 0.001;                     double maxRatio        = 1.0;
-    double minAzimuth      = 0.0  ;                     double maxAzimuth      = ImageJockeyUtils::PI;
-    double minContribution = inputVarmap.max() / 100.0; double maxContribution = inputVarmap.max();
-    double deltaAxis = maxAxis - minAxis;
-    double deltaRatio = maxRatio - minRatio;
-    double deltaAzimuth = maxAzimuth - minAzimuth;
-    double deltaContribution = maxContribution - minContribution;
-
-    //create the parameters are initialized near in the center of the domain
-    //the starting values are not particuarly important.
+    //Initialize the optimization domain (boundary conditions) and
+    //the sets of variogram paramaters (both linear and structured)
+    VariogramParametersDomain domain;
+    spectral::array vw;
+    spectral::array L_wMin;
+    spectral::array L_wMax;
     std::vector< IJVariographicStructure2D > variogramStructures;
-    for( int i = 0; i < m; ++i )
-        variogramStructures.push_back( IJVariographicStructure2D (  ( maxAxis         + minAxis         ) / 2.0,
-                                                                    ( maxRatio        + minRatio        ) / 2.0,
-                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
-                                                                     maxContribution / m ) ); //split evenly the total contribution among the geologic factors
-
-    //Initialize the linear vector of parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
-    // from the variographic parameters for each structure
-    // the starting values are not particuarly important.
-    spectral::array vw( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
-    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            vw[i] = variogramStructures[iStructure].getParameter( iPar );
-
-    //Create a vector with the minimum values allowed for the parameters w
-    //(see min* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMin( vw.size(), 0.0 );
-    for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            switch( iPar ){
-            case 0: L_wMin[i] = minAxis;         break;
-            case 1: L_wMin[i] = minRatio;        break;
-            case 2: L_wMin[i] = minAzimuth;      break;
-            case 3: L_wMin[i] = minContribution; break;
-            }
-
-    //Create a vector with the maximum values allowed for the parameters w
-    //(see max* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMax( vw.size(), 1.0 );
-    for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            switch( iPar ){
-            case 0: L_wMax[i] = maxAxis;         break;
-            case 1: L_wMax[i] = maxRatio;        break;
-            case 2: L_wMax[i] = maxAzimuth;      break;
-            case 3: L_wMax[i] = maxContribution; break;
-            }
+    initDomainAndParameters( inputVarmap,
+                             m,
+                             domain,
+                             vw,
+                             L_wMin,
+                             L_wMax,
+                             variogramStructures );
 
     //-------------------------------------------------------------------------------------------------------------
-    //------------------------- THE MODIFIED LINE SEARCH ALGORITH AS PROPOSED BY Grosan and Abraham (2009)---------
+    //------------------------ THE MODIFIED LINE SEARCH ALGORITHM AS PROPOSED BY Grosan and Abraham (2009)---------
     //---------------------------A Novel Global Optimization Technique for High Dimensional Functions--------------
     //-------------------------------------------------------------------------------------------------------------
+    double deltaAxis         = domain.max.range        - domain.min.range;
+    double deltaRatio        = domain.max.rangeRatio   - domain.min.rangeRatio;
+    double deltaAzimuth      = domain.max.azimuth      - domain.min.azimuth;
+    double deltaContribution = domain.max.contribution - domain.min.contribution;
 
     QProgressDialog progressDialog;
     progressDialog.setRange(0, nRestarts * maxNumberOfOptimizationSteps );
@@ -954,5 +824,71 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
 
     // Display all the grids in a dialog
     displayGrids( maps, titles, shiftFlags );
+}
+
+void AutomaticVarFitDialog::initDomainAndParameters( const spectral::array& inputVarmap,
+                                                     int m,
+                                                     VariogramParametersDomain &domain,
+                                                     spectral::array &vw,
+                                                     spectral::array &L_wMin,
+                                                     spectral::array &L_wMax,
+                                                     std::vector<IJVariographicStructure2D>& variogramStructures) const
+{
+    //define the domain
+    double minCellSize = std::min( m_cg->getCellSizeI(), m_cg->getCellSizeJ() );
+    double minAxis         = minCellSize              ; double maxAxis         = m_cg->getDiagonalLength() / 2.0;
+    double minRatio        = 0.001                    ; double maxRatio        = 1.0;
+    double minAzimuth      = 0.0                      ; double maxAzimuth      = ImageJockeyUtils::PI;
+    double minContribution = inputVarmap.max() / 100.0; double maxContribution = inputVarmap.max();
+
+    //create the nested structures wanted by the user
+    //the parameters are initialized near in the center of the domain
+    for( int i = 0; i < m; ++i )
+        variogramStructures.push_back( IJVariographicStructure2D (  ( maxAxis         + minAxis         ) / 2.0,
+                                                                    ( maxRatio        + minRatio        ) / 2.0,
+                                                                    ( minAzimuth      + maxAzimuth      ) / 2.0,
+                                                                    ( maxContribution - minContribution ) / m ) );
+
+    //Initialize the vector of all variographic parameters [w]=[axis0,ratio0,az0,cc0,axis1,ratio1,...]
+    //this vector is used in optimization steps .
+    // the starting values are not particuarly important.
+    vw = spectral::array( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int iLinearIndex = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iIndexInStructure = 0; iIndexInStructure < IJVariographicStructure2D::getNumberOfParameters(); ++iIndexInStructure, ++iLinearIndex )
+            vw[iLinearIndex] = variogramStructures[iStructure].getParameter( iIndexInStructure );
+
+    //Minimum value allowed for the parameters w
+    //(see min* variables further up). DOMAIN CONSTRAINT
+    L_wMin = spectral::array( vw.size(), 0.0 );
+    for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMin[i] = minAxis;         break;
+            case 1: L_wMin[i] = minRatio;        break;
+            case 2: L_wMin[i] = minAzimuth;      break;
+            case 3: L_wMin[i] = minContribution; break;
+            }
+
+    //Maximum value allowed for the parameters w
+    //(see max* variables further up). DOMAIN CONSTRAINT
+    L_wMax = spectral::array( vw.size(), 1.0 );
+    for(int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            switch( iPar ){
+            case 0: L_wMax[i] = maxAxis;         break;
+            case 1: L_wMax[i] = maxRatio;        break;
+            case 2: L_wMax[i] = maxAzimuth;      break;
+            case 3: L_wMax[i] = maxContribution; break;
+            }
+
+    // Return the domain
+    domain.min.range        = minAxis;
+    domain.min.rangeRatio   = minRatio;
+    domain.min.azimuth      = minAzimuth;
+    domain.min.contribution = minContribution;
+    domain.max.range        = maxAxis;
+    domain.max.rangeRatio   = maxRatio;
+    domain.max.azimuth      = maxAzimuth;
+    domain.max.contribution = maxContribution;
 }
 
