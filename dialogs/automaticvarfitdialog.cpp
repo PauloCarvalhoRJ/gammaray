@@ -1214,13 +1214,14 @@ spectral::array AutomaticVarFitDialog::computeFIM( const spectral::array &gridWi
     spectral::array result( nI, nJ, nK, 0.0 );
 
     //de-centralize de covariance values (h=0 goes to the corners of the grid)
-    spectral::array covarianceDecentralized = spectral::shiftByHalf( gridWithCovariance );
+    // the multiplication by ( nI * nJ * nK ) is to keep simmetry with the division by the same value further down.
+    spectral::array covarianceDecentralized = spectral::shiftByHalf( gridWithCovariance ) * static_cast<double>( nI * nJ * nK );
 
     //compute FFT of the variographic surface (into polar form)
     spectral::complex_array variographicSurfaceFFT( nI, nJ, nK );
-    FFTWlock.lock();                                                      //
-    spectral::foward( variographicSurfaceFFT, covarianceDecentralized );  // FFTW crashes when called concurrently
-    FFTWlock.unlock();                                                    //
+    FFTWlock.lock();                                                     //
+    spectral::foward( variographicSurfaceFFT, covarianceDecentralized);  // FFTW crashes when called concurrently
+    FFTWlock.unlock();                                                   //
 
     //convert the FFT result (as complex numbers in a + bi form) to polar form (amplitudes and phases)
     spectral::complex_array variographicSurfaceFFTpolar = spectral::to_polar_form( variographicSurfaceFFT );
@@ -1244,7 +1245,7 @@ spectral::array AutomaticVarFitDialog::computeFIM( const spectral::array &gridWi
     FFTWlock.unlock();                    //
 
     //fftw3's reverse FFT requires that the values of output be divided by the number of cells
-    result = result / (double)( nI * nJ * nK );
+    result = result / static_cast<double>( nI * nJ * nK );
 
     //return the result
     return result;
@@ -1266,6 +1267,10 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
     uint nI = m_cg->getNI();
     uint nJ = m_cg->getNJ();
     uint nK = m_cg->getNK();
+
+    // Prepare the display of the variogram model surface (all nested structures added up)
+    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
+
     for( int iStructure = 0; iStructure < m; ++iStructure ) {
         //compute the theoretical varmap for one structure
         spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
@@ -1273,6 +1278,9 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
                                                                      oneStructureVarmap,
                                                                      IJVariogramPermissiveModel::SPHERIC,
                                                                      true );
+
+        //build up the complete model surface (all nested structures added up)
+        variograficSurface += oneStructureVarmap;
 
         //collect the theoretical varmap for display
         //oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
@@ -1291,11 +1299,8 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
         shiftFlags.push_back( false );
     }
 
-    // Prepare the display the variogram model surface
-    spectral::array variograficSurface( nI, nJ, nK, 0.0 );
-    for( spectral::array& oneStructure : maps ){
-        variograficSurface += oneStructure;
-    }
+    // Collect the data to display the complete model surface (all nested structures added up)
+    variograficSurface = variograficSurface.max() - variograficSurface;
     maps.push_back( variograficSurface );
     titles.push_back( QString( "Variogram model surface" ).toStdString() );
     shiftFlags.push_back( false );
