@@ -26,10 +26,11 @@ public:
      */
     void openProject( const QString directory_path );
 
-    /**
-     * Sets the main window pointer.
-     */
+    //!@{
+    //! Gets/Sets the main window pointer.
+    MainWindow* getMainWindow(){ return _mw; }
     void setMainWindow( MainWindow* mw );
+    //!@}
 
     /**
      * @brief Closes the currently opened project.
