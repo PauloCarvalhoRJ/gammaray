@@ -76,19 +76,23 @@ private:
     /**
      * Displays a series of grids in a dialog.
      * TIP C++11: use displayGrids({A}, {"A matrix"}, {false}); to display a single grid.
+     * @param modal If true, the dialog blocks execution until it is closed.
      */
     void displayGrids( const std::vector< spectral::array >& grids,
                        const std::vector< std::string >& titles,
-                       const std::vector< bool >& shiftByHalves ) ;
+                       const std::vector< bool >& shiftByHalves,
+                       bool modal ) const;
 
     /**
      * Applies the principle of the Fourier Integral Method to obtain the map in spatial domain
      * from a variographic map (theoretical or experimental) and a map of FFT phases.
-     * @param gridWithVariographicStructure The grid data with the variographic surface.  It must be actually a correlographic surface,
-     *                                      that is, with max value at the center and decrasing with distance from the center.
+     * REF: The Fourier Integral Method: An Efficient Spectral Method For Simulation of Random Fields. (Pardo-Iguzquiza & Chica-Olmo, 1993)
+     * @param gridWithCovariance The grid data with the variographic surface.  It must be actually a correlographic surface,
+     *                           that is, with max value at the center and decrasing with distance from the center.
+     *                           h=0 must be at the center of the grid.
      * @param gridWithFFTphases The grid data with the FFT phases in radians.  Must vary between -PI and +PI.
      */
-    spectral::array computeFIM( const spectral::array& gridWithVariographicStructure,
+    spectral::array computeFIM( const spectral::array& gridWithCovariance,
                                 const spectral::array& gridWithFFTphases ) const;
 
     /** Method called to display a dialog with relevant results from the variogram structures passed.
@@ -96,10 +100,12 @@ private:
      * @param variogramStructures The nested variogram structures as parameters (azimuth, axis, etc.).
      * @param fftPhaseMapOfInput The FFT phase map of the input grid data.
      * @param varmapOfInput Varmap fo the input grid data.
+     * @param modal If true, the dialog blocks execution until it is closed.
      */
     void displayResults(const std::vector< IJVariographicStructure2D >& variogramStructures ,
                         const spectral::array &fftPhaseMapOfInput,
-                        const spectral::array &varmapOfInput);
+                        const spectral::array &varmapOfInput,
+                        bool modal ) const;
 
     /** Method called by the several methods of optimization to initialize the
      *  parameter domain (boundary conditions) and the set of parameters.

@@ -9,6 +9,7 @@
 #include "imagejockey/imagejockeyutils.h"
 #include "imagejockey/svd/svdfactortree.h"
 #include "imagejockey/svd/svdanalysisdialog.h"
+#include "mainwindow.h"
 
 #include <QProgressDialog>
 #include <QMessageBox>
@@ -582,7 +583,7 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
             variogramStructures[iStructure].setParameter( iPar, vw[i] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
 }
 
 void AutomaticVarFitDialog::onDoWithLSRS()
@@ -752,7 +753,7 @@ void AutomaticVarFitDialog::onDoWithLSRS()
             variogramStructures[iStructure].setParameter( iPar, vw_bestSolution[i] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
 }
 
 void AutomaticVarFitDialog::onDoWithPSO()
@@ -951,7 +952,7 @@ void AutomaticVarFitDialog::onDoWithPSO()
             variogramStructures[iGeoFactor].setParameter( iPar, gbest_pw[i] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
 }
 
 void AutomaticVarFitDialog::onDoWithGenetic()
@@ -1154,12 +1155,13 @@ void AutomaticVarFitDialog::onDoWithGenetic()
             variogramStructures[iGeoFactor].setParameter( iPar, gbest_pw[i] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap );
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
 }
 
 void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &grids,
                                          const std::vector<std::string> &titles,
-                                         const std::vector<bool> & shiftByHalves)
+                                         const std::vector<bool> & shiftByHalves,
+                                         bool modal ) const
 {
     //Create the structure to store the geological factors
     SVDFactorTree * factorTree = new SVDFactorTree( 0.0 ); //the split factor of 0.0 has no special meaning here
@@ -1186,42 +1188,52 @@ void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &gri
     }
     //use the SVD analysis dialog to display the geological factors.
     //NOTE: do not use heap to allocate the dialog, unless you remove the Qt::WA_DeleteOnClose behavior of the dialog.
-    SVDAnalysisDialog* svdad = new SVDAnalysisDialog( this );
+    SVDAnalysisDialog* svdad = new SVDAnalysisDialog( Application::instance()->getMainWindow() );
+    svdad->setWindowTitle("Grids display");
     svdad->setTree( factorTree );
     svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
 //    connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
 //             this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
-    svdad->show();
+    if( modal )
+        svdad->exec();
+    else
+        svdad->show();
 }
 
-spectral::array AutomaticVarFitDialog::computeFIM( const spectral::array &gridWithVariographicStructure,
+spectral::array AutomaticVarFitDialog::computeFIM( const spectral::array &gridWithCovariance,
                                                    const spectral::array &gridWithFFTphases ) const
 {
     std::unique_lock<std::mutex> FFTWlock ( myMutexFFTW, std::defer_lock );
 
     //get grid dimensions
-    size_t nI = gridWithVariographicStructure.M();
-    size_t nJ = gridWithVariographicStructure.N();
-    size_t nK = gridWithVariographicStructure.K();
+    size_t nI = gridWithCovariance.M();
+    size_t nJ = gridWithCovariance.N();
+    size_t nK = gridWithCovariance.K();
 
     //prepare the result
     spectral::array result( nI, nJ, nK, 0.0 );
 
+    //de-centralize de covariance values (h=0 goes to the corners of the grid)
+    spectral::array covarianceDecentralized = spectral::shiftByHalf( gridWithCovariance );
+
     //compute FFT of the variographic surface (into polar form)
     spectral::complex_array variographicSurfaceFFT( nI, nJ, nK );
-    spectral::array tmp = spectral::shiftByHalf( gridWithVariographicStructure );
-    FFTWlock.lock();                                  //
-    spectral::foward( variographicSurfaceFFT, tmp );  // FFTW crashes when called concurrently
-    FFTWlock.unlock();                                //
+    FFTWlock.lock();                                                      //
+    spectral::foward( variographicSurfaceFFT, covarianceDecentralized );  // FFTW crashes when called concurrently
+    FFTWlock.unlock();                                                    //
+
+    //convert the FFT result (as complex numbers in a + bi form) to polar form (amplitudes and phases)
     spectral::complex_array variographicSurfaceFFTpolar = spectral::to_polar_form( variographicSurfaceFFT );
-    spectral::array variographicSurfaceFFTamplitudes = spectral::real( variographicSurfaceFFTpolar );
 
-    //get the square root of the amplitudes of the varmap FFT
-    spectral::array variographicSurfaceFFTamplitudesSQRT = variographicSurfaceFFTamplitudes.sqrt();
+    //get the FFT amplitudes of the covariance values to get the spectral density
+    spectral::array spectralDensity = spectral::real( variographicSurfaceFFTpolar );
 
-    //convert sqrt(varmap) and the phases of the input to rectangular form
+    //get the square root of the spectral density to get the FFT amplitude spectrum of the resulting map
+    spectral::array mapFFTamplitudes = spectralDensity.sqrt();
+
+    //convert the FFT amplitudes and phases (passad as parameter) of the future result to rectangular form (a + bi)
     spectral::complex_array mapFFTpolar = spectral::to_complex_array(
-                                                   variographicSurfaceFFTamplitudesSQRT,
+                                                   mapFFTamplitudes,
                                                    gridWithFFTphases
                                                 );
     spectral::complex_array mapFFT = spectral::to_rectangular_form( mapFFTpolar );
@@ -1240,7 +1252,8 @@ spectral::array AutomaticVarFitDialog::computeFIM( const spectral::array &gridWi
 
 void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStructure2D> &variogramStructures,
                                             const spectral::array& fftPhaseMapOfInput,
-                                            const spectral::array& varmapOfInput )
+                                            const spectral::array& varmapOfInput,
+                                            bool modal ) const
 {
     int m = variogramStructures.size();
     //Apply the principle of the Fourier Integral Method
@@ -1299,7 +1312,7 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
     shiftFlags.push_back( false );
 
     // Display all the grids in a dialog
-    displayGrids( maps, titles, shiftFlags );
+    displayGrids( maps, titles, shiftFlags, modal );
 }
 
 void AutomaticVarFitDialog::initDomainAndParameters( const spectral::array& inputVarmap,
