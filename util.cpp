@@ -36,6 +36,7 @@
 #include <vtkImageFFT.h>
 #include <vtkImageRFFT.h>
 #include <QProgressDialog>
+#include "spectral/spectral.h"
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
@@ -517,6 +518,41 @@ void Util::createGEOEASGrid(const QString columnName, std::vector<double> &value
         if( ! ( counter % 1000) )
             QCoreApplication::processEvents(); //let Qt repaint widgets
     }
+
+    //close file
+    file.close();
+}
+
+void Util::createGEOEASGrid(const QString columnName, const spectral::array &values, QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //write out the GEO-EAS grid header
+    out << "Grid file\n";
+    out << "1\n";
+    out << columnName << '\n';
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Creating grid...");
+
+    //loop to output the values
+    int nI = values.M();
+    int nJ = values.N();
+    int nK = values.K();
+
+    int counter = 0;
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i, ++counter ){
+                out << values( i, j, k ) << '\n';
+                if( ! ( counter % 1000) )
+                    QCoreApplication::processEvents(); //let Qt repaint widgets
+            }
 
     //close file
     file.close();

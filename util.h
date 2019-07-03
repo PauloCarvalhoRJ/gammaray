@@ -26,6 +26,9 @@ class CategoryDefinition;
 class VariogramModel;
 class SpatialLocation;
 class GridFile;
+namespace spectral{
+    struct array;
+}
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -267,6 +270,14 @@ public:
      * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
      */
     static void createGEOEASGrid(const QString columnName, std::vector<double> &values,
+                                 QString path);
+
+    /**
+     * Creates a GEO-EAS regular grid file using the given values
+     * passed as a spectra::array object.
+     */
+    static void createGEOEASGrid(const QString columnName,
+                                 const spectral::array &values,
                                  QString path);
 
     /**

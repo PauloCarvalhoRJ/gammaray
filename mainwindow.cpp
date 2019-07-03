@@ -2075,80 +2075,18 @@ void MainWindow::onCovarianceMap()
     uint nJ = cg->getNJ();
     uint nK = cg->getNK();
 
-    // Perform FFT to get a grid of complex numbers in rectangular form: real part (a), imaginary part (b).
-    spectral::complex_array gridRealAndImaginaryParts;
-    {
-        QProgressDialog progressDialog;
-        progressDialog.setRange(0,0);
-        progressDialog.show();
-        progressDialog.setLabelText("Computing FFT...");
-        QCoreApplication::processEvents(); //let Qt repaint widgets
-        spectral::array *gridData = cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() );
-        spectral::foward( gridRealAndImaginaryParts, *gridData );
-        delete gridData;
-    }
-
-    // 1) Convert real and imaginary parts to magnitude and phase (phi).
-    // 2) Make ||z|| = zz* = (a+bi)(a-bi) = a^2+b^2 (Convolution Theorem: a convolution reduces to a cell-to-cell product in frequency domain).
-    // 3) RFFT of ||z|| as magnitude and a grid filled with zeros as phase (zero phase).
-    // PRODUCTS: 3 grids: magnitude and phase parts; variographic map.
-    spectral::array gridVarmap( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-    {
-        QProgressDialog progressDialog;
-        progressDialog.setRange(0,0);
-        progressDialog.show();
-        progressDialog.setLabelText("Converting FFT results to polar form...");
-        spectral::complex_array gridNormSquaredAndZeroPhase( nI, nJ, nK );
-        for(unsigned int k = 0; k < nK; ++k) {
-            QCoreApplication::processEvents(); //let Qt repaint widgets
-            for(unsigned int j = 0; j < nJ; ++j){
-                for(unsigned int i = 0; i < nI; ++i){
-                    std::complex<double> value;
-                    //the scan order of fftw follows is the opposite of the GSLib convention
-                    int idx = k + nK * (j + nJ * i );
-                    //compute the complex number norm squared
-                    double normSquared = gridRealAndImaginaryParts.d_[idx][0]*gridRealAndImaginaryParts.d_[idx][0] +
-                                         gridRealAndImaginaryParts.d_[idx][1]*gridRealAndImaginaryParts.d_[idx][1];
-                    double phase = 0.0;
-                    //convert to rectangular form
-                    value = std::polar( normSquared, phase );
-                    //save the rectangular form in the grid
-                    gridNormSquaredAndZeroPhase.d_[idx][0] = value.real();
-                    gridNormSquaredAndZeroPhase.d_[idx][1] = value.imag();
-                }
-            }
-        }
-        progressDialog.setLabelText("Computing RFFT to get varmap...");
-        QCoreApplication::processEvents(); //let Qt repaint widgets
-        spectral::backward( gridVarmap, gridNormSquaredAndZeroPhase );
-    }
-
-
-	//mirrors the correlogram so it becomes an actual variogram map.
-	//this also puts the variogram in the 0-1 scale
-	double max = gridVarmap.max();
-	gridVarmap = max - gridVarmap;
-	spectral::standardize( gridVarmap );
-
-
-    //The covariance at h=0 ends up in the corners of the grid, then
-    //we shift the data so cov(0) is in the grid center
-    std::vector< std::complex<double> > arrayShifted( nI * nJ * nK );
-    for(uint k = 0; k < nK; ++k) {
-        int k_shift = (k + nK/2) % nK;
-        for(uint j = 0; j < nJ; ++j){
-            int j_shift = (j + nJ/2) % nJ;
-            for(uint i = 0; i < nI; ++i){
-                int i_shift = (i + nI/2) % nI;
-                //the scan order of fftw follows is the opposite of the GSLib convention
-                int idx = k + nK * (j + nJ * i );
-                //get the value
-                double value = gridVarmap.d_[idx];
-                //shift the values
-                arrayShifted[i_shift + j_shift*nI + k_shift*nJ*nI].real( value );
-            }
-        }
-    }
+    //Get input data as a raw data array
+    spectral::arrayPtr inputData( cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() ) ) ;
+    //make a local copy (will be moved to inside of a SVDFacor object)
+    spectral::array varmap( *inputData );
+    //compute varmap (output will go to temp)
+    spectral::autocovariance( varmap , *inputData, true );
+    //put covariance at h=0 in the center of the grid for ease of interpretation
+    varmap = spectral::shiftByHalf( varmap );
+    //clips the varmap so the grid matches the input's
+    varmap = spectral::project( varmap, nI, nJ, nK );
+    //invert result so the value increases radially from the center at h=0
+    varmap = varmap.max() - varmap;
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
@@ -2166,13 +2104,10 @@ void MainWindow::onCovarianceMap()
     new_cg->setOrigin( newX0, newY0, newZ0 );
 
     //save the results in the project's tmp directory
-    Util::createGEOEASGrid( "Covariance", "Delete_This", arrayShifted, tmp_file_path);
+    Util::createGEOEASGrid( "semivariance", varmap, tmp_file_path );
 
     //import the saved file to the project
     CartesianGrid * definitiveCG = Application::instance()->getProject()->importCartesianGrid( new_cg, new_var_name );
-
-    //remove the second useless attribute
-    definitiveCG->deleteVariable( 1 );
 
     //delete the temporary Cartesian grid object.
     delete new_cg;
