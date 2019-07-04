@@ -1935,7 +1935,7 @@ spectral::array Util::getVarmapSpectral(const spectral::array &inputData)
     spectral::array varmap( inputData );
 
     //compute varmap (output will go to temp)
-    spectral::autocovariance( varmap , inputData, true );
+    spectral::autocovariance( varmap , inputData, false );
 
     //put covariance at h=0 in the center of the grid for ease of interpretation
     varmap = spectral::shiftByHalf( varmap );

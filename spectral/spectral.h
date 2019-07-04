@@ -232,6 +232,9 @@ void conv(array &out, const array &a, const array &b);
 void autoconv(array &out, const array &a);
 
 // covariance
+
+//centered means that it assumes the data is quasi-Gaussian with zero mean.
+
 void covariance1d(std::vector<double> &out, std::vector<double> &np,
                   const std::vector<double> &a, const std::vector<double> &b,
                   bool centered);
