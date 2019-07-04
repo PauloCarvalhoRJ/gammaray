@@ -67,6 +67,7 @@
 #include "dialogs/factorialkrigingdialog.h"
 #include "dialogs/sisimdialog.h"
 #include "dialogs/automaticvarfitdialog.h"
+#include "dialogs/emptydialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -1994,11 +1995,16 @@ void MainWindow::onQuickView()
 	m_attributesCurrentlyBeingViewed[ factor ] = _right_clicked_attribute;
 
 	//Opens the viewer.
-	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
+    IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
 	factor->setCustomName( cg->getGridName() );
 	ijgvw->setFactor( factor );
 	connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), this, SLOT(onQuickViewerClosed(SVDFactor*,bool)) );
-    ijgvw->show();
+
+    EmptyDialog* ed = new EmptyDialog( this );
+    ed->addWidget( ijgvw );
+    ed->setWindowTitle( cg->getGridName() + "/" + _right_clicked_attribute->getName() );
+    connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), ed, SLOT(reject()) );
+    ed->show();
 }
 
 void MainWindow::onProjectGrids()
