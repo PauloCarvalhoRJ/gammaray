@@ -523,6 +523,14 @@ array array::sqrt() const
     return result;
 }
 
+array array::sqr() const
+{
+    array result( M_, N_, K_ );
+    for (size_t i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] * d_[i];
+    return result;
+}
+
 double array::euclideanLength() const
 {
     return std::sqrt( spectral::dot( *this, *this ) );
