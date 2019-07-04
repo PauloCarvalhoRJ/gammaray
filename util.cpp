@@ -10,6 +10,7 @@
 #include <QScreen>
 #include <QApplication>
 #include <QFrame>
+#include <QPushButton>
 #include <cassert>
 #include <stdint.h>
 #include "exceptions/invalidgslibdatafileexception.h"
@@ -42,6 +43,7 @@
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
+#include <QMessageBox>
 #endif
 #ifdef Q_OS_LINUX
   #include <stdlib.h>
@@ -1875,5 +1877,91 @@ bool Util::isInside(const Vertex3D & p, const std::vector<Face3D> & fs)
 		if ( d < bound )
 			return false;
 	}
-	return true;
+    return true;
+}
+
+spectral::array Util::getVarmapFIM(const spectral::array &inputData)
+{
+    size_t nI = inputData.M();
+    size_t nJ = inputData.N();
+    size_t nK = inputData.K();
+
+    //compute FFT of input data
+    spectral::complex_array inputFFT( nI, nJ, nK );
+    spectral::array temp = inputData; //make local copy because spectral::foward()'s parameters are not const
+    spectral::foward( inputFFT, temp );
+
+    //convert the FT of the input to polar form
+    spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+
+    //get the amplitudes
+    spectral::array inputFFTamplitudes = spectral::real( inputFFTpolar );
+
+    //get the spectral density
+    //NOTE: the division by ( nI * nJ * nK ) is due to FFTW's implementation's issue with scale. It is not from theory.
+    spectral::array inputSpectralDensity = inputFFTamplitudes.sqr() / static_cast<double>( nI * nJ * nK );
+
+    //make a polar FT image with the spectral density as amplitudes and0 zeros as phases
+    spectral::array zeroPhases( nI, nJ, nK, 0.0 );
+    spectral::complex_array varmapFFTpolar = spectral::to_complex_array( inputSpectralDensity, zeroPhases );
+
+    //convert the FT to Cartesian form
+    spectral::complex_array varmapFFT = spectral::to_rectangular_form(  varmapFFTpolar );
+
+    //get the covariance values by reversing the FT
+    spectral::array varmap( nI, nJ, nK, 0.0 );
+    spectral::backward( varmap, varmapFFT );
+
+    //centralize h=0 for ease of interpretation
+    varmap = spectral::shiftByHalf( varmap );
+
+    //put the covariance in the correct scale (FFTW implementation characteristic, not from theory)
+    varmap = varmap / static_cast<double>( nI * nJ * nK );
+    varmap = varmap - varmap.min();
+
+    //convert covariance values to semivariances (zero @ h=0)
+    varmap = varmap.max() - varmap;
+
+    return varmap;
+}
+
+spectral::array Util::getVarmapSpectral(const spectral::array &inputData)
+{
+    size_t nI = inputData.M();
+    size_t nJ = inputData.N();
+    size_t nK = inputData.K();
+
+    //make a local copy (will be moved to inside of a SVDFacor object)
+    spectral::array varmap( inputData );
+
+    //compute varmap (output will go to temp)
+    spectral::autocovariance( varmap , inputData, true );
+
+    //put covariance at h=0 in the center of the grid for ease of interpretation
+    varmap = spectral::shiftByHalf( varmap );
+
+    //clips the varmap so the grid matches the input's
+    varmap = spectral::project( varmap, nI, nJ, nK );
+
+    //invert result so the value increases radially from the center at h=0
+    varmap = varmap.max() - varmap;
+
+    return varmap;
+}
+
+spectral::array Util::getVarmap(const spectral::array &inputData)
+{
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("Fast varmap computing");
+    msgBox.setText("Choose method:\n\n"
+                   "-->FIM: uses the principle of the Fourier Integral Method (Pardo-Iguzquiza & Chica-Olmo, 1993)\n\n"
+                   "-->Spectral: uses the algorithm in spectral::autocovariance() method.\n\n"
+                   "Both methods are fast but the result may differ slightly from the varmap computed the traditional way.");
+    QAbstractButton* pButtonUseFFT      = msgBox.addButton("FIM", QMessageBox::YesRole);
+    QAbstractButton* pButtonUseSpectral = msgBox.addButton("Spectral", QMessageBox::ApplyRole);
+    msgBox.exec();
+    if ( msgBox.clickedButton() == pButtonUseFFT )
+        return getVarmapFIM( inputData );
+    else
+        return getVarmapSpectral( inputData );
 }

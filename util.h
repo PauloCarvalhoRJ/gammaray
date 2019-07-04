@@ -597,6 +597,25 @@ public:
 	 * This assumes the polyhedron is convex and the faces are all counter-clockwise.
 	 */
 	static bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs );
+
+    /**
+     * Computes the varmap using the FFT method for fast result.
+     * It is based on the the Fourier Integral Method (Pardo-Iguzquiza & Chica-Olmo, 1993).
+     * Review results if the cells are not squares/cubes.
+     */
+    static spectral::array getVarmapFIM( const spectral::array& inputData );
+
+    /**
+     * Computes the varmap using the spectral::autocovariance() method for fast result.
+     * Review results if the cells are not squares/cubes.
+     */
+    static spectral::array getVarmapSpectral( const spectral::array& inputData );
+
+    /**
+     * Computes the varmap with either getVarmapFFT() or getVarmapSpectral().
+     * Calling this method will ask the user to choose.
+     */
+    static spectral::array getVarmap( const spectral::array& inputData );
 };
 
 #endif // UTIL_H
