@@ -2077,16 +2077,9 @@ void MainWindow::onCovarianceMap()
 
     //Get input data as a raw data array
     spectral::arrayPtr inputData( cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() ) ) ;
-    //make a local copy (will be moved to inside of a SVDFacor object)
-    spectral::array varmap( *inputData );
-    //compute varmap (output will go to temp)
-    spectral::autocovariance( varmap , *inputData, true );
-    //put covariance at h=0 in the center of the grid for ease of interpretation
-    varmap = spectral::shiftByHalf( varmap );
-    //clips the varmap so the grid matches the input's
-    varmap = spectral::project( varmap, nI, nJ, nK );
-    //invert result so the value increases radially from the center at h=0
-    varmap = varmap.max() - varmap;
+
+    //Compute the varmap.
+    spectral::array varmap = Util::getVarmap( *inputData );
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
