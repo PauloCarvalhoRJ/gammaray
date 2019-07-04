@@ -131,6 +131,7 @@ private Q_SLOTS:
     void onDoWithLSRS();
     void onDoWithPSO();
     void onDoWithGenetic();
+    void onVarmapMethodChanged();
 };
 
 #endif // AUTOMATICVARFITDIALOG_H

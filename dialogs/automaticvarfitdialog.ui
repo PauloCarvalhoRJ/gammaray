@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>648</width>
+    <width>802</width>
     <height>443</height>
    </rect>
   </property>
@@ -155,6 +155,27 @@
         <property name="value">
          <number>69069</number>
         </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_35">
+        <property name="text">
+         <string>  varmap method:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cmbVarmapMethod">
+        <item>
+         <property name="text">
+          <string>FIM-based</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>Spectral</string>
+         </property>
+        </item>
        </widget>
       </item>
       <item>
@@ -1017,7 +1038,7 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>635</x>
+     <x>789</x>
      <y>430</y>
     </hint>
     <hint type="destinationlabel">
@@ -1065,8 +1086,8 @@
    <slot>onDoWithPSO()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>213</x>
-     <y>206</y>
+     <x>675</x>
+     <y>301</y>
     </hint>
     <hint type="destinationlabel">
      <x>270</x>
@@ -1081,12 +1102,28 @@
    <slot>onDoWithGenetic()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>203</x>
-     <y>206</y>
+     <x>665</x>
+     <y>330</y>
     </hint>
     <hint type="destinationlabel">
      <x>256</x>
      <y>415</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbVarmapMethod</sender>
+   <signal>activated(int)</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onVarmapMethodChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>677</x>
+     <y>48</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>756</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
@@ -1096,5 +1133,6 @@
   <slot>onDoWithLSRS()</slot>
   <slot>onDoWithPSO()</slot>
   <slot>onDoWithGenetic()</slot>
+  <slot>onVarmapMethodChanged()</slot>
  </slots>
 </ui>

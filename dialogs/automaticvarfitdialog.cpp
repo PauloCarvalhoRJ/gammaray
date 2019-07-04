@@ -10,6 +10,7 @@
 #include "imagejockey/svd/svdfactortree.h"
 #include "imagejockey/svd/svdanalysisdialog.h"
 #include "mainwindow.h"
+#include "util.h"
 
 #include <QProgressDialog>
 #include <QMessageBox>
@@ -199,24 +200,7 @@ AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
         m_gridViewerInput->setFactor( gridData );
     }
 
-    // display input variable's varmap
-    {
-        //compute varmap (output will go to temp)
-        spectral::array temp = computeVarmap();
-        //make a SVDFactor object so we can reuse IJGridViewerWidget to display gridded data
-        SVDFactor* gridData = new SVDFactor( std::move(temp), 1, 0.42,
-                                         -m_cg->getNI() / 2 * m_cg->getCellSizeI(),
-                                         -m_cg->getNJ() / 2 * m_cg->getCellSizeJ(),
-                                         -m_cg->getNK() / 2 * m_cg->getCellSizeK(),
-                                         m_cg->getCellSizeI(),
-                                         m_cg->getCellSizeJ(),
-                                         m_cg->getCellSizeK(),
-                                         0.0 );
-        //set color scale label
-        gridData->setCustomName( "Varmap" );
-        //display data
-        m_gridViewerVarmap->setFactor( gridData );
-    }
+    onVarmapMethodChanged();
 }
 
 AutomaticVarFitDialog::~AutomaticVarFitDialog()
@@ -228,17 +212,11 @@ spectral::array AutomaticVarFitDialog::computeVarmap() const
 {
     //Get input data as a raw data array
     spectral::arrayPtr inputData( m_cg->createSpectralArray( m_at->getAttributeGEOEASgivenIndex()-1 ) ) ;
-    //make a local copy (will be moved to inside of a SVDFacor object)
-    spectral::array temp( *inputData );
-    //compute varmap (output will go to temp)
-    spectral::autocovariance( temp , *inputData, true );
-    //put covariance at h=0 in the center of the grid for ease of interpretation
-    temp = spectral::shiftByHalf( temp );
-    //clips the varmap so the grid matches the input's
-    temp = spectral::project( temp, m_cg->getNI(), m_cg->getNJ(), m_cg->getNK() );
-    //invert result so the value increases radially from the center at h=0
-    temp = temp.max() - temp;
-    return temp;
+
+    if( ui->cmbVarmapMethod->currentIndex() == 0 ) //index 0 is FIM-based
+        return Util::getVarmapFIM( *inputData );
+    else
+        return Util::getVarmapSpectral( *inputData );
 }
 
 spectral::array AutomaticVarFitDialog::generateVariographicSurface(
@@ -1156,6 +1134,28 @@ void AutomaticVarFitDialog::onDoWithGenetic()
 
     // Display the results in a window.
     displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+}
+
+void AutomaticVarFitDialog::onVarmapMethodChanged()
+{
+    // display input variable's varmap
+    {
+        //compute varmap (output will go to temp)
+        spectral::array temp = computeVarmap();
+        //make a SVDFactor object so we can reuse IJGridViewerWidget to display gridded data
+        SVDFactor* gridData = new SVDFactor( std::move(temp), 1, 0.42,
+                                         -m_cg->getNI() / 2 * m_cg->getCellSizeI(),
+                                         -m_cg->getNJ() / 2 * m_cg->getCellSizeJ(),
+                                         -m_cg->getNK() / 2 * m_cg->getCellSizeK(),
+                                         m_cg->getCellSizeI(),
+                                         m_cg->getCellSizeJ(),
+                                         m_cg->getCellSizeK(),
+                                         0.0 );
+        //set color scale label
+        gridData->setCustomName( "Varmap" );
+        //display data
+        m_gridViewerVarmap->setFactor( gridData );
+    }
 }
 
 void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &grids,
