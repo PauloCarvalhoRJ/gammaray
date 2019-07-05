@@ -616,6 +616,19 @@ public:
      * Calling this method will ask the user to choose.
      */
     static spectral::array getVarmap( const spectral::array& inputData );
+
+    /** Converts an angle in degrees of azimuth (0 == north and increasing clockwise)
+     * to radians in trigonometric convention (0 == right and increasing counter-clockwise).
+     */
+    static double azimuthToRadians( double azimuth );
+
+    /** Converts an angle in radians (0 == right and increasing counter-clockwise by default)
+     * to half azimuth degrees (0 == north and increasing clockwise).
+     * Half-azimuth means that an azimuth greater than 180 is recomputed as az - 180.  E.g. N240E becomes N060E
+     */
+    static double radiansToHalfAzimuth( double trigonometricAngle, bool clockwiseRadians = false );
+
+    static QString formatToDecimalPlaces( double value, int nDecimalPlaces );
 };
 
 #endif // UTIL_H

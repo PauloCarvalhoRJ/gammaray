@@ -1965,3 +1965,26 @@ spectral::array Util::getVarmap(const spectral::array &inputData)
     else
         return getVarmapSpectral( inputData );
 }
+
+double Util::azimuthToRadians(double azimuth)
+{
+    return ( - azimuth + 90.0 ) * Util::PI_OVER_180;
+}
+
+double Util::radiansToHalfAzimuth(double trigonometricAngle, bool clockwiseRadians )
+{
+    if( ! clockwiseRadians )
+        trigonometricAngle = -trigonometricAngle;
+    double az = trigonometricAngle / Util::PI_OVER_180 + 90.0;
+    if ( az >= 180.0 )
+        az -= 180.0;
+    return az;
+}
+
+QString Util::formatToDecimalPlaces(double value, int nDecimalPlaces)
+{
+    char buffer[50];
+    QString format = "%." + QString::number(nDecimalPlaces) + "f";
+    std::sprintf(buffer, format.toStdString().c_str(), value );
+    return QString( buffer );
+}
