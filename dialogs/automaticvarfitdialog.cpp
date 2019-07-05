@@ -17,6 +17,7 @@
 #include <cassert>
 #include <thread>
 #include <mutex>
+#include <QInputDialog>
 
 /** This is a mutex to restrict access to the FFTW routines from
  * multiple threads.  Some of its routines are not thread safe.*/
@@ -1158,6 +1159,23 @@ void AutomaticVarFitDialog::onVarmapMethodChanged()
     }
 }
 
+void AutomaticVarFitDialog::onSaveAResult(spectral::array *result)
+{
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new variable in " + m_cg->getName(),
+                                             "New variable name:", QLineEdit::Normal,
+                                             "Nth_varmap_or_structure_of_" + m_at->getName(), &ok );
+
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //append the data as a new attribute to the destination grid.
+    m_cg->append( new_var_name, *result );
+}
+
 void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &grids,
                                          const std::vector<std::string> &titles,
                                          const std::vector<bool> & shiftByHalves,
@@ -1189,11 +1207,12 @@ void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &gri
     //use the SVD analysis dialog to display the geological factors.
     //NOTE: do not use heap to allocate the dialog, unless you remove the Qt::WA_DeleteOnClose behavior of the dialog.
     SVDAnalysisDialog* svdad = new SVDAnalysisDialog( Application::instance()->getMainWindow() );
-    svdad->setWindowTitle("Grids display");
+    svdad->setWindowTitle("Grids display: right-click on a grid to save it to the data set.");
     svdad->setTree( factorTree );
     svdad->setDeleteTreeOnClose( true ); //the three and all data it contains will be deleted on dialog close
-//    connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
-//             this, SLOT(onSumOfFactorsWasComputed(spectral::array*)) );
+    svdad->hideAnalysisButtons(); //we are not doing SVD analysis
+    connect( svdad, SIGNAL(sumOfFactorsComputed(spectral::array*)),
+             this,  SLOT(onSaveAResult(spectral::array*)) );
     if( modal )
         svdad->exec();
     else

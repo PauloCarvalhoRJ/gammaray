@@ -2026,6 +2026,7 @@ void MainWindow::onProjectGrids()
     cgDestination->loadData();
 
     //projection loop
+    //TODO: duplicate code: replace this with a call to spectral::project()
     for( int k = 0; k < cgSource->getNK(); ++k ){
         int kDest = k - cgSource->getNK()/2 + cgDestination->getNK()/2;
         for( int j = 0; j < cgSource->getNJ(); ++j ){

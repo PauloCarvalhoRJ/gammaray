@@ -69,6 +69,14 @@ void SVDAnalysisDialog::setGridWithPhaseForPossibleRFFT(IJAbstractCartesianGrid 
     m_variableIndexWithPhaseForPossibleRFFT = indexOfVariableWithPhase;
 }
 
+void SVDAnalysisDialog::hideAnalysisButtons()
+{
+    ui->btnCustomAnalysis->hide();
+    ui->btnPreview->hide();
+    ui->btnPreviewRFFT->hide();
+    ui->btnSave->hide();
+}
+
 void SVDAnalysisDialog::refreshTreeStyle()
 {
 	ui->svdFactorTreeView->setStyleSheet("QTreeView::branch:has-siblings:!adjoins-item { \

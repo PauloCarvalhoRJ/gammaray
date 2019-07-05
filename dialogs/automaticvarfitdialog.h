@@ -132,6 +132,7 @@ private Q_SLOTS:
     void onDoWithPSO();
     void onDoWithGenetic();
     void onVarmapMethodChanged();
+    void onSaveAResult( spectral::array* result );
 };
 
 #endif // AUTOMATICVARFITDIALOG_H
