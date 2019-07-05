@@ -1290,6 +1290,9 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
     // Prepare the display of the variogram model surface (all nested structures added up)
     spectral::array variograficSurface( nI, nJ, nK, 0.0 );
 
+    // The sum of the indidual maps corresponding to each structure
+    spectral::array sumOfStructures( nI, nJ, nK, 0.0 );
+
     for( int iStructure = 0; iStructure < m; ++iStructure ) {
         //compute the theoretical varmap for one structure
         spectral::array oneStructureVarmap( nI, nJ, nK, 0.0 );
@@ -1305,12 +1308,21 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
         //oneStructureVarmap = oneStructureVarmap.max() - oneStructureVarmap; // correlogram -> variogram
         //display inverted so it appears with 0.0 at center (h=0)
         maps.push_back( oneStructureVarmap.max() - oneStructureVarmap );
-        titles.push_back( QString( "Structure " + QString::number( iStructure ) ).toStdString() );
+        QString structureDesc = "Str. " + QString::number( iStructure ) + ": "
+                                "Sph "
+                                "cc="   + Util::formatToDecimalPlaces( variogramStructures[iStructure].contribution, 2 ) + ";\n "
+                                "axes=" + Util::formatToDecimalPlaces( variogramStructures[iStructure].range, 2 ) +
+                                " X " + Util::formatToDecimalPlaces( variogramStructures[iStructure].range * variogramStructures[iStructure].rangeRatio, 2 ) + "; "
+                                "az="   + Util::formatToDecimalPlaces( Util::radiansToHalfAzimuth( variogramStructures[iStructure].azimuth, true ), 0 ) + "; ";
+        titles.push_back( structureDesc.toStdString() ) ;
         shiftFlags.push_back( false );
 
         //compute FIM to obtain the map from a variographic structure
         spectral::array oneStructure( nI, nJ, nK, 0.0 );
         oneStructure = computeFIM( oneStructureVarmap, fftPhaseMapOfInput );
+
+        //accumulate the structures
+        sumOfStructures += oneStructure;
 
         //collect the "FK factor"
         maps.push_back( oneStructure );
@@ -1329,10 +1341,16 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
     titles.push_back( QString( "Varmap of input" ).toStdString() );
     shiftFlags.push_back( false );
 
-    // Prepare the display experimental - model
+    // Prepare the display of the difference experimental - model
     spectral::array diff = varmapOfInput - variograficSurface;
     maps.push_back( diff );
-    titles.push_back( QString( "Difference" ).toStdString() );
+    titles.push_back( QString( "Difference (variogram)" ).toStdString() );
+    shiftFlags.push_back( false );
+
+    // Prepare the display of the difference original data - sum of factors
+    spectral::arrayPtr inputData( m_cg->createSpectralArray( m_at->getAttributeGEOEASgivenIndex()-1 ) ) ;
+    maps.push_back( *inputData - sumOfStructures );
+    titles.push_back( QString( "Difference (map)" ).toStdString() );
     shiftFlags.push_back( false );
 
     // Display all the grids in a dialog
