@@ -9,6 +9,7 @@
 #include "domain/application.h"
 #include <QtGlobal>
 #include <QSettings>
+#include <QPushButton>
 #include "dialogs/datafiledialog.h"
 #include "dialogs/pointsetdialog.h"
 #include "dialogs/cartesiangriddialog.h"
@@ -2117,6 +2118,19 @@ void MainWindow::onCovarianceMap()
 
 void MainWindow::onVarigraphicDecomposition()
 {
+
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("Deprecated functionality");
+    msgBox.setText("This feature has been deprecated.  Variographic decomposition should be performed by right-clicking "
+                   "on a grid variable, then "
+                   "activating the \"Automatic variogram fitting\" option and saving the structure in the results "
+                   "window that will be opened there.");
+    QAbstractButton* pButtonGo     = msgBox.addButton("Proceed anyway", QMessageBox::YesRole);
+    QAbstractButton* pButtonCancel = msgBox.addButton("Cancel", QMessageBox::NoRole);
+    msgBox.exec();
+    if ( msgBox.clickedButton() == pButtonCancel )
+        return;
+
 	//get all the Cartesian grids in the project
 	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
 	//calls the Image Jockey dialog
