@@ -1038,7 +1038,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3"
+    previousVersions  << "5.5" << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3"
                       << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
                       << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1"
                       << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0"
@@ -1968,7 +1968,7 @@ spectral::array Util::getVarmap(const spectral::array &inputData)
 
 double Util::azimuthToRadians(double azimuth)
 {
-    return ( - azimuth + 90.0 ) * Util::PI_OVER_180;
+    return ( azimuth + 90.0 ) * Util::PI_OVER_180;
 }
 
 double Util::radiansToHalfAzimuth(double trigonometricAngle, bool clockwiseRadians )
