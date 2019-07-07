@@ -973,7 +973,7 @@
        <item row="7" column="2">
         <widget class="QPushButton" name="btnDoWithGenetic">
          <property name="toolTip">
-          <string>Run with SA+GD</string>
+          <string>Run with Genetic Algorithm</string>
          </property>
          <property name="text">
           <string/>
@@ -1010,7 +1010,7 @@
        <item row="1" column="1">
         <widget class="QPushButton" name="btnDoWithManual">
          <property name="toolTip">
-          <string>Run with SA+GD</string>
+          <string>Run with manually entered parameters</string>
          </property>
          <property name="text">
           <string/>
