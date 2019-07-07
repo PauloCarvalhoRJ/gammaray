@@ -152,7 +152,8 @@ typedef Individual Solution; //make a synonym just for code readbility
 AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::AutomaticVarFitDialog),
-    m_at( at )
+    m_at( at ),
+    m_nestedVariogramStructuresParametersForManual( new NestedVariogramStructuresParameters() )
 {
     assert( at && "AutomaticVarFitDialog::AutomaticVarFitDialog(): attribute cannot be null.");
 
@@ -202,6 +203,8 @@ AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     }
 
     onVarmapMethodChanged();
+
+    onNumberOfStructuresChanged( ui->spinNumberOfVariogramStructures->value() );
 }
 
 AutomaticVarFitDialog::~AutomaticVarFitDialog()
@@ -926,9 +929,9 @@ void AutomaticVarFitDialog::onDoWithPSO()
     progressDialog.hide();
 
     //Read the optimized variogram model parameters back to the variographic structures
-    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            variogramStructures[iGeoFactor].setParameter( iPar, gbest_pw[i] );
+    for( int iParLinear = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++iParLinear )
+            variogramStructures[iStructure].setParameter( iPar, gbest_pw[iParLinear] );
 
     // Display the results in a window.
     displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
@@ -1129,9 +1132,50 @@ void AutomaticVarFitDialog::onDoWithGenetic()
     spectral::array gbest_pw = population[0].parameters;
 
     //Read the optimized variogram model parameters back to the variographic structures
-    for( int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            variogramStructures[iGeoFactor].setParameter( iPar, gbest_pw[i] );
+    for( int iParLinear = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++iParLinear )
+            variogramStructures[iStructure].setParameter( iPar, gbest_pw[iParLinear] );
+
+    // Display the results in a window.
+    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+}
+
+void AutomaticVarFitDialog::onDoWithManual()
+{
+    int m = ui->spinNumberOfVariogramStructures->value();
+
+    //Compute FFT phase map of input
+    spectral::array inputFFTimagPhase = getInputPhaseMap();
+
+    //Compute varmap of input
+    spectral::array inputVarmap = computeVarmap();
+
+    //Initialize the optimization domain (boundary conditions) and
+    //the sets of variogram paramaters (both linear and structured)
+    VariogramParametersDomain domain;
+    spectral::array vw;
+    spectral::array L_wMin;
+    spectral::array L_wMax;
+    std::vector< IJVariographicStructure2D > variogramStructures;
+    initDomainAndParameters( inputVarmap,
+                             m,
+                             domain,
+                             vw,
+                             L_wMin,
+                             L_wMax,
+                             variogramStructures );
+
+    //Read the variogram model manually entered by the user
+    for( int iStructure = 0; iStructure < m; ++iStructure ){
+            variogramStructures[iStructure].setParameter( 0,
+                               m_nestedVariogramStructuresParametersForManual->getSemiMajorAxis( iStructure ) );
+            variogramStructures[iStructure].setParameter( 1,
+                               m_nestedVariogramStructuresParametersForManual->getSemiMinorSemiMajorAxesRatio( iStructure ) );
+            variogramStructures[iStructure].setParameter( 2,
+                               m_nestedVariogramStructuresParametersForManual->getAzimuthAsRadians( iStructure ) );
+            variogramStructures[iStructure].setParameter( 3,
+                               m_nestedVariogramStructuresParametersForManual->getContribution( iStructure ) );
+     }
 
     // Display the results in a window.
     displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
@@ -1176,35 +1220,41 @@ void AutomaticVarFitDialog::onSaveAResult(spectral::array *result)
     m_cg->append( new_var_name, *result );
 }
 
+void AutomaticVarFitDialog::onNumberOfStructuresChanged(int number)
+{
+    m_nestedVariogramStructuresParametersForManual->setNumberOfNestedStructures( number );
+    ui->layoutFieldsForManual->addWidget( m_nestedVariogramStructuresParametersForManual->getEditorWidget() );
+}
+
 void AutomaticVarFitDialog::displayGrids(const std::vector<spectral::array> &grids,
                                          const std::vector<std::string> &titles,
                                          const std::vector<bool> & shiftByHalves,
                                          bool modal ) const
 {
-    //Create the structure to store the geological factors
+    //Create the structure to store the variographic structure factors
     SVDFactorTree * factorTree = new SVDFactorTree( 0.0 ); //the split factor of 0.0 has no special meaning here
-    //Populate the factor container with the geological factors.
+    //Populate the factor container with the structure factors.
     std::vector< spectral::array >::const_iterator it = grids.begin();
     std::vector< std::string >::const_iterator itTitles = titles.begin();
     std::vector< bool >::const_iterator itShiftByHalves = shiftByHalves.begin();
     for(int i = 1; it != grids.end(); ++it, ++i, ++itTitles, ++itShiftByHalves){
-        //make a local copy of the geological factor data
-        spectral::array geoFactorDataCopy;
+        //make a local copy of the structure map data
+        spectral::array structureMapDataCopy;
         if( *itShiftByHalves )
-            geoFactorDataCopy = spectral::shiftByHalf( *it );
+            structureMapDataCopy = spectral::shiftByHalf( *it );
         else
-            geoFactorDataCopy = spectral::array( *it );
-        //Create a displayble object from the geological factor data
+            structureMapDataCopy = spectral::array( *it );
+        //Create a displayble object from the structure factor data
         //This pointer will be managed by the SVDFactorTree object.
-        SVDFactor* geoFactor = new SVDFactor( std::move(geoFactorDataCopy), i, 1/(grids.size()),
+        SVDFactor* structureFactor = new SVDFactor( std::move(structureMapDataCopy), i, 1/(grids.size()),
                                            0, 0, 0, 1, 1, 1, 0.0);
-        //Declare it as a geological factor (decomposable, not fundamental)
-        geoFactor->setType( SVDFactorType::GEOLOGICAL );
-        geoFactor->setCustomName( QString( (*itTitles).c_str() ) );
+        //Declare it as a structure factor (decomposable, not fundamental)
+        structureFactor->setType( SVDFactorType::GEOLOGICAL );
+        structureFactor->setCustomName( QString( (*itTitles).c_str() ) );
         //add the displayable object to the factor tree (container)
-        factorTree->addFirstLevelFactor( geoFactor );
+        factorTree->addFirstLevelFactor( structureFactor );
     }
-    //use the SVD analysis dialog to display the geological factors.
+    //use the SVD analysis dialog to display the structure factors.
     //NOTE: do not use heap to allocate the dialog, unless you remove the Qt::WA_DeleteOnClose behavior of the dialog.
     SVDAnalysisDialog* svdad = new SVDAnalysisDialog( Application::instance()->getMainWindow() );
     svdad->setWindowTitle("Grids display: right-click on a grid to save it to the data set.");
@@ -1287,6 +1337,9 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
     uint nJ = m_cg->getNJ();
     uint nK = m_cg->getNK();
 
+    // Get the input grid data
+    spectral::arrayPtr inputData( m_cg->createSpectralArray( m_at->getAttributeGEOEASgivenIndex()-1 ) ) ;
+
     // Prepare the display of the variogram model surface (all nested structures added up)
     spectral::array variograficSurface( nI, nJ, nK, 0.0 );
 
@@ -1347,8 +1400,17 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
     titles.push_back( QString( "Difference (variogram)" ).toStdString() );
     shiftFlags.push_back( false );
 
+    // Display the input data
+    maps.push_back( *inputData );
+    titles.push_back( QString( "Original grid" ).toStdString() );
+    shiftFlags.push_back( false );
+
+    // Display the sum of factors obtained with the nested structures
+    maps.push_back( sumOfStructures );
+    titles.push_back( QString( "Result of the model" ).toStdString() );
+    shiftFlags.push_back( false );
+
     // Prepare the display of the difference original data - sum of factors
-    spectral::arrayPtr inputData( m_cg->createSpectralArray( m_at->getAttributeGEOEASgivenIndex()-1 ) ) ;
     maps.push_back( *inputData - sumOfStructures );
     titles.push_back( QString( "Difference (map)" ).toStdString() );
     shiftFlags.push_back( false );

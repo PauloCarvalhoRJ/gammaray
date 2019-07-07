@@ -4,6 +4,7 @@
 #include <QDialog>
 #include "spectral/spectral.h"
 #include "imagejockey/ijvariographicmodel2d.h"
+#include "geostats/nestedvariogramstructuresparameters.h"
 
 class Attribute;
 class CartesianGrid;
@@ -50,6 +51,8 @@ private:
 
     IJGridViewerWidget* m_gridViewerInput;
     IJGridViewerWidget* m_gridViewerVarmap;
+
+    NestedVariogramStructuresParametersPtr m_nestedVariogramStructuresParametersForManual;
 
     /** Computes the varmap of the input data.
      * TODO: consider moving this method to either CartesianGrid,
@@ -127,12 +130,16 @@ private:
                                   std::vector<IJVariographicStructure2D> &variogramStructures ) const;
 
 private Q_SLOTS:
+
     void onDoWithSAandGD();
     void onDoWithLSRS();
     void onDoWithPSO();
     void onDoWithGenetic();
+    void onDoWithManual();
+
     void onVarmapMethodChanged();
     void onSaveAResult( spectral::array* result );
+    void onNumberOfStructuresChanged(int number);
 };
 
 #endif // AUTOMATICVARFITDIALOG_H
