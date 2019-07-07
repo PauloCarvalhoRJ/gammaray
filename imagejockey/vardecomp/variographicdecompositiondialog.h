@@ -16,6 +16,24 @@ namespace spectral {
     class complex_array;
 }
 
+enum class FundamentalFactorType : int {
+    SVD_SINGULAR_FACTOR,
+    FFT_SPECTRUM_PARTITION,
+    GABOR_ANALYSIS_FACTOR
+};
+
+struct GaborAnalysisParameters{
+    double initialFrequency;
+    double finalFrequency;
+    double frequencyStep;
+    double azimuthStep;
+    int kernelSize;
+    double kernelMeanMajorAxis;
+    double kernelMeanMinorAxis;
+    double kernelSigmaMajorAxis;
+    double kernelSigmaMinorAxis;
+};
+
 class VariographicDecompositionDialog : public QDialog
 {
     Q_OBJECT
@@ -64,7 +82,30 @@ private:
 									 std::vector<spectral::array> & frequencyFactors,
 									 int nTracks);
 
-	void doVariographicDecomposition2( bool useSVD );
+    /** Computes the fundamental factors for the given variable of the given grid using
+     *  Gabor analysis.  The parameters for it are set in the passed GaborParameters
+     *  structure.
+     */
+    void doGaborAnalysisOnData( const spectral::array* gridInputData,
+                                std::vector<spectral::array> & frequencyFactors,
+                                const GaborAnalysisParameters& gaborParameters );
+
+    void doVariographicDecomposition2( FundamentalFactorType fundamentalFactorType );
+
+    /** Tests whether the passed set of free parameters w result in a valid
+     * set of fundamental factors weights.
+     * @param vectorOfParameters The column-vector with the free paramateres to test.
+     * @param A The LHS of the linear system originated from the information conservation constraints.
+     * @param Adagger The pseudo-inverse of A.
+     * @param B The RHS of the linear system originated from the information conservation constraints.
+     * @param I The identity matrix compatible with the formula: [a] = Adagger.B + (I-Adagger.A)[w]
+     */
+    bool isSetOfFreeParametersValid( const spectral::array &vectorOfParameters,
+                                     const spectral::array &A,
+                                     const spectral::array &Adagger,
+                                     const spectral::array &B,
+                                     const spectral::array &I ) const;
+
 
 private Q_SLOTS:
 	void doVariographicDecomposition();
@@ -76,6 +117,16 @@ private Q_SLOTS:
     void onSumOfFactorsWasComputed(spectral::array *gridData); //called to save grid data as a Cartesian grid
     void doVariographicDecomposition2();
 	void doVariographicDecomposition3();
+    void doVariographicDecomposition4();
+    void doVariographicParametersAnalysis( FundamentalFactorType fundamentalFactorType );
+    void doVariographicParametersAnalysisWithGabor();
+    void doVariographicParametersAnalysisWithSpectrumPart();
+    void doVariographicDecomposition5_WITH_SA_AND_GD();
+    void doVariographicDecomposition5_WITH_LSRS();
+    void doVariographicDecomposition5_WITH_PSO();
+    void doVariographicDecomposition5_WITH_Genetic();
+    void doVariographicDecomposition5_WITH_BruteForce();
+    void doVariographicDecomposition5();
 };
 
 #endif // VARIOGRAPHICDECOMPOSITIONDIALOG_H

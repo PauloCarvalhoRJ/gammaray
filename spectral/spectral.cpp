@@ -10,6 +10,7 @@ With contributions by Paulo R. M. Carvalho (paulo.r.m.carvalho@gmail.com)
 #include <cmath>
 #include <Eigen/Dense>
 #include <complex>
+#include <numeric>
 
 namespace spectral
 {
@@ -506,7 +507,28 @@ double array::max() const
 
 double array::min() const
 {
-	return *std::min_element( d_.begin(), d_.end() );
+    return *std::min_element( d_.begin(), d_.end() );
+}
+
+double array::avg() const
+{
+    return std::accumulate( d_.begin(), d_.end(), 0.0) / d_.size();
+}
+
+array array::sqrt() const
+{
+    array result( M_, N_, K_ );
+    for (size_t i = 0; i < d_.size(); ++i)
+        result.d_[i] = std::sqrt( d_[i] );
+    return result;
+}
+
+array array::sqr() const
+{
+    array result( M_, N_, K_ );
+    for (size_t i = 0; i < d_.size(); ++i)
+        result.d_[i] = d_[i] * d_[i];
+    return result;
 }
 
 double array::euclideanLength() const

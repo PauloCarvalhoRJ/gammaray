@@ -10,6 +10,7 @@
 #include <QScreen>
 #include <QApplication>
 #include <QFrame>
+#include <QPushButton>
 #include <cassert>
 #include <stdint.h>
 #include "exceptions/invalidgslibdatafileexception.h"
@@ -36,11 +37,13 @@
 #include <vtkImageFFT.h>
 #include <vtkImageRFFT.h>
 #include <QProgressDialog>
+#include "spectral/spectral.h"
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
+#include <QMessageBox>
 #endif
 #ifdef Q_OS_LINUX
   #include <stdlib.h>
@@ -517,6 +520,41 @@ void Util::createGEOEASGrid(const QString columnName, std::vector<double> &value
         if( ! ( counter % 1000) )
             QCoreApplication::processEvents(); //let Qt repaint widgets
     }
+
+    //close file
+    file.close();
+}
+
+void Util::createGEOEASGrid(const QString columnName, const spectral::array &values, QString path)
+{
+    //open file for writing
+    QFile file( path );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //write out the GEO-EAS grid header
+    out << "Grid file\n";
+    out << "1\n";
+    out << columnName << '\n';
+
+    QProgressDialog progressDialog;
+    progressDialog.setRange(0,0);
+    progressDialog.show();
+    progressDialog.setLabelText("Creating grid...");
+
+    //loop to output the values
+    int nI = values.M();
+    int nJ = values.N();
+    int nK = values.K();
+
+    int counter = 0;
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i, ++counter ){
+                out << values( i, j, k ) << '\n';
+                if( ! ( counter % 1000) )
+                    QCoreApplication::processEvents(); //let Qt repaint widgets
+            }
 
     //close file
     file.close();
@@ -1000,7 +1038,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3"
+    previousVersions  << "5.5" << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3"
                       << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
                       << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0" << "1.7.1"
                       << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1" << "1.2" << "1.1.0"
@@ -1839,5 +1877,114 @@ bool Util::isInside(const Vertex3D & p, const std::vector<Face3D> & fs)
 		if ( d < bound )
 			return false;
 	}
-	return true;
+    return true;
+}
+
+spectral::array Util::getVarmapFIM(const spectral::array &inputData)
+{
+    size_t nI = inputData.M();
+    size_t nJ = inputData.N();
+    size_t nK = inputData.K();
+
+    //compute FFT of input data
+    spectral::complex_array inputFFT( nI, nJ, nK );
+    spectral::array temp = inputData; //make local copy because spectral::foward()'s parameters are not const
+    spectral::foward( inputFFT, temp );
+
+    //convert the FT of the input to polar form
+    spectral::complex_array inputFFTpolar = spectral::to_polar_form( inputFFT );
+
+    //get the amplitudes
+    spectral::array inputFFTamplitudes = spectral::real( inputFFTpolar );
+
+    //get the spectral density
+    //NOTE: the division by ( nI * nJ * nK ) is due to FFTW's implementation's issue with scale. It is not from theory.
+    spectral::array inputSpectralDensity = inputFFTamplitudes.sqr() / static_cast<double>( nI * nJ * nK );
+
+    //make a polar FT image with the spectral density as amplitudes and0 zeros as phases
+    spectral::array zeroPhases( nI, nJ, nK, 0.0 );
+    spectral::complex_array varmapFFTpolar = spectral::to_complex_array( inputSpectralDensity, zeroPhases );
+
+    //convert the FT to Cartesian form
+    spectral::complex_array varmapFFT = spectral::to_rectangular_form(  varmapFFTpolar );
+
+    //get the covariance values by reversing the FT
+    spectral::array varmap( nI, nJ, nK, 0.0 );
+    spectral::backward( varmap, varmapFFT );
+
+    //centralize h=0 for ease of interpretation
+    varmap = spectral::shiftByHalf( varmap );
+
+    //put the covariance in the correct scale (FFTW implementation characteristic, not from theory)
+    varmap = varmap / static_cast<double>( nI * nJ * nK );
+    varmap = varmap - varmap.min();
+
+    //convert covariance values to semivariances (zero @ h=0)
+    varmap = varmap.max() - varmap;
+
+    return varmap;
+}
+
+spectral::array Util::getVarmapSpectral(const spectral::array &inputData)
+{
+    size_t nI = inputData.M();
+    size_t nJ = inputData.N();
+    size_t nK = inputData.K();
+
+    //make a local copy (will be moved to inside of a SVDFacor object)
+    spectral::array varmap( inputData );
+
+    //compute varmap (output will go to temp)
+    spectral::autocovariance( varmap , inputData, false );
+
+    //put covariance at h=0 in the center of the grid for ease of interpretation
+    varmap = spectral::shiftByHalf( varmap );
+
+    //clips the varmap so the grid matches the input's
+    varmap = spectral::project( varmap, nI, nJ, nK );
+
+    //invert result so the value increases radially from the center at h=0
+    varmap = varmap.max() - varmap;
+
+    return varmap;
+}
+
+spectral::array Util::getVarmap(const spectral::array &inputData)
+{
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("Fast varmap computing");
+    msgBox.setText("Choose method:\n\n"
+                   "-->FIM: uses the principle of the Fourier Integral Method (Pardo-Iguzquiza & Chica-Olmo, 1993)\n\n"
+                   "-->Spectral: uses the algorithm in spectral::autocovariance() method.\n\n"
+                   "Both methods are fast but the result may differ slightly from the varmap computed the traditional way.");
+    QAbstractButton* pButtonUseFFT      = msgBox.addButton("FIM", QMessageBox::YesRole);
+    QAbstractButton* pButtonUseSpectral = msgBox.addButton("Spectral", QMessageBox::ApplyRole);
+    msgBox.exec();
+    if ( msgBox.clickedButton() == pButtonUseFFT )
+        return getVarmapFIM( inputData );
+    else
+        return getVarmapSpectral( inputData );
+}
+
+double Util::azimuthToRadians(double azimuth)
+{
+    return ( azimuth + 90.0 ) * Util::PI_OVER_180;
+}
+
+double Util::radiansToHalfAzimuth(double trigonometricAngle, bool clockwiseRadians )
+{
+    if( ! clockwiseRadians )
+        trigonometricAngle = -trigonometricAngle;
+    double az = trigonometricAngle / Util::PI_OVER_180 + 90.0;
+    if ( az >= 180.0 )
+        az -= 180.0;
+    return az;
+}
+
+QString Util::formatToDecimalPlaces(double value, int nDecimalPlaces)
+{
+    char buffer[50];
+    QString format = "%." + QString::number(nDecimalPlaces) + "f";
+    std::sprintf(buffer, format.toStdString().c_str(), value );
+    return QString( buffer );
 }

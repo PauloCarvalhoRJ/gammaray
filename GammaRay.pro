@@ -236,7 +236,11 @@ SOURCES += main.cpp\
     imagejockey/gabor/gaborutils.cpp \
     imagejockey/gabor/gaborfrequencyazimuthselections.cpp \
     imagejockey/wavelet/wavelettransformdialog.cpp \
-    imagejockey/wavelet/waveletutils.cpp
+    imagejockey/wavelet/waveletutils.cpp \
+    imagejockey/ijvariographicmodel2d.cpp \
+    dialogs/automaticvarfitdialog.cpp \
+    dialogs/emptydialog.cpp \
+    geostats/nestedvariogramstructuresparameters.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -451,7 +455,11 @@ HEADERS  += mainwindow.h \
     imagejockey/gabor/gaborutils.h \
     imagejockey/gabor/gaborfrequencyazimuthselections.h \
     imagejockey/wavelet/wavelettransformdialog.h \
-    imagejockey/wavelet/waveletutils.h
+    imagejockey/wavelet/waveletutils.h \
+    imagejockey/ijvariographicmodel2d.h \
+    dialogs/automaticvarfitdialog.h \
+    dialogs/emptydialog.h \
+    geostats/nestedvariogramstructuresparameters.h
 
 
 FORMS    += mainwindow.ui \
@@ -533,7 +541,9 @@ FORMS    += mainwindow.ui \
     imagejockey/emd/emdanalysisdialog.ui \
     imagejockey/gabor/gaborfilterdialog.ui \
     imagejockey/gabor/gaborscandialog.ui \
-    imagejockey/wavelet/wavelettransformdialog.ui
+    imagejockey/wavelet/wavelettransformdialog.ui \
+    dialogs/automaticvarfitdialog.ui \
+    dialogs/emptydialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -677,7 +687,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 5.5
+VERSION = 5.7
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

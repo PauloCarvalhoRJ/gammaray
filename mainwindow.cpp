@@ -9,6 +9,7 @@
 #include "domain/application.h"
 #include <QtGlobal>
 #include <QSettings>
+#include <QPushButton>
 #include "dialogs/datafiledialog.h"
 #include "dialogs/pointsetdialog.h"
 #include "dialogs/cartesiangriddialog.h"
@@ -66,6 +67,8 @@
 #include "dialogs/machinelearningdialog.h"
 #include "dialogs/factorialkrigingdialog.h"
 #include "dialogs/sisimdialog.h"
+#include "dialogs/automaticvarfitdialog.h"
+#include "dialogs/emptydialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -513,7 +516,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
-				CartesianGrid* cg = (CartesianGrid*)parent_file;
+                _projectContextMenu->addAction("Automatic variogram fitting", this, SLOT(onAutoVarFit()));
+                CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
@@ -1992,11 +1996,16 @@ void MainWindow::onQuickView()
 	m_attributesCurrentlyBeingViewed[ factor ] = _right_clicked_attribute;
 
 	//Opens the viewer.
-	IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
+    IJGridViewerWidget* ijgvw = new IJGridViewerWidget( true, true, true );
 	factor->setCustomName( cg->getGridName() );
 	ijgvw->setFactor( factor );
 	connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), this, SLOT(onQuickViewerClosed(SVDFactor*,bool)) );
-    ijgvw->show();
+
+    EmptyDialog* ed = new EmptyDialog( this );
+    ed->addWidget( ijgvw );
+    ed->setWindowTitle( cg->getGridName() + "/" + _right_clicked_attribute->getName() );
+    connect( ijgvw, SIGNAL(closed(SVDFactor*,bool)), ed, SLOT(reject()) );
+    ed->show();
 }
 
 void MainWindow::onProjectGrids()
@@ -2018,6 +2027,7 @@ void MainWindow::onProjectGrids()
     cgDestination->loadData();
 
     //projection loop
+    //TODO: duplicate code: replace this with a call to spectral::project()
     for( int k = 0; k < cgSource->getNK(); ++k ){
         int kDest = k - cgSource->getNK()/2 + cgDestination->getNK()/2;
         for( int j = 0; j < cgSource->getNJ(); ++j ){
@@ -2073,80 +2083,11 @@ void MainWindow::onCovarianceMap()
     uint nJ = cg->getNJ();
     uint nK = cg->getNK();
 
-    // Perform FFT to get a grid of complex numbers in rectangular form: real part (a), imaginary part (b).
-    spectral::complex_array gridRealAndImaginaryParts;
-    {
-        QProgressDialog progressDialog;
-        progressDialog.setRange(0,0);
-        progressDialog.show();
-        progressDialog.setLabelText("Computing FFT...");
-        QCoreApplication::processEvents(); //let Qt repaint widgets
-        spectral::array *gridData = cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() );
-        spectral::foward( gridRealAndImaginaryParts, *gridData );
-        delete gridData;
-    }
+    //Get input data as a raw data array
+    spectral::arrayPtr inputData( cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() ) ) ;
 
-    // 1) Convert real and imaginary parts to magnitude and phase (phi).
-    // 2) Make ||z|| = zz* = (a+bi)(a-bi) = a^2+b^2 (Convolution Theorem: a convolution reduces to a cell-to-cell product in frequency domain).
-    // 3) RFFT of ||z|| as magnitude and a grid filled with zeros as phase (zero phase).
-    // PRODUCTS: 3 grids: magnitude and phase parts; variographic map.
-    spectral::array gridVarmap( (spectral::index)nI, (spectral::index)nJ, (spectral::index)nK );
-    {
-        QProgressDialog progressDialog;
-        progressDialog.setRange(0,0);
-        progressDialog.show();
-        progressDialog.setLabelText("Converting FFT results to polar form...");
-        spectral::complex_array gridNormSquaredAndZeroPhase( nI, nJ, nK );
-        for(unsigned int k = 0; k < nK; ++k) {
-            QCoreApplication::processEvents(); //let Qt repaint widgets
-            for(unsigned int j = 0; j < nJ; ++j){
-                for(unsigned int i = 0; i < nI; ++i){
-                    std::complex<double> value;
-                    //the scan order of fftw follows is the opposite of the GSLib convention
-                    int idx = k + nK * (j + nJ * i );
-                    //compute the complex number norm squared
-                    double normSquared = gridRealAndImaginaryParts.d_[idx][0]*gridRealAndImaginaryParts.d_[idx][0] +
-                                         gridRealAndImaginaryParts.d_[idx][1]*gridRealAndImaginaryParts.d_[idx][1];
-                    double phase = 0.0;
-                    //convert to rectangular form
-                    value = std::polar( normSquared, phase );
-                    //save the rectangular form in the grid
-                    gridNormSquaredAndZeroPhase.d_[idx][0] = value.real();
-                    gridNormSquaredAndZeroPhase.d_[idx][1] = value.imag();
-                }
-            }
-        }
-        progressDialog.setLabelText("Computing RFFT to get varmap...");
-        QCoreApplication::processEvents(); //let Qt repaint widgets
-        spectral::backward( gridVarmap, gridNormSquaredAndZeroPhase );
-    }
-
-
-	//mirrors the correlogram so it becomes an actual variogram map.
-	//this also puts the variogram in the 0-1 scale
-	double max = gridVarmap.max();
-	gridVarmap = max - gridVarmap;
-	spectral::standardize( gridVarmap );
-
-
-    //The covariance at h=0 ends up in the corners of the grid, then
-    //we shift the data so cov(0) is in the grid center
-    std::vector< std::complex<double> > arrayShifted( nI * nJ * nK );
-    for(uint k = 0; k < nK; ++k) {
-        int k_shift = (k + nK/2) % nK;
-        for(uint j = 0; j < nJ; ++j){
-            int j_shift = (j + nJ/2) % nJ;
-            for(uint i = 0; i < nI; ++i){
-                int i_shift = (i + nI/2) % nI;
-                //the scan order of fftw follows is the opposite of the GSLib convention
-                int idx = k + nK * (j + nJ * i );
-                //get the value
-                double value = gridVarmap.d_[idx];
-                //shift the values
-                arrayShifted[i_shift + j_shift*nI + k_shift*nJ*nI].real( value );
-            }
-        }
-    }
+    //Compute the varmap.
+    spectral::array varmap = Util::getVarmap( *inputData );
 
     //make a tmp file path
     QString tmp_file_path = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
@@ -2164,13 +2105,10 @@ void MainWindow::onCovarianceMap()
     new_cg->setOrigin( newX0, newY0, newZ0 );
 
     //save the results in the project's tmp directory
-    Util::createGEOEASGrid( "Covariance", "Delete_This", arrayShifted, tmp_file_path);
+    Util::createGEOEASGrid( "semivariance", varmap, tmp_file_path );
 
     //import the saved file to the project
     CartesianGrid * definitiveCG = Application::instance()->getProject()->importCartesianGrid( new_cg, new_var_name );
-
-    //remove the second useless attribute
-    definitiveCG->deleteVariable( 1 );
 
     //delete the temporary Cartesian grid object.
     delete new_cg;
@@ -2180,6 +2118,19 @@ void MainWindow::onCovarianceMap()
 
 void MainWindow::onVarigraphicDecomposition()
 {
+
+    QMessageBox msgBox;
+    msgBox.setWindowTitle("Deprecated functionality");
+    msgBox.setText("This feature has been deprecated.  Variographic decomposition should be performed by right-clicking "
+                   "on a grid variable, then "
+                   "activating the \"Automatic variogram fitting\" option and saving the structure in the results "
+                   "window that will be opened there.");
+    QAbstractButton* pButtonGo     = msgBox.addButton("Proceed anyway", QMessageBox::YesRole);
+    QAbstractButton* pButtonCancel = msgBox.addButton("Cancel", QMessageBox::NoRole);
+    msgBox.exec();
+    if ( msgBox.clickedButton() == pButtonCancel )
+        return;
+
 	//get all the Cartesian grids in the project
 	std::vector< IJAbstractCartesianGrid* > grids = Application::instance()->getProject()->getAllCartesianGrids( );
 	//calls the Image Jockey dialog
@@ -2386,6 +2337,12 @@ void MainWindow::onRequestGrid( const QString name, IJAbstractCartesianGrid *&po
         }
     Application::instance()->logWarn("MainWindow::onRequestGrid(): Cartesian grid named [" + name + "] not found.");
     pointer = nullptr;
+}
+
+void MainWindow::onAutoVarFit()
+{
+    AutomaticVarFitDialog* avfd = new AutomaticVarFitDialog( _right_clicked_attribute, this );
+    avfd->show();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

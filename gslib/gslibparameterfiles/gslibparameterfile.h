@@ -35,6 +35,15 @@ public:
      */
     GSLibParameterFile();
 
+    /**
+     * Constructs a non-GSLib parameter collection with hard-coded GSLib parameter template lines.
+     * The lines must follow the same syntax of the regular template files.  See file templates/template_syntax.txt
+     * in the source directory.
+     * This constructor is useful to quickly build complex forms full of fields without having to design them in
+     * Qt Designer.
+     */
+    GSLibParameterFile( const std::vector<QString>& linesOfTemplateSyntax );
+
     virtual ~GSLibParameterFile();
 
     /**

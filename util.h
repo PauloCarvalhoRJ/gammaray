@@ -26,6 +26,9 @@ class CategoryDefinition;
 class VariogramModel;
 class SpatialLocation;
 class GridFile;
+namespace spectral{
+    struct array;
+}
 
 /*! Display resolution classes used to select an adequate set of icons and maybe other
  *  GUI measures sensitive to display resolution. */
@@ -267,6 +270,14 @@ public:
      * three indexes (i, j and k): array[ i + j*nI + k*nJ*nI ]
      */
     static void createGEOEASGrid(const QString columnName, std::vector<double> &values,
+                                 QString path);
+
+    /**
+     * Creates a GEO-EAS regular grid file using the given values
+     * passed as a spectra::array object.
+     */
+    static void createGEOEASGrid(const QString columnName,
+                                 const spectral::array &values,
                                  QString path);
 
     /**
@@ -586,6 +597,38 @@ public:
 	 * This assumes the polyhedron is convex and the faces are all counter-clockwise.
 	 */
 	static bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs );
+
+    /**
+     * Computes the varmap using the FFT method for fast result.
+     * It is based on the the Fourier Integral Method (Pardo-Iguzquiza & Chica-Olmo, 1993).
+     * Review results if the cells are not squares/cubes.
+     */
+    static spectral::array getVarmapFIM( const spectral::array& inputData );
+
+    /**
+     * Computes the varmap using the spectral::autocovariance() method for fast result.
+     * Review results if the cells are not squares/cubes.
+     */
+    static spectral::array getVarmapSpectral( const spectral::array& inputData );
+
+    /**
+     * Computes the varmap with either getVarmapFFT() or getVarmapSpectral().
+     * Calling this method will ask the user to choose.
+     */
+    static spectral::array getVarmap( const spectral::array& inputData );
+
+    /** Converts an angle in degrees of azimuth (0 == north and increasing clockwise)
+     * to radians in trigonometric convention (0 == right and increasing counter-clockwise).
+     */
+    static double azimuthToRadians( double azimuth );
+
+    /** Converts an angle in radians (0 == right and increasing counter-clockwise by default)
+     * to half azimuth degrees (0 == north and increasing clockwise).
+     * Half-azimuth means that an azimuth greater than 180 is recomputed as az - 180.  E.g. N240E becomes N060E
+     */
+    static double radiansToHalfAzimuth( double trigonometricAngle, bool clockwiseRadians = false );
+
+    static QString formatToDecimalPlaces( double value, int nDecimalPlaces );
 };
 
 #endif // UTIL_H

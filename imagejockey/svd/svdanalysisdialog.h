@@ -41,6 +41,10 @@ public:
     void setGridWithPhaseForPossibleRFFT( IJAbstractCartesianGrid* grid,
                                           int indexOfVariableWithPhase );
 
+    /** Hides the analysis buttons.  This is useful to reuse this dialog to display
+     * a series of grids. */
+    void hideAnalysisButtons();
+
 signals:
     /** Emitted when the user clicks on the "Save" or "Sum" button.
      *  The slot is responsible for deleting or managing the object.
