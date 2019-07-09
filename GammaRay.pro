@@ -8,7 +8,8 @@ QT       += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
 
-TARGET = GammaRay
+PROGRAM_NAME = GammaRay #this name identifies the program such as in Windows Registry
+TARGET = GammaRay #this is the name for the executable, it does not need to be the same as PROGRAM_NAME
 TEMPLATE = app
 
 include(GammaRay.pri)
@@ -693,12 +694,12 @@ VERSION = 5.7
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
 
 # Define application name macro
-DEFINES += APP_NAME=\\\"$$TARGET\\\"
+DEFINES += APP_NAME=\\\"$$PROGRAM_NAME\\\"
 
 # Define application name and version macro
 # \040 means a whitespace.  Don't replace it with an explicit space because
 # it doesn't compile.
-DEFINES += APP_NAME_VER=\\\"$$TARGET\\\040$$VERSION\\\"
+DEFINES += APP_NAME_VER=\\\"$$PROGRAM_NAME\\\040$$VERSION\\\"
 
 RESOURCES += \
     resources.qrc \
