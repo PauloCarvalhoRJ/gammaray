@@ -38,7 +38,7 @@ public:
      * @param m The desired number of variographic nested structures.
      * @return A distance/difference measure.
      */
-    double objectiveFunction ( IJAbstractCartesianGrid& gridWithGeometry,
+    double objectiveFunction (const IJAbstractCartesianGrid &gridWithGeometry,
                                const spectral::array &inputGridData,
                                const spectral::array &vectorOfParameters,
                                const int m ) const;
@@ -67,7 +67,7 @@ private:
      * @param m The number of structures.
      * TODO: consider moving this method to GeostatsUtil.
      */
-    spectral::array generateVariographicSurface( IJAbstractCartesianGrid& gridWithGeometry,
+    spectral::array generateVariographicSurface( const IJAbstractCartesianGrid& gridWithGeometry,
                                                  const spectral::array &vectorOfParameters,
                                                  const int m ) const;
 

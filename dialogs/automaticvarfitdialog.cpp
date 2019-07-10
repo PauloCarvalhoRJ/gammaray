@@ -224,7 +224,7 @@ spectral::array AutomaticVarFitDialog::computeVarmap() const
 }
 
 spectral::array AutomaticVarFitDialog::generateVariographicSurface(
-                                            IJAbstractCartesianGrid& gridWithGeometry,
+                                            const IJAbstractCartesianGrid& gridWithGeometry,
                                             const spectral::array &vectorOfParameters,
                                             const int m ) const {
     //get grid parameters
@@ -252,7 +252,7 @@ spectral::array AutomaticVarFitDialog::generateVariographicSurface(
 }
 
 
-double AutomaticVarFitDialog::objectiveFunction( IJAbstractCartesianGrid& gridWithGeometry,
+double AutomaticVarFitDialog::objectiveFunction( const IJAbstractCartesianGrid& gridWithGeometry,
            const spectral::array &inputGridData,
            const spectral::array &vectorOfParameters,
            const int m ) const  {
