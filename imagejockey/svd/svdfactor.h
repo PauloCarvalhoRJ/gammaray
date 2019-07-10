@@ -270,7 +270,7 @@ public:
     virtual void clearLoadedData(){} //SVDFactors are not persistible
     virtual long appendAsNewVariable(const QString variableName, const spectral::array &array);
     virtual double getUninformedDataValue();
-    virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z );
+    virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z ) const;
     virtual double getMax(int variableIndex);
     virtual double getMin(int variableIndex);
 

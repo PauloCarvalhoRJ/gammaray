@@ -50,7 +50,7 @@ public:
      *               decreases with distance.  Set to false to get the normal variogram
      *               behavior, which increases with distance.
      */
-    void addContributionToModelGrid(IJAbstractCartesianGrid &gridWithGeometry,
+    void addContributionToModelGrid( const IJAbstractCartesianGrid &gridWithGeometry,
                                      spectral::array& targetGrid,
                                      IJVariogramPermissiveModel model,
                                      bool invert ) const;

@@ -64,7 +64,7 @@ public:
 	 * The returned coordinate is that of the center of the cell.
 	 */
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,
-						   double& x, double& y, double& z ) = 0;
+                           double& x, double& y, double& z ) const = 0;
 
 	/** Sets the number of realizations.
 	 * This is declarative only.  No check is performed whether there are actually the number of

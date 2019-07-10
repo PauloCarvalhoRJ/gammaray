@@ -25,22 +25,22 @@ double IJAbstractCartesianGrid::getDiagonalLength()
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
-double IJAbstractCartesianGrid::getCenterX()
+double IJAbstractCartesianGrid::getCenterX() const
 {
     return getCenterLocation()._x;
 }
 
-double IJAbstractCartesianGrid::getCenterY()
+double IJAbstractCartesianGrid::getCenterY() const
 {
     return getCenterLocation()._y;
 }
 
-double IJAbstractCartesianGrid::getCenterZ()
+double IJAbstractCartesianGrid::getCenterZ() const
 {
     return getCenterLocation()._z;
 }
 
-IJSpatialLocation IJAbstractCartesianGrid::getCenterLocation()
+IJSpatialLocation IJAbstractCartesianGrid::getCenterLocation() const
 {
     IJSpatialLocation result;
     //TODO: add support for rotations

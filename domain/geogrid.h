@@ -162,7 +162,7 @@ public:
 
 //GridFile interface
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,
-						   double& x, double& y, double& z );
+                           double& x, double& y, double& z ) const;
 	virtual SpatialLocation getCenter();
 	virtual bool XYZtoIJK( double x, double y, double z, uint &i, uint &j, uint &k );
 
