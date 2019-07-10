@@ -31,10 +31,10 @@ public:
 
     //@{
     /** Getters for the spatial location of the center of the grid's box. */
-    double getCenterX();
-    double getCenterY();
-    double getCenterZ();
-    IJSpatialLocation getCenterLocation();
+    double getCenterX() const;
+    double getCenterY() const;
+    double getCenterZ() const;
+    IJSpatialLocation getCenterLocation() const;
     //@}
 
     //@{
@@ -159,7 +159,7 @@ public:
     /** Returns, via output variables, the x,y,z location of a cell given its topological
      * coordinate i,j,k.
      */
-    virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z ) = 0;
+    virtual void getCellLocation( int i, int j, int k, double& x, double& y, double& z ) const = 0;
 
     /**
      * Returns the maximum value in the given variable.

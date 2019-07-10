@@ -497,7 +497,7 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
 	return true;
 }
 
-void CartesianGrid::IJKtoXYZ(uint i, uint j, uint k, double &x, double &y, double &z)
+void CartesianGrid::IJKtoXYZ(uint i, uint j, uint k, double &x, double &y, double &z) const
 {
 	x = _x0 + _dx / 2 + _dx * i;
 	y = _y0 + _dy / 2 + _dy * j;
@@ -644,7 +644,7 @@ long CartesianGrid::appendAsNewVariable(const QString variableName, const spectr
     return append( variableName, array );
 }
 
-void CartesianGrid::getCellLocation(int i, int j, int k, double &x, double &y, double &z)
+void CartesianGrid::getCellLocation(int i, int j, int k, double &x, double &y, double &z) const
 {
     IJKtoXYZ( i, j, k, x, y, z );
 }

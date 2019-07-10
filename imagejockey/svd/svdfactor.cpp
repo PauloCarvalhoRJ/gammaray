@@ -688,7 +688,7 @@ double SVDFactor::getUninformedDataValue()
     return std::numeric_limits<double>::quiet_NaN();
 }
 
-void SVDFactor::getCellLocation(int i, int j, int k, double &x, double &y, double &z)
+void SVDFactor::getCellLocation(int i, int j, int k, double &x, double &y, double &z) const
 {
     // TODO: refactor: this is the same code (giving or taking differences in member names)
     //       as CartesianGrid::IJKtoXYZ() method.
