@@ -624,10 +624,6 @@ void AutomaticVarFitDialog::onDoWithLSRS()
     //------------------------ THE MODIFIED LINE SEARCH ALGORITHM AS PROPOSED BY Grosan and Abraham (2009)---------
     //---------------------------A Novel Global Optimization Technique for High Dimensional Functions--------------
     //-------------------------------------------------------------------------------------------------------------
-    double deltaAxis         = domain.max.range        - domain.min.range;
-    double deltaRatio        = domain.max.rangeRatio   - domain.min.rangeRatio;
-    double deltaAzimuth      = domain.max.azimuth      - domain.min.azimuth;
-    double deltaContribution = domain.max.contribution - domain.min.contribution;
 
     QProgressDialog progressDialog;
     progressDialog.setRange(0, nRestarts * maxNumberOfOptimizationSteps );
@@ -652,49 +648,16 @@ void AutomaticVarFitDialog::onDoWithLSRS()
             startingPoints.push_back( vw_StartingPoint );
         }
 
-        //lambda to define the step as a function of iteration number (the alpha-k in Grosan and Abraham (2009))
-        //first iteration must be 1.
-        auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
-
         //----------------loop of line search algorithm----------------
         double fOfBestSolution = std::numeric_limits<double>::max();
         //for each step
         for( int k = 1; k <= maxNumberOfOptimizationSteps; ++k ){
             //for each starting point (in the parameter space).
             for( int i = 0; i < nStartingPoints; ++i ){
-                //make a candidate point with a vector from the current point.
-                spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
-                for( int j = 0; j < vw.size(); ++j ){
-                    double p_k = -1.0 + std::rand() / ( RAND_MAX / 2.0);//author suggests -1 or drawn from [0.0 1.0] for best results
 
-                    double delta = 0.0;
-                    switch( j % IJVariographicStructure2D::getNumberOfParameters() ){
-                    case 0: delta = deltaAxis;         break;
-                    case 1: delta = deltaRatio;        break;
-                    case 2: delta = deltaAzimuth;      break;
-                    case 3: delta = deltaContribution; break;
-                    }
+                movePointAlongLineForLSRS( m, i, k, domain, L_wMax, L_wMin, *inputGrid, *inputData,  //<-- INPUT PARAMETERS
+                                           startingPoints, fOfBestSolution, vw_bestSolution );       //--> OUTPUT PARAMETERS
 
-                    vw_candidate[j] = startingPoints[i][j] + p_k * delta * alpha_k( k );
-                    if( vw_candidate[j] > L_wMax[j] )
-                        vw_candidate[j] = L_wMax[j];
-                    if( vw_candidate[j] < L_wMin[j] )
-                        vw_candidate[j] = L_wMin[j];
-
-                }
-                //evaluate the objective function for the current point and for the candidate point
-                double fCurrent   = objectiveFunction( *inputGrid, *inputData, startingPoints[i], m );
-                double fCandidate = objectiveFunction( *inputGrid, *inputData, vw_candidate,      m );
-                //if the candidate point improves the objective function...
-                if( fCandidate < fCurrent ){
-                    //...make it the current point.
-                    startingPoints[i] = vw_candidate;
-                    //keep track of the best solution
-                    if( fCandidate < fOfBestSolution ){
-                        fOfBestSolution = fCandidate;
-                        vw_bestSolution = vw_candidate;
-                    }
-                }
             } //for each starting point
 
             progressDialog.setValue( t * maxNumberOfOptimizationSteps + k );
@@ -1483,5 +1446,63 @@ void AutomaticVarFitDialog::initDomainAndParameters( const spectral::array& inpu
     domain.max.rangeRatio   = maxRatio;
     domain.max.azimuth      = maxAzimuth;
     domain.max.contribution = maxContribution;
+}
+
+void AutomaticVarFitDialog::movePointAlongLineForLSRS(
+        int m,
+        int i,
+        int k,
+        const VariogramParametersDomain &domain,
+        const spectral::array& L_wMax,
+        const spectral::array& L_wMin,
+        const IJAbstractCartesianGrid& inputGrid,
+        const spectral::array& inputData,
+        std::vector< spectral::array >& startingPoints,
+        double& fOfBestSolution,
+        spectral::array& vw_bestSolution
+        ) const
+{
+    //lambda to define the step as a function of iteration number (the alpha-k in Grosan and Abraham (2009))
+    //first iteration must be 1.
+    auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
+
+    double deltaAxis         = domain.max.range        - domain.min.range;
+    double deltaRatio        = domain.max.rangeRatio   - domain.min.rangeRatio;
+    double deltaAzimuth      = domain.max.azimuth      - domain.min.azimuth;
+    double deltaContribution = domain.max.contribution - domain.min.contribution;
+
+    //make a candidate point with a vector from the current point.
+    spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
+    for( int j = 0; j < vw_candidate.size(); ++j ){
+        double p_k = -1.0 + std::rand() / ( RAND_MAX / 2.0);//author suggests -1 or drawn from [0.0 1.0] for best results
+
+        double delta = 0.0;
+        switch( j % IJVariographicStructure2D::getNumberOfParameters() ){
+        case 0: delta = deltaAxis;         break;
+        case 1: delta = deltaRatio;        break;
+        case 2: delta = deltaAzimuth;      break;
+        case 3: delta = deltaContribution; break;
+        }
+
+        vw_candidate[j] = startingPoints[i][j] + p_k * delta * alpha_k( k );
+        if( vw_candidate[j] > L_wMax[j] )
+            vw_candidate[j] = L_wMax[j];
+        if( vw_candidate[j] < L_wMin[j] )
+            vw_candidate[j] = L_wMin[j];
+
+    }
+    //evaluate the objective function for the current point and for the candidate point
+    double fCurrent   = objectiveFunction( inputGrid, inputData, startingPoints[i], m );
+    double fCandidate = objectiveFunction( inputGrid, inputData, vw_candidate,      m );
+    //if the candidate point improves the objective function...
+    if( fCandidate < fCurrent ){
+        //...make it the current point.
+        startingPoints[i] = vw_candidate;
+        //keep track of the best solution
+        if( fCandidate < fOfBestSolution ){
+            fOfBestSolution = fCandidate;
+            vw_bestSolution = vw_candidate;
+        }
+    }
 }
 
