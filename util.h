@@ -628,6 +628,7 @@ public:
      */
     static double radiansToHalfAzimuth( double trigonometricAngle, bool clockwiseRadians = false );
 
+    /** Formats a double value as a string with a given number of decimal places. */
     static QString formatToDecimalPlaces( double value, int nDecimalPlaces );
 };
 
