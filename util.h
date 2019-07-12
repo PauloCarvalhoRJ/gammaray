@@ -630,6 +630,13 @@ public:
 
     /** Formats a double value as a string with a given number of decimal places. */
     static QString formatToDecimalPlaces( double value, int nDecimalPlaces );
+
+    /** Divides a given range of values into consecutive sub-ranges as evenly as possible.
+     * This is mostly useful to distribute a former for...loop's range of indexes amongst a
+     * number of threads for parallelization.
+     * Returns a vector of pairs.  The first member of each pair is the min and the second, the max.
+     */
+    static std::vector< std::pair< int, int > > generateSubRanges(int mainRangeMin, int mainRangeMax, int numberOfSubRanges);
 };
 
 #endif // UTIL_H
