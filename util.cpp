@@ -1988,3 +1988,37 @@ QString Util::formatToDecimalPlaces(double value, int nDecimalPlaces)
     std::sprintf(buffer, format.toStdString().c_str(), value );
     return QString( buffer );
 }
+
+std::vector< std::pair<int, int> > Util::generateSubRanges(int mainRangeMin,
+                                                           int mainRangeMax,
+                                                           int numberOfSubRanges)
+{
+    std::vector<std::pair<int, int> > result;
+    std::vector<int> bucket_sizes;
+    int i;
+
+    //init vectors
+    bucket_sizes.reserve( numberOfSubRanges );
+    result.reserve( numberOfSubRanges );
+    for( i = 0; i < numberOfSubRanges; ++i ){
+        bucket_sizes.push_back( 0 );
+        result.push_back( {0, 0} );
+    }
+
+    int even_length = (mainRangeMax-mainRangeMin+1)/numberOfSubRanges;
+    for(i=0; i<numberOfSubRanges; ++i)
+        bucket_sizes[i] = even_length;
+
+    /* distribute surplus as evenly as possible across buckets */
+    int surplus = (mainRangeMax-mainRangeMin+1)%numberOfSubRanges;
+    for(i=0; surplus>0; --surplus, i=(i+1)%numberOfSubRanges)
+        bucket_sizes[i] += 1;
+
+    int n=0, k=mainRangeMin;
+    for(i=0; i<numberOfSubRanges && k<=mainRangeMax; ++i, ++n){
+        result[i] = { k, k+bucket_sizes[i]-1 };
+        k += bucket_sizes[i];
+    }
+
+    return result;
+}

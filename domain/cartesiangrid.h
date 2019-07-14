@@ -91,7 +91,7 @@ public:
 						   uint& i,   uint& j,   uint& k );
 	virtual SpatialLocation getCenter();
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,
-						   double& x, double& y, double& z );
+                           double& x, double& y, double& z ) const;
 
 
 //DataFile interface
@@ -152,7 +152,7 @@ public:
     virtual void clearLoadedData();
     virtual long appendAsNewVariable( const QString variableName, const spectral::array& array );
     virtual double getUninformedDataValue(){ return getNoDataValueAsDouble(); }
-    virtual void getCellLocation(int i, int j, int k, double& x, double& y, double& z);
+    virtual void getCellLocation(int i, int j, int k, double& x, double& y, double& z) const;
     virtual double getMax( int column );
     virtual double getMin( int column );
 

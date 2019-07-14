@@ -598,7 +598,7 @@ Hexahedron GeoGrid::makeHexahedron( uint cellIndex )
 	return hexa;
 }
 
-void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z)
+void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z) const
 {
 	uint cellIndex = k * m_nJ * m_nI + j * m_nI + i;
 	CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndex );
