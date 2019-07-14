@@ -352,7 +352,7 @@ double AutomaticVarFitDialog::objectiveFunction( const IJAbstractCartesianGrid& 
     for( int k = 0; k < nK; ++k )
         for( int j = 0; j < nJ; ++j )
             for( int i = 0; i < nI; ++i )
-                sum += std::abs( ( inputGridData(i,j,k) - mapFromTheoreticalVariogramModel(i,j,k) ) );
+                sum += std::abs( std::abs( inputGridData(i,j,k) ) - std::abs( mapFromTheoreticalVariogramModel(i,j,k) ) );
 //    sum /= inputGridData.size();
 
 //    VariographicDecompositionDialog::displayGrid( inputGridData, "input data", false );
