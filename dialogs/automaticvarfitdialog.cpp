@@ -17,12 +17,14 @@
 #include <cassert>
 #include <thread>
 #include <mutex>
+#include <functional>
 #include <QInputDialog>
 
 /** This is a mutex to restrict access to the FFTW routines from
  * multiple threads.  Some of its routines are not thread safe.*/
 
 std::mutex myMutexFFTW; //ATTENTION NAME CLASH: there is a variable called mutexFFTW defined somewhere out there.
+std::mutex myMutexLSRS;
 
 /**
  * The code for multithreaded gradient vector calculation for objective function.
@@ -62,6 +64,45 @@ void taskOnePartialDerivative (
                                    ( 2 * epsilon );
     }
 }
+
+/**
+ * The code for multithreaded moving of points along lines for the LSRS algorithm.
+ * @param autoVarFitDlgRef Reference to the AutomaticVarFitDialog object so its objective function can be called.
+ * @param m Number of variogram nested structures.
+ * @param initial_i First point index to process.
+ * @param final_i Last point index to process.  If final_i==initial_i, this thread processes only one point.
+ * @param k Optimization step number. First must be 1, not 0.
+ * @param domain The min/max variogram parameters boundaries as an object.
+ * @param L_wMax The min variogram parameters boundaries as a linear array.
+ * @param L_wMin The max variogram parameters boundaries as a linear array.
+ * @param inputGrid The grid object with grid geometry.
+ * @param inputData The grid input data.
+ * OUTPUT PARAMETERS:
+ * @param startingPoints The set of points (solutions) that will travel along lines.
+ * @param fOfBestSolution The value of objetive function at the best solution found.
+ * @param vw_bestSolution The variogram parameters of the best solution found (as linear array).
+ */
+void taskMovePointAlongLineForLSRS (
+        const AutomaticVarFitDialog& autoVarFitDlgRef,
+        int m,
+        int initial_i,
+        int final_i,
+        int k,
+        const VariogramParametersDomain &domain,
+        const spectral::array& L_wMax,
+        const spectral::array& L_wMin,
+        const IJAbstractCartesianGrid& inputGrid,
+        const spectral::array& inputData,
+        std::vector< spectral::array >& startingPoints,
+        double& fOfBestSolution,
+        spectral::array& vw_bestSolution
+        ){
+    for( int i = initial_i; i <= final_i ; ++i )
+        autoVarFitDlgRef.movePointAlongLineForLSRS
+                                 ( m, i, k, domain, L_wMax, L_wMin, inputGrid, inputData,  //<-- INPUT PARAMETERS
+                                   startingPoints, fOfBestSolution, vw_bestSolution );     //--> OUTPUT PARAMETERS
+}
+
 
 ////////////////////////////////////////CLASS FOR THE GENETIC ALGORITHM//////////////////////////////////////////
 
@@ -571,6 +612,8 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
 void AutomaticVarFitDialog::onDoWithLSRS()
 {
     //////////////////////////////USER CONFIGURATION////////////////////////////////////
+    // Number of parallel execution threads
+    unsigned int nThreads = ui->spinNumberOfThreads->value();
     int m = ui->spinNumberOfVariogramStructures->value();
     int maxNumberOfOptimizationSteps = ui->spinMaxStepsLSRS->value();
     // The user-given epsilon (useful for numerical calculus).
@@ -631,6 +674,16 @@ void AutomaticVarFitDialog::onDoWithLSRS()
     progressDialog.setValue( 0 );
     progressDialog.setLabelText("Line Search with Restart in progress...");
 
+    //distribute as evenly as possible (load balance) the starting
+    //points (by their indexes) amongst the threads.
+    std::vector< std::pair< int, int > > startingPointsIndexesRanges =
+            Util::generateSubRanges( 0, nStartingPoints-1, nThreads );
+
+    //sanity check
+    assert( startingPointsIndexesRanges.size() == nThreads && "AutomaticVarFitDialog::onDoWithLSRS(): "
+                                                              "number of threads different from starting point index ranges. "
+                                                              " This is likely a bug in Util::generateSubRanges() function." );
+
     //the line search restarting loop
     spectral::array vw_bestSolution( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
     for( int t = 0; t < nRestarts; ++t){
@@ -652,13 +705,32 @@ void AutomaticVarFitDialog::onDoWithLSRS()
         double fOfBestSolution = std::numeric_limits<double>::max();
         //for each step
         for( int k = 1; k <= maxNumberOfOptimizationSteps; ++k ){
-            //for each starting point (in the parameter space).
-            for( int i = 0; i < nStartingPoints; ++i ){
 
-                movePointAlongLineForLSRS( m, i, k, domain, L_wMax, L_wMin, *inputGrid, *inputData,  //<-- INPUT PARAMETERS
-                                           startingPoints, fOfBestSolution, vw_bestSolution );       //--> OUTPUT PARAMETERS
+            //create and start the threads.  Each thread moves a set of points along a set of lines.
+            std::thread threads[nThreads];
+            unsigned int iThread = 0;
+            for( const std::pair< int, int >& startingPointsIndexesRange : startingPointsIndexesRanges ) {
+                threads[iThread] = std::thread( taskMovePointAlongLineForLSRS,
+                                                std::cref(*this),
+                                                m,
+                                                startingPointsIndexesRange.first,
+                                                startingPointsIndexesRange.second,
+                                                k,
+                                                std::cref(domain),
+                                                std::cref(L_wMax),
+                                                std::cref(L_wMin),
+                                                std::cref(*inputGrid),
+                                                std::cref(*inputData),          //<-- INPUT PARAMETERS UP TO HERE
+                                                std::ref(startingPoints),
+                                                std::ref(fOfBestSolution),
+                                                std::ref(vw_bestSolution)
+                                                );                              //--> OUTPUT PARAMETERS UP TO HERE
+                ++iThread;
+            } //for each thread (ranges of starting points)
 
-            } //for each starting point
+            //wait for the threads to finish.
+            for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+                threads[iThread].join();
 
             progressDialog.setValue( t * maxNumberOfOptimizationSteps + k );
             QApplication::processEvents(); // let Qt update the UI
@@ -1448,8 +1520,7 @@ void AutomaticVarFitDialog::initDomainAndParameters( const spectral::array& inpu
     domain.max.contribution = maxContribution;
 }
 
-void AutomaticVarFitDialog::movePointAlongLineForLSRS(
-        int m,
+void AutomaticVarFitDialog::movePointAlongLineForLSRS(int m,
         int i,
         int k,
         const VariogramParametersDomain &domain,
@@ -1457,11 +1528,13 @@ void AutomaticVarFitDialog::movePointAlongLineForLSRS(
         const spectral::array& L_wMin,
         const IJAbstractCartesianGrid& inputGrid,
         const spectral::array& inputData,
-        std::vector< spectral::array >& startingPoints,
-        double& fOfBestSolution,
-        spectral::array& vw_bestSolution
+        std::vector<spectral::array> &startingPoints, //--> Output parameter
+        double &fOfBestSolution,                      //--> Output parameter
+        spectral::array &vw_bestSolution              //--> Output parameter
         ) const
 {
+    std::unique_lock<std::mutex> LSRSlock ( myMutexLSRS, std::defer_lock );
+
     //lambda to define the step as a function of iteration number (the alpha-k in Grosan and Abraham (2009))
     //first iteration must be 1.
     auto alpha_k = [=](int k) { return 2.0 + 3.0 / std::pow(2, k*k + 1); };
@@ -1474,7 +1547,7 @@ void AutomaticVarFitDialog::movePointAlongLineForLSRS(
     //make a candidate point with a vector from the current point.
     spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
     for( int j = 0; j < vw_candidate.size(); ++j ){
-        double p_k = -1.0 + std::rand() / ( RAND_MAX / 2.0);//author suggests -1 or drawn from [0.0 1.0] for best results
+        double p_k = -0.1;// + std::rand() / ( RAND_MAX / 2.0);//author suggests -1 or drawn from [0.0 1.0] for best results
 
         double delta = 0.0;
         switch( j % IJVariographicStructure2D::getNumberOfParameters() ){
@@ -1496,6 +1569,7 @@ void AutomaticVarFitDialog::movePointAlongLineForLSRS(
     double fCandidate = objectiveFunction( inputGrid, inputData, vw_candidate,      m );
     //if the candidate point improves the objective function...
     if( fCandidate < fCurrent ){
+        LSRSlock.lock();   //----------------------> Data writing section protected with a mutex lock
         //...make it the current point.
         startingPoints[i] = vw_candidate;
         //keep track of the best solution
@@ -1503,6 +1577,7 @@ void AutomaticVarFitDialog::movePointAlongLineForLSRS(
             fOfBestSolution = fCandidate;
             vw_bestSolution = vw_candidate;
         }
+        LSRSlock.unlock(); //<---------------------- Data writing section protected with a mutex lock
     }
 }
 

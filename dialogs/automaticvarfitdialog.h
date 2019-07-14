@@ -43,6 +43,33 @@ public:
                                const spectral::array &vectorOfParameters,
                                const int m ) const;
 
+    /**
+     * @brief Moves a point (a solution) along a line for the Line Search with Restart optimization.
+     * @param m Number of variogram nested structures.
+     * @param i Point index.
+     * @param k Optimization step number. First must be 1, not 0.
+     * @param domain The min/max variogram parameters boundaries as an object.
+     * @param L_wMax The min variogram parameters boundaries as a linear array.
+     * @param L_wMin The max variogram parameters boundaries as a linear array.
+     * @param inputGrid The grid object with grid geometry.
+     * @param inputData The grid input data.
+     * OUTPUT PARAMETERS:
+     * @param startingPoints The set of points (solutions) that will travel along lines.
+     * @param fOfBestSolution The value of objetive function at the best solution found.
+     * @param vw_bestSolution The variogram parameters of the best solution found (as linear array).
+     */
+    void movePointAlongLineForLSRS(int m,
+                           int i,
+                           int k,
+                           const VariogramParametersDomain& domain,
+                           const spectral::array &L_wMax,
+                           const spectral::array &L_wMin,
+                           const IJAbstractCartesianGrid &inputGrid,
+                           const spectral::array &inputData,
+                           std::vector<spectral::array> &startingPoints,
+                           double &fOfBestSolution,
+                           spectral::array &vw_bestSolution) const;
+
 private:
     Ui::AutomaticVarFitDialog *ui;
 
@@ -128,33 +155,6 @@ private:
                                   spectral::array& L_wMin,
                                   spectral::array& L_wMax,
                                   std::vector<IJVariographicStructure2D> &variogramStructures ) const;
-
-    /**
-     * @brief Moves a point (a solution) along a line for the Line Search with Restart optimization.
-     * @param m Number of variogram nested structures.
-     * @param i Point index.
-     * @param k Optimization step number. First must be 1, not 0.
-     * @param domain The min/max variogram parameters boundaries as an object.
-     * @param L_wMax The min variogram parameters boundaries as a linear array.
-     * @param L_wMin The max variogram parameters boundaries as a linear array.
-     * @param inputGrid The grid object with grid geometry.
-     * @param inputData The grid input data.
-     * OUTPUT PARAMETERS:
-     * @param startingPoints The set of points (solutions) that will travel along lines.
-     * @param fOfBestSolution The value of objetive function at the best solution found.
-     * @param vw_bestSolution The variogram parameters of the best solution found (as linear array).
-     */
-    void movePointAlongLineForLSRS(int m,
-                           int i,
-                           int k,
-                           const VariogramParametersDomain& domain,
-                           const spectral::array &L_wMax,
-                           const spectral::array &L_wMin,
-                           const IJAbstractCartesianGrid &inputGrid,
-                           const spectral::array &inputData,
-                           std::vector<spectral::array> &startingPoints,
-                           double &fOfBestSolution,
-                           spectral::array &vw_bestSolution) const;
 
 private Q_SLOTS:
 
