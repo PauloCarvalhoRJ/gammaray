@@ -53,6 +53,10 @@ public:
      * @param L_wMin The max variogram parameters boundaries as a linear array.
      * @param inputGrid The grid object with grid geometry.
      * @param inputData The grid input data.
+     * @param randSequence Sequence of values returned by std::rand()/(double)RAND_MAX calls made before hand.  Its number of elements must be
+     *                     Number of optimization steps * startingPoints.size() * vw_bestSolution.size()
+     *                     A prior random number generation is to preserve the same random walk for a given seed
+     *                     independently of number and order of multiple threads execution.
      * OUTPUT PARAMETERS:
      * @param startingPoints The set of points (solutions) that will travel along lines.
      * @param fOfBestSolution The value of objetive function at the best solution found.
@@ -66,6 +70,7 @@ public:
                            const spectral::array &L_wMin,
                            const IJAbstractCartesianGrid &inputGrid,
                            const spectral::array &inputData,
+                           const spectral::array &randSequence,
                            std::vector<spectral::array> &startingPoints,
                            double &fOfBestSolution,
                            spectral::array &vw_bestSolution) const;

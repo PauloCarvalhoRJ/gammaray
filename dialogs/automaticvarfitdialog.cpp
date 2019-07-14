@@ -77,6 +77,10 @@ void taskOnePartialDerivative (
  * @param L_wMin The max variogram parameters boundaries as a linear array.
  * @param inputGrid The grid object with grid geometry.
  * @param inputData The grid input data.
+ * @param randSequence Sequence of values returned by std::rand()/(double)RAND_MAX calls made before hand.  Its number of elements must be
+ *                     Number of optimization steps * startingPoints.size() * vw_bestSolution.size()
+ *                     A prior random number generation is to preserve the same random walk for a given seed
+ *                     independently of number and order of multiple threads execution.
  * OUTPUT PARAMETERS:
  * @param startingPoints The set of points (solutions) that will travel along lines.
  * @param fOfBestSolution The value of objetive function at the best solution found.
@@ -93,14 +97,15 @@ void taskMovePointAlongLineForLSRS (
         const spectral::array& L_wMin,
         const IJAbstractCartesianGrid& inputGrid,
         const spectral::array& inputData,
+        const spectral::array& randSequence,
         std::vector< spectral::array >& startingPoints,
         double& fOfBestSolution,
         spectral::array& vw_bestSolution
         ){
     for( int i = initial_i; i <= final_i ; ++i )
         autoVarFitDlgRef.movePointAlongLineForLSRS
-                                 ( m, i, k, domain, L_wMax, L_wMin, inputGrid, inputData,  //<-- INPUT PARAMETERS
-                                   startingPoints, fOfBestSolution, vw_bestSolution );     //--> OUTPUT PARAMETERS
+                                 ( m, i, k, domain, L_wMax, L_wMin, inputGrid, inputData, randSequence, //<-- INPUT PARAMETERS
+                                   startingPoints, fOfBestSolution, vw_bestSolution );                  //--> OUTPUT PARAMETERS
 }
 
 
@@ -701,6 +706,17 @@ void AutomaticVarFitDialog::onDoWithLSRS()
             startingPoints.push_back( vw_StartingPoint );
         }
 
+        //generate a random walk beforehand so the result is the same
+        //independently of how threads execute.
+        spectral::array randSequence( vw_bestSolution.size(),       //--> number of variogram parameters per solution
+                                      nStartingPoints,              //--> number of solutions per optimization step
+                                      maxNumberOfOptimizationSteps, //--> number of optimization steps
+                                      0.0 );
+        for( int k = 1; k <= maxNumberOfOptimizationSteps; ++k )
+            for( int i = 0; i < nStartingPoints; ++i )
+                for( int j = 0; j < vw_bestSolution.size(); ++j )
+                    randSequence( j, i, k-1 ) = std::rand() / static_cast<double>( RAND_MAX );
+
         //----------------loop of line search algorithm----------------
         double fOfBestSolution = std::numeric_limits<double>::max();
         //for each step
@@ -720,11 +736,12 @@ void AutomaticVarFitDialog::onDoWithLSRS()
                                                 std::cref(L_wMax),
                                                 std::cref(L_wMin),
                                                 std::cref(*inputGrid),
-                                                std::cref(*inputData),          //<-- INPUT PARAMETERS UP TO HERE
+                                                std::cref(*inputData),
+                                                std::cref(randSequence),    //<-- INPUT PARAMETERS UP TO HERE
                                                 std::ref(startingPoints),
                                                 std::ref(fOfBestSolution),
                                                 std::ref(vw_bestSolution)
-                                                );                              //--> OUTPUT PARAMETERS UP TO HERE
+                                                );                          //--> OUTPUT PARAMETERS UP TO HERE
                 ++iThread;
             } //for each thread (ranges of starting points)
 
@@ -1528,6 +1545,7 @@ void AutomaticVarFitDialog::movePointAlongLineForLSRS(int m,
         const spectral::array& L_wMin,
         const IJAbstractCartesianGrid& inputGrid,
         const spectral::array& inputData,
+        const spectral::array& randSequence,
         std::vector<spectral::array> &startingPoints, //--> Output parameter
         double &fOfBestSolution,                      //--> Output parameter
         spectral::array &vw_bestSolution              //--> Output parameter
@@ -1547,7 +1565,7 @@ void AutomaticVarFitDialog::movePointAlongLineForLSRS(int m,
     //make a candidate point with a vector from the current point.
     spectral::array vw_candidate( (spectral::index)( m * IJVariographicStructure2D::getNumberOfParameters() ) );
     for( int j = 0; j < vw_candidate.size(); ++j ){
-        double p_k = -0.1;// + std::rand() / ( RAND_MAX / 2.0);//author suggests -1 or drawn from [0.0 1.0] for best results
+        double p_k = -1.0 + randSequence( j, i, k-1 ) * 2.0;//author suggests -1 or drawn from [0.0 1.0] for best results
 
         double delta = 0.0;
         switch( j % IJVariographicStructure2D::getNumberOfParameters() ){
