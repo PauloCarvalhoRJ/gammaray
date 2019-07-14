@@ -108,7 +108,6 @@ void taskMovePointAlongLineForLSRS (
                                    startingPoints, fOfBestSolution, vw_bestSolution );                  //--> OUTPUT PARAMETERS
 }
 
-
 ////////////////////////////////////////CLASS FOR THE GENETIC ALGORITHM//////////////////////////////////////////
 
 class Individual{
@@ -194,6 +193,33 @@ public:
 };
 typedef Individual Solution; //make a synonym just for code readbility
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * The code for multithreaded evaluation of the objective function for a range of individuals (a set of variogam parameters)
+ * in the Genetic Algorithm.
+ * @param autoVarFitDlgRef Reference to the AutomaticVarFitDialog object so its objective function can be called.
+ * @param m Number of variogram nested structures.
+ * @param iIndividual_initial First individual index to process.
+ * @param iIndividual_final Last individual index to process.  If final_i==initial_i, this thread processes only one individual.
+ * @param inputGrid The grid object with grid geometry.
+ * @param inputData The grid input data.
+ * OUTPUT PARAMETER:
+ * @param population The set of individuals to receive the evaluation of the objective function.
+ */void taskEvaluateObjetiveInRangeOfIndividualsForGenetic(
+        const AutomaticVarFitDialog& autoVarFitDlgRef,
+        int iIndividual_initial,
+        int iIndividual_final,
+        int m,
+        const IJAbstractCartesianGrid& inputGrid,
+        const spectral::array& inputData,
+        std::vector< Individual >& population  //-->output parameter
+        ) {
+    for( int iInd = iIndividual_initial; iInd <= iIndividual_final; ++iInd ){
+        Individual& ind = population[iInd];
+        ind.fValue = autoVarFitDlgRef.objectiveFunction( inputGrid, inputData, ind.parameters, m );
+    }
+}
+
 
 AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -302,7 +328,6 @@ double AutomaticVarFitDialog::objectiveFunction( const IJAbstractCartesianGrid& 
            const spectral::array &inputGridData,
            const spectral::array &vectorOfParameters,
            const int m ) const  {
-    std::unique_lock<std::mutex> FFTWlock ( myMutexFFTW, std::defer_lock );
 
     //get grid parameters
     int nI = gridWithGeometry.getNI();
@@ -992,6 +1017,7 @@ void AutomaticVarFitDialog::onDoWithPSO()
 void AutomaticVarFitDialog::onDoWithGenetic()
 {
     //////////////////////////////USER CONFIGURATION////////////////////////////////////
+    int nThreads = ui->spinNumberOfThreads->value();
     int m = ui->spinNumberOfVariogramStructures->value();
     int maxNumberOfGenerations = ui->spinNumberOfGenerations->value();
     uint nPopulationSize = ui->spinPopulationSize->value(); //number of individuals (sets of parameters)
@@ -1062,6 +1088,16 @@ void AutomaticVarFitDialog::onDoWithGenetic()
 
     //=========================================THE GENETIC ALGORITHM==================================================
 
+    //distribute as evenly as possible (load balance) the starting
+    //points (by their indexes) amongst the threads.
+    std::vector< std::pair< int, int > > individualsIndexesRanges =
+            Util::generateSubRanges( 0, nPopulationSize-1, nThreads );
+
+    //sanity check
+    assert( individualsIndexesRanges.size() == nThreads && "AutomaticVarFitDialog::onDoWithGenetic(): "
+                                                              "number of threads different from individual index ranges. "
+                                                              " This is likely a bug in Util::generateSubRanges() function." );
+
     QProgressDialog progressDialog;
     progressDialog.setRange(0, maxNumberOfGenerations);
     progressDialog.setValue( 0 );
@@ -1087,10 +1123,30 @@ void AutomaticVarFitDialog::onDoWithGenetic()
         }
 
         //evaluate the individuals of current population
-        for( uint iInd = 0; iInd < population.size(); ++iInd ){
-            Individual& ind = population[iInd];
-            ind.fValue = objectiveFunction( *inputGrid, *inputData, ind.parameters, m );
-        }
+//        for( uint iInd = 0; iInd < population.size(); ++iInd ){
+//            Individual& ind = population[iInd];
+//            ind.fValue = objectiveFunction( *inputGrid, *inputData, ind.parameters, m );
+//        }
+
+        //create and start the threads.  Each thread evaluates the objective function for a series of individuals.
+        std::thread threads[nThreads];
+        unsigned int iThread = 0;
+        for( const std::pair< int, int >& individualsIndexesRange : individualsIndexesRanges ) {
+            threads[iThread] = std::thread( taskEvaluateObjetiveInRangeOfIndividualsForGenetic,
+                                            std::cref(*this),
+                                            individualsIndexesRange.first,
+                                            individualsIndexesRange.second,
+                                            m,
+                                            std::cref(*inputGrid),
+                                            std::cref(*inputData), //<-- INPUT PARAMETERS UP TO HERE
+                                            std::ref( population ) //--> OUTPUT PARAMETERS UP TO HERE
+                                            );
+            ++iThread;
+        } //for each thread (ranges of starting points)
+
+        //wait for the threads to finish.
+        for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+            threads[iThread].join();
 
         //sort the population in ascending order (lower value == better fitness)
         std::sort( population.begin(), population.end() );
