@@ -1513,9 +1513,18 @@ void AutomaticVarFitDialog::displayResults( const std::vector<IJVariographicStru
     titles.push_back( QString( "Original grid" ).toStdString() );
     shiftFlags.push_back( false );
 
+    //Read the optimized variogram model parameters as a linearized array
+    spectral::array vw( variogramStructures.size() * IJVariographicStructure2D::getNumberOfParameters() );
+    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            vw[i] = variogramStructures[iStructure].getParameter( iPar );
+
+    double objectiveFunctionValue = objectiveFunction( *m_cg, *inputData, vw, m );
+
     // Display the sum of factors obtained with the nested structures
     maps.push_back( sumOfStructures );
-    titles.push_back( QString( "Result of the model" ).toStdString() );
+    titles.push_back( QString( "Result of the model (F=" +
+                               Util::formatToDecimalPlaces( objectiveFunctionValue, 1 ) ).toStdString() + ")" );
     shiftFlags.push_back( false );
 
     // Prepare the display of the difference original data - sum of factors
