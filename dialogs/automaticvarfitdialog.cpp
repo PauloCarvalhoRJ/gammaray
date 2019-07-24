@@ -599,10 +599,10 @@ void AutomaticVarFitDialog::onDoWithSAandGD()
                 spectral::array new_vw = vw - gradient * alpha;
                 //Impose domain constraints to the parameters.
                 for( int i = 0; i < new_vw.size(); ++i){
-                    if( new_vw.d_[i] < 0.0 )
-                        new_vw.d_[i] = 0.0;
-                    if( new_vw.d_[i] > 1.0 )
-                        new_vw.d_[i] = 1.0;
+                    if( new_vw.d_[i] < L_wMin[i] )
+                        new_vw.d_[i] = L_wMin[i];
+                    if( new_vw.d_[i] > L_wMax[i] )
+                        new_vw.d_[i] = L_wMax[i];
                 }
                 currentF = objectiveFunction( *m_cg, *inputData, vw,     m );
                 nextF =    objectiveFunction( *m_cg, *inputData, new_vw, m );
