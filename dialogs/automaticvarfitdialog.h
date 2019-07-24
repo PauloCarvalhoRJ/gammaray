@@ -38,10 +38,42 @@ public:
      * @param m The desired number of variographic nested structures.
      * @return A distance/difference measure.
      */
-    double objectiveFunction ( IJAbstractCartesianGrid& gridWithGeometry,
+    double objectiveFunction (const IJAbstractCartesianGrid &gridWithGeometry,
                                const spectral::array &inputGridData,
                                const spectral::array &vectorOfParameters,
                                const int m ) const;
+
+    /**
+     * @brief Moves a point (a solution) along a line for the Line Search with Restart optimization.
+     * @param m Number of variogram nested structures.
+     * @param i Point index.
+     * @param k Optimization step number. First must be 1, not 0.
+     * @param domain The min/max variogram parameters boundaries as an object.
+     * @param L_wMax The min variogram parameters boundaries as a linear array.
+     * @param L_wMin The max variogram parameters boundaries as a linear array.
+     * @param inputGrid The grid object with grid geometry.
+     * @param inputData The grid input data.
+     * @param randSequence Sequence of values returned by std::rand()/(double)RAND_MAX calls made before hand.  Its number of elements must be
+     *                     Number of optimization steps * startingPoints.size() * vw_bestSolution.size()
+     *                     A prior random number generation is to preserve the same random walk for a given seed
+     *                     independently of number and order of multiple threads execution.
+     * OUTPUT PARAMETERS:
+     * @param startingPoints The set of points (solutions) that will travel along lines.
+     * @param fOfBestSolution The value of objetive function at the best solution found.
+     * @param vw_bestSolution The variogram parameters of the best solution found (as linear array).
+     */
+    void movePointAlongLineForLSRS(int m,
+                           int i,
+                           int k,
+                           const VariogramParametersDomain& domain,
+                           const spectral::array &L_wMax,
+                           const spectral::array &L_wMin,
+                           const IJAbstractCartesianGrid &inputGrid,
+                           const spectral::array &inputData,
+                           const spectral::array &randSequence,
+                           std::vector<spectral::array> &startingPoints,
+                           double &fOfBestSolution,
+                           spectral::array &vw_bestSolution) const;
 
 private:
     Ui::AutomaticVarFitDialog *ui;
@@ -67,7 +99,7 @@ private:
      * @param m The number of structures.
      * TODO: consider moving this method to GeostatsUtil.
      */
-    spectral::array generateVariographicSurface( IJAbstractCartesianGrid& gridWithGeometry,
+    spectral::array generateVariographicSurface( const IJAbstractCartesianGrid& gridWithGeometry,
                                                  const spectral::array &vectorOfParameters,
                                                  const int m ) const;
 
