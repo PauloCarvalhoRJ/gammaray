@@ -185,8 +185,11 @@ public:
      * @param maxNumberOfAlphaReductionSteps Alpha is reduced iteratively until a descent is detected (no overshoot).
      * @param convergenceCriterion GD stops after two consecutive steps yield two objective function values whose
      *                             difference is less than this value.  It is normally a small value (e.g.: 10^-6)
+     * @param openResultsDialog If true, the results are also displayed in a dialog.
+     * @returns The fitted variogram model as a vector of variographic structures.
      */
-    void processWithSAandGD(unsigned int nThreads,
+    std::vector< IJVariographicStructure2D > processWithSAandGD(
+                            unsigned int nThreads,
                             int m,
                             unsigned seed,
                             double f_Tinitial,
@@ -197,7 +200,9 @@ public:
                             double epsilon,
                             double initialAlpha,
                             double maxNumberOfAlphaReductionSteps,
-                            double convergenceCriterion);
+                            double convergenceCriterion,
+                            bool openResultsDialog = true
+                            );
 
     /** Performs automatic variogram fitting using Line Search with Restart
      *  as optimization method.
@@ -210,14 +215,19 @@ public:
      * @param epsilon The user-given epsilon (useful for numerical calculus). It is normally a small value (e.g.: 10^-6)
      * @param nStartingPointsN umber of random starting points in the domain.
      * @param nRestarts Number of restarts.
+     * @param openResultsDialog If true, the results are also displayed in a dialog.
+     * @returns The fitted variogram model as a vector of variographic structures.
      */
-    void processWithLSRS(unsigned int nThreads,
+    std::vector< IJVariographicStructure2D > processWithLSRS(
+                         unsigned int nThreads,
                          int m,
                          unsigned seed,
                          int maxNumberOfOptimizationSteps,
                          double epsilon,
                          int nStartingPoints,
-                         int nRestarts);
+                         int nRestarts,
+                         bool openResultsDialog = true
+            );
 
     /** Performs automatic variogram fitting using Particle Swarm Optimization
      *  as optimization method.
@@ -230,14 +240,19 @@ public:
      * @param intertia_weight The inertia of the particles.  Greater values means less velocity variation.
      * @param acceleration_constant_1 The acceleration caused by the particle's best evaluation location.
      * @param acceleration_constant_2 The acceleration caused by the global best evaluation location.
+     * @param openResultsDialog If true, the results are also displayed in a dialog.
+     * @returns The fitted variogram model as a vector of variographic structures.
      */
-    void processWithPSO(int m,
+    std::vector< IJVariographicStructure2D > processWithPSO(
+                        int m,
                         unsigned seed,
                         int maxNumberOfOptimizationSteps,
                         int nParticles,
                         double intertia_weight,
                         double acceleration_constant_1,
-                        double acceleration_constant_2);
+                        double acceleration_constant_2,
+                        bool openResultsDialog = true
+            );
 
     /** Performs automatic variogram fitting using Genetic Algorithm
      *  as optimization method.
@@ -256,8 +271,11 @@ public:
      *                     the probability of any parameter parameter (gene) to be changed is 1/nParameters * mutationRate
      *                     thus, 1.0 means that one gene will surely be mutated per mutation on average.  Fractionary
      *                     values are possible. 0.0 means no mutation will take place.
+     * @param openResultsDialog If true, the results are also displayed in a dialog.
+     * @returns The fitted variogram model as a vector of variographic structures.
      */
-    void processWithGenetic(int nThreads,
+    std::vector< IJVariographicStructure2D > processWithGenetic(
+                            int nThreads,
                             int m,
                             unsigned seed,
                             int maxNumberOfGenerations,
@@ -265,7 +283,13 @@ public:
                             uint nSelectionSize,
                             double probabilityOfCrossOver,
                             uint pointOfCrossover,
-                            double mutationRate);
+                            double mutationRate,
+                            bool openResultsDialog = true
+            );
+
+    /** Evaluates the objective function for the passed variogram model as a vector of variogram structures.
+     */
+    double evaluateModel( const std::vector< IJVariographicStructure2D >& variogramStructures ) const;
 
 private Q_SLOTS:
 

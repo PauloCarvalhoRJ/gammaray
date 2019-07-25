@@ -536,13 +536,7 @@ void AutomaticVariogramFitting::displayResults( const std::vector<IJVariographic
     titles.push_back( QString( "Original grid" ).toStdString() );
     shiftFlags.push_back( false );
 
-    //Read the optimized variogram model parameters as a linearized array
-    spectral::array vw( variogramStructures.size() * IJVariographicStructure2D::getNumberOfParameters() );
-    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
-        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
-            vw[i] = variogramStructures[iStructure].getParameter( iPar );
-
-    double objectiveFunctionValue = objectiveFunction( *m_cg, *inputData, vw, m );
+    double objectiveFunctionValue = evaluateModel( variogramStructures );
 
     // Display the sum of factors obtained with the nested structures
     maps.push_back( sumOfStructures );
@@ -625,8 +619,7 @@ void AutomaticVariogramFitting::initDomainAndParameters( const spectral::array& 
     domain.max.contribution = maxContribution;
 }
 
-void AutomaticVariogramFitting::processWithSAandGD(
-        unsigned int nThreads,
+std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithSAandGD(unsigned int nThreads,
         int m,
         unsigned seed,
         double f_Tinitial,
@@ -637,8 +630,8 @@ void AutomaticVariogramFitting::processWithSAandGD(
         double epsilon,
         double initialAlpha,
         double maxNumberOfAlphaReductionSteps,
-        double convergenceCriterion
-        )
+        double convergenceCriterion,
+        bool openResultsDialog)
 {
     // Intialize the random number generator with the same seed
     std::srand (seed);
@@ -866,18 +859,22 @@ void AutomaticVariogramFitting::processWithSAandGD(
             variogramStructures[iStructure].setParameter( iPar, vw[i] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+    if( openResultsDialog )
+        displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+
+    //return the fitted model
+    return variogramStructures;
 }
 
-void AutomaticVariogramFitting::processWithLSRS(
+std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithLSRS(
         unsigned int nThreads,
         int m,
         unsigned seed,
         int maxNumberOfOptimizationSteps,
         double epsilon,
         int nStartingPoints,
-        int nRestarts
-        )
+        int nRestarts,
+        bool openResultsDialog)
 {
     //Intialize the random number generator with the same seed
     std::srand (seed);
@@ -1039,18 +1036,22 @@ void AutomaticVariogramFitting::processWithLSRS(
             variogramStructures[iStructure].setParameter( iPar, vw_bestSolution[i] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+    if( openResultsDialog )
+        displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+
+    //return the fitted model
+    return variogramStructures;
 }
 
-void AutomaticVariogramFitting::processWithPSO(
+std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithPSO(
         int m,
         unsigned seed,
         int maxNumberOfOptimizationSteps,
         int nParticles,
         double intertia_weight,
         double acceleration_constant_1,
-        double acceleration_constant_2
-        )
+        double acceleration_constant_2,
+        bool openResultsDialog)
 {
     //Intialize the random number generator with the same seed
     std::srand (seed);
@@ -1237,10 +1238,14 @@ void AutomaticVariogramFitting::processWithPSO(
             variogramStructures[iStructure].setParameter( iPar, gbest_pw[iParLinear] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+    if( openResultsDialog )
+        displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+
+    //return the fitted model
+    return variogramStructures;
 }
 
-void AutomaticVariogramFitting::processWithGenetic(
+std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithGenetic(
         int nThreads,
         int m,
         unsigned seed,
@@ -1249,8 +1254,8 @@ void AutomaticVariogramFitting::processWithGenetic(
         uint nSelectionSize,
         double probabilityOfCrossOver,
         uint pointOfCrossover,
-        double mutationRate
-        )
+        double mutationRate,
+        bool openResultsDialog)
 {
     //Intialize the random number generator with the same seed
     std::srand (seed);
@@ -1263,19 +1268,19 @@ void AutomaticVariogramFitting::processWithGenetic(
         QMessageBox::critical( Application::instance()->getMainWindow(),
                                "Error",
                                "AutomaticVariogramFitting::onDoWithGenetic(): Selection pool size must be less than population size.");
-        return;
+        return std::vector<IJVariographicStructure2D>();
     }
     if( nPopulationSize % 2 + nSelectionSize % 2 ){
         QMessageBox::critical( Application::instance()->getMainWindow(),
                                "Error",
                                "AutomaticVariogramFitting::onDoWithGenetic(): Sizes must be even numbers.");
-        return;
+        return std::vector<IJVariographicStructure2D>();
     }
     if( pointOfCrossover >= totalNumberOfParameters  ){
         QMessageBox::critical( Application::instance()->getMainWindow(),
                                "Error",
                                "AutomaticVariogramFitting::onDoWithGenetic(): Point of crossover must be less than the number of parameters.");
-        return;
+        return std::vector<IJVariographicStructure2D>();
     }
 
     // Get the data objects.
@@ -1473,7 +1478,26 @@ void AutomaticVariogramFitting::processWithGenetic(
             variogramStructures[iStructure].setParameter( iPar, gbest_pw[iParLinear] );
 
     // Display the results in a window.
-    displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+    if( openResultsDialog )
+        displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+
+    //return the fitted model
+    return variogramStructures;
+}
+
+double AutomaticVariogramFitting::evaluateModel(const std::vector<IJVariographicStructure2D> &variogramStructures) const
+{
+    // Get the number of nested structures
+    int m = variogramStructures.size();
+    // Get the input grid data
+    spectral::arrayPtr inputData( m_cg->createSpectralArray( m_at->getAttributeGEOEASgivenIndex()-1 ) ) ;
+    //Read the optimized variogram model parameters as a linearized array
+    spectral::array vw( variogramStructures.size() * IJVariographicStructure2D::getNumberOfParameters() );
+    for( int i = 0, iStructure = 0; iStructure < m; ++iStructure )
+        for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
+            vw[i] = variogramStructures[iStructure].getParameter( iPar );
+
+    return objectiveFunction( *m_cg, *inputData, vw, m );
 }
 
 void AutomaticVariogramFitting::movePointAlongLineForLSRS(int m,
