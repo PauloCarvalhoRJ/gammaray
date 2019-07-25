@@ -42,7 +42,6 @@ private Q_SLOTS:
     void onDoWithManual();
 
     void onVarmapMethodChanged();
-    void onSaveAResult( spectral::array* result );
     void onNumberOfStructuresChanged(int number);
 };
 

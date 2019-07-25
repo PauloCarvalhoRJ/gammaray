@@ -274,23 +274,6 @@ void AutomaticVarFitDialog::onVarmapMethodChanged()
     }
 }
 
-void AutomaticVarFitDialog::onSaveAResult(spectral::array *result)
-{
-    //user enters the name for the new variable
-    bool ok;
-    QString new_var_name = QInputDialog::getText(this, "Create new variable in " + m_cg->getName(),
-                                             "New variable name:", QLineEdit::Normal,
-                                             "Nth_varmap_or_structure_of_" + m_at->getName(), &ok );
-
-    //abort if the user cancels the input box
-    if ( !ok || new_var_name.isEmpty() ){
-        return;
-    }
-
-    //append the data as a new attribute to the destination grid.
-    m_cg->append( new_var_name, *result );
-}
-
 void AutomaticVarFitDialog::onNumberOfStructuresChanged(int number)
 {
     m_nestedVariogramStructuresParametersForManual->setNumberOfNestedStructures( number );
