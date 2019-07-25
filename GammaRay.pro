@@ -241,7 +241,8 @@ SOURCES += main.cpp\
     imagejockey/ijvariographicmodel2d.cpp \
     dialogs/automaticvarfitdialog.cpp \
     dialogs/emptydialog.cpp \
-    geostats/nestedvariogramstructuresparameters.cpp
+    geostats/nestedvariogramstructuresparameters.cpp \
+    geostats/automaticvariogramfitting.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -460,7 +461,8 @@ HEADERS  += mainwindow.h \
     imagejockey/ijvariographicmodel2d.h \
     dialogs/automaticvarfitdialog.h \
     dialogs/emptydialog.h \
-    geostats/nestedvariogramstructuresparameters.h
+    geostats/nestedvariogramstructuresparameters.h \
+    geostats/automaticvariogramfitting.h
 
 
 FORMS    += mainwindow.ui \
