@@ -1,7 +1,7 @@
 #ifndef AUTOMATICVARIOGRAMFITTING_H
 #define AUTOMATICVARIOGRAMFITTING_H
 
-#include <QObject>
+#include <QObject> //to enable Qt's signals/slots mechanism
 #include "spectral/spectral.h"
 #include "imagejockey/ijvariographicmodel2d.h"
 #include "geostats/nestedvariogramstructuresparameters.h"
@@ -202,7 +202,7 @@ public:
                             double maxNumberOfAlphaReductionSteps,
                             double convergenceCriterion,
                             bool openResultsDialog = true
-                            );
+                            ) const;
 
     /** Performs automatic variogram fitting using Line Search with Restart
      *  as optimization method.
@@ -227,7 +227,7 @@ public:
                          int nStartingPoints,
                          int nRestarts,
                          bool openResultsDialog = true
-            );
+            ) const;
 
     /** Performs automatic variogram fitting using Particle Swarm Optimization
      *  as optimization method.
@@ -252,7 +252,7 @@ public:
                         double acceleration_constant_1,
                         double acceleration_constant_2,
                         bool openResultsDialog = true
-            );
+            ) const;
 
     /** Performs automatic variogram fitting using Genetic Algorithm
      *  as optimization method.
@@ -285,7 +285,7 @@ public:
                             uint pointOfCrossover,
                             double mutationRate,
                             bool openResultsDialog = true
-            );
+            ) const;
 
     /** Evaluates the objective function for the passed variogram model as a vector of variogram structures.
      */

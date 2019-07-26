@@ -47,7 +47,7 @@ void taskOnePartialDerivative (
                                IJAbstractCartesianGrid* gridWithGeometry,
                                const spectral::array& gridData,
                                const int m,
-                               AutomaticVariogramFitting* autoVarFitRef,
+                               const AutomaticVariogramFitting* autoVarFitRef,
                                spectral::array* gradient //output object: for some reason, the thread object constructor does not compile with non-const references.
                                ){
     std::vector< int >::const_iterator it = parameterIndexBin.cbegin();
@@ -631,7 +631,7 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithSAa
         double initialAlpha,
         double maxNumberOfAlphaReductionSteps,
         double convergenceCriterion,
-        bool openResultsDialog)
+        bool openResultsDialog) const
 {
     // Intialize the random number generator with the same seed
     std::srand (seed);
@@ -874,7 +874,7 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithLSR
         double epsilon,
         int nStartingPoints,
         int nRestarts,
-        bool openResultsDialog)
+        bool openResultsDialog) const
 {
     //Intialize the random number generator with the same seed
     std::srand (seed);
@@ -1051,7 +1051,7 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithPSO
         double intertia_weight,
         double acceleration_constant_1,
         double acceleration_constant_2,
-        bool openResultsDialog)
+        bool openResultsDialog) const
 {
     //Intialize the random number generator with the same seed
     std::srand (seed);
@@ -1255,7 +1255,7 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithGen
         double probabilityOfCrossOver,
         uint pointOfCrossover,
         double mutationRate,
-        bool openResultsDialog)
+        bool openResultsDialog) const
 {
     //Intialize the random number generator with the same seed
     std::srand (seed);
