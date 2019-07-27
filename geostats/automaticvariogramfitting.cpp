@@ -747,7 +747,7 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithSAa
             double f_probMov = probAcceptance( f_eCurrent, f_eNew, f_T );
             if( f_probMov >= ( (double)std::rand() / RAND_MAX ) ) {//draws a value between 0.0 and 1.0
                 L_wCurrent = L_wNew; //replaces the current state with the neighboring random state
-                 Application::instance()->logInfo("  moved to energy level " + QString::number( f_eNew ));
+                 //Application::instance()->logInfo("  moved to energy level " + QString::number( f_eNew ));
                 //if the energy is the record low, store it, just in case the SA loop ends without converging.
                 if( f_eNew < f_lowestEnergyFound ){
                     f_lowestEnergyFound = f_eNew;
