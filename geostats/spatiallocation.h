@@ -27,6 +27,9 @@ public:
 	/** Prints the contents to std::cout.  Useful for debugging. */
 	void print();
 
+    /** Returns the Cartesian distance between this location and the given x,y,z coordinate. */
+    double distanceTo( double x, double y, double z );
+
 	SpatialLocation operator+( double a ) const;
 };
 
