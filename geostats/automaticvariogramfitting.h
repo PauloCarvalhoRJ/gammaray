@@ -36,7 +36,10 @@ public:
     /** Sets the method for fast variogram map computing. */
     void setFastVarmapMethod( FastVarmapMethod fastVarmapMethod );
 
-    /** The objective function for the optimization processes (indirect variographic fitting).
+    /** The objective function for the optimization processes.
+     * It follows the objective function proposed by
+     * Larrondo et al (2003) - VARFIT: A Program for Semi-Automatic Variogram Modelling
+     *                         Center for Computational Geostatistics Report Five
      * See complete theory in the program manual for in-depth explanation of the method's parameters below.
      * @param gridWithGeometry A grid object whose geometry will be copied to the generated grid with the varmap for objective function evaluation.
      * @param inputData The grid data for comparison.

@@ -28,6 +28,7 @@
 
 std::mutex myMutexFFTW; //ATTENTION NAME CLASH: there is a variable called mutexFFTW defined somewhere out there.
 std::mutex myMutexLSRS;
+std::mutex myMutexObjectiveFunction;
 
 /**
  * The code for multithreaded gradient vector calculation for objective function.
@@ -282,7 +283,7 @@ spectral::array AutomaticVariogramFitting::generateVariographicSurface(
         varEllip.addContributionToModelGrid( gridWithGeometry,
                                              variographicSurface,
                                              IJVariogramPermissiveModel::SPHERIC,
-                                             true );
+                                             false );
     }
     return variographicSurface;
 }
@@ -292,35 +293,90 @@ double AutomaticVariogramFitting::objectiveFunction( const IJAbstractCartesianGr
            const spectral::array &inputGridData,
            const spectral::array &vectorOfParameters,
            const int m ) const  {
+    std::unique_lock<std::mutex> objectiveFunctionlock ( myMutexObjectiveFunction, std::defer_lock );
 
     //get grid parameters
     int nI = gridWithGeometry.getNI();
     int nJ = gridWithGeometry.getNJ();
     int nK = gridWithGeometry.getNK();
 
-    //generate the variogram model surface
+
+    //Get input's varmap (this only needs to be redone when the input variable changes)
+    static spectral::array inputVarmap; //this is initialized when the program loads
+    {
+        static Attribute* currentAttribute = nullptr; //this is initialized when the program loads
+        if( inputVarmap.data().empty() || currentAttribute != m_at ){
+            objectiveFunctionlock.lock(); //this lock prevents two threads from populating the static (global) variable at once.
+            if( inputVarmap.data().empty() || currentAttribute != m_at ){ //repeat the outer if() to avoid unnecessary recomputing varmap
+                                                                          //conversely, the role of the outer if is to wrap the lock so the
+                                                                          //threads don't queue.
+                Application::instance()->logInfo("AutomaticVariogramFitting::objectiveFunction(): computing varmap.");
+                inputVarmap = computeVarmap();
+                currentAttribute = m_at;
+            }
+            objectiveFunctionlock.unlock();
+        }
+    }
+
+    //generate the variogram model surface from the parameters
     spectral::array theoreticalVariographicSurface = generateVariographicSurface( gridWithGeometry,
                                                                        vectorOfParameters,
                                                                        m );
 
-    //Get input's FFT phase map
-    spectral::array inputFFTimagPhase = getInputPhaseMap();
+    //get the sill of the variogram models
+    double sill = theoreticalVariographicSurface.max();
 
-    //Apply the principle of the Fourier Integral Method to obtain what would the map be
-    //if it actually had the theoretical variogram model
-    spectral::array mapFromTheoreticalVariogramModel( nI, nJ, nK, 0.0 );
-    mapFromTheoreticalVariogramModel = computeFIM( theoreticalVariographicSurface, inputFFTimagPhase );
+    //compute the weights for the experimental varmap points (this only needs to be redone when the input variable changes)
+    static spectral::array weights; //this is initialized when the program loads
+    {
+        static Attribute* currentAttribute2 = nullptr; //this is initialized when the program loads
+        if( weights.data().empty() || currentAttribute2 != m_at ){
+            objectiveFunctionlock.lock(); //this lock prevents two threads from populating the static (global) variable at once.
+            weights = spectral::array( nI, nJ, nK, 0.0 );
+            if( weights.data().empty() || currentAttribute2 != m_at ){ //repeat the outer if() to avoid unnecessary recomputing the weights
+                                                                      //conversely, the role of the outer if is to wrap the lock so the
+                                                                      //threads don't queue.
+                Application::instance()->logInfo("AutomaticVariogramFitting::objectiveFunction(): computing varmap weights.");
+                currentAttribute2 = m_at;
+
+                //get the grid center location
+                SpatialLocation gridCenter = m_cg->getCenter();
+                double x, y, z;
+
+                //compute the sum of all distances
+                double sumInvDistances = 0.0;
+                {
+                    for( int k = 0; k < nK; ++k )
+                        for( int j = 0; j < nJ; ++j )
+                            for( int i = 0; i < nI; ++i ) {
+                                m_cg->getCellLocation( i, j, k, x, y, z );
+                                double d = gridCenter.distanceTo( x, y, z );
+                                if( d < 0.0001 ){ //if the separation is too small (results in large weight), this usually happens at the center
+                                    sumInvDistances += 0.0;
+                                    weights( i, j, k ) = 0.0; //takes the opportunity to save the inv. lag distance beforehand
+                                }else{
+                                    sumInvDistances += 1.0/d;
+                                    weights( i, j, k ) = 1.0/d; //takes the opportunity to save the inv. lag distance beforehand
+                                }
+                            }
+                }
+
+                //compute the weights
+                weights = weights / sumInvDistances; //the distances are already stored
+            }
+
+            objectiveFunctionlock.unlock();
+        }
+    }
 
     //compute the objective function metric
     double sum = 0.0;
     for( int k = 0; k < nK; ++k )
         for( int j = 0; j < nJ; ++j )
-            for( int i = 0; i < nI; ++i )
-                sum += std::abs( std::abs( inputGridData(i,j,k) ) - std::abs( mapFromTheoreticalVariogramModel(i,j,k) ) );
-//    sum /= inputGridData.size();
-
-//    VariographicDecompositionDialog::displayGrid( inputGridData, "input data", false );
-//    VariographicDecompositionDialog::displayGrid( mapFromTheoreticalVariogramModel, "FIM", false );
+            for( int i = 0; i < nI; ++i ) {
+                double diff = theoreticalVariographicSurface( i, j, k ) - inputVarmap( i, j, k );
+                sum += weights(i, j, k) * diff*diff;
+            }
 
     // Finally, return the objective function value.
     return sum;
@@ -494,10 +550,10 @@ void AutomaticVariogramFitting::displayResults( const std::vector<IJVariographic
         maps.push_back( oneStructureVarmap.max() - oneStructureVarmap );
         QString structureDesc = "Str. " + QString::number( iStructure ) + ": "
                                 "Sph "
-                                "cc="   + Util::formatToDecimalPlaces( variogramStructures[iStructure].contribution, 2 ) + ";\n "
-                                "axes=" + Util::formatToDecimalPlaces( variogramStructures[iStructure].range, 2 ) +
-                                " X " + Util::formatToDecimalPlaces( variogramStructures[iStructure].range * variogramStructures[iStructure].rangeRatio, 2 ) + "; "
-                                "az="   + Util::formatToDecimalPlaces( Util::radiansToHalfAzimuth( variogramStructures[iStructure].azimuth, true ), 0 ) + "; ";
+                                "cc="   + Util::formatToDecimalPlaces( variogramStructures[iStructure].contribution, 3 ) + ";\n "
+                                "axes=" + Util::formatToDecimalPlaces( variogramStructures[iStructure].range, 3 ) +
+                                " X " + Util::formatToDecimalPlaces( variogramStructures[iStructure].range * variogramStructures[iStructure].rangeRatio, 3 ) + "; "
+                                "az="   + Util::formatToDecimalPlaces( Util::radiansToHalfAzimuth( variogramStructures[iStructure].azimuth, true ), 3 ) + "; ";
         titles.push_back( structureDesc.toStdString() ) ;
         shiftFlags.push_back( false );
 
@@ -541,7 +597,7 @@ void AutomaticVariogramFitting::displayResults( const std::vector<IJVariographic
     // Display the sum of factors obtained with the nested structures
     maps.push_back( sumOfStructures );
     titles.push_back( QString( "Result of the model (F=" +
-                               Util::formatToDecimalPlaces( objectiveFunctionValue, 1 ) ).toStdString() + ")" );
+                               Util::formatToDecimalPlaces( objectiveFunctionValue, 3 ) ).toStdString() + ")" );
     shiftFlags.push_back( false );
 
     // Prepare the display of the difference original data - sum of factors
