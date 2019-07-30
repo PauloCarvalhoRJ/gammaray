@@ -43,6 +43,8 @@ private Q_SLOTS:
 
     void onVarmapMethodChanged();
     void onNumberOfStructuresChanged(int number);
+
+    void onRunExperiments();
 };
 
 #endif // AUTOMATICVARFITDIALOG_H

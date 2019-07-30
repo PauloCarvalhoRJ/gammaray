@@ -12,6 +12,7 @@
 #include <QInputDialog>
 #include <cassert>
 #include <thread>
+#include <QTextStream>
 
 AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -278,4 +279,47 @@ void AutomaticVarFitDialog::onNumberOfStructuresChanged(int number)
 {
     m_nestedVariogramStructuresParametersForManual->setNumberOfNestedStructures( number );
     ui->layoutFieldsForManual->addWidget( m_nestedVariogramStructuresParametersForManual->getEditorWidget() );
+}
+
+void AutomaticVarFitDialog::onRunExperiments()
+{
+    //open a new file for output
+    QFile outputFile( QString("C:\\Users\\ur5m\\Desktop\\experiments.txt") );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+
+    int experimentNumber = 1;
+    for( double tInitial = 20; tInitial <= 20000; tInitial += 2000 )
+        for( double tFinal = 20; tFinal <= 10000 && tFinal < tInitial; tFinal += 1000 )
+            for( int nSteps = 100; nSteps <= 5000; nSteps += 500 )
+                for( double hopFactor = 0.01; hopFactor <= 1.000 ; hopFactor += 0.1 )
+                {
+                    std::vector< IJVariographicStructure2D > model =
+                                  m_autoVarFit.processWithSAandGD(
+                                                     8,
+                                                     4,
+                                                     131313,
+                                                     tInitial,
+                                                     tFinal,
+                                                     nSteps,
+                                                     hopFactor,
+                                                     20,
+                                                     0.000001,
+                                                     1.0,
+                                                     60,
+                                                     0.000001,
+                                                     false);
+                    out << "t0=" << tInitial
+                              << " t1=" << tFinal
+                              << " nSteps=" << nSteps
+                              << " hop=" << hopFactor
+                              << " F=" << m_autoVarFit.evaluateModel( model )
+                              << '\n';
+                    out.flush();
+                    std::cout << experimentNumber << std::endl;
+                    ++experimentNumber;
+                }
+
+    //closes the output file
+    outputFile.close();
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>802</width>
-    <height>443</height>
+    <width>925</width>
+    <height>585</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -190,6 +190,16 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnRunExperiments">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="text">
+         <string>experiments</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -407,17 +417,20 @@
        </item>
        <item row="5" column="2">
         <widget class="QDoubleSpinBox" name="spinMaxHopFactor">
+         <property name="decimals">
+          <number>3</number>
+         </property>
          <property name="minimum">
-          <double>0.010000000000000</double>
+          <double>0.001000000000000</double>
          </property>
          <property name="maximum">
           <double>100.000000000000000</double>
          </property>
          <property name="singleStep">
-          <double>0.100000000000000</double>
+          <double>0.010000000000000</double>
          </property>
          <property name="value">
-          <double>0.100000000000000</double>
+          <double>0.010000000000000</double>
          </property>
         </widget>
        </item>
@@ -1075,7 +1088,7 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>789</x>
+     <x>912</x>
      <y>430</y>
     </hint>
     <hint type="destinationlabel">
@@ -1092,7 +1105,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>111</x>
-     <y>121</y>
+     <y>127</y>
     </hint>
     <hint type="destinationlabel">
      <x>184</x>
@@ -1108,7 +1121,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>118</y>
+     <y>124</y>
     </hint>
     <hint type="destinationlabel">
      <x>209</x>
@@ -1124,7 +1137,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>119</y>
+     <y>125</y>
     </hint>
     <hint type="destinationlabel">
      <x>270</x>
@@ -1140,7 +1153,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>120</y>
+     <y>126</y>
     </hint>
     <hint type="destinationlabel">
      <x>256</x>
@@ -1171,8 +1184,8 @@
    <slot>onDoWithManual()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>708</x>
-     <y>309</y>
+     <x>101</x>
+     <y>116</y>
     </hint>
     <hint type="destinationlabel">
      <x>796</x>
@@ -1196,6 +1209,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnRunExperiments</sender>
+   <signal>clicked()</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onRunExperiments()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>863</x>
+     <y>53</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>920</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onDoWithSAandGD()</slot>
@@ -1205,5 +1234,6 @@
   <slot>onVarmapMethodChanged()</slot>
   <slot>onDoWithManual()</slot>
   <slot>onNumberOfStructuresChanged(int)</slot>
+  <slot>onRunExperiments()</slot>
  </slots>
 </ui>
