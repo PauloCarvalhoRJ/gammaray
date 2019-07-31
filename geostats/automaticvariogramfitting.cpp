@@ -344,7 +344,6 @@ double AutomaticVariogramFitting::objectiveFunction( const IJAbstractCartesianGr
                 double x, y, z;
 
                 //compute the sum of all distances
-                double sumInvDistances = 0.0;
                 {
                     for( int k = 0; k < nK; ++k )
                         for( int j = 0; j < nJ; ++j )
@@ -352,17 +351,12 @@ double AutomaticVariogramFitting::objectiveFunction( const IJAbstractCartesianGr
                                 m_cg->getCellLocation( i, j, k, x, y, z );
                                 double d = gridCenter.distanceTo( x, y, z );
                                 if( d < 0.0001 ){ //if the separation is too small (results in large weight), this usually happens at the center
-                                    sumInvDistances += 0.0;
                                     weights( i, j, k ) = 0.0; //takes the opportunity to save the inv. lag distance beforehand
                                 }else{
-                                    sumInvDistances += 1.0/d;
                                     weights( i, j, k ) = 1.0/d; //takes the opportunity to save the inv. lag distance beforehand
                                 }
                             }
                 }
-
-                //compute the weights
-                weights = weights / sumInvDistances; //the distances are already stored
             }
 
             objectiveFunctionlock.unlock();
