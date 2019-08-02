@@ -50,7 +50,7 @@ TransiogramDialog::TransiogramDialog(VerticalTransiogramModel *vtm,
     //must display the charts with the model curves
     if( m_vtm ){
         m_vtm->readFromFS();
-        //makeChartsForModelReview();
+        makeChartsForModelReview();
     }
 }
 
