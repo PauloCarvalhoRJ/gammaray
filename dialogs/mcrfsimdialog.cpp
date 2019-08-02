@@ -172,6 +172,12 @@ void MCRFSimDialog::onRun()
         QMessageBox::critical( this, "Error", QString("Simulation failed.  Check the messages panel for more details of the error."));
         Application::instance()->logError( "MCRFSimDialog::onRun(): Simulation ended with error: ");
         Application::instance()->logError( "    " + markovSim.getLastError() );
+    } else {
+        int realNum = 1;
+        for( const spectral::arrayPtr& simValues : markovSim.getRealizations() ){
+            markovSim.m_cgSim->appendAsNewVariable( "real_" + QString::number(realNum), *simValues );
+            ++realNum;
+        }
     }
 }
 

@@ -121,6 +121,13 @@ public:
      */
     void setOrIncreaseProgressMT( ulong ammount, bool increase = true );
 
+    /** Returns the realizations simulated in the last sucessful call to run().
+     * Each spectral::array object is a series of double values that match
+     * the scan order of the simulation grid.  Values matching the simulation grid's
+     * no-data-value are uninformed values.
+     */
+    const std::vector< spectral::arrayPtr >& getRealizations() const { return m_realizations; }
+
 private:
 
     /** The description of the cause of the last failure during simulation. */
