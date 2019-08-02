@@ -576,11 +576,16 @@ void TransiogramDialog::onSave()
         DataFile* parentOfFirst = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
         CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
     } else {
-        Application::instance()->logError( "TransiogramDialog::onSave(): no attributes.", true );
-        return;
+        Application::instance()->logInfo( "TransiogramDialog::onSave(): no attributes. Assuming user is editing an existing model.", false );
+        if( m_vtm ){
+            CDofFirst = m_vtm->getCategoryDefinition();
+        } else {
+            Application::instance()->logError( "TransiogramDialog::onSave(): no attributes and no transiogram model to review. Aborted.", true );
+            return;
+        }
     }
     if ( ! CDofFirst ){
-        Application::instance()->logError( "TransiogramDialog::onSave(): null category definition.", true );
+        Application::instance()->logError( "TransiogramDialog::onSave(): null category definition. Aborted.", true );
         return;
     }
 
@@ -601,12 +606,12 @@ void TransiogramDialog::onSave()
     }
 
     //create and populate the new object
-    if (ok && ( !new_transiogram_model_name.isEmpty() || isNew )){
+    if (ok && ( !new_transiogram_model_name.isEmpty() || !isNew )){
 
         if( isNew )
             //create the domain object
-            VerticalTransiogramModel* m_vtm = new VerticalTransiogramModel( Application::instance()->getProject()->getPath() + "/" + new_transiogram_model_name,
-                                                                      CDofFirst->getName() );
+            m_vtm = new VerticalTransiogramModel( Application::instance()->getProject()->getPath() + "/" + new_transiogram_model_name,
+                                                                 CDofFirst->getName() );
         else
             //reset the existing one
             m_vtm->clearParameters();
