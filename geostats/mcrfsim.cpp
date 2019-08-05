@@ -114,6 +114,15 @@ bool MCRFSim::isOKtoRun()
         }
     }
 
+    {
+        CategoryDefinition* cdOfPDF = m_pdf->getCategoryDefinition();
+        CategoryDefinition* cdOfTransiogramModel = m_transiogramModel->getCategoryDefinition();
+        if( cdOfPDF != cdOfTransiogramModel ){
+            m_lastError = "Category definition of transiogram model must be the same object as that the PDF is based on.";
+            return false;
+        }
+    }
+
     if( ! m_gradationFieldOfSimGrid ){
         m_lastError = "Use of a gradation field in the simulation grid is required to stablish a correlation"
                       " between vertical (time) and lateral facies succession in 3D Markov Chain.";
@@ -122,6 +131,7 @@ bool MCRFSim::isOKtoRun()
 
     if( useSecondaryData() ){
         CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
+        cdOfPrimData->loadQuintuplets();
         int nProbFields = m_probFields.size();
         int nCategories = cdOfPrimData->getCategoryCount();
         if( nProbFields != nCategories ){
@@ -177,7 +187,6 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     double simCellZ                   = m_cgSim->getDataSpatialLocation( simCellLinearIndex, CartesianCoord::Z );
     double simCellGradationFieldValue = m_cgSim->dataIJKConst( m_gradationFieldOfSimGrid->getAttributeGEOEASgivenIndex()-1,
                                                                i, j, k );
-
     //get the probabilities from the global PDF, they're the marginal
     //probabilities for the Tau Model
     for( int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex )
@@ -200,16 +209,14 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         DataCellPtr sampleDataCell = *itSampleCells;
 
         //get the facies value (it is a double due to DataFile API, but it is an integer value).
-        double sampleFaciesValue = m_dfPrimary->data( sampleDataCell->_dataIndex,
-                                                      m_atPrimary->getAttributeGEOEASgivenIndex()-1 );
+        double sampleFaciesValue = sampleDataCell->readValueFromDataSet( m_atPrimary->getAttributeGEOEASgivenIndex()-1 );
 
         // Sanity check against No-data-values
         // DataFile::isNDV() is non-const and has a slow string-to-double conversion
         if( ! Util::almostEqual2sComplement( m_simGridNDV, sampleFaciesValue, 1 ) ){
 
             // get the sample's gradation field value
-            double sampleGradationValue = m_dfPrimary->data( sampleDataCell->_dataIndex,
-                                                          m_gradationFieldOfPrimaryData->getAttributeGEOEASgivenIndex()-1 );
+            double sampleGradationValue = sampleDataCell->readValueFromDataSet( m_gradationFieldOfPrimaryData->getAttributeGEOEASgivenIndex()-1 );
 
             //To preserve Markovian property, we cannot use data ahead in the facies succession.
             bool isAheadInSuccession = false;
@@ -491,6 +498,16 @@ bool MCRFSim::run()
     //get the number of threads from max number of threads set by the user
     //or number of realizations (whichever is the lowest)
     unsigned int nThreads = std::min( m_maxNumberOfThreads, nRealizations );
+
+    //loads the a priori facies distribution from the filesystem
+    m_pdf->loadPairs();
+
+    //loads the transiogram model data.
+    m_transiogramModel->readFromFS();
+
+    //loads category information from filesystem
+    CategoryDefinition* cd = m_pdf->getCategoryDefinition();
+    cd->loadQuintuplets();
 
     //announce the simulation has begun.
     Application::instance()->logInfo("Commencing MCRF simulation with " + QString::number(nThreads) + " thread(s).");

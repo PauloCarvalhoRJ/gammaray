@@ -119,7 +119,8 @@ double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesCode, u
     } catch ( std::out_of_range& e ) {
         assert( false && "VerticalTransiogramModel::getTransitionProbability(): facies code not in m_faciesCodeToIndex. "
                          "Could not resolve transiogram rol/col index for the given facies code. "
-                         "Perhaps a prior call to VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap() is missing." );
+                         "Perhaps a prior call to VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap() or"
+                         " VerticalTransiogramModel::readFromFS() is missing." );
     }
 }
 
@@ -422,6 +423,7 @@ void VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap()
     assert( cd && "VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap(): null category definition."
                   " Metadata file may be refering to a non-existent category definition file.");
     m_faciesCodeToIndex.clear();
+    cd->loadQuintuplets();
     for( uint i = 0; i < cd->getCategoryCount(); ++i ){
         uint faciesIndex = getFaciesIndex( cd->getCategoryName( i ) );
         uint faciesCode = cd->getCategoryCode( i );
