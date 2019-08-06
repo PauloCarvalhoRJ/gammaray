@@ -89,8 +89,12 @@ public:
 	void setNReal( uint n );
 
 
-	/** Adds de contents of the given data array as new column to this Cartesian grid. */
-	long append( const QString columnName, const spectral::array& array );
+    /** Adds de contents of the given data array as new column to this regular grid.
+     * If a CategoryDefinition is passed, the new variable will be treated as a categorical attribute.
+     */
+    long append( const QString columnName,
+                 const spectral::array& array,
+                 CategoryDefinition* cd = nullptr );
 
 	/** Converts a data row index into topological coordinates (output parameters). */
     void indexToIJK(uint index, uint & i, uint & j, uint & k ) const;

@@ -1,6 +1,8 @@
 #include "gridfile.h"
 #include "application.h"
 #include "spectral/spectral.h"
+#include "domain/categorydefinition.h"
+#include "domain/attribute.h"
 
 GridFile::GridFile( QString path ) : DataFile( path )
 {
@@ -61,7 +63,9 @@ void GridFile::setNReal(uint n)
 }
 
 
-long GridFile::append(const QString columnName, const spectral::array &array)
+long GridFile::append(const QString columnName,
+                      const spectral::array &array,
+                      CategoryDefinition *cd)
 {
 	long index = addEmptyDataColumn( columnName, m_nI * m_nJ * m_nK );
 
@@ -79,6 +83,32 @@ long GridFile::append(const QString columnName, const spectral::array &array)
 	if( idx != m_nI * m_nJ * m_nK )
 		Application::instance()->logError("GridFile::append(): mismatch between number of data values added and grid cell count.");
 
+
+    //if the new data column is to be a categorical variable
+    if( cd ){
+        // get the GEO-EAS index for new attribute
+        uint indexGEOEAS
+            = _data[0].size(); // assumes the first row has the correct number of data columns
+
+        // if the added column was deemed categorical, adds its GEO-EAS index and name of the
+        // category definition
+        // to the list of pairs for metadata keeping.
+        if (cd) {
+            _categorical_attributes.append(QPair<uint, QString>(indexGEOEAS, cd->getName()));
+            // update the metadata file
+            this->updateMetaDataFile();
+        }
+
+        // Get the new Attribute object that correspond to the new data column in memory
+        Attribute *newAttribute = dynamic_cast<Attribute*>( getChildByIndex( index ) );
+
+        assert( newAttribute && "GridFile::append(): object returned by ::getChildByIndex(index) is not an Attribute or is a null pointer." );
+
+        // Set the new Attribute as categorical
+        newAttribute->setCategorical(true);
+    }
+
+    //save the grid data to the filesystem.
 	writeToFS();
 
 	//update the project tree in the main window.
