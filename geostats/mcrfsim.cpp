@@ -364,8 +364,22 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     cdf.reserve( cd->getCategoryCount() );
     double cumulativeProbability = 0.0;
     for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
-        cumulativeProbability += tauModelCopy.getFinalProbability( categoryIndex );
+        double prob = tauModelCopy.getFinalProbability( categoryIndex );
+
+        //caps cumulative probability at 1.0 (user can model a transiogram that sums more than 1.0 at certain lags)
+        if( cumulativeProbability + prob > 1.0 )
+            cumulativeProbability = 1.0;
+        else
+            cumulativeProbability += prob;
+
         cdf.push_back( cumulativeProbability );
+    }
+
+    //ensures cdf ends at 1.0 (user can model a transiogram that sums less than 1.0 at certain lags)
+    if( cumulativeProbability < 1.0 ){
+        cumulativeProbability = 1.0;
+        //forces last probability to 1.0
+        cdf[cdf.size()-1] = 1.0;
     }
 
     //sanity check
@@ -686,6 +700,10 @@ DataCellPtrMultiset MCRFSim::getSamplesFromPrimaryMT(const GridCell &simulationC
     DataCellPtrMultiset result;
     if( m_searchStrategyPrimary && m_atPrimary ){
 
+        //if the user set the max number of primary data samples to search to zero, returns the empty result.
+        if( ! m_searchStrategyPrimary->m_nb_samples )
+            return result;
+
         //Fetch the indexes of the samples to be used in the simulation.
         QList<uint> samplesIndexes = m_spatialIndexOfPrimaryData->getNearestWithinGenericRTreeBased( simulationCell, *m_searchStrategyPrimary );
         QList<uint>::iterator it = samplesIndexes.begin();
@@ -737,6 +755,10 @@ DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simula
 {
     DataCellPtrMultiset result;
     if( m_searchStrategySimGrid && m_cgSim ){
+
+        //if the user set the number of cells to search to zero, returns the empty result.
+        if( ! m_searchStrategySimGrid->m_nb_samples )
+            return result;
 
         //Fetch the indexes of the samples to be used in the simulation.
         QList<uint> samplesIndexes;
