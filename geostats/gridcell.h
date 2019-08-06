@@ -26,9 +26,9 @@ public:
 	inline GridCell( CartesianGrid* grid, int dataIndex, int i, int j, int k ) : DataCell( dataIndex, grid ),
 		_grid(grid), _indexIJK(i,j,k)
     {
-        _center._x = grid->getX0() + _indexIJK._i * grid->getDX();
-        _center._y = grid->getY0() + _indexIJK._j * grid->getDY();
-        _center._z = grid->getZ0() + _indexIJK._k * grid->getDZ();
+        _center._x = grid->getX0() + _indexIJK._i * grid->getDX() + grid->getDX() / 2.0;
+        _center._y = grid->getY0() + _indexIJK._j * grid->getDY() + grid->getDY() / 2.0;
+        _center._z = grid->getZ0() + _indexIJK._k * grid->getDZ() + grid->getDZ() / 2.0;
     }
 
     /** Computes the topological distance from the given cell.
