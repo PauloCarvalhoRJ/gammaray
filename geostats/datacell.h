@@ -29,9 +29,9 @@ public:
 	 * The result is also stored in _cartesianDistance member variable.
 	 */
 	inline double computeCartesianDistance( const DataCell &fromCell ){
-		double dx = std::abs( _center._x - fromCell._center._x );
-		double dy = std::abs( _center._y - fromCell._center._y );
-		double dz = std::abs( _center._z - fromCell._center._z );
+        double dx = _center._x - fromCell._center._x;
+        double dy = _center._y - fromCell._center._y;
+        double dz = _center._z - fromCell._center._z;
 		_cartesianDistance = std::sqrt( dx*dx + dy*dy + dz*dz );
 		return _cartesianDistance;
 	}
