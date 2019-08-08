@@ -32,7 +32,7 @@ public:
     virtual void deleteFromFS();
 
     /** Returns the full path to the file. */
-    virtual QString getPath();
+    virtual QString getPath() const;
 
     /** Returns whether the file type may have a companion metadata file. */
     virtual bool canHaveMetaData() = 0;

@@ -76,7 +76,7 @@ void File::deleteFromFS()
     //TODO: files may have metadata files (.md) associated with them.  They must also be deleted.
 }
 
-QString File::getPath()
+QString File::getPath() const
 {
     return this->_path;
 }
