@@ -57,7 +57,7 @@ public:
      * Returns wheter the given column index corresponds to one of the coordinates (x, y or z).
      * First index is 0.
      */
-    bool isCoordinate( uint column );
+    virtual bool isCoordinate( uint column );
 
     /** Returns a list with pairs with weight-variable relations.
      *  The key of the map is the index of the variable which is the weight
