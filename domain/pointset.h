@@ -63,7 +63,7 @@ public:
      *  The key of the map is the index of the variable which is the weight
      *  of the variable whose index is the second member of the pair.
      */
-    QMap<uint, uint> getWeightsVariablesPairs()  { return _wgt_var_pairs; }
+    QMap<uint, uint> getWeightsVariablesPairs() const  { return _wgt_var_pairs; }
 
     //DataFile interface
 public:
