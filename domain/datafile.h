@@ -85,13 +85,13 @@ public:
      * Returns the index of the given field in GEO-EAS convention (first is 1).
      * If the given field name does not exist, returns zero.
      */
-    uint getFieldGEOEASIndex( QString field_name );
+    uint getFieldGEOEASIndex( QString field_name ) const;
 
     /**
      * Returns the Attribute that has the given index in the GEO-EAS file (first is 1).
      * Returns a null pointer of there is no such Attribute.
      */
-    Attribute* getAttributeFromGEOEASIndex( uint index );
+    Attribute* getAttributeFromGEOEASIndex( uint index ) const;
 
     /**
      * Returns the GEO-EAS index of the last field of the data file.
@@ -172,13 +172,13 @@ public:
      * 2- GEO-EAS index of varibale that was normal score transformed into variable in 1-.
      * 3- File name of the transform table (.trn file).
      */
-    QMap<uint, QPair<uint, QString> > getNSVarVarTrnTriads(){ return _nsvar_var_trn; }
+    QMap<uint, QPair<uint, QString> > getNSVarVarTrnTriads() const { return _nsvar_var_trn; }
 
     /**
      * Returns the list of GEO-EAS indexes (1st == 1, not zero) of the attributes considered as categorical variables.
      * The second member of the pairs is the name of the category definition file.
      */
-    QList< QPair<uint,QString> > getCategoricalAttributes(){ return _categorical_attributes; }
+    QList< QPair<uint,QString> > getCategoricalAttributes() const { return _categorical_attributes; }
 
     /**
      * Adds the values stored in an Attribute object as a GEO-EAS column to the given data file.
@@ -212,11 +212,17 @@ public:
     /**
      * Returns the number of data columns (variables) of the first line of file (assumes all lines have the
      * same number of columns).
-     * Make sure to have called loadData() prior to this call, otherwise zero will be returned.
+     */
+    uint getDataColumnCount();
+
+    /**
+     * Does the same as getDataColumnCount() but is const.  Due to constness, it does not automatically
+     * load data on demand like its non-const counterpar.  Hence, make sure to have called loadData() prior to
+     * this call, otherwise zero will be returned.
      * Also if you made changes to the data file, it is necessary to call loadData() again to update
      * the object contents.
      */
-    uint getDataColumnCount();
+    uint getDataColumnCountConst() const;
 
     /** Returns whether the given value equals the no-data value set for this data file.
      * If a no-data value has not been set, this method always returns false.
@@ -274,6 +280,7 @@ public:
 
     /**
      * Adds a new data column to this DataFile filled with zeroes.
+     * Returns the index (1st is zero) of the new data column.
      * @param numberOfDataElements Number of values in the column, normally should be getDataLineCount(),
      *        unless this object is a new one without any previous data.
      */

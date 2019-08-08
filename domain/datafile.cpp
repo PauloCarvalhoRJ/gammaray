@@ -309,7 +309,7 @@ double DataFile::mean(uint column)
         return 0.0;
 }
 
-uint DataFile::getFieldGEOEASIndex(QString field_name)
+uint DataFile::getFieldGEOEASIndex(QString field_name) const
 {
     QStringList field_names = Util::getFieldNames(this->_path);
     for (int i = 0; i < field_names.size(); ++i) {
@@ -319,9 +319,9 @@ uint DataFile::getFieldGEOEASIndex(QString field_name)
     return 0;
 }
 
-Attribute *DataFile::getAttributeFromGEOEASIndex(uint index)
+Attribute *DataFile::getAttributeFromGEOEASIndex(uint index) const
 {
-    std::vector<ProjectComponent *>::iterator it = this->_children.begin();
+    std::vector<ProjectComponent *>::const_iterator it = this->_children.begin();
     for (; it != this->_children.end(); ++it) {
         ProjectComponent *pi = *it;
         if (pi->isAttribute()) {
@@ -767,6 +767,11 @@ uint DataFile::getDataLineCount() const { return _data.size(); }
 uint DataFile::getDataColumnCount()
 {
     loadData();
+    return getDataColumnCountConst();
+}
+
+uint DataFile::getDataColumnCountConst() const
+{
     if (getDataLineCount() > 0)
         return _data[0].size();
     else
