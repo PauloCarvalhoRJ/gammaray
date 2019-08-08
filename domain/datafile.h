@@ -207,7 +207,7 @@ public:
      * Also if you made changes to the data file, it is necessary to call loadData() again to update
      * the object contents.
      */
-    uint getDataLineCount();
+    uint getDataLineCount() const;
 
     /**
      * Returns the number of data columns (variables) of the first line of file (assumes all lines have the

@@ -762,7 +762,7 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name, bool categ
     }
 }
 
-uint DataFile::getDataLineCount() { return _data.size(); }
+uint DataFile::getDataLineCount() const { return _data.size(); }
 
 uint DataFile::getDataColumnCount()
 {
