@@ -349,7 +349,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         //for each category
         for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
             uint probColumnIndex = m_probFields[ categoryIndex ]->getAttributeGEOEASgivenIndex() - 1;
-            double probabilityFromSecondary = simulationCell.readValueFromDataSet(  );
+            double probabilityFromSecondary = simulationCell.readValueFromDataSet( probColumnIndex );
             tauModelCopy.setProbabilityFromSource( categoryIndex,
                                                   static_cast<uint>( ProbabilitySource::FROM_SECONDARY_DATA ),
                                                   probabilityFromSecondary );
