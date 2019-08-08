@@ -272,7 +272,7 @@ void PointSet::addVariableWeightRelationship(uint variableGEOEASindex, uint weig
     this->updateMetaDataFile();
 }
 
-bool PointSet::isCoordinate(uint column)
+bool PointSet::isCoordinate(uint column) const
 {
     int columnGEOEAS = column + 1;
     return ( _x_field_index == columnGEOEAS ) ||
