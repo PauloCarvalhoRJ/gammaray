@@ -64,6 +64,20 @@ public:
                          double& minX, double& minY, double& minZ,
                          double& maxX, double& maxY, double& maxZ ) const;
 
+    /**
+     * Returns wheter the given column index corresponds to one of the coordinates (x, y or z / initial or final).
+     * First index is 0.
+     */
+    virtual bool isCoordinate( uint column ) const;
+
+    /**
+     * Creates a new PointSet object containing the data of this SegmentSet.
+     * The coordinates of the point set are that of the mid points of the segments.
+     * The function creates a new physical data file matching the newly created PointSet
+     * in the project's directory using the passed name as file name.
+     */
+    PointSet* toPointSetMidPoints(const QString &psName) const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

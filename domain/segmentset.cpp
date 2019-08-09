@@ -1,6 +1,10 @@
 #include "segmentset.h"
 #include "viewer3d/view3dviewdata.h"
 #include "viewer3d/view3dbuilders.h"
+#include "domain/attribute.h"
+#include "domain/application.h"
+#include "domain/project.h"
+#include "util.h"
 #include <QFile>
 #include <QTextStream>
 #include <cassert>
@@ -203,6 +207,66 @@ void SegmentSet::getBoundingBox(uint dataLineIndex, double &minX, double &minY, 
     maxX = std::max( maxX, dataConst( dataLineIndex, getXFinalIndex()-1 ) );
     maxY = std::max( maxY, dataConst( dataLineIndex, getYFinalIndex()-1 ) );
     maxZ = std::max( maxZ, dataConst( dataLineIndex, getZFinalIndex()-1 ) );
+}
+
+bool SegmentSet::isCoordinate(uint column) const
+{
+    //tests whether the column is x, y or z initial (inherited from PointSet)
+    if( PointSet::isCoordinate( column ) )
+        return true;
+    //tests whether the column is x, y or z final
+    int columnGEOEAS = column + 1;
+    return ( _x_final_field_index == columnGEOEAS ) ||
+           ( _y_final_field_index == columnGEOEAS ) ||
+           ( _z_final_field_index == columnGEOEAS ) ;
+}
+
+PointSet *SegmentSet::toPointSetMidPoints(const QString& psName ) const
+{
+    int nDataRows = getDataLineCount();
+    int nDataColumns = getDataColumnCountConst();
+    assert( nDataRows && "SegmentSet::toPointSetMidPoints(): zero data lines. "
+                         "Perhaps a prior call to DataFile::readFromFS() is missing.");
+
+    //copies this segment set's file as a new file
+    QString psFilePath = Application::instance()->getProject()->getPath() + "/" + psName;
+    Util::copyFile( getPath(), psFilePath );
+    PointSet* new_ps = new PointSet( psFilePath );
+
+    //load the data
+    new_ps->loadData();
+    new_ps->updateChildObjectsCollection();
+
+    //append the new data columns for the mid points coordinates
+    int iColumnMPx = new_ps->addEmptyDataColumn( "midPointX", nDataRows );
+    int iColumnMPy = new_ps->addEmptyDataColumn( "midPointY", nDataRows );
+    int iColumnMPz = new_ps->addEmptyDataColumn( "midPointZ", nDataRows );
+
+    //compute mid points for the PointSet object
+    for( int iRow = 0; iRow < nDataRows; ++iRow ){
+        double center_x = ( dataConst( iRow, getXFinalIndex()-1 ) + dataConst( iRow, getXindex()-1 ) ) / 2.0;
+        double center_y = ( dataConst( iRow, getYFinalIndex()-1 ) + dataConst( iRow, getYindex()-1 ) ) / 2.0;
+        double center_z = ( dataConst( iRow, getZFinalIndex()-1 ) + dataConst( iRow, getZindex()-1 ) ) / 2.0;
+        new_ps->setData( iRow, iColumnMPx, center_x );
+        new_ps->setData( iRow, iColumnMPy, center_y );
+        new_ps->setData( iRow, iColumnMPz, center_z );
+    }
+
+    //commit data to file system
+    new_ps->writeToFS();
+
+    //set appropriate metadata
+    new_ps->setInfo( iColumnMPx+1, //these indexes are GEO-EAS indexes (1st == 1)
+                     iColumnMPy+1,
+                     iColumnMPz+1,
+                     getNoDataValue(),
+                     getWeightsVariablesPairs(),
+                     getNSVarVarTrnTriads(),
+                     getCategoricalAttributes() );
+    new_ps->updateMetaDataFile();
+
+    //return the pointer to the created object
+    return new_ps;
 }
 
 
