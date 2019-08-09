@@ -47,7 +47,7 @@ public:
     /** Fills the given list with all ProjectComponents contained within.
      * It returns all children objects, their children, etc.  It is recursive call.
      */
-    void getAllObjects( std::vector<ProjectComponent*> &result );
+    void getAllObjects( std::vector<ProjectComponent*> &result ) const;
     /** Recursively searches for an object matching the given object locator. */
     ProjectComponent* findObject( const QString object_locator );
     void dummyCall(){ int x; x = 2; ++x; } //used to test pointer validity (TODO: not used anywhere)

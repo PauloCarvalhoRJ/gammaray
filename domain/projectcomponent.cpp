@@ -101,9 +101,9 @@ void ProjectComponent::save(QTextStream */*txt_stream*/)
 
 }
 
-void ProjectComponent::getAllObjects( std::vector<ProjectComponent *> &result )
+void ProjectComponent::getAllObjects( std::vector<ProjectComponent *> &result ) const
 {
-    for (std::vector<ProjectComponent*>::iterator it = _children.begin() ; it != _children.end(); ++it )
+    for (std::vector<ProjectComponent*>::const_iterator it = _children.begin() ; it != _children.end(); ++it )
     {
         result.push_back( *it );
         (*it)->getAllObjects( result );
