@@ -159,6 +159,14 @@ double SegmentSet::getSegmentLenght(int iRecord)
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
+double SegmentSet::getSegmentLenghtConst(int iRecord) const
+{
+    double dx = dataConst( iRecord, getXFinalIndex()-1 ) - dataConst( iRecord, getXindex()-1 );
+    double dy = dataConst( iRecord, getYFinalIndex()-1 ) - dataConst( iRecord, getYindex()-1 );
+    double dz = dataConst( iRecord, getZFinalIndex()-1 ) - dataConst( iRecord, getZindex()-1 );
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
 double SegmentSet::getDistanceToNextSegment(int iRecord)
 {
     if( iRecord == getDataLineCount() - 1 )
@@ -237,10 +245,11 @@ PointSet *SegmentSet::toPointSetMidPoints(const QString& psName ) const
     new_ps->loadData();
     new_ps->updateChildObjectsCollection();
 
-    //append the new data columns for the mid points coordinates
-    int iColumnMPx = new_ps->addEmptyDataColumn( "midPointX", nDataRows );
-    int iColumnMPy = new_ps->addEmptyDataColumn( "midPointY", nDataRows );
-    int iColumnMPz = new_ps->addEmptyDataColumn( "midPointZ", nDataRows );
+    //append the new data columns for the mid points coordinates and segment lengths
+    int iColumnMPx        = new_ps->addEmptyDataColumn( "midPointX"     , nDataRows );
+    int iColumnMPy        = new_ps->addEmptyDataColumn( "midPointY"     , nDataRows );
+    int iColumnMPz        = new_ps->addEmptyDataColumn( "midPointZ"     , nDataRows );
+    int iColumnSegLengths = new_ps->addEmptyDataColumn( "segment_length", nDataRows );
 
     //compute mid points for the PointSet object
     for( int iRow = 0; iRow < nDataRows; ++iRow ){
@@ -250,6 +259,8 @@ PointSet *SegmentSet::toPointSetMidPoints(const QString& psName ) const
         new_ps->setData( iRow, iColumnMPx, center_x );
         new_ps->setData( iRow, iColumnMPy, center_y );
         new_ps->setData( iRow, iColumnMPz, center_z );
+        //compute the length
+        new_ps->setData( iRow, iColumnSegLengths, getSegmentLenghtConst( iRow ) );
     }
 
     //commit data to file system

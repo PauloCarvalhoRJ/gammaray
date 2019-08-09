@@ -45,6 +45,9 @@ public:
     /** Returns the length of the iRecord-th segment. */
     double getSegmentLenght( int iRecord );
 
+    /** Does the same as getSegmentLenght(), but is const, which requires a prior call to DataFile::readFromFS()." */
+    double getSegmentLenghtConst( int iRecord ) const;
+
     /** Returns the distance between the end of the iRecord-th segment
      * to the beginning of the (iRecord+1)-th segment.
      * If the iRecord-th segment is the last, this method returns zero.
