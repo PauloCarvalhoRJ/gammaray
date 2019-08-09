@@ -501,6 +501,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Compute segment lengths", this, SLOT(onSegmentLengths()));
+                _projectContextMenu->addAction("Convert to point set (mid points)", this, SLOT(onExtractMidPoints()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -2699,6 +2700,29 @@ void MainWindow::onFlipTopBottom()
             return;
         gf->flipData( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, var_name, FlipDataDirection::W_DIRECTION );
     }
+}
+
+void MainWindow::onExtractMidPoints()
+{
+    SegmentSet* ss = dynamic_cast<SegmentSet*>( _right_clicked_file );
+
+    QString suggested_name = ss->getName() + "_as_midPoints";
+    //open the renaming dialog
+    bool ok;
+    QString ps_file_name = QInputDialog::getText(this, "Name the new file",
+                                                 "New point set file:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //create the mid-point point set
+    ss->readFromFS();
+    PointSet* ps = ss->toPointSetMidPoints( ps_file_name );
+
+    //attach the object to the project tree
+    Application::instance()->getProject()->addDataFile( ps );
+
+    //show the newly created object in main window's project tree
+    Application::instance()->refreshProjectTree();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

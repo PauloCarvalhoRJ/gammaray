@@ -212,6 +212,7 @@ private slots:
     void onFlipEastWest();
     void onFlipNorthSouth();
     void onFlipTopBottom();
+    void onExtractMidPoints();
 
 private:
     /**
