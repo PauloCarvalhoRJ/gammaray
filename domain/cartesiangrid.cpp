@@ -58,7 +58,7 @@ void CartesianGrid::setInfo(double x0, double y0, double z0,
     _categorical_attributes.clear();
     _categorical_attributes << categorical_attributes;
 
-    this->updatePropertyCollection();
+    this->updateChildObjectsCollection();
 }
 
 void CartesianGrid::setInfoFromMetadataFile()

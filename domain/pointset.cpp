@@ -90,7 +90,7 @@ void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_d
     _nsvar_var_trn.unite( nvar_var_trn_triads );
     _categorical_attributes.clear();
     _categorical_attributes << categorical_attributes;
-    this->updatePropertyCollection();
+    this->updateChildObjectsCollection();
 }
 
 

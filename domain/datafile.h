@@ -366,6 +366,12 @@ public:
      */
     virtual double getProportion(int variableIndex, double value0, double value1 );
 
+    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical file.
+     * Mostly the child objects are Attributes under a DataFile.  Others, such as the GeoGrid, have
+     * a more complex hierarchy tree.
+     */
+    void updateChildObjectsCollection();
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
@@ -396,9 +402,6 @@ protected:
 
     /** The no-data value specified by the user. */
     QString _no_data_value;
-
-    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical file. */
-    void updatePropertyCollection();
 
     /**
      * pairs relating n-scored variables (first uint) and variables

@@ -473,10 +473,11 @@ void DataFile::writeToFS()
 
     if (control != nvars) {
         Application::instance()->logWarn("WARNING: DataFile::writeToFS(): mismatch "
-                                         "between data column count and Attribute object "
-                                         "count.");
+                                         "between data column count (" + QString::number(nvars) +
+                                         ") and Attribute object "
+                                         "count (" + QString::number(control) + ").");
         // make up names for mismatched data columns
-        for (uint iGEOEAS = control; iGEOEAS <= nvars; ++iGEOEAS) {
+        for (uint iGEOEAS = control+1; iGEOEAS <= nvars; ++iGEOEAS) {
             out << "ATTRIBUTE " << iGEOEAS << endl;
         }
     }
@@ -514,7 +515,7 @@ void DataFile::writeToFS()
     // renames the .new file, effectively replacing the current file.
     outputFile.rename(this->getPath());
     // updates properties list so any changes appear in the project tree.
-    updatePropertyCollection();
+    updateChildObjectsCollection();
     // update the project tree in the main window.
     Application::instance()->refreshProjectTree();
 }
@@ -549,7 +550,7 @@ int DataFile::getCalcPropertyIndex(const std::string & name)
     return getChildIndex( getChildByName( QString(name.c_str()) ) );
 }
 
-void DataFile::updatePropertyCollection()
+void DataFile::updateChildObjectsCollection()
 {
 	// erases all current children
     this->_children.clear(); // TODO: deallocate elements/deep delete (minor memory leak)
@@ -564,7 +565,7 @@ void DataFile::updatePropertyCollection()
 		cgUVW->setParent( this );
 		GeoGrid* thisGeoGridAspect = dynamic_cast<GeoGrid*>( this );
 		cgUVW->setInfoFromGeoGrid( thisGeoGridAspect );
-		cgUVW->updatePropertyCollection();
+        cgUVW->updateChildObjectsCollection();
 	} else {
 		// list fields from data file
 		QStringList fields = Util::getFieldNames(this->_path);
@@ -612,7 +613,7 @@ void DataFile::replacePhysicalFile(const QString from_file_path)
     // copies the source file over the current physical file in project.
     Util::copyFile(from_file_path, _path);
     // updates properties list so any changes appear in the project tree.
-    updatePropertyCollection();
+    updateChildObjectsCollection();
     // update the project tree in the main window.
     Application::instance()->refreshProjectTree();
 }
@@ -756,7 +757,7 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name, bool categ
             this->updateMetaDataFile();
         }
         // updates properties list so any changes appear in the project tree.
-        updatePropertyCollection();
+        updateChildObjectsCollection();
         // update the project tree in the main window.
         Application::instance()->refreshProjectTree();
     }
@@ -1119,7 +1120,7 @@ void DataFile::deleteVariable( uint columnToDelete )
     }
 
     //update the child Attribute objects
-    updatePropertyCollection();
+    updateChildObjectsCollection();
 
     //update the project tree in the main window.
     Application::instance()->refreshProjectTree();

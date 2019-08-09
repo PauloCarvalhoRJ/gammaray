@@ -428,7 +428,7 @@ void GeoGrid::setInfo(int nI, int nJ, int nK, int nreal, const QString no_data_v
 	_categorical_attributes.clear();
 	_categorical_attributes << categorical_attributes;
 	//update the attribute fields
-	this->updatePropertyCollection();
+	this->updateChildObjectsCollection();
 }
 
 uint GeoGrid::getMeshNumberOfVertexes()
