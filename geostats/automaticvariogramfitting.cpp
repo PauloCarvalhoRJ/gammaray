@@ -323,8 +323,9 @@ double AutomaticVariogramFitting::objectiveFunction( const IJAbstractCartesianGr
                                                                        vectorOfParameters,
                                                                        m );
 
-    //get the sill of the variogram models
-    double sill = theoreticalVariographicSurface.max();
+    double meanSampleSpacing = ( gridWithGeometry.getCellSizeI() +
+                                 gridWithGeometry.getCellSizeJ() +
+                                 gridWithGeometry.getCellSizeK() ) / 3.0;
 
     //compute the weights for the experimental varmap points (this only needs to be redone when the input variable changes)
     static spectral::array weights; //this is initialized when the program loads
@@ -353,7 +354,7 @@ double AutomaticVariogramFitting::objectiveFunction( const IJAbstractCartesianGr
                                 if( d < 0.0001 ){ //if the separation is too small (results in large weight), this usually happens at the center
                                     weights( i, j, k ) = 0.0; //takes the opportunity to save the inv. lag distance beforehand
                                 }else{
-                                    weights( i, j, k ) = 1.0/d; //takes the opportunity to save the inv. lag distance beforehand
+                                    weights( i, j, k ) = 1.0/d / ( 6.28*d/meanSampleSpacing ); //takes the opportunity to save the inv. lag distance beforehand
                                 }
                             }
                 }
