@@ -28,6 +28,7 @@ private:
     const Attribute* m_atOrigin;
 
     bool transferFromCGtoGG();
+    bool transferFromCGtoPS();
 };
 
 #endif // VALUESTRANSFERER_H
