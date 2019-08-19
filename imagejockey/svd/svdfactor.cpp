@@ -234,8 +234,15 @@ double SVDFactor::getMinValue()
 {
 	if( m_isMinValueDefined )
 		return m_minValue;
-    m_minValue = *std::min_element( m_factorData->data().begin(), m_factorData->data().end() ) ;
-	m_isMinValueDefined = true;
+
+    //std::min_element() doesn't ignore NaNs!!!
+    //m_minValue = *std::min_element( m_factorData->data().begin(), m_factorData->data().end() ) ;
+    m_minValue = std::numeric_limits<double>::max();
+    for( const double& val : m_factorData->data() )
+        if( !std::isnan(val) && val < m_minValue )
+            m_minValue = val;
+
+    m_isMinValueDefined = true;
     return m_minValue;
 }
 
@@ -243,7 +250,14 @@ double SVDFactor::getMaxValue()
 {
 	if( m_isMaxValueDefined )
 		return m_maxValue;
-    m_maxValue = *std::max_element( m_factorData->data().begin(), m_factorData->data().end() ) ;
+
+    //std::max_element() doesn't ignore NaNs!!!
+    //m_maxValue = *std::max_element( m_factorData->data().begin(), m_factorData->data().end() ) ;
+    m_maxValue = std::numeric_limits<double>::lowest();
+    for( const double& val : m_factorData->data() )
+        if( !std::isnan(val) && val > m_maxValue )
+            m_maxValue = val;
+
 	m_isMaxValueDefined = true;
     return m_maxValue;
 }
