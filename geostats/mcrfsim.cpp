@@ -228,8 +228,8 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
             }
 
             if( ! isAheadInSuccession ){
-                //get the facies code that was simulated in the neighboring cell
-                uint faciesCodeInSample = static_cast< uint >( sampleGradationValue );
+                //get the facies code that was found in the neighboring primary data
+                uint faciesCodeInSample = static_cast< uint >( sampleFaciesValue );
                 //compute the resulting succession distance ( vector resulting from vertical separation and
                 // variation in the gradation field - lateral succession separation )
                 double faciesSuccessionDistance = 0.0;
