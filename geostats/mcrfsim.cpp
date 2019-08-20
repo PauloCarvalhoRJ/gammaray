@@ -365,25 +365,18 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     double cumulativeProbability = 0.0;
     for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
         double prob = tauModelCopy.getFinalProbability( categoryIndex );
-
-        //caps cumulative probability at 1.0 (user can model a transiogram that sums more than 1.0 at certain lags)
-        if( cumulativeProbability + prob > 1.0 )
-            cumulativeProbability = 1.0;
-        else
-            cumulativeProbability += prob;
-
+        cumulativeProbability += prob;
         cdf.push_back( cumulativeProbability );
     }
 
     //ensures cdf ends at 1.0 (user can model a transiogram that sums less than 1.0 at certain lags)
-    if( cumulativeProbability < 1.0 ){
-        cumulativeProbability = 1.0;
-        //forces last probability to 1.0
-        cdf[cdf.size()-1] = 1.0;
-    }
+    //the probs are rescaled so the cdf ends at 1.0.
+    double ratio = 1.0 / cumulativeProbability;
+    for(double &a : cdf) { a *= ratio; }
 
     //sanity check
-    double tolerance = 0.1;
+    double tolerance = 0.0001;
+    cumulativeProbability = cdf.back();
     if( cumulativeProbability + tolerance < 1.0 || cumulativeProbability - tolerance > 1.0 ){
         return m_simGridNDV;
     }
