@@ -211,11 +211,11 @@ void TransiogramDialog::makeChartsForModelReview()
             QValueAxis *axisY = new QValueAxis();
             axisY->setRange( 0.0, 1.0 );
             axisY->applyNiceNumbers();
-            axisY->setLabelFormat("%i");
+            axisY->setLabelFormat(m_formatForLabelsInYAxis);
             QValueAxis *axisX = new QValueAxis();
             axisX->setRange( 0.0, hFinal );
             axisX->applyNiceNumbers();
-            axisX->setLabelFormat("%i");
+            axisX->setLabelFormat(m_formatForLabelsInXAxis);
 
             //create a chart object to contain all the data series in the same chart area
             QChart *chart = new QChart();
@@ -483,11 +483,11 @@ void TransiogramDialog::performCalculation()
             QValueAxis *axisY = new QValueAxis();
             axisY->setRange( 0.0, 1.0 );
             axisY->applyNiceNumbers();
-            axisY->setLabelFormat("%0.1g");
+            axisY->setLabelFormat(m_formatForLabelsInYAxis);
             QValueAxis *axisX = new QValueAxis();
             axisX->setRange( hInitial, hFinal );
             axisX->applyNiceNumbers();
-            axisX->setLabelFormat("%0.3g");
+            axisX->setLabelFormat(m_formatForLabelsInXAxis);
 
             //create a chart object to contain all the data series in the same chart area
             QChart *chart = new QChart();
@@ -725,13 +725,13 @@ void TransiogramDialog::onTransiogramModelUpdated()
             axisY = new QValueAxis();
         axisY->setRange( 0.0, 2.0 );
         axisY->applyNiceNumbers();
-        axisY->setLabelFormat("%i");
+        axisY->setLabelFormat(m_formatForLabelsInYAxis);
         QValueAxis *axisX = dynamic_cast<QValueAxis *>( chart->axisX() );
         if( ! axisX )
             axisX = new QValueAxis();
         axisX->setRange( hInitial, hFinal );
         axisX->applyNiceNumbers();
-        axisX->setLabelFormat("%i");
+        axisX->setLabelFormat(m_formatForLabelsInXAxis);
         //-------------------------------------------------
 
         chart->removeAllSeries();

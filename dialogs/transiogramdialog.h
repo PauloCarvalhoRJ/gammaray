@@ -44,6 +44,9 @@ private:
 
     VerticalTransiogramModel* m_vtm;
 
+    QString m_formatForLabelsInXAxis = "%0.3g";
+    QString m_formatForLabelsInYAxis = "%0.1g";
+
     void tryToAddAttribute( Attribute* attribute );
     void clearCharts();
 
