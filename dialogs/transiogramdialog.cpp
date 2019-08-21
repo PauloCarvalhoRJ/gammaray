@@ -483,11 +483,11 @@ void TransiogramDialog::performCalculation()
             QValueAxis *axisY = new QValueAxis();
             axisY->setRange( 0.0, 1.0 );
             axisY->applyNiceNumbers();
-            axisY->setLabelFormat("%i");
+            axisY->setLabelFormat("%0.1g");
             QValueAxis *axisX = new QValueAxis();
             axisX->setRange( hInitial, hFinal );
             axisX->applyNiceNumbers();
-            axisX->setLabelFormat("%i");
+            axisX->setLabelFormat("%0.3g");
 
             //create a chart object to contain all the data series in the same chart area
             QChart *chart = new QChart();
