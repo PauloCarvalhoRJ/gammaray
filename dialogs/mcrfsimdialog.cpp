@@ -175,7 +175,7 @@ void MCRFSimDialog::onRun()
     } else {
         int realNum = 1;
         for( const spectral::arrayPtr& simValues : markovSim.getRealizations() ){
-            markovSim.m_cgSim->append( "real_" + QString::number(realNum),
+            markovSim.m_cgSim->append( m_commonSimulationParameters->getBaseNameForRealizationVariables() + QString::number(realNum),
                                        *simValues,
                                        markovSim.m_pdf->getCategoryDefinition() );
 
