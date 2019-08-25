@@ -4,6 +4,7 @@
 #include "domain/file.h"
 #include "domain/cartesiangrid.h"
 #include "domain/application.h"
+#include "dialogs/emptydialog.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "imagejockey/svd/svdfactor.h"
 #include "imagejockey/imagejockeyutils.h"
@@ -22,10 +23,15 @@
 #include <QCoreApplication>
 #include <QApplication>
 #include <QMessageBox>
+#include <QChart>
+#include <QLineSeries>
+#include <QChartView>
+#include <QValueAxis>
+
+std::vector< double > AutomaticVariogramFitting::s_objectiveFunctionValues;
 
 /** This is a mutex to restrict access to the FFTW routines from
  * multiple threads.  Some of its routines are not thread safe.*/
-
 std::mutex myMutexFFTW; //ATTENTION NAME CLASH: there is a variable called mutexFFTW defined somewhere out there.
 std::mutex myMutexLSRS;
 std::mutex myMutexObjectiveFunction;
@@ -502,6 +508,43 @@ spectral::array AutomaticVariogramFitting::computeFIM( const spectral::array &gr
     return result;
 }
 
+void AutomaticVariogramFitting::showObjectiveFunctionEvolution() const
+{
+    //load the x,y data for the chart
+    QtCharts::QLineSeries *chartSeries = new QtCharts::QLineSeries();
+    double max = std::numeric_limits<double>::lowest();
+    for(uint i = 0; i < s_objectiveFunctionValues.size(); ++i){
+        chartSeries->append( i+1, s_objectiveFunctionValues[i] );
+        if( s_objectiveFunctionValues[i] > max )
+            max = s_objectiveFunctionValues[i];
+    }
+
+    //create a new chart object
+    QtCharts::QChart *objFuncValuesChart = new QtCharts::QChart();
+    {
+        objFuncValuesChart->addSeries( chartSeries );
+        objFuncValuesChart->axisX( chartSeries );
+
+        QtCharts::QValueAxis* axisX = new QtCharts::QValueAxis();
+        axisX->setLabelFormat("%i");
+        objFuncValuesChart->setAxisX(axisX, chartSeries);
+
+        QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
+        axisY->setLabelFormat("%3.2f");
+        axisY->setRange( 0.0, max );
+        objFuncValuesChart->setAxisY(axisY, chartSeries);
+
+        objFuncValuesChart->legend()->hide();
+    }
+
+    //create the chart dialog
+    EmptyDialog* ed = new EmptyDialog( Application::instance()->getMainWindow() );
+    QtCharts::QChartView* chartView = new QtCharts::QChartView( objFuncValuesChart );
+    ed->addWidget( chartView );
+    ed->setWindowTitle( "Objective function with iterations." );
+    ed->show();
+}
+
 void AutomaticVariogramFitting::displayResults( const std::vector<IJVariographicStructure2D> &variogramStructures,
                                             const spectral::array& fftPhaseMapOfInput,
                                             const spectral::array& varmapOfInput,
@@ -577,8 +620,8 @@ void AutomaticVariogramFitting::displayResults( const std::vector<IJVariographic
     shiftFlags.push_back( false );
 
     // Prepare the display of the difference experimental - model
-    spectral::array diff = varmapOfInput - variograficSurface;
-    maps.push_back( diff );
+    spectral::array diffVarmapAndModel = varmapOfInput - variograficSurface;
+    maps.push_back( diffVarmapAndModel );
     titles.push_back( QString( "Difference (variogram)" ).toStdString() );
     shiftFlags.push_back( false );
 
@@ -587,12 +630,20 @@ void AutomaticVariogramFitting::displayResults( const std::vector<IJVariographic
     titles.push_back( QString( "Original grid" ).toStdString() );
     shiftFlags.push_back( false );
 
+    // Get the objective function value corresponding to the fitted variogram model.
     double objectiveFunctionValue = evaluateModel( variogramStructures );
 
     // Display the sum of factors obtained with the nested structures
     maps.push_back( sumOfStructures );
     titles.push_back( QString( "Result of the model (F=" +
                                Util::formatToDecimalPlaces( objectiveFunctionValue, 3 ) ).toStdString() + ")" );
+    shiftFlags.push_back( false );
+
+    //compute FIM to obtain the map from the residual varmap - variogram model
+    spectral::array mapFromDiffVarmapAndModel( nI, nJ, nK, 0.0 );
+    mapFromDiffVarmapAndModel = computeFIM( diffVarmapAndModel, fftPhaseMapOfInput );
+    maps.push_back( mapFromDiffVarmapAndModel );
+    titles.push_back( QString( "Result of diff. varmap - model" ).toStdString() );
     shiftFlags.push_back( false );
 
     // Prepare the display of the difference original data - sum of factors
@@ -684,6 +735,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithSAa
         double convergenceCriterion,
         bool openResultsDialog) const
 {
+    //clear the collected objective function values.
+    s_objectiveFunctionValues.clear();
+
     // Intialize the random number generator with the same seed
     std::srand (seed);
 
@@ -806,6 +860,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithSAa
                 }
             }
 
+            //collect the interation's objective function value
+            s_objectiveFunctionValues.push_back( f_eCurrent );
+
             //Let Qt repaint the GUI
             progressDialog.setValue( k );
             QCoreApplication::processEvents();
@@ -890,6 +947,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithSAa
                 Application::instance()->logWarn( "WARNING: reached maximum alpha reduction steps." );
         }
 
+        //collect the interation's objective function value
+        s_objectiveFunctionValues.push_back( currentF );
+
         //Check the convergence criterion.
         double ratio = currentF / nextF;
         if( ratio  < (1.0 + convergenceCriterion) )
@@ -910,8 +970,10 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithSAa
             variogramStructures[iStructure].setParameter( iPar, vw[i] );
 
     // Display the results in a window.
-    if( openResultsDialog )
+    if( openResultsDialog ){
         displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+        showObjectiveFunctionEvolution();
+    }
 
     //return the fitted model
     return variogramStructures;
@@ -927,6 +989,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithLSR
         int nRestarts,
         bool openResultsDialog) const
 {
+    //clear the collected objective function values.
+    s_objectiveFunctionValues.clear();
+
     //Intialize the random number generator with the same seed
     std::srand (seed);
 
@@ -1049,6 +1114,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithLSR
             for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
                 threads[iThread].join();
 
+            //collect the iteration's best objective function value
+            s_objectiveFunctionValues.push_back( objectiveFunction( *inputGrid, *inputData, vw_bestSolution, m ) );
+
             progressDialog.setValue( t * maxNumberOfOptimizationSteps + k );
             QApplication::processEvents(); // let Qt update the UI
 
@@ -1087,8 +1155,10 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithLSR
             variogramStructures[iStructure].setParameter( iPar, vw_bestSolution[i] );
 
     // Display the results in a window.
-    if( openResultsDialog )
+    if( openResultsDialog ){
         displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+        showObjectiveFunctionEvolution();
+    }
 
     //return the fitted model
     return variogramStructures;
@@ -1104,6 +1174,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithPSO
         double acceleration_constant_2,
         bool openResultsDialog) const
 {
+    //clear the collected objective function values.
+    s_objectiveFunctionValues.clear();
+
     //Intialize the random number generator with the same seed
     std::srand (seed);
 
@@ -1276,6 +1349,10 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithPSO
             QApplication::processEvents(); //let Qt update UI
 
         } // for each particle
+
+        //collect the interation's objective function value
+        s_objectiveFunctionValues.push_back( fOfgbest );
+
     } // for each step
 
     //-------------------------------------------------------------------------------------------------------------
@@ -1289,8 +1366,10 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithPSO
             variogramStructures[iStructure].setParameter( iPar, gbest_pw[iParLinear] );
 
     // Display the results in a window.
-    if( openResultsDialog )
+    if( openResultsDialog ){
         displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+        showObjectiveFunctionEvolution();
+    }
 
     //return the fitted model
     return variogramStructures;
@@ -1308,6 +1387,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithGen
         double mutationRate,
         bool openResultsDialog) const
 {
+    //clear the collected objective function values.
+    s_objectiveFunctionValues.clear();
+
     //Intialize the random number generator with the same seed
     std::srand (seed);
 
@@ -1406,12 +1488,6 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithGen
             population.push_back( ind );
         }
 
-        //evaluate the individuals of current population
-//        for( uint iInd = 0; iInd < population.size(); ++iInd ){
-//            Individual& ind = population[iInd];
-//            ind.fValue = objectiveFunction( *inputGrid, *inputData, ind.parameters, m );
-//        }
-
         //create and start the threads.  Each thread evaluates the objective function for a series of individuals.
         std::thread threads[nThreads];
         unsigned int iThread = 0;
@@ -1434,6 +1510,9 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithGen
 
         //sort the population in ascending order (lower value == better fitness)
         std::sort( population.begin(), population.end() );
+
+        //collect the iteration's best objective function value
+        s_objectiveFunctionValues.push_back( population[0].fValue );
 
         //clip the population (the excessive worst fit individuals die)
         while( population.size() > nPopulationSize )
@@ -1529,8 +1608,10 @@ std::vector<IJVariographicStructure2D> AutomaticVariogramFitting::processWithGen
             variogramStructures[iStructure].setParameter( iPar, gbest_pw[iParLinear] );
 
     // Display the results in a window.
-    if( openResultsDialog )
+    if( openResultsDialog ){
         displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+        showObjectiveFunctionEvolution();
+    }
 
     //return the fitted model
     return variogramStructures;

@@ -128,6 +128,10 @@ private:
     Attribute* m_at;
     CartesianGrid* m_cg;
     FastVarmapMethod m_fastVarmapMethod;
+    /** The objective function values collected during the last execution
+     * of an optimization method.
+     */
+    static std::vector< double > s_objectiveFunctionValues;
 
     /** Utilitary function that encapsulates variographic surface generation from
      * variogram model parameters.
@@ -163,6 +167,12 @@ private:
     spectral::array computeFIM( const spectral::array& gridWithCovariance,
                                 const spectral::array& gridWithFFTphases ) const;
 
+
+    /**
+     * Displays a dialog with a chart showing the evolution of the objective function
+     * value versus iterations of the optimization method.
+     */
+    void showObjectiveFunctionEvolution( ) const;
 
 public:
 
