@@ -96,6 +96,15 @@ bool MCRFSim::isOKtoRun()
             m_lastError = "Category definition of input variable must be the same object as that the PDF is based on.";
             return false;
         }
+        if( m_pdf->hasZeroOrLessProb() ){
+            m_lastError = "PDF has zero or negative probability values.";
+            return false;
+        }
+        m_pdf->loadPairs();
+        if( ! m_pdf->sumsToOne() ){
+            m_lastError = "PDF's probabilities do not sum up to 1.0. Sum = " + QString::number( m_pdf->sumProbs() ) + " .";
+            return false;
+        }
     }
 
     if( ! m_transiogramModel ){
@@ -164,7 +173,6 @@ bool MCRFSim::useSecondaryData() const
 double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                                   std::mt19937 &randomNumberGenerator, const spectral::array& simulatedData ) const
 {
-
     //get the facies set to be simulated
     CategoryDefinition* cd = m_pdf->getCategoryDefinition();
 
@@ -213,7 +221,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
 
         // Sanity check against No-data-values
         // DataFile::isNDV() is non-const and has a slow string-to-double conversion
-        if( ! Util::almostEqual2sComplement( m_simGridNDV, sampleFaciesValue, 1 ) ){
+        if( ! m_primaryDataHasNDV || ! Util::almostEqual2sComplement( m_primaryDataNDV, sampleFaciesValue, 1 ) ){
 
             // get the sample's gradation field value
             double sampleGradationValue = sampleDataCell->readValueFromDataSet( m_gradationFieldOfPrimaryData->getAttributeGEOEASgivenIndex()-1 );
@@ -299,7 +307,6 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         }
     }
 
-
     //////////////// COMPUTE THE PROBABILITIES OF THIS SIMULATION CELL BEING EACH CANDIDATE FACIES//////////////////////
     /////// FOR THEORY AND FORMULATION, SEE PROGRAM MANUAL IN THE SECTION "MARKOV CHAIN RANDOM FIELD SIMULATION" ///////
 
@@ -307,7 +314,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     // samples and previously simulated cells.
     const VerticalTransiogramModel& transiogramModel = *m_transiogramModel;
     auto lambdaMultiplicationProbs = [ faciesFromCodesAndSuccessionSeparations, transiogramModel ] ( uint faciesCodeTo ) {
-        double result = 1.0;
+        double result = 0.0; //assumes zero probability
         std::vector< std::pair< FaciesCodeFrom, SuccessionSeparation > >::const_iterator it =
                 faciesFromCodesAndSuccessionSeparations.cbegin();
         //iterate over all "from" facies codes, which reside in the primary data samples and previously simulated nodes
@@ -316,7 +323,10 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
             uint faciesCodeFrom = (*it).first;
             double h = (*it).second;
             double probability = transiogramModel.getTransitionProbability( faciesCodeFrom, faciesCodeTo, h );
-            result *= probability;
+            if( it == faciesFromCodesAndSuccessionSeparations.cbegin() )
+                result = probability; //initialize the resulting probability with the first probability
+            else
+                result *= probability;
         }
         return result;
     };
@@ -336,7 +346,11 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         //compute the numerator (a multiplication) part of the MCRF equation
         double numerator = lambdaMultiplicationProbs( candidateFaciesCode );
         //finaly compute the probability according to transiography (primary data and previously simulated cells)
-        double probabilityFromTransiography = numerator / denominator;
+        double probabilityFromTransiography;
+        if( denominator > 0.0 )
+            probabilityFromTransiography = numerator / denominator;
+        else
+            probabilityFromTransiography = 0.0;
         //set the probability in the Tau Model
         tauModelCopy.setProbabilityFromSource( iCandidateFacies,
                                               static_cast<uint>( ProbabilitySource::FROM_TRANSIOGRAM ),
@@ -365,6 +379,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     double cumulativeProbability = 0.0;
     for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
         double prob = tauModelCopy.getFinalProbability( categoryIndex );
+        assert( prob != 0.0 && "MCRFSim::simulateOneCellMT(): final probabilities are not supposed to be zero!");
         cumulativeProbability += prob;
         cdf.push_back( cumulativeProbability );
     }
@@ -374,12 +389,18 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     double ratio = 1.0 / cumulativeProbability;
     for(double &a : cdf) { a *= ratio; }
 
-    //sanity check
+    //sanity checks
     double tolerance = 0.0001;
     cumulativeProbability = cdf.back();
     if( cumulativeProbability + tolerance < 1.0 || cumulativeProbability - tolerance > 1.0 ){
+        assert( false && "MCRFSim::simulateOneCellMT(): Final probabilities for Monte Carlo not summing up to 1.0.");
         return m_simGridNDV;
     }
+    for( double &cumulativeProbability : cdf )
+        if( ! std::isfinite( cumulativeProbability )){
+            assert( false && "MCRFSim::simulateOneCellMT(): At least one final probability for Monte Carlo is infinity or NaN.");
+            return m_simGridNDV;
+        }
 
     //Draw a cumulative probability from an uniform distribution
     std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
@@ -394,6 +415,8 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     }
 
     //execution is not supposed to reach this point
+    assert( false && "MCRFSim::simulateOneCellMT(): Execution reached a point not supposed to be.  "
+                     "Please, check the sources of probabilities: global PDF, transiograms and secondary data.");
     return m_simGridNDV;
 }
 
@@ -498,6 +521,10 @@ bool MCRFSim::run()
 
     //get the simulation grid's NDV (getNoDataValueAsDouble() is expensive)
     m_simGridNDV = m_cgSim->getNoDataValueAsDouble();
+
+    //get the primary data's NDV (getNoDataValueAsDouble() is expensive)
+    m_primaryDataHasNDV = m_dfPrimary->hasNoDataValue();
+    m_primaryDataNDV = m_dfPrimary->getNoDataValueAsDouble();
 
     //get the number of realizations the user wants to simulate
     uint nRealizations = m_commonSimulationParameters->getNumberOfRealizations();
@@ -615,6 +642,11 @@ bool MCRFSim::run()
     m_progressDialog->setMaximum( nI * nJ * nK * nRealizations );
     /////////////////////////////////
 
+    //suspend logging during processing
+    Application::instance()->logErrorOff();
+    Application::instance()->logWarningOff();
+    Application::instance()->logInfoOff();
+
     //create and run the simulation threads
     std::thread threads[nThreads];
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
@@ -655,6 +687,11 @@ bool MCRFSim::run()
     //lock-wait for the threads to finish their execution contexts.
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
         threads[iThread].join();
+
+    //flush any log messages that may have been issued during the simulation
+    Application::instance()->logErrorOn();
+    Application::instance()->logWarningOn();
+    Application::instance()->logInfoOn();
 
     //collect the realizations created by the threads:
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread ){

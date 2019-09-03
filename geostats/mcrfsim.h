@@ -140,8 +140,12 @@ private:
     ulong m_progress;
     //!@}
 
-    /** The no-data-value as a double value to avoid unnecessary iterative calls to DataFile::getNoDataValue*(). */
+    /** The simulation grid's no-data-value as a double value to avoid unnecessary iterative calls to DataFile::getNoDataValue*(). */
     double m_simGridNDV;
+
+    /** The sprimary data's no-data-value as a double value to avoid unnecessary iterative calls to DataFile::getNoDataValue*(). */
+    double m_primaryDataNDV;
+    bool m_primaryDataHasNDV;
 
     /** The set of simulated data.  Each spectral::array object is a string of doubles that matches the
      * scan order of the simulation grid.
