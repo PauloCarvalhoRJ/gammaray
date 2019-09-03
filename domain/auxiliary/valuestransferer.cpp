@@ -36,6 +36,8 @@ bool ValuesTransferer::transfer()
             return transferFromCGtoGG();
         else if( dfOrig->getFileType() == "CARTESIANGRID" && dfDest->getFileType() == "POINTSET" )
             return transferFromCGtoPS();
+        else if( dfOrig->getFileType() == "CARTESIANGRID" && dfDest->getFileType() == "CARTESIANGRID" )
+            return transferFromCGtoCG();
         else
             Application::instance()->logError("ValuesTransferer::transfer(): collocated transfer of values from a " +
                                               dfOrig->getFileType()
@@ -153,6 +155,62 @@ bool ValuesTransferer::transferFromCGtoPS()
 
     //adds the collocated values a new attribute to the destination data file
     psDest->addNewDataColumn( m_newAttributeName, collocatedValues );
+
+    return true;
+}
+
+bool ValuesTransferer::transferFromCGtoCG()
+{
+    //get the data sets as concrete data types
+    CartesianGrid* cgDest = dynamic_cast<CartesianGrid*>( m_dfDestination );
+    CartesianGrid* cgOrig = dynamic_cast<CartesianGrid*>( m_atOrigin->getContainingFile() );
+
+    //load everything from the filesystem
+    cgOrig->loadData();
+    cgDest->loadData();
+
+    //get some data information
+    uint rowCount = cgDest->getDataLineCount();
+    uint atIndex = m_atOrigin->getAttributeGEOEASgivenIndex()-1;
+    double NDVofDest = cgDest->getNoDataValueAsDouble();
+
+    //create a vector to hold the collocated values
+    std::vector< double > collocatedValues;
+    collocatedValues.reserve( rowCount );
+
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Transfering collocated values...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setValue( 0 );
+    progressDialog.setMaximum( rowCount );
+    /////////////////////////////////
+
+    int progressUpdateStep = rowCount / 100;
+
+    //loop over the destination Cartesian grid cells
+    //to transfer values
+    for( int iRow = 0; iRow < rowCount; ++iRow ){
+        uint i, j, k;
+        cgDest->indexToIJK( iRow, i, j, k );
+        double x, y, z;
+        cgDest->IJKtoXYZ( i, j, k, x, y, z );
+
+        double collocatedValue = cgOrig->valueAt( atIndex, x, y, z );
+        if( std::isfinite( collocatedValue ) && ! cgOrig->isNDV( collocatedValue ) )
+            collocatedValues.push_back( collocatedValue );
+        else
+            collocatedValues.push_back( NDVofDest );
+
+        if( ! ( iRow % progressUpdateStep ) ){
+            progressDialog.setValue( iRow );
+            QApplication::processEvents();
+        }
+    }
+
+    //adds the collocated values a new attribute to the destination data file
+    cgDest->addNewDataColumn( m_newAttributeName, collocatedValues );
 
     return true;
 }
