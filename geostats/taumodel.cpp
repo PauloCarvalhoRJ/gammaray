@@ -38,7 +38,7 @@ double TauModel::getFinalProbability(unsigned int categoryIndex) const
     double x = 1.0;
     for( unsigned int sourceIndex = 0; sourceIndex < m_probsOtherSources.size(); ++sourceIndex ){
         double pb = m_probsOtherSources[sourceIndex][ categoryIndex ];
-        double b = ( 1.0 - pb ) / pb;
+        double b = pb==0.0 ? 1000.0 : ( ( 1.0 - pb ) / pb ); //resolve to an arbitrarily large value if pb is zero (b tends to be large)
         x *= std::pow( b / a, m_TauFactors[sourceIndex] );
     }
 
