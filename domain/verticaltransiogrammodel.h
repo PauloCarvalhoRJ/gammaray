@@ -64,8 +64,10 @@ public:
     CategoryDefinition* getCategoryDefinition() const;
 
     /** Returns the probability of the transition from one facies to another at a given separation h.
-     * Make sure all transiography information was loaded wither with the data loading/updating methods
-     * before making queries, otherwise an error followed by a crash will ensue.
+     * Make sure all transiography information was loaded with the data loading/updating methods
+     * before making queries, otherwise a zero probability will be returned for any facies code not found.
+     * NOTICE: Not all facies in the CatgeoryDefinition are necessarily present in the transiogram matrix.
+     *         Missing categories have zero transition probability.
      */
     double getTransitionProbability( uint fromFaciesCode, uint toFaciesCode, double h ) const;
 

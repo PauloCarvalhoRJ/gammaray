@@ -90,38 +90,34 @@ CategoryDefinition *VerticalTransiogramModel::getCategoryDefinition() const
 int VerticalTransiogramModel::getFaciesIndex(const QString faciesName) const
 {
     //get the index of the head facies
-    int faciesIndex = -1;
     std::vector<QString>::const_iterator it = std::find ( m_faciesNames.cbegin(), m_faciesNames.cend(), faciesName );
-    if (it != m_faciesNames.end())
-        faciesIndex = it - m_faciesNames.begin();
-    return faciesIndex;
+    if (it != m_faciesNames.cend()){
+        return it - m_faciesNames.cbegin();
+    }
+    return -1;
 }
 
 double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesCode, uint toFaciesCode, double h) const
 {
-    try {
+    //it is possible that not all facies have transiograms modeled.  In this case, there is zero probability
+    //of transition.
+    if( m_faciesCodeToIndex.find( fromFaciesCode ) == m_faciesCodeToIndex.end() ||
+        m_faciesCodeToIndex.find( toFaciesCode ) == m_faciesCodeToIndex.end() )
+        return 0.0;
 
-        uint fromFaciesIndex = m_faciesCodeToIndex.at( fromFaciesCode );
-        uint toFaciesIndex   = m_faciesCodeToIndex.at(  toFaciesCode  );
-        const std::vector< VTransiogramParameters >& transriogramsRow = m_verticalTransiogramsMatrix[ fromFaciesIndex ];
-        const VTransiogramParameters& transiogram = transriogramsRow[ toFaciesIndex ];
+    uint fromFaciesIndex = m_faciesCodeToIndex.at( fromFaciesCode );
+    uint toFaciesIndex   = m_faciesCodeToIndex.at(  toFaciesCode  );
+    const std::vector< VTransiogramParameters >& transriogramsRow = m_verticalTransiogramsMatrix[ fromFaciesIndex ];
+    const VTransiogramParameters& transiogram = transriogramsRow[ toFaciesIndex ];
+    TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
+    if( fromFaciesCode == toFaciesCode )
+        transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
 
-        TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
-        if( fromFaciesCode == toFaciesCode )
-            transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
-
-        return GeostatsUtils::getTransiogramProbability( transiogramType,
-                                                         std::get<0>( transiogram ),
-                                                         h,
-                                                         std::get<1>( transiogram ),
-                                                         std::get<2>( transiogram ) );
-
-    } catch ( std::out_of_range& e ) {
-        assert( false && "VerticalTransiogramModel::getTransitionProbability(): facies code not in m_faciesCodeToIndex. "
-                         "Could not resolve transiogram rol/col index for the given facies code. "
-                         "Perhaps a prior call to VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap() or"
-                         " VerticalTransiogramModel::readFromFS() is missing." );
-    }
+    return GeostatsUtils::getTransiogramProbability( transiogramType,
+                                                     std::get<0>( transiogram ),
+                                                     h,
+                                                     std::get<1>( transiogram ),
+                                                     std::get<2>( transiogram ) );
 }
 
 uint VerticalTransiogramModel::getRowOrColCount() const
@@ -425,9 +421,10 @@ void VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap()
     m_faciesCodeToIndex.clear();
     cd->loadQuintuplets();
     for( uint i = 0; i < cd->getCategoryCount(); ++i ){
-        uint faciesIndex = getFaciesIndex( cd->getCategoryName( i ) );
-        uint faciesCode = cd->getCategoryCode( i );
-        if( faciesIndex >= 0)
+        int faciesIndex = getFaciesIndex( cd->getCategoryName( i ) );
+        int faciesCode = cd->getCategoryCode( i );
+        assert( faciesCode >= 0 && "VerticalTransiogramModel::updateInternalFaciesCodeToIndexMap(): facies code not found." );
+        if( faciesIndex >= 0 )
             m_faciesCodeToIndex.insert( { faciesCode, faciesIndex } );
     }
 }
