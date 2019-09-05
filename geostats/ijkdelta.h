@@ -21,7 +21,7 @@ public:
      * @param result An array with room for at least 8 elements.
      * @return The number of first elements in result with the computed indexes (2, 4 or 8).
      */
-    inline int getIndexes(IJKIndex& fromIndex, IJKIndex *result ) const
+    inline int getIndexes(const IJKIndex& fromIndex, IJKIndex *result ) const
     {
         int possibleIs[2];
         int possibleJs[2];

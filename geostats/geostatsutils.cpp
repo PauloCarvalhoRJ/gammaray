@@ -307,14 +307,14 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
     return result;
 }
 
-void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
+void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                                                         int numberOfSamples,
                                                         int nColsAround,
                                                         int nRowsAround,
                                                         int nSlicesAround,
                                                         bool hasNDV,
                                                         double NDV,
-														GridCellPtrMultiset &list)
+                                                        GridCellPtrMultiset &list)
 {
     CartesianGrid* cg = cell._grid;
     if( ! cg ){

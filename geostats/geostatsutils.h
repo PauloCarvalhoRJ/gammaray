@@ -116,7 +116,7 @@ public:
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
      */
-	static void getValuedNeighborsTopoOrdered(GridCell &cell,
+    static void getValuedNeighborsTopoOrdered(const GridCell &cell,
 															int numberOfSamples,
 															int nColsAround,
 															int nRowsAround,

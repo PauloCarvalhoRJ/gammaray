@@ -34,7 +34,7 @@ public:
     /** Computes the topological distance from the given cell.
      * The result is also stored in _topoDistance member variable.
      */
-    inline int computeTopoDistance( GridCell &fromCell ){
+    inline int computeTopoDistance( const GridCell &fromCell ){
         _topoDistance = std::abs( _indexIJK._i - fromCell._indexIJK._i ) +
                         std::abs( _indexIJK._j - fromCell._indexIJK._j ) +
                         std::abs( _indexIJK._k - fromCell._indexIJK._k );
