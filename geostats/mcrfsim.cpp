@@ -185,7 +185,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
 
     //collect neighboring simulation grid cells ordered by their distance with respect
     //to the simulation cell.
-    DataCellPtrMultiset vNeighboringSimGridCells = getNeighboringSimGridCellsMT( simulationCell );
+    DataCellPtrMultiset vNeighboringSimGridCells = getNeighboringSimGridCellsMT( simulationCell, simulatedData );
 
     //make a local copy of the Tau Model (this is potentially a multi-threaded code)
     TauModel tauModelCopy( *m_tauModel );
@@ -781,7 +781,8 @@ DataCellPtrMultiset MCRFSim::getSamplesFromPrimaryMT(const GridCell &simulationC
     return result;
 }
 
-DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simulationCell) const
+DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simulationCell,
+                                                          const spectral::array& simulatedData) const
 {
     DataCellPtrMultiset result;
     if( m_searchStrategySimGrid && m_cgSim ){
@@ -792,10 +793,16 @@ DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simula
 
         //Fetch the indexes of the samples to be used in the simulation.
         QList<uint> samplesIndexes;
-        if( m_commonSimulationParameters->getSearchAlgorithmOptionForSimGrid() == 0 )
-            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinGenericRTreeBased( simulationCell, *m_searchStrategySimGrid );
-        else
-            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinTunedForLargeDataSets( simulationCell, *m_searchStrategySimGrid );
+//        if( m_commonSimulationParameters->getSearchAlgorithmOptionForSimGrid() == 0 )
+//            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinGenericRTreeBased( simulationCell, *m_searchStrategySimGrid );
+//        else
+//            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinTunedForLargeDataSets( simulationCell, *m_searchStrategySimGrid );
+        //The simulation grid is necessarily a Cartesian grid
+        samplesIndexes = m_spatialIndexOfSimGrid->getNearestFromCartesianGrid( simulationCell,
+                                                                               *m_searchStrategySimGrid,
+                                                                               true,
+                                                                               m_simGridNDV,
+                                                                               &simulatedData.d_ );
         QList<uint>::iterator it = samplesIndexes.begin();
 
         //Create and collect the searched sample objects, which depend on the type of the input file.

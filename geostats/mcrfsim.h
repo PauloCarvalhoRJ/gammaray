@@ -193,8 +193,10 @@ private:
      * The resulting collection depends on the SearchStrategy object set for the simulation grid.  Returns an empty object if any
      * required parameter for the search to work is missing.  The data cells are ordered
      * by their distance to the passed simulation cell.
+     * This method also needs to query the previously simulated data, which is passed as a parameter.
      */
-    DataCellPtrMultiset getNeighboringSimGridCellsMT( const GridCell& simulationCell ) const;
+    DataCellPtrMultiset getNeighboringSimGridCellsMT(const GridCell& simulationCell ,
+                                                     const spectral::array &simulatedData) const;
 
 };
 
