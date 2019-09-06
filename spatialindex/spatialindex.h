@@ -13,6 +13,7 @@ class SearchStrategy;
 class DataFile;
 class GeoGrid;
 class SegmentSet;
+class GridCell;
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -92,6 +93,25 @@ public:
     QList<uint> getNearestWithinTunedForLargeDataSets(const DataCell& dataCell,
                                         const SearchStrategy & searchStrategy ) const;
 
+
+    /**
+     * It is a highly specialized member of the getNearest*() family of methods.
+     * It works only with regular grid cells and Cartesian grids, taking
+     * advantage of the implicit regular geometry and topology to improve search performance manifold.
+     * An empty list can be returned.
+     * @param gridCell The grid cell used as center to query neighboring cells.
+     * @param searchStrategy The object containg the search parameters.
+     * @param hasNDV Shortcut to avoid iterative calls to the slow DataFile::hasNoDataValue()
+     * @param NDVvalue Shortcut to avoid iterative calls to the slow DataFile::getNoDataValueAsDouble()
+     * @param simulatedData This should be set if this method is being called by computations that do not
+     *                      immediately commit the results to the grid (e.g. simulation routines), otherwise an index
+     *                      crash will ensue as the index in gridCell object is invalid or is -1.
+     */
+    QList<uint> getNearestFromCartesianGrid(const GridCell &gridCell,
+                                            const SearchStrategy & searchStrategy,
+                                            bool hasNDV,
+                                            double NDVvalue,
+                                            const std::vector<double> *simulatedData = nullptr) const;
 
     /** Clears the spatial index. */
 	void clear();

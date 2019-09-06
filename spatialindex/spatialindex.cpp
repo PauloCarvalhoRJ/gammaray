@@ -469,7 +469,55 @@ QList<uint> SpatialIndex::getNearestWithinTunedForLargeDataSets(const DataCell& 
             result.push_back( (*it).first.second );
     }
 
-	return result;
+    return result;
+}
+
+QList<uint> SpatialIndex::getNearestFromCartesianGrid(const GridCell &gridCell,
+                                                      const SearchStrategy &searchStrategy,
+                                                      bool hasNDV,
+                                                      double NDVvalue,
+                                                      const std::vector<double> *simulatedData) const
+{
+    assert( m_dataFile && "SpatialIndex::getNearestFromCartesianGrid(): No data file.  "
+                          "Make sure you have made a call to fill() prior to making queries.");
+
+    assert( ( gridCell._dataIndex >= 0 || simulatedData ) && "SpatialIndex::getNearestFromCartesianGrid(): "
+                                                             "the data index of gridCell is -1, but no "
+                                                             "separate computed data was provided (simulatedData == nullptr).");
+
+    //get the desired number of samples.
+    uint n = searchStrategy.m_nb_samples;
+
+    //prepare the result container.
+    QList<uint> result;
+    result.reserve( n );
+
+    //for this search mode, the data set must be a Cartesian grid
+    CartesianGrid* cg = dynamic_cast< CartesianGrid* >( m_dataFile );
+    if( cg ){
+
+        //collects valued n-neighbors ordered by their topological distance with respect
+        //to the target cell
+        GridCellPtrMultiset vCells;
+
+        //collects the data samples (depend on the search neighborhood)
+        GeostatsUtils::getValuedNeighborsTopoOrdered( gridCell,
+                                                               n,
+                                                               16,
+                                                               16,
+                                                               16,
+                                                               hasNDV,
+                                                               NDVvalue,
+                                                               vCells,
+                                                               simulatedData );
+
+        //Make a copy of the sample collection but with generic versions of the objects for the methods transparent to grid information.
+        //DataCellPtrMultiset vDataCells( vCells.begin(), vCells.end() );
+
+    } else
+        assert( false && "SpatialIndex::getNearestFromCartesianGrid(): Searched data set is not a Cartesian grid.");
+
+    return result;
 }
 
 void SpatialIndex::clear()
