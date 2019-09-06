@@ -314,12 +314,17 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                                                         int nSlicesAround,
                                                         bool hasNDV,
                                                         double NDV,
-                                                        GridCellPtrMultiset &list)
+                                                        GridCellPtrMultiset &list,
+                                                        const std::vector<double> *simulatedData)
 {
     CartesianGrid* cg = cell._grid;
     if( ! cg ){
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null grid.  Returning empty list.");
     }
+
+    assert( ( cell._dataIndex >= 0 || simulatedData ) && "GeostatsUtils::getValuedNeighborsTopoOrdered(): "
+                                                             "the data index of cell is -1, but no "
+                                                             "separate computed data was provided (simulatedData == nullptr).");
 
     //get the grid limits
     int row_limit = cg->getNY();
@@ -380,16 +385,20 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
             int jj = indexes[iIndex]._j;
             int kk = indexes[iIndex]._k;
             //...if the index is within the grid limits...
-			if( ii >= 0 && ii < column_limit &&
-				jj >= 0 && jj < row_limit &&
+            if( ii >= 0 && ii < column_limit &&
+                jj >= 0 && jj < row_limit &&
                 kk >= 0 && kk < slice_limit ){
                 //...get the value corresponding to the cell index.
-                double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
+                double value;
+                if ( cell._dataIndex >= 0 )  // data column is provided: fetch value from the grid
+                    value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
+                else                         // data column is NOT provided: fetch value from a client-given data container
+                    value = (*simulatedData)[ cg->IJKtoIndex( ii, jj, kk ) ];
                 //if the cell is valued... DataFile::hasNDV() is slow.
                 if( !hasNDV || !Util::almostEqual2sComplement( NDV, value, 1 ) ){
                     //...it is a valid neighbor.
-					GridCellPtr currentCell( new GridCell( cg, cell._dataIndex, ii, jj, kk ) );
-					currentCell->computeTopoDistance( cell );
+                    GridCellPtr currentCell( new GridCell( cg, cell._dataIndex, ii, jj, kk ) );
+                    currentCell->computeTopoDistance( cell );
                     list.insert( currentCell );
                     //if the number of neighbors is reached...
                     if( list.size() == (unsigned)numberOfSamples )
@@ -398,7 +407,7 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                 }
             }
         }
-	}
+    }
 }
 
 MatrixNXM<double> GeostatsUtils::makePmatrixForFK(int nsamples, int nst, KrigingType kType )

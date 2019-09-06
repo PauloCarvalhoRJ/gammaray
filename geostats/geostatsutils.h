@@ -115,6 +115,9 @@ public:
 
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
+     * @param simulatedData This should be set if this method is being called by computations that do not
+     *                      immediately commit the results to the grid (e.g. simulation routines), otherwise an index
+     *                      crash will ensue as the index in cell object parameter is invalid or is -1.
      */
     static void getValuedNeighborsTopoOrdered(const GridCell &cell,
 															int numberOfSamples,
@@ -123,7 +126,8 @@ public:
 															int nSlicesAround,
 															bool hasNDV,
 															double NDV,
-															GridCellPtrMultiset & list);
+                                                            GridCellPtrMultiset & list,
+                                                            const std::vector<double> *simulatedData = nullptr );
 	/** Creates the P matrix for Factorial Kriging.
 	 * see theory in Ma et al. (2014) - Factorial kriging for multiscale modelling.
 	 * @param nsamples Number of samples for the kriging operation.
