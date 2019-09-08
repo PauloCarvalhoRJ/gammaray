@@ -323,3 +323,11 @@ void AutomaticVarFitDialog::onRunExperiments()
     //closes the output file
     outputFile.close();
 }
+
+void AutomaticVarFitDialog::onObjectiveFunctionChanged()
+{
+    if( ui->cmbObjectiveFunction->currentIndex() == 0 )
+        m_autoVarFit.setObjectiveFunctionType( ObjectiveFunctionType::BASED_ON_FIM );
+    else
+        m_autoVarFit.setObjectiveFunctionType( ObjectiveFunctionType::BASED_ON_VARFIT );
+}

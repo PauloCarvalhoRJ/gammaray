@@ -45,6 +45,8 @@ private Q_SLOTS:
     void onNumberOfStructuresChanged(int number);
 
     void onRunExperiments();
+
+    void onObjectiveFunctionChanged();
 };
 
 #endif // AUTOMATICVARFITDIALOG_H

@@ -100,7 +100,7 @@
       <item>
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>Global parameters: num. threads:</string>
+         <string>Global parameters: #threads:</string>
         </property>
        </widget>
       </item>
@@ -117,7 +117,7 @@
       <item>
        <widget class="QLabel" name="label_7">
         <property name="text">
-         <string>    num. structures:</string>
+         <string>    #structures:</string>
         </property>
        </widget>
       </item>
@@ -174,6 +174,27 @@
         <item>
          <property name="text">
           <string>Spectral</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_36">
+        <property name="text">
+         <string>  obj. function:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cmbObjectiveFunction">
+        <item>
+         <property name="text">
+          <string>FIM-based</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>VARMAP-based</string>
          </property>
         </item>
        </widget>
@@ -1088,8 +1109,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>912</x>
-     <y>430</y>
+     <x>914</x>
+     <y>574</y>
     </hint>
     <hint type="destinationlabel">
      <x>510</x>
@@ -1104,8 +1125,8 @@
    <slot>onDoWithSAandGD()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>111</x>
-     <y>127</y>
+     <x>109</x>
+     <y>112</y>
     </hint>
     <hint type="destinationlabel">
      <x>184</x>
@@ -1121,7 +1142,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>124</y>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
      <x>209</x>
@@ -1137,7 +1158,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>125</y>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
      <x>270</x>
@@ -1153,7 +1174,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>126</y>
+     <y>110</y>
     </hint>
     <hint type="destinationlabel">
      <x>256</x>
@@ -1168,8 +1189,8 @@
    <slot>onVarmapMethodChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>677</x>
-     <y>48</y>
+     <x>617</x>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>756</x>
@@ -1185,7 +1206,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>116</y>
+     <y>99</y>
     </hint>
     <hint type="destinationlabel">
      <x>796</x>
@@ -1200,8 +1221,8 @@
    <slot>onNumberOfStructuresChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>373</x>
-     <y>45</y>
+     <x>337</x>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>487</x>
@@ -1225,6 +1246,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>cmbObjectiveFunction</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onObjectiveFunctionChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>728</x>
+     <y>43</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>695</x>
+     <y>60</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onDoWithSAandGD()</slot>
@@ -1235,5 +1272,6 @@
   <slot>onDoWithManual()</slot>
   <slot>onNumberOfStructuresChanged(int)</slot>
   <slot>onRunExperiments()</slot>
+  <slot>onObjectiveFunctionChanged()</slot>
  </slots>
 </ui>

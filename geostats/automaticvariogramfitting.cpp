@@ -233,7 +233,8 @@ typedef Individual Solution; //make a synonym just for code readbility
 
 AutomaticVariogramFitting::AutomaticVariogramFitting( Attribute *at ) :
     m_at( at ),
-    m_fastVarmapMethod( FastVarmapMethod::VARMAP_WITH_FIM )
+    m_fastVarmapMethod( FastVarmapMethod::VARMAP_WITH_FIM ),
+    m_objectiveFunctionType( ObjectiveFunctionType::BASED_ON_FIM )
 {
     assert( at && "AutomaticVariogramFitting::AutomaticVariogramFitting(): attribute cannot be null.");
 
@@ -294,8 +295,24 @@ spectral::array AutomaticVariogramFitting::generateVariographicSurface(
     return variographicSurface;
 }
 
-
 double AutomaticVariogramFitting::objectiveFunction( const IJAbstractCartesianGrid& gridWithGeometry,
+           const spectral::array &inputGridData,
+           const spectral::array &vectorOfParameters,
+           const int m ) const  {
+    switch( m_objectiveFunctionType ){
+        case ObjectiveFunctionType::BASED_ON_FIM: return objectiveFunctionFIM( gridWithGeometry,
+                                                                               inputGridData,
+                                                                               vectorOfParameters,
+                                                                               m);
+        case ObjectiveFunctionType::BASED_ON_VARFIT: return objectiveFunctionVARFIT( gridWithGeometry,
+                                                                                     inputGridData,
+                                                                                     vectorOfParameters,
+                                                                                     m);
+        default: return -999.0;
+    }
+}
+
+double AutomaticVariogramFitting::objectiveFunctionVARFIT( const IJAbstractCartesianGrid& gridWithGeometry,
            const spectral::array &inputGridData,
            const spectral::array &vectorOfParameters,
            const int m ) const  {
@@ -377,6 +394,57 @@ double AutomaticVariogramFitting::objectiveFunction( const IJAbstractCartesianGr
             for( int i = 0; i < nI; ++i ) {
                 double diff = theoreticalVariographicSurface( i, j, k ) - inputVarmap( i, j, k );
                 sum += weights(i, j, k) * diff*diff;
+            }
+
+    // Finally, return the objective function value.
+    return sum;
+}
+
+double AutomaticVariogramFitting::objectiveFunctionFIM( const IJAbstractCartesianGrid& gridWithGeometry,
+           const spectral::array &inputGridData,
+           const spectral::array &vectorOfParameters,
+           const int m ) const  {
+    std::unique_lock<std::mutex> objectiveFunctionlock ( myMutexObjectiveFunction, std::defer_lock );
+
+    //get grid parameters
+    int nI = gridWithGeometry.getNI();
+    int nJ = gridWithGeometry.getNJ();
+    int nK = gridWithGeometry.getNK();
+
+    //compute the FFT phase map of the input data
+    static spectral::array inputFFTphases; //this is initialized when the program loads
+    {
+        static Attribute* currentAttribute3 = nullptr; //this is initialized when the program loads
+        if( inputFFTphases.data().empty() || currentAttribute3 != m_at ){
+            objectiveFunctionlock.lock(); //this lock prevents two threads from populating the static (global) variable at once.
+            if( inputFFTphases.data().empty() || currentAttribute3 != m_at ){ //repeat the outer if() to avoid unnecessary recomputing the weights
+                                                                              //conversely, the role of the outer if is to wrap the lock so the
+                                                                              //threads don't queue.
+                inputFFTphases = getInputPhaseMap();
+                Application::instance()->logInfo("AutomaticVariogramFitting::objectiveFunction(): computing input's FFT phase map.");
+                currentAttribute3 = m_at;
+            }
+
+            objectiveFunctionlock.unlock();
+        }
+    }
+
+    //generate the variogram model surface from the parameters
+    spectral::array theoreticalVariographicSurface = generateVariographicSurface( gridWithGeometry,
+                                                                       vectorOfParameters,
+                                                                       m );
+
+    //generate the map from the theoretical variographic structure
+    spectral::array mapFromTheoreticalVariographicStructure =
+            computeFIM( theoreticalVariographicSurface, inputFFTphases );
+
+    //compute the objective function metric
+    double sum = 0.0;
+    for( int k = 0; k < nK; ++k )
+        for( int j = 0; j < nJ; ++j )
+            for( int i = 0; i < nI; ++i ) {
+                double diff = mapFromTheoreticalVariographicStructure( i, j, k ) - inputGridData( i, j, k );
+                sum += diff*diff;
             }
 
     // Finally, return the objective function value.

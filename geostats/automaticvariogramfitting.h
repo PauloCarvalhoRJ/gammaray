@@ -23,6 +23,12 @@ enum class FastVarmapMethod : int{
     VARMAP_WITH_SPECTRAL /*!< Compute with a spectral method (not scientifically validated yet). */
 };
 
+/*! The type of objective function. */
+enum class ObjectiveFunctionType : int{
+    BASED_ON_FIM,     /*!< Compares the input map with the map sinthetized from the variogram model with FIM. */
+    BASED_ON_VARFIT   /*!< Compares the varmap of input with the theoretic variogram surface. */
+};
+
 /** Performs full 2D automatic variogram fitting for data in regular grids . */
 class AutomaticVariogramFitting : public QObject
 {
@@ -37,17 +43,13 @@ public:
     void setFastVarmapMethod( FastVarmapMethod fastVarmapMethod );
 
     /** The objective function for the optimization processes.
-     * It follows the objective function proposed by
-     * Larrondo et al (2003) - VARFIT: A Program for Semi-Automatic Variogram Modelling
-     *                         Center for Computational Geostatistics Report Five
-     * See complete theory in the program manual for in-depth explanation of the method's parameters below.
      * @param gridWithGeometry A grid object whose geometry will be copied to the generated grid with the varmap for objective function evaluation.
      * @param inputData The grid data for comparison.
      * @param vectorOfParameters The column-vector with the free paramateres (variogram parameters).
      * @param m The desired number of variographic nested structures.
      * @return A distance/difference measure.
      */
-    double objectiveFunction (const IJAbstractCartesianGrid &gridWithGeometry,
+    double objectiveFunction ( const IJAbstractCartesianGrid &gridWithGeometry,
                                const spectral::array &inputGridData,
                                const spectral::array &vectorOfParameters,
                                const int m ) const;
@@ -124,10 +126,18 @@ public:
                         const spectral::array &fftPhaseMapOfInput,
                         const spectral::array &varmapOfInput,
                         bool modal ) const;
+
+    /** Sets the type of objective function for optimization. */
+    void setObjectiveFunctionType( ObjectiveFunctionType objectiveFunctionType ){
+        m_objectiveFunctionType = objectiveFunctionType;
+    }
+
 private:
     Attribute* m_at;
     CartesianGrid* m_cg;
     FastVarmapMethod m_fastVarmapMethod;
+    ObjectiveFunctionType m_objectiveFunctionType;
+
     /** The objective function values collected during the last execution
      * of an optimization method.
      */
@@ -173,6 +183,35 @@ private:
      * value versus iterations of the optimization method.
      */
     void showObjectiveFunctionEvolution( ) const;
+
+    /** The specialization of objectiveFunction() that follows the objective function proposed by
+     * Larrondo et al (2003) - VARFIT: A Program for Semi-Automatic Variogram Modelling
+     *                         Center for Computational Geostatistics Report Five
+     * See complete theory in the program manual for in-depth explanation of the method's parameters below.
+     * @param gridWithGeometry A grid object whose geometry will be copied to the generated grid with the varmap for objective function evaluation.
+     * @param inputData The grid data for comparison.
+     * @param vectorOfParameters The column-vector with the free paramateres (variogram parameters).
+     * @param m The desired number of variographic nested structures.
+     * @return A distance/difference measure.
+     */
+    double objectiveFunctionVARFIT ( const IJAbstractCartesianGrid &gridWithGeometry,
+                                     const spectral::array &inputGridData,
+                                     const spectral::array &vectorOfParameters,
+                                     const int m ) const;
+
+    /** The specialization of objectiveFunction() that compares the input map with the map sinthetized
+     * from the theoretical variogram with the Fourier Integral Method.
+     * See complete theory in the program manual for in-depth explanation of the method's parameters below.
+     * @param gridWithGeometry A grid object whose geometry will be copied to the generated grid with the varmap for objective function evaluation.
+     * @param inputData The grid data for comparison.
+     * @param vectorOfParameters The column-vector with the free paramateres (variogram parameters).
+     * @param m The desired number of variographic nested structures.
+     * @return A distance/difference measure.
+     */
+    double objectiveFunctionFIM ( const IJAbstractCartesianGrid &gridWithGeometry,
+                                  const spectral::array &inputGridData,
+                                  const spectral::array &vectorOfParameters,
+                                  const int m ) const;
 
 public:
 
