@@ -13,7 +13,7 @@ CommonSimulationParameters::CommonSimulationParameters() :
                           "<uint><uint>                                          -Data per sector: min. and max. (0=not used)",                 // 7
                           "<double><double><double>                              -Search ellipsoid: radii (hmax,hmin,vert)",                    // 8
                           "<double><double><double>                              -Search ellipsoid: angles (az, dip, roll)",                    // 9
-                          "<option [0:generic rtree based] [1:tuned for large data sets]>   -Search algorithm option for the simulation grid"   // 10
+                          "<option [0:generic rtree based] [1:tuned for large data sets] [2:tuned for Cartesian grids]>   -Search algorithm option for the simulation grid"   // 10
                           //"<option [0:no] [1:yes]>                             -Assign data to nodes",                                        // --
                           //"<option [0:no] [1:yes]><uint>                       -Use multigrid search (0=no, 1=yes), number",                  // --
                       })
@@ -43,7 +43,7 @@ CommonSimulationParameters::CommonSimulationParameters() :
         par9->getParameter<GSLibParDouble*>(2)->_value = 0.0;
     }
     GSLibParOption* par10 = getParameter<GSLibParOption*>(10);
-    par10->_selected_value = 0;
+    par10->_selected_value = 2;
 }
 
 void CommonSimulationParameters::setBaseNameForRealizationVariables(const QString baseName)

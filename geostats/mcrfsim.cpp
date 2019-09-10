@@ -162,6 +162,19 @@ bool MCRFSim::isOKtoRun()
         }
     }
 
+    //if the user opts to use the Cartesian grid-tuned algorithm, then the neighborhood
+    //becomes a parallelepiped and not a ellipsoid for searches in the simulation grid
+    //hence, any angles set to it are illegal.
+    if( m_commonSimulationParameters->getSearchAlgorithmOptionForSimGrid() == 2){
+        if( m_commonSimulationParameters->getSearchEllipAzimuth() != 0.0 ||
+            m_commonSimulationParameters->getSearchEllipDip() != 0.0 ||
+            m_commonSimulationParameters->getSearchEllipRoll() != 0.0  ){
+            m_lastError = "Cannot set rotation angles if the search algorithm option is 'tuned for Cartesian grids' as the"
+                          " search neighborhood becomes a parallelepiped for searches in the simulation grid.";
+            return false;
+        }
+    }
+
     return true;
 }
 
@@ -793,16 +806,28 @@ DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simula
 
         //Fetch the indexes of the samples to be used in the simulation.
         QList<uint> samplesIndexes;
-//        if( m_commonSimulationParameters->getSearchAlgorithmOptionForSimGrid() == 0 )
-//            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinGenericRTreeBased( simulationCell, *m_searchStrategySimGrid );
-//        else
-//            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinTunedForLargeDataSets( simulationCell, *m_searchStrategySimGrid );
-        //The simulation grid is necessarily a Cartesian grid
-        samplesIndexes = m_spatialIndexOfSimGrid->getNearestFromCartesianGrid( simulationCell,
-                                                                               *m_searchStrategySimGrid,
-                                                                               true,
-                                                                               m_simGridNDV,
-                                                                               &simulatedData.d_ );
+        if( m_commonSimulationParameters->getSearchAlgorithmOptionForSimGrid() == 0 )
+            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinGenericRTreeBased( simulationCell, *m_searchStrategySimGrid );
+        else if( m_commonSimulationParameters->getSearchAlgorithmOptionForSimGrid() == 1 )
+            samplesIndexes = m_spatialIndexOfSimGrid->getNearestWithinTunedForLargeDataSets( simulationCell, *m_searchStrategySimGrid );
+        else{
+            uint nCellsIDirection = m_commonSimulationParameters->getSearchEllipHMin() / m_cgSim->getDX() * 2.0;
+            uint nCellsJDirection = m_commonSimulationParameters->getSearchEllipHMax() / m_cgSim->getDY() * 2.0;
+            uint nCellsKDirection = m_commonSimulationParameters->getSearchEllipHVert() / m_cgSim->getDZ() * 2.0;
+            if( nCellsIDirection < 1 ) nCellsIDirection = 1;
+            if( nCellsJDirection < 1 ) nCellsJDirection = 1;
+            if( nCellsKDirection < 1 ) nCellsKDirection = 1;
+            //The simulation grid is necessarily a Cartesian grid
+            samplesIndexes = m_spatialIndexOfSimGrid->getNearestFromCartesianGrid( simulationCell,
+                                                                                   *m_searchStrategySimGrid,
+                                                                                   true,
+                                                                                   m_simGridNDV,
+                                                                                   nCellsIDirection,
+                                                                                   nCellsJDirection,
+                                                                                   nCellsKDirection,
+                                                                                   &simulatedData.d_ );
+        }
+
         QList<uint>::iterator it = samplesIndexes.begin();
 
         //Create and collect the searched sample objects, which depend on the type of the input file.

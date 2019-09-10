@@ -103,6 +103,9 @@ public:
      * @param searchStrategy The object containg the search parameters.
      * @param hasNDV Shortcut to avoid iterative calls to the slow DataFile::hasNoDataValue()
      * @param NDVvalue Shortcut to avoid iterative calls to the slow DataFile::getNoDataValueAsDouble()
+     * @param The parallelepipedal search neighborhoord's size as number of cells in East-West direction.
+     * @param The parallelepipedal search neighborhoord's size as number of cells in North-South direction.
+     * @param The parallelepipedal search neighborhoord's size as number of cells in Up-Down direction.
      * @param simulatedData This should be set if this method is being called by computations that do not
      *                      immediately commit the results to the grid (e.g. simulation routines), otherwise an index
      *                      crash will ensue as the index in gridCell object is invalid or is -1.
@@ -111,7 +114,11 @@ public:
                                             const SearchStrategy & searchStrategy,
                                             bool hasNDV,
                                             double NDVvalue,
-                                            const std::vector<double> *simulatedData = nullptr) const;
+                                            uint nCellsIDirection,
+                                            uint nCellsJDirection,
+                                            uint nCellsKDirection,
+                                            const std::vector<double> *simulatedData = nullptr
+                                            ) const;
 
     /** Clears the spatial index. */
 	void clear();

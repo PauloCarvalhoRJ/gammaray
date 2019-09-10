@@ -390,14 +390,18 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                 kk >= 0 && kk < slice_limit ){
                 //...get the value corresponding to the cell index.
                 double value;
-                if ( cell._dataIndex >= 0 )  // data column is provided: fetch value from the grid
-                    value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
-                else                         // data column is NOT provided: fetch value from a client-given data container
-                    value = (*simulatedData)[ cg->IJKtoIndex( ii, jj, kk ) ];
+                int dataIndex;
+                if ( cell._dataIndex >= 0 ) {  // data column is provided: fetch value from the grid
+                    dataIndex = cell._dataIndex;
+                    value = cg->dataIJK( dataIndex, ii, jj, kk );
+                } else { // data column is NOT provided: fetch value from a client-given data container
+                    dataIndex = cg->IJKtoIndex( ii, jj, kk );
+                    value = (*simulatedData)[ dataIndex ];
+                }
                 //if the cell is valued... DataFile::hasNDV() is slow.
                 if( !hasNDV || !Util::almostEqual2sComplement( NDV, value, 1 ) ){
                     //...it is a valid neighbor.
-                    GridCellPtr currentCell( new GridCell( cg, cell._dataIndex, ii, jj, kk ) );
+                    GridCellPtr currentCell( new GridCell( cg, dataIndex, ii, jj, kk ) );
                     currentCell->computeTopoDistance( cell );
                     list.insert( currentCell );
                     //if the number of neighbors is reached...

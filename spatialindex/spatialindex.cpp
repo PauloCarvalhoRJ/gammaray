@@ -476,6 +476,9 @@ QList<uint> SpatialIndex::getNearestFromCartesianGrid(const GridCell &gridCell,
                                                       const SearchStrategy &searchStrategy,
                                                       bool hasNDV,
                                                       double NDVvalue,
+                                                      uint nCellsIDirection,
+                                                      uint nCellsJDirection,
+                                                      uint nCellsKDirection,
                                                       const std::vector<double> *simulatedData) const
 {
     assert( m_dataFile && "SpatialIndex::getNearestFromCartesianGrid(): No data file.  "
@@ -503,16 +506,19 @@ QList<uint> SpatialIndex::getNearestFromCartesianGrid(const GridCell &gridCell,
         //collects the data samples (depend on the search neighborhood)
         GeostatsUtils::getValuedNeighborsTopoOrdered( gridCell,
                                                                n,
-                                                               16,
-                                                               16,
-                                                               16,
+                                                               nCellsIDirection,
+                                                               nCellsJDirection,
+                                                               nCellsKDirection,
                                                                hasNDV,
                                                                NDVvalue,
                                                                vCells,
                                                                simulatedData );
 
-        //Make a copy of the sample collection but with generic versions of the objects for the methods transparent to grid information.
-        //DataCellPtrMultiset vDataCells( vCells.begin(), vCells.end() );
+        //collect the data row indexes of the valued samples found.
+        for( const GridCellPtr& vCell : vCells ){
+            assert( vCell->_dataIndex >= 0 && "SpatialIndex::getNearestFromCartesianGrid(): tried to return invalid data index." );
+            result.push_back( vCell->_dataIndex );
+        }
 
     } else
         assert( false && "SpatialIndex::getNearestFromCartesianGrid(): Searched data set is not a Cartesian grid.");
