@@ -392,7 +392,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     double cumulativeProbability = 0.0;
     for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
         double prob = tauModelCopy.getFinalProbability( categoryIndex );
-        assert( prob != 0.0 && "MCRFSim::simulateOneCellMT(): final probabilities are not supposed to be zero!");
+        //assert( prob != 0.0 && "MCRFSim::simulateOneCellMT(): final probabilities are not supposed to be zero!");
         cumulativeProbability += prob;
         cdf.push_back( cumulativeProbability );
     }
