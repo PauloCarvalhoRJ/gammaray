@@ -242,7 +242,8 @@ SOURCES += main.cpp\
     dialogs/automaticvarfitdialog.cpp \
     dialogs/emptydialog.cpp \
     geostats/nestedvariogramstructuresparameters.cpp \
-    geostats/automaticvariogramfitting.cpp
+    geostats/automaticvariogramfitting.cpp \
+    dialogs/automaticvarfitexperimentsdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -462,7 +463,8 @@ HEADERS  += mainwindow.h \
     dialogs/automaticvarfitdialog.h \
     dialogs/emptydialog.h \
     geostats/nestedvariogramstructuresparameters.h \
-    geostats/automaticvariogramfitting.h
+    geostats/automaticvariogramfitting.h \
+    dialogs/automaticvarfitexperimentsdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -546,7 +548,8 @@ FORMS    += mainwindow.ui \
     imagejockey/gabor/gaborscandialog.ui \
     imagejockey/wavelet/wavelettransformdialog.ui \
     dialogs/automaticvarfitdialog.ui \
-    dialogs/emptydialog.ui
+    dialogs/emptydialog.ui \
+    dialogs/automaticvarfitexperimentsdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
