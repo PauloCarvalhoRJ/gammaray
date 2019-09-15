@@ -6,6 +6,7 @@
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "spectral/spectral.h"
 #include "imagejockey/svd/svdfactor.h"
+#include "dialogs/automaticvarfitexperimentsdialog.h"
 
 #include <QProgressDialog>
 #include <QMessageBox>
@@ -68,6 +69,8 @@ AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
         //display data
         m_gridViewerInput->setFactor( gridData );
     }
+
+    ui->btnRunExperiments->setEnabled( false );
 
     onVarmapMethodChanged();
 
@@ -283,45 +286,154 @@ void AutomaticVarFitDialog::onNumberOfStructuresChanged(int number)
 
 void AutomaticVarFitDialog::onRunExperiments()
 {
-    //open a new file for output
-    QFile outputFile( QString("C:\\Users\\ur5m\\Desktop\\experiments.txt") );
-    outputFile.open( QFile::WriteOnly | QFile::Text );
-    QTextStream out(&outputFile);
+    AutomaticVarFitExperimentsDialog expd;
 
-    int experimentNumber = 1;
-    for( double tInitial = 20; tInitial <= 20000; tInitial += 2000 )
-        for( double tFinal = 20; tFinal <= 10000 && tFinal < tInitial; tFinal += 1000 )
-            for( int nSteps = 100; nSteps <= 5000; nSteps += 500 )
-                for( double hopFactor = 0.01; hopFactor <= 1.000 ; hopFactor += 0.1 )
-                {
-                    std::vector< IJVariographicStructure2D > model =
-                                  m_autoVarFit.processWithSAandGD(
-                                                     8,
-                                                     4,
-                                                     131313,
-                                                     tInitial,
-                                                     tFinal,
-                                                     nSteps,
-                                                     hopFactor,
-                                                     20,
-                                                     0.000001,
-                                                     1.0,
-                                                     60,
-                                                     0.000001,
-                                                     false);
-                    out << "t0=" << tInitial
-                              << " t1=" << tFinal
-                              << " nSteps=" << nSteps
-                              << " hop=" << hopFactor
-                              << " F=" << m_autoVarFit.evaluateModel( model )
-                              << '\n';
-                    out.flush();
-                    std::cout << experimentNumber << std::endl;
-                    ++experimentNumber;
-                }
+    int tabIndex = ui->tabMethods->currentIndex();
 
-    //closes the output file
-    outputFile.close();
+    //configure the parameter ranging dialog's UI
+    {
+        expd.setAgorithmLabel( ui->tabMethods->tabText( tabIndex ) );
+        switch ( tabIndex ) {
+        case 1: //SA+GD algorithm
+            expd.setParameterList( {"seed",
+                                    "initial temperature",
+                                    "final temperature",
+                                    "max. 'hop' factor"} );
+            expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                          { 20.0, 20000.0, 1000.0 },
+                                          { 2.0, 20000.0, 1000.0 },
+                                          { .01, 1.0, .1 }} );
+            expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                          { 20.0, 20000.0, 1000.0 },
+                                          { 2.0, 20000.0, 1000.0 },
+                                          { .01, 1.0, .1 }} );
+            expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 }} );
+            break;
+        case 2: //LSRS algorithm
+            expd.setParameterList( {"seed",
+                                    "number of lines"} );
+            expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                          { 10, 1000, 10 }} );
+            expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                          { 10, 1000, 10 }} );
+            expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
+                                          { 2, 50, 1 }} );
+            break;
+        case 3: //PSO algorithm
+            expd.setParameterList( {"seed",
+                                    "number of particles",
+                                    "inertia",
+                                    "acceleration constant 1",
+                                    "acceleration constant 2"} );
+            expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                          { 5, 1000, 10 },
+                                          { 2.0, 20000.0, 1000.0 },
+                                          { 0.01, 1.0, 0.05 },
+                                          { 0.01, 1.0, 0.05 }} );
+            expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                        { 5, 1000, 10 },
+                                        { 2.0, 20000.0, 1000.0 },
+                                        { 0.01, 1.0, 0.05 },
+                                        { 0.01, 1.0, 0.05 }} );
+            expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 }} );
+            break;
+        case 4: //Genetic algorithm
+            expd.setParameterList( {"seed",
+                                    "population size",
+                                    "selection size",
+                                    "probability of crossover",
+                                    "point of crossover",
+                                    "mutation rate"} );
+            expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                          { 6, 1000, 10 },
+                                          { 2, 1000, 10 },
+                                          { 0.01, 1.0, 0.05 },
+                                          { 1, 80, 1 },
+                                          { 0.01, 1.0, 0.05 }} );
+            expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
+                                          { 6, 1000, 10 },
+                                          { 2, 1000, 10 },
+                                          { 0.01, 1.0, 0.05 },
+                                          { 1, 80, 1 },
+                                          { 0.01, 1.0, 0.05 }} );
+            expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 },
+                                          { 2, 50, 1 }} );
+            break;
+        }
+    }
+
+    //show the dialog modally
+    expd.exec();
+
+    //perform the experiments
+    {
+        switch ( tabIndex ) {
+        case 1: //SA+GD algorithm
+            runExperimentsWithSAandGD();
+            break;
+        case 2: //LSRS algorithm
+            runExperimentsWithLSRS();
+            break;
+        case 3: //PSO algorithm
+            runExperimentsWithPSO();
+            break;
+        case 4: //Genetic algorithm
+            runExperimentsWithGenetic();
+            break;
+        }
+    }
+
+
+//    //open a new file for output
+//    QFile outputFile( QString("C:\\Users\\ur5m\\Desktop\\experiments.txt") );
+//    outputFile.open( QFile::WriteOnly | QFile::Text );
+//    QTextStream out(&outputFile);
+
+//    int experimentNumber = 1;
+//    for( double tInitial = 20; tInitial <= 20000; tInitial += 2000 )
+//        for( double tFinal = 20; tFinal <= 10000 && tFinal < tInitial; tFinal += 1000 )
+//            for( int nSteps = 100; nSteps <= 5000; nSteps += 500 )
+//                for( double hopFactor = 0.01; hopFactor <= 1.000 ; hopFactor += 0.1 )
+//                {
+//                    std::vector< IJVariographicStructure2D > model =
+//                                  m_autoVarFit.processWithSAandGD(
+//                                                     8,
+//                                                     4,
+//                                                     131313,
+//                                                     tInitial,
+//                                                     tFinal,
+//                                                     nSteps,
+//                                                     hopFactor,
+//                                                     20,
+//                                                     0.000001,
+//                                                     1.0,
+//                                                     60,
+//                                                     0.000001,
+//                                                     false);
+//                    out << "t0=" << tInitial
+//                              << " t1=" << tFinal
+//                              << " nSteps=" << nSteps
+//                              << " hop=" << hopFactor
+//                              << " F=" << m_autoVarFit.evaluateModel( model )
+//                              << '\n';
+//                    out.flush();
+//                    std::cout << experimentNumber << std::endl;
+//                    ++experimentNumber;
+//                }
+
+//    //closes the output file
+//    outputFile.close();
 }
 
 void AutomaticVarFitDialog::onObjectiveFunctionChanged()
@@ -330,4 +442,67 @@ void AutomaticVarFitDialog::onObjectiveFunctionChanged()
         m_autoVarFit.setObjectiveFunctionType( ObjectiveFunctionType::BASED_ON_FIM );
     else
         m_autoVarFit.setObjectiveFunctionType( ObjectiveFunctionType::BASED_ON_VARFIT );
+}
+
+void AutomaticVarFitDialog::onMethodTabChanged(int tabIndex)
+{
+    if( tabIndex >=1 && tabIndex <= 4)
+        ui->btnRunExperiments->setEnabled( true );
+    else
+        ui->btnRunExperiments->setEnabled( false );
+}
+
+void AutomaticVarFitDialog::runExperimentsWithSAandGD(
+        int seedI,       int seedF,       int seedSteps,
+        double iniTempI, double iniTempF, int iniTempSteps,
+        double finTempI, double finTempF, int finTempSteps,
+        double hopFactI, double hopFactF, int hopFactSteps
+        )
+{
+    int seedStep = ( seedF - seedI ) / seedSteps;
+    if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
+
+    double iniTempStep = ( iniTempF - iniTempI ) / iniTempSteps;
+    if( iniTempStep <= 0.0 ) iniTempStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double finTempStep = ( finTempF - finTempI ) / finTempSteps;
+    if( finTempStep <= 0.0 ) finTempStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double hopFactStep = ( hopFactF - hopFactI ) / hopFactSteps;
+    if( hopFactStep <= 0.0 ) hopFactStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    for( int seed = seedI; seed <= seedF; seed += seedStep )
+        for( double tInitial = iniTempI; tInitial <= iniTempF; tInitial += iniTempStep )
+            for( double tFinal = finTempI; tFinal <= finTempF && tFinal < tInitial; tFinal += finTempStep )
+                for( double hopFactor = hopFactI; hopFactor <= hopFactF; hopFactor += hopFactStep )
+                    std::vector< IJVariographicStructure2D > model =
+                                  m_autoVarFit.processWithSAandGD(
+                                                     ui->spinNumberOfThreads->value(),
+                                                     ui->spinNumberOfVariogramStructures->value(),
+                                                     seed,
+                                                     tInitial,
+                                                     tFinal,
+                                                     ui->spinMaxStepsSA->value(),
+                                                     hopFactor,
+                                                     ui->spinMaxSteps->value(),
+                                                     std::pow( 10.0, ui->spinLogEpsilon->value() ),
+                                                     ui->spinInitialAlpha->value(),
+                                                     ui->spinMaxStepsAlphaReduction->value(),
+                                                     std::pow( 10.0, ui->spinConvergenceCriterion->value() ),
+                                                     false);
+}
+
+void AutomaticVarFitDialog::runExperimentsWithLSRS()
+{
+
+}
+
+void AutomaticVarFitDialog::runExperimentsWithPSO()
+{
+
+}
+
+void AutomaticVarFitDialog::runExperimentsWithGenetic()
+{
+
 }

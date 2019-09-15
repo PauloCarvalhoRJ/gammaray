@@ -215,7 +215,7 @@
       <item>
        <widget class="QPushButton" name="btnRunExperiments">
         <property name="enabled">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="text">
          <string>experiments</string>
@@ -1189,7 +1189,7 @@
    <slot>onVarmapMethodChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>617</x>
+     <x>579</x>
      <y>53</y>
     </hint>
     <hint type="destinationlabel">
@@ -1221,7 +1221,7 @@
    <slot>onNumberOfStructuresChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>337</x>
+     <x>299</x>
      <y>53</y>
     </hint>
     <hint type="destinationlabel">
@@ -1262,6 +1262,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>tabMethods</sender>
+   <signal>currentChanged(int)</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onMethodTabChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>78</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>51</x>
+     <y>59</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onDoWithSAandGD()</slot>
@@ -1273,5 +1289,6 @@
   <slot>onNumberOfStructuresChanged(int)</slot>
   <slot>onRunExperiments()</slot>
   <slot>onObjectiveFunctionChanged()</slot>
+  <slot>onMethodTabChanged(int)</slot>
  </slots>
 </ui>

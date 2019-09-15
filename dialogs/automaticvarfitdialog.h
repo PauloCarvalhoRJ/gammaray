@@ -47,6 +47,19 @@ private Q_SLOTS:
     void onRunExperiments();
 
     void onObjectiveFunctionChanged();
+
+    void onMethodTabChanged( int tabIndex );
+
+private:
+    void runExperimentsWithSAandGD(
+            int seedI,       int seedF,       int seedSteps,
+            double iniTempI, double iniTempF, int iniTempSteps,
+            double finTempI, double finTempF, int finTempSteps,
+            double hopFactI, double hopFactF, int hopFactSteps
+            );
+    void runExperimentsWithLSRS();
+    void runExperimentsWithPSO();
+    void runExperimentsWithGenetic();
 };
 
 #endif // AUTOMATICVARFITDIALOG_H
