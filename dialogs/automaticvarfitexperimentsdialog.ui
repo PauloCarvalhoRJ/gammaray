@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Choose parameter to test</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -134,8 +134,8 @@
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>248</x>
-     <y>254</y>
+     <x>257</x>
+     <y>196</y>
     </hint>
     <hint type="destinationlabel">
      <x>157</x>
@@ -150,8 +150,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>309</x>
+     <y>196</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -159,5 +159,24 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>cmbParameter</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>AutomaticVarFitExperimentsDialog</receiver>
+   <slot>onUpdateSpinBoxes()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>198</x>
+     <y>40</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>251</x>
+     <y>24</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
+ <slots>
+  <slot>onUpdateSpinBoxes()</slot>
+ </slots>
 </ui>

@@ -23,25 +23,22 @@ void AutomaticVarFitExperimentsDialog::setParameterList(QStringList names)
     ui->cmbParameter->addItems( names );
 }
 
-void AutomaticVarFitExperimentsDialog::setFromSpinBox(double min, double max, double increase)
+void AutomaticVarFitExperimentsDialog::setFromSpinBoxConfigs(
+        const std::vector<MinMaxIncreaseDouble> oneConfigPerParameter)
 {
-    ui->dblSpinFrom->setMinimum( min );
-    ui->dblSpinFrom->setMaximum( max );
-    ui->dblSpinFrom->setSingleStep( increase );
+    m_configsForFromSpinBox = oneConfigPerParameter;
 }
 
-void AutomaticVarFitExperimentsDialog::setToSpinBox(double min, double max, double increase)
+void AutomaticVarFitExperimentsDialog::setToSpinBoxConfigs(
+        const std::vector<MinMaxIncreaseDouble> oneConfigPerParameter)
 {
-    ui->dblSpinTo->setMinimum( min );
-    ui->dblSpinTo->setMaximum( max );
-    ui->dblSpinTo->setSingleStep( increase );
+    m_configsForToSpinBox = oneConfigPerParameter;
 }
 
-void AutomaticVarFitExperimentsDialog::setStepsSpinBox(int min, int max, int increase)
+void AutomaticVarFitExperimentsDialog::setStepsSpinBoxConfigs(
+        const std::vector<MinMaxIncreaseInt> oneConfigPerParameter)
 {
-    ui->spinNumberOfSteps->setMinimum( min );
-    ui->spinNumberOfSteps->setMaximum( max );
-    ui->spinNumberOfSteps->setSingleStep( increase );
+    m_configsForStepsSpinBox = oneConfigPerParameter;
 }
 
 int AutomaticVarFitExperimentsDialog::getParameterIndex()
@@ -62,4 +59,26 @@ double AutomaticVarFitExperimentsDialog::getTo()
 int AutomaticVarFitExperimentsDialog::getNumberOfSteps()
 {
     return ui->spinNumberOfSteps->value();
+}
+
+void AutomaticVarFitExperimentsDialog::showEvent(QShowEvent *event)
+{
+    QDialog::showEvent( event );
+    onUpdateSpinBoxes();
+}
+
+void AutomaticVarFitExperimentsDialog::onUpdateSpinBoxes()
+{
+    int parameterIndex = ui->cmbParameter->currentIndex();
+    if( parameterIndex < m_configsForFromSpinBox.size() ){
+        ui->dblSpinFrom->setMinimum(    std::get<0>( m_configsForFromSpinBox[ parameterIndex ] ) );
+        ui->dblSpinFrom->setMaximum(    std::get<1>( m_configsForFromSpinBox[ parameterIndex ] ) );
+        ui->dblSpinFrom->setSingleStep( std::get<2>( m_configsForFromSpinBox[ parameterIndex ] ) );
+        ui->dblSpinTo->setMinimum(    std::get<0>( m_configsForToSpinBox[ parameterIndex ] ) );
+        ui->dblSpinTo->setMaximum(    std::get<1>( m_configsForToSpinBox[ parameterIndex ] ) );
+        ui->dblSpinTo->setSingleStep( std::get<2>( m_configsForToSpinBox[ parameterIndex ] ) );
+        ui->spinNumberOfSteps->setMinimum(    std::get<0>( m_configsForStepsSpinBox[ parameterIndex ] ) );
+        ui->spinNumberOfSteps->setMaximum(    std::get<1>( m_configsForStepsSpinBox[ parameterIndex ] ) );
+        ui->spinNumberOfSteps->setSingleStep( std::get<2>( m_configsForStepsSpinBox[ parameterIndex ] ) );
+    }
 }
