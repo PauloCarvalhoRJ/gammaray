@@ -200,6 +200,8 @@ private slots:
                             const spectral::array &orientationField );
     void onRequestGrid( const QString name, IJAbstractCartesianGrid*& pointer );
     void onAutoVarFit();
+    void onConvertFaciesNamesToCodes();
+    void onCategorize();
 
 private:
     /**
@@ -235,6 +237,15 @@ private:
       * Creates the dynamic items of sub-menu "Classify with".
       */
     void makeMenuClassifyWith();
+
+    /**
+     * The pointer to the dynamic sub-menu "Make categorical as" of the project tree context menu.
+     */
+    QMenu* m_subMenuCategorize;
+    /**
+      * Creates the dynamic items of sub-menu "Make categorical as".
+      */
+    void makeMenuCategorize();
 
     /**
      * The pointer to the dynamic sub-menu "Map as" of the project tree context menu.

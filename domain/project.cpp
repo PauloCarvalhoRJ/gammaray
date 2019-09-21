@@ -24,6 +24,7 @@
 #include "domain/univariatecategoryclassification.h"
 #include "geogrid.h"
 #include "plot.h"
+#include "domain/segmentset.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
 {
@@ -229,7 +230,21 @@ Project::Project(const QString path) : QAbstractItemModel()
 				//reads GeoGrid metadata from the .md file
 				gg->setInfoFromMetadataFile();
 		   }
-		}
+           //found a Segment Set file reference in gammaray.prj
+           if( line.startsWith( "SEGMENTSET:" )){
+               //get file name
+                QString segmentset_file = line.split(":")[1];
+                //make file path
+                QFile ss_file( this->_project_directory->absoluteFilePath( segmentset_file ) );
+                //create SegmentSet object from file
+                SegmentSet *ss = new SegmentSet( ss_file.fileName() );
+                //add the object to project tree structure
+                this->_data_files->addChild( ss );
+                ss->setParent( this->_data_files );
+                //reads SegmentSet metadata from the .md file
+                ss->setInfoFromMetadataFile();
+           }
+        }
         prj_file.close();
     }
 

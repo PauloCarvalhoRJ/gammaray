@@ -5,6 +5,7 @@
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
 #include "domain/geogrid.h"
+#include "domain/segmentset.h"
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
 
@@ -44,6 +45,9 @@
 #include <vtkRenderWindow.h>
 #include <vtkThreshold.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkLineSource.h>
+#include <vtkTubeFilter.h>
+#include <vtkLine.h>
 #include <QMessageBox>
 
 void RefreshCallback( vtkObject* vtkNotUsed(caller),
@@ -133,6 +137,8 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
 
     if( fileType == "POINTSET" ){
         return buildForAttributeFromPointSet( (PointSet*)file, attribute, widget3D );
+    } else if( fileType == "SEGMENTSET" ){
+        return buildForAttributeFromSegmentSet( static_cast<SegmentSet*>(file), attribute, widget3D );
     } else if( fileType == "CARTESIANGRID" ) {
         CartesianGrid* cg = (CartesianGrid*)file;
 		if( ! cg->isUVWOfAGeoGrid() ){
@@ -240,6 +246,94 @@ View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet,
     actor->GetProperty()->SetPointSize(3);
 
     return View3DViewData(actor);
+}
+
+View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segmentSet,
+                                                               Attribute *attribute,
+                                                               View3DWidget *widget3D)
+{
+    //load data from filesystem
+    segmentSet->loadData();
+
+    //get the array indexes for the xyz coordinates
+    //defining the segments
+    uint x0colIdx = segmentSet->getXindex() - 1;
+    uint y0colIdx = segmentSet->getYindex() - 1;
+    uint z0colIdx = segmentSet->getZindex() - 1;
+    uint x1colIdx = segmentSet->getXFinalIndex() - 1;
+    uint y1colIdx = segmentSet->getYFinalIndex() - 1;
+    uint z1colIdx = segmentSet->getZFinalIndex() - 1;
+
+    //get the array index of the target variable in parent data file
+    uint var_index = segmentSet->getFieldGEOEASIndex( attribute->getName() );
+
+    //create a VTK array to store the sample values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("values");
+
+    //get the max and min of the selected variable (useful for continuous variables)
+    double min = segmentSet->min( var_index-1 );
+    double max = segmentSet->max( var_index-1 );
+
+    //build point and segment primitives from data
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    vtkSmartPointer<vtkCellArray> segments = vtkSmartPointer<vtkCellArray>::New();
+    for( uint i = 0; i < segmentSet->getDataLineCount(); ++i ){
+        double x0 = segmentSet->data( i, x0colIdx );
+        double y0 = segmentSet->data( i, y0colIdx );
+        double z0 = segmentSet->data( i, z0colIdx );
+        double x1 = segmentSet->data( i, x1colIdx );
+        double y1 = segmentSet->data( i, y1colIdx );
+        double z1 = segmentSet->data( i, z1colIdx );
+        vtkIdType id0 = points->InsertNextPoint( x0, y0, z0 );
+        vtkIdType id1 = points->InsertNextPoint( x1, y1, z1 );
+        vtkSmartPointer<vtkLine> segment = vtkSmartPointer<vtkLine>::New();
+        segment->GetPointIds()->SetId( 0, id0 );
+        segment->GetPointIds()->SetId( 1, id1 );
+        segments->InsertNextCell( segment );
+        // take the opportunitu to load the sample values
+        double value = segmentSet->data( i, var_index - 1 );
+        values->InsertNextValue( value );
+    }
+
+    // build a polygonal line from the points and segments primitives
+    vtkSmartPointer<vtkPolyData> poly = vtkSmartPointer<vtkPolyData>::New();
+    poly->SetPoints( points );
+    poly->SetLines( segments );
+    poly->GetCellData()->SetScalars( values );
+    poly->GetCellData()->SetActiveScalars("values");
+
+    // build a tube around the polygonal line
+    vtkSmartPointer<vtkTubeFilter> tubeFilter =
+      vtkSmartPointer<vtkTubeFilter>::New();
+    tubeFilter->SetInputData( poly );
+    tubeFilter->SetRadius(10); //default is .5
+    tubeFilter->SetNumberOfSides(50);
+    tubeFilter->Update();
+
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( segmentSet->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
+
+    // Create a VTK mapper and actor to enable its visualization
+    vtkSmartPointer<vtkPolyDataMapper> tubeMapper =
+      vtkSmartPointer<vtkPolyDataMapper>::New();
+    tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
+    tubeMapper->SetLookupTable(lut);
+    tubeMapper->SetScalarModeToUseCellData();
+    tubeMapper->SetColorModeToMapScalars();
+    tubeMapper->SelectColorArray("values");
+    tubeMapper->SetScalarRange(min, max);
+
+    vtkSmartPointer<vtkActor> tubeActor =
+      vtkSmartPointer<vtkActor>::New();
+    tubeActor->GetProperty()->SetOpacity(1.0); //Make the tube have some transparency.
+    tubeActor->SetMapper(tubeMapper);
+
+    return View3DViewData( tubeActor );
 }
 
 View3DViewData View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid, View3DWidget */*widget3D*/)

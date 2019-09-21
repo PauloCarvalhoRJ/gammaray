@@ -35,6 +35,8 @@ void DataFileDialog::accept()
         this->_file_type = DataFileDialog::CARTESIANGRID;
     if ( this->ui->radioXYZ->isChecked() )
         this->_file_type = DataFileDialog::POINTSET;
+    if ( this->ui->radioSegmentSet->isChecked() )
+        this->_file_type = DataFileDialog::SEGMENTSET;
     //close the dialog
     this->done( QDialog::Accepted );
 }

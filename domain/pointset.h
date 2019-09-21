@@ -37,6 +37,7 @@ public:
      */
     void setInfoFromOtherPointSet( PointSet* otherPS );
 
+    /** First index is 1 (GEO-EAS indexes) */
     int getXindex();
     int getYindex();
     int getZindex();
@@ -96,7 +97,7 @@ public:
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 
 
-private:
+protected:
     int _x_field_index; //index start at 1. Zero means not set.
     int _y_field_index;
     int _z_field_index;

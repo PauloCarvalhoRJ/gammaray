@@ -4,7 +4,8 @@
 #include <vtkColorTransferFunction.h>
 
 #include "domain/application.h"
-
+#include "domain/categorydefinition.h"
+#include "util.h"
 
 
 View3dColorTables::View3dColorTables()
@@ -28,6 +29,55 @@ QString View3dColorTables::getColorTableName(ColorTable ct)
         default:
             return "UNKNOWN";
     }
+}
+
+vtkSmartPointer<vtkLookupTable> View3dColorTables::getCategoricalColorTable( CategoryDefinition *cd, bool useGSLibColors )
+{
+    cd->loadQuintuplets();
+    int catCount = cd->getCategoryCount();
+
+    //determine the greatest categorical code
+    int maxCatCode = 0;
+    for( int i = 0; i < catCount; ++i )
+        maxCatCode = std::max<int>( maxCatCode, cd->getCategoryCode(i) );
+
+    //table color indexes must go from 0 to greatest facies code, without skipping values
+    size_t tableSize = maxCatCode + 1;
+    vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+    lut->SetNumberOfTableValues(tableSize);
+
+    //but assign only the codes defined in the category definition
+    //which may be less than the total number of entries in the color table
+    //this is a requirement by the way VTK's LUT work for categorical color tables
+    for(size_t i = 0; i < tableSize; ++i)
+    {
+        if( cd->codeExists( i ) ){
+            double rgb[3];
+            QColor color;
+            int catIndex = cd->getCategoryIndex( i );
+            if( useGSLibColors )
+                color = Util::getGSLibColor( cd->getColorCode( catIndex ) );
+            else
+                color = cd->getCustomColor( catIndex );
+            rgb[0] = color.redF();
+            rgb[1] = color.greenF();
+            rgb[2] = color.blueF();
+            //WARNING: avoid using different transparency levels
+            //         weird transparency effects have been observed.
+            //         set the same alpha for all colors in the table
+            lut->SetTableValue(i, rgb[0], rgb[1], rgb[2], 1.0);
+            lut->SetAnnotation(i, QString::number(i).toStdString() );
+        } else {
+            lut->SetTableValue(i, 0.0, 0.0, 0.0, 1.0);
+            lut->SetAnnotation(i, "UNKNOWN CATEGORY" );
+        }
+    }
+    lut->IndexedLookupOn();
+    lut->SetNanColor( 0.0, 0.0, 0.0, 1.0 ); //ilegal color codes are rendered as 100% transparent.
+    lut->Build();
+
+    return lut;
+
 }
 
 //===============private functions=====================================

@@ -812,6 +812,42 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc,
     this->updateMetaDataFile();
 }
 
+void DataFile::convertToCategorical(uint column, CategoryDefinition *cd, int fallbackCode, const QString name_for_new_column)
+{
+    // load the current data from the file system
+    loadData();
+
+    // for each data row...
+    std::vector<std::vector<double>>::iterator it = _data.begin();
+    for (; it != _data.end(); ++it) {
+        //...get the input value
+        int candidateCode = static_cast<int>( (*it).at(column) );
+        //...check whether the value is a valid category code
+        if ( cd->codeExists(  candidateCode ) )
+            //...append the code to the current row.
+            (*it).push_back( candidateCode );
+        else
+            //...use the fallback code if the value is an invalid code
+            (*it).push_back( fallbackCode );
+    }
+
+    // create and add a new Attribute object the represents the new column
+    uint newIndexGEOEAS = Util::getFieldNames(this->getPath()).count() + 1;
+    Attribute *at = new Attribute(name_for_new_column, newIndexGEOEAS, true);
+    // adds the attribute's GEO-EAS index (with the name of the category definition file)
+    // to the metadata as a categorical attribute
+    _categorical_attributes.append(
+        QPair<uint, QString>(newIndexGEOEAS, cd->getName()));
+    at->setParent(this);
+    this->addChild(at);
+
+    // saves the file contents to file system
+    this->writeToFS();
+
+    // update the metadata file
+    this->updateMetaDataFile();
+}
+
 void DataFile::freeLoadedData() {
 	_data.clear();
 	//clear() does not guarantee memory is actually freed.

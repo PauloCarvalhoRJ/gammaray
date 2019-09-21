@@ -241,7 +241,13 @@ SOURCES += main.cpp\
     imagejockey/ijvariographicmodel2d.cpp \
     dialogs/automaticvarfitdialog.cpp \
     dialogs/emptydialog.cpp \
-    geostats/nestedvariogramstructuresparameters.cpp
+    geostats/nestedvariogramstructuresparameters.cpp \
+    dialogs/segmentsetdialog.cpp \
+    domain/segmentset.cpp \
+    domain/quintuplets.cpp \
+    gslib/gslibparams/gslibparcustomcolor.cpp \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp \
+    dialogs/choosecategorydialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -460,7 +466,13 @@ HEADERS  += mainwindow.h \
     imagejockey/ijvariographicmodel2d.h \
     dialogs/automaticvarfitdialog.h \
     dialogs/emptydialog.h \
-    geostats/nestedvariogramstructuresparameters.h
+    geostats/nestedvariogramstructuresparameters.h \
+    dialogs/segmentsetdialog.h \
+    domain/segmentset.h \
+    domain/quintuplets.h \
+    gslib/gslibparams/gslibparcustomcolor.h \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.h \
+    dialogs/choosecategorydialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -544,7 +556,10 @@ FORMS    += mainwindow.ui \
     imagejockey/gabor/gaborscandialog.ui \
     imagejockey/wavelet/wavelettransformdialog.ui \
     dialogs/automaticvarfitdialog.ui \
-    dialogs/emptydialog.ui
+    dialogs/emptydialog.ui \
+    dialogs/segmentsetdialog.ui \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.ui \
+    dialogs/choosecategorydialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

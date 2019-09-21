@@ -501,8 +501,16 @@ public:
 
     /** Split function specialized to tokenize data lines of GEO-EAS files.
      *  @note This is not a generic tokenizer, so do not use for other applications.
+     *        Use tokenizeWithQuotes() for generic tokenization (slower).
      */
 	static void fastSplit(const QString lineGEOEAS, QStringList& list);
+
+    /**
+     * Tokenizes a line of text using blank spaces or tabulation characters as separator.
+     * Text enclosed in double quotes are kept as one token.
+     * @param includeDoubleQuotes If true, tokens delimited by double quotes are kept with them.
+     */
+    static std::vector<std::string> tokenizeWithDoubleQuotes(const std::string& lineOfText, bool includeDoubleQuotes);
 
     /** Computes 3D FFT (forward or reverse) for an array of values.  The result will be
      * stored in the input array.
@@ -637,6 +645,29 @@ public:
      * Returns a vector of pairs.  The first member of each pair is the min and the second, the max.
      */
     static std::vector< std::pair< int, int > > generateSubRanges(int mainRangeMin, int mainRangeMax, int numberOfSubRanges);
+    
+    /**
+     * Replaces every occurrences of facies names/symbols in the given file with the respective
+     * facies numerical codes.
+     * @param path The path to the input file.
+     * @param cd The CategoryDefinition object to use.
+     * @param useMainNames If true, the function searches for the texts saved in the main name field of the CategoricalDefinition.
+     *                     Otherwise, it uses the alternate name field.
+     * @param saveTo The path to the output file.
+     * @return True if the function completes successfully.  False if something goes wrong (e.g. file does not exist).
+     */
+    static bool replaceFaciesNamesWithCodes( QString path,
+                                             CategoryDefinition* cd,
+                                             bool useMainNames,
+                                             QString saveTo );
+
+    /**
+     * Tests wheter the string is one of those in the list.
+     * This method is designed for comparison against a short list of constant strings.
+     * For brevity, it is suggested to call this function like this:
+     *    Util::isIn( droidName, {"C3PO", "R2D2", "BB8"} );
+     */
+    static bool isIn( const QString& stringToTest, const QStringList& listOfValues );
 };
 
 #endif // UTIL_H

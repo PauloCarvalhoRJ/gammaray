@@ -47,11 +47,13 @@
 #include <QMimeData>
 #include <QTimer>
 #include <QProgressDialog>
+#include <QPushButton>
 #include "domain/variogrammodel.h"
 #include "domain/experimentalvariogram.h"
 #include "domain/thresholdcdf.h"
 #include "domain/categorypdf.h"
 #include "domain/geogrid.h"
+#include "domain/segmentset.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -69,6 +71,8 @@
 #include "dialogs/sisimdialog.h"
 #include "dialogs/automaticvarfitdialog.h"
 #include "dialogs/emptydialog.h"
+#include "dialogs/segmentsetdialog.h"
+#include "dialogs/choosecategorydialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -88,8 +92,9 @@
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    m_subMenuClassifyInto( new QMenu("Classify into", this) ),
-    m_subMenuClassifyWith( new QMenu("Classify with", this) ),
+    m_subMenuClassifyInto( new QMenu("Classify into",       this) ),
+    m_subMenuClassifyWith( new QMenu("Classify with",       this) ),
+    m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
     m_subMenuMapAs( new QMenu("Map as", this) )
 {
     //Import any registry/home user settings of a previous version
@@ -434,10 +439,13 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
             _right_clicked_file = static_cast<File*>( index.internalPointer() );
+            //all files should be removable
             _projectContextMenu->addAction("Remove from project", this, SLOT(onRemoveFile()));
             _projectContextMenu->addAction("Remove and delete", this, SLOT(onRemoveAndDeleteFile()));
+            //for all those files editable with GammaRay editors (normaly any file that is not a data file)
             if( _right_clicked_file->isEditable() )
                 _projectContextMenu->addAction("Edit", this, SLOT(onEdit()));
+            //for all thos files with a no-data-value attribute (normally all data files)
             if ( _right_clicked_file->canHaveMetaData() ){
                 _projectContextMenu->addAction("See metadata", this, SLOT(onSeeMetadata()));
                 //TODO: consider creating a method hasNDV() in File class.
@@ -466,9 +474,11 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
+                _projectContextMenu->addAction("Convert facies names/symbols to codes...", this, SLOT(onConvertFaciesNamesToCodes()));
             }
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ||
-                _right_clicked_file->getFileType() == "POINTSET" ){
+                _right_clicked_file->getFileType() == "POINTSET" ||
+                _right_clicked_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Calculator...", this, SLOT(onCalculator()));
                 _projectContextMenu->addAction("Add new variable", this, SLOT(onNewAttribute()));
             }
@@ -482,10 +492,14 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _right_clicked_attribute = static_cast<Attribute*>( index.internalPointer() );
             File* parent_file = _right_clicked_attribute->getContainingFile();
             if( parent_file->getFileType() == "POINTSET" ||
-                parent_file->getFileType() == "CARTESIANGRID"  )
+                parent_file->getFileType() == "CARTESIANGRID" ||
+                parent_file->getFileType() == "SEGMENTSET" )
                 _projectContextMenu->addAction("Histogram", this, SLOT(onHistogram()));
-            if( parent_file->getFileType().compare("POINTSET") == 0 ){
+            if( parent_file->getFileType() == "POINTSET"  ||
+                parent_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Map (locmap)", this, SLOT(onLocMap()));
+            }
+            if( parent_file->getFileType().compare("POINTSET") == 0 ){
                 _projectContextMenu->addAction("Decluster...", this, SLOT(onDecluster()));
             }
             if( parent_file->getFileType().compare("CARTESIANGRID") == 0 ){
@@ -494,18 +508,25 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuMapAs );
             }
             if( parent_file->getFileType() == "POINTSET" ||
-                parent_file->getFileType() == "CARTESIANGRID"  ){
+                parent_file->getFileType() == "CARTESIANGRID"  ||
+                parent_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Probability plot", this, SLOT(onProbPlt()));
-                _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
                 _projectContextMenu->addAction("Normal score...", this, SLOT(onNScore()));
                 _projectContextMenu->addAction("Model a distribution...", this, SLOT(onDistrModel()));
 				_projectContextMenu->addAction("Soft indicator calibration...", this, SLOT(onSoftIndicatorCalib()) );
 			}
-            if( parent_file->getFileType().compare("POINTSET") == 0 ){
+            if( parent_file->getFileType() == "POINTSET" ||
+                parent_file->getFileType() == "CARTESIANGRID" ){
+                _projectContextMenu->addAction("Variogram analysis...", this, SLOT(onVariogramAnalysis()));
+            }
+            if( parent_file->getFileType() == "POINTSET"  ||
+                parent_file->getFileType() == "SEGMENTSET" ){
                 makeMenuClassifyInto();
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
+                makeMenuCategorize();
+                _projectContextMenu->addMenu( m_subMenuCategorize );
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
@@ -523,8 +544,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
                 }
             }
-            if( parent_file->getFileType() == "POINTSET" ||
-                parent_file->getFileType() == "CARTESIANGRID"  )
+            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
                 _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
         }
     //two items were selected.  The context menu depends on the combination of items.
@@ -547,7 +567,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _projectContextMenu->addAction(menu_caption_xplot.append(menu_caption_vars), this, SLOT(onXPlot()));
             _projectContextMenu->addAction(menu_caption_bidist.append(menu_caption_vars), this, SLOT(onBidistrModel()));
             _projectContextMenu->addAction(menu_caption_xvariography.append(menu_caption_vars), this, SLOT(onVariogramAnalysis()));
-            //if their parent file is a Cartesin grid
+            //if their parent file is a Cartesian grid
             _right_clicked_attribute = static_cast<Attribute*>( index1.internalPointer() );
             _right_clicked_attribute2 = static_cast<Attribute*>( index2.internalPointer() );
             if( _right_clicked_attribute->getContainingFile()->getFileType() == "CARTESIANGRID" ){
@@ -572,9 +592,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _right_clicked_attribute2 = static_cast<Attribute*>( index2.internalPointer() );
             _projectContextMenu->addAction("Q-Q/P-P plot", this, SLOT(onQpplt()));
             //if one parent is a point set and the other is a Cartesian grid
-            if( (_right_clicked_attribute ->getContainingFile()->getFileType()=="POINTSET" &&
+            if( ( Util::isIn( _right_clicked_attribute ->getContainingFile()->getFileType(), {"POINTSET", "SEGMENTSET"} ) &&
                  _right_clicked_attribute2->getContainingFile()->getFileType()=="CARTESIANGRID") ||
-                (_right_clicked_attribute2->getContainingFile()->getFileType()=="POINTSET" &&
+                ( Util::isIn( _right_clicked_attribute ->getContainingFile()->getFileType(), {"POINTSET", "SEGMENTSET"} ) &&
                  _right_clicked_attribute ->getContainingFile()->getFileType()=="CARTESIANGRID")){
                 CartesianGrid* cg;
                 if( _right_clicked_attribute2->getContainingFile()->getFileType()=="CARTESIANGRID" )
@@ -1304,9 +1324,9 @@ void MainWindow::onEdit()
 
 void MainWindow::onCreateCategoryPDF()
 {
-    //We can assume the file is a category definitio.
+    //We can assume the file is a category definition.
     CategoryDefinition* cd  = (CategoryDefinition*)_right_clicked_file;
-    cd->loadTriplets();
+    cd->loadQuintuplets();
 
     //Create an empty p.d.f.
     CategoryPDF* cpdf = new CategoryPDF(cd, "");
@@ -2345,6 +2365,78 @@ void MainWindow::onAutoVarFit()
     avfd->show();
 }
 
+void MainWindow::onConvertFaciesNamesToCodes()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Choose data file with facies names/symbols:", Util::getLastBrowsedDirectory());
+    if( path.isEmpty() )
+        return;
+    QString saveTo = QFileDialog::getSaveFileName(this, "Save output file as:", Util::getLastBrowsedDirectory());
+    if( ! saveTo.isEmpty() ){
+        //We can assume the file is a category definition.
+        CategoryDefinition* cd  = dynamic_cast<CategoryDefinition*>( _right_clicked_file );
+        if( cd ){
+            cd->loadQuintuplets();
+            QString mainNameExample = cd->getCategoryName( 0 );
+            QString alternateNameExample = cd->getExtendedCategoryName( 0 );
+            QMessageBox msgBox;
+            msgBox.setText("Which textual info to use?");
+            QAbstractButton* pButtonMainName = msgBox.addButton("main name (e.g. " + mainNameExample + ")", QMessageBox::YesRole);
+            msgBox.addButton("alternate name (e.g. " + alternateNameExample + ")", QMessageBox::NoRole);
+            msgBox.exec();
+            bool useMainNames = ( msgBox.clickedButton() == pButtonMainName );
+            Util::replaceFaciesNamesWithCodes( path, cd, useMainNames, saveTo );
+        }
+    }
+}
+
+void MainWindow::onCategorize()
+{
+    //assuming sender() returns a QAction* if execution passes through here.
+    QAction *act = (QAction*)sender();
+
+    //assuming the text in the menu item is the name of a categorical definition file.
+    QString categoricalDefinitionFileName = act->text();
+
+    //try to get the corresponding project component.
+    ProjectComponent* pc = Application::instance()->getProject()->
+            getResourcesGroup()->getChildByName( categoricalDefinitionFileName );
+    if( ! pc ){
+        Application::instance()->logError("MainWindow::onCategorize(): File " + categoricalDefinitionFileName +
+                                          " not found in Resource Files group.");
+        return;
+    }
+
+    //Assuming the project componene is a CategoryDefinition
+    CategoryDefinition* cd = (CategoryDefinition*)pc;
+
+    //Open the dialog to edit the classification intervals and category.
+    ChooseCategoryDialog ccd( cd, "Input", "Choose fallback category:", this );
+    int result = ccd.exec();
+    if( result != QDialog::Accepted )
+        return;
+
+    //Assumes the attribute's parent file is a DataFile
+    DataFile* df = dynamic_cast<DataFile*>(_right_clicked_attribute->getContainingFile());
+
+    //Get the target attribute GEO-EAS index in the data file
+    uint index = df->getFieldGEOEASIndex( _right_clicked_attribute->getName() );
+
+    //propose a name for the new variable
+    QString proposed_name = _right_clicked_attribute->getName() + "_CAT";
+
+    //user enters the name for the new variable
+    QString new_var_name = QInputDialog::getText(this, "Name the new categorical variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             proposed_name );
+
+    //if the user didn't cancel the input box
+    if ( ! new_var_name.isEmpty() ){
+        //perfom de classification
+        df->convertToCategorical(index-1, cd, ccd.getSelectedCategoryCode(), new_var_name );
+    }
+
+}
+
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
@@ -2667,6 +2759,24 @@ void MainWindow::makeMenuClassifyWith()
     }
 }
 
+void MainWindow::makeMenuCategorize()
+{
+    m_subMenuCategorize->clear(); //remove any previously added item actions
+    ObjectGroup* resources = Application::instance()->getProject()->getResourcesGroup();
+    for( uint i = 0; i < (uint)resources->getChildCount(); ++i){
+        ProjectComponent *pc = resources->getChildByIndex( i );
+        if( pc->isFile() ){
+            File *fileAspect = (File*)pc;
+            if( fileAspect->getFileType() == "CATEGORYDEFINITION" ){
+                m_subMenuCategorize->addAction( fileAspect->getIcon(),
+                                                fileAspect->getName(),
+                                                this,
+                                                SLOT(onCategorize()));
+            }
+        }
+    }
+}
+
 void MainWindow::makeMenuMapAs()
 {
     m_subMenuMapAs->clear(); //remove any previously added item actions
@@ -2714,6 +2824,16 @@ void MainWindow::doAddDataFile(const QString filePath )
                                  cgd.getRot(), cgd.getNReal(), cgd.getNoDataValue(),
                                  empty, empty2 );
                     Application::instance()->getProject()->addDataFile( cg );
+                }
+            } else if( dfd.getDataFileType() == DataFileDialog::SEGMENTSET ) {
+                SegmentSetDialog ssd( this, filePath );
+                ssd.exec();
+                if( ssd.result() == QDialog::Accepted ){
+                    SegmentSet *ss = new SegmentSet( filePath );
+                    ss->setInfo( ssd.getXIniFieldIndex(), ssd.getYIniFieldIndex(), ssd.getZIniFieldIndex(),
+                                 ssd.getXFinFieldIndex(), ssd.getYFinFieldIndex(), ssd.getZFinFieldIndex(),
+                                 ssd.getNoDataValue() );
+                    Application::instance()->getProject()->addDataFile( ss );
                 }
             }
         }

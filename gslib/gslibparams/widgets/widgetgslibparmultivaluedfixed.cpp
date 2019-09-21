@@ -79,6 +79,11 @@ void WidgetGSLibParMultiValuedFixed::fillFields( GSLibParMultiValuedFixed *param
             new_widget->fillFields( (GSLibParMultiValuedVariable*)par );
             ui->frmFields->layout()->addWidget( new_widget );
             this->_widgets.append( new_widget );
+        }else if( param_type_name == "customcolor" ){
+            WidgetGSLibCustomColor* new_widget = (WidgetGSLibCustomColor*)par->getWidget();
+            new_widget->fillFields( (GSLibParCustomColor*)par );
+            ui->frmFields->layout()->addWidget( new_widget );
+            this->_widgets.append( new_widget );
         }else
             Application::instance()->logError(QString("WidgetGSLibParMultiValuedFixed::fillFields(): parameter type \"").append(param_type_name).append("\" does not have an equivalent widget type."));
     }
@@ -113,6 +118,9 @@ void WidgetGSLibParMultiValuedFixed::updateValue(GSLibParMultiValuedFixed *param
         }else if( param_type_name == "multivaluedvariable" ){
             WidgetGSLibParMultiValuedVariable* gwidget = (WidgetGSLibParMultiValuedVariable*)widget;
             gwidget->updateValue( (GSLibParMultiValuedVariable*)par );
+        }else if( param_type_name == "customcolor" ){
+            WidgetGSLibCustomColor* gwidget = (WidgetGSLibCustomColor*)widget;
+            gwidget->updateValue( (GSLibParCustomColor*)par );
         }else
             Application::instance()->logError(QString("WidgetGSLibParMultiValuedFixed::updateValue(): parameter type \"").append(param_type_name).append("\" does not have an equivalent widget type."));
     }
