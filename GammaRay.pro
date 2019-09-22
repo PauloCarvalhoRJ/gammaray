@@ -247,7 +247,11 @@ SOURCES += main.cpp\
     domain/quintuplets.cpp \
     gslib/gslibparams/gslibparcustomcolor.cpp \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp \
-    dialogs/choosecategorydialog.cpp
+    dialogs/choosecategorydialog.cpp \
+    domain/faciestransitionmatrix.cpp \
+    dialogs/projectfilechoosedialog.cpp \
+    dialogs/entropycyclicityanalysisdialog.cpp \
+    dialogs/faciesrelationshipdiagramdialog.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -472,7 +476,11 @@ HEADERS  += mainwindow.h \
     domain/quintuplets.h \
     gslib/gslibparams/gslibparcustomcolor.h \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.h \
-    dialogs/choosecategorydialog.h
+    dialogs/choosecategorydialog.h \
+    domain/faciestransitionmatrix.h \
+    dialogs/projectfilechoosedialog.h \
+    dialogs/entropycyclicityanalysisdialog.h \
+    dialogs/faciesrelationshipdiagramdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -559,7 +567,10 @@ FORMS    += mainwindow.ui \
     dialogs/emptydialog.ui \
     dialogs/segmentsetdialog.ui \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.ui \
-    dialogs/choosecategorydialog.ui
+    dialogs/choosecategorydialog.ui \
+    dialogs/projectfilechoosedialog.ui \
+    dialogs/entropycyclicityanalysisdialog.ui \
+    dialogs/faciesrelationshipdiagramdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -689,6 +700,21 @@ isEmpty(_GSL_LIB){
 INCLUDEPATH += $$_GSL_INCLUDE
 LIBPATH     += $$_GSL_LIB
 LIBS        += -lgsl
+#==============================================================
+
+#========= The GraphViz include and lib path and libraries.=========
+_GRAPHVIZ_INCLUDE = $$(GRAPHVIZ_INCLUDE)
+isEmpty(_GRAPHVIZ_INCLUDE){
+        error(GRAPHVIZ_INCLUDE environment variable not defined.)
+}
+_GRAPHVIZ_LIB = $$(GRAPHVIZ_LIB)
+isEmpty(_GRAPHVIZ_LIB){
+        error(GRAPHVIZ_LIB environment variable not defined.)
+}
+INCLUDEPATH += $$_GRAPHVIZ_INCLUDE
+LIBPATH     += $$_GRAPHVIZ_LIB
+LIBS        += -lgvc
+LIBS        += -lcgraph
 #==============================================================
 
 #=====================Embedded thirdparty libraries===========================

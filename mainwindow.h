@@ -202,6 +202,10 @@ private slots:
     void onAutoVarFit();
     void onConvertFaciesNamesToCodes();
     void onCategorize();
+    void onAddFaciesTransitionMatrix();
+    void onSetCategoryDefinitionOfAFasciesTransitionMatrix();
+    void onEntropyCyclicityAnalysis();
+    void onFaciesRelationShipDiagram();
 
 private:
     /**

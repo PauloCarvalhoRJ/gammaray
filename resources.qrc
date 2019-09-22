@@ -119,5 +119,6 @@
         <file alias="xcoordf32">art/iconsHD/xcoordf32.png</file>
         <file alias="ycoordf32">art/iconsHD/ycoordf32.png</file>
         <file alias="zcoordf32">art/iconsHD/zcoordf32.png</file>
+        <file alias="transmat32">art/iconsHD/transmat32.png</file>
     </qresource>
 </RCC>

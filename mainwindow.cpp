@@ -54,6 +54,7 @@
 #include "domain/categorypdf.h"
 #include "domain/geogrid.h"
 #include "domain/segmentset.h"
+#include "domain/faciestransitionmatrix.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -73,6 +74,9 @@
 #include "dialogs/emptydialog.h"
 #include "dialogs/segmentsetdialog.h"
 #include "dialogs/choosecategorydialog.h"
+#include "dialogs/projectfilechoosedialog.h"
+#include "dialogs/entropycyclicityanalysisdialog.h"
+#include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -435,6 +439,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         if ( index.isValid() && index.internalPointer() == project->getResourcesGroup()) {
             _projectContextMenu->addAction("Create threshold c.d.f. ...", this, SLOT(onCreateThresholdCDF()));
             _projectContextMenu->addAction("Create categories definition ...", this, SLOT(onCreateCategoryDefinition()));
+            _projectContextMenu->addAction("Add facies transition matrix...", this, SLOT(onAddFaciesTransitionMatrix()));
         }
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
@@ -445,13 +450,14 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             //for all those files editable with GammaRay editors (normaly any file that is not a data file)
             if( _right_clicked_file->isEditable() )
                 _projectContextMenu->addAction("Edit", this, SLOT(onEdit()));
-            //for all thos files with a no-data-value attribute (normally all data files)
+            //for all those files with a no-data-value attribute (normally all data files)
             if ( _right_clicked_file->canHaveMetaData() ){
                 _projectContextMenu->addAction("See metadata", this, SLOT(onSeeMetadata()));
-                //TODO: consider creating a method hasNDV() in File class.
+                //TODO: consider creating a method hasNDV() in File class to replace these multiple tests below.
                 if( _right_clicked_file->getFileType() != "EXPVARIOGRAM" &&
                     _right_clicked_file->getFileType() != "UNIDIST" &&
-                    _right_clicked_file->getFileType() != "BIDIST")
+                    _right_clicked_file->getFileType() != "BIDIST" &&
+                    _right_clicked_file->getFileType() != "FACIESTRANSITIONMATRIX" )
                     _projectContextMenu->addAction("Set no-data value", this, SLOT(onSetNDV()));
             }
             if( _right_clicked_file->getFileType() == "PLOT" ){
@@ -485,7 +491,12 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 			if( _right_clicked_file->getFileType() == "GEOGRID" ){
 				_projectContextMenu->addAction("Compute cell volumes", this, SLOT(onGeoGridCellVolumes()));
 			}
-			_projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
+            if( _right_clicked_file->getFileType() == "FACIESTRANSITIONMATRIX" ){
+                _projectContextMenu->addAction("Set/Change associated category definition", this, SLOT(onSetCategoryDefinitionOfAFasciesTransitionMatrix()));
+                _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
+                _projectContextMenu->addAction("Facies relationship diagram", this, SLOT(onFaciesRelationShipDiagram()));
+            }
+            _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
         //build context menu for an attribute
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isAttribute() ) {
@@ -2385,6 +2396,7 @@ void MainWindow::onConvertFaciesNamesToCodes()
             msgBox.exec();
             bool useMainNames = ( msgBox.clickedButton() == pButtonMainName );
             Util::replaceFaciesNamesWithCodes( path, cd, useMainNames, saveTo );
+            Util::saveLastBrowsedDirectoryOfFile( saveTo );
         }
     }
 }
@@ -2435,6 +2447,94 @@ void MainWindow::onCategorize()
         df->convertToCategorical(index-1, cd, ccd.getSelectedCategoryCode(), new_var_name );
     }
 
+}
+
+void MainWindow::onAddFaciesTransitionMatrix()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Choose file formatted as a transition matrix (see program manual):", Util::getLastBrowsedDirectory());
+    if( path.isEmpty() )
+        return;
+
+    QString name = Util::getFileName( path );
+
+    ProjectFileChooseDialog pfcd( "Choose a category definition",
+                                  "Choose a category definition to be associated with the facies transition matrix.  You can do it later.",
+                                  FileSelectorType::CategoryDefinitions, this );
+    int result = pfcd.exec();
+    if( result != QDialog::Accepted )
+        return;
+
+    QString associatedCategoryDefinitionName;
+
+    CategoryDefinition* cd = dynamic_cast<CategoryDefinition*>( pfcd.getSelectedFile() );
+
+    if( cd )
+        associatedCategoryDefinitionName = cd->getName();
+
+    if( ! associatedCategoryDefinitionName.isEmpty() ){
+        FaciesTransitionMatrix testObject( path, associatedCategoryDefinitionName );
+        if( ! testObject.isUsable() ){
+            QMessageBox::critical( this, "Error", "The facies transition matrix cannot be associated with the selected category definition.\n"
+                                                  "You can set a valid one later. Verify whether all fascies names in the matrix file exist in the category definition.");
+            associatedCategoryDefinitionName = "";
+        }
+    }
+
+    Util::saveLastBrowsedDirectoryOfFile( path );
+
+    Application::instance()->getProject()->importFaciesTransitionMatrix( path, name, associatedCategoryDefinitionName );
+}
+
+void MainWindow::onSetCategoryDefinitionOfAFasciesTransitionMatrix()
+{
+    FaciesTransitionMatrix *ftm = dynamic_cast<FaciesTransitionMatrix*>(_right_clicked_file);
+
+    ProjectFileChooseDialog pfcd( "Choose a category definition",
+                                  "Choose a category definition to be associated with the facies transition matrix.",
+                                  FileSelectorType::CategoryDefinitions, this );
+    int result = pfcd.exec();
+    if( result != QDialog::Accepted )
+        return;
+
+    QString associatedCategoryDefinitionName;
+
+    CategoryDefinition* cd = dynamic_cast<CategoryDefinition*>( pfcd.getSelectedFile() );
+
+    if( cd )
+        associatedCategoryDefinitionName = cd->getName();
+
+    if( ! associatedCategoryDefinitionName.isEmpty() ){
+        FaciesTransitionMatrix testObject( ftm->getPath(), associatedCategoryDefinitionName );
+        if( ! testObject.isUsable() ){
+            QMessageBox::critical( this, "Error", "The facies transition matrix cannot be associated with the selected category definition.\n"
+                                                  "You can set a valid one later. Verify whether all facies names in the matrix file exist in the category definition.");
+            associatedCategoryDefinitionName = "";
+        }
+    }
+
+    if( cd )
+        ftm->setInfo( cd->getName() );
+    else
+        ftm->setInfo( "" );
+    ftm->updateMetaDataFile();
+}
+
+void MainWindow::onEntropyCyclicityAnalysis()
+{
+    FaciesTransitionMatrix *ftm = dynamic_cast<FaciesTransitionMatrix*>(_right_clicked_file);
+    if( ftm ){
+        EntropyCyclicityAnalysisDialog* ecad = new EntropyCyclicityAnalysisDialog( ftm, this );
+        ecad->show();
+    }
+}
+
+void MainWindow::onFaciesRelationShipDiagram()
+{
+    FaciesTransitionMatrix *ftm = dynamic_cast<FaciesTransitionMatrix*>(_right_clicked_file);
+    if( ftm ){
+        FaciesRelationShipDiagramDialog* frsdd = new FaciesRelationShipDiagramDialog( ftm, this );
+        frsdd->show();
+    }
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

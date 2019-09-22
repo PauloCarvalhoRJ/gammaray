@@ -21,8 +21,8 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
     if( m_HasNotSetItem )
         ui->cmbFile->addItem( "NOT SET" );
 
-	//////////////    ATTENTION: WHENEVER A NEW GROUP IS USED HERE,          /////////////
-	//////////////  YOU NEED TO UPDATE the other methods in this class.  /////////////////
+    //////////////    ATTENTION: WHENEVER A NEW GROUP (e.g. Resources group) IS USED HERE,          /////////////
+    //////////////            YOU NEED TO UPDATE the other methods in this class.                   /////////////////
 
     //adds files from the Resource Files Group of type according to the types specified in m_filesOfTypes
     ObjectGroup* og = project->getResourcesGroup();
@@ -32,7 +32,8 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
                      ( m_filesOfTypes == FileSelectorType::PDFs && varFile->getFileType() == "CATEGORYPDF" ) ||
                      ( m_filesOfTypes == FileSelectorType::CategoryDefinitions && varFile->getFileType() == "CATEGORYDEFINITION" ) ||
                      ( m_filesOfTypes == FileSelectorType::CDsAndCDFs && (varFile->getFileType() == "CATEGORYDEFINITION" || varFile->getFileType() == "THRESHOLDCDF") ) ||
-                     ( m_filesOfTypes == FileSelectorType::CDsCDFsandPDFs && (varFile->getFileType() == "CATEGORYDEFINITION" || varFile->getFileType() == "THRESHOLDCDF" || varFile->getFileType() == "CATEGORYPDF") );
+                     ( m_filesOfTypes == FileSelectorType::CDsCDFsandPDFs && (varFile->getFileType() == "CATEGORYDEFINITION" || varFile->getFileType() == "THRESHOLDCDF" || varFile->getFileType() == "CATEGORYPDF") ) ||
+                     ( m_filesOfTypes == FileSelectorType::FaciesTransitionMatrices && varFile->getFileType() == "FACIESTRANSITIONMATRIX" );
         if( toAdd ){
             ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }

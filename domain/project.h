@@ -131,6 +131,16 @@ public:
      */
     void importBivariateDistribution(const QString from_path, const QString new_file_name , const QMap<uint, Roles::DistributionColumnRole> &roles);
 
+    /** Creates a new facies transition matrix object given a path to a
+     * correctly formatted file and its new name once
+     * in the project.  The file is copied into the project's directory, renamed
+     * and registered in the project's metadata file.  from_path must be a complete
+     * path, including the original file name. new_file_name must include extension.
+     * @param associatedCategoryDefinitionName The name of an existing CategoryDefinition object whose category names match the names in the
+     *                                         file.  Pass an empty string if you do not specify a category definition (may hinder some functionalities).
+     */
+    void importFaciesTransitionMatrix( const QString from_path, const QString new_file_name, QString associatedCategoryDefinitionName );
+
     /** Creates a new threshold c.d.f. object from a file assumed to be already present in the project's directory.
      * If the object's path is elsewhere, then the project may contain an orphan reference if either the project
      * or the referenced file is moved.
