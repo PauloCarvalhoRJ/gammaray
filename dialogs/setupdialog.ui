@@ -95,6 +95,40 @@
     </layout>
    </item>
    <item>
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>GraphViz home path:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <property name="spacing">
+      <number>6</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QLineEdit" name="txtGVPath">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnSearchGVPath">
+       <property name="text">
+        <string>...</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
       <string>Maximum number of cell grids in 3D visualization without resampling:</string>
@@ -173,8 +207,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>316</x>
-     <y>260</y>
+     <x>325</x>
+     <y>258</y>
     </hint>
     <hint type="destinationlabel">
      <x>286</x>
@@ -189,8 +223,8 @@
    <slot>showGSLibPathSearch()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>424</x>
-     <y>80</y>
+     <x>432</x>
+     <y>51</y>
     </hint>
     <hint type="destinationlabel">
      <x>232</x>
@@ -205,8 +239,8 @@
    <slot>showGSPathSearch()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>424</x>
-     <y>140</y>
+     <x>432</x>
+     <y>101</y>
     </hint>
     <hint type="destinationlabel">
      <x>232</x>
@@ -214,9 +248,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnSearchGVPath</sender>
+   <signal>clicked()</signal>
+   <receiver>SetupDialog</receiver>
+   <slot>showGVPathSearch()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>390</x>
+     <y>142</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>440</x>
+     <y>168</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showGSLibPathSearch()</slot>
   <slot>showGSPathSearch()</slot>
+  <slot>showGVPathSearch()</slot>
  </slots>
 </ui>

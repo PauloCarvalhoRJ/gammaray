@@ -251,7 +251,8 @@ SOURCES += main.cpp\
     domain/faciestransitionmatrix.cpp \
     dialogs/projectfilechoosedialog.cpp \
     dialogs/entropycyclicityanalysisdialog.cpp \
-    dialogs/faciesrelationshipdiagramdialog.cpp
+    dialogs/faciesrelationshipdiagramdialog.cpp \
+    graphviz/graphviz.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -480,7 +481,8 @@ HEADERS  += mainwindow.h \
     domain/faciestransitionmatrix.h \
     dialogs/projectfilechoosedialog.h \
     dialogs/entropycyclicityanalysisdialog.h \
-    dialogs/faciesrelationshipdiagramdialog.h
+    dialogs/faciesrelationshipdiagramdialog.h \
+    graphviz/graphviz.h
 
 
 FORMS    += mainwindow.ui \
@@ -700,21 +702,6 @@ isEmpty(_GSL_LIB){
 INCLUDEPATH += $$_GSL_INCLUDE
 LIBPATH     += $$_GSL_LIB
 LIBS        += -lgsl
-#==============================================================
-
-#========= The GraphViz include and lib path and libraries.=========
-_GRAPHVIZ_INCLUDE = $$(GRAPHVIZ_INCLUDE)
-isEmpty(_GRAPHVIZ_INCLUDE){
-        error(GRAPHVIZ_INCLUDE environment variable not defined.)
-}
-_GRAPHVIZ_LIB = $$(GRAPHVIZ_LIB)
-isEmpty(_GRAPHVIZ_LIB){
-        error(GRAPHVIZ_LIB environment variable not defined.)
-}
-INCLUDEPATH += $$_GRAPHVIZ_INCLUDE
-LIBPATH     += $$_GRAPHVIZ_LIB
-LIBS        += -lgvc
-LIBS        += -lcgraph
 #==============================================================
 
 #=====================Embedded thirdparty libraries===========================
