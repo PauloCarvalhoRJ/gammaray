@@ -26,6 +26,7 @@
 #include "plot.h"
 #include "domain/segmentset.h"
 #include "domain/faciestransitionmatrix.h"
+#include "domain/verticaltransiogrammodel.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
 {
@@ -259,6 +260,20 @@ Project::Project(const QString path) : QAbstractItemModel()
                 //reads FaciesTransitionMatrix metadata from the .md file
                 ftm->setInfoFromMetadataFile();
            }
+           //found a Vertical Transiogram Model file reference in gammaray.prj
+           if( line.startsWith( "VERTICALTRANSIOGRAMMODEL:" )){
+               //get file name
+                QString verticalTransiogramModel_file = line.split(":")[1];
+                //make file path
+                QFile vtm_file( this->_project_directory->absoluteFilePath( verticalTransiogramModel_file ) );
+                //create FaciesTransitionMatrix object from file
+                VerticalTransiogramModel *vtm = new VerticalTransiogramModel( vtm_file.fileName(), "" );
+                //add the object to its correct directory in the project tree structure
+                this->_variograms->addChild( vtm );
+                vtm->setParent( this->_variograms );
+                //reads FaciesTransitionMatrix metadata from the .md file
+                vtm->setInfoFromMetadataFile();
+           }
         }
         prj_file.close();
     }
@@ -405,6 +420,13 @@ void Project::addCategoryPDF(CategoryPDF *cpdf)
     this->save();
 }
 
+void Project::addVerticalTransiogramModel(VerticalTransiogramModel *vtm)
+{
+    this->_variograms->addChild( vtm );
+    vtm->setParent( this->_variograms );
+    this->save();
+}
+
 void Project::addResourceFile(File *file)
 {
     this->_resources->addChild( file );
@@ -535,6 +557,13 @@ void Project::registerThresholdCDF(ThresholdCDF *tcdf)
 void Project::registerCategoryPDF(CategoryPDF *cpdf)
 {
     this->addCategoryPDF( cpdf );
+    //refreshes project tree display
+    Application::instance()->refreshProjectTree();
+}
+
+void Project::registerVerticalTransiogramModel(VerticalTransiogramModel *vtm)
+{
+    this->addVerticalTransiogramModel( vtm );
     //refreshes project tree display
     Application::instance()->refreshProjectTree();
 }

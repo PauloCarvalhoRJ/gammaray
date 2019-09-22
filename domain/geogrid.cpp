@@ -11,6 +11,7 @@
 #include "domain/project.h"
 #include "geometry/vector3d.h"
 #include "geometry/face3d.h"
+#include "exceptions/invalidmethodexception.h"
 
 #include <QCoreApplication>
 #include <QFile>
@@ -112,7 +113,110 @@ GeoGrid::GeoGrid(QString path, Attribute * atTop, Attribute * atBase, uint nHori
 	m_nJ = nJCells;
 	m_nK = nKCells;
 	m_nreal = 1;
-	_no_data_value = "";
+    _no_data_value = "";
+}
+
+GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
+    GridFile( path ),
+    m_spatialIndex( new SpatialIndexPoints() ),
+    m_lastModifiedDateTimeLastMeshLoad()
+{
+    //get origin Cartesian grid and do some sanity checks
+    CartesianGrid *cg = nullptr;
+    for( const GeoGridZone zone : zones ){
+        CartesianGrid *cgTop = dynamic_cast<CartesianGrid*>( zone.top->getContainingFile() );
+        CartesianGrid *cgBase = dynamic_cast<CartesianGrid*>( zone.base->getContainingFile() );
+        assert( cgTop && "GeoGrid(): top attribute is not from a CartesianGrid object." );
+        assert( cgBase && "GeoGrid(): base attribute is not from a CartesianGrid object." );
+        assert( cgBase == cgTop && "GeoGrid(): top and base attributes must be from the same CartesianGrid object." );
+        assert( ! cgBase->isTridimensional() && "GeoGrid(): The CartesianGrid of top and base must be 2D (map)." );
+        cg = cgTop;
+    }
+    assert( cg && "GeoGrid(): no zones passed." );
+
+    //get grid geometry
+    uint nIVertexes = cg->getNI();
+    uint nJVertexes = cg->getNJ();
+    uint nKVertexes = 0;
+    for( const GeoGridZone zone : zones )
+        nKVertexes += zone.nHorizonSlices + 1;
+    uint nVertexes = nIVertexes * nJVertexes * nKVertexes;
+
+    //allocate the vertex list
+    m_vertexesPart.reserve( nVertexes );
+
+    for( const GeoGridZone zone : zones ){
+        //get the indexes of the properties holding the top and base values.
+        uint columnIndexBase = zone.base->getAttributeGEOEASgivenIndex()-1;
+        uint columnIndexTop = zone.top->getAttributeGEOEASgivenIndex()-1;
+
+        uint nKVertexesZone = zone.nHorizonSlices + 1;
+
+        //create the vertexes
+        for( uint k = 0; k < nKVertexesZone; ++k ){
+            for( uint j = 0; j < nJVertexes; ++j ){
+                for( uint i = 0; i < nIVertexes; ++i ){
+                    //get base and top values
+                    double vBase = cg->dataIJK( columnIndexBase, i, j, 0 );
+                    double vTop = cg->dataIJK( columnIndexTop, i, j, 0 );
+                    //compute the depth (z) of the current vertex.
+                    double depth = vBase + ( k / (double)zone.nHorizonSlices ) * ( vTop - vBase );
+                    //create and set the position of the vertex
+                    VertexRecordPtr vertex( new VertexRecord() );
+                    double x, y, z;
+                    cg->IJKtoXYZ( i, j, 0, x, y, z );
+                    vertex->X = x;
+                    vertex->Y = y;
+                    vertex->Z = depth;
+                    m_vertexesPart.push_back( vertex );
+                }
+            }
+        }
+    }
+
+    //define the number of cells (cell centered values, one less than the number of vertexes in each direction )
+    uint nICells = cg->getNI()-1;
+    uint nJCells = cg->getNJ()-1;
+    uint nKCells = 0;
+    for( const GeoGridZone zone : zones )
+        nKCells += zone.nHorizonSlices;
+    uint nCells = nICells * nJCells * nKCells;
+
+    //allocate the cell definition list
+    m_cellDefsPart.reserve( nCells );
+
+    uint vertexKoffset = 0;
+    for( const GeoGridZone zone : zones ){
+        uint nKCellsZone = zone.nHorizonSlices;
+        //assign vertexes id's to the cells
+        for( uint k = 0; k < nKCellsZone; ++k ){
+            for( uint j = 0; j < nJCells; ++j ){
+                for( uint i = 0; i < nICells; ++i ){
+                    CellDefRecordPtr cellDef( new CellDefRecord() );
+                    //see Doxygen of CellDefRecordPtr in geogrid.h for a diagram of vertex arrangement in space
+                    // and how they form the edges and faces of the visual representation of the cell.
+                    cellDef->vId[0] = ( vertexKoffset + k + 0 ) * nJVertexes * nIVertexes + ( j + 0 ) * nIVertexes + ( i + 0 );
+                    cellDef->vId[1] = ( vertexKoffset + k + 0 ) * nJVertexes * nIVertexes + ( j + 0 ) * nIVertexes + ( i + 1 );
+                    cellDef->vId[2] = ( vertexKoffset + k + 0 ) * nJVertexes * nIVertexes + ( j + 1 ) * nIVertexes + ( i + 1 );
+                    cellDef->vId[3] = ( vertexKoffset + k + 0 ) * nJVertexes * nIVertexes + ( j + 1 ) * nIVertexes + ( i + 0 );
+                    cellDef->vId[4] = ( vertexKoffset + k + 1 ) * nJVertexes * nIVertexes + ( j + 0 ) * nIVertexes + ( i + 0 );
+                    cellDef->vId[5] = ( vertexKoffset + k + 1 ) * nJVertexes * nIVertexes + ( j + 0 ) * nIVertexes + ( i + 1 );
+                    cellDef->vId[6] = ( vertexKoffset + k + 1 ) * nJVertexes * nIVertexes + ( j + 1 ) * nIVertexes + ( i + 1 );
+                    cellDef->vId[7] = ( vertexKoffset + k + 1 ) * nJVertexes * nIVertexes + ( j + 1 ) * nIVertexes + ( i + 0 );
+                    m_cellDefsPart.push_back( cellDef );
+                }
+            }
+        }
+        vertexKoffset += nKCellsZone + 1;
+    }
+
+    //initialize member variables
+    m_nI = nICells;
+    m_nJ = nJCells;
+    m_nK = nKCells;
+    m_nreal = 1;
+    _no_data_value = "";
+
 }
 
 void GeoGrid::getBoundingBox(uint cellIndex,
@@ -691,7 +795,12 @@ double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
 	case CartesianCoord::Y: return y;
 	case CartesianCoord::Z: return z;
 	default: return x;
-	}
+    }
+}
+
+double GeoGrid::getProportion(int variableIndex, double value0, double value1)
+{
+    throw new InvalidMethodException();
 }
 
 bool GeoGrid::canHaveMetaData()

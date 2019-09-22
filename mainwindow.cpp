@@ -77,6 +77,7 @@
 #include "dialogs/projectfilechoosedialog.h"
 #include "dialogs/entropycyclicityanalysisdialog.h"
 #include "dialogs/faciesrelationshipdiagramdialog.h"
+#include "dialogs/transiogramdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -771,6 +772,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         //if all selected items are attributes (two or more)
         if( areAllItemsAttributes && selected_indexes.size() > 1 ){
             _projectContextMenu->addAction("Multiple variograms", this, SLOT(onMultiVariogram()));
+        }
+        //if all selected items are attributes (three or more)
+        if( areAllItemsAttributes && selected_indexes.size() > 2 ){
+            _projectContextMenu->addAction("Create GeoGrid with multiple zones", this, SLOT(onCreateGeoGridMultiZone()));
         }
     }
 
@@ -1606,7 +1611,7 @@ void MainWindow::onMultiVariogram()
 {
     QList<Attribute *> selectedAttributes = getSelectedAttributes();
     MultiVariogramDialog * mvd = new MultiVariogramDialog( selectedAttributes.toVector().toStdVector(), this );
-    mvd->show(); //shows dialgo asynchronolously
+    mvd->show(); //shows dialog asynchronolously
 }
 
 void MainWindow::onHistpltsim()
@@ -2537,6 +2542,56 @@ void MainWindow::onFaciesRelationShipDiagram()
     }
 }
 
+void MainWindow::onCreateGeoGridMultiZone()
+{
+    QList<Attribute *> selectedAttributes = getSelectedAttributes();
+
+    std::vector<GeoGridZone> zones;
+
+    //for each zone (pair of horizons)
+    for( int i = 0; i < selectedAttributes.size() - 1; ++i ){
+        bool ok;
+        //ask the user for the number of horizon slices.
+        int nHSlices = QInputDialog::getInt(this, "User input requested",
+                          "Number of horizon slices for zone " + QString::number( i+1 ) +
+                                            " (top=" + selectedAttributes[i]->getName() +
+                                            "; base=" + selectedAttributes[i+1]->getName() + "):", 5, 1, 500, 1,
+                           &ok);
+        if(!ok) return;
+        zones.push_back( { selectedAttributes[i], selectedAttributes[i+1], nHSlices } );
+    }
+
+    //open the renaming dialog
+    bool ok;
+    QString new_file_name = QInputDialog::getText(this, "Name the new grid file",
+                                             "New file name:", QLineEdit::Normal, "", &ok);
+    if( ! ok )
+        return;
+
+    //make the path for the file.
+    QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
+
+    //create the grid object
+    GeoGrid* geoGrid = new GeoGrid( new_file_path, zones );
+
+    //the necessary steps to register the new object as a project member.
+    {
+        //create a GEO-EAS Cartesian grid file that serves as GeoGrid's data storage
+        Util::createGEOEAScheckerboardGrid( geoGrid, new_file_path );
+        //save data to file system
+        geoGrid->writeToFS();
+        //save its metadata file
+        geoGrid->updateMetaDataFile();
+        //causes an update to the child objects in the project tree
+        geoGrid->setInfoFromMetadataFile();
+        //attach the object to the project tree
+        Application::instance()->getProject()->addDataFile( geoGrid );
+        //show the newly created object in main window's project tree
+        Application::instance()->refreshProjectTree();
+    }
+
+}
+
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
@@ -3047,4 +3102,10 @@ void MainWindow::openCokrigingNewcokb3d()
 {
     CokrigingDialog* cokd = new CokrigingDialog( this, CokrigingProgram::NEWCOKB3D );
     cokd->show();
+}
+
+void MainWindow::openTransiography()
+{
+    TransiogramDialog* td = new TransiogramDialog( this );
+    td->show();
 }

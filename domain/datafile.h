@@ -336,9 +336,21 @@ public:
      */
     std::vector< double > getDataColumn( uint column );
 
+    /**
+     * Returns the proportion of the values that fall in the given interval.
+     * To count discrete values (e.g. facies codes) just make them equal.
+     * No-data-values are not counted, even if they numerically are within the interval.
+     * First variable index is zero (non-GEOEAS index).
+     * If there is no valid data, zero is returned.
+     * Subclasses that have varying support size (e.g. SegmentSet and GeoGrid) should override this
+     * method to account such variation in the proportion.
+     */
+    virtual double getProportion(int variableIndex, double value0, double value1 );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
+    virtual void readFromFS(){ loadData(); }
 
 // ICalcPropertyCollection interface
 public:

@@ -36,6 +36,16 @@ public:
     int getYFinalIndex();
     int getZFinalIndex();
 
+    /** Returns the length of the iRecord-th segment. */
+    double getSegmentLenght( int iRecord );
+
+    /** Returns the distance between the end of the iRecord-th segment
+     * to the beginning of the (iRecord+1)-th segment.
+     * If the iRecord-th segment is the last, this method returns zero.
+     */
+    double getDistanceToNextSegment( int iRecord );
+
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
@@ -57,6 +67,8 @@ public:
 public:
     /** NOTE: this returns the middle point of the segment. */
     virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
+    /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
+    virtual double getProportion(int variableIndex, double value0, double value1 );
 
 protected:
     int _x_final_field_index; //index start at 1. Zero means not set.

@@ -21,6 +21,7 @@ class ThresholdCDF;
 class CategoryPDF;
 class ProjectComponent;
 class IJAbstractCartesianGrid;
+class VerticalTransiogramModel;
 
 /**
  * @brief The Project class holds all information about a geostats study.
@@ -69,6 +70,9 @@ public:
 
     /** Adds the given category p.d.f. object to this project. */
     void addCategoryPDF( CategoryPDF *cpdf );
+
+    /** Adds the given vertical transiogram model object to this project. */
+    void addVerticalTransiogramModel( VerticalTransiogramModel *vtm );
 
     /** Adds the given generic file object as a resource. */
     void addResourceFile( File *file );
@@ -152,6 +156,12 @@ public:
      * or the referenced file is moved.
      */
     void registerCategoryPDF( CategoryPDF* cpdf );
+
+    /** Creates a new vertical transiogram model object from a file assumed to be already present in the project's directory.
+     * If the object's path is elsewhere, then the project may contain an orphan reference if either the project
+     * or the referenced file is moved.
+     */
+    void registerVerticalTransiogramModel( VerticalTransiogramModel* vtm );
 
     /** Creates a new generic file object from a file assumed to be already present in the project's directory.
      * If the object's path is elsewhere, then the project may contain an orphan reference if either the project

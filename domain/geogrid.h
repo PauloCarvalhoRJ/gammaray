@@ -57,6 +57,16 @@ typedef struct{
 } CellDefRecord;
 typedef std::shared_ptr< CellDefRecord > CellDefRecordPtr;
 
+
+/**
+ * Structure used as parameter for multi-zone GeoGrid constructors.
+ */
+struct GeoGridZone {
+    Attribute* top;
+    Attribute* base;
+    int nHorizonSlices;
+};
+
 /////////////////////////////////////////////////  The GeoGrid class ///////////////////////////////////////////////////////////
 
 /** The GeoGrid is an irregular structured grid.  See the program manual for more in-depth
@@ -76,6 +86,13 @@ public:
 	 * @param nHorizonSlices The number of cell layers between top and base.  Minimum is 1.
 	 */
 	GeoGrid( QString path, Attribute* atTop, Attribute* atBase, uint nHorizonSlices );
+
+    /** Initializes the geometry as proportional to the tops and bases passed as zones.  The top and base
+     * attributes must come from the same map (2D CartesianGrid).  Use this constructor for new grids only.
+     * Do not use this to load existing ones.
+     * @param path The file path where the data file (GEO-EAS cartesian grid data file) will be saved
+     */
+    GeoGrid( QString path, std::vector<GeoGridZone> zones );
 
 	/**
 	 * Returns (via output parameters) the bounding box of a cell given its cell index.
@@ -176,6 +193,8 @@ public:
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
 	/** GeoGrids are assumed to be always 3D. */
 	virtual bool isTridimensional(){ return true; }
+    /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
+    virtual double getProportion(int variableIndex, double value0, double value1 );
 
 // File interface
 public:

@@ -1195,6 +1195,25 @@ std::vector<double> DataFile::getDataColumn(uint column)
     return result;
 }
 
+double DataFile::getProportion(int variableIndex, double value0, double value1)
+{
+    int countYES = 0;
+    int countNO = 0;
+    for( int i = 0; i < getDataLineCount(); ++i ){
+        double value = data( i, variableIndex );
+        if( ! isNDV( value ) ){
+            if( value >= value0 && value <= value1 )
+                ++countYES;
+            else
+                ++countNO;
+        }
+    }
+    if( countYES + countNO > 0 )
+        return countYES / static_cast<double>( countYES + countNO );
+    else
+        return 0.0;
+}
+
 void DataFile::removeDataLine(uint line)
 {
 	_data.erase( _data.begin() + line );

@@ -9,6 +9,7 @@
 #include <complex>
 #include "geometry/face3d.h"
 #include "viewer3d/view3dcolortables.h"
+#include "domain/faciestransitionmatrix.h"
 
 // macro used to do printf on QString for debugging purposes
 // it is safe to delete this.
@@ -66,6 +67,10 @@ enum class FFT1DDirection : int {
 enum class ColorScaling : uint { ARITHMETIC = 0, LOG };
 
 enum class ValueScaling : uint { DIRECT = 0, ABS };
+
+//one Facies Transition Matrix per h.
+typedef double Separation;
+typedef std::pair<Separation, FaciesTransitionMatrix> hFTM;
 
 /**
  * @brief The Util class organizes system-wide utilitary functions.
@@ -671,6 +676,12 @@ public:
     static bool isIn( const QString& stringToTest, const QStringList& listOfValues );
 
     /**
+     * Returns the color mapped from the given value according to
+     * the passed color table.
+     */
+    static QColor getColorFromValue(double value, ColorTable colorTableToUse, double min = 0.0, double max = 1.0);
+
+    /**
      * Returns a string in the format "#RRGGBB" mapped from the given value according to
      * the passed color table.
      */
@@ -682,9 +693,64 @@ public:
     /** Returns the value of x of chiSquares() whose area under the chi-squared distribution (see chiSquared) to its right
      * corresponds to the value passed as the significanceLevel parameter.
      * The returned value is equivalent to the one that would be manually obtained with chi-square tables commonly used.
-     * @param step Step size used to compute the area under the cruve.
+     * @param step Step size used to compute the area under the curve.
      */
     static double chiSquaredAreaToTheRight(double significanceLevel, int degreesOfFreedom, double step );
+
+    /** Returns whether the given color is dark.
+     * This function computes the luminance of the color according to the ITU-R recommendation BT.709,
+     * then it judges whether it is dark accoring to a threshold per W3C Recommendations.
+     */
+    static bool isDark( const QColor& color );
+
+    /**
+     * Returns a color that is contrasting with respect the input color.
+     * This is useful to set, for instance, bright letters over a dark barkground.
+     */
+    static QColor makeContrast( const QColor& color );
+
+    /**
+     * Makes a <font color='#nnnnnn'>text</font> HTML tag so that the text has constrasting letters against
+     * the given background color.
+     */
+    static QString fontColorTag( const QString& text, const QColor& bgcolor );
+
+    /**
+     * Computes a series of Facies Transition Matrices for different separations (h) in space.
+     * @param categoricalAttributes The list with categorical attributes to compute FTMs for.
+     * @param hInitial The initial separation (e.g. 1m)
+     * @param hFinal The final separation (e.g. 30m)
+     * @param nSteps The number of separations between initial and final separations (e.g. 15).
+     * @param toleranceCoefficient The tolerance to be used for spatial searches (useful for point sets or other
+     *                             data sets with sparse small support).
+     */
+    static std::vector<hFTM> computeFaciesTransitionMatrices( std::vector<Attribute *> &categoricalAttributes,
+                                                              double hInitial,
+                                                              double hFinal,
+                                                              int nSteps,
+                                                              double toleranceCoefficient );
+
+    /**
+     *  Removes zero-only columns and rows from the passed Facies Transion Matrices.
+     *  This action is done such that all matrices in the list have columns
+     *  and rows refering to the same facies.
+     */
+    static void compressFaciesTransitionMatrices( std::vector<hFTM>& hFTMs );
+
+    /**
+     * Plots the Facies Relationship Diagram for the passed Facies Transition Matrix.
+     * @param tmpPostscriptFilePath Output parameter: the path to the resulted Postscript temporary file.
+     * @param cutoff Probability values below this value are not plotted.
+     * @param makeLinesProportionalToProbabilities The thickness of the lines in the graph are proportional to the transition probabilities.
+     * @param numberOfDecimalDigits The number of decimal places in the labels of the graph.
+     * @param maxLineThickness The maximum line thickness to be used if makeLinesProportionalToProbabilities is true.
+     */
+    static void makeFaciesRelationShipDiagramPlot( const FaciesTransitionMatrix &faciesTransitionMatrix,
+                                                   QString &tmpPostscriptFilePath,
+                                                   double cutoff,
+                                                   bool makeLinesProportionalToProbabilities ,
+                                                   int numberOfDecimalDigits,
+                                                   int maxLineThickness );
 };
 
 #endif // UTIL_H

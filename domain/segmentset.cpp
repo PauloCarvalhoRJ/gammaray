@@ -119,6 +119,24 @@ int SegmentSet::getZFinalIndex()
     return _z_final_field_index;
 }
 
+double SegmentSet::getSegmentLenght(int iRecord)
+{
+    double dx = data( iRecord, getXFinalIndex()-1 ) - data( iRecord, getXindex()-1 );
+    double dy = data( iRecord, getYFinalIndex()-1 ) - data( iRecord, getYindex()-1 );
+    double dz = data( iRecord, getZFinalIndex()-1 ) - data( iRecord, getZindex()-1 );
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
+double SegmentSet::getDistanceToNextSegment(int iRecord)
+{
+    if( iRecord == getDataLineCount() - 1 )
+        return 0.0;
+    double dx = data( iRecord+1, getXindex()-1 ) - data( iRecord, getXFinalIndex()-1 );
+    double dy = data( iRecord+1, getYindex()-1 ) - data( iRecord, getYFinalIndex()-1 );
+    double dz = data( iRecord+1, getZindex()-1 ) - data( iRecord, getZFinalIndex()-1 );
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
 
 QIcon SegmentSet::getIcon()
 {
@@ -218,4 +236,24 @@ double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
         else
             return 0.0; //returns z=0.0 for datasets in 2D.
     }
+}
+
+double SegmentSet::getProportion(int variableIndex, double value0, double value1)
+{
+    double lengthYES = 0.0;
+    double lengthNO = 0.0;
+    for( int i = 0; i < getDataLineCount(); ++i ){
+        double value = data( i, variableIndex );
+        if( ! isNDV( value ) ){
+            if( value >= value0 && value <= value1 ){
+                lengthYES += getSegmentLenght( i );
+            } else {
+                lengthNO += getSegmentLenght( i );
+            }
+        }
+    }
+    if( (lengthYES + lengthNO) > 0 )
+        return lengthYES / ( lengthYES + lengthNO );
+    else
+        return 0.0;
 }

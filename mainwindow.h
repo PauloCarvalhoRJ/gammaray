@@ -68,6 +68,7 @@ public slots:
     void openImageJockey();
     void openSGSIM();
     void openCokrigingNewcokb3d();
+    void openTransiography();
 
 private:
     Ui::MainWindow *ui;
@@ -206,6 +207,7 @@ private slots:
     void onSetCategoryDefinitionOfAFasciesTransitionMatrix();
     void onEntropyCyclicityAnalysis();
     void onFaciesRelationShipDiagram();
+    void onCreateGeoGridMultiZone();
 
 private:
     /**

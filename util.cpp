@@ -21,10 +21,13 @@
 #include "domain/categorydefinition.h"
 #include "domain/pointset.h"
 #include "domain/variogrammodel.h"
+#include "domain/segmentset.h"
+#include "domain/auxiliary/faciestransitionmatrixmaker.h"
 #include "gslib/gslibparameterfiles/gslibparameterfile.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/gslibparinputdata.h"
 #include "gslib/gslib.h"
+#include "graphviz/graphviz.h"
 #include "dialogs/displayplotdialog.h"
 #include "dialogs/distributioncolumnrolesdialog.h"
 #include <QDir>
@@ -39,6 +42,7 @@
 #include <vtkLookupTable.h>
 #include <QProgressDialog>
 #include "spectral/spectral.h"
+#include <QStringBuilder>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
@@ -2121,12 +2125,17 @@ bool Util::isIn(const QString &stringToTest, const QStringList &listOfValues)
     return listOfValues.contains( stringToTest );
 }
 
-QString Util::getHTMLColorFromValue(double value, ColorTable colorTableToUse, double min, double max )
+QColor Util::getColorFromValue(double value, ColorTable colorTableToUse, double min, double max)
 {
     vtkSmartPointer<vtkLookupTable> colorTable = View3dColorTables::getColorTable( colorTableToUse, min, max );
     double rgb[3];
     colorTable->GetColor( value, rgb );
-    QColor color( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+    return QColor( rgb[0] * 255, rgb[1] * 255, rgb[2] * 255 );
+}
+
+QString Util::getHTMLColorFromValue(double value, ColorTable colorTableToUse, double min, double max )
+{
+    QColor color = getColorFromValue( value, colorTableToUse, min, max );
     return color.name( QColor::HexRgb );
 }
 
@@ -2148,4 +2157,227 @@ double Util::chiSquaredAreaToTheRight( double significanceLevel, int degreesOfFr
         if( sum > 1.0 - significanceLevel )
             return currentX;
     }
+}
+
+bool Util::isDark(const QColor &color)
+{
+    //compute luminance per the ITU-R recommendation BT.709
+    double L;
+    {
+        std::vector<double> rgb = { color.redF(), color.greenF(), color.blueF() };
+        for( double& c : rgb) {
+            if ( c <= 0.03928)
+                c = c / 12.92;
+            else
+                c = std::pow( ( c + 0.055) / 1.055, 2.4 );
+        }
+        L = 0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2];
+    }
+
+    // the threshold 0.179 for contrast comes from W3C Recommendations:
+    // (L1 + 0.05) / (L2 + 0.05), where L1 is the luminance of the lightest color and L2
+    // is the luminance of the darkest on a scale of 0.0-1.0.  Making L1 the luminance of white (1.0)
+    // and L2 the luminance of black (0.0), one arrives at the 0.179 figure.
+    // see discussion in: https://stackoverflow.com/questions/3942878/how-to-decide-font-color-in-white-or-black-depending-on-background-color/3943023#3943023
+    if( L <= 0.179 /*color.greenF() < 0.6*/ )
+        return true;
+    else
+        return false;
+}
+
+QColor Util::makeContrast(const QColor &color)
+{
+    if( isDark( color ) )
+        return Qt::white;
+    else
+        return Qt::black;
+}
+
+QString Util::fontColorTag(const QString &text, const QColor &bgcolor)
+{
+    return "<font color='" % makeContrast(bgcolor).name(QColor::HexRgb) % "'>" % text % "</font>";
+}
+
+std::vector<hFTM> Util::computeFaciesTransitionMatrices(std::vector<Attribute*>& categoricalAttributes,
+                                                      double hInitial,
+                                                      double hFinal,
+                                                      int nSteps,
+                                                      double toleranceCoefficient )
+{
+    double dh = ( hFinal - hInitial ) / nSteps;
+
+    //get pointer to the category definition of the first variable (assumed the same for all variables).
+    DataFile* parentOfFirst = dynamic_cast<DataFile*>( categoricalAttributes.front()->getContainingFile() );
+    CategoryDefinition* CDofFirst = parentOfFirst->getCategoryDefinition( categoricalAttributes.front() );
+    CDofFirst->readFromFS();
+
+    std::vector<hFTM> hFTMs;
+
+    //for each separation h
+    for( double h = hInitial; h <= hFinal; h += dh ){
+        //create a FTM for all categorical variables for each h.
+        FaciesTransitionMatrix ftmAll("");
+        ftmAll.setInfo( CDofFirst->getName() );
+        ftmAll.initialize();
+        hFTMs.push_back( { h, ftmAll } );
+    }
+
+    //for each file (each categorical attribute)
+    for( Attribute* at : categoricalAttributes ){
+        //get the data file
+        DataFile* dataFile = dynamic_cast<DataFile*>( at->getContainingFile() );
+        Application::instance()->logInfo("Commencing work on " + dataFile->getName() + "/" + at->getName() + "...");
+        QApplication::processEvents();
+        //if the data file is a segment set
+        if( dataFile->getFileType() == "SEGMENTSET" ){
+            //load data from file system
+            dataFile->readFromFS();
+            //make an auxiliary object to count facies transitions at given separations
+            FaciesTransitionMatrixMaker<SegmentSet> ftmMaker( dynamic_cast<SegmentSet*>(dataFile),
+                                                              at->getAttributeGEOEASgivenIndex()-1 );
+            //for each separation h
+            for( hFTM& hftm : hFTMs ){
+                Application::instance()->logInfo("   working on h = " + QString::number( hftm.first ) + "...");
+                QApplication::processEvents();
+                //make a Facies Transion Matrix for a given h
+                FaciesTransitionMatrix ftm = ftmMaker.makeAlongTrajectory( hftm.first, toleranceCoefficient * hftm.first );
+                //add its counts to the global FTM for a given h
+                hftm.second.add( ftm );
+            }
+        } else {
+            Application::instance()->logError("Util::computeFaciesTransitionMatrix(): Data files of type " +
+                                               dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete or not done at all.", true);
+        }
+    }
+
+    return hFTMs;
+}
+
+void Util::compressFaciesTransitionMatrices( std::vector<hFTM>& hFTMs )
+{
+    //get a reference to one of the FTM (assumes the FTM for each h referes to the same facies after compression).
+    FaciesTransitionMatrix& firstFTM = hFTMs.front().second;
+
+    //for each category (compress columns)
+    for( int i = 0; i < firstFTM.getColumnCount(); ++i ){
+        //assume all columns are full of zeroes
+        bool keepColumn = false;
+        //for each separation h, query whether we have columns with only zeroes in all the FTMs.
+        for( const hFTM& hftm : hFTMs ){
+            const FaciesTransitionMatrix& ftm = hftm.second;
+            if( ! ftm.isColumnZeroed( i ) )
+                keepColumn = true;
+        }
+        //if a column for all h's were full of zeros
+        if( !keepColumn ){
+            //removes all zeroed columns for each separation h
+            // so they all have the same facies
+            for( hFTM& hftm : hFTMs ){
+                FaciesTransitionMatrix& ftm = hftm.second;
+                ftm.removeColumn( i );
+            }
+            --i;
+        }
+    }
+
+    //for each category (compress rows)
+    for( int i = 0; i < firstFTM.getRowCount(); ++i ){
+        //assume all rows are full of zeroes
+        bool keepRow = false;
+        //for each separation h, query whether we have rows with only zeroes in all the FTMs.
+        for( const hFTM& hftm : hFTMs ){
+            const FaciesTransitionMatrix& ftm = hftm.second;
+            if( ! ftm.isRowZeroed( i ) )
+                keepRow = true;
+        }
+        //if a row for all h's were full of zeros
+        if( !keepRow ){
+            //removes all zeroed rows for each separation h
+            // so they all have the same facies
+            for( hFTM& hftm : hFTMs ){
+                FaciesTransitionMatrix& ftm = hftm.second;
+                ftm.removeRow( i );
+            }
+            --i;
+        }
+    }
+
+}
+
+void Util::makeFaciesRelationShipDiagramPlot( const FaciesTransitionMatrix &faciesTransitionMatrix,
+                                              QString& tmpPostscriptFilePath,
+                                              double cutoff,
+                                              bool makeLinesProportionalToProbabilities,
+                                              int numberOfDecimalDigits,
+                                              int maxLineThickness )
+{
+    QString outputDOT = "digraph{\n";
+    outputDOT = outputDOT % "page=\"8.5,11\";\n";
+    outputDOT = outputDOT % "size=\"7.5,10\";\n";
+    for( int i = 0; i < faciesTransitionMatrix.getRowCount(); ++i ){
+        for( int j = 0; j < faciesTransitionMatrix.getColumnCount(); ++j ){
+            // Help about the DOT style language: https://graphviz.gitlab.io/_pages/pdf/dotguide.pdf
+            // Help about GraphViz API:           https://graphviz.gitlab.io/_pages/pdf/libguide.pdf
+            // GraphViz general documentation:    https://www.graphviz.org/documentation/
+            double diff = faciesTransitionMatrix.getDifference( i, j );
+            if( diff > cutoff ){
+                //style for the "from" facies
+                QColor color = faciesTransitionMatrix.getColorOfCategoryInRowHeader( i ).toHsv();
+                double hue = color.hueF();
+                if( hue < 0 )
+                    hue *= -1.0;
+                QString hsv = QString::number( hue )   + " " +
+                        QString::number( color.saturationF() ) + " " +
+                        QString::number( color.valueF() );
+                QString labelColor = "black";
+                if( Util::isDark( color ) ) //if the facies color is too dark, use white letters for the labels
+                    labelColor = "white";
+                outputDOT = outputDOT % "\"" % faciesTransitionMatrix.getRowHeader(i) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
+                        "label=<<FONT COLOR=\"" % labelColor % "\">" % faciesTransitionMatrix.getRowHeader(i) % "</FONT>>]\n";
+                //style for the "to" facies
+                color = faciesTransitionMatrix.getColorOfCategoryInColumnHeader( j ).toHsv();
+                hue = color.hueF();
+                if( hue < 0 )
+                    hue *= -1.0;
+                hsv = QString::number( hue )   + " " +
+                        QString::number( color.saturationF() ) + " " +
+                        QString::number( color.valueF() );
+                labelColor = "black";
+                if( Util::isDark( color ) ) //if the facies color is too dark, use white letters for the labels
+                    labelColor = "white";
+                outputDOT = outputDOT % "\"" % faciesTransitionMatrix.getColumnHeader(j) % "\" [shape=box,style=filled,color=\"" % hsv % "\"," %
+                        "label=<<FONT COLOR=\"" % labelColor % "\">" % faciesTransitionMatrix.getColumnHeader(j) % "</FONT>>]\n";
+                //style for the edge connecting both facies
+                outputDOT = outputDOT % "\"" % faciesTransitionMatrix.getRowHeader(i) % "\" -> \"" %
+                        faciesTransitionMatrix.getColumnHeader(j) % "\"" %
+                        "[label=\"" % QString::number(diff,'g',numberOfDecimalDigits) % "\"";
+                if( makeLinesProportionalToProbabilities )
+                    outputDOT = outputDOT % ",style=\"setlinewidth(" % QString::number((int)( diff * maxLineThickness )) % ")\"";
+                outputDOT = outputDOT % "]\n";
+            }
+        }
+    }
+    outputDOT = outputDOT % "}\n";
+
+    //create a .dot file in the temporary directory
+    QString dotFilePath = Application::instance()->getProject()->generateUniqueTmpFilePath("dot");
+
+    //open the file for output
+    QFile outputDotFile( dotFilePath );
+    outputDotFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputDotFile);
+
+    //write out dot syntax
+    out << outputDOT << '\n';
+
+    outputDotFile.close();
+
+    //make a tmp PostScript file
+    QString psFilePath = Application::instance()->getProject()->generateUniqueTmpFilePath("ps");
+
+    //parse the dot file and render a PostScript file
+    GraphViz::makePSfromDOT( dotFilePath, psFilePath );
+
+    //return the path to the generated tmp PostScript file
+    tmpPostscriptFilePath = psFilePath;
 }

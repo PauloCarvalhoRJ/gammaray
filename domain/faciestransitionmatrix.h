@@ -6,6 +6,28 @@
 
 class CategoryDefinition;
 
+/**
+ * A facies transition matrix is a file containing counts (normally) of transitions from a facies in a row
+ * to a facies in a column.  Some applications require that the counts be converted to probabilities
+ * or proportions between 0.0 and 1.0.
+ *
+ * The file is a tab-separated text file like the example below (names are the name property of
+ * the refered CategoryDefinition object whose name is in m_associatedCategoryDefinitionName member):
+ *
+ *     LMT	ESF	CRT	BRC	CAR	CRD	DOL	CLH	SLX	TUF	TRV
+ * LMT	0	40	30	9	36	2	4	0	1	0	0
+ * ESF	48	0	13	1	165	4	4	0	0	0	0
+ * CRT	24	24	0	2	91	15	2	1	2	2	2
+ * BRC	9	4	4	0	3	0	0	1	0	0	0
+ * CAR	33	160	90	7	0	26	7	1	6	1	1
+ * CRD	3	5	20	1	19	0	0	0	0	0	0
+ * DOL	5	0	3	1	8	0	0	0	0	0	0
+ * CLH	0	1	2	0	0	0	0	0	0	0	0
+ * SLX	0	2	4	0	4	0	0	0	0	0	0
+ * TUF	0	0	3	0	0	0	0	0	0	0	0
+ * TRV	0	0	0	0	2	1	0	0	0	0	0
+ *
+ */
 class FaciesTransitionMatrix : public File
 {
 public:
@@ -21,19 +43,46 @@ public:
     /**
      * @param associatedCategoryDefinition Pass nullptr to unset the value.
      */
-    void setInfo(QString associatedCategoryDefinitionName );
+    void setInfo( QString associatedCategoryDefinitionName );
 
     /** Sets point set metadata from the accompaining .md file, if it exists.
-     Nothing happens if the metadata file does not exist.  If it exists, it calls
-     #setInfo() with the metadata read from the .md file.*/
+     * Nothing happens if the metadata file does not exist.  If it exists, it calls
+     * #setInfo() with the metadata read from the .md file.
+     */
     void setInfoFromMetadataFile();
+
+    /**
+     * This method populates m_columnHeadersFaciesNames and m_columnHeadersFaciesNames with
+     * the facies names of the category definition refered by m_associatedCategoryDefinitionName.
+     * It also populates m_transitionProbabilities with zeroes.
+     * This method is useful when building a FTM from scratch instead of reading from a file.
+     * You must set the category definition name with a call to setInfo() or to setInfoFromMetadataFile()
+     * prior to calling this method otherwise an error will ensue.
+     */
+    void initialize();
+
+    /**
+     * Increments by one unit the value in this matrix given two facies codes.
+     * Recalling that a FTM matrix is read as the transition count/probability
+     * from a facies in a line to a facies in a column.
+     * An error is printed to the program's message pane if the CategoryDefinition object
+     * this FTM refers to cannot be found for some reason.
+     * Nothing happens if the passed code does not exist in the CategoryDefinition.
+     */
+    void incrementCount( int faciesCodeFrom, int faciesCodeTo );
+
+    /**
+     * Adds the values of this matrix with those of the passed FTM.
+     * Nothing happens if both FTMs are not compatible for addition like mathematical matrices.
+     */
+    void add( const FaciesTransitionMatrix& otherFTM );
 
     /**
      * Returns the pointer to the CategoryDefinition object whose name is
      * in m_associatedCategoryDefinitionName.  Returns nullptr it the name
      * is not set or the object with the name does not exist.
      */
-    CategoryDefinition* getAssociatedCategoryDefinition();
+    CategoryDefinition* getAssociatedCategoryDefinition() const;
 
     /** Sums all the values in the matrix and returns it.
      * This value makes sense if this matrix is storing facies
@@ -41,14 +90,14 @@ public:
      * Do not forget to load the matrix previously with readFromFS(), otherwise
      * zero will be returned.
      */
-    double getTotal();
+    double getTotal() const;
 
     /**
      * Sums all values in a row.  First row has index 0.
      * Do not forget to load the matrix previously with readFromFS(), otherwise
      * zero will be returned.
      */
-    double getSumOfRow( int rowIndex );
+    double getSumOfRow( int rowIndex ) const;
 
     /**
      * Shortcut to getTotal() - getSumOfRow(rowIndex).
@@ -60,33 +109,33 @@ public:
      * Do not forget to load the matrix previously with readFromFS(), otherwise
      * zero will be returned.
      */
-    double getSumOfColumn( int columnIndex );
+    double getSumOfColumn( int columnIndex ) const;
 
-    int getColumnCount();
-    int getRowCount();
-    QString getColumnHeader( int columnIndex );
-    QString getRowHeader( int rowIndex );
-    double getValue( int rowIndex, int colIndex );
+    int getColumnCount() const;
+    int getRowCount() const;
+    QString getColumnHeader( int columnIndex ) const;
+    QString getRowHeader( int rowIndex ) const;
+    double getValue( int rowIndex, int colIndex ) const;
     double getValueMax();
 
     /** Returns the color assigned to the category of the given column.
      * A default color is returned if no category definition is associated
      * or the category name is not found.
      */
-    QColor getColorOfCategoryInColumnHeader( int columnIndex );
+    QColor getColorOfCategoryInColumnHeader( int columnIndex ) const;
 
     /** Returns the color assigned to the category of the given row.
      * A default color is returned if no category definition is associated
      * or the category name is not found.
      */
-    QColor getColorOfCategoryInRowHeader( int rowIndex );
+    QColor getColorOfCategoryInRowHeader( int rowIndex ) const;
 
     /**
      * Returns the upward transition probability from one facies to another.  This value makes sense
      * for transition values stored as counts (count matrix).
      * The value is computed as getValue( fromFaciesRowIndex, toFaciesColIndex ) / getSumOfRow( fromFaciesRowIndex )
      */
-    double getUpwardTransitionProbability( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getUpwardTransitionProbability( int fromFaciesRowIndex, int toFaciesColIndex ) const;
 
     /**
      * Returns the downward transition probability from one facies to another.  This value makes sense
@@ -94,6 +143,22 @@ public:
      * The value is computed as getValue( fromFaciesColumnIndex, toFaciesRowIndex ) / getSumOfColumn( fromFaciesColumnIndex )
      */
     double getDownwardTransitionProbability(int toFaciesRowIndex , int fromFaciesColumnIndex);
+
+    /**
+     * Returns the transition rate value as a function of transition probabilities.
+     * This value is calculated as:
+     * For faciesRowIndex == faciesColumnIndex (auto-transiography):
+     *         -1 / meanSizeForFaciesInRow
+     * For faciesRowIndex != faciesColumnIndex (cross-transiography):
+     *         transition_probability / meanSizeForFaciesInRow
+     * See Li W., 2007 (Transiograms for Characterizing Spatial Variability of Soil Classes.)
+     * @param meanSizeForFaciesInRow The mean size of the units (e.g. length, thickness, etc.) where the facies
+     *                               specified by the faciesRowIndex parameter appears.  This parameter should be taken
+     *                               from another source (e.g. computed from a data set or entered by the user).
+     * @param upward If true, uses the transtion probability returned by getUpwardTransitionProbability(), otherwise,
+     *               by getDownwardTransitionProbability().
+     */
+    double getTransitionRate( int faciesRowIndex, int faciesColumnIndex, double meanSizeForFaciesInRow, bool upward );
 
     /**
      * Returns the sum of post-depositional entropies for a given facies with respect to all other facies.
@@ -123,7 +188,7 @@ public:
      * Returns the probability of the transition from one facies to another that occur in a random manner.
      * The value is computed as getSumOfColumn( toFaciesColIndex ) / ( getTotal() - getSumOfRow( fromFaciesRowIndex ) )
      */
-    double getIndependentTrail( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getIndependentTrail( int fromFaciesRowIndex, int toFaciesColIndex ) const;
 
     /**
      * This value highlight probabilities of occurrence greater than if the sequence were random.
@@ -131,7 +196,7 @@ public:
      * Great negative values indicate a downward correlation (less random downward sequence).
      * It is computed as getUpwardTransitionProbability(fromFaciesRowIndex, toFaciesColIndex) - getIndependentTrail(fromFaciesRowIndex, toFaciesColIndex)
      */
-    double getDifference( int fromFaciesRowIndex, int toFaciesColIndex );
+    double getDifference( int fromFaciesRowIndex, int toFaciesColIndex ) const;
     double getMaxAbsDifference( );
 
     /**
@@ -156,6 +221,28 @@ public:
      * over all rows (i's) and columns (j's).
      */
     double getChiSquared();
+
+    /** Informs whether the given column has only zeroes. */
+    bool isColumnZeroed( int j ) const;
+
+    /** Informs whether the given row has only zeroes. */
+    bool isRowZeroed( int i ) const;
+
+    /** Removes the given column from the FTM. */
+    void removeColumn( int j );
+
+    /** Removes the given row from the FTM. */
+    void removeRow( int i );
+
+    /** Returns the index of the row whose header equals the given name.
+     * Returns -1 if the name is not found.
+     */
+    int getRowIndexOfCategory( const QString& faciesName );
+
+    /** Returns the index of the column whose header equals the given name.
+     * Returns -1 if the name is not found.
+     */
+    int getColumnIndexOfCategory( const QString& faciesName );
 
     // ProjectComponent interface
 public:
@@ -182,7 +269,7 @@ protected:
     std::vector<QString> m_columnHeadersFaciesNames;
     std::vector<QString> m_lineHeadersFaciesNames;
     //outer vector: each line; inner vector: each value (columns)
-    std::vector< std::vector < double> > m_transitionProbabilities;
+    std::vector< std::vector < double > > m_transitionCounts;
 
     spectral::array toSpectralArray();
 };
