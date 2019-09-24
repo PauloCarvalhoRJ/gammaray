@@ -36,70 +36,8 @@
        <string>IJK Clipping</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout">
-       <item row="0" column="1">
-        <widget class="QLabel" name="lblIlowClip">
-         <property name="text">
-          <string>TextLabel</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLabel" name="lblIhighClip">
-         <property name="text">
-          <string>TextLabel</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QLabel" name="lblJlowClip">
-         <property name="text">
-          <string>TextLabel</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
-        <widget class="QLabel" name="lblJhighClip">
-         <property name="text">
-          <string>TextLabel</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QSlider" name="sldILowClip">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>10</number>
-         </property>
-         <property name="tracking">
-          <bool>false</bool>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="tickPosition">
-          <enum>QSlider::TicksBelow</enum>
-         </property>
-         <property name="tickInterval">
-          <number>1</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QSlider" name="sldIHighClip">
+       <item row="5" column="2">
+        <widget class="QSlider" name="sldKHighClip">
          <property name="minimum">
           <number>1</number>
          </property>
@@ -107,74 +45,6 @@
           <number>10</number>
          </property>
          <property name="value">
-          <number>10</number>
-         </property>
-         <property name="tracking">
-          <bool>false</bool>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="tickPosition">
-          <enum>QSlider::TicksBelow</enum>
-         </property>
-         <property name="tickInterval">
-          <number>1</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>I (inline) clipping:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>J (cross line) clipping:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>K (slice) clipping:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="2">
-        <widget class="QSlider" name="sldJHighClip">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <number>10</number>
-         </property>
-         <property name="value">
-          <number>10</number>
-         </property>
-         <property name="tracking">
-          <bool>false</bool>
-         </property>
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="tickPosition">
-          <enum>QSlider::TicksBelow</enum>
-         </property>
-         <property name="tickInterval">
-          <number>1</number>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QSlider" name="sldKLowClip">
-         <property name="minimum">
-          <number>1</number>
-         </property>
-         <property name="maximum">
           <number>10</number>
          </property>
          <property name="tracking">
@@ -213,8 +83,30 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="2">
-        <widget class="QSlider" name="sldKHighClip">
+       <item row="5" column="1">
+        <widget class="QSlider" name="sldKLowClip">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10</number>
+         </property>
+         <property name="tracking">
+          <bool>false</bool>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="tickPosition">
+          <enum>QSlider::TicksBelow</enum>
+         </property>
+         <property name="tickInterval">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QSlider" name="sldJHighClip">
          <property name="minimum">
           <number>1</number>
          </property>
@@ -235,6 +127,114 @@
          </property>
          <property name="tickInterval">
           <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>K (slice) clipping:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>J (cross line) clipping:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label">
+         <property name="text">
+          <string>I (inline) clipping:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QSlider" name="sldIHighClip">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10</number>
+         </property>
+         <property name="value">
+          <number>10</number>
+         </property>
+         <property name="tracking">
+          <bool>false</bool>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="tickPosition">
+          <enum>QSlider::TicksBelow</enum>
+         </property>
+         <property name="tickInterval">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QSlider" name="sldILowClip">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10</number>
+         </property>
+         <property name="tracking">
+          <bool>false</bool>
+         </property>
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="tickPosition">
+          <enum>QSlider::TicksBelow</enum>
+         </property>
+         <property name="tickInterval">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QLabel" name="lblJhighClip">
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QLabel" name="lblJlowClip">
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <widget class="QLabel" name="lblIhighClip">
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QLabel" name="lblIlowClip">
+         <property name="text">
+          <string>TextLabel</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -260,6 +260,61 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Color scaling</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <widget class="QLabel" name="label_4">
+         <property name="text">
+          <string>Color table min:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QDoubleSpinBox" name="spinColorMin">
+         <property name="minimum">
+          <double>-1000000000.000000000000000</double>
+         </property>
+         <property name="maximum">
+          <double>1000000000.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="2">
+        <layout class="QHBoxLayout" name="horizontalLayout">
+         <item>
+          <widget class="QLabel" name="label_6">
+           <property name="text">
+            <string>max:</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="spinColorMax">
+           <property name="minimum">
+            <double>-1000000000.000000000000000</double>
+           </property>
+           <property name="maximum">
+            <double>1000000000.000000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_5">
+         <property name="text">
+          <string>Color scaling:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="cmbScaling"/>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
@@ -273,8 +328,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>368</x>
-     <y>74</y>
+     <x>310</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
      <x>231</x>
@@ -289,8 +344,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>200</x>
-     <y>74</y>
+     <x>141</x>
+     <y>75</y>
     </hint>
     <hint type="destinationlabel">
      <x>231</x>
@@ -305,8 +360,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>368</x>
-     <y>137</y>
+     <x>310</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
      <x>231</x>
@@ -321,8 +376,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>200</x>
-     <y>137</y>
+     <x>141</x>
+     <y>149</y>
     </hint>
     <hint type="destinationlabel">
      <x>231</x>
@@ -337,8 +392,8 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>368</x>
-     <y>200</y>
+     <x>310</x>
+     <y>223</y>
     </hint>
     <hint type="destinationlabel">
      <x>231</x>
@@ -353,12 +408,60 @@
    <slot>onUserMadeChanges()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>200</x>
-     <y>200</y>
+     <x>141</x>
+     <y>223</y>
     </hint>
     <hint type="destinationlabel">
      <x>231</x>
      <y>129</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinColorMin</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>V3DCfgWidForAttributeIn3DCartesianGrid</receiver>
+   <slot>onUserMadeChanges()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>197</x>
+     <y>99</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>465</x>
+     <y>137</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>spinColorMax</sender>
+   <signal>valueChanged(double)</signal>
+   <receiver>V3DCfgWidForAttributeIn3DCartesianGrid</receiver>
+   <slot>onUserMadeChanges()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>401</x>
+     <y>99</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>464</x>
+     <y>110</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbScaling</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>V3DCfgWidForAttributeIn3DCartesianGrid</receiver>
+   <slot>onUserMadeChanges()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>256</x>
+     <y>182</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>464</x>
+     <y>199</y>
     </hint>
    </hints>
   </connection>

@@ -26,7 +26,7 @@ void ObjectGroup::save(QTextStream *txt_stream)
 }
 
 
-bool ObjectGroup::isFile()
+bool ObjectGroup::isFile() const
 {
     return false;
 }

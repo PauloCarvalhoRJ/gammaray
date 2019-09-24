@@ -38,6 +38,11 @@ CartesianGridSelector::~CartesianGridSelector()
     delete ui;
 }
 
+int CartesianGridSelector::getCurrentIndex()
+{
+    return ui->cmbGrids->currentIndex();
+}
+
 void CartesianGridSelector::onSelection(int /*index*/)
 {
     m_dataFile = nullptr;

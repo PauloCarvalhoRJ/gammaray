@@ -175,6 +175,9 @@ void SoftIndicatorCalibrationDialog::onSave()
         //set the new point set metadata
 		ps->setInfo( psData->getXindex(), psData->getYindex(), psData->getZindex(), psData->getNoDataValue() );
 
+        //loads contents from file
+        ps->loadData();
+
         //adds the point set to the project
         Application::instance()->getProject()->addDataFile( ps );
 
@@ -183,22 +186,21 @@ void SoftIndicatorCalibrationDialog::onSave()
 
 	} else if( dataFile->getFileType() == "CARTESIANGRID" ){
 
-		//assuming the data file is a Cartesian grid file
-		CartesianGrid* cgData = (CartesianGrid*)dataFile;
+        //create a new grid object corresponding to a file to be created in the tmp directory
+        CartesianGrid* cg = new CartesianGrid( newDataSetPath );
 
-		//create a new Cartesian grid object corresponding to a file created in the tmp directory
-		CartesianGrid* cg = new CartesianGrid( newDataSetPath );
+        //set the new grid metadata
+        cg->setInfoFromOtherCG( dynamic_cast<CartesianGrid*>(dataFile) );
 
-		//set the new Cartesian grid metadata
-		cg->setInfoFromOtherCG( cgData );
+        //loads contents from file
+        cg->loadData();
 
-		//adds the Cartesiangrid to the project
-		Application::instance()->getProject()->addDataFile( cg );
+        //adds the Cartesiangrid to the project
+        Application::instance()->getProject()->addDataFile( cg );
 
-		//refreshes the project tree
-		Application::instance()->refreshProjectTree();
-
-	}
+        //refreshes the project tree
+        Application::instance()->refreshProjectTree();
+    }
 }
 
 void SoftIndicatorCalibrationDialog::onPreview()

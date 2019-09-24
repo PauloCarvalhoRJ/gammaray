@@ -12,11 +12,6 @@ namespace QtCharts {
     class QLineSeries;
 }
 
-enum class TransiogramType : int {
-    AUTO_TRANSIOGRAM,
-    CROSS_TRANSIOGRAM
-};
-
 class TransiogramChartView : public QtCharts::QChartView
 {
     Q_OBJECT
@@ -43,6 +38,8 @@ public:
     /** Returns the values that make up the transiogram model curve
      * This is useful to display the same curve in some other QChartView widget. */
     QtCharts::QLineSeries *getSeriesTransiogramModel() const;
+
+    void setModelVisible( bool value );
 
 Q_SIGNALS:
     /** Listening clients must use the get*() methods to retrieve the updated model parameters. */
@@ -73,6 +70,7 @@ private:
     bool m_mouseDown;
     QString m_headFaciesName;
     QString m_tailFaciesName;
+    bool m_modelVisible;
     void showOrHideCrossHairs();
     void updateModelSeries();
 };

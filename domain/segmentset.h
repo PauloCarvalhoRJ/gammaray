@@ -29,15 +29,24 @@ public:
      #setInfo() with the metadata read from the .md file.*/
     void setInfoFromMetadataFile();
 
+    /**
+     * Sets segment set metadata from the passed segment set. This is useful to make
+     * duplicates of or to extend existing segment sets.
+     */
+    void setInfoFromAnotherSegmentSet( SegmentSet* otherSS );
+
     /** The inherited getXindex(), getYindex() and getZindex() from PointSet are the
      * coordinates of the initial segment. First index is 1 (GEO-EAS indexes).
      */
-    int getXFinalIndex();
-    int getYFinalIndex();
-    int getZFinalIndex();
+    int getXFinalIndex() const;
+    int getYFinalIndex() const;
+    int getZFinalIndex() const;
 
     /** Returns the length of the iRecord-th segment. */
     double getSegmentLenght( int iRecord );
+
+    /** Does the same as getSegmentLenght(), but is const, which requires a prior call to DataFile::readFromFS()." */
+    double getSegmentLenghtConst( int iRecord ) const;
 
     /** Returns the distance between the end of the iRecord-th segment
      * to the beginning of the (iRecord+1)-th segment.
@@ -45,6 +54,32 @@ public:
      */
     double getDistanceToNextSegment( int iRecord );
 
+    /**
+     * Adds a new variable containing the lengths of the segments.  The values can be useful
+     * for debiasing, for instance.
+     */
+    void computeSegmentLenghts( QString variable_name );
+
+    /**
+     * Returns (via output parameters) the bounding box of a segment given the corresponding data line index.
+     */
+    void getBoundingBox( uint dataLineIndex,
+                         double& minX, double& minY, double& minZ,
+                         double& maxX, double& maxY, double& maxZ ) const;
+
+    /**
+     * Returns wheter the given column index corresponds to one of the coordinates (x, y or z / initial or final).
+     * First index is 0.
+     */
+    virtual bool isCoordinate( uint column ) const;
+
+    /**
+     * Creates a new PointSet object containing the data of this SegmentSet.
+     * The coordinates of the point set are that of the mid points of the segments.
+     * The function creates a new physical data file matching the newly created PointSet
+     * in the project's directory using the passed name as file name.
+     */
+    PointSet* toPointSetMidPoints(const QString &psName) const;
 
     // ProjectComponent interface
 public:
@@ -67,8 +102,13 @@ public:
 public:
     /** NOTE: this returns the middle point of the segment. */
     virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
+
+    // PointSet interface
+public:
+    virtual void setInfoFromOtherPointSet( PointSet* otherPS );
 
 protected:
     int _x_final_field_index; //index start at 1. Zero means not set.

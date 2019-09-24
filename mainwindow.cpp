@@ -62,7 +62,7 @@
 #include "dialogs/valuespairsdialog.h"
 #include "dialogs/indicatorkrigingdialog.h"
 #include "dialogs/gridresampledialog.h"
-#include "spatialindex/spatialindexpoints.h"
+#include "spatialindex/spatialindex.h"
 #include "softindiccalib/softindicatorcalibrationdialog.h"
 #include "dialogs/cokrigingdialog.h"
 #include "dialogs/multivariogramdialog.h"
@@ -77,6 +77,9 @@
 #include "dialogs/projectfilechoosedialog.h"
 #include "dialogs/entropycyclicityanalysisdialog.h"
 #include "dialogs/faciesrelationshipdiagramdialog.h"
+#include "dialogs/transiogramdialog.h"
+#include "dialogs/mcrfsimdialog.h"
+#include "dialogs/lvadatasetdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -93,6 +96,8 @@
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/gabor/gaborfilterdialog.h"
 #include "imagejockey/wavelet/wavelettransformdialog.h"
+#include "domain/auxiliary/valuestransferer.h"
+#include "domain/verticaltransiogrammodel.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -100,7 +105,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_subMenuClassifyInto( new QMenu("Classify into",       this) ),
     m_subMenuClassifyWith( new QMenu("Classify with",       this) ),
     m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
-    m_subMenuMapAs( new QMenu("Map as", this) )
+    m_subMenuMapAs( new QMenu("Map as", this) ),
+    m_subMenuFlipData( new QMenu("Flip data", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -468,7 +474,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Plot", this, SLOT(onDisplayExperimentalVariogram()));
                 _projectContextMenu->addAction("Fit variogram model...", this, SLOT(onFitVModelToExperimentalVariogram()));
             }
-            if( _right_clicked_file->getFileType() == "VMODEL" ){
+            if( Util::isIn( _right_clicked_file->getFileType(), {"VMODEL","VERTICALTRANSIOGRAMMODEL"} ) ){
                 _projectContextMenu->addAction("Review", this, SLOT(onDisplayVariogramModel()));
             }
             if( _right_clicked_file->getFileType() == "POINTSET" ){
@@ -496,6 +502,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Set/Change associated category definition", this, SLOT(onSetCategoryDefinitionOfAFasciesTransitionMatrix()));
                 _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
                 _projectContextMenu->addAction("Facies relationship diagram", this, SLOT(onFaciesRelationShipDiagram()));
+            }
+            if( _right_clicked_file->getFileType() == "SEGMENTSET" ){
+                _projectContextMenu->addAction("Compute segment lengths", this, SLOT(onSegmentLengths()));
+                _projectContextMenu->addAction("Convert to point set (mid points)", this, SLOT(onExtractMidPoints()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -537,6 +547,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
+            }
+            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET","GEOGRID"} ) ){
                 makeMenuCategorize();
                 _projectContextMenu->addMenu( m_subMenuCategorize );
             }
@@ -550,11 +562,17 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
                 _projectContextMenu->addAction("Automatic variogram fitting", this, SLOT(onAutoVarFit()));
+                // TODO: ROAD WORK
+                //_projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
                 if( cg->getNReal() > 1){ //if parent file is Cartesian grid and has more than one realization
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
                 }
+            }
+            if( Util::isIn( parent_file->getFileType(), {"CARTESIANGRID","GEOGRID"} ) ){
+                makeMenuFlipData();
+                _projectContextMenu->addMenu( m_subMenuFlipData );
             }
             if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
                 _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
@@ -678,13 +696,13 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             PointSet* pointSet = nullptr;
             GeoGrid* geoGrid = nullptr;
             if( file1 ){
-                if( file1->getFileType() == "POINTSET" )
+                if( Util::isIn( file1->getFileType(), { "POINTSET", "SEGMENTSET" } ) )
                     pointSet = dynamic_cast<PointSet*>( file1 );
                 else if( file1->getFileType() == "GEOGRID" )
                     geoGrid = dynamic_cast<GeoGrid*>( file1 );
             }
             if( file2 ){
-                if( file2->getFileType() == "POINTSET" )
+                if( Util::isIn( file2->getFileType(), { "POINTSET", "SEGMENTSET" } ) )
                     pointSet = dynamic_cast<PointSet*>( file2 );
                 else if( file2->getFileType() == "GEOGRID" )
                     geoGrid = dynamic_cast<GeoGrid*>( file2 );
@@ -730,6 +748,38 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     menu_caption.append(" onto ");
                     menu_caption.append( cg->getName());
                     _projectContextMenu->addAction(menu_caption, this, SLOT(onProjectGrids()));
+                }
+            }
+        }
+        //if one object is a property of any data set and the other is another data set then transfer property can be used.
+        //The values are transfered in spatial (XYZ) domain.
+        if( index1.isValid() && index2.isValid() ){
+            File* file = nullptr;
+            Attribute* at = nullptr;
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+                file = static_cast<File*>( index2.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isAttribute() ){
+                at = static_cast<Attribute*>( index1.internalPointer() );
+            }
+            //determine the destination data set of the transfer operation
+            DataFile* ds = nullptr;
+            ds = dynamic_cast<DataFile*>( file );
+            //if user selected an attribute of a file
+            if( at && ds && at->getContainingFile() != file ){
+                //determine the origin data set.
+                DataFile* dsOrigin = nullptr;
+                File* parentFileOfSelectedAttribute = at->getContainingFile();
+                if( parentFileOfSelectedAttribute->isDataFile() )
+                    dsOrigin = static_cast<DataFile*>( parentFileOfSelectedAttribute );
+                if( dsOrigin ){
+                    _right_clicked_attribute = at;
+                    _right_clicked_data_file = ds;
+                    QString menu_caption = "Transfer ";
+                    menu_caption.append( dsOrigin->getName() + "/" + at->getName() );
+                    menu_caption.append(" to ");
+                    menu_caption.append( ds->getName());
+                    _projectContextMenu->addAction(menu_caption, this, SLOT(onTransferProperty()));
                 }
             }
         }
@@ -1192,9 +1242,16 @@ void MainWindow::onFitVModelToExperimentalVariogram()
 
 void MainWindow::onDisplayVariogramModel()
 {
-    //get pointer to the variogram model object right-clicked by the user
-    VariogramModel* vm = (VariogramModel*)_right_clicked_file;
-    this->createOrReviewVariogramModel( vm );
+    if( _right_clicked_file->getFileType() == "VMODEL" ){
+        //get pointer to the variogram model object right-clicked by the user
+        VariogramModel* vm = (VariogramModel*)_right_clicked_file;
+        this->createOrReviewVariogramModel( vm );
+    }
+    if( _right_clicked_file->getFileType() == "VERTICALTRANSIOGRAMMODEL" ){
+        //get pointer to the variogram model object right-clicked by the user
+        VerticalTransiogramModel* vtm = dynamic_cast<VerticalTransiogramModel*>( _right_clicked_file );
+        this->createOrReviewVerticalTransiogramModel( vtm );
+    }
 }
 
 void MainWindow::onCreateVariogramModel()
@@ -1374,7 +1431,7 @@ void MainWindow::onLookForDuplicates()
                                              0.001, 0.0, 1000.0, 3, &ok);
     if( ok ){
         PointSet* ps = (PointSet*)_right_clicked_file;
-		SpatialIndexPoints sip;
+		SpatialIndex sip;
 		sip.fill( ps, tolerance );
         uint totFileDataLines = ps->getDataLineCount();
         uint headerLineCount = Util::getHeaderLineCount( ps->getPath() );
@@ -2592,6 +2649,119 @@ void MainWindow::onCreateGeoGridMultiZone()
 
 }
 
+void MainWindow::onTransferProperty()
+{
+    //open the renaming dialog
+    bool ok;
+    QString new_attribute_name = QInputDialog::getText(this, "Name the new attribute",
+                                             "New attribute for destination data file:",
+                                             QLineEdit::Normal,
+                                             _right_clicked_attribute->getName(),
+                                             &ok);
+    if( ! ok )
+        return;
+
+    ValuesTransferer vt( new_attribute_name, _right_clicked_data_file, _right_clicked_attribute );
+    ok = vt.transfer();
+
+    if( ! ok )
+        QMessageBox::critical( this, "Error", "Transfer of values failed.  Check the messages panel.");
+}
+
+void MainWindow::onMCRFSim()
+{
+    MCRFSimDialog* mcrfd = new MCRFSimDialog( this );
+    mcrfd->show();
+}
+
+void MainWindow::onSegmentLengths()
+{
+    SegmentSet* ss = dynamic_cast<SegmentSet*>( _right_clicked_file );
+    if( ss ){
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with segment lenghts:", QLineEdit::Normal, "segment_lengths", &ok);
+        if( ! ok )
+            return;
+        ss->computeSegmentLenghts( var_name );
+    }
+}
+
+void MainWindow::onLVADataSet()
+{
+    LVADataSetDialog* lvad = new LVADataSetDialog( _right_clicked_attribute );
+    lvad->show();
+}
+
+void MainWindow::onFlipEastWest()
+{
+    GridFile* gf = dynamic_cast<GridFile*>( _right_clicked_attribute->getContainingFile() );
+    if( gf ){
+        QString suggested_name = _right_clicked_attribute->getName() + "_flippedU";
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with flipped data:", QLineEdit::Normal, suggested_name, &ok);
+        if( ! ok )
+            return;
+        gf->flipData( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, var_name, FlipDataDirection::U_DIRECTION );
+    }
+}
+
+void MainWindow::onFlipNorthSouth()
+{
+    GridFile* gf = dynamic_cast<GridFile*>( _right_clicked_attribute->getContainingFile() );
+    if( gf ){
+        QString suggested_name = _right_clicked_attribute->getName() + "_flippedV";
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with flipped data:", QLineEdit::Normal, suggested_name, &ok);
+        if( ! ok )
+            return;
+        gf->flipData( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, var_name, FlipDataDirection::V_DIRECTION );
+    }
+}
+
+void MainWindow::onFlipTopBottom()
+{
+    GridFile* gf = dynamic_cast<GridFile*>( _right_clicked_attribute->getContainingFile() );
+    if( gf ){
+        QString suggested_name = _right_clicked_attribute->getName() + "_flippedW";
+        //open the renaming dialog
+        bool ok;
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
+                                                 "New variable with flipped data:", QLineEdit::Normal, suggested_name, &ok);
+        if( ! ok )
+            return;
+        gf->flipData( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, var_name, FlipDataDirection::W_DIRECTION );
+    }
+}
+
+void MainWindow::onExtractMidPoints()
+{
+    SegmentSet* ss = dynamic_cast<SegmentSet*>( _right_clicked_file );
+
+    QString suggested_name = ss->getName() + "_as_midPoints";
+    //open the renaming dialog
+    bool ok;
+    QString ps_file_name = QInputDialog::getText(this, "Name the new file",
+                                                 "New point set file:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //create the mid-point point set
+    ss->readFromFS();
+    PointSet* ps = ss->toPointSetMidPoints( ps_file_name );
+
+    //attach the object to the project tree
+    Application::instance()->getProject()->addDataFile( ps );
+
+    //show the newly created object in main window's project tree
+    Application::instance()->refreshProjectTree();
+}
+
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
@@ -2636,24 +2806,31 @@ void MainWindow::onUnfold()
 
     //open the renaming dialog
     bool ok;
-    QString new_file_name = QInputDialog::getText(this, "New point set file",
-                                             "New point set file name:", QLineEdit::Normal, suggested_name, &ok);
+    QString new_file_name = QInputDialog::getText(this, "New " + _right_clicked_point_set->getFileType() + " file",
+                                             "New " + _right_clicked_point_set->getFileType() + " file name:", QLineEdit::Normal, suggested_name, &ok);
     if( ! ok )
         return;
 
-    //create a new point set file
-    PointSet* psUVW = _right_clicked_geo_grid->unfold( _right_clicked_point_set, new_file_name );
+    PointSet* psUVW = nullptr;
+    if( _right_clicked_point_set->getFileType() == "POINTSET" )
+        //create a new point set file
+        psUVW = _right_clicked_geo_grid->unfold( _right_clicked_point_set, new_file_name );
+    else if( _right_clicked_point_set->getFileType() == "SEGMENTSET" ){
+        //create a new segment set file
+        psUVW = _right_clicked_geo_grid->unfold( dynamic_cast<SegmentSet*>(_right_clicked_point_set), new_file_name );
+    }else
+        Application::instance()->logError("MainWindow::onUnfold(): cannot unfold data of type " + psUVW->getFileType() + ".");
 
     if( ! psUVW ){
         QMessageBox::critical( this, "Error", "Unfolding failed.  Check the messages panel.");
         return;
     }
 
-	//update the metadata file of the unfolded point set
-	psUVW->updateMetaDataFile();
+    //update the metadata file of the unfolded data set
+    psUVW->updateMetaDataFile();
 
 	//attach the object to the project tree
-	Application::instance()->getProject()->addDataFile( psUVW );
+    Application::instance()->getProject()->addDataFile( psUVW );
 
 	//show the newly created object in main window's project tree
 	Application::instance()->refreshProjectTree();
@@ -2932,6 +3109,14 @@ void MainWindow::makeMenuCategorize()
     }
 }
 
+void MainWindow::makeMenuFlipData()
+{
+    m_subMenuFlipData->clear(); //remove any previously added item actions
+    m_subMenuFlipData->addAction( "in U direction (East-West)", this,   SLOT(onFlipEastWest()));
+    m_subMenuFlipData->addAction( "in V direction (North-South)", this, SLOT(onFlipNorthSouth()));
+    m_subMenuFlipData->addAction( "in W direction (Top-Bottom)", this,  SLOT(onFlipTopBottom()));
+}
+
 void MainWindow::makeMenuMapAs()
 {
     m_subMenuMapAs->clear(); //remove any previously added item actions
@@ -2948,6 +3133,12 @@ void MainWindow::makeMenuMapAs()
             }
         }
     }
+}
+
+void MainWindow::createOrReviewVerticalTransiogramModel(VerticalTransiogramModel *vtm)
+{
+    TransiogramDialog* td = new TransiogramDialog( vtm, this );
+    td->show();
 }
 
 void MainWindow::doAddDataFile(const QString filePath )
@@ -3106,6 +3297,6 @@ void MainWindow::openCokrigingNewcokb3d()
 
 void MainWindow::openTransiography()
 {
-    TransiogramDialog* td = new TransiogramDialog( this );
+    TransiogramDialog* td = new TransiogramDialog( nullptr, this );
     td->show();
 }

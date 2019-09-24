@@ -10,6 +10,8 @@
 #include <QValueAxis>
 #include <QChartView>
 #include <QInputDialog>
+#include <QClipboard>
+#include <QScrollBar>
 
 #include "domain/datafile.h"
 #include "domain/application.h"
@@ -25,9 +27,13 @@
 #include "geostats/geostatsutils.h"
 #include "dialogs/dynamicfaciesrelationshipdiagramdialog.h"
 
-TransiogramDialog::TransiogramDialog(QWidget *parent) :
+TransiogramDialog::TransiogramDialog(VerticalTransiogramModel *vtm,
+                                     QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::TransiogramDialog)
+    ui(new Ui::TransiogramDialog),
+    m_vSizePerTransiogram( 100 ),
+    m_hSizePerTransiogram( 200 ),
+    m_vtm( vtm )
 {
     using namespace QtCharts;
 
@@ -39,6 +45,13 @@ TransiogramDialog::TransiogramDialog(QWidget *parent) :
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     setAcceptDrops(true);
+
+    //if client code passed a non-null VerticalTransiogramModel, we
+    //must display the charts with the model curves
+    if( m_vtm ){
+        m_vtm->readFromFS();
+        makeChartsForModelReview();
+    }
 }
 
 TransiogramDialog::~TransiogramDialog()
@@ -53,7 +66,7 @@ void TransiogramDialog::dragEnterEvent(QDragEnterEvent *e)
 
 void TransiogramDialog::dragMoveEvent(QDragMoveEvent *e)
 {
-
+    Q_UNUSED( e );
 }
 
 void TransiogramDialog::dropEvent(QDropEvent *e)
@@ -128,6 +141,158 @@ void TransiogramDialog::clearCharts()
     m_sumChartViews.clear();
 }
 
+void TransiogramDialog::makeChartsForModelReview()
+{
+    using namespace QtCharts;
+
+    //get pointer to the grid layout (assumes it is a grid layout)
+    QGridLayout* gridLayout = static_cast<QGridLayout*>( ui->frmTransiograms->layout() );
+
+    //place a frame in the top left corner of the grid
+    QFrame* topLeftCorner = new QFrame();
+    gridLayout->addWidget( topLeftCorner, 0, 0 );
+
+    //lay out the column headers.
+    for( int j = 0; j < m_vtm->getRowOrColCount(); ++j ){
+        QLabel* faciesLabel = new QLabel();
+        faciesLabel->setAlignment( Qt::AlignCenter );
+        QColor color = m_vtm->getColorOfCategory( j );
+        faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
+                                                                   QString::number(color.red()) + "," +
+                                                                   QString::number(color.green()) + "," +
+                                                                   QString::number(color.blue()) +"); }");
+        QString fontColor = "black";
+        if( Util::isDark( color ) )
+            fontColor = "white";
+        faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + m_vtm->getNameOfCategory( j ) + "</b></font>");
+        gridLayout->addWidget( faciesLabel, 0, j+1 );
+    }
+
+    //put a last label corresponding to the sum of transiograms
+    {
+        QLabel* faciesLabel = new QLabel();
+        faciesLabel->setAlignment( Qt::AlignCenter );
+        QColor color = Qt::black;
+        faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
+                                                                   QString::number(color.red()) + "," +
+                                                                   QString::number(color.green()) + "," +
+                                                                   QString::number(color.blue()) +"); }");
+        faciesLabel->setText( "<font color=\"white\"><b>BALANCE</b></font>");
+        gridLayout->addWidget( faciesLabel, 0, m_vtm->getRowOrColCount()+1 );
+    }
+
+    // for each row (facies in the rows of the FTMs (one per h)
+    for( int iHeadFacies = 0; iHeadFacies < m_vtm->getRowOrColCount(); ++iHeadFacies ){
+
+        //-------------------------------lay out the line headers.------------------------
+        QLabel* faciesLabel = new QLabel();
+        faciesLabel->setAlignment( Qt::AlignCenter );
+        QColor color = m_vtm->getColorOfCategory( iHeadFacies );
+        faciesLabel->setStyleSheet( "QLabel {background-color: rgb(" +
+                                                                   QString::number(color.red()) + "," +
+                                                                   QString::number(color.green()) + "," +
+                                                                   QString::number(color.blue()) +"); color: rgb(0.5,0.5,0.5); }");
+        QString fontColor = "black";
+        if( Util::isDark( color ) )
+            fontColor = "white";
+        faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + m_vtm->getNameOfCategory( iHeadFacies ) + "</b></font>");
+        gridLayout->addWidget( faciesLabel, iHeadFacies+1, 0 );
+        //-------------------------------------------------------------------------
+
+        //loop to create a row of charts (for each column)
+        for( int jTailFacies = 0; jTailFacies < m_vtm->getRowOrColCount(); ++jTailFacies ){
+
+            int tailFaciesCode = m_vtm->getCodeOfCategory( jTailFacies );
+
+            //set the final display range as 3x the longest range amongst the transiogram curves of the model
+            double hFinal = m_vtm->getLongestRange() * 3.0;
+
+            //create the chart's axes
+            QValueAxis *axisY = new QValueAxis();
+            axisY->setRange( 0.0, 1.0 );
+            axisY->applyNiceNumbers();
+            axisY->setLabelFormat(m_formatForLabelsInYAxis);
+            QValueAxis *axisX = new QValueAxis();
+            axisX->setRange( 0.0, hFinal );
+            axisX->applyNiceNumbers();
+            axisX->setLabelFormat(m_formatForLabelsInXAxis);
+
+            //create a chart object to contain all the data series in the same chart area
+            QChart *chart = new QChart();
+            {
+                chart->legend()->hide();
+                //chart->addSeries( seriesExperimentalTransiogram );
+                //chart->addSeries( seriesSill );
+                //chart->createDefaultAxes();
+                //chart->axisX()->setRange( hInitial, hFinal );
+                //chart->axisY()->setRange( -1.0, 0.0 );
+
+                //putting all series in the same scale
+                //chart->setAxisX( axisX, seriesExperimentalTransiogram );
+                //chart->setAxisY( axisY, seriesExperimentalTransiogram );
+                //chart->setAxisX( axisX, seriesSill );
+                //chart->setAxisY( axisY, seriesSill );
+
+                //more space for the curves
+                chart->layout()->setContentsMargins(2, 2, 2, 2);
+                chart->setMargins(QMargins(2, 2, 2, 2));
+            }
+
+            //create a chart widget to render the chart object
+            TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
+            if( iHeadFacies == jTailFacies )
+                transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
+            TransiogramChartView *transiogramChartView = new TransiogramChartView( chart,
+                                                                                   transiogramType,
+                                                                                   hFinal,
+                                                                                   axisX,
+                                                                                   axisY,
+                                                                                   m_vtm->getNameOfCategory( iHeadFacies ),
+                                                                                   m_vtm->getNameOfCategory( jTailFacies )
+                                                                                 );
+            {
+                transiogramChartView->setRenderHint(QPainter::Antialiasing);
+                transiogramChartView->setMinimumHeight( 100 );
+                transiogramChartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
+                transiogramChartView->setModelParameters( m_vtm->getRange( iHeadFacies, jTailFacies ), m_vtm->getSill( iHeadFacies, jTailFacies ) );
+                //to be notified if transiogram model updates.
+                connect( transiogramChartView, SIGNAL(modelWasUpdated()), this, SLOT(onTransiogramModelUpdated()) );
+            }
+
+            //lay out chart widget in the grid layout so it is in accordance to the pair of facies
+            //as set in the FTM.
+            gridLayout->setRowStretch( iHeadFacies+1, 1 );
+            gridLayout->setColumnStretch( jTailFacies+1, 1 );
+            gridLayout->addWidget( transiogramChartView, iHeadFacies+1, jTailFacies+1 );
+            m_transiogramChartViews.push_back( transiogramChartView );
+        }//loop to create a row of charts (for each column)
+
+        //append an additional chart so the user can check whether the transiogram models
+        //sum to 1.0 at all h's.  Recall the transiograms model probabilities.  This means
+        //that, for Markovian transiograms, they must sum up to 1.0 along a row.
+        {
+            //create a chart object to contain all the data series in the same chart area
+            QChart *chart = new QChart();
+            {
+                chart->legend()->hide();
+                //more space for the curves
+                chart->layout()->setContentsMargins(2, 2, 2, 2);
+                chart->setMargins(QMargins(2, 2, 2, 2));
+            }
+            QtCharts::QChartView *sumChartView = new QtCharts::QChartView( chart );
+            gridLayout->setRowStretch( iHeadFacies+1, 1 );
+            gridLayout->setColumnStretch( m_vtm->getRowOrColCount()+1, 1 );
+            gridLayout->addWidget( sumChartView, iHeadFacies+1, m_vtm->getRowOrColCount()+1 );
+            m_sumChartViews.push_back( sumChartView );
+        }
+
+    }// for each row (facies in the rows of the FTMs (one per h)
+
+    ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * m_vtm->getRowOrColCount() ,
+                                                m_vSizePerTransiogram * m_vtm->getRowOrColCount() );
+
+}
+
 void TransiogramDialog::performCalculation()
 {
     using namespace QtCharts;
@@ -187,7 +352,7 @@ void TransiogramDialog::performCalculation()
                                                                    QString::number(color.green()) + "," +
                                                                    QString::number(color.blue()) +"); }");
         QString fontColor = "black";
-        if( color.lightnessF() < 0.6 )
+        if( Util::isDark( color ) )
             fontColor = "white";
         faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getColumnHeader( j ) + "</b></font>");
         gridLayout->addWidget( faciesLabel, 0, j+1 );
@@ -218,7 +383,7 @@ void TransiogramDialog::performCalculation()
                                                                    QString::number(color.green()) + "," +
                                                                    QString::number(color.blue()) +"); color: rgb(0.5,0.5,0.5); }");
         QString fontColor = "black";
-        if( color.lightnessF() < 0.6 )
+        if( Util::isDark( color ) )
             fontColor = "white";
         faciesLabel->setText( "<font color=\"" + fontColor + "\"><b>" + firstFTM.getRowHeader( iHeadFacies ) + "</b></font>");
         gridLayout->addWidget( faciesLabel, iHeadFacies+1, 0 );
@@ -318,11 +483,11 @@ void TransiogramDialog::performCalculation()
             QValueAxis *axisY = new QValueAxis();
             axisY->setRange( 0.0, 1.0 );
             axisY->applyNiceNumbers();
-            axisY->setLabelFormat("%i");
+            axisY->setLabelFormat(m_formatForLabelsInYAxis);
             QValueAxis *axisX = new QValueAxis();
             axisX->setRange( hInitial, hFinal );
             axisX->applyNiceNumbers();
-            axisX->setLabelFormat("%i");
+            axisX->setLabelFormat(m_formatForLabelsInXAxis);
 
             //create a chart object to contain all the data series in the same chart area
             QChart *chart = new QChart();
@@ -361,7 +526,7 @@ void TransiogramDialog::performCalculation()
                 transiogramChartView->setRenderHint(QPainter::Antialiasing);
                 transiogramChartView->setMinimumHeight( 100 );
                 transiogramChartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
-                transiogramChartView->setModelParameters( 3.0, globalProportionOfTailFacies );
+                transiogramChartView->setModelParameters( (hFinal-hInitial) * 0.33, globalProportionOfTailFacies ); //init model range with 1/3rd of the total experimental range
                 //to be notified if transiogram model updates.
                 connect( transiogramChartView, SIGNAL(modelWasUpdated()), this, SLOT(onTransiogramModelUpdated()) );
             }
@@ -395,6 +560,9 @@ void TransiogramDialog::performCalculation()
 
     }// for each row (facies in the rows of the FTMs (one per h)
 
+    ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * firstFTM.getColumnCount() ,
+                                                m_vSizePerTransiogram * firstFTM.getColumnCount() );
+
     Application::instance()->logInfo("Transiography completed.");
     QApplication::processEvents();
 }
@@ -408,43 +576,61 @@ void TransiogramDialog::onSave()
         DataFile* parentOfFirst = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
         CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
     } else {
-        Application::instance()->logError( "TransiogramDialog::onSave(): no attributes.", true );
-        return;
+        Application::instance()->logInfo( "TransiogramDialog::onSave(): no attributes. Assuming user is editing an existing model.", false );
+        if( m_vtm ){
+            CDofFirst = m_vtm->getCategoryDefinition();
+        } else {
+            Application::instance()->logError( "TransiogramDialog::onSave(): no attributes and no transiogram model to review. Aborted.", true );
+            return;
+        }
     }
     if ( ! CDofFirst ){
-        Application::instance()->logError( "TransiogramDialog::onSave(): null category definition.", true );
+        Application::instance()->logError( "TransiogramDialog::onSave(): null category definition. Aborted.", true );
         return;
     }
 
-    //propose a name for the new file
-    QString proposed_name = CDofFirst->getName() + "_Vertical_Transiogram_Model";
+    //determine whether we want to create a new transiogram model
+    bool isNew = false;
+    if( ! m_vtm )
+        isNew = true;
 
-    //open file rename dialog
-    bool ok;
-    QString new_transiogram_model_name = QInputDialog::getText(this, "Name the new file",
+    bool ok = true;
+    QString new_transiogram_model_name;
+    if( isNew ){
+        //propose a name for the new file
+        QString proposed_name = CDofFirst->getName() + "_Vertical_Transiogram_Model";
+        //open file rename dialog
+        new_transiogram_model_name = QInputDialog::getText(this, "Name the new file",
                                              "New vertical transiogram model file name:", QLineEdit::Normal,
-                                             proposed_name, &ok);
+                                                           proposed_name, &ok);
+    }
 
     //create and populate the new object
-    if (ok && !new_transiogram_model_name.isEmpty()){
+    if (ok && ( !new_transiogram_model_name.isEmpty() || !isNew )){
 
-        //creat the domain object
-        VerticalTransiogramModel* vtm = new VerticalTransiogramModel( Application::instance()->getProject()->getPath() + "/" + new_transiogram_model_name,
-                                                                      CDofFirst->getName() );
+        if( isNew )
+            //create the domain object
+            m_vtm = new VerticalTransiogramModel( Application::instance()->getProject()->getPath() + "/" + new_transiogram_model_name,
+                                                                 CDofFirst->getName() );
+        else
+            //reset the existing one
+            m_vtm->clearParameters();
 
         //get the transiogram parameters from the transiogram chart widgets.
         for( QWidget* w : m_transiogramChartViews ){
             TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
-            vtm->addParameters( tcvAspect->getHeadFaciesName(), tcvAspect->getTailFaciesName(),
+            m_vtm->addParameters( tcvAspect->getHeadFaciesName(), tcvAspect->getTailFaciesName(),
                                   { tcvAspect->getTransiogramStructureType(), tcvAspect->getRange(), tcvAspect->getSill() } );
         }
 
         //save it to file
-        vtm->writeToFS();
+        m_vtm->writeToFS();
 
-        //adds to the project tree
-        Application::instance()->getProject()->addVerticalTransiogramModel( vtm );
-        Application::instance()->refreshProjectTree();
+        if( isNew ){
+            //adds to the project tree
+            Application::instance()->getProject()->addVerticalTransiogramModel( m_vtm );
+            Application::instance()->refreshProjectTree();
+        }
     }
 }
 
@@ -481,6 +667,8 @@ void TransiogramDialog::onTransiogramModelUpdated()
 
         QChart *chart = sumChartView->chart();
 
+        Application::instance()->logErrorOff();
+
         //create a data series for the sum of transiogram model curve values
         QLineSeries *seriesSum = new QLineSeries();
         {
@@ -516,6 +704,7 @@ void TransiogramDialog::onTransiogramModelUpdated()
             }
         }
 
+        Application::instance()->logErrorOn();
 
         //create a data series (line in the chart) to represent graphically the 1.0 level for
         //the transiograms sum charts between the h's configured by the user
@@ -536,13 +725,13 @@ void TransiogramDialog::onTransiogramModelUpdated()
             axisY = new QValueAxis();
         axisY->setRange( 0.0, 2.0 );
         axisY->applyNiceNumbers();
-        axisY->setLabelFormat("%i");
+        axisY->setLabelFormat(m_formatForLabelsInYAxis);
         QValueAxis *axisX = dynamic_cast<QValueAxis *>( chart->axisX() );
         if( ! axisX )
             axisX = new QValueAxis();
         axisX->setRange( hInitial, hFinal );
         axisX->applyNiceNumbers();
-        axisX->setLabelFormat("%i");
+        axisX->setLabelFormat(m_formatForLabelsInXAxis);
         //-------------------------------------------------
 
         chart->removeAllSeries();
@@ -573,6 +762,67 @@ void TransiogramDialog::onDynamicFRD()
                 toleranceCoefficient,
                 this );
     dfrdd->show();
+}
+
+void TransiogramDialog::onCaptureExperimentalTransiography()
+{
+//    //turn off model visibility
+//    for( QWidget* w : m_transiogramChartViews ){
+//        TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
+//        tcvAspect->setModelVisible( false );
+//    }
+
+    //capture the transiogram widgets image
+    QRect rectangle = ui->frmTransiograms->frameRect();
+    QPixmap pixmap(rectangle.size());
+    ui->frmTransiograms->render(&pixmap, QPoint(), QRegion(rectangle));
+
+    //copy the image to clipboard
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setPixmap( pixmap,  QClipboard::Clipboard );
+    QMessageBox::information(this, "Plot snapshot", "The transiograms image has been copied to the clipboard. You can paste it to any application.");
+
+//    //turn back on model visibility
+//    for( QWidget* w : m_transiogramChartViews ){
+//        TransiogramChartView* tcvAspect = static_cast< TransiogramChartView* >( w );
+//        tcvAspect->setModelVisible( true );
+    //    }
+}
+
+void TransiogramDialog::onZoomIn()
+{
+
+    m_hSizePerTransiogram *= 1.25;
+    m_vSizePerTransiogram *= 1.25;
+    ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * m_sumChartViews.size() ,
+                                                m_vSizePerTransiogram * m_sumChartViews.size() );
+}
+
+void TransiogramDialog::onZoomOut()
+{
+    m_hSizePerTransiogram /= 1.25;
+    m_vSizePerTransiogram /= 1.25;
+    ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * m_sumChartViews.size() ,
+                                                m_vSizePerTransiogram * m_sumChartViews.size() );
+}
+
+void TransiogramDialog::onCaptureExperimentalTransiographyWithoutOffscreen()
+{
+    //capture the transiogram widgets image
+    QRect rectangle = ui->scrollAreaTransiograms->frameRect();
+
+    //scrolls to the bottom of plot for convenience
+    int y = ui->scrollAreaTransiograms->verticalScrollBar()->value();
+    int x = ui->scrollAreaTransiograms->horizontalScrollBar()->value();
+    rectangle.moveTo( x, y );
+
+    QPixmap pixmap(rectangle.size());
+    ui->frmTransiograms->render(&pixmap, QPoint(), QRegion(rectangle));
+
+    //copy the image to clipboard
+    QClipboard *clipboard = QApplication::clipboard();
+    clipboard->setPixmap( pixmap,  QClipboard::Clipboard );
+    QMessageBox::information(this, "Plot snapshot", "The transiograms image (only visible ones) has been copied to the clipboard. You can paste it to any application.");
 }
 
 void TransiogramDialog::onResetAttributesList()

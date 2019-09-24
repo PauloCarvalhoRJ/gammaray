@@ -20,6 +20,15 @@ public:
         Returns nullptr if this object was not created from a CategoryDefinition (older versions of GammaRay)*/
     CategoryDefinition *getCategoryDefinition();
 
+    /** Returns whether the probabilities sum up to 1.0. */
+    bool sumsToOne( double tolerance = 0.001 ) const;
+
+    /** Returns whether there is one (or more) zero (or less) probabilities. */
+    bool hasZeroOrLessProb() const;
+
+    /** Returns the sum of the probabilities. */
+    double sumProbs() const;
+
     // ProjectComponent interface
 public:
     QIcon getIcon();

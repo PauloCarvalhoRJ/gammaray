@@ -148,6 +148,20 @@ double GeostatsUtils::getGamma(VariogramModel *model, const SpatialLocation &loc
     return result;
 }
 
+double GeostatsUtils::getTransiogramProbability( TransiogramType transiogramType,
+                                                 VariogramStructureType permissiveModel,
+                                                 double h,
+                                                 double range,
+                                                 double contribution )
+{
+    double probabilityValue = 0.0;
+    if( transiogramType == TransiogramType::AUTO_TRANSIOGRAM )
+        probabilityValue = 1.0 - GeostatsUtils::getGamma( permissiveModel, h, range, 1.0 - contribution );
+    else         //for cross-transiograms
+        probabilityValue = GeostatsUtils::getGamma( permissiveModel, h, range, contribution );
+    return probabilityValue;
+}
+
 MatrixNXM<double> GeostatsUtils::makeCovMatrix(DataCellPtrMultiset &samples,
 											   VariogramModel *variogramModel,
 											   double variogramSill,
@@ -293,19 +307,24 @@ MatrixNXM<double> GeostatsUtils::makeGammaMatrix(DataCellPtrMultiset &samples,
     return result;
 }
 
-void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
+void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                                                         int numberOfSamples,
                                                         int nColsAround,
                                                         int nRowsAround,
                                                         int nSlicesAround,
                                                         bool hasNDV,
                                                         double NDV,
-														GridCellPtrMultiset &list)
+                                                        GridCellPtrMultiset &list,
+                                                        const std::vector<double> *simulatedData)
 {
     CartesianGrid* cg = cell._grid;
     if( ! cg ){
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null grid.  Returning empty list.");
     }
+
+    assert( ( cell._dataIndex >= 0 || simulatedData ) && "GeostatsUtils::getValuedNeighborsTopoOrdered(): "
+                                                             "the data index of cell is -1, but no "
+                                                             "separate computed data was provided (simulatedData == nullptr).");
 
     //get the grid limits
     int row_limit = cg->getNY();
@@ -366,16 +385,24 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
             int jj = indexes[iIndex]._j;
             int kk = indexes[iIndex]._k;
             //...if the index is within the grid limits...
-			if( ii >= 0 && ii < column_limit &&
-				jj >= 0 && jj < row_limit &&
+            if( ii >= 0 && ii < column_limit &&
+                jj >= 0 && jj < row_limit &&
                 kk >= 0 && kk < slice_limit ){
                 //...get the value corresponding to the cell index.
-                double value = cg->dataIJK( cell._dataIndex, ii, jj, kk );
+                double value;
+                int dataIndex;
+                if ( cell._dataIndex >= 0 ) {  // data column is provided: fetch value from the grid
+                    dataIndex = cell._dataIndex;
+                    value = cg->dataIJK( dataIndex, ii, jj, kk );
+                } else { // data column is NOT provided: fetch value from a client-given data container
+                    dataIndex = cg->IJKtoIndex( ii, jj, kk );
+                    value = (*simulatedData)[ dataIndex ];
+                }
                 //if the cell is valued... DataFile::hasNDV() is slow.
                 if( !hasNDV || !Util::almostEqual2sComplement( NDV, value, 1 ) ){
                     //...it is a valid neighbor.
-					GridCellPtr currentCell( new GridCell( cg, cell._dataIndex, ii, jj, kk ) );
-					currentCell->computeTopoDistance( cell );
+                    GridCellPtr currentCell( new GridCell( cg, dataIndex, ii, jj, kk ) );
+                    currentCell->computeTopoDistance( cell );
                     list.insert( currentCell );
                     //if the number of neighbors is reached...
                     if( list.size() == (unsigned)numberOfSamples )
@@ -384,7 +411,7 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(GridCell &cell,
                 }
             }
         }
-	}
+    }
 }
 
 MatrixNXM<double> GeostatsUtils::makePmatrixForFK(int nsamples, int nst, KrigingType kType )

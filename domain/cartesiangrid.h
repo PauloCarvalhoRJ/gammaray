@@ -102,7 +102,8 @@ public:
     virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 	virtual bool isRegular() { return true; }
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-	virtual bool isTridimensional();
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
+    virtual bool isTridimensional();
 
 // File interface
 public:

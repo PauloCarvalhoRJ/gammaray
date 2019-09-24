@@ -451,6 +451,13 @@ void GSLibParameterFile::makeParamatersForFactorialKriging()
 	GSLibParDouble* par_minDistance = new GSLibParDouble("", "", "Min. distance between samples (0 == not used):");
 	par_minDistance->_value = 0.0;
 	_params.append( par_minDistance );
+
+    //------------Search algorithm option: parameter 9--------------------------------
+    GSLibParOption* par_searchAlgorithmOption = new GSLibParOption("", "", "Search algorithm option:");
+    par_searchAlgorithmOption->addOption( 0, "Generic R-Tree based (performs well for most data sets on average)");
+    par_searchAlgorithmOption->addOption( 1, "Tuned for large, high-density data sets (may run slow for small data sets)");
+    par_searchAlgorithmOption->_selected_value = 0;
+    _params.append( par_searchAlgorithmOption );
 }
 
 bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GSLibParType*>* params, QString tag_description ){

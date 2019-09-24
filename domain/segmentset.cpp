@@ -1,8 +1,13 @@
 #include "segmentset.h"
 #include "viewer3d/view3dviewdata.h"
 #include "viewer3d/view3dbuilders.h"
+#include "domain/attribute.h"
+#include "domain/application.h"
+#include "domain/project.h"
+#include "util.h"
 #include <QFile>
 #include <QTextStream>
+#include <cassert>
 
 SegmentSet::SegmentSet(QString path) : PointSet ( path )
 {
@@ -104,17 +109,44 @@ void SegmentSet::setInfoFromMetadataFile()
     }
 }
 
-int SegmentSet::getXFinalIndex()
+void SegmentSet::setInfoFromAnotherSegmentSet(SegmentSet *otherSS)
+{
+    QString md_file_path( this->_path );
+    QFile md_file( md_file_path.append(".md") );
+    int x_initial_index = 0, y_initial_index = 0, z_initial_index = 0;
+    int x_final_index = 0, y_final_index = 0, z_final_index = 0;
+    QMap<uint, uint> wgt_var_pairs;
+    QMap<uint, QPair<uint,QString> > nsvar_var_trn;
+    QList< QPair<uint,QString> > categorical_attributes;
+    QString ndv;
+
+    x_initial_index = otherSS->getXindex();
+    y_initial_index = otherSS->getYindex();
+    z_initial_index = otherSS->getZindex();
+    x_final_index = otherSS->getXFinalIndex(); //the only metadata not already present in PointSet
+    y_final_index = otherSS->getYFinalIndex(); //the only metadata not already present in PointSet
+    z_final_index = otherSS->getZFinalIndex(); //the only metadata not already present in PointSet
+    ndv = otherSS->getNoDataValue();
+    wgt_var_pairs = otherSS->getWeightsVariablesPairs();
+    nsvar_var_trn = otherSS->getNSVarVarTrnTriads();
+    categorical_attributes = otherSS->getCategoricalAttributes();
+
+    setInfo( x_initial_index, y_initial_index, z_initial_index,
+             x_final_index,   y_final_index,   z_final_index,
+             ndv, wgt_var_pairs, nsvar_var_trn, categorical_attributes );
+}
+
+int SegmentSet::getXFinalIndex() const
 {
     return _x_final_field_index;
 }
 
-int SegmentSet::getYFinalIndex()
+int SegmentSet::getYFinalIndex() const
 {
     return _y_final_field_index;
 }
 
-int SegmentSet::getZFinalIndex()
+int SegmentSet::getZFinalIndex() const
 {
     return _z_final_field_index;
 }
@@ -127,6 +159,14 @@ double SegmentSet::getSegmentLenght(int iRecord)
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
+double SegmentSet::getSegmentLenghtConst(int iRecord) const
+{
+    double dx = dataConst( iRecord, getXFinalIndex()-1 ) - dataConst( iRecord, getXindex()-1 );
+    double dy = dataConst( iRecord, getYFinalIndex()-1 ) - dataConst( iRecord, getYindex()-1 );
+    double dz = dataConst( iRecord, getZFinalIndex()-1 ) - dataConst( iRecord, getZindex()-1 );
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
 double SegmentSet::getDistanceToNextSegment(int iRecord)
 {
     if( iRecord == getDataLineCount() - 1 )
@@ -135,6 +175,109 @@ double SegmentSet::getDistanceToNextSegment(int iRecord)
     double dy = data( iRecord+1, getYindex()-1 ) - data( iRecord, getYFinalIndex()-1 );
     double dz = data( iRecord+1, getZindex()-1 ) - data( iRecord, getZFinalIndex()-1 );
     return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
+void SegmentSet::computeSegmentLenghts(QString variable_name)
+{
+    //load the data
+    loadData();
+
+    //appends a new variable
+    addEmptyDataColumn( variable_name, getDataLineCount() );
+
+    //get the current data column count
+    uint columnCount = getDataColumnCount();
+
+    //compute the lengths
+    uint rowCount = getDataLineCount();
+    for( int iRow = 0; iRow < rowCount; ++iRow )
+        setData( iRow, columnCount-1, getSegmentLenght( iRow ) );
+
+    //commit results to file system
+    writeToFS();
+}
+
+void SegmentSet::getBoundingBox(uint dataLineIndex, double &minX, double &minY, double &minZ, double &maxX, double &maxY, double &maxZ) const
+{
+    //initialize the results to ensure the returned extrema are those of the segment.
+    minX = minY = minZ = std::numeric_limits<double>::max();
+    maxX = maxY = maxZ = std::numeric_limits<double>::min();
+    //set the max's and min's
+    minX = std::min( minX, dataConst( dataLineIndex, getXindex()-1 ) );
+    minY = std::min( minY, dataConst( dataLineIndex, getYindex()-1 ) );
+    minZ = std::min( minZ, dataConst( dataLineIndex, getZindex()-1 ) );
+    minX = std::min( minX, dataConst( dataLineIndex, getXFinalIndex()-1 ) );
+    minY = std::min( minY, dataConst( dataLineIndex, getYFinalIndex()-1 ) );
+    minZ = std::min( minZ, dataConst( dataLineIndex, getZFinalIndex()-1 ) );
+    maxX = std::max( maxX, dataConst( dataLineIndex, getXindex()-1 ) );
+    maxY = std::max( maxY, dataConst( dataLineIndex, getYindex()-1 ) );
+    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZindex()-1 ) );
+    maxX = std::max( maxX, dataConst( dataLineIndex, getXFinalIndex()-1 ) );
+    maxY = std::max( maxY, dataConst( dataLineIndex, getYFinalIndex()-1 ) );
+    maxZ = std::max( maxZ, dataConst( dataLineIndex, getZFinalIndex()-1 ) );
+}
+
+bool SegmentSet::isCoordinate(uint column) const
+{
+    //tests whether the column is x, y or z initial (inherited from PointSet)
+    if( PointSet::isCoordinate( column ) )
+        return true;
+    //tests whether the column is x, y or z final
+    int columnGEOEAS = column + 1;
+    return ( _x_final_field_index == columnGEOEAS ) ||
+           ( _y_final_field_index == columnGEOEAS ) ||
+           ( _z_final_field_index == columnGEOEAS ) ;
+}
+
+PointSet *SegmentSet::toPointSetMidPoints(const QString& psName ) const
+{
+    int nDataRows = getDataLineCount();
+    int nDataColumns = getDataColumnCountConst();
+    assert( nDataRows && "SegmentSet::toPointSetMidPoints(): zero data lines. "
+                         "Perhaps a prior call to DataFile::readFromFS() is missing.");
+
+    //copies this segment set's file as a new file
+    QString psFilePath = Application::instance()->getProject()->getPath() + "/" + psName;
+    Util::copyFile( getPath(), psFilePath );
+    PointSet* new_ps = new PointSet( psFilePath );
+
+    //load the data
+    new_ps->loadData();
+    new_ps->updateChildObjectsCollection();
+
+    //append the new data columns for the mid points coordinates and segment lengths
+    int iColumnMPx        = new_ps->addEmptyDataColumn( "midPointX"     , nDataRows );
+    int iColumnMPy        = new_ps->addEmptyDataColumn( "midPointY"     , nDataRows );
+    int iColumnMPz        = new_ps->addEmptyDataColumn( "midPointZ"     , nDataRows );
+    int iColumnSegLengths = new_ps->addEmptyDataColumn( "segment_length", nDataRows );
+
+    //compute mid points for the PointSet object
+    for( int iRow = 0; iRow < nDataRows; ++iRow ){
+        double center_x = ( dataConst( iRow, getXFinalIndex()-1 ) + dataConst( iRow, getXindex()-1 ) ) / 2.0;
+        double center_y = ( dataConst( iRow, getYFinalIndex()-1 ) + dataConst( iRow, getYindex()-1 ) ) / 2.0;
+        double center_z = ( dataConst( iRow, getZFinalIndex()-1 ) + dataConst( iRow, getZindex()-1 ) ) / 2.0;
+        new_ps->setData( iRow, iColumnMPx, center_x );
+        new_ps->setData( iRow, iColumnMPy, center_y );
+        new_ps->setData( iRow, iColumnMPz, center_z );
+        //compute the length
+        new_ps->setData( iRow, iColumnSegLengths, getSegmentLenghtConst( iRow ) );
+    }
+
+    //commit data to file system
+    new_ps->writeToFS();
+
+    //set appropriate metadata
+    new_ps->setInfo( iColumnMPx+1, //these indexes are GEO-EAS indexes (1st == 1)
+                     iColumnMPy+1,
+                     iColumnMPz+1,
+                     getNoDataValue(),
+                     getWeightsVariablesPairs(),
+                     getNSVarVarTrnTriads(),
+                     getCategoricalAttributes() );
+    new_ps->updateMetaDataFile();
+
+    //return the pointer to the created object
+    return new_ps;
 }
 
 
@@ -238,6 +381,16 @@ double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
     }
 }
 
+void SegmentSet::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+{
+    x = ( data( line, _x_field_index - 1 ) + data( line, _x_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    y = ( data( line, _y_field_index - 1 ) + data( line, _y_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    if( isTridimensional() )
+        z = ( data( line, _z_field_index - 1 ) + data( line, _z_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    else
+        z = 0.0; //returns z=0.0 for datasets in 2D.
+}
+
 double SegmentSet::getProportion(int variableIndex, double value0, double value1)
 {
     double lengthYES = 0.0;
@@ -256,4 +409,10 @@ double SegmentSet::getProportion(int variableIndex, double value0, double value1
         return lengthYES / ( lengthYES + lengthNO );
     else
         return 0.0;
+}
+
+void SegmentSet::setInfoFromOtherPointSet(PointSet *otherPS)
+{
+    Q_UNUSED( otherPS );
+    assert( false && "Calling setInfoFromOtherPointSet() for a SegmentSet is illegal.");
 }

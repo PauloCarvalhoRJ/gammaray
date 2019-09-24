@@ -18,7 +18,7 @@ public:
 public:
 	QString getName() const;
     QIcon getIcon();
-    bool isFile();
+    bool isFile() const;
     bool isAttribute();
     virtual QString getObjectLocator();
     virtual QString getTypeName(){ return "ProjectRoot"; }

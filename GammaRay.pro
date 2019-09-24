@@ -110,7 +110,6 @@ SOURCES += main.cpp\
     domain/univariatecategoryclassification.cpp \
     widgets/categoryselector.cpp \
     widgets/intervalandcategorywidget.cpp \
-    spatialindex/spatialindexpoints.cpp \
     softindiccalib/softindicatorcalibrationdialog.cpp \
     softindiccalib/softindicatorcalibplot.cpp \
     softindiccalib/softindicatorcalibcanvaspicker.cpp \
@@ -258,7 +257,16 @@ SOURCES += main.cpp\
     domain/auxiliary/thicknesscalculator.cpp \
     widgets/transiogramchartview.cpp \
     domain/verticaltransiogrammodel.cpp \
-    dialogs/dynamicfaciesrelationshipdiagramdialog.cpp
+    dialogs/dynamicfaciesrelationshipdiagramdialog.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.cpp \
+    geostats/segmentsetcell.cpp \
+    domain/auxiliary/valuestransferer.cpp \
+    dialogs/mcrfsimdialog.cpp \
+    dialogs/lvadatasetdialog.cpp \
+    geostats/mcrfsim.cpp \
+    gslib/gslibparameterfiles/commonsimulationparameters.cpp \
+    spatialindex/spatialindex.cpp \
+    geostats/taumodel.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -343,7 +351,6 @@ HEADERS  += mainwindow.h \
     domain/univariatecategoryclassification.h \
     widgets/categoryselector.h \
     widgets/intervalandcategorywidget.h \
-    spatialindex/spatialindexpoints.h \
     softindiccalib/softindicatorcalibrationdialog.h \
     softindiccalib/softindicatorcalibplot.h \
     softindiccalib/softindicatorcalibcanvaspicker.h \
@@ -494,7 +501,16 @@ HEADERS  += mainwindow.h \
     domain/auxiliary/thicknesscalculator.h \
     widgets/transiogramchartview.h \
     domain/verticaltransiogrammodel.h \
-    dialogs/dynamicfaciesrelationshipdiagramdialog.h
+    dialogs/dynamicfaciesrelationshipdiagramdialog.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h \
+    geostats/segmentsetcell.h \
+    domain/auxiliary/valuestransferer.h \
+    dialogs/mcrfsimdialog.h \
+    dialogs/lvadatasetdialog.h \
+    geostats/mcrfsim.h \
+    gslib/gslibparameterfiles/commonsimulationparameters.h \
+    spatialindex/spatialindex.h \
+    geostats/taumodel.h
 
 
 FORMS    += mainwindow.ui \
@@ -586,7 +602,10 @@ FORMS    += mainwindow.ui \
     dialogs/entropycyclicityanalysisdialog.ui \
     dialogs/faciesrelationshipdiagramdialog.ui \
     dialogs/transiogramdialog.ui \
-    dialogs/dynamicfaciesrelationshipdiagramdialog.ui
+    dialogs/dynamicfaciesrelationshipdiagramdialog.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.ui \
+    dialogs/mcrfsimdialog.ui \
+    dialogs/lvadatasetdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

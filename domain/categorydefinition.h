@@ -62,7 +62,7 @@ public:
     QString getFileType(){ return "CATEGORYDEFINITION"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
-    QWidget *createContentElementWidget();
+    virtual QWidget *createContentElementWidget();
     QWidget *createWidgetFilledWithContentElement( uint iContent );
     void addContentElementFromWidget( QWidget* w );
     bool isDataFile(){ return false; }

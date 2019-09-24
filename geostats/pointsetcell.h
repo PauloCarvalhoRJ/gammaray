@@ -5,8 +5,6 @@
 #include "domain/pointset.h"
 #include <qglobal.h> //uint
 
-class PointSet;
-
 /** Data structure containing information of a point set data sample (point). */
 class PointSetCell : public DataCell
 {
@@ -29,6 +27,7 @@ public:
 
 	// DataCell	interface
 	virtual double readValueFromDataSet() const;
+    virtual double readValueFromDataSet( uint dataColumnIndex ) const;
 
 	PointSet* m_pointSet;
 	uint m_sampleIndex;

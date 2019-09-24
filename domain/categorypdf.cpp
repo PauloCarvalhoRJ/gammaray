@@ -25,6 +25,27 @@ CategoryDefinition *CategoryPDF::getCategoryDefinition()
         return nullptr;
 }
 
+bool CategoryPDF::sumsToOne( double tolerance ) const
+{
+    return std::abs( sumProbs() - 1.0 ) < tolerance;
+}
+
+bool CategoryPDF::hasZeroOrLessProb() const
+{
+    for( const QPair<int, double>& idp : m_pairs )
+        if( idp.second <= 0.0 )
+            return true;
+    return false;
+}
+
+double CategoryPDF::sumProbs() const
+{
+    double sum = 0.0;
+    for( const QPair<int, double>& idp : m_pairs )
+        sum += idp.second;
+    return sum;
+}
+
 QIcon CategoryPDF::getIcon()
 {
     if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI)

@@ -1,6 +1,8 @@
 #include "gridfile.h"
 #include "application.h"
 #include "spectral/spectral.h"
+#include "domain/categorydefinition.h"
+#include "domain/attribute.h"
 
 GridFile::GridFile( QString path ) : DataFile( path )
 {
@@ -61,7 +63,9 @@ void GridFile::setNReal(uint n)
 }
 
 
-long GridFile::append(const QString columnName, const spectral::array &array)
+long GridFile::append(const QString columnName,
+                      const spectral::array &array,
+                      CategoryDefinition *cd)
 {
 	long index = addEmptyDataColumn( columnName, m_nI * m_nJ * m_nK );
 
@@ -79,6 +83,32 @@ long GridFile::append(const QString columnName, const spectral::array &array)
 	if( idx != m_nI * m_nJ * m_nK )
 		Application::instance()->logError("GridFile::append(): mismatch between number of data values added and grid cell count.");
 
+
+    //if the new data column is to be a categorical variable
+    if( cd ){
+        // get the GEO-EAS index for new attribute
+        uint indexGEOEAS
+            = _data[0].size(); // assumes the first row has the correct number of data columns
+
+        // if the added column was deemed categorical, adds its GEO-EAS index and name of the
+        // category definition
+        // to the list of pairs for metadata keeping.
+        if (cd) {
+            _categorical_attributes.append(QPair<uint, QString>(indexGEOEAS, cd->getName()));
+            // update the metadata file
+            this->updateMetaDataFile();
+        }
+
+        // Get the new Attribute object that correspond to the new data column in memory
+        Attribute *newAttribute = dynamic_cast<Attribute*>( getChildByIndex( index ) );
+
+        assert( newAttribute && "GridFile::append(): object returned by ::getChildByIndex(index) is not an Attribute or is a null pointer." );
+
+        // Set the new Attribute as categorical
+        newAttribute->setCategorical(true);
+    }
+
+    //save the grid data to the filesystem.
 	writeToFS();
 
 	//update the project tree in the main window.
@@ -95,7 +125,7 @@ void GridFile::setDataIJK(uint column, uint i, uint j, uint k, double value)
 	_data[dataRow][column] = value;
 }
 
-void GridFile::indexToIJK(uint index, uint & i, uint & j, uint & k)
+void GridFile::indexToIJK(uint index, uint & i, uint & j, uint & k) const
 {
 	uint val = index;
 	uint nynx = m_nJ * m_nI;
@@ -140,7 +170,42 @@ void GridFile::setColumnData(uint dataColumn, spectral::array & array)
 
 uint GridFile::IJKtoIndex(uint i, uint j, uint k)
 {
-	return k * m_nJ * m_nI + j * m_nI + i;
+    return k * m_nJ * m_nI + j * m_nI + i;
+}
+
+void GridFile::flipData(uint iVariable, QString newVariableName, FlipDataDirection direction)
+{
+    loadData();
+
+    addEmptyDataColumn( newVariableName, m_nI * m_nJ * m_nK );
+
+    //get the index of the newly added data column
+    uint lastColumnIndex = getDataColumnCount()-1;
+
+    //data flipping loop
+    ulong idx = 0;
+    for (ulong k = 0; k < m_nK; ++k) {
+        for (ulong j = 0; j < m_nJ; ++j) {
+            for (ulong i = 0; i < m_nI; ++i) {
+                ulong target_i = i;
+                ulong target_j = j;
+                ulong target_k = k;
+                switch ( direction ) {
+                    case FlipDataDirection::U_DIRECTION: target_i = m_nI - 1 - i; break;
+                    case FlipDataDirection::V_DIRECTION: target_j = m_nJ - 1 - j; break;
+                    case FlipDataDirection::W_DIRECTION: target_k = m_nK - 1 - k; break;
+                }
+                double value = dataIJK( iVariable, i, j, k );
+                setDataIJK( lastColumnIndex, target_i, target_j, target_k, value );
+                ++idx;
+            }
+        }
+    }
+
+    writeToFS();
+
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
 }
 
 double GridFile::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)

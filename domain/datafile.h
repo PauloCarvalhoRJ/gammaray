@@ -45,6 +45,13 @@ public:
     double data(uint line, uint column);
 
     /**
+      * Does the same as data() but allows to be called with constness.
+      * ATTENTION: Due to constness, it doesn't load the data automatically !!!
+      *            Make sure to call loadData() before !!!
+      */
+    double dataConst(uint line, uint column) const;
+
+    /**
      * Returns the maximum value in the given column.
      * First column is 0.
      */
@@ -78,13 +85,13 @@ public:
      * Returns the index of the given field in GEO-EAS convention (first is 1).
      * If the given field name does not exist, returns zero.
      */
-    uint getFieldGEOEASIndex( QString field_name );
+    uint getFieldGEOEASIndex( QString field_name ) const;
 
     /**
      * Returns the Attribute that has the given index in the GEO-EAS file (first is 1).
      * Returns a null pointer of there is no such Attribute.
      */
-    Attribute* getAttributeFromGEOEASIndex( uint index );
+    Attribute* getAttributeFromGEOEASIndex( uint index ) const;
 
     /**
      * Returns the GEO-EAS index of the last field of the data file.
@@ -94,14 +101,14 @@ public:
     /**
      * Returns the user-given no-data value text when this data file were added to the project.
      */
-    virtual QString getNoDataValue();
+    virtual QString getNoDataValue() const;
 
     /**
      * Returns the user-given no-data value as a double value.
      * @note This method performs a conversion from the original text value entered by the user.  If it
      * cannot be converted to a double, a generic NaN is returned (std::nan("")).
      */
-    virtual double getNoDataValueAsDouble();
+    virtual double getNoDataValueAsDouble() const;
 
     /**
      * Sets the new no-data value.  Empty string means not set.
@@ -165,13 +172,13 @@ public:
      * 2- GEO-EAS index of varibale that was normal score transformed into variable in 1-.
      * 3- File name of the transform table (.trn file).
      */
-    QMap<uint, QPair<uint, QString> > getNSVarVarTrnTriads(){ return _nsvar_var_trn; }
+    QMap<uint, QPair<uint, QString> > getNSVarVarTrnTriads() const { return _nsvar_var_trn; }
 
     /**
      * Returns the list of GEO-EAS indexes (1st == 1, not zero) of the attributes considered as categorical variables.
      * The second member of the pairs is the name of the category definition file.
      */
-    QList< QPair<uint,QString> > getCategoricalAttributes(){ return _categorical_attributes; }
+    QList< QPair<uint,QString> > getCategoricalAttributes() const { return _categorical_attributes; }
 
     /**
      * Adds the values stored in an Attribute object as a GEO-EAS column to the given data file.
@@ -200,16 +207,22 @@ public:
      * Also if you made changes to the data file, it is necessary to call loadData() again to update
      * the object contents.
      */
-    uint getDataLineCount();
+    uint getDataLineCount() const;
 
     /**
      * Returns the number of data columns (variables) of the first line of file (assumes all lines have the
      * same number of columns).
-     * Make sure to have called loadData() prior to this call, otherwise zero will be returned.
+     */
+    uint getDataColumnCount();
+
+    /**
+     * Does the same as getDataColumnCount() but is const.  Due to constness, it does not automatically
+     * load data on demand like its non-const counterpar.  Hence, make sure to have called loadData() prior to
+     * this call, otherwise zero will be returned.
      * Also if you made changes to the data file, it is necessary to call loadData() again to update
      * the object contents.
      */
-    uint getDataColumnCount();
+    uint getDataColumnCountConst() const;
 
     /** Returns whether the given value equals the no-data value set for this data file.
      * If a no-data value has not been set, this method always returns false.
@@ -233,7 +246,7 @@ public:
     void convertToCategorical(uint column, CategoryDefinition* cd, int fallbackCode, const QString name_for_new_column);
 
     /** De-allocates the data loaded with loadData(). */
-    void freeLoadedData();
+    virtual void freeLoadedData();
 
     /** Sets the data page (first and last data line to load).
      * Setting a page, causes a reload in next calls to data() or loadData().  The interval is inclusive,
@@ -267,6 +280,7 @@ public:
 
     /**
      * Adds a new data column to this DataFile filled with zeroes.
+     * Returns the index (1st is zero) of the new data column.
      * @param numberOfDataElements Number of values in the column, normally should be getDataLineCount(),
      *        unless this object is a new one without any previous data.
      */
@@ -321,6 +335,11 @@ public:
 	 */
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) = 0;
 
+    /**
+     * Returns all the spatial coordinates (x, y and z as output parameters) of the data value given its line number.
+     */
+    virtual void getDataSpatialLocation( uint line, double& x, double& y, double& z ) = 0;
+
 	/** Returns whether this data set is tridimensional. */
 	virtual bool isTridimensional() = 0;
 
@@ -346,6 +365,12 @@ public:
      * method to account such variation in the proportion.
      */
     virtual double getProportion(int variableIndex, double value0, double value1 );
+
+    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical file.
+     * Mostly the child objects are Attributes under a DataFile.  Others, such as the GeoGrid, have
+     * a more complex hierarchy tree.
+     */
+    void updateChildObjectsCollection();
 
 //File interface
 	virtual void deleteFromFS();
@@ -377,9 +402,6 @@ protected:
 
     /** The no-data value specified by the user. */
     QString _no_data_value;
-
-    /** Repopulates the _children collection.  Mainly useful when there are changes in the physical file. */
-    void updatePropertyCollection();
 
     /**
      * pairs relating n-scored variables (first uint) and variables
