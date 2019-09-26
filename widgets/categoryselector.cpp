@@ -11,7 +11,7 @@ CategorySelector::CategorySelector(CategoryDefinition *cd, QWidget *parent) :
     ui->setupUi(this);
 
     if( cd ){
-        cd->loadTriplets(); //makes sure the triplets are read from the file system.
+        cd->loadQuintuplets(); //makes sure the triplets are read from the file system.
         for( int i = 0; i < cd->getCategoryCount(); ++i){
             ui->cmbCategories->addItem( Util::makeGSLibColorIcon( cd->getColorCode( i ) ),
                                         cd->getCategoryName( i ) + " (code = " + QString::number(cd->getCategoryCode( i )) + ")",

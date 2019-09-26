@@ -55,7 +55,7 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
         CategoryDefinition* cd = cpdf->getCategoryDefinition();
         //makes sure the definition is read from file
         if( cd )
-            cd->loadTriplets();
+            cd->loadQuintuplets();
         for( int i = 0; i < cpdf->getPairCount(); ++i){
             onAddPair();
             ValuePairVertical* vpvWidget = (ValuePairVertical*)m_pairWidgets.last();

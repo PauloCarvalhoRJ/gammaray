@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>506</width>
-    <height>412</height>
+    <width>553</width>
+    <height>388</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,6 +34,13 @@
        <widget class="QRadioButton" name="radioXYZ">
         <property name="text">
          <string>GEO-EAS point set</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioSegmentSet">
+        <property name="text">
+         <string>Segment set (GEO-EAS point set w/ 6 XYZ fields)</string>
         </property>
        </widget>
       </item>

@@ -115,5 +115,14 @@
         <file alias="svd32">art/iconsHD/svd32.png</file>
         <file alias="geogrid32">art/iconsHD/geogrid32.png</file>
         <file alias="geogrid32n">art/iconsHD/geogrid32n.png</file>
+        <file alias="segmentset32">art/iconsHD/segmentset32.png</file>
+        <file alias="xcoordf32">art/iconsHD/xcoordf32.png</file>
+        <file alias="ycoordf32">art/iconsHD/ycoordf32.png</file>
+        <file alias="zcoordf32">art/iconsHD/zcoordf32.png</file>
+        <file alias="transmat32">art/iconsHD/transmat32.png</file>
+        <file alias="transiogram32">art/iconsHD/transiogram32.png</file>
+        <file alias="clean32">art/iconsHD/clean32.png</file>
+        <file alias="frd32">art/iconsHD/frd32.png</file>
+        <file alias="snapshotz32">art/iconsHD/snapshotz32.png</file>
     </qresource>
 </RCC>

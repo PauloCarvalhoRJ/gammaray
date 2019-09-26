@@ -5,6 +5,7 @@
 #include "viewer3d/view3dconfigwidgetsbuilder.h"
 #include "cartesiangrid.h"
 #include "viewer3d/view3dbuilders.h"
+#include "domain/segmentset.h"
 
 Attribute::Attribute(QString name, int index_in_file, bool categorical) :
     IJAbstractVariable(), ICalcProperty()
@@ -14,13 +15,13 @@ Attribute::Attribute(QString name, int index_in_file, bool categorical) :
     _categorical = categorical;
 }
 
-File *Attribute::getContainingFile()
+File *Attribute::getContainingFile() const
 {
-    ProjectComponent *pc = this;
+    const ProjectComponent *pc = this;
     while( pc->hasParent() ){
         pc = pc->getParent();
         if( pc->isFile() )
-            return (File*)pc;
+            return (File*)pc; //surely pc is not this if execution reaches this line, so it is safe to cast const ponter to non-const poitner here.
     }
     return nullptr;
 }
@@ -46,8 +47,8 @@ QIcon Attribute::getIcon()
 	if( this->getParent()->isFile() ){ //most attributes have a File as parent, but not always
         File* parent_file = (File*)this->getParent();
         if( parent_file){
-            if( parent_file->getFileType() == "POINTSET" ){
-                PointSet* ps = (PointSet*)parent_file;
+            if( parent_file->getFileType() == "POINTSET" || parent_file->getFileType() == "SEGMENTSET" ){
+                PointSet* ps = (PointSet*)parent_file; //SegmentSet is a subclass of PointSet
                 if( this->_index ==  ps->getXindex() ) {
                     if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
                         return QIcon(":icons/xcoord16");
@@ -67,6 +68,18 @@ QIcon Attribute::getIcon()
                         return QIcon(":icons32/zcoord32");
                 }
             }
+            if( parent_file->getFileType() == "SEGMENTSET" ){
+                SegmentSet* ps = static_cast<SegmentSet*>(parent_file);
+                if( this->_index ==  ps->getXFinalIndex() ) {
+                    return QIcon(":icons32/xcoordf32");
+                }
+                if( this->_index ==  ps->getYFinalIndex() ){
+                    return QIcon(":icons32/ycoordf32");
+                }
+                if( this->_index ==  ps->getZFinalIndex() ){
+                    return QIcon(":icons32/zcoordf32");
+                }
+            }
         }
     }
     if( isCategorical() ){
@@ -82,7 +95,7 @@ QIcon Attribute::getIcon()
 }
 
 
-bool Attribute::isFile()
+bool Attribute::isFile() const
 {
     return false;
 }

@@ -32,7 +32,7 @@ public:
     virtual void deleteFromFS();
 
     /** Returns the full path to the file. */
-    virtual QString getPath();
+    virtual QString getPath() const;
 
     /** Returns whether the file type may have a companion metadata file. */
     virtual bool canHaveMetaData() = 0;
@@ -95,7 +95,7 @@ public:
     /**
       *  Returns the file size in bytes.  Returns -1 if file does not exist.
       */
-    virtual long getFileSize();
+    virtual qint64 getFileSize();
 
 	/**
 	  *  Returns whether this file as a distribution.
@@ -109,7 +109,7 @@ protected:
 public:
 	virtual QString getName() const;
     virtual QIcon getIcon() = 0;
-	virtual bool isFile();
+    virtual bool isFile() const;
 	virtual bool isAttribute();
     virtual QString getObjectLocator();
     virtual QString getTypeName(){ return getFileType(); }

@@ -284,6 +284,13 @@ void FactorialKrigingDialog::doFK()
 	// Get the estimation grid.
 	m_cg_estimation = static_cast<CartesianGrid*>( m_cgSelector->getSelectedDataFile() );
 
+    // get search algorithm option.
+    SearchAlogorithmOption searchAlogorithmOption;
+    if( m_gpfFK->getParameter<GSLibParOption*>( 9 )->_selected_value == 0 )
+        searchAlogorithmOption = SearchAlogorithmOption::GENERIC_RTREE_BASED;
+    else
+        searchAlogorithmOption = SearchAlogorithmOption::OPTIMIZED_FOR_LARGE_HIGH_DENSITY_DATASETS;
+
     //Build the search strategy and search neighborhood objects from the user-input values.
 	// See parameter indexes and types in GSLibParameterFile::makeParamatersForFactorialKriging()
     GSLibParMultiValuedFixed* search_ellip_radii_par = m_gpfFK->getParameter<GSLibParMultiValuedFixed*>( 4 );
@@ -326,6 +333,7 @@ void FactorialKrigingDialog::doFK()
         estimation.setInputVariable( m_DataSetVariableSelector->getSelectedVariable() );
         estimation.setEstimationGrid( m_cg_estimation );
         estimation.setFactorNumber( factor_number );
+        estimation.setSearchAlogorithmOption( searchAlogorithmOption );
 		m_results = estimation.run( );
 		//get the numbers of sample used in the estimations
 		std::vector< uint > vNSamplesAsUints = estimation.getNumberOfSamples();

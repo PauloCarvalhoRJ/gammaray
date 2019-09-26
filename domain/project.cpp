@@ -24,6 +24,9 @@
 #include "domain/univariatecategoryclassification.h"
 #include "geogrid.h"
 #include "plot.h"
+#include "domain/segmentset.h"
+#include "domain/faciestransitionmatrix.h"
+#include "domain/verticaltransiogrammodel.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
 {
@@ -229,7 +232,49 @@ Project::Project(const QString path) : QAbstractItemModel()
 				//reads GeoGrid metadata from the .md file
 				gg->setInfoFromMetadataFile();
 		   }
-		}
+           //found a Segment Set file reference in gammaray.prj
+           if( line.startsWith( "SEGMENTSET:" )){
+               //get file name
+                QString segmentset_file = line.split(":")[1];
+                //make file path
+                QFile ss_file( this->_project_directory->absoluteFilePath( segmentset_file ) );
+                //create SegmentSet object from file
+                SegmentSet *ss = new SegmentSet( ss_file.fileName() );
+                //add the object to project tree structure
+                this->_data_files->addChild( ss );
+                ss->setParent( this->_data_files );
+                //reads SegmentSet metadata from the .md file
+                ss->setInfoFromMetadataFile();
+           }
+           //found a Transition Probability Matrix file reference in gammaray.prj
+           if( line.startsWith( "FACIESTRANSITIONMATRIX:" )){
+               //get file name
+                QString faciesTransitionMatrix_file = line.split(":")[1];
+                //make file path
+                QFile ftm_file( this->_project_directory->absoluteFilePath( faciesTransitionMatrix_file ) );
+                //create FaciesTransitionMatrix object from file
+                FaciesTransitionMatrix *ftm = new FaciesTransitionMatrix( ftm_file.fileName() );
+                //add the object to its correct directory in the project tree structure
+                this->_resources->addChild( ftm );
+                ftm->setParent( this->_resources );
+                //reads FaciesTransitionMatrix metadata from the .md file
+                ftm->setInfoFromMetadataFile();
+           }
+           //found a Vertical Transiogram Model file reference in gammaray.prj
+           if( line.startsWith( "VERTICALTRANSIOGRAMMODEL:" )){
+               //get file name
+                QString verticalTransiogramModel_file = line.split(":")[1];
+                //make file path
+                QFile vtm_file( this->_project_directory->absoluteFilePath( verticalTransiogramModel_file ) );
+                //create FaciesTransitionMatrix object from file
+                VerticalTransiogramModel *vtm = new VerticalTransiogramModel( vtm_file.fileName(), "" );
+                //add the object to its correct directory in the project tree structure
+                this->_variograms->addChild( vtm );
+                vtm->setParent( this->_variograms );
+                //reads FaciesTransitionMatrix metadata from the .md file
+                vtm->setInfoFromMetadataFile();
+           }
+        }
         prj_file.close();
     }
 
@@ -375,6 +420,13 @@ void Project::addCategoryPDF(CategoryPDF *cpdf)
     this->save();
 }
 
+void Project::addVerticalTransiogramModel(VerticalTransiogramModel *vtm)
+{
+    this->_variograms->addChild( vtm );
+    vtm->setParent( this->_variograms );
+    this->save();
+}
+
 void Project::addResourceFile(File *file)
 {
     this->_resources->addChild( file );
@@ -478,6 +530,23 @@ void Project::importBivariateDistribution(const QString from_path, const QString
     Application::instance()->refreshProjectTree();
 }
 
+void Project::importFaciesTransitionMatrix( const QString from_path, const QString new_file_name, QString associatedCategoryDefinitionName )
+{
+    //create a new Facies Transition Matrix object from the given scatsmth output file
+    FaciesTransitionMatrix* ftm = new FaciesTransitionMatrix( from_path );
+    //copy the file to the project's directory
+    ftm->changeDir( Application::instance()->getProject()->getPath() );
+    //rename the file
+    ftm->rename( new_file_name );
+    //set metadata (if any)
+    ftm->setInfo( associatedCategoryDefinitionName );
+    //adds the facies transition matrix object to the project
+    //TODO: do not add again if there is already a univariate distribution with the same name.
+    this->addResourceFile( ftm );
+    //refreshes project tree display
+    Application::instance()->refreshProjectTree();
+}
+
 void Project::registerThresholdCDF(ThresholdCDF *tcdf)
 {
     this->addThresholdCDF( tcdf );
@@ -488,6 +557,13 @@ void Project::registerThresholdCDF(ThresholdCDF *tcdf)
 void Project::registerCategoryPDF(CategoryPDF *cpdf)
 {
     this->addCategoryPDF( cpdf );
+    //refreshes project tree display
+    Application::instance()->refreshProjectTree();
+}
+
+void Project::registerVerticalTransiogramModel(VerticalTransiogramModel *vtm)
+{
+    this->addVerticalTransiogramModel( vtm );
     //refreshes project tree display
     Application::instance()->refreshProjectTree();
 }

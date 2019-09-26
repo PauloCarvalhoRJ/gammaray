@@ -110,7 +110,6 @@ SOURCES += main.cpp\
     domain/univariatecategoryclassification.cpp \
     widgets/categoryselector.cpp \
     widgets/intervalandcategorywidget.cpp \
-    spatialindex/spatialindexpoints.cpp \
     softindiccalib/softindicatorcalibrationdialog.cpp \
     softindiccalib/softindicatorcalibplot.cpp \
     softindiccalib/softindicatorcalibcanvaspicker.cpp \
@@ -241,7 +240,33 @@ SOURCES += main.cpp\
     imagejockey/ijvariographicmodel2d.cpp \
     dialogs/automaticvarfitdialog.cpp \
     dialogs/emptydialog.cpp \
-    geostats/nestedvariogramstructuresparameters.cpp
+    geostats/nestedvariogramstructuresparameters.cpp \
+    dialogs/segmentsetdialog.cpp \
+    domain/segmentset.cpp \
+    domain/quintuplets.cpp \
+    gslib/gslibparams/gslibparcustomcolor.cpp \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.cpp \
+    dialogs/choosecategorydialog.cpp \
+    domain/faciestransitionmatrix.cpp \
+    dialogs/projectfilechoosedialog.cpp \
+    dialogs/entropycyclicityanalysisdialog.cpp \
+    dialogs/faciesrelationshipdiagramdialog.cpp \
+    graphviz/graphviz.cpp \
+    dialogs/transiogramdialog.cpp \
+    domain/auxiliary/faciestransitionmatrixmaker.cpp \
+    domain/auxiliary/thicknesscalculator.cpp \
+    widgets/transiogramchartview.cpp \
+    domain/verticaltransiogrammodel.cpp \
+    dialogs/dynamicfaciesrelationshipdiagramdialog.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.cpp \
+    geostats/segmentsetcell.cpp \
+    domain/auxiliary/valuestransferer.cpp \
+    dialogs/mcrfsimdialog.cpp \
+    dialogs/lvadatasetdialog.cpp \
+    geostats/mcrfsim.cpp \
+    gslib/gslibparameterfiles/commonsimulationparameters.cpp \
+    spatialindex/spatialindex.cpp \
+    geostats/taumodel.cpp
 
 HEADERS  += mainwindow.h \
     domain/project.h \
@@ -326,7 +351,6 @@ HEADERS  += mainwindow.h \
     domain/univariatecategoryclassification.h \
     widgets/categoryselector.h \
     widgets/intervalandcategorywidget.h \
-    spatialindex/spatialindexpoints.h \
     softindiccalib/softindicatorcalibrationdialog.h \
     softindiccalib/softindicatorcalibplot.h \
     softindiccalib/softindicatorcalibcanvaspicker.h \
@@ -460,7 +484,33 @@ HEADERS  += mainwindow.h \
     imagejockey/ijvariographicmodel2d.h \
     dialogs/automaticvarfitdialog.h \
     dialogs/emptydialog.h \
-    geostats/nestedvariogramstructuresparameters.h
+    geostats/nestedvariogramstructuresparameters.h \
+    dialogs/segmentsetdialog.h \
+    domain/segmentset.h \
+    domain/quintuplets.h \
+    gslib/gslibparams/gslibparcustomcolor.h \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.h \
+    dialogs/choosecategorydialog.h \
+    domain/faciestransitionmatrix.h \
+    dialogs/projectfilechoosedialog.h \
+    dialogs/entropycyclicityanalysisdialog.h \
+    dialogs/faciesrelationshipdiagramdialog.h \
+    graphviz/graphviz.h \
+    dialogs/transiogramdialog.h \
+    domain/auxiliary/faciestransitionmatrixmaker.h \
+    domain/auxiliary/thicknesscalculator.h \
+    widgets/transiogramchartview.h \
+    domain/verticaltransiogrammodel.h \
+    dialogs/dynamicfaciesrelationshipdiagramdialog.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h \
+    geostats/segmentsetcell.h \
+    domain/auxiliary/valuestransferer.h \
+    dialogs/mcrfsimdialog.h \
+    dialogs/lvadatasetdialog.h \
+    geostats/mcrfsim.h \
+    gslib/gslibparameterfiles/commonsimulationparameters.h \
+    spatialindex/spatialindex.h \
+    geostats/taumodel.h
 
 
 FORMS    += mainwindow.ui \
@@ -544,7 +594,18 @@ FORMS    += mainwindow.ui \
     imagejockey/gabor/gaborscandialog.ui \
     imagejockey/wavelet/wavelettransformdialog.ui \
     dialogs/automaticvarfitdialog.ui \
-    dialogs/emptydialog.ui
+    dialogs/emptydialog.ui \
+    dialogs/segmentsetdialog.ui \
+    gslib/gslibparams/widgets/widgetgslibcustomcolor.ui \
+    dialogs/choosecategorydialog.ui \
+    dialogs/projectfilechoosedialog.ui \
+    dialogs/entropycyclicityanalysisdialog.ui \
+    dialogs/faciesrelationshipdiagramdialog.ui \
+    dialogs/transiogramdialog.ui \
+    dialogs/dynamicfaciesrelationshipdiagramdialog.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.ui \
+    dialogs/mcrfsimdialog.ui \
+    dialogs/lvadatasetdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)
@@ -688,7 +749,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 5.7.1
+VERSION = 6.0
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

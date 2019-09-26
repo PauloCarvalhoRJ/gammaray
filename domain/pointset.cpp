@@ -90,7 +90,7 @@ void PointSet::setInfo(int x_index, int y_index, int z_index, const QString no_d
     _nsvar_var_trn.unite( nvar_var_trn_triads );
     _categorical_attributes.clear();
     _categorical_attributes << categorical_attributes;
-    this->updatePropertyCollection();
+    this->updateChildObjectsCollection();
 }
 
 
@@ -158,7 +158,17 @@ double PointSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
 			return data( line, _z_field_index - 1 ); //x,y,z is in data file directly
 		else
 			return 0.0; //returns z=0.0 for datasets in 2D.
-	}
+    }
+}
+
+void PointSet::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+{
+    x = data( line, _x_field_index - 1 ); //x,y,z is in data file directly
+    y = data( line, _y_field_index - 1 ); //x,y,z is in data file directly
+    if( isTridimensional() )
+        z = data( line, _z_field_index - 1 ); //x,y,z is in data file directly
+    else
+        z = 0.0; //returns z=0.0 for datasets in 2D.
 }
 
 bool PointSet::isTridimensional()
@@ -235,17 +245,17 @@ void PointSet::setInfoFromOtherPointSet(PointSet *otherPS)
                    ndv, wgt_var_pairs, nsvar_var_trn_triads, categorical_attributes);
 }
 
-int PointSet::getXindex()
+int PointSet::getXindex() const
 {
     return this->_x_field_index;
 }
 
-int PointSet::getYindex()
+int PointSet::getYindex() const
 {
     return this->_y_field_index;
 }
 
-int PointSet::getZindex()
+int PointSet::getZindex() const
 {
     return this->_z_field_index;
 }
@@ -262,7 +272,7 @@ void PointSet::addVariableWeightRelationship(uint variableGEOEASindex, uint weig
     this->updateMetaDataFile();
 }
 
-bool PointSet::isCoordinate(uint column)
+bool PointSet::isCoordinate(uint column) const
 {
     int columnGEOEAS = column + 1;
     return ( _x_field_index == columnGEOEAS ) ||

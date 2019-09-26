@@ -12,10 +12,10 @@ class DataFileDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit DataFileDialog(QWidget *parent = 0, const QString file_path = "");
+    explicit DataFileDialog(QWidget *parent = nullptr, const QString file_path = "");
     ~DataFileDialog();
 
-    enum { UNDEFINED, CARTESIANGRID, POINTSET} iDataFileType;
+    enum { UNDEFINED, CARTESIANGRID, POINTSET, SEGMENTSET } iDataFileType;
 
     int getDataFileType();
 

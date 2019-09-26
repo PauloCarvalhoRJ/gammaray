@@ -35,11 +35,12 @@ public:
     /** Sets point set metadata from the passed point set. This is useful to make
      * duplicates of or to extend existing point sets.
      */
-    void setInfoFromOtherPointSet( PointSet* otherPS );
+    virtual void setInfoFromOtherPointSet( PointSet* otherPS );
 
-    int getXindex();
-    int getYindex();
-    int getZindex();
+    /** First index is 1 (GEO-EAS indexes) */
+    int getXindex() const;
+    int getYindex() const;
+    int getZindex() const;
 
     /**
      * Returns whether the Z coordinate was defined.
@@ -56,13 +57,13 @@ public:
      * Returns wheter the given column index corresponds to one of the coordinates (x, y or z).
      * First index is 0.
      */
-    bool isCoordinate( uint column );
+    virtual bool isCoordinate( uint column ) const;
 
     /** Returns a list with pairs with weight-variable relations.
      *  The key of the map is the index of the variable which is the weight
      *  of the variable whose index is the second member of the pair.
      */
-    QMap<uint, uint> getWeightsVariablesPairs()  { return _wgt_var_pairs; }
+    QMap<uint, uint> getWeightsVariablesPairs() const  { return _wgt_var_pairs; }
 
     //DataFile interface
 public:
@@ -74,7 +75,8 @@ public:
     virtual void deleteVariable( uint columnToDelete );
 	virtual bool isRegular() { return false; }
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-	virtual bool isTridimensional();
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
+    virtual bool isTridimensional();
 
     // File interface
 public:
@@ -96,7 +98,7 @@ public:
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 
 
-private:
+protected:
     int _x_field_index; //index start at 1. Zero means not set.
     int _y_field_index;
     int _z_field_index;

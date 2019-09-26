@@ -17,7 +17,7 @@ public:
      *  The File can be a parent, grand-parent, etc. object.
      *  Returns a null pointer if the search goes all the way up to the ProjectRoot object.
      */
-    File* getContainingFile();
+    File* getContainingFile() const;
 
     /**
      * Returns the GEO-EAS index passed in the constructor,
@@ -35,7 +35,7 @@ public:
 public:
 	virtual QString getName() const;
 	virtual QIcon getIcon();
-	virtual bool isFile();
+    virtual bool isFile() const;
 	virtual bool isAttribute();
 	virtual QString getPresentationName();
     virtual QString getObjectLocator();

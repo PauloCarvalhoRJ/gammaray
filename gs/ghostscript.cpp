@@ -50,7 +50,7 @@ void Ghostscript::makePNG(const QString input_ps_file_path, const QString output
 
     //refer to http://www.ghostscript.com/doc/current/Use.htm for all GhostScript options.
 
-    QString command = gs_program.append( " -dSAFER -dBATCH -dNOPAUSE -r").\
+    QString command = gs_program.append( " -dSAFER -dBATCH -dNOPAUSE -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -r").\
             append( QString::number(resolution) ).\
             append(" -sDEVICE=png16m -sOutputFile=\"").\
             append( output_png_file_path ).\

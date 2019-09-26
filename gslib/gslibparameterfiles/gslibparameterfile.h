@@ -148,7 +148,7 @@ public: //-------static functions---------------
       */
     static void generateParameterFileTemplates( const QString directory_path );
 
-private:
+protected:
     /**
       * the header of the parameter file
       */
