@@ -8,6 +8,12 @@ namespace spectral{
    class array;
 }
 
+enum class FlipDataDirection : uint {
+    U_DIRECTION,
+    V_DIRECTION,
+    W_DIRECTION
+};
+
 /** Abstract class for all domain classes that have grid topology (IJK coordinates). */
 class GridFile : public DataFile
 {
@@ -24,6 +30,16 @@ public:
 		uint dataRow = i + j*m_nI + k*m_nJ*m_nI;
 		return data( dataRow, column );
 	}
+
+    /**
+      * Does the same as dataIJK() but allows to be called with constness.
+      * ATTENTION: Due to constness, it doesn't load the data automatically !!!
+      *            Make sure to call loadData() before !!!
+      */
+    inline double dataIJKConst( uint column, uint i, uint j, uint k ) const {
+        uint dataRow = i + j*m_nI + k*m_nJ*m_nI;
+        return dataConst( dataRow, column );
+    }
 
 	/** Creates a vector of complex numbers with the values taken from data columns.
 	 *  Specify -1 to omit a column, which causes the repective part to be filled with zeros.
@@ -73,11 +89,15 @@ public:
 	void setNReal( uint n );
 
 
-	/** Adds de contents of the given data array as new column to this Cartesian grid. */
-	long append( const QString columnName, const spectral::array& array );
+    /** Adds de contents of the given data array as new column to this regular grid.
+     * If a CategoryDefinition is passed, the new variable will be treated as a categorical attribute.
+     */
+    long append( const QString columnName,
+                 const spectral::array& array,
+                 CategoryDefinition* cd = nullptr );
 
 	/** Converts a data row index into topological coordinates (output parameters). */
-	void indexToIJK(uint index, uint & i, uint & j, uint & k );
+    void indexToIJK(uint index, uint & i, uint & j, uint & k ) const;
 
 	/** Replaces the data in the column with the data in passed data array. */
 	void setColumnData( uint dataColumn, spectral::array& array );
@@ -89,6 +109,12 @@ public:
 
 	/** Returns the data row index corresponding to the given topological coordinate (cell address). */
 	uint IJKtoIndex( uint i, uint j, uint k );
+
+    /** Flips data in U, V or W direction.  This is useful for gridded data that have been imported
+     *  or computed in scan order different than GSLib's convention.  The result is deposited in a new
+     *  variable.
+     */
+    void flipData( uint iVariable, QString newVariableName, FlipDataDirection direction );
 
 // ICalcPropertyCollection interface
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );

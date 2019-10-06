@@ -3,12 +3,14 @@
 #include "../domain/application.h"
 #include "../domain/datafile.h"
 #include "domain/attribute.h"
+#include "util.h"
 
-VariableSelector::VariableSelector(bool show_not_set, QWidget *parent) :
+VariableSelector::VariableSelector(bool show_not_set, VariableSelectorType selectorType, QWidget *parent) :
     QWidget(parent),
     ui(new Ui::VariableSelector),
     m_hasNotSetItem( show_not_set ),
-    m_dataFile( nullptr )
+    m_dataFile( nullptr ),
+    m_selectorType( selectorType )
 {
     ui->setupUi(this);
 
@@ -81,6 +83,21 @@ void VariableSelector::setCaption(QString caption)
     ui->lblCaption->setText( caption );
 }
 
+void VariableSelector::setCaptionBGColor(const QColor &color)
+{
+    QColor foreGroudColor = Util::makeContrast( color );
+
+    QString fgRGBAValues = QString::number(foreGroudColor.red())   + "," +
+                           QString::number(foreGroudColor.green()) + "," +
+                           QString::number(foreGroudColor.blue())  + ",255";
+
+    QString bgRGBAValues = QString::number(color.red())   + "," +
+                           QString::number(color.green()) + "," +
+                           QString::number(color.blue())  + ",255";
+
+    ui->lblCaption->setStyleSheet("QLabel { background-color : rgba(" + bgRGBAValues + "); color : rgba(" + fgRGBAValues + "); }");
+}
+
 void VariableSelector::onListVariables(DataFile *file)
 {
     m_dataFile = file;
@@ -95,7 +112,11 @@ void VariableSelector::onListVariables(DataFile *file)
     for(; it != all_contained_objects.end(); ++it){
         ProjectComponent* pc = *it;
         if( pc->isAttribute() ){
-			ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
+            Attribute* attributeAspect = static_cast< Attribute* >( pc );
+            bool canBeAdded =  m_selectorType == VariableSelectorType::ALL ||
+                              (m_selectorType == VariableSelectorType::CATEGORICAL && attributeAspect->isCategorical());
+            if( canBeAdded )
+                ui->cmbVariable->addItem( pc->getIcon(), pc->getName() );
         }
     }
 }

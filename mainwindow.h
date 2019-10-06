@@ -23,6 +23,8 @@ class UnivariateCategoryClassification;
 class SVDFactor;
 class IJAbstractCartesianGrid;
 class GeoGrid;
+class DataFile;
+class VerticalTransiogramModel;
 
 class MainWindow : public QMainWindow
 {
@@ -68,6 +70,7 @@ public slots:
     void openImageJockey();
     void openSGSIM();
     void openCokrigingNewcokb3d();
+    void openTransiography();
 
 private:
     Ui::MainWindow *ui;
@@ -114,6 +117,8 @@ private:
     Attribute *_right_clicked_attribute_onSVD;
     //pointer to right clicked GeoGrid (set in onProjectContextMenu() slot)
     GeoGrid* _right_clicked_geo_grid;
+    //pointer to right clicked DataFile (set in onProjectContextMenu() slot)
+    DataFile* _right_clicked_data_file;
 
 private slots:
     void onProjectContextMenu(const QPoint &mouse_location);
@@ -200,6 +205,21 @@ private slots:
                             const spectral::array &orientationField );
     void onRequestGrid( const QString name, IJAbstractCartesianGrid*& pointer );
     void onAutoVarFit();
+    void onConvertFaciesNamesToCodes();
+    void onCategorize();
+    void onAddFaciesTransitionMatrix();
+    void onSetCategoryDefinitionOfAFasciesTransitionMatrix();
+    void onEntropyCyclicityAnalysis();
+    void onFaciesRelationShipDiagram();
+    void onCreateGeoGridMultiZone();
+    void onTransferProperty();
+    void onMCRFSim();
+    void onSegmentLengths();
+    void onLVADataSet();
+    void onFlipEastWest();
+    void onFlipNorthSouth();
+    void onFlipTopBottom();
+    void onExtractMidPoints();
 
 private:
     /**
@@ -237,9 +257,27 @@ private:
     void makeMenuClassifyWith();
 
     /**
+     * The pointer to the dynamic sub-menu "Make categorical as" of the project tree context menu.
+     */
+    QMenu* m_subMenuCategorize;
+    /**
+      * Creates the dynamic items of sub-menu "Make categorical as".
+      */
+    void makeMenuCategorize();
+
+    /**
      * The pointer to the dynamic sub-menu "Map as" of the project tree context menu.
      */
     QMenu* m_subMenuMapAs;
+
+    /**
+     * The pointer to the sub-menu "Flip Data" of the project tree context menu.
+     */
+    QMenu* m_subMenuFlipData;
+    /**
+      * Creates the items of sub-menu "Flip data".
+      */
+    void makeMenuFlipData();
 
 	/**
 	 * Lists the attributes currently being viewed in the quick view dialog.
@@ -250,6 +288,12 @@ private:
       * Creates the dynamic items of sub-menu "Map as".
       */
     void makeMenuMapAs();
+
+    /**
+     * This method is used to create (vtm == nullptr) or review (vtm != nullptr)
+     * an existing vertical transiogram model.
+     */
+    void createOrReviewVerticalTransiogramModel( VerticalTransiogramModel* vtm );
 };
 
 #endif // MAINWINDOW_H

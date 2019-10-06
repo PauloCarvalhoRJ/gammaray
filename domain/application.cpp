@@ -62,6 +62,18 @@ void Application::setGhostscriptPathSetting(const QString path)
     qs.setValue("gspath", path);
 }
 
+QString Application::getGraphVizPathSetting()
+{
+    QSettings qs;
+    return qs.value("gvpath").toString();
+}
+
+void Application::setGraphVizPathSetting(const QString path)
+{
+    QSettings qs;
+    qs.setValue("gvpath", path);
+}
+
 int Application::getMaxGridCellCountFor3DVisualizationSetting()
 {
     QSettings qs;

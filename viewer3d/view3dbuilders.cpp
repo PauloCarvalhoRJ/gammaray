@@ -5,6 +5,7 @@
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
 #include "domain/geogrid.h"
+#include "domain/segmentset.h"
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
 
@@ -44,7 +45,14 @@
 #include <vtkRenderWindow.h>
 #include <vtkThreshold.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkLineSource.h>
+#include <vtkTubeFilter.h>
+#include <vtkLine.h>
+#include <vtkQuad.h>
+
 #include <QMessageBox>
+#include <QPushButton>
+
 
 void RefreshCallback( vtkObject* vtkNotUsed(caller),
                       long unsigned int vtkNotUsed(eventId),
@@ -133,16 +141,34 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
 
     if( fileType == "POINTSET" ){
         return buildForAttributeFromPointSet( (PointSet*)file, attribute, widget3D );
+    } else if( fileType == "SEGMENTSET" ){
+        return buildForAttributeFromSegmentSet( static_cast<SegmentSet*>(file), attribute, widget3D );
     } else if( fileType == "CARTESIANGRID" ) {
         CartesianGrid* cg = (CartesianGrid*)file;
-		if( ! cg->isUVWOfAGeoGrid() ){
+        if( ! cg->isUVWOfAGeoGrid() ){ //cg is a stand-alone Cartesian grid
 			if( cg->getNZ() < 2 ){
-				return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
+                QMessageBox msgBox;
+                msgBox.setText("Display 2D grid as?");
+                QAbstractButton* pButtonUseFlat = msgBox.addButton("Flat grid at z = 0.0", QMessageBox::YesRole);
+                msgBox.addButton("Surface w/ z = variable", QMessageBox::NoRole);
+                msgBox.exec();
+                if ( msgBox.clickedButton() == pButtonUseFlat )
+                    return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
+                else
+                    return buildForSurfaceCartesianGrid2D( cg, attribute, widget3D );
 			} else {
 				return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
 			}
-		} else {
-			return buildForAttributeGeoGrid( dynamic_cast<GeoGrid*>(cg->getParent()), attribute, widget3D );
+        } else { //cg is the UVW aspect of a GeoGrid: present the option to display it either with true geometry or as UVW cube
+            QMessageBox msgBox;
+            msgBox.setText("Which way to display the attribute?");
+            QAbstractButton* pButtonUseGeoGrid = msgBox.addButton("In XYZ GeoGrid", QMessageBox::YesRole);
+            msgBox.addButton("In UVW Cartesian grid", QMessageBox::NoRole);
+            msgBox.exec();
+            if ( msgBox.clickedButton() == pButtonUseGeoGrid )
+                return buildForAttributeGeoGrid( dynamic_cast<GeoGrid*>(cg->getParent()), attribute, widget3D );
+            else
+                return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
 		}
     } else {
         Application::instance()->logError("View3DBuilders::build(Attribute *): Attribute belongs to unsupported file type: " + fileType);
@@ -240,6 +266,96 @@ View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet,
     actor->GetProperty()->SetPointSize(3);
 
     return View3DViewData(actor);
+}
+
+View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segmentSet,
+                                                               Attribute *attribute,
+                                                               View3DWidget *widget3D)
+{
+    //load data from filesystem
+    segmentSet->loadData();
+
+    //get the array indexes for the xyz coordinates
+    //defining the segments
+    uint x0colIdx = segmentSet->getXindex() - 1;
+    uint y0colIdx = segmentSet->getYindex() - 1;
+    uint z0colIdx = segmentSet->getZindex() - 1;
+    uint x1colIdx = segmentSet->getXFinalIndex() - 1;
+    uint y1colIdx = segmentSet->getYFinalIndex() - 1;
+    uint z1colIdx = segmentSet->getZFinalIndex() - 1;
+
+    //get the array index of the target variable in parent data file
+    uint var_index = segmentSet->getFieldGEOEASIndex( attribute->getName() );
+
+    //create a VTK array to store the sample values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("values");
+
+    //get the max and min of the selected variable (useful for continuous variables)
+    double min = segmentSet->min( var_index-1 );
+    double max = segmentSet->max( var_index-1 );
+
+    //build point and segment primitives from data
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+    vtkSmartPointer<vtkCellArray> segments = vtkSmartPointer<vtkCellArray>::New();
+    for( uint i = 0; i < segmentSet->getDataLineCount(); ++i ){
+        double x0 = segmentSet->data( i, x0colIdx );
+        double y0 = segmentSet->data( i, y0colIdx );
+        double z0 = segmentSet->data( i, z0colIdx );
+        double x1 = segmentSet->data( i, x1colIdx );
+        double y1 = segmentSet->data( i, y1colIdx );
+        double z1 = segmentSet->data( i, z1colIdx );
+        vtkIdType id0 = points->InsertNextPoint( x0, y0, z0 );
+        vtkIdType id1 = points->InsertNextPoint( x1, y1, z1 );
+        vtkSmartPointer<vtkLine> segment = vtkSmartPointer<vtkLine>::New();
+        segment->GetPointIds()->SetId( 0, id0 );
+        segment->GetPointIds()->SetId( 1, id1 );
+        segments->InsertNextCell( segment );
+        // take the opportunitu to load the sample values
+        double value = segmentSet->data( i, var_index - 1 );
+        values->InsertNextValue( value );
+    }
+
+    // build a polygonal line from the points and segments primitives
+    vtkSmartPointer<vtkPolyData> poly = vtkSmartPointer<vtkPolyData>::New();
+    poly->SetPoints( points );
+    poly->SetLines( segments );
+    poly->GetCellData()->SetScalars( values );
+    poly->GetCellData()->SetActiveScalars("values");
+
+    // build a tube around the polygonal line
+    vtkSmartPointer<vtkTubeFilter> tubeFilter =
+      vtkSmartPointer<vtkTubeFilter>::New();
+    tubeFilter->SetInputData( poly );
+    tubeFilter->SetRadius(10); //default is .5
+    tubeFilter->SetNumberOfSides(50);
+    tubeFilter->Update();
+
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( segmentSet->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
+
+    // Create a VTK mapper and actor to enable its visualization
+    vtkSmartPointer<vtkPolyDataMapper> tubeMapper =
+      vtkSmartPointer<vtkPolyDataMapper>::New();
+    tubeMapper->SetInputConnection(tubeFilter->GetOutputPort());
+    tubeMapper->SetLookupTable(lut);
+    tubeMapper->SetScalarModeToUseCellData();
+    tubeMapper->SetColorModeToMapScalars();
+    tubeMapper->SelectColorArray("values");
+    tubeMapper->SetScalarRange(min, max);
+
+    vtkSmartPointer<vtkActor> tubeActor =
+      vtkSmartPointer<vtkActor>::New();
+    tubeActor->GetProperty()->SetOpacity(1.0); //Make the tube have some transparency.
+    tubeActor->SetMapper(tubeMapper);
+
+    View3DViewData v3dd( tubeActor );
+    v3dd.tubeFilter = tubeFilter;
+    return v3dd;
 }
 
 View3DViewData View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesianGrid, View3DWidget */*widget3D*/)
@@ -620,8 +736,12 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
     threshold->Update();
 
-    //assign a color table
-    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( cartesianGrid->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
     // Create mappers (visualization parameters) for each level-of-detail
     vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
@@ -671,9 +791,11 @@ View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianG
     for(int k = 0; k <= nZ; ++k)
         for(int j = 0; j <= nY; ++j)
             for(int i = 0; i <= nX; ++i)
-                points->InsertNextPoint( X0frame + i * dX,
-                                         Y0frame + j * dY,
-                                         Z0frame + k * dZ );
+                //the ( d* + d*/n* ) is to account for the extra cells in each direction due
+                //due to cell-centered-to-corner-point conversion
+                points->InsertNextPoint( X0frame + i * ( dX + dX/nX ),
+                                         Y0frame + j * ( dY + dY/nY ),
+                                         Z0frame + k * ( dZ + dZ/nZ ) );
     structuredGrid->SetDimensions( nX+1, nY+1, nZ+1 );
     structuredGrid->SetPoints(points);
 
@@ -799,9 +921,11 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     for(int k = 0; k <= nZsub; ++k)
         for(int j = 0; j <= nYsub; ++j)
             for(int i = 0; i <= nXsub; ++i)
-                points->InsertNextPoint( X0frame + i * dX * srate,
-                                         Y0frame + j * dY * srate,
-                                         Z0frame + k * dZ * srate );
+                //the ( d* + d*/n*sub ) is to account for the extra cells in each direction
+                //due to the corner-point-to-cell-centered conversion
+                points->InsertNextPoint( X0frame + i * ( dX + dX/nXsub ) * srate,
+                                         Y0frame + j * ( dY + dY/nYsub ) * srate,
+                                         Z0frame + k * ( dZ + dZ/nZsub ) * srate );
     structuredGrid->SetDimensions( nXsub+1, nYsub+1, nZsub+1 );
     structuredGrid->SetPoints(points);
 
@@ -831,8 +955,12 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
     threshold->Update();
 
-    //assign a color table
-    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( cartesianGrid->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
     // Create mapper (visualization parameters)
     vtkSmartPointer<vtkDataSetMapper> mapper =
@@ -867,10 +995,10 @@ View3DViewData View3DBuilders::buildForGeoGridMesh( GeoGrid * geoGrid, View3DWid
 	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	uint nCells = geoGrid->getMeshNumberOfCells();
 	unstructuredGrid->Allocate( nCells );
-	for( uint i = 0; i < nCells; ++i ) {
+    vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+    for( uint i = 0; i < nCells; ++i ) {
 		uint vIds[8];
 		geoGrid->getMeshCellDefinition( i, vIds );
-		vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
 		hexa->GetPointIds()->SetId(0, vIds[0]);
 		hexa->GetPointIds()->SetId(1, vIds[1]);
 		hexa->GetPointIds()->SetId(2, vIds[2]);
@@ -914,8 +1042,8 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 
 	//get the max and min of the selected variable
 	geoGrid->loadData();
-	double min = geoGrid->min( var_index-1 );
-	double max = geoGrid->max( var_index-1 );
+    double min = geoGrid->min( var_index-1 );
+    double max = geoGrid->max( var_index-1 );
 
 	//get the grid dimension of the GeoGrid
 	uint nI = geoGrid->getNI();
@@ -953,21 +1081,21 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
 	uint nCells = geoGrid->getMeshNumberOfCells();
 	unstructuredGrid->Allocate( nCells );
-	for( uint i = 0; i < nCells; ++i ) {
-		uint vIds[8];
-		geoGrid->getMeshCellDefinition( i, vIds );
-		vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
-		hexa->GetPointIds()->SetId(0, vIds[0]);
-		hexa->GetPointIds()->SetId(1, vIds[1]);
-		hexa->GetPointIds()->SetId(2, vIds[2]);
-		hexa->GetPointIds()->SetId(3, vIds[3]);
-		hexa->GetPointIds()->SetId(4, vIds[4]);
-		hexa->GetPointIds()->SetId(5, vIds[5]);
-		hexa->GetPointIds()->SetId(6, vIds[6]);
-		hexa->GetPointIds()->SetId(7, vIds[7]);
-		unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
+    vtkSmartPointer< vtkHexahedron > hexa = vtkSmartPointer< vtkHexahedron >::New();
+    for( uint i = 0; i < nCells; ++i ) {
+        uint vIds[8];
+        geoGrid->getMeshCellDefinition( i, vIds );
+        hexa->GetPointIds()->SetId(0, vIds[0]);
+        hexa->GetPointIds()->SetId(1, vIds[1]);
+        hexa->GetPointIds()->SetId(2, vIds[2]);
+        hexa->GetPointIds()->SetId(3, vIds[3]);
+        hexa->GetPointIds()->SetId(4, vIds[4]);
+        hexa->GetPointIds()->SetId(5, vIds[5]);
+        hexa->GetPointIds()->SetId(6, vIds[6]);
+        hexa->GetPointIds()->SetId(7, vIds[7]);
+        unstructuredGrid->InsertNextCell(hexa->GetCellType(), hexa->GetPointIds());
 	}
-	unstructuredGrid->SetPoints(hexaPoints);
+    unstructuredGrid->SetPoints(hexaPoints);
 
 	//assign the grid values to the grid cells
 	unstructuredGrid->GetCellData()->SetScalars( values );
@@ -980,8 +1108,12 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
 	threshold->Update();
 
-	//assign a color table
-	vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( geoGrid->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
 	// Create mapper (visualization parameters)
 	vtkSmartPointer<vtkDataSetMapper> mapper =
@@ -997,5 +1129,105 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	actor->SetMapper(mapper);
 	//actor->GetProperty()->EdgeVisibilityOn();
 
-    return View3DViewData( actor, threshold );
+    return View3DViewData( actor, mapper, threshold );
+}
+
+View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *cartesianGrid,
+                                                              Attribute *attribute,
+                                                              View3DWidget *widget3D)
+{
+    Q_UNUSED( widget3D );
+
+    if( cartesianGrid->getNK() > 1){
+        Application::instance()->logError("View3DBuilders::buildForSurfaceCartesianGrid2D(): grid cannot have more than one depth slice.");
+        return View3DViewData();
+    }
+
+    if( cartesianGrid->getNI() < 2 || cartesianGrid->getNJ() < 2 ){
+        Application::instance()->logError("View3DBuilders::buildForSurfaceCartesianGrid2D(): grid must be at least 2x2.");
+        return View3DViewData();
+    }
+
+    //get the variable index in parent data file
+    uint var_index = cartesianGrid->getFieldGEOEASIndex( attribute->getName() );
+
+    //create a VTK array to store the sample values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("values");
+
+    //create a visibility array. Cells with visibility >= 1 will be
+    //visible, and < 1 will be invisible.
+    vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+    visibility->SetNumberOfComponents(1);
+    visibility->SetName("Visibility");
+
+    //get the max and min of the selected variable
+    cartesianGrid->loadData();
+    double min = cartesianGrid->min( var_index-1 );
+    double max = cartesianGrid->max( var_index-1 );
+
+    //get the grid dimension of the 2D grid
+    uint nI = cartesianGrid->getNI();
+    uint nJ = cartesianGrid->getNJ();
+
+    //read sample values
+    values->Allocate( nI * nJ );
+    visibility->Allocate( nI * nJ );
+    for( int j = 0; j < nJ; ++j){
+        for( int i = 0; i < nI; ++i){
+            // sample value
+            double value = cartesianGrid->dataIJK( var_index - 1, i, j, 0);
+            values->InsertNextValue( value );
+            // visibility flag
+            if( cartesianGrid->isNDV( value ) )
+                visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+            else
+                visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+        }
+    }
+
+    // Create a VTK container with the points (mesh vertexes)
+    vtkSmartPointer< vtkPoints > quadVertexes = vtkSmartPointer< vtkPoints >::New();
+    quadVertexes->SetNumberOfPoints( nI * nJ );
+    for( int i = 0;  i < quadVertexes->GetNumberOfPoints(); ++i ){
+        double x, y, z;
+        uint ii, jj, kk;
+        //convert sequential index to grid coordinates
+        cartesianGrid->indexToIJK( i, ii, jj, kk );
+        //get cell location in space
+        cartesianGrid->getCellLocation( ii, jj, 0, x, y, z );
+        //get sample value
+        double sampleValue = cartesianGrid->dataIJK( var_index - 1, ii, jj, 0);
+        //make vertex with sample value as z
+        quadVertexes->InsertPoint(i, x, y, sampleValue);
+    }
+
+    // Create a VTK unstructured grid object (unrestricted geometry)
+    vtkSmartPointer<vtkUnstructuredGrid> unstructuredGrid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    uint nCells = ( nI - 1 ) * ( nJ - 1 );
+    unstructuredGrid->Allocate( nCells );
+    vtkSmartPointer< vtkQuad > quad = vtkSmartPointer< vtkQuad >::New();
+    for( uint i = 0; i < nCells; ++i ) {
+        uint cellJ = i / ( nI - 1 );
+        quad->GetPointIds()->SetId(0, i + cellJ );
+        quad->GetPointIds()->SetId(1, i + cellJ + 1 );
+        quad->GetPointIds()->SetId(2, i + cellJ + nI + 1 );
+        quad->GetPointIds()->SetId(3, i + cellJ + nI );
+        unstructuredGrid->InsertNextCell( quad->GetCellType(), quad->GetPointIds() );
+    }
+    unstructuredGrid->SetPoints(quadVertexes);
+
+    // Create mapper (visualization parameters)
+    vtkSmartPointer<vtkDataSetMapper> mapper =
+            vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputData( unstructuredGrid );
+    mapper->Update();
+
+    // Finally, pass everything to the actor and return it.
+    vtkSmartPointer<vtkActor> actor =
+            vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    //actor->GetProperty()->EdgeVisibilityOn();
+
+    return View3DViewData( actor );
 }

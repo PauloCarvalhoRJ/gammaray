@@ -16,6 +16,10 @@ enum class KrigingType : unsigned {
     OK      /*!< Originary kriging. */
 };
 
+enum class TransiogramType : int {
+    AUTO_TRANSIOGRAM,
+    CROSS_TRANSIOGRAM
+};
 
 /**
  * The GeostatsUtils class contains static utilitary functions common to geostatistics algorithms.
@@ -63,6 +67,20 @@ public:
 	static double getGamma(VariogramModel* model, const SpatialLocation& locA, const SpatialLocation& locB );
 
     /**
+     * Returns a facies transition probability as a function of a separation.
+     * @param transiogramType Sets whether it is an auto- or cross-transiogram
+     * @param permissiveModel One of the known variogram models (spheric, gaussian, etc.)
+     * @param h The separation.
+     * @param range The range.
+     * @param contribution The sill.
+     */
+    static double getTransiogramProbability( TransiogramType transiogramType,
+                                             VariogramStructureType permissiveModel,
+                                             double h,
+                                             double range,
+                                             double contribution );
+
+    /**
      * Creates a covariance matrix for the given set of samples.
      * @param kType Kriging type.  If SK, then the matrix has only the covariances between
      *        the samples.  If OK, the matrix has an extra row and column with 1.0s, except
@@ -97,15 +115,19 @@ public:
 
     /**
      *  Returns a list of valued grid cells, ordered by topological proximity to the target cell.
+     * @param simulatedData This should be set if this method is being called by computations that do not
+     *                      immediately commit the results to the grid (e.g. simulation routines), otherwise an index
+     *                      crash will ensue as the index in cell object parameter is invalid or is -1.
      */
-	static void getValuedNeighborsTopoOrdered(GridCell &cell,
+    static void getValuedNeighborsTopoOrdered(const GridCell &cell,
 															int numberOfSamples,
 															int nColsAround,
 															int nRowsAround,
 															int nSlicesAround,
 															bool hasNDV,
 															double NDV,
-															GridCellPtrMultiset & list);
+                                                            GridCellPtrMultiset & list,
+                                                            const std::vector<double> *simulatedData = nullptr );
 	/** Creates the P matrix for Factorial Kriging.
 	 * see theory in Ma et al. (2014) - Factorial kriging for multiscale modelling.
 	 * @param nsamples Number of samples for the kriging operation.

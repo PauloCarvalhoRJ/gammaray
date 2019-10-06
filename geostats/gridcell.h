@@ -26,15 +26,15 @@ public:
 	inline GridCell( CartesianGrid* grid, int dataIndex, int i, int j, int k ) : DataCell( dataIndex, grid ),
 		_grid(grid), _indexIJK(i,j,k)
     {
-        _center._x = grid->getX0() + _indexIJK._i * grid->getDX();
-        _center._y = grid->getY0() + _indexIJK._j * grid->getDY();
-        _center._z = grid->getZ0() + _indexIJK._k * grid->getDZ();
+        _center._x = grid->getX0() + _indexIJK._i * grid->getDX() + grid->getDX() / 2.0;
+        _center._y = grid->getY0() + _indexIJK._j * grid->getDY() + grid->getDY() / 2.0;
+        _center._z = grid->getZ0() + _indexIJK._k * grid->getDZ() + grid->getDZ() / 2.0;
     }
 
     /** Computes the topological distance from the given cell.
      * The result is also stored in _topoDistance member variable.
      */
-    inline int computeTopoDistance( GridCell &fromCell ){
+    inline int computeTopoDistance( const GridCell &fromCell ){
         _topoDistance = std::abs( _indexIJK._i - fromCell._indexIJK._i ) +
                         std::abs( _indexIJK._j - fromCell._indexIJK._j ) +
                         std::abs( _indexIJK._k - fromCell._indexIJK._k );
@@ -55,10 +55,19 @@ public:
     */
     double readValueFromGrid() const;
 
+    /** Returns the value from the grid associated with this cell given the index
+     * of anu variable.
+     * It assumes all cell info are correct (_dataIndex does not need to be set).
+     */
+    double readValueFromGrid( uint dataColumnIndex ) const;
+
 // DataCell	interface
 	virtual double readValueFromDataSet() const{
 		return readValueFromGrid();
 	}
+    virtual double readValueFromDataSet( unsigned int dataColumnIndex ) const{
+        return readValueFromGrid( dataColumnIndex );
+    }
 };
 
 typedef std::shared_ptr<GridCell> GridCellPtr;

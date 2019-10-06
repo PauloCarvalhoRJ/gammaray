@@ -16,3 +16,8 @@ double GridCell::readValueFromGrid() const
 {
     return _grid->dataIJK( _dataIndex, _indexIJK._i, _indexIJK._j, _indexIJK._k );
 }
+
+double GridCell::readValueFromGrid(uint dataColumnIndex) const
+{
+    return _grid->dataIJK( dataColumnIndex, _indexIJK._i, _indexIJK._j, _indexIJK._k );
+}

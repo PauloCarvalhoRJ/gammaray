@@ -14,5 +14,6 @@
 #include "widgetgslibparuint.h"
 #include "widgetgslibpargrid.h"
 #include "widgetgslibparcolor.h"
+#include "widgetgslibcustomcolor.h"
 
 #endif // GSLIBPARAMWIDGETS_H

@@ -6,8 +6,9 @@
 #include "geometry/hexahedron.h"
 
 class CartesianGrid;
-class SpatialIndexPoints;
+class SpatialIndex;
 class PointSet;
+class SegmentSet;
 
 /** The data record holding the spatial position of a vertex.
  * It's id is the index in the m_vertexes container.
@@ -57,6 +58,16 @@ typedef struct{
 } CellDefRecord;
 typedef std::shared_ptr< CellDefRecord > CellDefRecordPtr;
 
+
+/**
+ * Structure used as parameter for multi-zone GeoGrid constructors.
+ */
+struct GeoGridZone {
+    Attribute* top;
+    Attribute* base;
+    int nHorizonSlices;
+};
+
 /////////////////////////////////////////////////  The GeoGrid class ///////////////////////////////////////////////////////////
 
 /** The GeoGrid is an irregular structured grid.  See the program manual for more in-depth
@@ -77,10 +88,17 @@ public:
 	 */
 	GeoGrid( QString path, Attribute* atTop, Attribute* atBase, uint nHorizonSlices );
 
+    /** Initializes the geometry as proportional to the tops and bases passed as zones.  The top and base
+     * attributes must come from the same map (2D CartesianGrid).  Use this constructor for new grids only.
+     * Do not use this to load existing ones.
+     * @param path The file path where the data file (GEO-EAS cartesian grid data file) will be saved
+     */
+    GeoGrid( QString path, std::vector<GeoGridZone> zones );
+
 	/**
 	 * Returns (via output parameters) the bounding box of a cell given its cell index.
 	 */
-	void getBoundingBox(uint cellIndex,
+    void getBoundingBox(uint cellIndex,
 						 double& minX, double& minY, double& minZ,
 						 double& maxX, double& maxY, double& maxZ );
 
@@ -122,11 +140,17 @@ public:
     /** Returns, via output parameter, the indexes of mesh vertexes of a cell given its id (index). */
 	void getMeshCellDefinition( uint index, uint (&vIds)[8] );
 
-    /** Returns a new point set by transforming the input point from XYZ space to UVW space.
+    /** Returns a new point set by transforming the input point set from XYZ space to UVW space.
      * Returns null pointer if unfold fails for any reason.
      * Points outside the grid mesh are removed from the result.
      */
     PointSet* unfold( PointSet* inputPS, QString nameForNewPointSet );
+
+    /** Returns a new segment set by transforming the input segment set from XYZ space to UVW space.
+     * Returns null pointer if unfold fails for any reason.
+     * Segments with an end falling outside the grid mesh are removed from the result.
+     */
+    SegmentSet* unfold( SegmentSet* inputSS, QString nameForNewSegmentSet );
 
     /**
      * Converts a global XYZ coordinate into the grid's homogeneous (values between [0, 1])
@@ -174,8 +198,12 @@ public:
 	virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 	virtual bool isRegular() { return false; }
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-	/** GeoGrids are assumed to be always 3D. */
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
+    /** GeoGrids are assumed to be always 3D. */
 	virtual bool isTridimensional(){ return true; }
+    /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
+    virtual double getProportion(int variableIndex, double value0, double value1 );
+    virtual void freeLoadedData();
 
 // File interface
 public:
@@ -202,7 +230,7 @@ private:
 	std::vector< VertexRecordPtr > m_vertexesPart;
 	std::vector< CellDefRecordPtr > m_cellDefsPart;
 	//----------------------------------------------
-	std::unique_ptr< SpatialIndexPoints > m_spatialIndex;
+    std::unique_ptr< SpatialIndex > m_spatialIndex;
 
 	/**
 	 * Stores the file timestamp in the last call to loadMesh().

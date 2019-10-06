@@ -209,6 +209,15 @@ double DataFile::data(uint line, uint column)
     return (this->_data.at(line)).at(column);
 }
 
+double DataFile::dataConst(uint line, uint column) const
+{
+    switch (_data.size()) { // if _data is empty
+    case 0:
+        assert( false && "DataFile::dataConst(): data not loaded.  Make sure you call loadData() prior to fetching data with dataConst()." );
+    }
+    return (this->_data.at(line)).at(column);
+}
+
 // TODO: consider adding a flag to disable NDV checking (applicable to coordinates)
 double DataFile::max(uint column)
 {
@@ -300,7 +309,7 @@ double DataFile::mean(uint column)
         return 0.0;
 }
 
-uint DataFile::getFieldGEOEASIndex(QString field_name)
+uint DataFile::getFieldGEOEASIndex(QString field_name) const
 {
     QStringList field_names = Util::getFieldNames(this->_path);
     for (int i = 0; i < field_names.size(); ++i) {
@@ -310,9 +319,9 @@ uint DataFile::getFieldGEOEASIndex(QString field_name)
     return 0;
 }
 
-Attribute *DataFile::getAttributeFromGEOEASIndex(uint index)
+Attribute *DataFile::getAttributeFromGEOEASIndex(uint index) const
 {
-    std::vector<ProjectComponent *>::iterator it = this->_children.begin();
+    std::vector<ProjectComponent *>::const_iterator it = this->_children.begin();
     for (; it != this->_children.end(); ++it) {
         ProjectComponent *pi = *it;
         if (pi->isAttribute()) {
@@ -331,9 +340,9 @@ uint DataFile::getLastFieldGEOEASIndex()
     return field_names.count();
 }
 
-QString DataFile::getNoDataValue() { return this->_no_data_value; }
+QString DataFile::getNoDataValue() const { return this->_no_data_value; }
 
-double DataFile::getNoDataValueAsDouble()
+double DataFile::getNoDataValueAsDouble() const
 {
     bool OK;
     double result = getNoDataValue().toDouble(&OK);
@@ -369,6 +378,7 @@ bool DataFile::isCategorical(Attribute *at)
 
 CategoryDefinition *DataFile::getCategoryDefinition(Attribute *at)
 {
+    assert( at && "DataFile::getCategoryDefinition(): attribute is nullptr.");
     uint index_in_GEOEAS_file = this->getFieldGEOEASIndex(at->getName());
     QList<QPair<uint, QString>>::iterator it = _categorical_attributes.begin();
     for (; it != _categorical_attributes.end(); ++it) {
@@ -463,10 +473,11 @@ void DataFile::writeToFS()
 
     if (control != nvars) {
         Application::instance()->logWarn("WARNING: DataFile::writeToFS(): mismatch "
-                                         "between data column count and Attribute object "
-                                         "count.");
+                                         "between data column count (" + QString::number(nvars) +
+                                         ") and Attribute object "
+                                         "count (" + QString::number(control) + ").");
         // make up names for mismatched data columns
-        for (uint iGEOEAS = control; iGEOEAS <= nvars; ++iGEOEAS) {
+        for (uint iGEOEAS = control+1; iGEOEAS <= nvars; ++iGEOEAS) {
             out << "ATTRIBUTE " << iGEOEAS << endl;
         }
     }
@@ -504,7 +515,7 @@ void DataFile::writeToFS()
     // renames the .new file, effectively replacing the current file.
     outputFile.rename(this->getPath());
     // updates properties list so any changes appear in the project tree.
-    updatePropertyCollection();
+    updateChildObjectsCollection();
     // update the project tree in the main window.
     Application::instance()->refreshProjectTree();
 }
@@ -539,7 +550,7 @@ int DataFile::getCalcPropertyIndex(const std::string & name)
     return getChildIndex( getChildByName( QString(name.c_str()) ) );
 }
 
-void DataFile::updatePropertyCollection()
+void DataFile::updateChildObjectsCollection()
 {
 	// erases all current children
     this->_children.clear(); // TODO: deallocate elements/deep delete (minor memory leak)
@@ -554,7 +565,7 @@ void DataFile::updatePropertyCollection()
 		cgUVW->setParent( this );
 		GeoGrid* thisGeoGridAspect = dynamic_cast<GeoGrid*>( this );
 		cgUVW->setInfoFromGeoGrid( thisGeoGridAspect );
-		cgUVW->updatePropertyCollection();
+        cgUVW->updateChildObjectsCollection();
 	} else {
 		// list fields from data file
 		QStringList fields = Util::getFieldNames(this->_path);
@@ -602,7 +613,7 @@ void DataFile::replacePhysicalFile(const QString from_file_path)
     // copies the source file over the current physical file in project.
     Util::copyFile(from_file_path, _path);
     // updates properties list so any changes appear in the project tree.
-    updatePropertyCollection();
+    updateChildObjectsCollection();
     // update the project tree in the main window.
     Application::instance()->refreshProjectTree();
 }
@@ -746,17 +757,22 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name, bool categ
             this->updateMetaDataFile();
         }
         // updates properties list so any changes appear in the project tree.
-        updatePropertyCollection();
+        updateChildObjectsCollection();
         // update the project tree in the main window.
         Application::instance()->refreshProjectTree();
     }
 }
 
-uint DataFile::getDataLineCount() { return _data.size(); }
+uint DataFile::getDataLineCount() const { return _data.size(); }
 
 uint DataFile::getDataColumnCount()
 {
     loadData();
+    return getDataColumnCountConst();
+}
+
+uint DataFile::getDataColumnCountConst() const
+{
     if (getDataLineCount() > 0)
         return _data[0].size();
     else
@@ -802,6 +818,49 @@ void DataFile::classify(uint column, UnivariateCategoryClassification *ucc,
     // to the metadata as a categorical attribute
     _categorical_attributes.append(
         QPair<uint, QString>(newIndexGEOEAS, ucc->getCategoryDefinition()->getName()));
+    at->setParent(this);
+    this->addChild(at);
+
+    // saves the file contents to file system
+    this->writeToFS();
+
+    // update the metadata file
+    this->updateMetaDataFile();
+}
+
+void DataFile::convertToCategorical(uint column, CategoryDefinition *cd, int fallbackCode, const QString name_for_new_column)
+{
+    // load the current data from the file system
+    loadData();
+
+    // for each data row...
+    std::vector<std::vector<double>>::iterator it = _data.begin();
+    for (; it != _data.end(); ++it) {
+        //...get the input value
+        int candidateCode = static_cast<int>( (*it).at(column) );
+        //...check whether the value is a valid category code
+        if ( cd->codeExists( candidateCode ) )
+            //...append the code to the current row.
+            (*it).push_back( candidateCode );
+        else {
+            //...if the invalid value is a no-data-value...
+            if( hasNoDataValue() && isNDV( candidateCode ) )
+                //...result is also no-data-value
+                (*it).push_back( getNoDataValueAsDouble() );
+            else
+                //...use the fallback code if the value is an invalid code
+                (*it).push_back( fallbackCode );
+        }
+    }
+
+    // create and add a new Attribute object the represents the new column
+    uint newIndexGEOEAS = Util::getFieldNames(this->getPath()).count() + 1;
+    Attribute *at = new Attribute(name_for_new_column, newIndexGEOEAS, true);
+
+    // adds the attribute's GEO-EAS index (with the name of the category definition file)
+    // to the metadata as a categorical attribute
+    _categorical_attributes.append(
+        QPair<uint, QString>(newIndexGEOEAS, cd->getName()));
     at->setParent(this);
     this->addChild(at);
 
@@ -1061,7 +1120,7 @@ void DataFile::deleteVariable( uint columnToDelete )
     }
 
     //update the child Attribute objects
-    updatePropertyCollection();
+    updateChildObjectsCollection();
 
     //update the project tree in the main window.
     Application::instance()->refreshProjectTree();
@@ -1157,6 +1216,25 @@ std::vector<double> DataFile::getDataColumn(uint column)
     for( uint i = 0; i < nLines; ++i)
         result.push_back( data(i, column) );
     return result;
+}
+
+double DataFile::getProportion(int variableIndex, double value0, double value1)
+{
+    int countYES = 0;
+    int countNO = 0;
+    for( int i = 0; i < getDataLineCount(); ++i ){
+        double value = data( i, variableIndex );
+        if( ! isNDV( value ) ){
+            if( value >= value0 && value <= value1 )
+                ++countYES;
+            else
+                ++countNO;
+        }
+    }
+    if( countYES + countNO > 0 )
+        return countYES / static_cast<double>( countYES + countNO );
+    else
+        return 0.0;
 }
 
 void DataFile::removeDataLine(uint line)

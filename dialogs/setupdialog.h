@@ -18,6 +18,7 @@ public:
 public slots:
     void showGSLibPathSearch();
     void showGSPathSearch();
+    void showGVPathSearch();
     void accept();
 
 private:

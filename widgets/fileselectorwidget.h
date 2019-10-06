@@ -13,15 +13,19 @@ class Distribution;
 
 /*! The file types to list. */
 enum class FileSelectorType : uint {
-    CDFs = 0,            /*!< Only threshold c.d.f. files can be selected. */
-    PDFs,                /*!< Only category p.d.f. files can be selected. */
-    DataFiles,           /*!< Data files can be selected. */
-    CategoryDefinitions, /*!< Categorical definition files can be selected. */
-    CDsAndCDFs,          /*!< Categorical definition and threshold c.d.f. files can be selected. */
-    CDsCDFsandPDFs,      /*!< Categorical definition, threshold c.d.f. and category p.d.f. files can be selected. */
-    PointSets,           /*!< Data files of point set type can be selected. */
-	CartesianGrids,      /*!< Data files of Cartesian grid type can be selected. */
-	Bidistributions      /*!< Bidistributions can be selected. */
+    CDFs = 0,                    /*!< Only threshold c.d.f. files can be selected. */
+    PDFs,                        /*!< Only category p.d.f. files can be selected. */
+    DataFiles,                   /*!< Data files can be selected. */
+    CategoryDefinitions,         /*!< Categorical definition files can be selected. */
+    CDsAndCDFs,                  /*!< Categorical definition and threshold c.d.f. files can be selected. */
+    CDsCDFsandPDFs,              /*!< Categorical definition, threshold c.d.f. and category p.d.f. files can be selected. */
+    PointSets,                   /*!< Data files of point set type can be selected. */
+    CartesianGrids,              /*!< Data files of Cartesian grid type can be selected. */
+    Bidistributions,             /*!< Bidistributions can be selected. */
+    FaciesTransitionMatrices,    /*!< Facies transitions matrices can be selected. */
+    GridFiles,                   /*!< Cartesian and Geo- grids can be selected. */
+    PointAndSegmentSets,         /*!< Data files of point or segment set types can be selected. */
+    VerticalTransiogramModels    /*!< Vertical transiogram models can be selected. */
 };
 
 /**

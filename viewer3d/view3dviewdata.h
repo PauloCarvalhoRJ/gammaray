@@ -8,6 +8,7 @@ class vtkStructuredGridClip;
 class vtkExtractGrid;
 class vtkDataSetMapper;
 class vtkThreshold;
+class vtkTubeFilter;
 
 
 /** This class is just a data structure to hold objects and info related to 3D visualization of a domain object.
@@ -35,6 +36,9 @@ public:
     View3DViewData(vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkThreshold> pThreshold);
 
+    View3DViewData(vtkSmartPointer<vtkProp> pActor,
+                   vtkSmartPointer<vtkDataSetMapper> pMapper,
+                   vtkSmartPointer<vtkThreshold> pThreshold);
 
     /** All objects must have a VTKActor to become visible. */
     vtkSmartPointer<vtkProp> actor;
@@ -50,6 +54,9 @@ public:
 
     /** The thresolhder may be needed to hide unvalued data locations. */
     vtkSmartPointer<vtkThreshold> threshold;
+
+    /** The tube filter is used to render segment sets with adjustable diameter. */
+    vtkSmartPointer<vtkTubeFilter> tubeFilter;
 
     /** Sampling rate. Default is 1: 1 cell per 1 sample in each topological direction (I, J, K). */
     int samplingRate;

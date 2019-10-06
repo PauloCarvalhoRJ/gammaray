@@ -76,6 +76,12 @@ public:
     //!@}
 
     //!@{
+    //! Reads and saves the GraphViz installation path from OS registry.
+    QString getGraphVizPathSetting();
+    void setGraphVizPathSetting(const QString path);
+    //!@}
+
+    //!@{
     //! Reads and saves the maximum number of cells in a single grid for the 3D viewer.
     int getMaxGridCellCountFor3DVisualizationSetting();
     void setMaxGridCellCountFor3DVisualizationSetting(int value);
