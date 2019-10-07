@@ -132,6 +132,13 @@ public:
         m_objectiveFunctionType = objectiveFunctionType;
     }
 
+    /** Rreturns the series of objective function values generated in the last run
+     * of either of the optimization algorithms.
+     */
+    static const std::vector< double >& getObjectiveFunctionValuesOfLastRun() {
+        return s_objectiveFunctionValues;
+    }
+
 private:
     Attribute* m_at;
     CartesianGrid* m_cg;

@@ -41,22 +41,22 @@ void AutomaticVarFitExperimentsDialog::setStepsSpinBoxConfigs(
     m_configsForStepsSpinBox = oneConfigPerParameter;
 }
 
-int AutomaticVarFitExperimentsDialog::getParameterIndex()
+int AutomaticVarFitExperimentsDialog::getParameterIndex() const
 {
     return ui->cmbParameter->currentIndex();
 }
 
-double AutomaticVarFitExperimentsDialog::getFrom()
+double AutomaticVarFitExperimentsDialog::getFrom() const
 {
     return ui->dblSpinFrom->value();
 }
 
-double AutomaticVarFitExperimentsDialog::getTo()
+double AutomaticVarFitExperimentsDialog::getTo() const
 {
     return ui->dblSpinTo->value();
 }
 
-int AutomaticVarFitExperimentsDialog::getNumberOfSteps()
+int AutomaticVarFitExperimentsDialog::getNumberOfSteps() const
 {
     return ui->spinNumberOfSteps->value();
 }

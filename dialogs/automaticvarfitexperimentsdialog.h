@@ -48,16 +48,16 @@ public:
     void setStepsSpinBoxConfigs( const std::vector< MinMaxIncreaseInt >    oneConfigPerParameter );
 
     /** Returns the index of the parameter name selected by the user. */
-    int getParameterIndex();
+    int getParameterIndex() const;
 
     /** Returns the "from:" value set by the user. */
-    double getFrom();
+    double getFrom() const;
 
     /** Returns the "to:" value set by the user. */
-    double getTo();
+    double getTo() const;
 
     /** Returns the number of steps between "from:" and "to:" values set by the user. */
-    int getNumberOfSteps();
+    int getNumberOfSteps() const;
 
 protected:
     //QWidget interface

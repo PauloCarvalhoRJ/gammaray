@@ -8,6 +8,7 @@
 class Attribute;
 class CartesianGrid;
 class IJGridViewerWidget;
+class AutomaticVarFitExperimentsDialog;
 
 namespace Ui {
 class AutomaticVarFitDialog;
@@ -51,6 +52,7 @@ private Q_SLOTS:
     void onMethodTabChanged( int tabIndex );
 
 private:
+    void runExperimentsWithSAandGD(const AutomaticVarFitExperimentsDialog& expParDiag);
     void runExperimentsWithSAandGD(
             int seedI,       int seedF,       int seedSteps,
             double iniTempI, double iniTempF, int iniTempSteps,
@@ -60,6 +62,9 @@ private:
     void runExperimentsWithLSRS();
     void runExperimentsWithPSO();
     void runExperimentsWithGenetic();
+
+    void showConvergenceCurves(
+            const std::vector< std::vector< double > >& curves ) const;
 };
 
 #endif // AUTOMATICVARFITDIALOG_H

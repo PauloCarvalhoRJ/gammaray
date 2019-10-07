@@ -3,10 +3,12 @@
 #include "mainwindow.h"
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
+#include "domain/application.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "spectral/spectral.h"
 #include "imagejockey/svd/svdfactor.h"
 #include "dialogs/automaticvarfitexperimentsdialog.h"
+#include "dialogs/emptydialog.h"
 
 #include <QProgressDialog>
 #include <QMessageBox>
@@ -14,6 +16,10 @@
 #include <cassert>
 #include <thread>
 #include <QTextStream>
+#include <QChart>
+#include <QLineSeries>
+#include <QChartView>
+#include <QValueAxis>
 
 AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -380,7 +386,7 @@ void AutomaticVarFitDialog::onRunExperiments()
     {
         switch ( tabIndex ) {
         case 1: //SA+GD algorithm
-            runExperimentsWithSAandGD();
+            runExperimentsWithSAandGD( expd );
             break;
         case 2: //LSRS algorithm
             runExperimentsWithLSRS();
@@ -452,6 +458,36 @@ void AutomaticVarFitDialog::onMethodTabChanged(int tabIndex)
         ui->btnRunExperiments->setEnabled( false );
 }
 
+void AutomaticVarFitDialog::runExperimentsWithSAandGD(const AutomaticVarFitExperimentsDialog& expParDiag)
+{
+    switch ( expParDiag.getParameterIndex() ) {
+    case 0: //vary seed
+        runExperimentsWithSAandGD( expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinInitialTemperature->value(), ui->spinInitialTemperature->value(), 1,
+                                   ui->spinFinalTemperature->value(), ui->spinFinalTemperature->value(), 1,
+                                   ui->spinMaxHopFactor->value(), ui->spinMaxHopFactor->value(), 1);
+        break;
+    case 1: //vary initial temperature
+        runExperimentsWithSAandGD( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinFinalTemperature->value(), ui->spinFinalTemperature->value(), 1,
+                                   ui->spinMaxHopFactor->value(), ui->spinMaxHopFactor->value(), 1);
+        break;
+    case 2: //vary final temperature
+        runExperimentsWithSAandGD( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinInitialTemperature->value(), ui->spinInitialTemperature->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinMaxHopFactor->value(), ui->spinMaxHopFactor->value(), 1);
+        break;
+    case 3: //vary max. 'hop' factor
+        runExperimentsWithSAandGD( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinInitialTemperature->value(), ui->spinInitialTemperature->value(), 1,
+                                   ui->spinFinalTemperature->value(), ui->spinFinalTemperature->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps());
+        break;
+    }
+}
+
 void AutomaticVarFitDialog::runExperimentsWithSAandGD(
         int seedI,       int seedF,       int seedSteps,
         double iniTempI, double iniTempF, int iniTempSteps,
@@ -471,10 +507,13 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
     double hopFactStep = ( hopFactF - hopFactI ) / hopFactSteps;
     if( hopFactStep <= 0.0 ) hopFactStep = 1000000.0; //makes sure the loop executes just once if initial == final
 
+    std::vector< std::vector< double > > convergenceCurves;
+
     for( int seed = seedI; seed <= seedF; seed += seedStep )
         for( double tInitial = iniTempI; tInitial <= iniTempF; tInitial += iniTempStep )
             for( double tFinal = finTempI; tFinal <= finTempF && tFinal < tInitial; tFinal += finTempStep )
-                for( double hopFactor = hopFactI; hopFactor <= hopFactF; hopFactor += hopFactStep )
+                for( double hopFactor = hopFactI; hopFactor <= hopFactF; hopFactor += hopFactStep ){
+                    //Run the algorithm
                     std::vector< IJVariographicStructure2D > model =
                                   m_autoVarFit.processWithSAandGD(
                                                      ui->spinNumberOfThreads->value(),
@@ -490,6 +529,12 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
                                                      ui->spinMaxStepsAlphaReduction->value(),
                                                      std::pow( 10.0, ui->spinConvergenceCriterion->value() ),
                                                      false);
+                    //collect the convergence profile (evolution of the objective function
+                    //value as the iteration progresses)
+                    convergenceCurves.push_back( m_autoVarFit.getObjectiveFunctionValuesOfLastRun() );
+                }
+
+    showConvergenceCurves( convergenceCurves );
 }
 
 void AutomaticVarFitDialog::runExperimentsWithLSRS()
@@ -505,4 +550,48 @@ void AutomaticVarFitDialog::runExperimentsWithPSO()
 void AutomaticVarFitDialog::runExperimentsWithGenetic()
 {
 
+}
+
+void AutomaticVarFitDialog::showConvergenceCurves(
+        const std::vector<std::vector<double> > &curves) const
+{
+    //load the multiple x,y data series for the chart
+    std::vector< QtCharts::QLineSeries* > chartSeriesVector;
+    double max = std::numeric_limits<double>::lowest();
+    for( const std::vector<double>& curve : curves ){
+        QtCharts::QLineSeries *chartSeries = new QtCharts::QLineSeries();
+        for(uint i = 0; i < curve.size(); ++i){
+            chartSeries->append( i+1, curve[i] );
+            if( curve[i] > max )
+                max = curve[i];
+        }
+        chartSeriesVector.push_back( chartSeries );
+    }
+
+    //create a new chart object
+    QtCharts::QChart *objFuncValuesChart = new QtCharts::QChart();
+    {
+        QtCharts::QValueAxis* axisX = new QtCharts::QValueAxis();
+        axisX->setLabelFormat("%i");
+
+        QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
+        axisY->setLabelFormat("%3.2f");
+        axisY->setRange( 0.0, max );
+
+        for( QtCharts::QLineSeries* chartSeries : chartSeriesVector ){
+            objFuncValuesChart->addSeries( chartSeries );
+            objFuncValuesChart->axisX( chartSeries );
+            objFuncValuesChart->setAxisX(axisX, chartSeries);
+            objFuncValuesChart->setAxisY(axisY, chartSeries);
+        }
+
+        objFuncValuesChart->legend()->hide();
+    }
+
+    //create the chart dialog
+    EmptyDialog* ed = new EmptyDialog( Application::instance()->getMainWindow() );
+    QtCharts::QChartView* chartView = new QtCharts::QChartView( objFuncValuesChart );
+    ed->addWidget( chartView );
+    ed->setWindowTitle( "Convergence curves." );
+    ed->exec();
 }
