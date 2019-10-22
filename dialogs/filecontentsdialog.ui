@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPlainTextEdit" name="txtFileContents">
+    <widget class="QTextEdit" name="txtFileContents">
      <property name="minimumSize">
       <size>
        <width>400</width>
@@ -26,12 +26,6 @@
       <font>
        <family>Courier New</family>
       </font>
-     </property>
-     <property name="lineWrapMode">
-      <enum>QPlainTextEdit::NoWrap</enum>
-     </property>
-     <property name="readOnly">
-      <bool>true</bool>
      </property>
     </widget>
    </item>
