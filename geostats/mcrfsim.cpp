@@ -428,7 +428,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     }
 
     //execution is not supposed to reach this point
-    assert( false && "MCRFSim::simulateOneCellMT(): Execution reached a point not supposed to be.  "
+    assert( false && "MCRFSim::simulateOneCellMT(): Execution reached a point not supposed to.  "
                      "Please, check the sources of probabilities: global PDF, transiograms and secondary data.");
     return m_simGridNDV;
 }
