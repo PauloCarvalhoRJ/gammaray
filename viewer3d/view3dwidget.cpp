@@ -32,6 +32,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "view3dbuilders.h"
 #include "view3dconfigwidget.h"
 #include "view3dverticalexaggerationwidget.h"
+#include "util.h"
 
 View3DWidget::View3DWidget(QWidget *parent)
     : QWidget(parent), ui(new Ui::View3DWidget), _currentCfgWidget(nullptr),
@@ -135,6 +136,19 @@ View3DWidget::View3DWidget(QWidget *parent)
     //_verticalExaggWiget->setWindowFlags( Qt::FramelessWindowHint );
     connect(_verticalExaggWiget, SIGNAL(valueChanged(double)), this,
             SLOT(onVerticalExaggerationChanged(double)));
+
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->btnGlobal->setIconSize( QSize( 64, 64 ) );
+        ui->btnGlobal->setIcon( QIcon(":icons32/v3Dglobal32") );
+        ui->btnLookAtXY->setIconSize( QSize( 64, 64 ) );
+        ui->btnLookAtXY->setIcon( QIcon(":icons32/v3Dxy32") );
+        ui->btnLookAtXZ->setIconSize( QSize( 64, 64 ) );
+        ui->btnLookAtXZ->setIcon( QIcon(":icons32/v3Dxz32") );
+        ui->btnLookAtYZ->setIconSize( QSize( 64, 64 ) );
+        ui->btnLookAtYZ->setIcon( QIcon(":icons32/v3Dyz32") );
+        ui->btnVerticalExaggeration->setIconSize( QSize( 64, 64 ) );
+        ui->btnVerticalExaggeration->setIcon( QIcon(":icons32/vertexag32") );
+    }
 }
 
 View3DWidget::~View3DWidget()

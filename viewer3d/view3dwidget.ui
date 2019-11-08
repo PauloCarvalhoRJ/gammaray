@@ -224,7 +224,7 @@
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
-              <normaloff>:/icons32/v3Dglobal32</normaloff>:/icons32/v3Dglobal32</iconset>
+              <normaloff>:/icons/v3Dglobal</normaloff>:/icons/v3Dglobal</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -247,7 +247,7 @@
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
-              <normaloff>:/icons32/v3Dxy32</normaloff>:/icons32/v3Dxy32</iconset>
+              <normaloff>:/icons/v3Dxy</normaloff>:/icons/v3Dxy</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -270,7 +270,7 @@
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
-              <normaloff>:/icons32/v3Dyz32</normaloff>:/icons32/v3Dyz32</iconset>
+              <normaloff>:/icons/v3Dyz</normaloff>:/icons/v3Dyz</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -293,7 +293,7 @@
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
-              <normaloff>:/icons32/v3Dxz32</normaloff>:/icons32/v3Dxz32</iconset>
+              <normaloff>:/icons/v3Dxz</normaloff>:/icons/v3Dxz</iconset>
             </property>
             <property name="iconSize">
              <size>
@@ -316,7 +316,7 @@
             </property>
             <property name="icon">
              <iconset resource="../resources.qrc">
-              <normaloff>:/icons32/vertexag32</normaloff>:/icons32/vertexag32</iconset>
+              <normaloff>:/icons/vertaxag</normaloff>:/icons/vertaxag</iconset>
             </property>
             <property name="iconSize">
              <size>

@@ -51,6 +51,11 @@
         <file alias="catuniclass16">art/catuniclass16x16.png</file>
         <file alias="faciesmap16">art/faciesmap16x16.png</file>
         <file alias="catvar16">art/catvar16.png</file>
+        <file alias="v3Dglobal">art/v3Dglobal.png</file>
+        <file alias="v3Dxy">art/v3Dxy.png</file>
+        <file alias="v3Dxz">art/v3Dxz.png</file>
+        <file alias="v3Dyz">art/v3Dyz.png</file>
+        <file alias="vertaxag">art/vertexag.png</file>
     </qresource>
     <qresource prefix="/icons32">
         <file alias="db32">art/iconsHD/db32.png</file>
