@@ -124,5 +124,7 @@
         <file alias="clean32">art/iconsHD/clean32.png</file>
         <file alias="frd32">art/iconsHD/frd32.png</file>
         <file alias="snapshotz32">art/iconsHD/snapshotz32.png</file>
+        <file alias="catdef32">art/iconsHD/catdef32x32.png</file>
+        <file alias="catuniclass32">art/iconsHD/catuniclass32x32.png</file>
     </qresource>
 </RCC>
