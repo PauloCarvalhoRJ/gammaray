@@ -9,6 +9,7 @@
 
 #include <QProgressDialog>
 #include <QApplication>
+#include <iostream>
 
 ValuesTransferer::ValuesTransferer(const QString newAttributeName,
                                    DataFile *dfDestination,
@@ -133,13 +134,17 @@ bool ValuesTransferer::transferFromCGtoPS()
     /////////////////////////////////
 
     int progressUpdateStep = rowCount / 100;
+    if( progressUpdateStep <= 0 )
+        progressUpdateStep = 1;
 
     //loop over the PointSet samples (one sample == one data record)
     //to transfer values
     for( int iRow = 0; iRow < rowCount; ++iRow ){
         double x = psDest->data( iRow, psDest->getXindex()-1 );
         double y = psDest->data( iRow, psDest->getYindex()-1 );
-        double z = psDest->data( iRow, psDest->getZindex()-1 );
+        double z = 0.0;
+        if( psDest->is3D() )
+            z = psDest->data( iRow, psDest->getZindex()-1 );
 
         double collocatedValue = cgOrig->valueAt( atIndex, x, y, z );
         if( std::isfinite( collocatedValue ) && ! cgOrig->isNDV( collocatedValue ) )
