@@ -256,7 +256,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                 double faciesSuccessionDistance = 0.0;
                 {
                     double verticalSeparation = simCellZ - sampleDataCell->_center._z;
-                    double lateralSuccessionSeparation = std::abs( sampleGradationValue - simCellGradationFieldValue );
+                    double lateralSuccessionSeparation = sampleGradationValue - simCellGradationFieldValue;
                     faciesSuccessionDistance = std::sqrt( verticalSeparation*verticalSeparation + lateralSuccessionSeparation*lateralSuccessionSeparation );
                 }
                 //Finally, collect the facies code and the succession separation for the ensuing transiogram
@@ -309,7 +309,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                 double faciesSuccessionDistance = 0.0;
                 {
                     double verticalSeparation = simCellZ - neighborGridCellAspect->_center._z;
-                    double lateralSuccessionSeparation = std::abs( neighborGradationFieldValue - simCellGradationFieldValue );
+                    double lateralSuccessionSeparation = neighborGradationFieldValue - simCellGradationFieldValue;
                     faciesSuccessionDistance = std::sqrt( verticalSeparation*verticalSeparation + lateralSuccessionSeparation*lateralSuccessionSeparation );
                 }
 
