@@ -3,8 +3,6 @@
 
 #include <QObject>
 
-class QTextStream;
-
 /** This is an auxiliary class used in DataFile::writeToFS() to enable the progress dialog.
  * The file is saved in a separate thread, so the progress bar updates.
  */
@@ -15,8 +13,8 @@ class DataSaver : public QObject
 public:
 
     explicit DataSaver(std::vector< std::vector<double> >& data,
-                       QTextStream& out,
-                       QObject *parent = 0);
+                       std::ostringstream& out,
+                       QObject *parent = nullptr);
 
     bool isFinished(){ return _finished; }
 
@@ -28,7 +26,7 @@ signals:
 private:
     bool _finished;
     std::vector< std::vector<double> >& _data;
-    QTextStream& _out;
+    std::ostringstream& _out;
 
 };
 

@@ -430,9 +430,12 @@ void DataFile::writeToFS()
 
     //create a new file for output
     QFile outputFile( QString( this->getPath() ).append(".new") );
-    outputFile.open( QFile::WriteOnly | QFile::Text );
+    if( ! outputFile.open( QFile::WriteOnly | QFile::Text | QFile::Truncate ) )
+        assert( false && "DataFile::writeToFS(): Could not open ASCII file for writing.");
 
-    QTextStream out(&outputFile);
+    std::ostringstream out;
+    out.precision( 12 );
+    //std::fixed( out ); //this forces fixed precision (that is, zeros to the right)
 
     // if file already exists, keep copy of the file description or make up one otherwise
     QString comment;
@@ -440,7 +443,7 @@ void DataFile::writeToFS()
         comment = Util::getGEOEAScomment(this->getPath());
     else
         comment = this->getFileType() + " created by GammaRay";
-    out << comment << endl;
+    out << comment.toStdString() << endl;
 
     // next, we need to know the number of columns
     //(assumes the first data line has the correct number of variables)
@@ -463,7 +466,7 @@ void DataFile::writeToFS()
             if ((*it)->isAttribute()) {
                 Attribute *at = (Attribute *)(*it);
                 if (at->getAttributeGEOEASgivenIndex() == (int)iGEOEAS) {
-                    out << at->getName() << endl;
+                    out << at->getName().toStdString() << endl;
                     ++control;
                     break;
                 }
@@ -505,6 +508,8 @@ void DataFile::writeToFS()
         thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
         QCoreApplication::processEvents(); //let Qt repaint widgets
     }
+
+    outputFile.write( out.str().data(), out.str().length() );
 
     // close output file
     outputFile.close();
