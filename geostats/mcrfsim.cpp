@@ -186,6 +186,11 @@ bool MCRFSim::useSecondaryData() const
 double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                                   std::mt19937 &randomNumberGenerator, const spectral::array& simulatedData ) const
 {
+    //compute the vertical cell anisotropy, which is important to normalize the vertical separations.
+    //this is important when the sim grid is in depositional domain, which normally has a vertical cell
+    //size much greater than the lateral cell sizes.
+    double vertAniso = m_cgSim->getDZ() / std::min( m_cgSim->getDX(), m_cgSim->getDY() );
+
     //get the facies set to be simulated
     CategoryDefinition* cd = m_pdf->getCategoryDefinition();
 
@@ -255,7 +260,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                 // variation in the gradation field - lateral succession separation )
                 double faciesSuccessionDistance = 0.0;
                 {
-                    double verticalSeparation = simCellZ - sampleDataCell->_center._z;
+                    double verticalSeparation = ( simCellZ - sampleDataCell->_center._z ) / vertAniso;
                     double lateralSuccessionSeparation = sampleGradationValue - simCellGradationFieldValue;
                     faciesSuccessionDistance = std::sqrt( verticalSeparation*verticalSeparation + lateralSuccessionSeparation*lateralSuccessionSeparation );
                 }
@@ -308,7 +313,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                 // variation in the gradation field - lateral succession separation )
                 double faciesSuccessionDistance = 0.0;
                 {
-                    double verticalSeparation = simCellZ - neighborGridCellAspect->_center._z;
+                    double verticalSeparation = ( simCellZ - neighborGridCellAspect->_center._z ) / vertAniso;
                     double lateralSuccessionSeparation = neighborGradationFieldValue - simCellGradationFieldValue;
                     faciesSuccessionDistance = std::sqrt( verticalSeparation*verticalSeparation + lateralSuccessionSeparation*lateralSuccessionSeparation );
                 }
