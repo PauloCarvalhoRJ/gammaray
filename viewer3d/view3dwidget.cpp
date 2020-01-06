@@ -128,6 +128,15 @@ View3DWidget::View3DWidget(QWidget *parent)
     callBackCommand->SetClientData((void*)this);
     _renderer->AddObserver( vtkCommand::AnyEvent , callBackCommand );   // mp_ren is the vtkRenderer object.
 
+    // Prepare to render transparency/translucency adequately
+    // See: https://stackoverflow.com/questions/47528086/problems-with-rendering-transparent-objects-in-vtk
+    //      https://vtk.org/Wiki/VTK/Examples/Cxx/Visualization/CorrectlyRenderTranslucentGeometry
+    _renderer->SetUseDepthPeeling(1);
+    _renderer->SetOcclusionRatio(0.1);
+    _renderer->SetMaximumNumberOfPeels(4);
+    _vtkwidget->GetRenderWindow()->SetMultiSamples(0);
+    _vtkwidget->GetRenderWindow()->SetAlphaBitPlanes(1);
+
     // adjusts view so everything fits in the screen
     _renderer->ResetCamera();
 

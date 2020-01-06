@@ -64,22 +64,18 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getCategoricalColorTable( Cat
             rgb[0] = color.redF();
             rgb[1] = color.greenF();
             rgb[2] = color.blueF();
-            //WARNING: avoid using different transparency levels
-            //         weird transparency effects have been observed.
-            //         set the same alpha for all colors in the table
             lut->SetTableValue(i, rgb[0], rgb[1], rgb[2], 1.0);
             lut->SetAnnotation(i, QString::number(i).toStdString() );
         } else {
-            lut->SetTableValue(i, 0.0, 0.0, 0.0, 1.0);
+            lut->SetTableValue(i, 1.0, 0.0, 1.0, 0.3); //ilegal color codes are rendered as pink 70% transparent.
             lut->SetAnnotation(i, "UNKNOWN CATEGORY" );
         }
     }
+    lut->SetNanColor( 1.0, 0.0, 1.0, 0.3 ); //unvalued locations are rendered as pink 70% transparent.
     lut->IndexedLookupOn();
-    lut->SetNanColor( 0.0, 0.0, 0.0, 1.0 ); //ilegal color codes are rendered as 100% transparent.
     lut->Build();
 
     return lut;
-
 }
 
 //===============private functions=====================================
