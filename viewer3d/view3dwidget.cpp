@@ -25,6 +25,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkSphereSource.h>
 #include <vtkTransform.h>
 #include <vtkFXAAOptions.h>
+#include <vtkRendererCollection.h>
+#include <vtkCallbackCommand.h>
 
 #include "domain/application.h"
 #include "domain/project.h"
@@ -32,6 +34,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "view3dbuilders.h"
 #include "view3dconfigwidget.h"
 #include "view3dverticalexaggerationwidget.h"
+#include "viewer3d/v3dmouseinteractor.h"
 #include "util.h"
 
 View3DWidget::View3DWidget(QWidget *parent)
@@ -112,6 +115,19 @@ View3DWidget::View3DWidget(QWidget *parent)
     _vtkAxesWidget->InteractiveOn();
     //--------------------------------------------------------------------------
 
+    // Customize event handling through a subclass of vtkInteractorStyleTrackballCamera.
+    // This allows picking and probing by clicking on objects in the scene, for example.
+    vtkSmartPointer<v3dMouseInteractor> myInteractor = vtkSmartPointer<v3dMouseInteractor>::New();
+    myInteractor->setParentView3DWidget( this );
+    myInteractor->SetDefaultRenderer(_renderer);
+    _vtkwidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle( myInteractor );
+
+    // Set callback for any event
+    vtkSmartPointer<vtkCallbackCommand> callBackCommand = vtkSmartPointer<vtkCallbackCommand>::New();
+    callBackCommand->SetCallback( rendererCallback );
+    callBackCommand->SetClientData((void*)this);
+    _renderer->AddObserver( vtkCommand::AnyEvent , callBackCommand );   // mp_ren is the vtkRenderer object.
+
     // adjusts view so everything fits in the screen
     _renderer->ResetCamera();
 
@@ -169,6 +185,20 @@ void View3DWidget::removeCurrentConfigWidget()
         _currentCfgWidget->setParent(nullptr);
         // resets the pointer
         _currentCfgWidget = nullptr;
+    }
+}
+
+/*static*/ void View3DWidget::rendererCallback(vtkObject *caller,
+                                                 unsigned long vtkNotUsed(QWidget::event),
+                                                 void *arg,
+                                                 void *vtkNotUsed(whatIsThis))
+{
+    QVTKOpenGLWidget *qvtkOGLwidget;  // must point to the same object as View3DWidget's _vtkwidget.
+    qvtkOGLwidget = static_cast<QVTKOpenGLWidget*>(arg);
+    if( ! qvtkOGLwidget ){
+        Application::instance()->logWarn("View3DWidget::rendererCallback(): arg is not a QVTKOpenGLWidget.  Check View3DWidget::_vtkwidget's class.");
+    } else {
+        // Place vtkRenderer event handling code here.
     }
 }
 
