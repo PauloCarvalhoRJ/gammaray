@@ -644,6 +644,10 @@ _VTK_VERSION_SUFFIX = $$(VTK_VERSION_SUFFIX)
 isEmpty(_VTK_VERSION_SUFFIX){
     warning(VTK_VERSION_SUFFIX environment variable not defined or empty.)
 }
+    gcc:QMAKE_CXXFLAGS += -isystem $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
+  clang:QMAKE_CXXFLAGS += -isystem $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
+  mingw:QMAKE_CXXFLAGS += -isystem $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
+msvc:QMAKE_CXXFLAGS += /external:I $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
 INCLUDEPATH += $$_VTK_INCLUDE
 LIBPATH     += $$_VTK_LIB
 LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
@@ -698,6 +702,10 @@ _ITK_VERSION_SUFFIX = $$(ITK_VERSION_SUFFIX)
 isEmpty(_ITK_VERSION_SUFFIX){
     warning(ITK_VERSION_SUFFIX environment variable not defined or empty.)
 }
+    gcc:QMAKE_CXXFLAGS += -isystem $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
+  clang:QMAKE_CXXFLAGS += -isystem $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
+  mingw:QMAKE_CXXFLAGS += -isystem $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
+msvc:QMAKE_CXXFLAGS += /external:I $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
 INCLUDEPATH += $$_ITK_INCLUDE
 LIBPATH     += $$_ITK_LIB
 LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
