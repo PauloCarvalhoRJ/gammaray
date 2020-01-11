@@ -20,6 +20,11 @@ enum class CartesianCoord : int {
 	Z
 };
 
+enum class SortingOrder : int {
+    ASCENDING,
+    DESCENDING
+};
+
 /**
  * @brief The DataFile class is the base class of all project components that are
  *  files with scientific data, namely Point Set and Cartesian Grid.
@@ -371,6 +376,14 @@ public:
      * a more complex hierarchy tree.
      */
     void updateChildObjectsCollection();
+
+    /**
+     * Returns a new data table sorted (ascending or descending) by the given data column.
+     * ATTENTION: calling this for gridded data will modify the location of each data value in space.
+     *            Reordering data is more common with data objects with geometry attached to data
+     *            values such as point sets.  Gridded data have geometry that does not belong to the data set.
+     */
+    std::vector< std::vector<double> > getDataSortedBy( int variableIndex, SortingOrder sortingOrder );
 
 //File interface
 	virtual void deleteFromFS();
