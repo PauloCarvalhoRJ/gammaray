@@ -493,7 +493,27 @@ void FaciesTransitionMatrix::updateMetaDataFile()
 
 void FaciesTransitionMatrix::writeToFS()
 {
-    throw InvalidMethodException();
+    //open file for writing
+    QFile file( getPath() );
+    file.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&file);
+
+    //output the column headers
+    for( const QString& columnHeader : m_columnHeadersFaciesNames ){
+        out << '\t' << Util::putDoubleQuotesIfThereIsWhiteSpace( columnHeader );
+    }
+    out << '\n';
+
+    //output the line headers and the sum/probability values
+    for( int iLine = 0; iLine < m_lineHeadersFaciesNames.size(); ++iLine ){
+        out << Util::putDoubleQuotesIfThereIsWhiteSpace( m_lineHeadersFaciesNames[ iLine ] );
+        for( double value : m_transitionCounts[ iLine ] )
+            out << '\t' << value;
+        out << '\n';
+    }
+
+    //close file
+    file.close();
 }
 
 void FaciesTransitionMatrix::readFromFS()
