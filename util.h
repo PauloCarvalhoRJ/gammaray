@@ -523,6 +523,9 @@ public:
      */
     static std::vector<std::string> tokenizeWithDoubleQuotes(const std::string& lineOfText, bool includeDoubleQuotes);
 
+    /** Enclose in double quotes if the input text has whitespaces. */
+    static QString putDoubleQuotesIfThereIsWhiteSpace( const QString& text );
+
     /** Computes 3D FFT (forward or reverse) for an array of values.  The result will be
      * stored in the input array.
      *  @note The array elements are OVERWRITTEN during computation.

@@ -1585,6 +1585,14 @@ std::vector<std::string> Util::tokenizeWithDoubleQuotes( const std::string &line
     return result;
 }
 
+QString Util::putDoubleQuotesIfThereIsWhiteSpace(const QString &text)
+{
+    QString delimiter;
+    if( text.contains(' ') )
+        delimiter = "\"";
+    return delimiter + text + delimiter;
+}
+
 void Util::fft3D(int nI, int nJ, int nK, std::vector<std::complex<double> > &values,
                  FFTComputationMode isig,
                  FFTImageType itype )
