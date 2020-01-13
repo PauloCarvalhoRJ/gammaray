@@ -20,3 +20,8 @@ ChooseVariableDialog::~ChooseVariableDialog()
 {
     delete ui;
 }
+
+int ChooseVariableDialog::getSelectedVariableIndex()
+{
+    return static_cast<int>( m_variableSelector->getSelectedVariableGEOEASIndex() ) - 1;
+}

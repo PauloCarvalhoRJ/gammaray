@@ -18,6 +18,9 @@ public:
     explicit ChooseVariableDialog(DataFile* df, const QString title, const QString caption, QWidget *parent = nullptr);
     ~ChooseVariableDialog();
 
+    /** Returns -1 if the user opts to "NOT SET". */
+    int getSelectedVariableIndex();
+
 private:
     Ui::ChooseVariableDialog *ui;
     DataFile* m_df;
