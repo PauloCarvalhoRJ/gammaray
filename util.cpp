@@ -2031,7 +2031,7 @@ double Util::radiansToHalfAzimuth(double trigonometricAngle, bool clockwiseRadia
 QString Util::formatToDecimalPlaces(double value, int nDecimalPlaces)
 {
     char buffer[50];
-    QString format = "%." + QString::number(nDecimalPlaces) + "f";
+    QString format = "%." + QString::number(nDecimalPlaces) + "g";
     std::sprintf(buffer, format.toStdString().c_str(), value );
     return QString( buffer );
 }
