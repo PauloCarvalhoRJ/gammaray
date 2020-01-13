@@ -3,6 +3,7 @@
 
 #include "file.h"
 #include "calculator/icalcpropertycollection.h"
+#include "util.h"
 #include <vector>
 #include <QMap>
 #include <QDateTime>
@@ -18,11 +19,6 @@ enum class CartesianCoord : int {
 	X,
 	Y,
 	Z
-};
-
-enum class SortingOrder : int {
-    ASCENDING,
-    DESCENDING
 };
 
 /**
@@ -383,7 +379,17 @@ public:
      *            Reordering data is more common with data objects with geometry attached to data
      *            values such as point sets.  Gridded data have geometry that does not belong to the data set.
      */
-    std::vector< std::vector<double> > getDataSortedBy( int variableIndex, SortingOrder sortingOrder );
+    std::vector< std::vector<double> > getDataSortedBy( int variableIndex, SortingOrder sortingOrder ) const;
+
+    /**
+     * Splits the data set into several tables using the value of a given variable as criterion.
+     * This is normally used with data files that have data from several different sources (e.g. different
+     * drill holes).  The outer std::vector is the collection of the data tables (the inner vectors).
+     */
+    std::vector< std::vector< std::vector<double> > > getDataGroupedBy( int variableIndex ) const;
+
+    /** Returns a read-only reference to the internal data table. */
+    const std::vector< std::vector<double> >& getDataTable() const { return _data; }
 
 //File interface
 	virtual void deleteFromFS();

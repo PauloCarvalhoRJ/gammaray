@@ -613,23 +613,9 @@ void DataFile::updateChildObjectsCollection()
     }
 }
 
-struct DataRowComparatorByColumnIndexAscending {
-  bool operator() ( const std::vector<double>& row1,
-                    const std::vector<double>& row2 ) {
-      return row1[m_columnIndex] < row2[m_columnIndex] ;
-  }
-  uint m_columnIndex;
-};
-struct DataRowComparatorByColumnIndexDescending {
-  bool operator() ( const std::vector<double>& row1,
-                    const std::vector<double>& row2 ) {
-      return row1[m_columnIndex] > row2[m_columnIndex] ;
-  }
-  uint m_columnIndex;
-};
-std::vector<std::vector<double> > DataFile::getDataSortedBy(int variableIndex, SortingOrder sortingOrder)
+std::vector< std::vector<double> > DataFile::getDataSortedBy(int variableIndex, SortingOrder sortingOrder) const
 {
-    std::vector<std::vector<double> > result;
+    std::vector< std::vector<double> > result;
 
     //Sanity checks.
     if( _data.empty() ){
@@ -645,14 +631,37 @@ std::vector<std::vector<double> > DataFile::getDataSortedBy(int variableIndex, S
     result = _data;
 
     // Sort the data by given column.
-    if( sortingOrder == SortingOrder::ASCENDING ){
-        DataRowComparatorByColumnIndexAscending dataRowComparatorByColumnIndex;
-        dataRowComparatorByColumnIndex.m_columnIndex = variableIndex;
-        std::sort( result.begin(), result.end(), dataRowComparatorByColumnIndex );
-    } else {
-        DataRowComparatorByColumnIndexDescending dataRowComparatorByColumnIndex;
-        dataRowComparatorByColumnIndex.m_columnIndex = variableIndex;
-        std::sort( result.begin(), result.end(), dataRowComparatorByColumnIndex );
+    Util::sortDataFrame( result, variableIndex, sortingOrder );
+
+    return result;
+}
+
+std::vector< std::vector< std::vector<double> > > DataFile::getDataGroupedBy(int variableIndex) const
+{
+    std::vector< std::vector<std::vector<double> > > result;
+
+    //Sanity checks.
+    if( _data.empty() ){
+        Application::instance()->logError("DataFile::getDataGroupedBy(): Operation failed: no data loaded.");
+        return result;
+    }
+    if( variableIndex < 0 || variableIndex >= _data[0].size() ){ //assuming all rows have the same number of columns.
+        Application::instance()->logError("DataFile::getDataGroupedBy(): Operation failed: index out of range: " + QString::number(variableIndex));
+        return result;
+    }
+
+    std::vector< std::vector<double> > orderedData = getDataSortedBy( variableIndex, SortingOrder::ASCENDING );
+
+    double previousGroupByValue = std::numeric_limits<double>::quiet_NaN();
+    std::vector< std::vector<double> > group;
+    for( const std::vector<double>& row : orderedData ){
+        double currentGroupByValue = row[ variableIndex ];
+        if( currentGroupByValue != previousGroupByValue ){
+            result.push_back( group );
+            group = std::vector< std::vector<double> >();
+        }
+        group.push_back( row );
+        previousGroupByValue = currentGroupByValue;
     }
 
     return result;

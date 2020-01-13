@@ -68,6 +68,11 @@ enum class ColorScaling : uint { ARITHMETIC = 0, LOG };
 
 enum class ValueScaling : uint { DIRECT = 0, ABS };
 
+enum class SortingOrder : int {
+    ASCENDING,
+    DESCENDING
+};
+
 //one Facies Transition Matrix per h.
 typedef double Separation;
 typedef std::pair<Separation, FaciesTransitionMatrix> hFTM;
@@ -751,6 +756,23 @@ public:
                                                    bool makeLinesProportionalToProbabilities ,
                                                    int numberOfDecimalDigits,
                                                    int maxLineThickness );
+
+    /**
+     * Sorts (in-place) the given data table by the given data column.  The outer vector are each row
+     * and the inner vector are each column. This function assumes the existence of the n-th data column
+     * in all rows, so passing an irregular data table may result in a crash.
+     */
+    static void sortDataFrame(std::vector< std::vector < double > >& df, uint dataColumn, SortingOrder sortingOrder );
+
+    /**
+     * Tells whether two lines, giving their head and tail XYZ coordinates, are connected somehow.
+     * The function also returns true if the lines are conneced at both ends (coincident).
+     */
+    static bool areConnected( double line1HeadX, double line1HeadY, double line1HeadZ,
+                              double line1TailX, double line1TailY, double line1TailZ,
+                              double line2HeadX, double line2HeadY, double line2HeadZ,
+                              double line2TailX, double line2TailY, double line2TailZ,
+                              double tolerance = 0.000001 );
 };
 
 #endif // UTIL_H

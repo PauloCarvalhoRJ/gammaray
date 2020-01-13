@@ -2387,3 +2387,68 @@ void Util::makeFaciesRelationShipDiagramPlot( const FaciesTransitionMatrix &faci
     //return the path to the generated tmp PostScript file
     tmpPostscriptFilePath = psFilePath;
 }
+
+struct DataRowComparatorByColumnIndexAscending {
+  bool operator() ( const std::vector<double>& row1,
+                    const std::vector<double>& row2 ) {
+      return row1[m_columnIndex] < row2[m_columnIndex] ;
+  }
+  uint m_columnIndex;
+};
+struct DataRowComparatorByColumnIndexDescending {
+  bool operator() ( const std::vector<double>& row1,
+                    const std::vector<double>& row2 ) {
+      return row1[m_columnIndex] > row2[m_columnIndex] ;
+  }
+  uint m_columnIndex;
+};
+void Util::sortDataFrame(std::vector< std::vector<double> > &df, uint dataColumn, SortingOrder sortingOrder)
+{
+    if( sortingOrder == SortingOrder::ASCENDING ){
+        DataRowComparatorByColumnIndexAscending dataRowComparatorByColumnIndex;
+        dataRowComparatorByColumnIndex.m_columnIndex = dataColumn;
+        std::sort( df.begin(), df.end(), dataRowComparatorByColumnIndex );
+    } else {
+        DataRowComparatorByColumnIndexDescending dataRowComparatorByColumnIndex;
+        dataRowComparatorByColumnIndex.m_columnIndex = dataColumn;
+        std::sort( df.begin(), df.end(), dataRowComparatorByColumnIndex );
+    }
+}
+
+bool Util::areConnected(double line1HeadX, double line1HeadY, double line1HeadZ,
+                        double line1TailX, double line1TailY, double line1TailZ,
+                        double line2HeadX, double line2HeadY, double line2HeadZ,
+                        double line2TailX, double line2TailY, double line2TailZ, double tolerance)
+{
+    double X1 = 0.0, X2 = 0.0, Y1 = 0.0, Y2 = 0.0, Z1 = 0.0, Z2 = 0.0;
+    //Try different combos of head and tail coordinates for both lines as they can be oriented
+    //in different ways.
+    for( int combo = 0; combo < 4; ++combo){
+        switch (combo) {
+        case 0:
+            X1 = line1HeadX; X2 = line2HeadX;
+            Y1 = line1HeadY; Y2 = line2HeadY;
+            Z1 = line1HeadZ; Z2 = line2HeadZ; break;
+        case 1:
+            X1 = line1HeadX; X2 = line2TailX;
+            Y1 = line1HeadY; Y2 = line2TailY;
+            Z1 = line1HeadZ; Z2 = line2TailZ; break;
+        case 2:
+            X1 = line1TailX; X2 = line2HeadX;
+            Y1 = line1TailY; Y2 = line2HeadY;
+            Z1 = line1TailZ; Z2 = line2HeadZ; break;
+        case 3:
+            X1 = line1TailX; X2 = line2TailX;
+            Y1 = line1TailY; Y2 = line2TailY;
+            Z1 = line1TailZ; Z2 = line2TailZ; break;
+        }
+        double dX = X1 - X2;
+        double dY = Y1 - Y2;
+        double dZ = Z1 - Z2;
+        double distance = std::sqrt( dX*dX + dY*dY + dZ*dZ );
+        //return true if the lines connect at either end.
+        if( distance < tolerance )
+            return true;
+    }
+    return false;
+}
