@@ -83,6 +83,7 @@
 #include "dialogs/lvadatasetdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
+#include "dialogs/faciestransitionmatrixoptionsdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -2768,22 +2769,59 @@ void MainWindow::onExtractMidPoints()
 
 void MainWindow::onMakeFaciesTransitionMatrix()
 {
-    DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
-
-    //Open the dialog to set by which variable to group the data on (treat each group as separate data sets, e.g. drill holes).
-    ChooseVariableDialog cvd( df, "Input", "Choose variable to group by (normally some integer id):", this );
-    int result = cvd.exec();
+    //presents the user with the available options to compute the transitions (directions and whether to
+    //compute transition counts or probabilities)
+    FaciesTransitionMatrixOptionsDialog ftmd( this );
+    int result = ftmd.exec();
     if( result != QDialog::Accepted )
         return;
 
-    FaciesTransitionMatrixMaker<DataFile>* ftmMaker = new FaciesTransitionMatrixMaker<DataFile>(
-                                                    df ,
-                                                    _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+    //get pointer to the data file.
+    DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
 
-    // Index == -1 means to not group by (treat entire data set as a single sequence).
-    ftmMaker->setGroupByColumn( cvd.getSelectedVariableIndex() );
+    //crate an FTM make auxiliary object.
+    FaciesTransitionMatrixMaker<DataFile> ftmMaker( df, _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
-    FaciesTransitionMatrix ftm = ftmMaker->makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
+    //if data file is a point or segment set...
+    if( ! df->isRegular() ){
+        //...Open the dialog to set by which variable to group the data on (treat each group as separate data sets, e.g. drill holes).
+        ChooseVariableDialog cvd( df, "Input", "Choose variable to group by (normally some integer id):", this );
+        int result = cvd.exec();
+        if( result != QDialog::Accepted )
+            return;
+        // Index == -1 means to not group by (treat entire data set as a single sequence).
+        ftmMaker.setGroupByColumn( cvd.getSelectedVariableIndex() );
+    }
+
+    // Compute FTM from alternating facies in data from -Z to +Z.
+    FaciesTransitionMatrix ftm = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
+
+    // Ask the user for a name for the FTM file.
+    bool ok;
+    QString suggested_file_name = _right_clicked_attribute->getName() + "_FTM";
+    QString new_file_name = QInputDialog::getText(this, "Name the new Facies Transition Matrix file",
+                                             "New Facies Transition Matrix file name:", QLineEdit::Normal, suggested_file_name, &ok);
+    if( ! ok )
+        return;
+
+    // Save the FTM file and register it in the project.
+    QString associatedCategoryDefinitionName;
+    CategoryDefinition* cd = df->getCategoryDefinition( _right_clicked_attribute );
+    QString path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
+    if( cd )
+        associatedCategoryDefinitionName = cd->getName();
+    if( ! associatedCategoryDefinitionName.isEmpty() ){
+        ftm.setPath( path );
+        ftm.writeToFS();
+        if( ! ftm.isUsable() ){
+            ftm.deleteFromFS();
+            QMessageBox::critical( this, "Error", "The facies transition matrix cannot be associated with the selected category definition.  This is likely a bug.");
+        } else {
+            Application::instance()->getProject()->importFaciesTransitionMatrix( path, new_file_name, associatedCategoryDefinitionName );
+        }
+    } else
+        Application::instance()->logError("inWindow::onMakeFaciesTransitionMatrix(): no category definition.  Operation failed. This is likely a bug.");
+
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
