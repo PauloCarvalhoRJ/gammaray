@@ -430,9 +430,12 @@ void DataFile::writeToFS()
 
     //create a new file for output
     QFile outputFile( QString( this->getPath() ).append(".new") );
-    outputFile.open( QFile::WriteOnly | QFile::Text );
+    if( ! outputFile.open( QFile::WriteOnly | QFile::Text | QFile::Truncate ) )
+        assert( false && "DataFile::writeToFS(): Could not open ASCII file for writing.");
 
-    QTextStream out(&outputFile);
+    std::ostringstream out;
+    out.precision( 12 );
+    //std::fixed( out ); //this forces fixed precision (that is, zeros to the right)
 
     // if file already exists, keep copy of the file description or make up one otherwise
     QString comment;
@@ -440,7 +443,7 @@ void DataFile::writeToFS()
         comment = Util::getGEOEAScomment(this->getPath());
     else
         comment = this->getFileType() + " created by GammaRay";
-    out << comment << endl;
+    out << comment.toStdString() << endl;
 
     // next, we need to know the number of columns
     //(assumes the first data line has the correct number of variables)
@@ -463,7 +466,7 @@ void DataFile::writeToFS()
             if ((*it)->isAttribute()) {
                 Attribute *at = (Attribute *)(*it);
                 if (at->getAttributeGEOEASgivenIndex() == (int)iGEOEAS) {
-                    out << at->getName() << endl;
+                    out << at->getName().toStdString() << endl;
                     ++control;
                     break;
                 }
@@ -505,6 +508,8 @@ void DataFile::writeToFS()
         thread->wait( 200 ); //reduces cpu usage, refreshes at each 200 milliseconds
         QCoreApplication::processEvents(); //let Qt repaint widgets
     }
+
+    outputFile.write( out.str().data(), out.str().length() );
 
     // close output file
     outputFile.close();
@@ -605,7 +610,61 @@ void DataFile::updateChildObjectsCollection()
 				at->setParent(this);
 			}
 		}
-	}
+    }
+}
+
+std::vector< std::vector<double> > DataFile::getDataSortedBy(int variableIndex, SortingOrder sortingOrder) const
+{
+    std::vector< std::vector<double> > result;
+
+    //Sanity checks.
+    if( _data.empty() ){
+        Application::instance()->logError("DataFile::getDataSortedBy(): Operation failed: no data loaded.");
+        return result;
+    }
+    if( variableIndex < 0 || variableIndex >= _data[0].size() ){ //assuming all rows have the same number of columns.
+        Application::instance()->logError("DataFile::getDataSortedBy(): Operation failed: index out of range: " + QString::number(variableIndex));
+        return result;
+    }
+
+    // Make a duplicate of the original data.
+    result = _data;
+
+    // Sort the data by given column.
+    Util::sortDataFrame( result, variableIndex, sortingOrder );
+
+    return result;
+}
+
+std::vector< std::vector< std::vector<double> > > DataFile::getDataGroupedBy(int variableIndex) const
+{
+    std::vector< std::vector<std::vector<double> > > result;
+
+    //Sanity checks.
+    if( _data.empty() ){
+        Application::instance()->logError("DataFile::getDataGroupedBy(): Operation failed: no data loaded.");
+        return result;
+    }
+    if( variableIndex < 0 || variableIndex >= _data[0].size() ){ //assuming all rows have the same number of columns.
+        Application::instance()->logError("DataFile::getDataGroupedBy(): Operation failed: index out of range: " + QString::number(variableIndex));
+        return result;
+    }
+
+    std::vector< std::vector<double> > orderedData = getDataSortedBy( variableIndex, SortingOrder::ASCENDING );
+
+    double previousGroupByValue = std::numeric_limits<double>::quiet_NaN();
+    std::vector< std::vector<double> > group;
+    for( const std::vector<double>& row : orderedData ){
+        double currentGroupByValue = row[ variableIndex ];
+        if( currentGroupByValue != previousGroupByValue ){
+            result.push_back( group );
+            group = std::vector< std::vector<double> >();
+        }
+        group.push_back( row );
+        previousGroupByValue = currentGroupByValue;
+    }
+
+    return result;
 }
 
 void DataFile::replacePhysicalFile(const QString from_file_path)

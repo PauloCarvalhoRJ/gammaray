@@ -3,7 +3,7 @@
 #include <sstream>    // std::stringstream
 #include <iomanip>      // std::setprecision
 
-DataSaver::DataSaver(std::vector<std::vector<double> > &data, QTextStream &out, QObject *parent) :
+DataSaver::DataSaver(std::vector<std::vector<double> > &data, std::ostringstream &out, QObject *parent) :
     QObject(parent),
     _finished( false ),
     _data(data),
@@ -15,24 +15,21 @@ void DataSaver::doSave()
 {
     int linesSavedSoFar = 0;
     //for each data line
-    std::vector< std::vector<double> >::iterator itDataLine = _data.begin();
-    for(; itDataLine != _data.end(); ++itDataLine){
+    std::vector< std::vector<double> >::const_iterator itDataLine = _data.cbegin();
+    for(; itDataLine != _data.cend(); ++itDataLine){
         //updates the progress
         if( ! ( linesSavedSoFar % 1000 ) ){ //update progress for each 1000 lines to not impact performance much
             emit progress( (int)(linesSavedSoFar) );
         }
-        //for each data column
-        std::vector<double>::iterator itDataColumn = (*itDataLine).begin();
+        std::vector<double>::const_iterator itDataColumn = (*itDataLine).cbegin();
+        //output the value in the first column
         _out << *itDataColumn;
         ++itDataColumn;
-        for(; itDataColumn != (*itDataLine).end(); ++itDataColumn){
-            //making sure the values are written in GSLib-like precision
-            std::stringstream ss;
-            ss << std::setprecision( 12 /*std::numeric_limits<double>::max_digits10*/ );
-            ss << *itDataColumn;
-            _out << '\t' << ss.str().c_str();
+        //for each data column, from 2nd column and on.
+        for(; itDataColumn != (*itDataLine).cend(); ++itDataColumn){
+            _out << '\t' << *itDataColumn;
         }
-        _out << endl; //this must be QTextStream's endl, not std::endl
+        _out << std::endl; //mind the difference between QTextStream's endl and std::endl
         ++linesSavedSoFar;
     }
     _finished = true;

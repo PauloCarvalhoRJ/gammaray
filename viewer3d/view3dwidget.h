@@ -5,6 +5,7 @@
 
 #include <QMap>
 #include <vtkSmartPointer.h>
+#include <vtkObject.h>
 
 class vtkActor;
 class vtkOrientationMarkerWidget;
@@ -65,6 +66,12 @@ private:
 
     // removes the current 3D viewing config widget.
     void removeCurrentConfigWidget();
+
+    // this is called whenever the an event occurs in the vtkRenderer.
+    static void rendererCallback( vtkObject* caller,
+                                  unsigned long vtkNotUsed(event),
+                                  void* arg,
+                                  void* vtkNotUsed(whatIsThis) );
 
 private slots:
     void onNewObject(const View3DListRecord object_info);

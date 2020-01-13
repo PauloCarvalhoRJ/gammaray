@@ -220,6 +220,7 @@ private slots:
     void onFlipNorthSouth();
     void onFlipTopBottom();
     void onExtractMidPoints();
+    void onMakeFaciesTransitionMatrix();
 
 private:
     /**

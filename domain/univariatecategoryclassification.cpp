@@ -5,6 +5,7 @@
 #include "application.h"
 #include "project.h"
 #include "objectgroup.h"
+#include "util.h"
 
 UnivariateCategoryClassification::UnivariateCategoryClassification(CategoryDefinition *cd, QString path) :
     DoubleDoubeIntTriplets ( path ),
@@ -41,6 +42,14 @@ int UnivariateCategoryClassification::getCategory(double value, int noClassValue
             return get3rdValue( i );
     //returns the no-data-value if no class is found
     return noClassValue;
+}
+
+QIcon UnivariateCategoryClassification::getIcon()
+{
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/catuniclass16");
+    else
+        return QIcon(":icons32/catuniclass32");
 }
 
 void UnivariateCategoryClassification::save(QTextStream *txt_stream)

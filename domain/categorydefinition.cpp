@@ -73,6 +73,14 @@ int CategoryDefinition::getCategoryCodeByName(const QString &catName)
     return -999;
 }
 
+QIcon CategoryDefinition::getIcon()
+{
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        return QIcon(":icons/catdef16");
+    else
+        return QIcon(":icons32/catdef32");
+}
+
 void CategoryDefinition::save(QTextStream *txt_stream)
 {
     (*txt_stream) << this->getFileType() << ":" << this->getFileName() << '\n';

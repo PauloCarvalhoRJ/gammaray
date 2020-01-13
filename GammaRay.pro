@@ -32,6 +32,8 @@ win32 {
 }
 
 SOURCES += main.cpp\
+    dialogs/choosevariabledialog.cpp \
+    dialogs/faciestransitionmatrixoptionsdialog.cpp \
         mainwindow.cpp \
     domain/project.cpp \
     domain/application.cpp \
@@ -83,6 +85,7 @@ SOURCES += main.cpp\
     domain/plot.cpp \
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
+    viewer3d/v3dmouseinteractor.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -271,6 +274,8 @@ SOURCES += main.cpp\
     geostats/taumodel.cpp
 
 HEADERS  += mainwindow.h \
+    dialogs/choosevariabledialog.h \
+    dialogs/faciestransitionmatrixoptionsdialog.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
@@ -326,6 +331,7 @@ HEADERS  += mainwindow.h \
     domain/plot.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
+    viewer3d/v3dmouseinteractor.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
@@ -518,6 +524,8 @@ HEADERS  += mainwindow.h \
 
 
 FORMS    += mainwindow.ui \
+    dialogs/choosevariabledialog.ui \
+    dialogs/faciestransitionmatrixoptionsdialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
@@ -647,6 +655,10 @@ _VTK_VERSION_SUFFIX = $$(VTK_VERSION_SUFFIX)
 isEmpty(_VTK_VERSION_SUFFIX){
     warning(VTK_VERSION_SUFFIX environment variable not defined or empty.)
 }
+    gcc:QMAKE_CXXFLAGS += -isystem $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
+  clang:QMAKE_CXXFLAGS += -isystem $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
+  mingw:QMAKE_CXXFLAGS += -isystem $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
+msvc:QMAKE_CXXFLAGS += /external:I $$_VTK_INCLUDE  #This is to suppress the countless compiler warnings from VTK headers
 INCLUDEPATH += $$_VTK_INCLUDE
 LIBPATH     += $$_VTK_LIB
 LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
@@ -701,6 +713,10 @@ _ITK_VERSION_SUFFIX = $$(ITK_VERSION_SUFFIX)
 isEmpty(_ITK_VERSION_SUFFIX){
     warning(ITK_VERSION_SUFFIX environment variable not defined or empty.)
 }
+    gcc:QMAKE_CXXFLAGS += -isystem $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
+  clang:QMAKE_CXXFLAGS += -isystem $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
+  mingw:QMAKE_CXXFLAGS += -isystem $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
+msvc:QMAKE_CXXFLAGS += /external:I $$_ITK_INCLUDE  #This is to suppress the countless compiler warnings from ITK headers
 INCLUDEPATH += $$_ITK_INCLUDE
 LIBPATH     += $$_ITK_LIB
 LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
@@ -754,7 +770,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.0
+VERSION = 6.1
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

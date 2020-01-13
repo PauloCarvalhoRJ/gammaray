@@ -390,18 +390,12 @@ QList<uint> SpatialIndex::getNearestWithinTunedForLargeDataSets(const DataCell& 
 	if( m_dataFile->isTridimensional() )
 		z = dataCell._center._z;
 
-    //Get the bounding box as a function of the search neighborhood centered at the data cell.
-	double maxX, maxY, maxZ, minX, minY, minZ;
-    searchNeighborhood.getBBox( x, y, z, minX, minY, minZ, maxX, maxY, maxZ );
-    Box searchBB( Point3D( minX, minY, minZ ),
-				  Point3D( maxX, maxY, maxZ ));
-
-    //Get all the points within the bounding box of the search neighborhood.
+    //Get all the n points closest to the center of the cell.
     //This step improves performance because the actual inside/outside test of the search
     //neighborhood implementation may be slow.
     std::vector< BoxAndDataIndexAndDistance > pointsInSearchBB;
     pointsInSearchBB.reserve( 1000 );
-    BOOST_FOREACH(const BoxAndDataIndex & v, m_rtree | bgi::adaptors::queried(bgi::intersects(searchBB)))
+    BOOST_FOREACH(const BoxAndDataIndex & v, m_rtree | bgi::adaptors::queried(bgi::nearest(Point3D( x, y, z ), n)))
     {
         uint indexP = v.second;
         //get the location of the point in the result set.

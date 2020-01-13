@@ -91,7 +91,7 @@ QIcon Attribute::getIcon()
     if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
         return QIcon(":icons/var");
     else
-        return QIcon(":icons/var32");
+        return QIcon(":icons32/var32");
 }
 
 
