@@ -241,6 +241,8 @@ SOURCES += main.cpp\
     dialogs/automaticvarfitdialog.cpp \
     dialogs/emptydialog.cpp \
     geostats/nestedvariogramstructuresparameters.cpp \
+    geostats/automaticvariogramfitting.cpp \
+    dialogs/automaticvarfitexperimentsdialog.cpp \
     dialogs/segmentsetdialog.cpp \
     domain/segmentset.cpp \
     domain/quintuplets.cpp \
@@ -485,6 +487,8 @@ HEADERS  += mainwindow.h \
     dialogs/automaticvarfitdialog.h \
     dialogs/emptydialog.h \
     geostats/nestedvariogramstructuresparameters.h \
+    geostats/automaticvariogramfitting.h \
+    dialogs/automaticvarfitexperimentsdialog.h \
     dialogs/segmentsetdialog.h \
     domain/segmentset.h \
     domain/quintuplets.h \
@@ -595,6 +599,7 @@ FORMS    += mainwindow.ui \
     imagejockey/wavelet/wavelettransformdialog.ui \
     dialogs/automaticvarfitdialog.ui \
     dialogs/emptydialog.ui \
+    dialogs/automaticvarfitexperimentsdialog.ui \
     dialogs/segmentsetdialog.ui \
     gslib/gslibparams/widgets/widgetgslibcustomcolor.ui \
     dialogs/choosecategorydialog.ui \

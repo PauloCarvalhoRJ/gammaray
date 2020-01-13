@@ -24,7 +24,15 @@ double SpatialLocation::norm2D()
 
 void SpatialLocation::print()
 {
-	std::cout << "Location: x=" << _x << ", y=" << _y << ", z=" << _z << std::endl;
+    std::cout << "Location: x=" << _x << ", y=" << _y << ", z=" << _z << std::endl;
+}
+
+double SpatialLocation::distanceTo(double x, double y, double z)
+{
+    double dx = x - _x;
+    double dy = y - _y;
+    double dz = z - _z;
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
 SpatialLocation SpatialLocation::operator+(double a) const

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>802</width>
-    <height>443</height>
+    <width>925</width>
+    <height>585</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -100,7 +100,7 @@
       <item>
        <widget class="QLabel" name="label_6">
         <property name="text">
-         <string>Global parameters: num. threads:</string>
+         <string>Global parameters: #threads:</string>
         </property>
        </widget>
       </item>
@@ -117,7 +117,7 @@
       <item>
        <widget class="QLabel" name="label_7">
         <property name="text">
-         <string>    num. structures:</string>
+         <string>    #structures:</string>
         </property>
        </widget>
       </item>
@@ -179,6 +179,27 @@
        </widget>
       </item>
       <item>
+       <widget class="QLabel" name="label_36">
+        <property name="text">
+         <string>  obj. function:</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QComboBox" name="cmbObjectiveFunction">
+        <item>
+         <property name="text">
+          <string>FIM-based</string>
+         </property>
+        </item>
+        <item>
+         <property name="text">
+          <string>VARMAP-based</string>
+         </property>
+        </item>
+       </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer_2">
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
@@ -190,6 +211,16 @@
          </size>
         </property>
        </spacer>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnRunExperiments">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="text">
+         <string>experiments</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>
@@ -407,17 +438,20 @@
        </item>
        <item row="5" column="2">
         <widget class="QDoubleSpinBox" name="spinMaxHopFactor">
+         <property name="decimals">
+          <number>3</number>
+         </property>
          <property name="minimum">
-          <double>0.010000000000000</double>
+          <double>0.001000000000000</double>
          </property>
          <property name="maximum">
           <double>100.000000000000000</double>
          </property>
          <property name="singleStep">
-          <double>0.100000000000000</double>
+          <double>0.010000000000000</double>
          </property>
          <property name="value">
-          <double>0.100000000000000</double>
+          <double>0.010000000000000</double>
          </property>
         </widget>
        </item>
@@ -1075,8 +1109,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>789</x>
-     <y>430</y>
+     <x>914</x>
+     <y>574</y>
     </hint>
     <hint type="destinationlabel">
      <x>510</x>
@@ -1091,8 +1125,8 @@
    <slot>onDoWithSAandGD()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>111</x>
-     <y>121</y>
+     <x>109</x>
+     <y>112</y>
     </hint>
     <hint type="destinationlabel">
      <x>184</x>
@@ -1108,7 +1142,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>118</y>
+     <y>108</y>
     </hint>
     <hint type="destinationlabel">
      <x>209</x>
@@ -1124,7 +1158,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>119</y>
+     <y>109</y>
     </hint>
     <hint type="destinationlabel">
      <x>270</x>
@@ -1140,7 +1174,7 @@
    <hints>
     <hint type="sourcelabel">
      <x>101</x>
-     <y>120</y>
+     <y>110</y>
     </hint>
     <hint type="destinationlabel">
      <x>256</x>
@@ -1155,8 +1189,8 @@
    <slot>onVarmapMethodChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>677</x>
-     <y>48</y>
+     <x>579</x>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>756</x>
@@ -1171,8 +1205,8 @@
    <slot>onDoWithManual()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>708</x>
-     <y>309</y>
+     <x>101</x>
+     <y>99</y>
     </hint>
     <hint type="destinationlabel">
      <x>796</x>
@@ -1187,12 +1221,60 @@
    <slot>onNumberOfStructuresChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>373</x>
-     <y>45</y>
+     <x>299</x>
+     <y>53</y>
     </hint>
     <hint type="destinationlabel">
      <x>487</x>
      <y>66</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnRunExperiments</sender>
+   <signal>clicked()</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onRunExperiments()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>863</x>
+     <y>53</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>920</x>
+     <y>88</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>cmbObjectiveFunction</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onObjectiveFunctionChanged()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>728</x>
+     <y>43</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>695</x>
+     <y>60</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>tabMethods</sender>
+   <signal>currentChanged(int)</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onMethodTabChanged(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>78</x>
+     <y>72</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>51</x>
+     <y>59</y>
     </hint>
    </hints>
   </connection>
@@ -1205,5 +1287,8 @@
   <slot>onVarmapMethodChanged()</slot>
   <slot>onDoWithManual()</slot>
   <slot>onNumberOfStructuresChanged(int)</slot>
+  <slot>onRunExperiments()</slot>
+  <slot>onObjectiveFunctionChanged()</slot>
+  <slot>onMethodTabChanged(int)</slot>
  </slots>
 </ui>
