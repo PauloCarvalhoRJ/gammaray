@@ -32,6 +32,7 @@ win32 {
 }
 
 SOURCES += main.cpp\
+    dialogs/choosevariabledialog.cpp \
         mainwindow.cpp \
     domain/project.cpp \
     domain/application.cpp \
@@ -270,6 +271,7 @@ SOURCES += main.cpp\
     geostats/taumodel.cpp
 
 HEADERS  += mainwindow.h \
+    dialogs/choosevariabledialog.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
@@ -516,6 +518,7 @@ HEADERS  += mainwindow.h \
 
 
 FORMS    += mainwindow.ui \
+    dialogs/choosevariabledialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \

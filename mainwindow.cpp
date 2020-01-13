@@ -55,6 +55,7 @@
 #include "domain/geogrid.h"
 #include "domain/segmentset.h"
 #include "domain/faciestransitionmatrix.h"
+#include "domain/auxiliary/faciestransitionmatrixmaker.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -81,6 +82,7 @@
 #include "dialogs/mcrfsimdialog.h"
 #include "dialogs/lvadatasetdialog.h"
 #include "dialogs/transiogramdialog.h"
+#include "dialogs/choosevariabledialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -576,6 +578,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
                 _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
+            if( _right_clicked_attribute->isCategorical() )
+                _projectContextMenu->addAction("Make facies transition matrix", this, SLOT(onMakeFaciesTransitionMatrix()));
         }
     //two items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 2 ) {
@@ -2760,6 +2764,26 @@ void MainWindow::onExtractMidPoints()
 
     //show the newly created object in main window's project tree
     Application::instance()->refreshProjectTree();
+}
+
+void MainWindow::onMakeFaciesTransitionMatrix()
+{
+    DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
+
+    //Open the dialog to set by which variable to group the data on (treat each group as separate data sets, e.g. drill holes).
+    ChooseVariableDialog cvd( df, "Input", "Choose variable to group by (normally some integer id):", this );
+    int result = cvd.exec();
+    if( result != QDialog::Accepted )
+        return;
+
+    FaciesTransitionMatrixMaker<DataFile>* ftmMaker = new FaciesTransitionMatrixMaker<DataFile>(
+                                                    df ,
+                                                    _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+
+    // Index == -1 means to not group by (treat entire data set as a single sequence).
+    ftmMaker->setGroupByColumn( cvd.getSelectedVariableIndex() );
+
+    FaciesTransitionMatrix ftm = ftmMaker->makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
