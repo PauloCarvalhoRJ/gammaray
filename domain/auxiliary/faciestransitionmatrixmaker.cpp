@@ -12,7 +12,8 @@
 //#include <vtkLine.h>
 //#include <vtkPolyData.h>
 //#include <vtkCellData.h>
-//#include <vtkExtractEdges.h>
+//#include <vtkCleanPolyData.h>
+//#include <vtkStripper.h>
 
 //-------------------specializations of the getTrajectoryLength() template function---------------//
 namespace FTMMakerAdapters {
@@ -238,14 +239,19 @@ namespace FTMMakerAdapters {
 //        poly->SetLines( segments );
 //        poly->GetCellData()->SetScalars( dataIndexes );
 
+//        vtkSmartPointer<vtkCleanPolyData> cleanPolyData =
+//              vtkSmartPointer<vtkCleanPolyData>::New();
+//          cleanPolyData->SetInputData( poly );
+//          cleanPolyData->Update();
 
-//        vtkSmartPointer<vtkExtractEdges> lineExtractor = vtkSmartPointer<vtkExtractEdges>::New();
-//        lineExtractor->SetInputData( poly );
-//        lineExtractor->CreateDefaultLocator();
-//        lineExtractor->Update();
+//        vtkSmartPointer<vtkStripper> stripper = vtkSmartPointer<vtkStripper>::New();
+//        stripper->SetInputConnection( cleanPolyData->GetOutputPort() );
+//        stripper->SetMaximumLength( 200 );
+//        stripper->JoinContiguousSegmentsOn();
+//        stripper->Update();
 
 //        Application::instance()->logInfo("=====>" + QString::number( poly->GetNumberOfCells() ));
-//        Application::instance()->logInfo("=====>" + QString::number( lineExtractor->GetOutput()->GetNumberOfCells() ));
+//        Application::instance()->logInfo("=====>" + QString::number( stripper->GetOutput()->GetNumberOfCells() ));
 
         return result;
     }
