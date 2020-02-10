@@ -214,6 +214,7 @@ private slots:
     void onCreateGeoGridMultiZone();
     void onTransferProperty();
     void onMCRFSim();
+    void onDataImputationWithMCMC();
     void onSegmentLengths();
     void onLVADataSet();
     void onFlipEastWest();

@@ -80,6 +80,7 @@
 #include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/mcrfsimdialog.h"
+#include "dialogs/mcmcdataimputationdialog.h"
 #include "dialogs/lvadatasetdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
@@ -2677,6 +2678,12 @@ void MainWindow::onMCRFSim()
 {
     MCRFSimDialog* mcrfd = new MCRFSimDialog( this );
     mcrfd->show();
+}
+
+void MainWindow::onDataImputationWithMCMC()
+{
+    MCMCDataImputationDialog* mcmcd = new MCMCDataImputationDialog( this );
+    mcmcd->show();
 }
 
 void MainWindow::onSegmentLengths()
