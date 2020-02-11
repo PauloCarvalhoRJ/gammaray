@@ -244,6 +244,18 @@ public:
      */
     int getColumnIndexOfCategory( const QString& faciesName );
 
+    /** Informs whether the main diagonal is zeroed.  That is: no auto-transition is present.
+     * An FTM without auto-transitions is a requirement for Embedded Markov Chains (data is not
+     * regularized in geologic time).
+     * Always returns false if this FTM is not square.
+     */
+    bool isMainDiagonalZeroed() const;
+
+    /** Informs whether this FTM is a square matrix.
+     * WARNING: returns true if this FTM is empty (zero size).
+     */
+    bool isSquare() const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

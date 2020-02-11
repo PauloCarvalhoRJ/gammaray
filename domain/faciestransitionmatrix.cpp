@@ -452,6 +452,21 @@ int FaciesTransitionMatrix::getColumnIndexOfCategory(const QString &faciesName)
     return -1;
 }
 
+bool FaciesTransitionMatrix::isMainDiagonalZeroed() const
+{
+    if( ! isSquare() )
+        return false;
+    for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j )
+        if( ! Util::almostEqual2sComplement( m_transitionCounts[j][j], 0.0, 1 ) )
+             return false;
+    return true;
+}
+
+bool FaciesTransitionMatrix::isSquare() const
+{
+    return m_columnHeadersFaciesNames.size() == m_lineHeadersFaciesNames.size();
+}
+
 QIcon FaciesTransitionMatrix::getIcon()
 {
     return QIcon(":icons32/transmat32");
