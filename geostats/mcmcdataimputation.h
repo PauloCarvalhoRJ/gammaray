@@ -22,7 +22,7 @@ enum class FTMType : int {
  * pseudo-random generator of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to
  * generate its Monte Carlo draw as well as facies sequence draw from a Facies Transition Matrix.
  *
- * REF: Coal modeling using Markov Chain and Monte Carlo simulation: Analysis of mcrolithotype and lithotype succession.
+ * REF: Coal modeling using Markov Chain and Monte Carlo simulation: Analysis of microlithotype and lithotype succession.
  *      Dindarloo et al, Sed Geol (2015), 329: 1-11
  *      DOI: 10.1016/j.sedgeo.2015.08.005
  */

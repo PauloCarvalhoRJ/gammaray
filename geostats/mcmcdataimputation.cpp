@@ -32,7 +32,17 @@ bool MCMCDataImputation::isOKtoRun()
         return false;
     }
 
+    if( ! m_FTM ){
+        m_lastError = "Facies Transition Matrix not provided.";
+        return false;
+    } else if( ! m_FTM->isUsable() ) {
+        m_lastError = "Facies Transition Matrix is not usable.  It likely contains a facies name not present the associated categorical definition.";
+        return false;
+    }
+
     {
+        m_FTM->readFromFS();
+
         CategoryDefinition* cdOfVariable = m_dataSet->getCategoryDefinition( m_atVariable );
         if( ! cdOfVariable ){
             m_lastError = "Category definition of input variable not found (nullptr).";
@@ -47,7 +57,7 @@ bool MCMCDataImputation::isOKtoRun()
             m_lastError = "Category definition of input variable must be the same object as that of the FTM.";
             return false;
         }
-        if( m_FTM->isMainDiagonalZeroed() ){
+        if( ! m_FTM->isMainDiagonalZeroed() ){
             m_lastError = "FTM must have a zeroed main diagonal (no self-transitions) to be compatible with Embedded Markov Chains.";
             return false;
         }
