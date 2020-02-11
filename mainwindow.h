@@ -160,6 +160,7 @@ private slots:
     void onEditWithExternalProgram();
     void onClearMessages();
     void onClassifyWith();
+    void onFilterBy();
     void onMapAs();
     void onSoftIndicatorCalib();
     void onFreeLoadedData();
@@ -257,6 +258,15 @@ private:
       * Creates the dynamic items of sub-menu "Classify with".
       */
     void makeMenuClassifyWith();
+
+    /**
+     * The pointer to the dynamic sub-menu "Filter by" of the project tree context menu.
+     */
+    QMenu* m_subMenuFilterBy;
+    /**
+      * Creates the dynamic items of sub-menu "Filter by".
+      */
+    void makeMenuFilterBy();
 
     /**
      * The pointer to the dynamic sub-menu "Make categorical as" of the project tree context menu.

@@ -108,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     m_subMenuClassifyInto( new QMenu("Classify into",       this) ),
     m_subMenuClassifyWith( new QMenu("Classify with",       this) ),
+    m_subMenuFilterBy    ( new QMenu("Filter by",           this) ),
     m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
     m_subMenuMapAs( new QMenu("Map as", this) ),
     m_subMenuFlipData( new QMenu("Flip data", this) )
@@ -551,6 +552,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
+                makeMenuFilterBy();
+                _projectContextMenu->addMenu( m_subMenuFilterBy );
             }
             if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET","GEOGRID"} ) ){
                 makeMenuCategorize();
@@ -1499,6 +1502,11 @@ void MainWindow::onClassifyWith()
     connect( ted, SIGNAL(accepted()), this, SLOT(onPerformClassifyInto()));
     ted->show(); //show()->non-modal / execute()->modal
     //method onPerformClassifyInto() will be called upon dilog accept.
+}
+
+void MainWindow::onFilterBy()
+{
+
 }
 
 void MainWindow::onMapAs()
@@ -3155,6 +3163,24 @@ void MainWindow::makeMenuClassifyWith()
                                                   fileAspect->getName(),
                                                   this,
                                                   SLOT(onClassifyWith()));
+            }
+        }
+    }
+}
+
+void MainWindow::makeMenuFilterBy()
+{
+    m_subMenuFilterBy->clear(); //remove any previously added item actions
+    DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
+    if( df ){
+        CategoryDefinition* cd = df->getCategoryDefinition( _right_clicked_attribute );
+        if( cd ){
+            cd->readFromFS();
+            for( int i = 0; i < cd->getCategoryCount(); ++i ){
+                m_subMenuClassifyWith->addAction( Util::makeColorIcon( cd->getCustomColor( i ) ),
+                                                  cd->getCategoryName( i ),
+                                                  this,
+                                                  SLOT(onFilterBy()));
             }
         }
     }
