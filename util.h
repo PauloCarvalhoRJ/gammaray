@@ -374,6 +374,11 @@ public:
     static void makeGSLibColorsList(QList<QColor> &colors);
 
     /**
+     * Creates a 16x16 pixel QIcon filled with the given color.
+     */
+    static QIcon makeColorIcon( const QColor& color );
+
+    /**
      * Creates a 16x16 pixel QIcon filled with a GSLib color given its code.
      */
     static QIcon makeGSLibColorIcon(uint color_code);

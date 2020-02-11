@@ -983,6 +983,16 @@ void Util::makeGSLibColorsList(QList<QColor> &colors)
     colors << QColor(128,128,128) << QColor(154,154,154) << QColor(179,179,179) << QColor(205,205,205) << QColor(230,230,230);
 }
 
+QIcon Util::makeColorIcon(const QColor &color)
+{
+    //make and return the icon.
+    QPixmap pixmap(16,16);
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI )
+        pixmap = QPixmap(32, 32);
+    pixmap.fill( color );
+    return QIcon( pixmap );
+}
+
 QIcon Util::makeGSLibColorIcon(uint color_code)
 {
     //make list of GSLib colors
