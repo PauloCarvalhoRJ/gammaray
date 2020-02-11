@@ -34,6 +34,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
     domain/application.cpp \
@@ -282,6 +283,7 @@ HEADERS  += mainwindow.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
+    geostats/mcmcdataimputation.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
