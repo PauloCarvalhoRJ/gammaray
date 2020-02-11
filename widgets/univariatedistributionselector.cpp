@@ -4,6 +4,7 @@
 #include "../domain/application.h"
 #include "../domain/objectgroup.h"
 #include "../domain/file.h"
+#include "util.h"
 
 UnivariateDistributionSelector::UnivariateDistributionSelector(bool show_not_set, QWidget *parent) :
     QWidget(parent),
@@ -48,6 +49,26 @@ UnivariateDistribution *UnivariateDistributionSelector::getSelectedDistribution(
         }
     }
     return nullptr;
+}
+
+void UnivariateDistributionSelector::setCaption(QString caption)
+{
+    ui->label->setText( caption );
+}
+
+void UnivariateDistributionSelector::setCaptionBGColor(const QColor &color)
+{
+    QColor foreGroudColor = Util::makeContrast( color );
+
+    QString fgRGBAValues = QString::number(foreGroudColor.red())   + "," +
+                           QString::number(foreGroudColor.green()) + "," +
+                           QString::number(foreGroudColor.blue())  + ",255";
+
+    QString bgRGBAValues = QString::number(color.red())   + "," +
+                           QString::number(color.green()) + "," +
+                           QString::number(color.blue())  + ",255";
+
+    ui->label->setStyleSheet("QLabel { background-color : rgba(" + bgRGBAValues + "); color : rgba(" + fgRGBAValues + "); }");
 }
 
 void UnivariateDistributionSelector::onSelection(int /*index*/)
