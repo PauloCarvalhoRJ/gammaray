@@ -119,7 +119,7 @@ public:
     /**
      * Returns whether the user has given a no-data value when this data file were added to the project.
      */
-    virtual bool hasNoDataValue();
+    virtual bool hasNoDataValue() const;
 
     /**
      * Returns whether the given attribute is a declustering weight of another attribute.
@@ -229,7 +229,7 @@ public:
      * If a no-data value has not been set, this method always returns false.
      * TODO: possible performance bottleneck.
      */
-    bool isNDV( double value );
+    bool isNDV( double value ) const;
 
     /**
      * Adds a new data column (variable/attribute) containing categorical values computed from the
@@ -390,6 +390,19 @@ public:
 
     /** Returns a read-only reference to the internal data table. */
     const std::vector< std::vector<double> >& getDataTable() const { return _data; }
+
+    /** Returns a read-only reference to a data row. */
+    const std::vector<double>& getDataRow( int rowIndex ) const;
+
+    /**
+     * Returns a new data table filtered by the given data column.
+     * To filter by discrete values (e.g. facies codes) just make the interval criteria equal.
+     * No-data-values are left out, even if they numerically are within the interval.
+     * First variable index is zero (non-GEOEAS index).
+     * If there is no valid data, an empty data frame is returned.
+     * ATTENTION: calling this for gridded data will result in a data frame that is not consistent with the grid.
+     */
+    std::vector< std::vector<double> > getDataFilteredBy( int variableIndex, double value0, double value1 ) const;
 
 //File interface
 	virtual void deleteFromFS();
