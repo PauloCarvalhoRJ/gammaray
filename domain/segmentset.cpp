@@ -280,6 +280,20 @@ PointSet *SegmentSet::toPointSetMidPoints(const QString& psName ) const
     return new_ps;
 }
 
+SegmentSet* SegmentSet::createSegmentSetByFiltering(uint column, double vMin, double vMax)
+{
+    //Create new empty point set.
+    SegmentSet* newSS = new SegmentSet( "" );
+    //Get filtered data frame.
+    std::vector< std::vector< double > > filteredData = getDataFilteredBy( column, vMin, vMax );
+    //Assign it as the new point set's data.
+    newSS->_data = filteredData;
+    //Set the same metadata.
+    newSS->setInfoFromAnotherSegmentSet( this );
+    //Return the new filtered data set.
+    return newSS;
+}
+
 
 QIcon SegmentSet::getIcon()
 {
