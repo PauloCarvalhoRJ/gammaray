@@ -277,7 +277,21 @@ bool PointSet::isCoordinate(uint column) const
     int columnGEOEAS = column + 1;
     return ( _x_field_index == columnGEOEAS ) ||
            ( _y_field_index == columnGEOEAS ) ||
-           ( _z_field_index == columnGEOEAS ) ;
+            ( _z_field_index == columnGEOEAS ) ;
+}
+
+PointSet *PointSet::createPointSetByFiltering(uint column, double vMin, double vMax)
+{
+    //Create new empty point set.
+    PointSet* newPS = new PointSet( "" );
+    //Get filtered data frame.
+    std::vector< std::vector< double > > filteredData = getDataFilteredBy( column, vMin, vMax );
+    //Assign it as the new point set's data.
+    newPS->_data = filteredData;
+    //Set the same metadata.
+    newPS->setInfoFromOtherPointSet( this );
+    //Return the new filtered data set.
+    return newPS;
 }
 
 bool PointSet::canHaveMetaData()
