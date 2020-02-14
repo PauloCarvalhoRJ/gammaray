@@ -27,6 +27,7 @@ private:
     VariableSelector* m_varSelector;
     FileSelectorWidget* m_ftmSelector;
     std::vector< UnivariateDistributionSelector* > m_distributionSelectors;
+    VariableSelector* m_groupByVariableSelector;
     //----------------------------------------------
 
 private Q_SLOTS:

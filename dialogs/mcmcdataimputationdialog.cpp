@@ -34,6 +34,12 @@ MCMCDataImputationDialog::MCMCDataImputationDialog(QWidget *parent) :
     connect( m_varSelector,  SIGNAL(currentIndexChanged(int)),
              this,           SLOT(onVariableChanged()) );
 
+    m_groupByVariableSelector = new VariableSelector( true );
+    ui->frmCmbGroupByVariable->layout()->addWidget( m_groupByVariableSelector );
+    connect( m_fileSelector, SIGNAL(dataFileSelected(DataFile*)),
+             m_groupByVariableSelector,  SLOT(onListVariables(DataFile*)) );
+
+
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
     //if the desired sample file happens to be the first one in the list.
