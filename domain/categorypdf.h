@@ -26,6 +26,15 @@ public:
     /** Returns whether there is one (or more) zero (or less) probabilities. */
     bool hasZeroOrLessProb() const;
 
+    /**
+     * Returns a category code given a cumulative frequency.
+     * The passed cumulative frequency is normally drawn from a random number generator.
+     * This method is typically called from facies drawing code in simulation algorithms.
+     * Returns -1 if somehow the method fails to find the category code corresponding to passed
+     * cumulative frequency.
+     */
+    int getFaciesFromCumulativeFrequency( double cumulativeProbability );
+
     /** Returns the sum of the probabilities. */
     double sumProbs() const;
 

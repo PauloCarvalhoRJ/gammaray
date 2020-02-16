@@ -38,6 +38,19 @@ bool CategoryPDF::hasZeroOrLessProb() const
     return false;
 }
 
+int CategoryPDF::getFaciesFromCumulativeFrequency(double cumulativeProbability)
+{
+    CategoryDefinition* cd = getCategoryDefinition();
+    assert( cd && "CategoryPDF::getFaciesFromCumulativeFrequency(): getCategoryDefinition() returned nullptr.");
+    double cumProb = 0.0;
+    for( const QPair<int, double>& idp : m_pairs ) {
+        cumProb += idp.second;
+        if( cumulativeProbability <= cumProb )
+            return idp.first;
+    }
+    return -1;
+}
+
 double CategoryPDF::sumProbs() const
 {
     double sum = 0.0;
