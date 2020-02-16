@@ -84,6 +84,40 @@
        </layout>
       </widget>
      </item>
+     <item>
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>PDF for uninformed data without previous category:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="frmCmbPDF">
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_8">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+       </layout>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -287,6 +321,9 @@
            </item>
            <item>
             <widget class="QComboBox" name="cmbFTMtype">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
              <item>
               <property name="text">
                <string>Frequencies</string>

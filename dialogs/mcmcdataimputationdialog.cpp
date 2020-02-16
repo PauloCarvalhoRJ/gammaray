@@ -9,6 +9,7 @@
 #include "domain/application.h"
 #include "domain/segmentset.h"
 #include "domain/attribute.h"
+#include "domain/categorypdf.h"
 #include "geostats/mcmcdataimputation.h"
 
 #include <QMessageBox>
@@ -38,6 +39,9 @@ MCMCDataImputationDialog::MCMCDataImputationDialog(QWidget *parent) :
     ui->frmCmbGroupByVariable->layout()->addWidget( m_groupByVariableSelector );
     connect( m_fileSelector, SIGNAL(dataFileSelected(DataFile*)),
              m_groupByVariableSelector,  SLOT(onListVariables(DataFile*)) );
+
+    m_PDFSelector = new FileSelectorWidget( FileSelectorType::PDFs, true );
+    ui->frmCmbPDF->layout()->addWidget( m_PDFSelector );
 
 
     //calling this slot causes the variable comboboxes to update, so they show up populated
@@ -72,6 +76,7 @@ void MCMCDataImputationDialog::onRunMCMC()
     mcmcSim.m_atVariable = dynamic_cast<Attribute*>( m_varSelector->getSelectedVariable() );
     for( UnivariateDistributionSelector* probFieldSelector : m_distributionSelectors )
         mcmcSim.m_distributions.push_back( probFieldSelector->getSelectedDistribution() );
+    mcmcSim.m_pdfForImputationWithPreviousUnavailable = dynamic_cast<CategoryPDF*>( m_PDFSelector->getSelectedFile() );
     //----------------------------------------------------------------------------------------------------------------------------------------
 
     if( ! mcmcSim.run() ){
@@ -79,7 +84,7 @@ void MCMCDataImputationDialog::onRunMCMC()
         Application::instance()->logError( "MCMCDataImputationDialog::onRun(): Simulation ended with error: ");
         Application::instance()->logError( "    Last error:" + mcmcSim.getLastError() );
     } else {
-        // TODO: add save to data set code here.
+        // TODO: add save to data set code goes here.
     }
 }
 
