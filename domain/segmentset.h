@@ -89,6 +89,12 @@ public:
      */
     SegmentSet* createSegmentSetByFiltering( uint column, double vMin, double vMax );
 
+    /**
+     * Returns the |Zfinal-Zinitial| of the iRecord-th segment.
+     * NOTE: make sure a prior call to DataFile::readFromFS() was made to load segment data.
+     */
+    double getSegmentHeight( int iRecord ) const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

@@ -294,6 +294,12 @@ SegmentSet* SegmentSet::createSegmentSetByFiltering(uint column, double vMin, do
     return newSS;
 }
 
+double SegmentSet::getSegmentHeight(int iRecord) const
+{
+    double dz = dataConst( iRecord, getZFinalIndex()-1 ) - dataConst( iRecord, getZindex()-1 );
+    return std::abs( dz );
+}
+
 
 QIcon SegmentSet::getIcon()
 {
