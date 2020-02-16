@@ -237,7 +237,7 @@ public:
     /** Returns the index of the row whose header equals the given name.
      * Returns -1 if the name is not found.
      */
-    int getRowIndexOfCategory( const QString& faciesName );
+    int getRowIndexOfCategory( const QString& faciesName ) const;
 
     /** Returns the index of the column whose header equals the given name.
      * Returns -1 if the name is not found.
@@ -255,6 +255,17 @@ public:
      * WARNING: returns true if this FTM is empty (zero size).
      */
     bool isSquare() const;
+
+    /**
+     * Returns a category code given a cumulative frequency.
+     * The probabilities used are the rows of the upward transition probabilities matrix (see
+     * getUpwardTransitionProbability() ) corresponding to the passed category.
+     * The passed cumulative frequency is normally drawn from a random number generator.
+     * This method is typically called from facies drawing code in simulation algorithms.
+     * Returns -1 if somehow the method fails to find the category code corresponding to passed
+     * cumulative frequency.
+     */
+    int getUpwardNextFaciesFromCumulativeFrequency(int fromFaciesCode, double cumulativeFrequency ) const;
 
     // ProjectComponent interface
 public:
