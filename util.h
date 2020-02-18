@@ -781,6 +781,13 @@ public:
                               double line2HeadX, double line2HeadY, double line2HeadZ,
                               double line2TailX, double line2TailY, double line2TailZ,
                               double tolerance = 0.000001 );
+
+    /** Converts a vector of doubles as space-separated string. */
+    static QString dumpDataLine( const std::vector<double>& dataLine );
+
+    /** Performs a linear interpolation: y = y0 + ( y1 - y0 ) * ( x - x0 ) / ( x1 - x0 ); */
+    inline static double linearInterpolation( double x, double x0, double x1, double y0, double y1 )
+                   { return y0 + ( y1 - y0 ) * ( x - x0 ) / ( x1 - x0 ); }
 };
 
 #endif // UTIL_H

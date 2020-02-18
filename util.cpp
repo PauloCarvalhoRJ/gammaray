@@ -2470,3 +2470,11 @@ bool Util::areConnected(double line1HeadX, double line1HeadY, double line1HeadZ,
     }
     return false;
 }
+
+QString Util::dumpDataLine(const std::vector<double> &dataLine)
+{
+    std::stringstream dump;
+    for (double value : dataLine)
+        dump << value << ' ';
+    return QString( dump.str().c_str() );
+}
