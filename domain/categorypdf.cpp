@@ -42,6 +42,8 @@ int CategoryPDF::getFaciesFromCumulativeFrequency(double cumulativeProbability)
 {
     CategoryDefinition* cd = getCategoryDefinition();
     assert( cd && "CategoryPDF::getFaciesFromCumulativeFrequency(): getCategoryDefinition() returned nullptr.");
+    if( m_pairs.empty() )
+        readFromFS();
     double cumProb = 0.0;
     for( const QPair<int, double>& idp : m_pairs ) {
         cumProb += idp.second;
