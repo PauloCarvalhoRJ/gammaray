@@ -788,6 +788,16 @@ public:
     /** Performs a linear interpolation: y = y0 + ( y1 - y0 ) * ( x - x0 ) / ( x1 - x0 ); */
     inline static double linearInterpolation( double x, double x0, double x1, double y0, double y1 )
                    { return y0 + ( y1 - y0 ) * ( x - x0 ) / ( x1 - x0 ); }
+
+    /** If z1 < z0, returns x1, y1, z1; x0, y0, z0 otherwise. */
+    static void getBaseCoordinate( double x0, double y0, double z0,
+                                   double x1, double y1, double z1,
+                                   double& x, double& y, double& z);
+
+    /** If z1 > z0, returns x1, y1, z1; x0, y0, z0 otherwise. */
+    static void getTopCoordinate(  double x0, double y0, double z0,
+                                   double x1, double y1, double z1,
+                                   double& x, double& y, double& z);
 };
 
 #endif // UTIL_H

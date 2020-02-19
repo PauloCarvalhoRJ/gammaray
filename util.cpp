@@ -2478,3 +2478,23 @@ QString Util::dumpDataLine(const std::vector<double> &dataLine)
         dump << value << ' ';
     return QString( dump.str().c_str() );
 }
+
+void Util::getBaseCoordinate(double x0, double y0, double z0,
+                             double x1, double y1, double z1,
+                             double &x, double &y, double &z)
+{
+    if( z1 < z0 )
+        { x = x1; y = y1; z = z1; }
+    else
+        { x = x0; y = y0; z = z0; }
+}
+
+void Util::getTopCoordinate(double x0, double y0, double z0,
+                            double x1, double y1, double z1,
+                            double &x, double &y, double &z)
+{
+    if( z1 > z0 )
+        { x = x1; y = y1; z = z1; }
+    else
+        { x = x0; y = y0; z = z0; }
+}
