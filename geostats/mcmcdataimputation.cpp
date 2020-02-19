@@ -105,13 +105,24 @@ bool MCMCDataImputation::run()
             //if it is uninformed, proceed to imputation
             if( m_dataSet->isNDV( currentFaciesCode ) ){
 
+                //flag that signals the end of the impute process.
+                bool imputing = true;
+
                 //initialize the total thickness to imput with the total Z variation of the current segment
                 double remainingUninformedThickness = m_dataSet->getSegmentHeight( currentDataRow );
 
-                bool imputing = true;
-                double x0 = currentHeadX;
-                double y0 = currentHeadY;
-                double z0 = currentHeadZ;
+                //initialize the imputed segment's head coordinate with the base coordinate of the uninformed segment
+                double x0, y0, z0;
+                Util::getBaseCoordinate( currentHeadX, currentHeadY, currentHeadZ,
+                                         currentTailX, currentTailY, currentTailZ,
+                                         x0          , y0          , z0 );
+
+                //get the coordinate of the topmost end of the uninformed segment
+                double xTop, yTop, zTop;
+                Util::getTopCoordinate( currentHeadX, currentHeadY, currentHeadZ,
+                                        currentTailX, currentTailY, currentTailZ,
+                                        xTop        , yTop        , zTop );
+
                 while( imputing ){
                     //draw a facies code.
                     {
@@ -179,8 +190,8 @@ bool MCMCDataImputation::run()
 
                         //compute the tail coordinate for the new imputed segment
                         z1 = z0 + thicknessToUse;
-                        x1 = Util::linearInterpolation( z1, z0, currentTailZ, x0, currentTailX );
-                        y1 = Util::linearInterpolation( z1, z0, currentTailZ, y0, currentTailY );
+                        x1 = Util::linearInterpolation( z1, z0, zTop, x0, xTop );
+                        y1 = Util::linearInterpolation( z1, z0, zTop, y0, yTop );
 
                         //set its geometry (resulted from the drawn thickness)
                         newSegment[ m_dataSet->getXindex()-1 ]      = x0;
