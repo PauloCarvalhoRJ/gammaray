@@ -17,7 +17,7 @@ MCMCDataImputation::MCMCDataImputation() :
     m_distributions( std::map< int, UnivariateDistribution* >() ),
     m_atVariableGroupBy( nullptr ),
     m_pdfForImputationWithPreviousUnavailable( nullptr ),
-    m_imputedData( std::vector< std::vector<double> >() )
+    m_imputedData( std::vector< std::vector< std::vector<double> > >() )
 {
 
 }
@@ -27,17 +27,6 @@ bool MCMCDataImputation::run()
     //check whether everything is ok
     if( !isOKtoRun() )
         return false;
-
-    //create the data frame to receive the imputed data
-    m_imputedData = std::vector< std::vector<double> >();
-
-    //get the data set as either grouped by some variable or as is.
-    std::vector< std::vector< std::vector<double> > > dataFrame;
-    m_dataSet->loadData();
-    if( m_atVariableGroupBy )
-        dataFrame = m_dataSet->getDataGroupedBy( m_atVariableGroupBy->getAttributeGEOEASgivenIndex()-1 );
-    else
-        dataFrame.push_back( m_dataSet->getDataTable() );
 
     //set ordering criteria to stablish the facies sequence for the Embedded Markov Chain part of the simulation
     int sortByColumnIndex = -1;
@@ -50,9 +39,6 @@ bool MCMCDataImputation::run()
     //get the index of the categorical variable to be imputed
     int indexCategoricalVariable = m_atVariable->getAttributeGEOEASgivenIndex()-1;
 
-    //keep track of the data row in the data file
-    int currentDataRow = 0;
-
     //initialize the random number generator with the user-given seed
     std::mt19937 randomNumberGenerator;
     randomNumberGenerator.seed( m_seed );
@@ -64,197 +50,217 @@ bool MCMCDataImputation::run()
         it++;
     }
 
-    //for each data group (may be just one)
-    for( std::vector< std::vector< double > >& dataGroup : dataFrame ){
+    //for each realization
+    for( std::vector< std::vector<double> >& imputedDataRealization : m_imputedData ){
 
-        double previousHeadX = std::numeric_limits<double>::quiet_NaN();
-        double previousHeadY = std::numeric_limits<double>::quiet_NaN();
-        double previousHeadZ = std::numeric_limits<double>::quiet_NaN();
-        double previousTailX = std::numeric_limits<double>::quiet_NaN();
-        double previousTailY = std::numeric_limits<double>::quiet_NaN();
-        double previousTailZ = std::numeric_limits<double>::quiet_NaN();
+        //get the data set as either grouped by some variable or as is.
+        std::vector< std::vector< std::vector<double> > > dataFrame;
+        m_dataSet->loadData();
+        if( m_atVariableGroupBy )
+            dataFrame = m_dataSet->getDataGroupedBy( m_atVariableGroupBy->getAttributeGEOEASgivenIndex()-1 );
+        else
+            dataFrame.push_back( m_dataSet->getDataTable() );
 
-        int previousFaciesCode = m_dataSet->getNoDataValueAsDouble();
+        //keep track of the data row in the data file
+        int currentDataRow = 0;
 
-        //Sort the data group to meet the sequence criterion wanted by the user.
-        Util::sortDataFrame( dataGroup, sortByColumnIndex, ascendingOrDescending );
+        //for each data group (may be just one)
+        for( std::vector< std::vector< double > >& dataGroup : dataFrame ){
 
-        //for each data row (for each segment)
-        for( std::vector< double >& dataRow : dataGroup ){
+            double previousHeadX = std::numeric_limits<double>::quiet_NaN();
+            double previousHeadY = std::numeric_limits<double>::quiet_NaN();
+            double previousHeadZ = std::numeric_limits<double>::quiet_NaN();
+            double previousTailX = std::numeric_limits<double>::quiet_NaN();
+            double previousTailY = std::numeric_limits<double>::quiet_NaN();
+            double previousTailZ = std::numeric_limits<double>::quiet_NaN();
 
-            // get segment geometry
-            double currentHeadX = dataRow[ m_dataSet->getXindex()-1 ];
-            double currentHeadY = dataRow[ m_dataSet->getYindex()-1 ];
-            double currentHeadZ = dataRow[ m_dataSet->getZindex()-1 ];
-            double currentTailX = dataRow[ m_dataSet->getXFinalIndex()-1 ];
-            double currentTailY = dataRow[ m_dataSet->getYFinalIndex()-1 ];
-            double currentTailZ = dataRow[ m_dataSet->getZFinalIndex()-1 ];
+            int previousFaciesCode = m_dataSet->getNoDataValueAsDouble();
 
-            //if the current segment doesn't connect to the previous...
-            if( ! Util::areConnected(  currentHeadX,  currentHeadY,  currentHeadZ,
-                                       currentTailX,  currentTailY,  currentTailZ,
-                                      previousHeadX, previousHeadY, previousHeadZ,
-                                      previousTailX, previousTailY, previousTailZ ) ){
-                //invalidate the previous lithotype
-                previousFaciesCode = m_dataSet->getNoDataValueAsDouble();
-            }
+            //Sort the data group to meet the sequence criterion wanted by the user.
+            Util::sortDataFrame( dataGroup, sortByColumnIndex, ascendingOrDescending );
 
-            //get the current facies code
-            int currentFaciesCode = dataRow[ indexCategoricalVariable ];
+            //for each data row (for each segment)
+            for( std::vector< double >& dataRow : dataGroup ){
 
-            //if it is uninformed, proceed to imputation
-            if( m_dataSet->isNDV( currentFaciesCode ) ){
+                // get segment geometry
+                double currentHeadX = dataRow[ m_dataSet->getXindex()-1 ];
+                double currentHeadY = dataRow[ m_dataSet->getYindex()-1 ];
+                double currentHeadZ = dataRow[ m_dataSet->getZindex()-1 ];
+                double currentTailX = dataRow[ m_dataSet->getXFinalIndex()-1 ];
+                double currentTailY = dataRow[ m_dataSet->getYFinalIndex()-1 ];
+                double currentTailZ = dataRow[ m_dataSet->getZFinalIndex()-1 ];
 
-                //flag that signals the end of the impute process.
-                bool imputing = true;
+                //if the current segment doesn't connect to the previous...
+                if( ! Util::areConnected(  currentHeadX,  currentHeadY,  currentHeadZ,
+                                           currentTailX,  currentTailY,  currentTailZ,
+                                          previousHeadX, previousHeadY, previousHeadZ,
+                                          previousTailX, previousTailY, previousTailZ ) ){
+                    //invalidate the previous lithotype
+                    previousFaciesCode = m_dataSet->getNoDataValueAsDouble();
+                }
 
-                //initialize the total thickness to imput with the total Z variation of the current segment
-                double remainingUninformedThickness = m_dataSet->getSegmentHeight( currentDataRow );
+                //get the current facies code
+                int currentFaciesCode = dataRow[ indexCategoricalVariable ];
 
-                //initialize the imputed segment's head coordinate with the base coordinate of the uninformed segment
-                double x0, y0, z0;
-                Util::getBaseCoordinate( currentHeadX, currentHeadY, currentHeadZ,
-                                         currentTailX, currentTailY, currentTailZ,
-                                         x0          , y0          , z0 );
+                //if it is uninformed, proceed to imputation
+                if( m_dataSet->isNDV( currentFaciesCode ) ){
 
-                //get the coordinate of the topmost end of the uninformed segment
-                double xTop, yTop, zTop;
-                Util::getTopCoordinate( currentHeadX, currentHeadY, currentHeadZ,
-                                        currentTailX, currentTailY, currentTailZ,
-                                        xTop        , yTop        , zTop );
+                    //flag that signals the end of the impute process.
+                    bool imputing = true;
 
-                while( imputing ){
-                    //draw a facies code.
-                    {
-                        //Draw a cumulative probability from an uniform distribution
-                        std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
-                        double prob = uniformDistributionBetween0and1( randomNumberGenerator );
+                    //initialize the total thickness to imput with the total Z variation of the current segment
+                    double remainingUninformedThickness = m_dataSet->getSegmentHeight( currentDataRow );
 
-                        //if there is a previous facies code, draw using the FTM (Markov Chains)
-                        if( ! m_dataSet->isNDV( previousFaciesCode ) ) {
-                            // get the next facies code from the FTM given a comulative probability drawn.
-                            currentFaciesCode = m_FTM->getUpwardNextFaciesFromCumulativeFrequency( previousFaciesCode, prob );
-                            if( currentFaciesCode < 0 ){
-                                m_lastError = "Simulated facies code somehow was invalid.  Check the FTM.";
-                                return false;
+                    //initialize the imputed segment's head coordinate with the base coordinate of the uninformed segment
+                    double x0, y0, z0;
+                    Util::getBaseCoordinate( currentHeadX, currentHeadY, currentHeadZ,
+                                             currentTailX, currentTailY, currentTailZ,
+                                             x0          , y0          , z0 );
+
+                    //get the coordinate of the topmost end of the uninformed segment
+                    double xTop, yTop, zTop;
+                    Util::getTopCoordinate( currentHeadX, currentHeadY, currentHeadZ,
+                                            currentTailX, currentTailY, currentTailZ,
+                                            xTop        , yTop        , zTop );
+
+                    while( imputing ){
+                        //draw a facies code.
+                        {
+                            //Draw a cumulative probability from an uniform distribution
+                            std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
+                            double prob = uniformDistributionBetween0and1( randomNumberGenerator );
+
+                            //if there is a previous facies code, draw using the FTM (Markov Chains)
+                            if( ! m_dataSet->isNDV( previousFaciesCode ) ) {
+                                // get the next facies code from the FTM given a comulative probability drawn.
+                                currentFaciesCode = m_FTM->getUpwardNextFaciesFromCumulativeFrequency( previousFaciesCode, prob );
+                                if( currentFaciesCode < 0 ){
+                                    m_lastError = "Simulated facies code somehow was invalid.  Check the FTM.";
+                                    return false;
+                                }
+                            } else { //otherwhise, draw facies using the PDF (Monte Carlo)
+                                if( ! m_pdfForImputationWithPreviousUnavailable ){
+                                    m_lastError = "An uninformed location without a previous informed data was found (Markov "
+                                                  "Chains not possible) but the user did not provide a fallback PDF.";
+                                    //dump offending data line.
+                                    Application::instance()->logError( "Dump of offending data line (processing order likely differs from file order):\n" + Util::dumpDataLine( dataRow ) );
+                                    return false;
+                                }
+                                // get the next facies code from the PDF given a comulative probability drawn.
+                                currentFaciesCode = m_pdfForImputationWithPreviousUnavailable->
+                                        getFaciesFromCumulativeFrequency( prob );
+                                if( currentFaciesCode < 0 ){
+                                    m_lastError = "Simulated facies code somehow was invalid.  Check the PDF.";
+                                    return false;
+                                }
                             }
-                        } else { //otherwhise, draw facies using the PDF (Monte Carlo)
-                            if( ! m_pdfForImputationWithPreviousUnavailable ){
-                                m_lastError = "An uninformed location without a previous informed data was found (Markov "
-                                              "Chains not possible) but the user did not provide a fallback PDF.";
+                        }// draw a facies code
+
+                        //once the facies is known, draw a thickness from the facies' distribution of thickness
+                        double thickness;
+                        {
+                            //Draw a cumulative probability from an uniform distribution
+                            std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
+                            double prob = uniformDistributionBetween0and1( randomNumberGenerator );
+
+                            thickness = m_distributions[ currentFaciesCode ]->getValueFromCumulativeFrequency( prob );
+
+                            if( std::isnan( thickness ) ){
+                                m_lastError = "An invalid thickness value was drawn.";
                                 //dump offending data line.
                                 Application::instance()->logError( "Dump of offending data line (processing order likely differs from file order):\n" + Util::dumpDataLine( dataRow ) );
                                 return false;
                             }
-                            // get the next facies code from the PDF given a comulative probability drawn.
-                            currentFaciesCode = m_pdfForImputationWithPreviousUnavailable->
-                                    getFaciesFromCumulativeFrequency( prob );
-                            if( currentFaciesCode < 0 ){
-                                m_lastError = "Simulated facies code somehow was invalid.  Check the PDF.";
-                                return false;
+                        }// draw a thickness
+
+                        //imput a new segment
+                        double x1, y1, z1;
+                        {
+                            double thicknessToUse = thickness;
+
+                            //truncate the last segment so it fits in the remaining gap
+                            if( thicknessToUse > remainingUninformedThickness ){
+                                thicknessToUse = remainingUninformedThickness;
+                                //signals there is nothing left to impute
+                                imputing = false;
                             }
-                        }
-                    }// draw a facies code
 
-                    //once the facies is known, draw a thickness from the facies' distribution of thickness
-                    double thickness;
-                    {
-                        //Draw a cumulative probability from an uniform distribution
-                        std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
-                        double prob = uniformDistributionBetween0and1( randomNumberGenerator );
+                            //initialize the new imputed segment with a copy of the uninformed segment
+                            std::vector<double> newSegment = dataRow;
 
-                        thickness = m_distributions[ currentFaciesCode ]->getValueFromCumulativeFrequency( prob );
+                            //compute the tail coordinate for the new imputed segment
+                            z1 = z0 + thicknessToUse;
+                            x1 = Util::linearInterpolation( z1, z0, zTop, x0, xTop );
+                            y1 = Util::linearInterpolation( z1, z0, zTop, y0, yTop );
 
-                        if( std::isnan( thickness ) ){
-                            m_lastError = "An invalid thickness value was drawn.";
-                            //dump offending data line.
-                            Application::instance()->logError( "Dump of offending data line (processing order likely differs from file order):\n" + Util::dumpDataLine( dataRow ) );
-                            return false;
-                        }
-                    }// draw a thickness
+                            //set its geometry (resulted from the drawn thickness)
+                            newSegment[ m_dataSet->getXindex()-1 ]      = x0;
+                            newSegment[ m_dataSet->getYindex()-1 ]      = y0;
+                            newSegment[ m_dataSet->getZindex()-1 ]      = z0;
+                            newSegment[ m_dataSet->getXFinalIndex()-1 ] = x1;
+                            newSegment[ m_dataSet->getYFinalIndex()-1 ] = y1;
+                            newSegment[ m_dataSet->getZFinalIndex()-1 ] = z1;
 
-                    //imput a new segment
-                    double x1, y1, z1;
-                    {
-                        double thicknessToUse = thickness;
+                            //set the drawn facies
+                            newSegment[ indexCategoricalVariable ] = currentFaciesCode;
 
-                        //truncate the last segment so it fits in the remaining gap
-                        if( thicknessToUse > remainingUninformedThickness ){
-                            thicknessToUse = remainingUninformedThickness;
-                            //signals there is nothing left to impute
-                            imputing = false;
-                        }
+                            //appends the imputed=yes flag to the imputed data
+                            newSegment.push_back( 1 );
 
-                        //initialize the new imputed segment with a copy of the uninformed segment
-                        std::vector<double> newSegment = dataRow;
+                            //appends the imputed data to the output
+                            imputedDataRealization.push_back( newSegment );
 
-                        //compute the tail coordinate for the new imputed segment
-                        z1 = z0 + thicknessToUse;
-                        x1 = Util::linearInterpolation( z1, z0, zTop, x0, xTop );
-                        y1 = Util::linearInterpolation( z1, z0, zTop, y0, yTop );
+                            //decreses the total thickness to impute
+                            remainingUninformedThickness -= thicknessToUse;
 
-                        //set its geometry (resulted from the drawn thickness)
-                        newSegment[ m_dataSet->getXindex()-1 ]      = x0;
-                        newSegment[ m_dataSet->getYindex()-1 ]      = y0;
-                        newSegment[ m_dataSet->getZindex()-1 ]      = z0;
-                        newSegment[ m_dataSet->getXFinalIndex()-1 ] = x1;
-                        newSegment[ m_dataSet->getYFinalIndex()-1 ] = y1;
-                        newSegment[ m_dataSet->getZFinalIndex()-1 ] = z1;
+                            //checks whether the imputation completed filling the entire gap
+                            //the remaining thickness should be zero at the end of the process
+                            if( ! imputing && ! Util::almostEqual2sComplement( remainingUninformedThickness, 0, 1 )){
+                                Application::instance()->logWarn("MCMCDataImputation::run(): the remaining thickness is supposed to"
+                                                                 " be zero after finishing an imputation. Got: " + QString::number( remainingUninformedThickness ) );
+                                Application::instance()->logWarn("     data dump of the segment being imputed:");
+                                Application::instance()->logWarn("     " + Util::dumpDataLine( dataRow ));
+                            }
+                        } //impute a new segment
 
-                        //set the drawn facies
-                        newSegment[ indexCategoricalVariable ] = currentFaciesCode;
+                        //the initial coordinate of the next imputed segment will be the end of the current one
+                        x0 = x1;
+                        y0 = y1;
+                        z0 = z1;
 
-                        //appends the imputed=yes flag to the imputed data
-                        newSegment.push_back( 1 );
+                    } //while imputing
+                } else { //informed data is just copied to the output
+                    dataRow.push_back( 0 ); //apends the imputed=no flag to the output
+                    imputedDataRealization.push_back( dataRow );
+                }
 
-                        //appends the imputed data to the output
-                        m_imputedData.push_back( newSegment );
+                // keep track of segment geometry for the next iteration to determine connectivity.
+                previousHeadX = currentHeadX;
+                previousHeadY = currentHeadY;
+                previousHeadZ = currentHeadZ;
+                previousTailX = currentTailX;
+                previousTailY = currentTailY;
+                previousTailZ = currentTailZ;
 
-                        //decreses the total thickness to impute
-                        remainingUninformedThickness -= thicknessToUse;
+                previousFaciesCode = currentFaciesCode;
 
-                        //checks whether the imputation completed filling the entire gap
-                        //the remaining thickness should be zero at the end of the process
-                        if( ! imputing && ! Util::almostEqual2sComplement( remainingUninformedThickness, 0, 1 )){
-                            Application::instance()->logWarn("MCMCDataImputation::run(): the remaining thickness is supposed to"
-                                                             " be zero after finishing an imputation. Got: " + QString::number( remainingUninformedThickness ) );
-                            Application::instance()->logWarn("     data dump of the segment being imputed:");
-                            Application::instance()->logWarn("     " + Util::dumpDataLine( dataRow ));
-                        }
-                    } //impute a new segment
+                ++currentDataRow;
+            } //for each data row (for each segment)
 
-                    //the initial coordinate of the next imputed segment will be the end of the current one
-                    x0 = x1;
-                    y0 = y1;
-                    z0 = z1;
+        }//for each data group (may be just one)
 
-                } //while imputing
-            } else { //informed data is just copied to the output
-                dataRow.push_back( 0 ); //apends the imputed=no flag to the output
-                m_imputedData.push_back( dataRow );
-            }
-
-            // keep track of segment geometry for the next iteration to determine connectivity.
-            previousHeadX = currentHeadX;
-            previousHeadY = currentHeadY;
-            previousHeadZ = currentHeadZ;
-            previousTailX = currentTailX;
-            previousTailY = currentTailY;
-            previousTailZ = currentTailZ;
-
-            previousFaciesCode = currentFaciesCode;
-
-            ++currentDataRow;
-        } //for each data row (for each segment)
-
-    }//for each data group (may be just one)
-
-    if( m_imputedData.empty() ){
-        m_lastError = "MCMCDataImputation::run(): somehow the simulation completed with an empty data set.";
-        return false;
-    }
+        if( m_imputedData.empty() ){
+            m_lastError = "MCMCDataImputation::run(): somehow the simulation completed with an empty data set.";
+            return false;
+        }
+    } //for each realization
 
     return true;
+}
+
+void MCMCDataImputation::setNumberOfRealizations(uint numberOfRealizations)
+{
+    m_imputedData = std::vector< std::vector< std::vector<double> > >( numberOfRealizations );
 }
 
 bool MCMCDataImputation::isOKtoRun()

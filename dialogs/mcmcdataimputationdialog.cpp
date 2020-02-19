@@ -92,6 +92,7 @@ void MCMCDataImputationDialog::onRunMCMC()
     mcmcSim.m_pdfForImputationWithPreviousUnavailable = dynamic_cast<CategoryPDF*>( m_PDFSelector->getSelectedFile() );
     mcmcSim.m_sequenceDirection = static_cast<SequenceDirection>( ui->cmbOrder->currentIndex() );
     mcmcSim.m_atVariableGroupBy = dynamic_cast<Attribute*>( m_groupByVariableSelector->getSelectedVariable() );
+    mcmcSim.setNumberOfRealizations( ui->spinRealizations->value() );
     //----------------------------------------------------------------------------------------------------------------------------------------
 
     Application::instance()->logInfo("Commencing MCMC simulation...");
@@ -110,43 +111,48 @@ void MCMCDataImputationDialog::onRunMCMC()
         if( ! ok )
             return;
 
-        //make the path for the file.
-        QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
+        for( uint iReal = 0; iReal < mcmcSim.getNumberOfRealizations(); ++iReal ){
 
-        //Creates a new segment set object to house the imputed data.
-        SegmentSet* imputed_ss = new SegmentSet( new_file_path );
+            //make the path for the file.
+            QString new_file_path = Application::instance()->getProject()->getPath() + "/" +
+                                    new_file_name + ui->txtRealizationBaseName->text() +
+                                    QString::number( iReal );
 
-        //Set the same metadata of the original data set.
-        imputed_ss->setInfoFromAnotherSegmentSet( mcmcSim.m_dataSet );
+            //Creates a new segment set object to house the imputed data.
+            SegmentSet* imputed_ss = new SegmentSet( new_file_path );
 
-        //causes a population of child Attribute objects matching the ones from the original imput data set
-        imputed_ss->setPath( mcmcSim.m_dataSet->getPath() );
-        imputed_ss->updateChildObjectsCollection();
+            //Set the same metadata of the original data set.
+            imputed_ss->setInfoFromAnotherSegmentSet( mcmcSim.m_dataSet );
 
-        //loads the original data into the imputed data set
-        imputed_ss->loadData();
+            //causes a population of child Attribute objects matching the ones from the original imput data set
+            imputed_ss->setPath( mcmcSim.m_dataSet->getPath() );
+            imputed_ss->updateChildObjectsCollection();
 
-        //adds a new Attribute corresponding to the imputed=1/0 flag, along with an extra data column
-        imputed_ss->addEmptyDataColumn( "imputed", imputed_ss->getDataLineCount() );
+            //loads the original data into the imputed data set
+            imputed_ss->loadData();
 
-        //replaces original data with the imputed data
-        imputed_ss->replaceDataFrame( mcmcSim.getImputedDataFrame() );
+            //adds a new Attribute corresponding to the imputed=1/0 flag, along with an extra data column
+            imputed_ss->addEmptyDataColumn( "imputed", imputed_ss->getDataLineCount() );
 
-        //creates the new physical file
-        imputed_ss->setPath( new_file_path );
-        imputed_ss->writeToFS();
+            //replaces original data with the imputed data
+            imputed_ss->replaceDataFrame( mcmcSim.getImputedDataFrames()[ iReal ] );
 
-        //save its metadata file
-        imputed_ss->updateMetaDataFile();
+            //creates the new physical file
+            imputed_ss->setPath( new_file_path );
+            imputed_ss->writeToFS();
 
-        //causes an update to the child objects in the project tree
-        imputed_ss->setInfoFromMetadataFile();
+            //save its metadata file
+            imputed_ss->updateMetaDataFile();
 
-        //attach the object to the project tree
-        Application::instance()->getProject()->addDataFile( imputed_ss );
+            //causes an update to the child objects in the project tree
+            imputed_ss->setInfoFromMetadataFile();
 
-        //show the newly created object in main window's project tree
-        Application::instance()->refreshProjectTree();
+            //attach the object to the project tree
+            Application::instance()->getProject()->addDataFile( imputed_ss );
+
+            //show the newly created object in main window's project tree
+            Application::instance()->refreshProjectTree();
+        }
     }
 }
 

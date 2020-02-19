@@ -80,18 +80,25 @@ public:
     /** Returns a text explaining the cause of the last failure during the simulation. */
     QString getLastError() const{ return m_lastError; }
 
-    /** Returns the imputed data frame. An additional binary variable is appended to each record:
-     * 1: record was imputed; 0: record is original data.
+    /** Returns the imputed data frames (all realizations). An additional binary variable
+     *  is appended to each record: 1: record was imputed; 0: record is original data.
      */
-    std::vector< std::vector<double> > getImputedDataFrame(){ return m_imputedData; }
+    std::vector< std::vector< std::vector<double> > > getImputedDataFrames(){ return m_imputedData; }
+
+    /** Sets the number of realizations (the number of elements in the outermost vector of m_imputedData).
+     * Any previously simulated data will be lost.
+     */
+    void setNumberOfRealizations(uint numberOfRealizations );
+
+    uint getNumberOfRealizations(){ return m_imputedData.size(); }
 
 private:
 
     /** The description of the cause of the last failure during simulation. */
     QString m_lastError;
 
-    /** The imputed data frame. */
-    std::vector< std::vector<double> > m_imputedData;
+    /** The imputed data frames (all realizations). */
+    std::vector< std::vector< std::vector<double> > > m_imputedData;
 
     /** Returns whether the simulation parameters are valid and consistent. */
     bool isOKtoRun();
