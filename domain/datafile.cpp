@@ -656,13 +656,17 @@ std::vector< std::vector< std::vector<double> > > DataFile::getDataGroupedBy(int
     std::vector< std::vector<double> > group;
     for( const std::vector<double>& row : orderedData ){
         double currentGroupByValue = row[ variableIndex ];
-        if( currentGroupByValue != previousGroupByValue ){
+        if( currentGroupByValue != previousGroupByValue && !group.empty() ){
             result.push_back( group );
             group = std::vector< std::vector<double> >();
         }
         group.push_back( row );
         previousGroupByValue = currentGroupByValue;
     }
+
+    //adds the last group
+    if( ! group.empty() )
+        result.push_back( group );
 
     return result;
 }
@@ -692,6 +696,11 @@ std::vector<std::vector<double> > DataFile::getDataFilteredBy(int variableIndex,
         Application::instance()->logWarn("DataFile::getDataFilteredBy(): filtering resulted in an empty data frame.");
 
     return result;
+}
+
+void DataFile::replaceDataFrame( const std::vector<std::vector<double> > &dataTable )
+{
+    _data = dataTable;
 }
 
 void DataFile::replacePhysicalFile(const QString from_file_path)

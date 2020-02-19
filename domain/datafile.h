@@ -404,6 +404,13 @@ public:
      */
     std::vector< std::vector<double> > getDataFilteredBy( int variableIndex, double value0, double value1 ) const;
 
+    /**
+     * Replaces the internal data frame with a copy of the one passed as parameter.
+     * ***CAUTION***: No consistency check is made with the collection of child Attribute objects
+     *                or the object's metadata.
+     */
+    void replaceDataFrame( const std::vector< std::vector<double> >& dataTable );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
