@@ -52,10 +52,17 @@ double UnivariateDistribution::getValueFromCumulativeFrequency(double cumulative
         double zValue = record[ zValueIndex ];
         double pValue = record[ pValueIndex ];
         cumulativeP += pValue;
-        if( i > 0 ){
+        if( i > 0 ){ //1st point is the start of the distribution, that is, we don't have a ramp yet.
             if( cumulativeProbability < cumulativeP ){
+                //the client P passed may be lower than the starting P of the distribution.
+                //using a P lower than the min P result in extrapolation, with likely wrong Z-values.
+                double cumulativePtoUse = std::max( cumulativeProbability, previousCumulativeP );
                 //the resulting z value is a linear interpolation between two cumulative probabilities and two z-values.
-                return Util::linearInterpolation( cumulativeProbability, previousCumulativeP, cumulativeP, previousZValue, zValue );
+                result = Util::linearInterpolation( cumulativePtoUse, previousCumulativeP, cumulativeP, previousZValue, zValue );
+                if( result < previousZValue || result > zValue )
+                    Application::instance()->logWarn( "UnivariateDistribution::getValueFromCumulativeFrequency(): extrapolation occured. "
+                                                      "Returned Z value is likely wrong.  Check passed cumulative probability value." );
+                return result;
             }
         }
         previousZValue = zValue;
