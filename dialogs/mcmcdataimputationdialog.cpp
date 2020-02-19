@@ -10,8 +10,10 @@
 #include "domain/segmentset.h"
 #include "domain/attribute.h"
 #include "domain/categorypdf.h"
+#include "domain/project.h"
 #include "geostats/mcmcdataimputation.h"
 
+#include <QInputDialog>
 #include <QMessageBox>
 
 MCMCDataImputationDialog::MCMCDataImputationDialog(QWidget *parent) :
@@ -74,17 +76,77 @@ void MCMCDataImputationDialog::onRunMCMC()
         mcmcSim.m_FTMtype = FTMType::PROBABILITIES;
     mcmcSim.m_dataSet = dynamic_cast<SegmentSet*>( m_fileSelector->getSelectedFile() );
     mcmcSim.m_atVariable = dynamic_cast<Attribute*>( m_varSelector->getSelectedVariable() );
-    for( UnivariateDistributionSelector* probFieldSelector : m_distributionSelectors )
-        mcmcSim.m_distributions.push_back( probFieldSelector->getSelectedDistribution() );
+    //----- the pairs category code/distribution -------
+    DataFile* df = static_cast<DataFile*>( m_fileSelector->getSelectedFile() );
+    assert( df && "MCMCDataImputationDialog::onRunMCMC(): null DataFile pointer.");
+    Attribute* at = m_varSelector->getSelectedVariable();
+    assert( at && "MCMCDataImputationDialog::onRunMCMC(): null Attribute pointer.");
+    CategoryDefinition* cd = df->getCategoryDefinition( at );
+    assert( cd && "MCMCDataImputationDialog::onRunMCMC(): null CategoryDefinition pointer.");
+    cd->loadQuintuplets(); //loads the data from the filesystem.
+    for( uint iCatIndex = 0; iCatIndex < cd->getCategoryCount(); ++iCatIndex ){
+        mcmcSim.m_distributions.insert( { cd->getCategoryCode( iCatIndex ),
+                                          m_distributionSelectors[ iCatIndex ]->getSelectedDistribution() } );
+    }
+    //--------------------------------------------------
     mcmcSim.m_pdfForImputationWithPreviousUnavailable = dynamic_cast<CategoryPDF*>( m_PDFSelector->getSelectedFile() );
+    mcmcSim.m_sequenceDirection = static_cast<SequenceDirection>( ui->cmbOrder->currentIndex() );
+    mcmcSim.m_atVariableGroupBy = dynamic_cast<Attribute*>( m_groupByVariableSelector->getSelectedVariable() );
     //----------------------------------------------------------------------------------------------------------------------------------------
 
+    Application::instance()->logInfo("Commencing MCMC simulation...");
     if( ! mcmcSim.run() ){
         QMessageBox::critical( this, "Error", QString("Simulation failed.  Check the messages panel for more details of the error."));
         Application::instance()->logError( "MCMCDataImputationDialog::onRun(): Simulation ended with error: ");
         Application::instance()->logError( "    Last error:" + mcmcSim.getLastError() );
     } else {
-        // TODO: add save to data set code goes here.
+        Application::instance()->logInfo("MCMC simulation completed.");
+
+        //open the renaming dialog
+        bool ok;
+        QString suggestedName = mcmcSim.m_dataSet->getName() + "_IMPUTED";
+        QString new_file_name = QInputDialog::getText(this, "Name the new segment set file",
+                                                 "New file name:", QLineEdit::Normal, suggestedName, &ok);
+        if( ! ok )
+            return;
+
+        //make the path for the file.
+        QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
+
+        //Creates a new segment set object to house the imputed data.
+        SegmentSet* imputed_ss = new SegmentSet( new_file_path );
+
+        //Set the same metadata of the original data set.
+        imputed_ss->setInfoFromAnotherSegmentSet( mcmcSim.m_dataSet );
+
+        //causes a population of child Attribute objects matching the ones from the original imput data set
+        imputed_ss->setPath( mcmcSim.m_dataSet->getPath() );
+        imputed_ss->updateChildObjectsCollection();
+
+        //loads the original data into the imputed data set
+        imputed_ss->loadData();
+
+        //adds a new Attribute corresponding to the imputed=1/0 flag, along with an extra data column
+        imputed_ss->addEmptyDataColumn( "imputed", imputed_ss->getDataLineCount() );
+
+        //replaces original data with the imputed data
+        imputed_ss->replaceDataFrame( mcmcSim.getImputedDataFrame() );
+
+        //creates the new physical file
+        imputed_ss->setPath( new_file_path );
+        imputed_ss->writeToFS();
+
+        //save its metadata file
+        imputed_ss->updateMetaDataFile();
+
+        //causes an update to the child objects in the project tree
+        imputed_ss->setInfoFromMetadataFile();
+
+        //attach the object to the project tree
+        Application::instance()->getProject()->addDataFile( imputed_ss );
+
+        //show the newly created object in main window's project tree
+        Application::instance()->refreshProjectTree();
     }
 }
 

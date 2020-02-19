@@ -4,12 +4,20 @@
 #include "domain/categorydefinition.h"
 #include "domain/attribute.h"
 #include "domain/categorypdf.h"
+#include "domain/univariatedistribution.h"
+#include "domain/application.h"
 
 #include <random>
 
 
 MCMCDataImputation::MCMCDataImputation() :
-    m_atVariableGroupBy( nullptr )
+    m_atVariable( nullptr ),
+    m_dataSet ( nullptr ),
+    m_FTM( nullptr ),
+    m_distributions( std::map< int, UnivariateDistribution* >() ),
+    m_atVariableGroupBy( nullptr ),
+    m_pdfForImputationWithPreviousUnavailable( nullptr ),
+    m_imputedData( std::vector< std::vector<double> >() )
 {
 
 }
@@ -21,10 +29,11 @@ bool MCMCDataImputation::run()
         return false;
 
     //create the data frame to receive the imputed data
-    std::vector< std::vector<double> > imputedData;
+    m_imputedData = std::vector< std::vector<double> >();
 
     //get the data set as either grouped by some variable or as is.
     std::vector< std::vector< std::vector<double> > > dataFrame;
+    m_dataSet->loadData();
     if( m_atVariableGroupBy )
         dataFrame = m_dataSet->getDataGroupedBy( m_atVariableGroupBy->getAttributeGEOEASgivenIndex()-1 );
     else
@@ -47,6 +56,13 @@ bool MCMCDataImputation::run()
     //initialize the random number generator with the user-given seed
     std::mt19937 randomNumberGenerator;
     randomNumberGenerator.seed( m_seed );
+
+    //load the thickness CDFs
+    std::map<int, UnivariateDistribution*>::iterator it = m_distributions.begin();
+    while( it != m_distributions.end() ){
+        it->second->readFromFS();
+        it++;
+    }
 
     //for each data group (may be just one)
     for( std::vector< std::vector< double > >& dataGroup : dataFrame ){
@@ -92,34 +108,119 @@ bool MCMCDataImputation::run()
                 //initialize the total thickness to imput with the total Z variation of the current segment
                 double remainingUninformedThickness = m_dataSet->getSegmentHeight( currentDataRow );
 
-                //draw a facies code.
-                {
-                    //Draw a cumulative probability from an uniform distribution
-                    std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
-                    double prob = uniformDistributionBetween0and1( randomNumberGenerator );
-                    //if there is a previous facies code, draw using the FTM (Markov Chains)
-                    if( ! m_dataSet->isNDV( previousFaciesCode ) ) {
-                        // get the next facies code from the FTM given a comulative probability drawn.
-                        currentFaciesCode = m_FTM->getUpwardNextFaciesFromCumulativeFrequency( previousFaciesCode, prob );
-                    } else { //otherwhise, draw facies using the PDF (Monte Carlo)
-                        if( ! m_pdfForImputationWithPreviousUnavailable ){
-                            m_lastError = "An uninformed location without a previous informed data was found (Markov "
-                                          "Chains not possible) but the user did not provide a PDF.";
+                bool imputing = true;
+                double x0 = currentHeadX;
+                double y0 = currentHeadY;
+                double z0 = currentHeadZ;
+                while( imputing ){
+                    //draw a facies code.
+                    {
+                        //Draw a cumulative probability from an uniform distribution
+                        std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
+                        double prob = uniformDistributionBetween0and1( randomNumberGenerator );
+
+                        //if there is a previous facies code, draw using the FTM (Markov Chains)
+                        if( ! m_dataSet->isNDV( previousFaciesCode ) ) {
+                            // get the next facies code from the FTM given a comulative probability drawn.
+                            currentFaciesCode = m_FTM->getUpwardNextFaciesFromCumulativeFrequency( previousFaciesCode, prob );
+                            if( currentFaciesCode < 0 ){
+                                m_lastError = "Simulated facies code somehow was invalid.  Check the FTM.";
+                                return false;
+                            }
+                        } else { //otherwhise, draw facies using the PDF (Monte Carlo)
+                            if( ! m_pdfForImputationWithPreviousUnavailable ){
+                                m_lastError = "An uninformed location without a previous informed data was found (Markov "
+                                              "Chains not possible) but the user did not provide a fallback PDF.";
+                                //dump offending data line.
+                                Application::instance()->logError( "Dump of offending data line (processing order likely differs from file order):\n" + Util::dumpDataLine( dataRow ) );
+                                return false;
+                            }
+                            // get the next facies code from the PDF given a comulative probability drawn.
+                            currentFaciesCode = m_pdfForImputationWithPreviousUnavailable->
+                                    getFaciesFromCumulativeFrequency( prob );
+                            if( currentFaciesCode < 0 ){
+                                m_lastError = "Simulated facies code somehow was invalid.  Check the PDF.";
+                                return false;
+                            }
+                        }
+                    }// draw a facies code
+
+                    //once the facies is known, draw a thickness from the facies' distribution of thickness
+                    double thickness;
+                    {
+                        //Draw a cumulative probability from an uniform distribution
+                        std::uniform_real_distribution<double> uniformDistributionBetween0and1( 0.0, 1.0 );
+                        double prob = uniformDistributionBetween0and1( randomNumberGenerator );
+
+                        thickness = m_distributions[ currentFaciesCode ]->getValueFromCumulativeFrequency( prob );
+
+                        if( std::isnan( thickness ) ){
+                            m_lastError = "An invalid thickness value was drawn.";
+                            //dump offending data line.
+                            Application::instance()->logError( "Dump of offending data line (processing order likely differs from file order):\n" + Util::dumpDataLine( dataRow ) );
                             return false;
                         }
-                        // get the next facies code from the PDF given a comulative probability drawn.
-                        currentFaciesCode = m_pdfForImputationWithPreviousUnavailable->
-                                getFaciesFromCumulativeFrequency( prob );
-                    }
-                }
+                    }// draw a thickness
 
-                //once the facies is known, draw a thickness from the facies' distribution of thickness
+                    //imput a new segment
+                    double x1, y1, z1;
+                    {
+                        double thicknessToUse = thickness;
 
-                STOPED_HERE;
+                        //truncate the last segment so it fits in the remaining gap
+                        if( thicknessToUse > remainingUninformedThickness ){
+                            thicknessToUse = remainingUninformedThickness;
+                            //signals there is nothing left to impute
+                            imputing = false;
+                        }
 
+                        //initialize the new imputed segment with a copy of the uninformed segment
+                        std::vector<double> newSegment = dataRow;
+
+                        //compute the tail coordinate for the new imputed segment
+                        z1 = z0 + thicknessToUse;
+                        x1 = Util::linearInterpolation( z1, z0, currentTailZ, x0, currentTailX );
+                        y1 = Util::linearInterpolation( z1, z0, currentTailZ, y0, currentTailY );
+
+                        //set its geometry (resulted from the drawn thickness)
+                        newSegment[ m_dataSet->getXindex()-1 ]      = x0;
+                        newSegment[ m_dataSet->getYindex()-1 ]      = y0;
+                        newSegment[ m_dataSet->getZindex()-1 ]      = z0;
+                        newSegment[ m_dataSet->getXFinalIndex()-1 ] = x1;
+                        newSegment[ m_dataSet->getYFinalIndex()-1 ] = y1;
+                        newSegment[ m_dataSet->getZFinalIndex()-1 ] = z1;
+
+                        //set the drawn facies
+                        newSegment[ indexCategoricalVariable ] = currentFaciesCode;
+
+                        //appends the imputed=yes flag to the imputed data
+                        newSegment.push_back( 1 );
+
+                        //appends the imputed data to the output
+                        m_imputedData.push_back( newSegment );
+
+                        //decreses the total thickness to impute
+                        remainingUninformedThickness -= thicknessToUse;
+
+                        //checks whether the imputation completed filling the entire gap
+                        //the remaining thickness should be zero at the end of the process
+                        if( ! imputing && ! Util::almostEqual2sComplement( remainingUninformedThickness, 0, 1 )){
+                            Application::instance()->logWarn("MCMCDataImputation::run(): the remaining thickness is supposed to"
+                                                             " be zero after finishing an imputation. Got: " + QString::number( remainingUninformedThickness ) );
+                            Application::instance()->logWarn("     data dump of the segment being imputed:");
+                            Application::instance()->logWarn("     " + Util::dumpDataLine( dataRow ));
+                        }
+                    } //impute a new segment
+
+                    //the initial coordinate of the next imputed segment will be the end of the current one
+                    x0 = x1;
+                    y0 = y1;
+                    z0 = z1;
+
+                } //while imputing
             } else { //informed data is just copied to the output
                 dataRow.push_back( 0 ); //apends the imputed=no flag to the output
-                imputedData.push_back( dataRow );
+                m_imputedData.push_back( dataRow );
             }
 
             // keep track of segment geometry for the next iteration to determine connectivity.
@@ -130,10 +231,17 @@ bool MCMCDataImputation::run()
             previousTailY = currentTailY;
             previousTailZ = currentTailZ;
 
+            previousFaciesCode = currentFaciesCode;
+
+            ++currentDataRow;
         } //for each data row (for each segment)
 
-        ++currentDataRow;
     }//for each data group (may be just one)
+
+    if( m_imputedData.empty() ){
+        m_lastError = "MCMCDataImputation::run(): somehow the simulation completed with an empty data set.";
+        return false;
+    }
 
     return true;
 }
@@ -195,20 +303,28 @@ bool MCMCDataImputation::isOKtoRun()
                     QString::number(nCategories) + " ).";
             return false;
         }
-        for( UnivariateDistribution* ud : m_distributions ){
-            if( ! ud ){
+        for( const std::pair<int, UnivariateDistribution*>& facies_ud : m_distributions ){
+            if( ! facies_ud.second ){
                 m_lastError = "Passed null pointer to the collection of distributions.";
                 return false;
             }
         }
     }
 
-    CategoryDefinition* cdOfPDF = m_pdfForImputationWithPreviousUnavailable->getCategoryDefinition();
-    if( cdOfPDF ){
-        if( cdOfPDF != cdOfPrimData ){
-            m_lastError = "Category definition of input variable must be the same object as that the PDF is based on.";
-            return false;
+    if( m_pdfForImputationWithPreviousUnavailable ) {
+        CategoryDefinition* cdOfPDF = m_pdfForImputationWithPreviousUnavailable->getCategoryDefinition();
+        if( cdOfPDF ){
+            if( cdOfPDF != cdOfPrimData ){
+                m_lastError = "If a PDF is provides, its associated category definition must be the same object as "
+                              "the input variable's.";
+                return false;
+            }
         }
+    }
+
+    if( m_sequenceDirection != SequenceDirection::FROM_MINUS_Z_TO_PLUS_Z ) {
+        m_lastError = "Unrecognized sequence direction.  Must be one of the constants in the SequenceDirection enum.";
+        return false;
     }
 
     return true;

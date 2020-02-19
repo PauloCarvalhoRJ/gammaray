@@ -1,6 +1,7 @@
 #ifndef MCMCDATAIMPUTATION_H
 #define MCMCDATAIMPUTATION_H
 
+#include <map>
 #include <vector>
 #include <QString>
 
@@ -50,8 +51,8 @@ public:
     FaciesTransitionMatrix* m_FTM;
     /** The type of FTM as declared by the user. */
     FTMType m_FTMtype;
-    /** The thickness distributions of each facies for the Monte Carlo part of the simulation. */
-    std::vector< UnivariateDistribution* > m_distributions;
+    /** The thickness distributions (map's values) of each facies (map's index) for the Monte Carlo part of the simulation. */
+    std::map< int, UnivariateDistribution* > m_distributions;
     /** The seed for the random number generator. */
     int m_seed;
     /** The attribute to group the data by (e.g. drill hole id).
@@ -79,10 +80,18 @@ public:
     /** Returns a text explaining the cause of the last failure during the simulation. */
     QString getLastError() const{ return m_lastError; }
 
+    /** Returns the imputed data frame. An additional binary variable is appended to each record:
+     * 1: record was imputed; 0: record is original data.
+     */
+    std::vector< std::vector<double> > getImputedDataFrame(){ return m_imputedData; }
+
 private:
 
     /** The description of the cause of the last failure during simulation. */
     QString m_lastError;
+
+    /** The imputed data frame. */
+    std::vector< std::vector<double> > m_imputedData;
 
     /** Returns whether the simulation parameters are valid and consistent. */
     bool isOKtoRun();
