@@ -26,12 +26,12 @@ public:
     /** Returns the GEO-EAS index (1 == first) of the column, if there is one, and only one, column with a
      *  value role (linear or log scale).   Returns zero if there is none or more than one.
      *  @see Roles */
-    uint getTheColumnWithValueRole();
+    uint getTheColumnWithValueRole() const;
 
     /** Returns the GEO-EAS index (1 == first) of the column, if there is one, and only one, column with the
      *  probability role.   Returns zero if there is none or more than one.
      *  @see Roles */
-    uint getTheColumnWithProbabilityRole();
+    uint getTheColumnWithProbabilityRole() const;
 
 // File interface
 public:
