@@ -8,6 +8,7 @@ GammaRay is a graphical user interface (GUI) that automates geostatistical workf
 If you enjoyed this project, you might also enjoy GeostatsPy: https://github.com/GeostatsGuy/GeostatsPy<br>
 
 VERSION HISTORY:<br>
+&nbsp;&nbsp;&nbsp;Version 6.2   - data imputation with Markov Chains-Monte Carlo simulation and filtering of data sets.<br>
 &nbsp;&nbsp;&nbsp;Version 6.1   - create facies transition matrices and 3D picking & probing.<br>
 <strong>Version 6.0   - Markov Chain Random Field Simulation and numerous new features and enhancements<br></strong>
 &nbsp;&nbsp;&nbsp;Version 5.7   - full 2d automatic variogram fitting and analysis<br>
