@@ -81,6 +81,20 @@ public:
      */
     PointSet* toPointSetMidPoints(const QString &psName) const;
 
+    /**
+     * Creates a new segment set object similar to this one but with the data filtered
+     * by the passed criteria.  To filter by a category id, just pass its code as both criteria.
+     * The new point set is returned without a physical file path and not attached to the project.
+     * It is up to the client code to set the path and, if needed, attach it to the project.
+     */
+    SegmentSet* createSegmentSetByFiltering( uint column, double vMin, double vMax );
+
+    /**
+     * Returns the |Zfinal-Zinitial| of the iRecord-th segment.
+     * NOTE: make sure a prior call to DataFile::readFromFS() was made to load segment data.
+     */
+    double getSegmentHeight( int iRecord ) const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

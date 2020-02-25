@@ -34,6 +34,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
     domain/application.cpp \
@@ -271,7 +272,8 @@ SOURCES += main.cpp\
     geostats/mcrfsim.cpp \
     gslib/gslibparameterfiles/commonsimulationparameters.cpp \
     spatialindex/spatialindex.cpp \
-    geostats/taumodel.cpp
+    geostats/taumodel.cpp \
+    dialogs/mcmcdataimputationdialog.cpp
 
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
@@ -281,6 +283,7 @@ HEADERS  += mainwindow.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
+    geostats/mcmcdataimputation.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
@@ -520,7 +523,8 @@ HEADERS  += mainwindow.h \
     geostats/mcrfsim.h \
     gslib/gslibparameterfiles/commonsimulationparameters.h \
     spatialindex/spatialindex.h \
-    geostats/taumodel.h
+    geostats/taumodel.h \
+    dialogs/mcmcdataimputationdialog.h
 
 
 FORMS    += mainwindow.ui \
@@ -618,7 +622,8 @@ FORMS    += mainwindow.ui \
     dialogs/dynamicfaciesrelationshipdiagramdialog.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.ui \
     dialogs/mcrfsimdialog.ui \
-    dialogs/lvadatasetdialog.ui
+    dialogs/lvadatasetdialog.ui \
+    dialogs/mcmcdataimputationdialog.ui
 
 #==================== The Boost include path.==================
 _BOOST_INCLUDE = $$(BOOST_INCLUDE)

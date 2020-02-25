@@ -44,7 +44,8 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
         m_filesOfTypes == FileSelectorType::CartesianGrids ||
         m_filesOfTypes == FileSelectorType::PointSets ||
         m_filesOfTypes == FileSelectorType::GridFiles ||
-        m_filesOfTypes == FileSelectorType::PointAndSegmentSets ){
+        m_filesOfTypes == FileSelectorType::PointAndSegmentSets ||
+        m_filesOfTypes == FileSelectorType::SegmentSets ){
         og = project->getDataFilesGroup();
         for( int i = 0; i < og->getChildCount(); ++i){
             File* varFile = (File*)og->getChildByIndex( i );
@@ -52,7 +53,8 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
                          ( m_filesOfTypes == FileSelectorType::PointSets && varFile->getFileType() == "POINTSET" ) ||
                          ( m_filesOfTypes == FileSelectorType::CartesianGrids && varFile->getFileType() == "CARTESIANGRID" ) ||
                          ( m_filesOfTypes == FileSelectorType::GridFiles && ( varFile->getFileType() == "CARTESIANGRID" || varFile->getFileType() == "GEOGRID" ) ) ||
-                         ( m_filesOfTypes == FileSelectorType::PointAndSegmentSets && ( varFile->getFileType() == "POINTSET" || varFile->getFileType() == "SEGMENTSET" ) );
+                         ( m_filesOfTypes == FileSelectorType::PointAndSegmentSets && ( varFile->getFileType() == "POINTSET" || varFile->getFileType() == "SEGMENTSET" ) ) ||
+                         ( m_filesOfTypes == FileSelectorType::SegmentSets && ( varFile->getFileType() == "SEGMENTSET" )  );
             if( toAdd )
                 ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }

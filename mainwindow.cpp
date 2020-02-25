@@ -80,6 +80,7 @@
 #include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/mcrfsimdialog.h"
+#include "dialogs/mcmcdataimputationdialog.h"
 #include "dialogs/lvadatasetdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
@@ -107,6 +108,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow),
     m_subMenuClassifyInto( new QMenu("Classify into",       this) ),
     m_subMenuClassifyWith( new QMenu("Classify with",       this) ),
+    m_subMenuFilterBy    ( new QMenu("Filter by",           this) ),
     m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
     m_subMenuMapAs( new QMenu("Map as", this) ),
     m_subMenuFlipData( new QMenu("Flip data", this) )
@@ -550,6 +552,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuClassifyInto );
                 makeMenuClassifyWith();
                 _projectContextMenu->addMenu( m_subMenuClassifyWith );
+                makeMenuFilterBy();
+                _projectContextMenu->addMenu( m_subMenuFilterBy );
             }
             if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET","GEOGRID"} ) ){
                 makeMenuCategorize();
@@ -1498,6 +1502,111 @@ void MainWindow::onClassifyWith()
     connect( ted, SIGNAL(accepted()), this, SLOT(onPerformClassifyInto()));
     ted->show(); //show()->non-modal / execute()->modal
     //method onPerformClassifyInto() will be called upon dilog accept.
+}
+
+void MainWindow::onFilterBy()
+{
+    //assuming sender() returns a QAction* if execution passes through here.
+    QAction *act = (QAction*)sender();
+
+    //assuming the text in the menu item is the name of category.
+    QString categoryName = act->text();
+
+    double filtMin = -std::numeric_limits<double>::max();
+    double filtMax = std::numeric_limits<double>::max();
+
+    PointSet* ps = dynamic_cast<PointSet*>( _right_clicked_attribute->getContainingFile() );
+
+    if( ps ){
+        ps->loadData();
+        CategoryDefinition* cd = ps->getCategoryDefinition( _right_clicked_attribute );
+        if( cd ){
+            cd->readFromFS();
+            //get category code
+            int catCode = cd->getCategoryCodeByName( categoryName );
+            if( catCode != -999 ){
+                filtMin = catCode;
+                filtMax = catCode;
+            } else {
+                Application::instance()->logError( "MainWindow::onFilterBy(): category not found: " + categoryName );
+                return;
+            }
+        } else {
+            filtMin = ps->min( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+            filtMax = ps->max( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
+            bool ok;
+            filtMin = QInputDialog::getDouble( this, "Enter min. value", "Enter min. value of " +
+                                                      _right_clicked_attribute->getName() + " for filtering:", filtMin, filtMin, filtMax, 6, &ok );
+            if( ! ok )
+                return;
+            filtMax = QInputDialog::getDouble( this, "Enter max. value", "Enter max. value of " +
+                                                      _right_clicked_attribute->getName() + " for filtering:", filtMax, filtMin, filtMax, 6, &ok );
+            if( ! ok )
+                return;
+        }
+    } else {
+        Application::instance()->logError( "MainWindow::onFilterBy(): File is not an irregular data set." );
+        return;
+    }
+
+    //open the renaming dialog
+    bool ok;
+    QString suggestedName = ps->getName() + "_" + _right_clicked_attribute->getName() + "." + categoryName;
+    QString new_file_name = QInputDialog::getText(this, "Name the new point set file",
+                                             "New file name:", QLineEdit::Normal, suggestedName, &ok);
+    if( ! ok )
+        return;
+
+    //make the path for the file.
+    QString new_file_path = Application::instance()->getProject()->getPath() + "/" + new_file_name;
+
+    //Make a new data set from the filtered data.
+    if( ps->getFileType() == "POINTSET" ) {
+        PointSet* filteredPS = ps->createPointSetByFiltering( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, filtMin, filtMax );
+
+        filteredPS->setPath( ps->getPath() );
+        filteredPS->updateChildObjectsCollection();
+        filteredPS->setPath( new_file_path );
+
+        //the necessary steps to register the new object as a project member.
+        {
+            //save data to file system
+            filteredPS->writeToFS();
+            //save its metadata file
+            filteredPS->updateMetaDataFile();
+            //causes an update to the child objects in the project tree
+            filteredPS->setInfoFromMetadataFile();
+            //attach the object to the project tree
+            Application::instance()->getProject()->addDataFile( filteredPS );
+            //show the newly created object in main window's project tree
+            Application::instance()->refreshProjectTree();
+        }
+    } else if( ps->getFileType() == "SEGMENTSET" ){
+        SegmentSet* ss = dynamic_cast<SegmentSet*>( ps );
+
+        SegmentSet* filteredSS = ss->createSegmentSetByFiltering( _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1, filtMin, filtMax );
+
+        filteredSS->setPath( ps->getPath() );
+        filteredSS->updateChildObjectsCollection();
+        filteredSS->setPath( new_file_path );
+
+        //the necessary steps to register the new object as a project member.
+        {
+            //save data to file system
+            filteredSS->writeToFS();
+            //save its metadata file
+            filteredSS->updateMetaDataFile();
+            //causes an update to the child objects in the project tree
+            filteredSS->setInfoFromMetadataFile();
+            //attach the object to the project tree
+            Application::instance()->getProject()->addDataFile( filteredSS );
+            //show the newly created object in main window's project tree
+            Application::instance()->refreshProjectTree();
+        }
+    } else {
+        Application::instance()->logError( "MainWindow::onFilterBy(): data set type not supported: " + ps->getFileType() );
+    }
+
 }
 
 void MainWindow::onMapAs()
@@ -2679,6 +2788,12 @@ void MainWindow::onMCRFSim()
     mcrfd->show();
 }
 
+void MainWindow::onDataImputationWithMCMC()
+{
+    MCMCDataImputationDialog* mcmcd = new MCMCDataImputationDialog( this );
+    mcmcd->show();
+}
+
 void MainWindow::onSegmentLengths()
 {
     SegmentSet* ss = dynamic_cast<SegmentSet*>( _right_clicked_file );
@@ -3150,6 +3265,31 @@ void MainWindow::makeMenuClassifyWith()
                                                   SLOT(onClassifyWith()));
             }
         }
+    }
+}
+
+void MainWindow::makeMenuFilterBy()
+{
+    m_subMenuFilterBy->clear(); //remove any previously added item actions
+    DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
+    if( df ){
+        CategoryDefinition* cd = df->getCategoryDefinition( _right_clicked_attribute );
+        if( cd ){ //filtering option for categorical variables
+            cd->readFromFS();
+            for( int i = 0; i < cd->getCategoryCount(); ++i ){
+                m_subMenuFilterBy->addAction( Util::makeColorIcon( cd->getCustomColor( i ) ),
+                                                  cd->getCategoryName( i ),
+                                                  this,
+                                                  SLOT(onFilterBy()));
+            }
+        } else { //filtering option for continuous variables
+            m_subMenuFilterBy->addAction( QIcon(),
+                                          "set interval",
+                                          this,
+                                          SLOT(onFilterBy()));
+        }
+    } else {
+        Application::instance()->logError( "MainWindow::makeMenuFilterBy(): DataFile is nullptr." );
     }
 }
 

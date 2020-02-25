@@ -298,6 +298,7 @@
     <addaction name="actionSequential_Indicator_Simulation_continuous"/>
     <addaction name="actionSequential_Indicator_Simulation_categorical"/>
     <addaction name="actionMarkov_Chain_Random_Field_Simulation"/>
+    <addaction name="actionData_Imputation_with_MCMC"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuEstimation"/>
@@ -427,6 +428,11 @@
   <action name="actionMarkov_Chain_Random_Field_Simulation">
    <property name="text">
     <string>Markov Chain Random Field Simulation</string>
+   </property>
+  </action>
+  <action name="actionData_Imputation_with_MCMC">
+   <property name="text">
+    <string>Data Imputation with MCMC</string>
    </property>
   </action>
  </widget>
@@ -762,6 +768,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionData_Imputation_with_MCMC</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onDataImputationWithMCMC()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -783,5 +805,6 @@
   <slot>onSISIMCategorical()</slot>
   <slot>openTransiography()</slot>
   <slot>onMCRFSim()</slot>
+  <slot>onDataImputationWithMCMC()</slot>
  </slots>
 </ui>

@@ -46,7 +46,7 @@ void ProjectComponent::setParent(ProjectComponent *parent)
     this->_parent = parent;
 }
 
-ProjectComponent *ProjectComponent::getChildByIndex(int index)
+ProjectComponent *ProjectComponent::getChildByIndex(int index) const
 {
     return this->_children[index];
 }
@@ -56,7 +56,7 @@ ProjectComponent *ProjectComponent::getParent() const
     return this->_parent;
 }
 
-int ProjectComponent::getChildCount()
+int ProjectComponent::getChildCount() const
 {
     return this->_children.size();
 }

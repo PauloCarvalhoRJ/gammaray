@@ -430,7 +430,7 @@ void FaciesTransitionMatrix::removeRow(int i)
     m_lineHeadersFaciesNames.erase( m_lineHeadersFaciesNames.begin() + i );
 }
 
-int FaciesTransitionMatrix::getRowIndexOfCategory(const QString &faciesName)
+int FaciesTransitionMatrix::getRowIndexOfCategory(const QString &faciesName) const
 {
     int count = 0;
     for( const QString& header : m_lineHeadersFaciesNames ){
@@ -448,6 +448,39 @@ int FaciesTransitionMatrix::getColumnIndexOfCategory(const QString &faciesName)
         if( header == faciesName )
             return count;
         ++count;
+    }
+    return -1;
+}
+
+bool FaciesTransitionMatrix::isMainDiagonalZeroed() const
+{
+    if( ! isSquare() )
+        return false;
+    for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j )
+        if( ! Util::almostEqual2sComplement( m_transitionCounts[j][j], 0.0, 1 ) )
+             return false;
+    return true;
+}
+
+bool FaciesTransitionMatrix::isSquare() const
+{
+    return m_columnHeadersFaciesNames.size() == m_lineHeadersFaciesNames.size();
+}
+
+int FaciesTransitionMatrix::getUpwardNextFaciesFromCumulativeFrequency
+                         ( int fromFaciesCode, double cumulativeFrequency ) const
+{
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    assert( cd && "FaciesTransitionMatrix::getUpwardNextFaciesFromCumulativeFrequency(): getAssociatedCategoryDefinition() returned nullptr.");
+    int rowIndex = getRowIndexOfCategory( cd->getCategoryNameByCode( fromFaciesCode ) );
+    assert( rowIndex >= 0 && "FaciesTransitionMatrix::getUpwardNextFaciesFromCumulativeFrequency(): query of facies code failed." );
+    std::vector< double > probs = m_transitionCounts[ rowIndex ];
+    double cumProb = 0.0;
+    for( int colIndex = 0; colIndex < probs.size(); ++colIndex ){
+        int toFaciesCode = cd->getCategoryCodeByName( m_columnHeadersFaciesNames[ colIndex ] );
+        cumProb += getUpwardTransitionProbability( rowIndex, colIndex  );
+        if( cumulativeFrequency <= cumProb )
+            return toFaciesCode;
     }
     return -1;
 }

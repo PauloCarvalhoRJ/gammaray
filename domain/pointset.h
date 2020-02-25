@@ -65,6 +65,14 @@ public:
      */
     QMap<uint, uint> getWeightsVariablesPairs() const  { return _wgt_var_pairs; }
 
+    /**
+     * Creates a new point set object similar to this one but with the data filtered
+     * by the passed criteria.  To filter by a category id, just pass its code as both criteria.
+     * The new point set is returned without a physical file path and not attached to the project.
+     * It is up to the client code to set the path and, if needed, attach it to the project.
+     */
+    PointSet* createPointSetByFiltering( uint column, double vMin, double vMax );
+
     //DataFile interface
 public:
     /** Returns whether the passed Attribute is a weight according to the file's metadata. */

@@ -983,6 +983,16 @@ void Util::makeGSLibColorsList(QList<QColor> &colors)
     colors << QColor(128,128,128) << QColor(154,154,154) << QColor(179,179,179) << QColor(205,205,205) << QColor(230,230,230);
 }
 
+QIcon Util::makeColorIcon(const QColor &color)
+{
+    //make and return the icon.
+    QPixmap pixmap(16,16);
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI )
+        pixmap = QPixmap(32, 32);
+    pixmap.fill( color );
+    return QIcon( pixmap );
+}
+
 QIcon Util::makeGSLibColorIcon(uint color_code)
 {
     //make list of GSLib colors
@@ -2459,4 +2469,32 @@ bool Util::areConnected(double line1HeadX, double line1HeadY, double line1HeadZ,
             return true;
     }
     return false;
+}
+
+QString Util::dumpDataLine(const std::vector<double> &dataLine)
+{
+    std::stringstream dump;
+    for (double value : dataLine)
+        dump << value << ' ';
+    return QString( dump.str().c_str() );
+}
+
+void Util::getBaseCoordinate(double x0, double y0, double z0,
+                             double x1, double y1, double z1,
+                             double &x, double &y, double &z)
+{
+    if( z1 < z0 )
+        { x = x1; y = y1; z = z1; }
+    else
+        { x = x0; y = y0; z = z0; }
+}
+
+void Util::getTopCoordinate(double x0, double y0, double z0,
+                            double x1, double y1, double z1,
+                            double &x, double &y, double &z)
+{
+    if( z1 > z0 )
+        { x = x1; y = y1; z = z1; }
+    else
+        { x = x0; y = y0; z = z0; }
 }

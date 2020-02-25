@@ -357,7 +357,7 @@ void DataFile::setNoDataValue(const QString new_ndv)
     this->updateMetaDataFile();
 }
 
-bool DataFile::hasNoDataValue() { return !this->_no_data_value.trimmed().isEmpty(); }
+bool DataFile::hasNoDataValue() const { return !this->_no_data_value.trimmed().isEmpty(); }
 
 bool DataFile::isNormal(Attribute *at)
 {
@@ -656,7 +656,7 @@ std::vector< std::vector< std::vector<double> > > DataFile::getDataGroupedBy(int
     std::vector< std::vector<double> > group;
     for( const std::vector<double>& row : orderedData ){
         double currentGroupByValue = row[ variableIndex ];
-        if( currentGroupByValue != previousGroupByValue ){
+        if( currentGroupByValue != previousGroupByValue && !group.empty() ){
             result.push_back( group );
             group = std::vector< std::vector<double> >();
         }
@@ -664,7 +664,43 @@ std::vector< std::vector< std::vector<double> > > DataFile::getDataGroupedBy(int
         previousGroupByValue = currentGroupByValue;
     }
 
+    //adds the last group
+    if( ! group.empty() )
+        result.push_back( group );
+
     return result;
+}
+
+const std::vector<double> &DataFile::getDataRow(int rowIndex) const
+{
+    return _data[rowIndex];
+}
+
+std::vector<std::vector<double> > DataFile::getDataFilteredBy(int variableIndex, double value0, double value1) const
+{
+    std::vector< std::vector<double> > result;
+
+    if( _data.empty() )
+        Application::instance()->logError("DataFile::getDataFilteredBy(): no data to filter.  Perhaps loading data from the filesystem was not performed.");
+
+    for( int i = 0; i < getDataLineCount(); ++i ){
+        double value = dataConst( i, variableIndex );
+        if( ! isNDV( value ) ){
+            if( value >= value0 && value <= value1 ){
+                result.push_back( getDataRow( i ) );
+            }
+        }
+    }
+
+    if( result.empty() )
+        Application::instance()->logWarn("DataFile::getDataFilteredBy(): filtering resulted in an empty data frame.");
+
+    return result;
+}
+
+void DataFile::replaceDataFrame( const std::vector<std::vector<double> > &dataTable )
+{
+    _data = dataTable;
 }
 
 void DataFile::replacePhysicalFile(const QString from_file_path)
@@ -838,7 +874,7 @@ uint DataFile::getDataColumnCountConst() const
         return 0;
 }
 
-bool DataFile::isNDV(double value)
+bool DataFile::isNDV(double value) const
 {
     if (!this->hasNoDataValue())
         return false;

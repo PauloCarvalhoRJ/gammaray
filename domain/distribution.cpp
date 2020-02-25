@@ -33,7 +33,7 @@ void Distribution::setInfoFromMetadataFile()
     }
 }
 
-uint Distribution::getTheColumnWithValueRole()
+uint Distribution::getTheColumnWithValueRole() const
 {
     uint result = 0;
     for ( int i = 0; i < getChildCount(); ++i ) {
@@ -50,7 +50,7 @@ uint Distribution::getTheColumnWithValueRole()
     return result;
 }
 
-uint Distribution::getTheColumnWithProbabilityRole()
+uint Distribution::getTheColumnWithProbabilityRole() const
 {
     uint result = 0;
     for ( int i = 0; i < getChildCount(); ++i ) {

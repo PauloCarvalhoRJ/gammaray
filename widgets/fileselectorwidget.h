@@ -25,7 +25,8 @@ enum class FileSelectorType : uint {
     FaciesTransitionMatrices,    /*!< Facies transitions matrices can be selected. */
     GridFiles,                   /*!< Cartesian and Geo- grids can be selected. */
     PointAndSegmentSets,         /*!< Data files of point or segment set types can be selected. */
-    VerticalTransiogramModels    /*!< Vertical transiogram models can be selected. */
+    VerticalTransiogramModels,   /*!< Vertical transiogram models can be selected. */
+    SegmentSets                  /*!< Segment sets only can be selected. */
 };
 
 /**

@@ -36,9 +36,9 @@ public:
     virtual void removeChild( ProjectComponent* child );
     virtual bool hasParent() const;
     virtual void setParent( ProjectComponent* parent );
-    virtual ProjectComponent* getChildByIndex( int index );
+    virtual ProjectComponent* getChildByIndex( int index ) const;
     virtual ProjectComponent* getParent() const;
-    virtual int getChildCount();
+    virtual int getChildCount() const;
     virtual int getIndexInParent();
     virtual int getChildIndex( ProjectComponent* child );
     ProjectComponent* getChildByName( QString name, bool recurse = false );
