@@ -1038,9 +1038,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition()
 		//Max number of SA steps.
 		int i_kmax = ui->spinMaxStepsSA->value();
 		//Minimum value allowed for the parameters w (all zeros). DOMAIN CONSTRAINT
-		spectral::array L_wMin( vw.size(), 0.0d );
+        spectral::array L_wMin( vw.size(), 0.0 );
 		//Maximum value allowed for the parameters w (all ones). DOMAIN CONSTRAINT
-		spectral::array L_wMax( vw.size(), 1.0d );
+        spectral::array L_wMax( vw.size(), 1.0 );
 		/*Factor used to control the size of the random state “hop”.  For example, if the maximum “hop” must be
 		 10% of domain size, set 0.1.  Small values (e.g. 0.001) result in slow, but more accurate convergence.
 		 Large values (e.g. 100.0) covers more space faster, but falls outside the domain are more frequent,
@@ -1619,9 +1619,9 @@ void VariographicDecompositionDialog::doVariographicDecomposition2(
         //Max number of SA steps.
         int i_kmax = ui->spinMaxStepsSA->value();
         //Minimum value allowed for the parameters w (all zeros). DOMAIN CONSTRAINT
-        spectral::array L_wMin( vw.size(), 0.0d );
+        spectral::array L_wMin( vw.size(), 0.0 );
         //Maximum value allowed for the parameters w (all ones). DOMAIN CONSTRAINT
-        spectral::array L_wMax( vw.size(), 1.0d );
+        spectral::array L_wMax( vw.size(), 1.0 );
         /*Factor used to control the size of the random state “hop”.  For example, if the maximum “hop” must be
          10% of domain size, set 0.1.  Small values (e.g. 0.001) result in slow, but more accurate convergence.
          Large values (e.g. 100.0) covers more space faster, but falls outside the domain are more frequent,
@@ -2186,7 +2186,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_G
         //Max number of SA steps.
         int i_kmax = ui->spinMaxStepsSA->value();
         //Minimum value allowed for the parameters w (see min* variables further up). DOMAIN CONSTRAINT
-        spectral::array L_wMin( vw.size(), 0.0d );
+        spectral::array L_wMin( vw.size(), 0.0 );
         for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
             for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
                 switch( iPar ){
@@ -2196,7 +2196,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_SA_AND_G
                 case 3: L_wMin[i] = minContribution; break;
                 }
         //Maximum value allowed for the parameters w (see max* variables further up). DOMAIN CONSTRAINT
-        spectral::array L_wMax( vw.size(), 1.0d );
+        spectral::array L_wMax( vw.size(), 1.0 );
         for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
             for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
                 switch( iPar ){
@@ -2609,7 +2609,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
 
     //Create a vector with the minimum values allowed for the parameters w
     //(see min* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMin( vw.size(), 0.0d );
+    spectral::array L_wMin( vw.size(), 0.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -2621,7 +2621,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_LSRS()
 
     //Create a vector with the maximum values allowed for the parameters w
     //(see max* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMax( vw.size(), 1.0d );
+    spectral::array L_wMax( vw.size(), 1.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -2920,7 +2920,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
 
     //Create a vector with the minimum values allowed for the parameters w
     //(see min* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMin( vw.size(), 0.0d );
+    spectral::array L_wMin( vw.size(), 0.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -2932,7 +2932,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_PSO()
 
     //Create a vector with the maximum values allowed for the parameters w
     //(see max* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMax( vw.size(), 1.0d );
+    spectral::array L_wMax( vw.size(), 1.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -3262,7 +3262,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
 
     //Create a vector with the minimum values allowed for the parameters w
     //(see min* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMin( vw.size(), 0.0d );
+    spectral::array L_wMin( vw.size(), 0.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -3274,7 +3274,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_Genetic(
 
     //Create a vector with the maximum values allowed for the parameters w
     //(see max* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMax( vw.size(), 1.0d );
+    spectral::array L_wMax( vw.size(), 1.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -3592,7 +3592,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_BruteFor
 
     //Create a vector with the minimum values allowed for the parameters w
     //(see min* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMin( vw.size(), 0.0d );
+    spectral::array L_wMin( vw.size(), 0.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -3604,7 +3604,7 @@ void VariographicDecompositionDialog::doVariographicDecomposition5_WITH_BruteFor
 
     //Create a vector with the maximum values allowed for the parameters w
     //(see max* variables further up). DOMAIN CONSTRAINT
-    spectral::array L_wMax( vw.size(), 1.0d );
+    spectral::array L_wMax( vw.size(), 1.0 );
     for(int i = 0, iGeoFactor = 0; iGeoFactor < m; ++iGeoFactor )
         for( int iPar = 0; iPar < IJVariographicStructure2D::getNumberOfParameters(); ++iPar, ++i )
             switch( iPar ){
@@ -3825,7 +3825,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 		spectral::array grid;
 		bool wasTouched = false;
 		void makeGrid( int pnI, int pnJ, int pnK ){
-			grid = spectral::array( pnI, pnJ, pnK, 0.0d );
+            grid = spectral::array( pnI, pnJ, pnK, 0.0 );
 		}
 		bool isAligned( double azimuth ){
 			return azimuth >= startAzimuth && azimuth < endAzimuth;
@@ -3853,7 +3853,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 			int nSectors = 1;
 			if( index > 0 )
 				nSectors = 2 * (index+1); //innermost track = 1 sector, then 4, then 6, then 8, then 10...
-			double azimuthSpan = 180.0d / nSectors;
+            double azimuthSpan = 180.0 / nSectors;
 			double currentStartAzimuth = 0.0;
 			double currentEndAzimuth = azimuthSpan;
 			for( int i = 0; i < nSectors; ++i ){
@@ -3981,7 +3981,7 @@ void VariographicDecompositionDialog::doFourierPartitioningOnData(const spectral
 			std::vector< Sector >::iterator itSector = (*trackIt).sectors.begin();
 			for( ; itSector != (*trackIt).sectors.end(); ++itSector ){
 				spectral::complex_array input = spectral::to_complex_array( (*itSector).grid, inputFFTphases );
-				spectral::array backtrans( nI, nJ, nK, 0.0d );
+                spectral::array backtrans( nI, nJ, nK, 0.0 );
 				input = spectral::to_rectangular_form( input );
 				spectral::backward( backtrans, input );
 				(*itSector).grid = backtrans / static_cast<double>(nI * nJ * nK);
