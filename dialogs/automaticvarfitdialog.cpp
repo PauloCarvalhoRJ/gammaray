@@ -380,7 +380,9 @@ void AutomaticVarFitDialog::onRunExperiments()
     }
 
     //show the dialog modally
-    expd.exec();
+    int ret = expd.exec();
+    if( ret != QDialog::Accepted )
+        return;
 
     //perform the experiments
     {
@@ -495,6 +497,7 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
         double hopFactI, double hopFactF, int hopFactSteps
         )
 {
+    //-----------------set the experiment parameter ranges------------------
     int seedStep = ( seedF - seedI ) / seedSteps;
     if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
 
@@ -507,8 +510,8 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
     double hopFactStep = ( hopFactF - hopFactI ) / hopFactSteps;
     if( hopFactStep <= 0.0 ) hopFactStep = 1000000.0; //makes sure the loop executes just once if initial == final
 
-    std::vector< std::vector< double > > convergenceCurves;
-
+    //------------------populate the curves---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
     for( int seed = seedI; seed <= seedF; seed += seedStep )
         for( double tInitial = iniTempI; tInitial <= iniTempF; tInitial += iniTempStep )
             for( double tFinal = finTempI; tFinal <= finTempF && tFinal < tInitial; tFinal += finTempStep )
@@ -531,10 +534,23 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
                                                      false);
                     //collect the convergence profile (evolution of the objective function
                     //value as the iteration progresses)
-                    convergenceCurves.push_back( m_autoVarFit.getObjectiveFunctionValuesOfLastRun() );
+                    convergenceCurves.push_back( {
+                                                     QString("seed=%1;Ti=%2;Tf=%3;hop=%4").arg(seed).arg(tInitial).arg(tFinal).arg(hopFactor),
+                                                     m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                                 } );
                 }
 
-    showConvergenceCurves( convergenceCurves );
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( iniTempSteps > 1 )
+        varyingWhat += "Ti";
+    if( finTempSteps > 1 )
+        varyingWhat += "Tf";
+    if( hopFactSteps > 1 )
+        varyingWhat += "hop";
+    showConvergenceCurves( "SA/GD: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
 void AutomaticVarFitDialog::runExperimentsWithLSRS()
@@ -553,30 +569,47 @@ void AutomaticVarFitDialog::runExperimentsWithGenetic()
 }
 
 void AutomaticVarFitDialog::showConvergenceCurves(
-        const std::vector<std::vector<double> > &curves) const
+        QString chartTitle,
+        const std::vector<std::pair<QString, std::vector<double> > > &curves) const
 {
+
     //load the multiple x,y data series for the chart
     std::vector< QtCharts::QLineSeries* > chartSeriesVector;
     double max = std::numeric_limits<double>::lowest();
-    for( const std::vector<double>& curve : curves ){
+    uint maxColorCode = Util::getMaxGSLibColorCode();
+    uint iterationNumber = 0;
+    for( const std::pair< QString, std::vector<double> >& curve : curves ){
         QtCharts::QLineSeries *chartSeries = new QtCharts::QLineSeries();
-        for(uint i = 0; i < curve.size(); ++i){
-            chartSeries->append( i+1, curve[i] );
-            if( curve[i] > max )
-                max = curve[i];
+        //set the curve's legend caption
+        chartSeries->setName( curve.first );
+        //set the curve's color (cycle through a finite set of colors)
+        QColor color = Util::getGSLibColor( ( iterationNumber % maxColorCode ) + 1 );
+        if( color == Qt::white )
+            color = Qt::black;
+        chartSeries->setColor( color );
+        //set the curve's values
+        for(uint i = 0; i < curve.second.size(); ++i){
+            chartSeries->append( i+1, curve.second[i] );
+            if( curve.second[i] > max )
+                max = curve.second[i];
         }
         chartSeriesVector.push_back( chartSeries );
+        iterationNumber++;
     }
 
     //create a new chart object
     QtCharts::QChart *objFuncValuesChart = new QtCharts::QChart();
     {
+        objFuncValuesChart->setTitle("<H2>" + chartTitle + "</H2>");
+
         QtCharts::QValueAxis* axisX = new QtCharts::QValueAxis();
         axisX->setLabelFormat("%i");
+        axisX->setTitleText("iterations");
 
         QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
         axisY->setLabelFormat("%3.2f");
         axisY->setRange( 0.0, max );
+        axisY->setTitleText("obj. function value");
 
         for( QtCharts::QLineSeries* chartSeries : chartSeriesVector ){
             objFuncValuesChart->addSeries( chartSeries );
@@ -585,13 +618,14 @@ void AutomaticVarFitDialog::showConvergenceCurves(
             objFuncValuesChart->setAxisY(axisY, chartSeries);
         }
 
-        objFuncValuesChart->legend()->hide();
+        //objFuncValuesChart->legend()->hide();
+        objFuncValuesChart->legend()->setAlignment( Qt::AlignRight );
     }
 
     //create the chart dialog
     EmptyDialog* ed = new EmptyDialog( Application::instance()->getMainWindow() );
     QtCharts::QChartView* chartView = new QtCharts::QChartView( objFuncValuesChart );
     ed->addWidget( chartView );
-    ed->setWindowTitle( "Convergence curves." );
+    ed->setWindowTitle( chartTitle );
     ed->exec();
 }

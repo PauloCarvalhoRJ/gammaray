@@ -63,8 +63,11 @@ private:
     void runExperimentsWithPSO();
     void runExperimentsWithGenetic();
 
+    // First element in each pair: curve caption.
+    // Second element in each pair: curve values.
     void showConvergenceCurves(
-            const std::vector< std::vector< double > >& curves ) const;
+            QString chartTitle,
+            const std::vector< std::pair< QString, std::vector< double > > >& curves ) const;
 };
 
 #endif // AUTOMATICVARFITDIALOG_H
