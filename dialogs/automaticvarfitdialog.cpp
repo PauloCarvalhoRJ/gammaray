@@ -322,7 +322,7 @@ void AutomaticVarFitDialog::onRunExperiments()
             expd.setParameterList( {"seed",
                                     "number of lines"} );
             expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
-                                          { 10, 1000, 10 }} );
+                                          { 2, 900, 10 }} );
             expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
                                           { 10, 1000, 10 }} );
             expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
@@ -391,7 +391,7 @@ void AutomaticVarFitDialog::onRunExperiments()
             runExperimentsWithSAandGD( expd );
             break;
         case 2: //LSRS algorithm
-            runExperimentsWithLSRS();
+            runExperimentsWithLSRS( expd );
             break;
         case 3: //PSO algorithm
             runExperimentsWithPSO();
@@ -510,7 +510,7 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
     double hopFactStep = ( hopFactF - hopFactI ) / hopFactSteps;
     if( hopFactStep <= 0.0 ) hopFactStep = 1000000.0; //makes sure the loop executes just once if initial == final
 
-    //------------------populate the curves---------------------------------
+    //------------------populate the curves (runs the experiment)---------------------------------
     std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
     for( int seed = seedI; seed <= seedF; seed += seedStep )
         for( double tInitial = iniTempI; tInitial <= iniTempF; tInitial += iniTempStep )
@@ -553,9 +553,61 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
     showConvergenceCurves( "SA/GD: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
-void AutomaticVarFitDialog::runExperimentsWithLSRS()
+void AutomaticVarFitDialog::runExperimentsWithLSRS( const AutomaticVarFitExperimentsDialog& expParDiag )
 {
+    switch ( expParDiag.getParameterIndex() ) {
+    case 0: //vary seed
+        runExperimentsWithLSRS( expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinNumberOfStartingPoints->value(), ui->spinNumberOfStartingPoints->value(), 1);
+        break;
+    case 1: //vary number of lines
+        runExperimentsWithLSRS( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps()
+                              );
+        break;
+    }
+}
 
+void AutomaticVarFitDialog::runExperimentsWithLSRS(int seedI, int seedF, int seedSteps,
+                                                   double nLinesI, double nLinesF, int nLinesSteps)
+{
+    //-----------------set the experiment parameter ranges------------------
+    int seedStep = ( seedF - seedI ) / seedSteps;
+    if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
+
+    double nLinesStep = ( nLinesF - nLinesI ) / nLinesSteps;
+    if( nLinesStep <= 0.0 ) nLinesStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    //------------------populate the curves (runs the experiment)---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
+    for( int seed = seedI; seed <= seedF; seed += seedStep )
+        for( double nLines = nLinesI; nLines <= nLinesF; nLines += nLinesStep ){
+            //Run the algorithm
+            std::vector< IJVariographicStructure2D > model =
+                          m_autoVarFit.processWithLSRS(
+                                             ui->spinNumberOfThreads->value(),
+                                             ui->spinNumberOfVariogramStructures->value(),
+                                             seed,
+                                             ui->spinMaxStepsLSRS->value(),
+                                             std::pow( 10.0, ui->spinLogEpsilonLSRS->value() ),
+                                             nLines,
+                                             ui->spinNumberOfRestarts->value(),
+                                             false);
+            //collect the convergence profile (evolution of the objective function
+            //value as the iteration progresses)
+            convergenceCurves.push_back( {
+                                             QString("seed=%1;nLines=%2").arg(seed).arg(nLines),
+                                             m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                         } );
+        }
+
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( nLinesSteps > 1 )
+        varyingWhat += "nLines";
+    showConvergenceCurves( "LSRS: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
 void AutomaticVarFitDialog::runExperimentsWithPSO()

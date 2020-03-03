@@ -59,7 +59,11 @@ private:
             double finTempI, double finTempF, int finTempSteps,
             double hopFactI, double hopFactF, int hopFactSteps
             );
-    void runExperimentsWithLSRS();
+    void runExperimentsWithLSRS( const AutomaticVarFitExperimentsDialog& expParDiag );
+    void runExperimentsWithLSRS(
+            int seedI,      int seedF,      int seedSteps,
+            double nLinesI, double nLinesF, int nLinesSteps
+            );
     void runExperimentsWithPSO();
     void runExperimentsWithGenetic();
 
