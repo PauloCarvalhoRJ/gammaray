@@ -64,7 +64,14 @@ private:
             int seedI,      int seedF,      int seedSteps,
             double nLinesI, double nLinesF, int nLinesSteps
             );
-    void runExperimentsWithPSO();
+    void runExperimentsWithPSO(const AutomaticVarFitExperimentsDialog &expParDiag);
+    void runExperimentsWithPSO(
+            int seedI,             int seedF,             int seedSteps,
+            double nParticlesI,    double nParticlesF,    int nParticlesSteps,
+            double inertiaI,       double inertiaF,       int inertiaSteps,
+            double acceleration1I, double acceleration1F, int acceleration1Steps,
+            double acceleration2I, double acceleration2F, int acceleration2Steps
+            );
     void runExperimentsWithGenetic();
 
     // First element in each pair: curve caption.

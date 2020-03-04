@@ -336,14 +336,14 @@ void AutomaticVarFitDialog::onRunExperiments()
                                     "acceleration constant 2"} );
             expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
                                           { 5, 1000, 10 },
-                                          { 2.0, 20000.0, 1000.0 },
-                                          { 0.01, 1.0, 0.05 },
-                                          { 0.01, 1.0, 0.05 }} );
+                                          { 0.01, 20.0, 0.05 },
+                                          { 0.01, 20.0, 0.05 },
+                                          { 0.01, 20.0, 0.05 }} );
             expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
                                         { 5, 1000, 10 },
-                                        { 2.0, 20000.0, 1000.0 },
-                                        { 0.01, 1.0, 0.05 },
-                                        { 0.01, 1.0, 0.05 }} );
+                                        { 0.01, 20.0, 0.05 },
+                                        { 0.01, 20.0, 0.05 },
+                                        { 0.01, 20.0, 0.05 }} );
             expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
                                           { 2, 50, 1 },
                                           { 2, 50, 1 },
@@ -394,7 +394,7 @@ void AutomaticVarFitDialog::onRunExperiments()
             runExperimentsWithLSRS( expd );
             break;
         case 3: //PSO algorithm
-            runExperimentsWithPSO();
+            runExperimentsWithPSO( expd );
             break;
         case 4: //Genetic algorithm
             runExperimentsWithGenetic();
@@ -610,9 +610,109 @@ void AutomaticVarFitDialog::runExperimentsWithLSRS(int seedI, int seedF, int see
     showConvergenceCurves( "LSRS: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
-void AutomaticVarFitDialog::runExperimentsWithPSO()
+void AutomaticVarFitDialog::runExperimentsWithPSO( const AutomaticVarFitExperimentsDialog& expParDiag )
 {
+    switch ( expParDiag.getParameterIndex() ) {
+    case 0: //vary seed
+        runExperimentsWithPSO( expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 1: //vary number of particles
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 2: //vary inertia
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 3: //vary acceleration factor 1
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 4: //vary acceleration factor 2
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps() );
+        break;
+    }
+}
 
+void AutomaticVarFitDialog::runExperimentsWithPSO(int    seedI,          int seedF,             int seedSteps,
+                                                  double nParticlesI,    double nParticlesF,    int nParticlesSteps,
+                                                  double inertiaI,       double inertiaF,       int inertiaSteps,
+                                                  double acceleration1I, double acceleration1F, int acceleration1Steps,
+                                                  double acceleration2I, double acceleration2F, int acceleration2Steps)
+{
+    //-----------------set the experiment parameter ranges------------------
+    int seedStep = ( seedF - seedI ) / seedSteps;
+    if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
+
+    double nParticlesStep = ( nParticlesF - nParticlesI ) / nParticlesSteps;
+    if( nParticlesStep <= 0.0 ) nParticlesStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double inertiaStep = ( inertiaF - inertiaI ) / inertiaSteps;
+    if( inertiaStep <= 0.0 ) inertiaStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double acceleration1Step = ( acceleration1F - acceleration1I ) / acceleration1Steps;
+    if( acceleration1Step <= 0.0 ) acceleration1Step = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double acceleration2Step = ( acceleration2F - acceleration2I ) / acceleration2Steps;
+    if( acceleration2Step <= 0.0 ) acceleration2Step = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    //------------------populate the curves (runs the experiment)---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
+    for( int seed = seedI; seed <= seedF; seed += seedStep )
+        for( double nParticles = nParticlesI; nParticles <= nParticlesF; nParticles += nParticlesStep )
+            for( double inertia = inertiaI; inertia <= inertiaF; inertia += inertiaStep )
+                for( double acceleration1 = acceleration1I; acceleration1 <= acceleration1F; acceleration1 += acceleration1Step )
+                    for( double acceleration2 = acceleration2I; acceleration2 <= acceleration2F; acceleration2 += acceleration2Step ){
+                        //Run the algorithm
+                        std::vector< IJVariographicStructure2D > model =
+                                      m_autoVarFit.processWithPSO(
+                                                         ui->spinNumberOfVariogramStructures->value(),
+                                                         seed,
+                                                         ui->spinMaxStepsPSO->value(),
+                                                         nParticles,
+                                                         inertia,
+                                                         acceleration1,
+                                                         acceleration2,
+                                                         false);
+                        //collect the convergence profile (evolution of the objective function
+                        //value as the iteration progresses)
+                        convergenceCurves.push_back( {
+                                                         QString("seed=%1;nPart=%2;inert=%3;acc1=%4;acc2=%5").
+                                                                  arg(seed).arg(nParticles).arg(inertia).arg(acceleration1).arg(acceleration2),
+                                                         m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                                     } );
+                    }
+
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( nParticlesSteps > 1 )
+        varyingWhat += "nParticles";
+    if( inertiaSteps > 1 )
+        varyingWhat += "inertia";
+    if( acceleration1Steps > 1 )
+        varyingWhat += "acceleration factor 1";
+    if( acceleration2Steps > 1 )
+        varyingWhat += "acceleration factor 2";
+    showConvergenceCurves( "PSO: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
 void AutomaticVarFitDialog::runExperimentsWithGenetic()
