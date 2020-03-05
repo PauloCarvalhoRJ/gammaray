@@ -397,7 +397,7 @@ void AutomaticVarFitDialog::onRunExperiments()
             runExperimentsWithPSO( expd );
             break;
         case 4: //Genetic algorithm
-            runExperimentsWithGenetic();
+            runExperimentsWithGenetic( expd );
             break;
         }
     }
@@ -715,9 +715,136 @@ void AutomaticVarFitDialog::runExperimentsWithPSO(int    seedI,          int see
     showConvergenceCurves( "PSO: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
-void AutomaticVarFitDialog::runExperimentsWithGenetic()
+void AutomaticVarFitDialog::runExperimentsWithGenetic( const AutomaticVarFitExperimentsDialog& expParDiag )
 {
+    switch ( expParDiag.getParameterIndex() ) {
+    case 0: //vary seed
+        runExperimentsWithGenetic( expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 1: //vary population size
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 2: //vary selection size
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 3: //vary cross over probability
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 4: //vary point of cross over
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 5: //vary mutation rate
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps() );
+        break;
+    }
+}
 
+void AutomaticVarFitDialog::runExperimentsWithGenetic(int seedI,            int seedF,            int seedSteps,
+                                                      double popSizeI,      double popSizeF,      int popSizeSteps,
+                                                      double selSizeI,      double selSizeF,      int selSizeSteps,
+                                                      double xOverProbI,    double xOverProbF,    int xOverProbSteps,
+                                                      double pointOfXOverI, double pointOfXOverF, int pointOfXOverSteps,
+                                                      double mutRateI,      double mutRateF,      int mutRateSteps)
+{
+    //-----------------set the experiment parameter ranges------------------
+    int seedStep = ( seedF - seedI ) / seedSteps;
+    if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
+
+    double popSizeStep = ( popSizeF - popSizeI ) / popSizeSteps;
+    if( popSizeStep <= 0.0 ) popSizeStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double selSizeStep = ( selSizeF - selSizeI ) / selSizeSteps;
+    if( selSizeStep <= 0.0 ) selSizeStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double xOverProbStep = ( xOverProbF - xOverProbI ) / xOverProbSteps;
+    if( xOverProbStep <= 0.0 ) xOverProbStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double pointOfXOverStep = ( pointOfXOverF - pointOfXOverI ) / pointOfXOverSteps;
+    if( pointOfXOverStep <= 0.0 ) pointOfXOverStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double mutRateStep = ( mutRateF - mutRateI ) / mutRateSteps;
+    if( mutRateStep <= 0.0 ) mutRateStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    //------------------populate the curves (runs the experiment)---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
+    for( int seed = seedI; seed <= seedF; seed += seedStep )
+        for( double popSize = popSizeI; popSize <= popSizeF; popSize += popSizeStep )
+            for( double selSize = selSizeI; selSize <= selSizeF; selSize += selSizeStep )
+                for( double xOverProb = xOverProbI; xOverProb <= xOverProbF; xOverProb += xOverProbStep )
+                    for( double pointOfXOver = pointOfXOverI; pointOfXOver <= pointOfXOverF; pointOfXOver += pointOfXOverStep )
+                        for( double mutRate = mutRateI; mutRate <= mutRateF; mutRate += mutRateStep ){
+
+                            uint iPopSize = static_cast<uint>(popSize);
+                            if( iPopSize % 2 ) //if population size is odd
+                                iPopSize++; //make it even
+
+                            //Run the algorithm
+                            std::vector< IJVariographicStructure2D > model =
+                                          m_autoVarFit.processWithGenetic(
+                                                             ui->spinNumberOfThreads->value(),
+                                                             ui->spinNumberOfVariogramStructures->value(),
+                                                             seed,
+                                                             ui->spinNumberOfGenerations->value(),
+                                                             iPopSize,
+                                                             selSize,
+                                                             xOverProb,
+                                                             pointOfXOver,
+                                                             mutRate,
+                                                             false);
+                            //collect the convergence profile (evolution of the objective function
+                            //value as the iteration progresses)
+                            convergenceCurves.push_back( {
+                                                             QString("seed=%1;popSize=%2;selSize=%3;xOverP=%4;pointXOver=%5;mutRate=%6").
+                                                                      arg(seed).arg(iPopSize).arg((int)selSize).arg(xOverProb).arg((int)pointOfXOver).arg(mutRate),
+                                                             m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                                         } );
+                    }
+
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( popSizeSteps > 1 )
+        varyingWhat += "population size";
+    if( selSizeSteps > 1 )
+        varyingWhat += "selection size";
+    if( xOverProbSteps > 1 )
+        varyingWhat += "probability of cross over";
+    if( pointOfXOverSteps > 1 )
+        varyingWhat += "point of cross over";
+    if( mutRateSteps > 1 )
+        varyingWhat += "mutation rate";
+    showConvergenceCurves( "GA: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
 void AutomaticVarFitDialog::showConvergenceCurves(

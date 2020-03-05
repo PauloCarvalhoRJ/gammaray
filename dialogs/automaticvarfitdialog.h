@@ -72,7 +72,15 @@ private:
             double acceleration1I, double acceleration1F, int acceleration1Steps,
             double acceleration2I, double acceleration2F, int acceleration2Steps
             );
-    void runExperimentsWithGenetic();
+    void runExperimentsWithGenetic(const AutomaticVarFitExperimentsDialog& expParDiag);
+    void runExperimentsWithGenetic(
+            int    seedI,         int seedF,            int seedSteps,
+            double popSizeI,      double popSizeF,      int popSizeSteps,
+            double selSizeI,      double selSizeF,      int selSizeSteps,
+            double xOverProbI,    double xOverProbF,    int xOverProbSteps,
+            double pointOfXOverI, double pointOfXOverF, int pointOfXOverSteps,
+            double mutRateI,      double mutRateF,      int mutRateSteps
+            );
 
     // First element in each pair: curve caption.
     // Second element in each pair: curve values.
