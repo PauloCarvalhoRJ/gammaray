@@ -275,28 +275,28 @@
        <item row="4" column="0">
         <widget class="QLabel" name="label_17">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Max. number of steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_12">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Final temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Final temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="5" column="0">
         <widget class="QLabel" name="label_18">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. &quot;hop&quot; factor:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Max. &quot;hop&quot; factor:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_11">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Initial temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Initial temperature:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -313,35 +313,35 @@
        <item row="8" column="0">
         <widget class="QLabel" name="label_15">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="7" column="0">
         <widget class="QLabel" name="label_16">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="10" column="0">
         <widget class="QLabel" name="label_19">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of α reduction steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Max. number of α reduction steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="9" column="0">
         <widget class="QLabel" name="label_14">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Initial α: &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Initial α: &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
        <item row="11" column="0">
         <widget class="QLabel" name="label_9">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Convergence criterion:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Convergence criterion:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -571,7 +571,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_20">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;&amp;epsilon;:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -594,7 +594,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_21">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -617,7 +617,7 @@
        <item row="3" column="0">
         <widget class="QLabel" name="label_22">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of starting points:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Number of starting points:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -640,7 +640,7 @@
        <item row="4" column="0">
         <widget class="QLabel" name="label_23">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of restarts:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Number of restarts:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -716,7 +716,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_24">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Max. number of optimization steps:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -739,7 +739,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_25">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of particles:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Number of particles:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -762,7 +762,7 @@
        <item row="3" column="0">
         <widget class="QLabel" name="label_26">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Inertia weight:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Inertia weight:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -782,7 +782,7 @@
        <item row="4" column="0">
         <widget class="QLabel" name="label_27">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Acceleration constant 1:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Acceleration constant 1:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -802,7 +802,7 @@
        <item row="5" column="0">
         <widget class="QLabel" name="label_28">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Acceleration constant 2:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Acceleration constant 2:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -875,7 +875,7 @@
        <item row="1" column="0">
         <widget class="QLabel" name="label_29">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Number of generations:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Number of generations:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -898,7 +898,7 @@
        <item row="2" column="0">
         <widget class="QLabel" name="label_30">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Population size:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Population size:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -921,7 +921,7 @@
        <item row="3" column="0" colspan="2">
         <widget class="QLabel" name="label_31">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Natural selection size (must be &amp;lt; pop. size):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Natural selection size (must be &amp;lt; pop. size):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -944,7 +944,7 @@
        <item row="4" column="0">
         <widget class="QLabel" name="label_32">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Probability of crossover:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Probability of crossover:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -964,7 +964,7 @@
        <item row="5" column="0" colspan="2">
         <widget class="QLabel" name="label_33">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Point of crossover (must be 0 &amp;lt;= and  &amp;lt; 4*num. structures):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Point of crossover (must be 0 &amp;lt;= and  &amp;lt; 4*num. structures):&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
@@ -987,7 +987,7 @@
        <item row="6" column="0">
         <widget class="QLabel" name="label_34">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif'; font-size:13px;&quot;&gt;Mutation rate:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Verdana,Arial,Tahoma,Calibri,Geneva,sans-serif';&quot;&gt;Mutation rate:&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>
