@@ -29,6 +29,7 @@ private:
     std::vector< UnivariateDistributionSelector* > m_distributionSelectors;
     VariableSelector* m_groupByVariableSelector;
     FileSelectorWidget* m_PDFSelector;
+    FileSelectorWidget* m_enforceFtmSelector;
     //----------------------------------------------
 
 private Q_SLOTS:

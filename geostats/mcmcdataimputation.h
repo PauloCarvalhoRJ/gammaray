@@ -68,6 +68,10 @@ public:
      * locations exist and the user does not provide a PDF.
      */
     CategoryPDF* m_pdfForImputationWithPreviousUnavailable;
+    /** The Facies Transition Matrix use to forbid transitions. Only transitions with count/probability
+     * greater than zero will be allowed in the realizations.  Set nullptr to allow any transition.
+     */
+    FaciesTransitionMatrix* m_enforceFTM;
     /*@}*/
 
     /** Runs the algorithm.  If false is returned, the simulation failed.  Call getLastError() to get the reasons
