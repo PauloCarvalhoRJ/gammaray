@@ -242,7 +242,7 @@ public:
     /** Returns the index of the column whose header equals the given name.
      * Returns -1 if the name is not found.
      */
-    int getColumnIndexOfCategory( const QString& faciesName );
+    int getColumnIndexOfCategory( const QString& faciesName ) const;
 
     /** Informs whether the main diagonal is zeroed.  That is: no auto-transition is present.
      * An FTM without auto-transitions is a requirement for Embedded Markov Chains (data is not
@@ -266,6 +266,17 @@ public:
      * cumulative frequency.
      */
     int getUpwardNextFaciesFromCumulativeFrequency(int fromFaciesCode, double cumulativeFrequency ) const;
+
+
+    /**
+     * Returns whether the passed FTM has transitions that do not exist in this FTM.
+     * In other words, returns true if the passed FTM has a transition frequency greater than the threshold parameter
+     * where this FTM has zero frequency. Both matrices can be different, but all facies names in
+     * this FTM must exist in the queried FTM.  The criterion used is the upward transition frequency,
+     * or the value returned by getUpwardTransitionProbability().
+     * @param threshold Values below this are considered zero.
+     */
+    bool hasInexistentTransitions( const FaciesTransitionMatrix& ftmToQuery, double threshold = 0.0 ) const;
 
     // ProjectComponent interface
 public:
