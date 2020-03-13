@@ -2167,9 +2167,8 @@ double Util::chiSquared(double x, int degreesOfFreedom)
 {
     double half_n = degreesOfFreedom / 2.0;
     double half_x = x / 2.0;
-    double gamma = std::tgamma( half_n );
-    return 1.0 / ( gamma * std::pow(2.0, half_n) ) * std::pow( x, half_n - 1.0 ) * std::exp( -half_x );
-
+    long double gamma = std::tgammal( static_cast<long double>(half_n) );
+    return 1.0 / ( gamma * std::pow<long double>(2.0, half_n) ) * std::pow<long double>( x, half_n - 1.0 ) * std::exp( -half_x );
 }
 
 double Util::chiSquaredAreaToTheRight( double significanceLevel, int degreesOfFreedom, double step )
