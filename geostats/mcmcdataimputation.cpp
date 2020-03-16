@@ -307,7 +307,7 @@ bool MCMCDataImputation::run()
             FaciesTransitionMatrix ftmOfRealization = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
 
             // If the FTM of the realization has illegal transitions...
-            if( m_enforceFTM->hasInexistentTransitions( ftmOfRealization ) ){
+            if( m_enforceFTM->hasInexistentTransitions( ftmOfRealization, m_enforceThreshold ) ){
                 //...warn user
                 Application::instance()->logWarn("Realization have forbidden transitions.  Simulating again...");
                 //...clear realization data
