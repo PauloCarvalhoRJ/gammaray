@@ -114,7 +114,7 @@ bool MCMCDataImputation::run()
                     bool imputing = true;
 
                     //initialize the total thickness to imput with the total Z variation of the current segment
-                    double remainingUninformedThickness = m_dataSet->getSegmentHeight( currentDataRow );
+                    double remainingUninformedThickness = std::abs( currentTailZ - currentHeadZ );
 
                     //initialize the imputed segment's head coordinate with the base coordinate of the uninformed segment
                     double x0, y0, z0;
