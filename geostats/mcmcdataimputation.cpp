@@ -263,27 +263,28 @@ bool MCMCDataImputation::run()
         if( m_enforceFTM ){
 
             //Creates a new segment set object to house the imputed data.
-            SegmentSet* imputed_ss = new SegmentSet( "" );
+            SegmentSet imputed_ss( "" );
 
             //Set the same metadata of the original data set.
-            imputed_ss->setInfoFromAnotherSegmentSet( m_dataSet );
+            imputed_ss.setInfoFromAnotherSegmentSet( m_dataSet );
 
             //causes a population of child Attribute objects matching the ones from the original imput data set
-            imputed_ss->setPath( m_dataSet->getPath() );
-            imputed_ss->updateChildObjectsCollection();
+            imputed_ss.setPath( m_dataSet->getPath() );
+            imputed_ss.updateChildObjectsCollection();
 
             //loads the original data into the imputed data set
-            imputed_ss->loadData();
+            imputed_ss.loadData();
 
             //adds a new Attribute corresponding to the imputed=1/0 flag, along with an extra data column
-            imputed_ss->addEmptyDataColumn( "imputed", imputed_ss->getDataLineCount() );
+            imputed_ss.addEmptyDataColumn( "imputed", imputed_ss.getDataLineCount() );
 
             //replaces original data with the imputed data
-            imputed_ss->replaceDataFrame( imputedDataRealization );
+            imputed_ss.replaceDataFrame( imputedDataRealization );
 
             //save the realization as temporary dataset
-            imputed_ss->setPath( Application::instance()->getProject()->generateUniqueTmpFilePath("dat") );
-            imputed_ss->writeToFS();
+            QString tmpFileName = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+            imputed_ss.setPath( tmpFileName );
+            imputed_ss.writeToFS();
 
 //            //save its metadata file
 //            imputed_ss->updateMetaDataFile();
@@ -292,10 +293,10 @@ bool MCMCDataImputation::run()
 //            imputed_ss->setInfoFromMetadataFile();
 
             //crate an FTM make auxiliary object.
-            FaciesTransitionMatrixMaker<DataFile> ftmMaker( imputed_ss, m_atVariable->getAttributeGEOEASgivenIndex()-1 );
+            FaciesTransitionMatrixMaker<DataFile> ftmMaker( &imputed_ss, m_atVariable->getAttributeGEOEASgivenIndex()-1 );
 
             //if data file is a point or segment set...
-            if( ! imputed_ss->isRegular() ){
+            if( ! imputed_ss.isRegular() ){
                 // Index == -1 means to not group by (treat entire data set as a single sequence).
                 if( m_atVariableGroupBy )
                     ftmMaker.setGroupByColumn( m_atVariableGroupBy->getAttributeGEOEASgivenIndex()-1 );
@@ -315,6 +316,9 @@ bool MCMCDataImputation::run()
                 //...simulate again
                 --iReal;
             }
+
+            // delete the temporary file
+            imputed_ss.deleteFromFS();
 
         } //discard realizations with forbidden transitions (if user wants it)
 
