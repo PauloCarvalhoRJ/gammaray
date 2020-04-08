@@ -1022,6 +1022,13 @@ QColor Util::getGSLibColor(uint color_code)
     return colors.at( color_code - 1 );
 }
 
+uint Util::getMaxGSLibColorCode()
+{
+    QList<QColor> gslibColors;
+    makeGSLibColorsList( gslibColors );
+    return gslibColors.size();
+}
+
 QString Util::getGSLibColorName(uint color_code)
 {
     switch( color_code ){
@@ -2495,5 +2502,16 @@ void Util::getTopCoordinate(double x0, double y0, double z0,
     if( z1 > z0 )
         { x = x1; y = y1; z = z1; }
     else
-        { x = x0; y = y0; z = z0; }
+    { x = x0; y = y0; z = z0; }
+}
+
+QString Util::formatAsSingleLine(QStringList list, QString separator)
+{
+    QString result;
+    for( QString element : list ){
+        if( ! result.isEmpty() )
+            result += separator;
+        result += element;
+    }
+    return result;
 }

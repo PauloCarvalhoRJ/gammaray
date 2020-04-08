@@ -388,6 +388,11 @@ public:
       */
     static QColor getGSLibColor(uint color_code);
 
+    /** Returns the highest GSLib color code.
+     * Lowest is 1 (red).
+     */
+    static uint getMaxGSLibColorCode();
+
     /**
       * Returns the name of a GSLib color given its code.
       */
@@ -798,6 +803,9 @@ public:
     static void getTopCoordinate(  double x0, double y0, double z0,
                                    double x1, double y1, double z1,
                                    double& x, double& y, double& z);
+
+    /** Format the given list of strings as single-line string with the given separator. **/
+    static QString formatAsSingleLine( QStringList list, QString separator = " " );
 };
 
 #endif // UTIL_H

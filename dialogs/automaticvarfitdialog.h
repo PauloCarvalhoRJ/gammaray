@@ -59,12 +59,34 @@ private:
             double finTempI, double finTempF, int finTempSteps,
             double hopFactI, double hopFactF, int hopFactSteps
             );
-    void runExperimentsWithLSRS();
-    void runExperimentsWithPSO();
-    void runExperimentsWithGenetic();
+    void runExperimentsWithLSRS( const AutomaticVarFitExperimentsDialog& expParDiag );
+    void runExperimentsWithLSRS(
+            int seedI,      int seedF,      int seedSteps,
+            double nLinesI, double nLinesF, int nLinesSteps
+            );
+    void runExperimentsWithPSO(const AutomaticVarFitExperimentsDialog &expParDiag);
+    void runExperimentsWithPSO(
+            int seedI,             int seedF,             int seedSteps,
+            double nParticlesI,    double nParticlesF,    int nParticlesSteps,
+            double inertiaI,       double inertiaF,       int inertiaSteps,
+            double acceleration1I, double acceleration1F, int acceleration1Steps,
+            double acceleration2I, double acceleration2F, int acceleration2Steps
+            );
+    void runExperimentsWithGenetic(const AutomaticVarFitExperimentsDialog& expParDiag);
+    void runExperimentsWithGenetic(
+            int    seedI,         int seedF,            int seedSteps,
+            double popSizeI,      double popSizeF,      int popSizeSteps,
+            double selSizeI,      double selSizeF,      int selSizeSteps,
+            double xOverProbI,    double xOverProbF,    int xOverProbSteps,
+            double pointOfXOverI, double pointOfXOverF, int pointOfXOverSteps,
+            double mutRateI,      double mutRateF,      int mutRateSteps
+            );
 
+    // First element in each pair: curve caption.
+    // Second element in each pair: curve values.
     void showConvergenceCurves(
-            const std::vector< std::vector< double > >& curves ) const;
+            QString chartTitle,
+            const std::vector< std::pair< QString, std::vector< double > > >& curves ) const;
 };
 
 #endif // AUTOMATICVARFITDIALOG_H
