@@ -1022,6 +1022,13 @@ QColor Util::getGSLibColor(uint color_code)
     return colors.at( color_code - 1 );
 }
 
+uint Util::getMaxGSLibColorCode()
+{
+    QList<QColor> gslibColors;
+    makeGSLibColorsList( gslibColors );
+    return gslibColors.size();
+}
+
 QString Util::getGSLibColorName(uint color_code)
 {
     switch( color_code ){
@@ -1060,11 +1067,12 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5" << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1"
-                      << "4.5" << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2"
-                      << "3.0" << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2"
-                      << "2.1" << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1"
-                      << "1.3" << "1.2.1" << "1.2" << "1.1.0" << "1.0.1" << "1.0";
+    previousVersions  << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5" << "5.3" << "5.1"
+                      << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3" << "4.0"
+                      << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
+                      << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0"
+                      << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1"
+                      << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
     for(; itVersion != previousVersions.end(); ++itVersion){
@@ -2167,9 +2175,8 @@ double Util::chiSquared(double x, int degreesOfFreedom)
 {
     double half_n = degreesOfFreedom / 2.0;
     double half_x = x / 2.0;
-    double gamma = std::tgamma( half_n );
-    return 1.0 / ( gamma * std::pow(2.0, half_n) ) * std::pow( x, half_n - 1.0 ) * std::exp( -half_x );
-
+    long double gamma = std::tgammal( static_cast<long double>(half_n) );
+    return 1.0 / ( gamma * std::pow<long double>(2.0, half_n) ) * std::pow<long double>( x, half_n - 1.0 ) * std::exp( -half_x );
 }
 
 double Util::chiSquaredAreaToTheRight( double significanceLevel, int degreesOfFreedom, double step )
@@ -2496,5 +2503,16 @@ void Util::getTopCoordinate(double x0, double y0, double z0,
     if( z1 > z0 )
         { x = x1; y = y1; z = z1; }
     else
-        { x = x0; y = y0; z = z0; }
+    { x = x0; y = y0; z = z0; }
+}
+
+QString Util::formatAsSingleLine(QStringList list, QString separator)
+{
+    QString result;
+    for( QString element : list ){
+        if( ! result.isEmpty() )
+            result += separator;
+        result += element;
+    }
+    return result;
 }

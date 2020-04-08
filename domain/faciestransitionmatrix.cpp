@@ -441,7 +441,7 @@ int FaciesTransitionMatrix::getRowIndexOfCategory(const QString &faciesName) con
     return -1;
 }
 
-int FaciesTransitionMatrix::getColumnIndexOfCategory(const QString &faciesName)
+int FaciesTransitionMatrix::getColumnIndexOfCategory(const QString &faciesName) const
 {
     int count = 0;
     for( const QString& header : m_columnHeadersFaciesNames ){
@@ -483,6 +483,24 @@ int FaciesTransitionMatrix::getUpwardNextFaciesFromCumulativeFrequency
             return toFaciesCode;
     }
     return -1;
+}
+
+bool FaciesTransitionMatrix::hasInexistentTransitions(const FaciesTransitionMatrix &ftmToQuery, double threshold) const
+{
+    for( int i = 0; i < m_lineHeadersFaciesNames.size(); ++i ){
+        QString fromFaciesName = m_lineHeadersFaciesNames[i];
+        for( int j = 0; j < m_columnHeadersFaciesNames.size(); ++j ){
+            QString toFaciesName = m_columnHeadersFaciesNames[j];
+            if( getUpwardTransitionProbability( i, j ) == 0.0 ){
+                int iQuery = ftmToQuery.getRowIndexOfCategory( fromFaciesName );
+                int jQuery = ftmToQuery.getColumnIndexOfCategory( toFaciesName );
+                assert( iQuery>=0 && jQuery>=0 && "FaciesTransitionMatrix::hasInexistentTransitions(): queried FTM does not have a facies of this FTM.");
+                if( ftmToQuery.getUpwardTransitionProbability( iQuery, jQuery ) > threshold )
+                    return true;
+            }
+        }
+    }
+    return false;
 }
 
 QIcon FaciesTransitionMatrix::getIcon()

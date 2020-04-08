@@ -54,6 +54,9 @@ MCMCDataImputationDialog::MCMCDataImputationDialog(QWidget *parent) :
     m_ftmSelector = new FileSelectorWidget( FileSelectorType::FaciesTransitionMatrices );
     ui->frmCmbFTM->layout()->addWidget( m_ftmSelector );
 
+    m_enforceFtmSelector = new FileSelectorWidget( FileSelectorType::FaciesTransitionMatrices, true );
+    ui->frmCmbEnforceFTM->layout()->addWidget( m_enforceFtmSelector );
+
     onRemakeDistributionCombos();
 }
 
@@ -93,6 +96,8 @@ void MCMCDataImputationDialog::onRunMCMC()
     mcmcSim.m_sequenceDirection = static_cast<SequenceDirection>( ui->cmbOrder->currentIndex() );
     mcmcSim.m_atVariableGroupBy = dynamic_cast<Attribute*>( m_groupByVariableSelector->getSelectedVariable() );
     mcmcSim.setNumberOfRealizations( ui->spinRealizations->value() );
+    mcmcSim.m_enforceFTM = dynamic_cast<FaciesTransitionMatrix*>( m_enforceFtmSelector->getSelectedFile() );
+    mcmcSim.m_enforceThreshold = ui->dblSpinEnforceThreshold->value();
     //----------------------------------------------------------------------------------------------------------------------------------------
 
     Application::instance()->logInfo("Commencing MCMC simulation...");

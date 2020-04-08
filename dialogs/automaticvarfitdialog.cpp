@@ -322,7 +322,7 @@ void AutomaticVarFitDialog::onRunExperiments()
             expd.setParameterList( {"seed",
                                     "number of lines"} );
             expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
-                                          { 10, 1000, 10 }} );
+                                          { 2, 900, 10 }} );
             expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
                                           { 10, 1000, 10 }} );
             expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
@@ -336,14 +336,14 @@ void AutomaticVarFitDialog::onRunExperiments()
                                     "acceleration constant 2"} );
             expd.setFromSpinBoxConfigs( { { 1000, 1000000, 10000 },
                                           { 5, 1000, 10 },
-                                          { 2.0, 20000.0, 1000.0 },
-                                          { 0.01, 1.0, 0.05 },
-                                          { 0.01, 1.0, 0.05 }} );
+                                          { 0.01, 20.0, 0.05 },
+                                          { 0.01, 20.0, 0.05 },
+                                          { 0.01, 20.0, 0.05 }} );
             expd.setToSpinBoxConfigs( { { 1000, 1000000, 10000 },
                                         { 5, 1000, 10 },
-                                        { 2.0, 20000.0, 1000.0 },
-                                        { 0.01, 1.0, 0.05 },
-                                        { 0.01, 1.0, 0.05 }} );
+                                        { 0.01, 20.0, 0.05 },
+                                        { 0.01, 20.0, 0.05 },
+                                        { 0.01, 20.0, 0.05 }} );
             expd.setStepsSpinBoxConfigs({ { 2, 50, 1 },
                                           { 2, 50, 1 },
                                           { 2, 50, 1 },
@@ -380,7 +380,9 @@ void AutomaticVarFitDialog::onRunExperiments()
     }
 
     //show the dialog modally
-    expd.exec();
+    int ret = expd.exec();
+    if( ret != QDialog::Accepted )
+        return;
 
     //perform the experiments
     {
@@ -389,13 +391,13 @@ void AutomaticVarFitDialog::onRunExperiments()
             runExperimentsWithSAandGD( expd );
             break;
         case 2: //LSRS algorithm
-            runExperimentsWithLSRS();
+            runExperimentsWithLSRS( expd );
             break;
         case 3: //PSO algorithm
-            runExperimentsWithPSO();
+            runExperimentsWithPSO( expd );
             break;
         case 4: //Genetic algorithm
-            runExperimentsWithGenetic();
+            runExperimentsWithGenetic( expd );
             break;
         }
     }
@@ -495,6 +497,7 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
         double hopFactI, double hopFactF, int hopFactSteps
         )
 {
+    //-----------------set the experiment parameter ranges------------------
     int seedStep = ( seedF - seedI ) / seedSteps;
     if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
 
@@ -507,8 +510,8 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
     double hopFactStep = ( hopFactF - hopFactI ) / hopFactSteps;
     if( hopFactStep <= 0.0 ) hopFactStep = 1000000.0; //makes sure the loop executes just once if initial == final
 
-    std::vector< std::vector< double > > convergenceCurves;
-
+    //------------------populate the curves (runs the experiment)---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
     for( int seed = seedI; seed <= seedF; seed += seedStep )
         for( double tInitial = iniTempI; tInitial <= iniTempF; tInitial += iniTempStep )
             for( double tFinal = finTempI; tFinal <= finTempF && tFinal < tInitial; tFinal += finTempStep )
@@ -531,52 +534,361 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
                                                      false);
                     //collect the convergence profile (evolution of the objective function
                     //value as the iteration progresses)
-                    convergenceCurves.push_back( m_autoVarFit.getObjectiveFunctionValuesOfLastRun() );
+                    convergenceCurves.push_back( {
+                                                     QString("seed=%1;Ti=%2;Tf=%3;hop=%4").arg(seed).arg(tInitial).arg(tFinal).arg(hopFactor),
+                                                     m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                                 } );
                 }
 
-    showConvergenceCurves( convergenceCurves );
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( iniTempSteps > 1 )
+        varyingWhat += "Ti";
+    if( finTempSteps > 1 )
+        varyingWhat += "Tf";
+    if( hopFactSteps > 1 )
+        varyingWhat += "hop";
+    showConvergenceCurves( "SA/GD: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
-void AutomaticVarFitDialog::runExperimentsWithLSRS()
+void AutomaticVarFitDialog::runExperimentsWithLSRS( const AutomaticVarFitExperimentsDialog& expParDiag )
 {
-
+    switch ( expParDiag.getParameterIndex() ) {
+    case 0: //vary seed
+        runExperimentsWithLSRS( expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinNumberOfStartingPoints->value(), ui->spinNumberOfStartingPoints->value(), 1);
+        break;
+    case 1: //vary number of lines
+        runExperimentsWithLSRS( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps()
+                              );
+        break;
+    }
 }
 
-void AutomaticVarFitDialog::runExperimentsWithPSO()
+void AutomaticVarFitDialog::runExperimentsWithLSRS(int seedI, int seedF, int seedSteps,
+                                                   double nLinesI, double nLinesF, int nLinesSteps)
 {
+    //-----------------set the experiment parameter ranges------------------
+    int seedStep = ( seedF - seedI ) / seedSteps;
+    if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
 
+    double nLinesStep = ( nLinesF - nLinesI ) / nLinesSteps;
+    if( nLinesStep <= 0.0 ) nLinesStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    //------------------populate the curves (runs the experiment)---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
+    for( int seed = seedI; seed <= seedF; seed += seedStep )
+        for( double nLines = nLinesI; nLines <= nLinesF; nLines += nLinesStep ){
+            //Run the algorithm
+            std::vector< IJVariographicStructure2D > model =
+                          m_autoVarFit.processWithLSRS(
+                                             ui->spinNumberOfThreads->value(),
+                                             ui->spinNumberOfVariogramStructures->value(),
+                                             seed,
+                                             ui->spinMaxStepsLSRS->value(),
+                                             std::pow( 10.0, ui->spinLogEpsilonLSRS->value() ),
+                                             nLines,
+                                             ui->spinNumberOfRestarts->value(),
+                                             false);
+            //collect the convergence profile (evolution of the objective function
+            //value as the iteration progresses)
+            convergenceCurves.push_back( {
+                                             QString("seed=%1;nLines=%2").arg(seed).arg(nLines),
+                                             m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                         } );
+        }
+
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( nLinesSteps > 1 )
+        varyingWhat += "nLines";
+    showConvergenceCurves( "LSRS: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
-void AutomaticVarFitDialog::runExperimentsWithGenetic()
+void AutomaticVarFitDialog::runExperimentsWithPSO( const AutomaticVarFitExperimentsDialog& expParDiag )
 {
+    switch ( expParDiag.getParameterIndex() ) {
+    case 0: //vary seed
+        runExperimentsWithPSO( expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 1: //vary number of particles
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 2: //vary inertia
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 3: //vary acceleration factor 1
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                               ui->dblSpinAccelerationConstant2->value(), ui->dblSpinAccelerationConstant2->value(), 1 );
+        break;
+    case 4: //vary acceleration factor 2
+        runExperimentsWithPSO( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                               ui->spinNumberOfParticles->value(), ui->spinNumberOfParticles->value(), 1,
+                               ui->dblSpinInertiaWeight->value(), ui->dblSpinInertiaWeight->value(), 1,
+                               ui->dblSpinAccelerationConstant1->value(), ui->dblSpinAccelerationConstant1->value(), 1,
+                               expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps() );
+        break;
+    }
+}
 
+void AutomaticVarFitDialog::runExperimentsWithPSO(int    seedI,          int seedF,             int seedSteps,
+                                                  double nParticlesI,    double nParticlesF,    int nParticlesSteps,
+                                                  double inertiaI,       double inertiaF,       int inertiaSteps,
+                                                  double acceleration1I, double acceleration1F, int acceleration1Steps,
+                                                  double acceleration2I, double acceleration2F, int acceleration2Steps)
+{
+    //-----------------set the experiment parameter ranges------------------
+    int seedStep = ( seedF - seedI ) / seedSteps;
+    if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
+
+    double nParticlesStep = ( nParticlesF - nParticlesI ) / nParticlesSteps;
+    if( nParticlesStep <= 0.0 ) nParticlesStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double inertiaStep = ( inertiaF - inertiaI ) / inertiaSteps;
+    if( inertiaStep <= 0.0 ) inertiaStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double acceleration1Step = ( acceleration1F - acceleration1I ) / acceleration1Steps;
+    if( acceleration1Step <= 0.0 ) acceleration1Step = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double acceleration2Step = ( acceleration2F - acceleration2I ) / acceleration2Steps;
+    if( acceleration2Step <= 0.0 ) acceleration2Step = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    //------------------populate the curves (runs the experiment)---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
+    for( int seed = seedI; seed <= seedF; seed += seedStep )
+        for( double nParticles = nParticlesI; nParticles <= nParticlesF; nParticles += nParticlesStep )
+            for( double inertia = inertiaI; inertia <= inertiaF; inertia += inertiaStep )
+                for( double acceleration1 = acceleration1I; acceleration1 <= acceleration1F; acceleration1 += acceleration1Step )
+                    for( double acceleration2 = acceleration2I; acceleration2 <= acceleration2F; acceleration2 += acceleration2Step ){
+                        //Run the algorithm
+                        std::vector< IJVariographicStructure2D > model =
+                                      m_autoVarFit.processWithPSO(
+                                                         ui->spinNumberOfVariogramStructures->value(),
+                                                         seed,
+                                                         ui->spinMaxStepsPSO->value(),
+                                                         nParticles,
+                                                         inertia,
+                                                         acceleration1,
+                                                         acceleration2,
+                                                         false);
+                        //collect the convergence profile (evolution of the objective function
+                        //value as the iteration progresses)
+                        convergenceCurves.push_back( {
+                                                         QString("seed=%1;nPart=%2;inert=%3;acc1=%4;acc2=%5").
+                                                                  arg(seed).arg(nParticles).arg(inertia).arg(acceleration1).arg(acceleration2),
+                                                         m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                                     } );
+                    }
+
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( nParticlesSteps > 1 )
+        varyingWhat += "nParticles";
+    if( inertiaSteps > 1 )
+        varyingWhat += "inertia";
+    if( acceleration1Steps > 1 )
+        varyingWhat += "acceleration factor 1";
+    if( acceleration2Steps > 1 )
+        varyingWhat += "acceleration factor 2";
+    showConvergenceCurves( "PSO: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
+}
+
+void AutomaticVarFitDialog::runExperimentsWithGenetic( const AutomaticVarFitExperimentsDialog& expParDiag )
+{
+    switch ( expParDiag.getParameterIndex() ) {
+    case 0: //vary seed
+        runExperimentsWithGenetic( expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 1: //vary population size
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 2: //vary selection size
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 3: //vary cross over probability
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 4: //vary point of cross over
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps(),
+                                   ui->dblSpinMutationRate->value(), ui->dblSpinMutationRate->value(), 1 );
+        break;
+    case 5: //vary mutation rate
+        runExperimentsWithGenetic( ui->spinSeed->value(), ui->spinSeed->value(), 1,
+                                   ui->spinPopulationSize->value(), ui->spinPopulationSize->value(), 1,
+                                   ui->spinSelectionSize->value(), ui->spinSelectionSize->value(), 1,
+                                   ui->dblSpinProbabilityOfCrossover->value(), ui->dblSpinProbabilityOfCrossover->value(), 1,
+                                   ui->spinPointOfCrossover->value(), ui->spinPointOfCrossover->value(), 1,
+                                   expParDiag.getFrom(), expParDiag.getTo(), expParDiag.getNumberOfSteps() );
+        break;
+    }
+}
+
+void AutomaticVarFitDialog::runExperimentsWithGenetic(int seedI,            int seedF,            int seedSteps,
+                                                      double popSizeI,      double popSizeF,      int popSizeSteps,
+                                                      double selSizeI,      double selSizeF,      int selSizeSteps,
+                                                      double xOverProbI,    double xOverProbF,    int xOverProbSteps,
+                                                      double pointOfXOverI, double pointOfXOverF, int pointOfXOverSteps,
+                                                      double mutRateI,      double mutRateF,      int mutRateSteps)
+{
+    //-----------------set the experiment parameter ranges------------------
+    int seedStep = ( seedF - seedI ) / seedSteps;
+    if( seedStep <= 0 ) seedStep = 1000000; //makes sure the loop executes just once if initial == final
+
+    double popSizeStep = ( popSizeF - popSizeI ) / popSizeSteps;
+    if( popSizeStep <= 0.0 ) popSizeStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double selSizeStep = ( selSizeF - selSizeI ) / selSizeSteps;
+    if( selSizeStep <= 0.0 ) selSizeStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double xOverProbStep = ( xOverProbF - xOverProbI ) / xOverProbSteps;
+    if( xOverProbStep <= 0.0 ) xOverProbStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double pointOfXOverStep = ( pointOfXOverF - pointOfXOverI ) / pointOfXOverSteps;
+    if( pointOfXOverStep <= 0.0 ) pointOfXOverStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    double mutRateStep = ( mutRateF - mutRateI ) / mutRateSteps;
+    if( mutRateStep <= 0.0 ) mutRateStep = 1000000.0; //makes sure the loop executes just once if initial == final
+
+    //------------------populate the curves (runs the experiment)---------------------------------
+    std::vector< std::pair< QString, std::vector< double > > > convergenceCurves;
+    for( int seed = seedI; seed <= seedF; seed += seedStep )
+        for( double popSize = popSizeI; popSize <= popSizeF; popSize += popSizeStep )
+            for( double selSize = selSizeI; selSize <= selSizeF; selSize += selSizeStep )
+                for( double xOverProb = xOverProbI; xOverProb <= xOverProbF; xOverProb += xOverProbStep )
+                    for( double pointOfXOver = pointOfXOverI; pointOfXOver <= pointOfXOverF; pointOfXOver += pointOfXOverStep )
+                        for( double mutRate = mutRateI; mutRate <= mutRateF; mutRate += mutRateStep ){
+
+                            uint iPopSize = static_cast<uint>(popSize);
+                            if( iPopSize % 2 ) //if population size is odd
+                                iPopSize++; //make it even
+
+                            //Run the algorithm
+                            std::vector< IJVariographicStructure2D > model =
+                                          m_autoVarFit.processWithGenetic(
+                                                             ui->spinNumberOfThreads->value(),
+                                                             ui->spinNumberOfVariogramStructures->value(),
+                                                             seed,
+                                                             ui->spinNumberOfGenerations->value(),
+                                                             iPopSize,
+                                                             selSize,
+                                                             xOverProb,
+                                                             pointOfXOver,
+                                                             mutRate,
+                                                             false);
+                            //collect the convergence profile (evolution of the objective function
+                            //value as the iteration progresses)
+                            convergenceCurves.push_back( {
+                                                             QString("seed=%1;popSize=%2;selSize=%3;xOverP=%4;pointXOver=%5;mutRate=%6").
+                                                                      arg(seed).arg(iPopSize).arg((int)selSize).arg(xOverProb).arg((int)pointOfXOver).arg(mutRate),
+                                                             m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
+                                                         } );
+                    }
+
+    //----------------Set chart title and show the curves--------------------
+    QStringList varyingWhat;
+    if( seedSteps > 1 )
+        varyingWhat += "seed";
+    if( popSizeSteps > 1 )
+        varyingWhat += "population size";
+    if( selSizeSteps > 1 )
+        varyingWhat += "selection size";
+    if( xOverProbSteps > 1 )
+        varyingWhat += "probability of cross over";
+    if( pointOfXOverSteps > 1 )
+        varyingWhat += "point of cross over";
+    if( mutRateSteps > 1 )
+        varyingWhat += "mutation rate";
+    showConvergenceCurves( "GA: varying " + Util::formatAsSingleLine( varyingWhat, ", " ), convergenceCurves );
 }
 
 void AutomaticVarFitDialog::showConvergenceCurves(
-        const std::vector<std::vector<double> > &curves) const
+        QString chartTitle,
+        const std::vector<std::pair<QString, std::vector<double> > > &curves) const
 {
+
     //load the multiple x,y data series for the chart
     std::vector< QtCharts::QLineSeries* > chartSeriesVector;
     double max = std::numeric_limits<double>::lowest();
-    for( const std::vector<double>& curve : curves ){
+    uint maxColorCode = Util::getMaxGSLibColorCode();
+    uint iterationNumber = 0;
+    for( const std::pair< QString, std::vector<double> >& curve : curves ){
         QtCharts::QLineSeries *chartSeries = new QtCharts::QLineSeries();
-        for(uint i = 0; i < curve.size(); ++i){
-            chartSeries->append( i+1, curve[i] );
-            if( curve[i] > max )
-                max = curve[i];
+        //set the curve's legend caption
+        chartSeries->setName( curve.first );
+        //set the curve's color (cycle through a finite set of colors)
+        QColor color = Util::getGSLibColor( ( iterationNumber % maxColorCode ) + 1 );
+        if( color == Qt::white )
+            color = Qt::black;
+        chartSeries->setColor( color );
+        //set the curve's values
+        for(uint i = 0; i < curve.second.size(); ++i){
+            chartSeries->append( i+1, curve.second[i] );
+            if( curve.second[i] > max )
+                max = curve.second[i];
         }
         chartSeriesVector.push_back( chartSeries );
+        iterationNumber++;
     }
 
     //create a new chart object
     QtCharts::QChart *objFuncValuesChart = new QtCharts::QChart();
     {
+        objFuncValuesChart->setTitle("<H2>" + chartTitle + "</H2>");
+
         QtCharts::QValueAxis* axisX = new QtCharts::QValueAxis();
         axisX->setLabelFormat("%i");
+        axisX->setTitleText("iterations");
 
         QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
         axisY->setLabelFormat("%3.2f");
         axisY->setRange( 0.0, max );
+        axisY->setTitleText("obj. function value");
 
         for( QtCharts::QLineSeries* chartSeries : chartSeriesVector ){
             objFuncValuesChart->addSeries( chartSeries );
@@ -585,13 +897,14 @@ void AutomaticVarFitDialog::showConvergenceCurves(
             objFuncValuesChart->setAxisY(axisY, chartSeries);
         }
 
-        objFuncValuesChart->legend()->hide();
+        //objFuncValuesChart->legend()->hide();
+        objFuncValuesChart->legend()->setAlignment( Qt::AlignRight );
     }
 
     //create the chart dialog
     EmptyDialog* ed = new EmptyDialog( Application::instance()->getMainWindow() );
     QtCharts::QChartView* chartView = new QtCharts::QChartView( objFuncValuesChart );
     ed->addWidget( chartView );
-    ed->setWindowTitle( "Convergence curves." );
+    ed->setWindowTitle( chartTitle );
     ed->exec();
 }

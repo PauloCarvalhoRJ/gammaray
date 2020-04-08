@@ -6,6 +6,8 @@
 #include "domain/categorypdf.h"
 #include "domain/univariatedistribution.h"
 #include "domain/application.h"
+#include "domain/auxiliary/faciestransitionmatrixmaker.h"
+#include "domain/project.h"
 
 #include <random>
 
@@ -51,7 +53,10 @@ bool MCMCDataImputation::run()
     }
 
     //for each realization
-    for( std::vector< std::vector<double> >& imputedDataRealization : m_imputedData ){
+    for( int iReal = 0; iReal < m_imputedData.size(); ++iReal ){
+
+        //get the empty realization dataframe
+        std::vector< std::vector<double> >& imputedDataRealization = m_imputedData[iReal];
 
         //get the data set as either grouped by some variable or as is.
         std::vector< std::vector< std::vector<double> > > dataFrame;
@@ -109,7 +114,7 @@ bool MCMCDataImputation::run()
                     bool imputing = true;
 
                     //initialize the total thickness to imput with the total Z variation of the current segment
-                    double remainingUninformedThickness = m_dataSet->getSegmentHeight( currentDataRow );
+                    double remainingUninformedThickness = std::abs( currentTailZ - currentHeadZ );
 
                     //initialize the imputed segment's head coordinate with the base coordinate of the uninformed segment
                     double x0, y0, z0;
@@ -253,6 +258,70 @@ bool MCMCDataImputation::run()
             m_lastError = "MCMCDataImputation::run(): somehow the simulation completed with an empty data set.";
             return false;
         }
+
+        //check wheather the realization has allowed transitions, if user wants this check.
+        if( m_enforceFTM ){
+
+            //Creates a new segment set object to house the imputed data.
+            SegmentSet imputed_ss( "" );
+
+            //Set the same metadata of the original data set.
+            imputed_ss.setInfoFromAnotherSegmentSet( m_dataSet );
+
+            //causes a population of child Attribute objects matching the ones from the original imput data set
+            imputed_ss.setPath( m_dataSet->getPath() );
+            imputed_ss.updateChildObjectsCollection();
+
+            //loads the original data into the imputed data set
+            imputed_ss.loadData();
+
+            //adds a new Attribute corresponding to the imputed=1/0 flag, along with an extra data column
+            imputed_ss.addEmptyDataColumn( "imputed", imputed_ss.getDataLineCount() );
+
+            //replaces original data with the imputed data
+            imputed_ss.replaceDataFrame( imputedDataRealization );
+
+            //save the realization as temporary dataset
+            QString tmpFileName = Application::instance()->getProject()->generateUniqueTmpFilePath("dat");
+            imputed_ss.setPath( tmpFileName );
+            imputed_ss.writeToFS();
+
+//            //save its metadata file
+//            imputed_ss->updateMetaDataFile();
+
+//            //causes an update to the child objects in the project tree
+//            imputed_ss->setInfoFromMetadataFile();
+
+            //crate an FTM make auxiliary object.
+            FaciesTransitionMatrixMaker<DataFile> ftmMaker( &imputed_ss, m_atVariable->getAttributeGEOEASgivenIndex()-1 );
+
+            //if data file is a point or segment set...
+            if( ! imputed_ss.isRegular() ){
+                // Index == -1 means to not group by (treat entire data set as a single sequence).
+                if( m_atVariableGroupBy )
+                    ftmMaker.setGroupByColumn( m_atVariableGroupBy->getAttributeGEOEASgivenIndex()-1 );
+                else
+                    ftmMaker.setGroupByColumn( -1 );
+            }
+
+            // Compute FTM from alternating facies in data from -Z to +Z.
+            FaciesTransitionMatrix ftmOfRealization = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
+
+            // If the FTM of the realization has illegal transitions...
+            if( m_enforceFTM->hasInexistentTransitions( ftmOfRealization, m_enforceThreshold ) ){
+                //...warn user
+                Application::instance()->logWarn("Realization have forbidden transitions.  Simulating again...");
+                //...clear realization data
+                imputedDataRealization.clear();
+                //...simulate again
+                --iReal;
+            }
+
+            // delete the temporary file
+            imputed_ss.deleteFromFS();
+
+        } //discard realizations with forbidden transitions (if user wants it)
+
     } //for each realization
 
     return true;
@@ -342,6 +411,27 @@ bool MCMCDataImputation::isOKtoRun()
     if( m_sequenceDirection != SequenceDirection::FROM_MINUS_Z_TO_PLUS_Z ) {
         m_lastError = "Unrecognized sequence direction.  Must be one of the constants in the SequenceDirection enum.";
         return false;
+    }
+
+    if( m_enforceFTM ){
+        if( ! m_enforceFTM->isUsable() ) {
+            m_lastError = "Facies Transition Matrix to limit transitions is not usable.  It likely contains a facies name not present the associated categorical definition.";
+            return false;
+        }
+        {
+            m_enforceFTM->readFromFS();
+
+            CategoryDefinition* cdOfVariable = m_dataSet->getCategoryDefinition( m_atVariable ); //this is verified previously
+            CategoryDefinition* cdOfFTM = m_enforceFTM->getAssociatedCategoryDefinition();
+            if( ! cdOfFTM ){
+                m_lastError = "Category definition of FTM to enforce transitions not found (nullptr).";
+                return false;
+            }
+            if( cdOfFTM != cdOfVariable ){
+                m_lastError = "Category definition of input variable must be the same object as that of the FTM used to enforce transitions.";
+                return false;
+            }
+        }
     }
 
     return true;
