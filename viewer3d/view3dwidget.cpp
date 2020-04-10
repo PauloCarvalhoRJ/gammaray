@@ -60,6 +60,10 @@ View3DWidget::View3DWidget(QWidget *parent)
         ui->splitter_2->restoreState(state);
     }
 
+    // MSAA aliasing (these must be BEFORE creating a QVTKOpenGLWidget.
+    vtkOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples ( 8 );
+    QSurfaceFormat::setDefaultFormat ( QVTKOpenGLWidget::defaultFormat() );
+
     _vtkwidget = new QVTKOpenGLWidget();
 
     //===========VTK TEST CODE==========================================
@@ -81,11 +85,11 @@ View3DWidget::View3DWidget(QWidget *parent)
     _renderer->SetBackground2(0.5, 0.5, 1);
 
     // enable antialiasing (fast approximate method)
-    _renderer->UseFXAAOn();
+    //_renderer->UseFXAAOn();
 
     // configure the FXAA antialiasing
-    vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
-    fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
+    //vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
+    //fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
     //fxaaOptions->SetSubpixelContrastThreshold(1/2.0);
     //fxaaOptions->SetRelativeContrastThreshold(0.125);
     //fxaaOptions->SetHardContrastThreshold(0.045);
@@ -103,6 +107,9 @@ View3DWidget::View3DWidget(QWidget *parent)
     _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
     _vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
+
+    //MSAA aliasing
+    _vtkwidget->GetRenderWindow()->SetMultiSamples( 4 );
 
     //----------------------adding the orientation axes-------------------------
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
