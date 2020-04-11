@@ -68,10 +68,15 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
                 lbl->setText(cd->getCategoryName( i ));
                 lbl->setAlignment( Qt::AlignCenter );
                 QColor color = Util::getGSLibColor( cd->getColorCode( i ) );
+                QColor fontColor = Util::makeContrast( color );
                 lbl->setStyleSheet("QLabel { background-color : rgb(" +
                                    QString::number(color.red()) + "," +
                                    QString::number(color.green()) + "," +
-                                   QString::number(color.blue()) +"); }");
+                                   QString::number(color.blue()) +"); " +
+                                   " color : rgb(" +
+                                   QString::number(fontColor.red()) + "," +
+                                   QString::number(fontColor.green()) + "," +
+                                   QString::number(fontColor.blue()) +") }");
                 vpvWidget->addWidget( lbl );
             }
         }
