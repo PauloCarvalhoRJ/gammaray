@@ -120,6 +120,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //puts application name and version in window title bar.
     this->setWindowTitle(APP_NAME_VER);
     //maximizes the window
+    this->resize(800, 600); //WEIRD! this is needed so showMaximized() works properly in UHD displays under Windows.
     this->showMaximized();
     //retore main window splitter position
     ui->splitter->restoreState( Application::instance()->getMainWindowSplitterSetting() );
