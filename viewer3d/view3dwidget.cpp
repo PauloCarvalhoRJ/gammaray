@@ -399,20 +399,17 @@ void View3DWidget::onVerticalExaggerationChanged(double value)
     _renderer->GetActiveCamera()->SetModelTransformMatrix(xform);
 
     // redraw the scene (none of these works :( )
-    //    _renderer->Render();
-    //    _vtkwidget->GetRenderWindow()->GetInteractor()->Render();
-    //    _vtkwidget->GetRenderWindow()->Render();
-    //    _vtkwidget->repaint();
-
-    // Perturb the splitter to force a redraw.
-    // TODO: find out a more elegant way to make the VTK widget redraw
     {
-        QList<int> oldSizes = ui->splitter->sizes();
-        QList<int> tmpSizes = oldSizes;
-        tmpSizes[0] = oldSizes[0] + 1;
-        tmpSizes[1] = oldSizes[1] - 1;
-        ui->splitter->setSizes(tmpSizes);
-        qApp->processEvents();
-        ui->splitter->setSizes(oldSizes);
+        _vtkwidget->GetRenderWindow()->GetInteractor()->Render();
+        _vtkwidget->GetRenderWindow()->Render();
+        _vtkwidget->repaint();
+        QApplication::sendPostedEvents();
+        //this->parentWidget()->update();
+        _renderer->Modified();
+        _renderer->Render();
+        vtkSmartPointer< vtkRenderWindow > renderWindow = _vtkwidget->GetRenderWindow();
+        renderWindow->Render();
+        renderWindow->Modified();
+        QApplication::processEvents();
     }
 }
