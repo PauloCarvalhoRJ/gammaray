@@ -61,8 +61,10 @@ View3DWidget::View3DWidget(QWidget *parent)
     }
 
     // MSAA aliasing (these must be BEFORE creating a QVTKOpenGLWidget.
-    vtkOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples ( 8 );
-    QSurfaceFormat::setDefaultFormat ( QVTKOpenGLWidget::defaultFormat() );
+    if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA") ){
+        vtkOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples ( 8 );
+        QSurfaceFormat::setDefaultFormat ( QVTKOpenGLWidget::defaultFormat() );
+    }
 
     _vtkwidget = new QVTKOpenGLWidget();
 
@@ -84,19 +86,22 @@ View3DWidget::View3DWidget(QWidget *parent)
     _renderer->SetBackground(0.9, 0.9, 1);
     _renderer->SetBackground2(0.5, 0.5, 1);
 
-    // enable antialiasing (fast approximate method)
-    //_renderer->UseFXAAOn();
+    if( ! ( Util::programWasCalledWithCommandLineArgument("-aa=none") ||
+            Util::programWasCalledWithCommandLineArgument("-aa=MSAA") ) ) {
+        // enable antialiasing (fast approximate method)
+        _renderer->UseFXAAOn();
 
-    // configure the FXAA antialiasing
-    //vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
-    //fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
-    //fxaaOptions->SetSubpixelContrastThreshold(1/2.0);
-    //fxaaOptions->SetRelativeContrastThreshold(0.125);
-    //fxaaOptions->SetHardContrastThreshold(0.045);
-    //fxaaOptions->SetSubpixelBlendLimit(0.75);
-    //fxaaOptions->SetSubpixelContrastThreshold(0.25);
-    //fxaaOptions->SetUseHighQualityEndpoints(true);
-    //fxaaOptions->SetEndpointSearchIterations(12);
+        // configure the FXAA antialiasing
+        vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
+        fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
+        //fxaaOptions->SetSubpixelContrastThreshold(1/2.0);
+        //fxaaOptions->SetRelativeContrastThreshold(0.125);
+        //fxaaOptions->SetHardContrastThreshold(0.045);
+        //fxaaOptions->SetSubpixelBlendLimit(0.75);
+        //fxaaOptions->SetSubpixelContrastThreshold(0.25);
+        //fxaaOptions->SetUseHighQualityEndpoints(true);
+        //fxaaOptions->SetEndpointSearchIterations(12);
+    }
 
     //    renderer->AddActor( sphereActor );  // VTK TEST CODE
     //    vtkRenderWindow* renwin = vtkRenderWindow::New();
@@ -109,7 +114,9 @@ View3DWidget::View3DWidget(QWidget *parent)
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
 
     //MSAA aliasing
-    _vtkwidget->GetRenderWindow()->SetMultiSamples( 4 );
+    if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA")){
+        _vtkwidget->GetRenderWindow()->SetMultiSamples( 4 );
+    }
 
     //----------------------adding the orientation axes-------------------------
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();

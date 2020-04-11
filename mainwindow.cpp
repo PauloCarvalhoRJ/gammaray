@@ -188,6 +188,14 @@ MainWindow::MainWindow(QWidget *parent) :
     else
         Application::instance()->logInfo( QString("Number of logical processors: unable to detect.") );
 
+    //show 3D antialising option.
+    if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA") )
+        Application::instance()->logInfo( "3D Antialiasing option: MSAA." );
+    else if( Util::programWasCalledWithCommandLineArgument("-aa=none"))
+        Application::instance()->logWarn( "3D Antialiasing option: DISABLED!" );
+    else
+        Application::instance()->logInfo( "3D Antialiasing option: FXAA (default)." );
+
     //add a custom menu item to the QTextEdit's standard context menu.
     ui->txtedMessages->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->txtedMessages,SIGNAL(customContextMenuRequested(const QPoint&)),this,SLOT(showMessagesConsoleCustomContextMenu(const QPoint &)));
