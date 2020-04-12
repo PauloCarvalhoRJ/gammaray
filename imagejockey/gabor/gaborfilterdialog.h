@@ -20,6 +20,7 @@ class vtkImageData;
 class vtkActor;
 class vtkActor2D;
 class vtkCubeAxesActor2D;
+class vtkParaViewScalarBar;
 
 class GaborFilterDialog : public QDialog
 {
@@ -57,10 +58,10 @@ private:
     vtkSmartPointer<vtkOrientationMarkerWidget> _vtkAxesWidget;
     // List of pointers to the objects being viewed (if any).
     std::vector< vtkSmartPointer<vtkActor> > _currentActors;
-    // Pointer to the scale bar actor
-    vtkSmartPointer<vtkActor2D> _scaleBarActor;
     // Pointer to the axes scales actor
     vtkSmartPointer<vtkCubeAxesActor2D> _axes;
+    // Client-owned pointer to the custom scalar bar 2D widget.
+    vtkNew<vtkParaViewScalarBar> _scalarBar;
     ///////////////////////////////////////////////////////////
 
     void clearDisplay();

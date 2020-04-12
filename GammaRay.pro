@@ -273,7 +273,11 @@ SOURCES += main.cpp\
     gslib/gslibparameterfiles/commonsimulationparameters.cpp \
     spatialindex/spatialindex.cpp \
     geostats/taumodel.cpp \
-    dialogs/mcmcdataimputationdialog.cpp
+    dialogs/mcmcdataimputationdialog.cpp \
+    imagejockey/paraviewscalarbar/vtkBoundingRectContextDevice2D.cpp \
+    imagejockey/paraviewscalarbar/vtkContext2DScalarBarActor.cpp \
+    imagejockey/paraviewscalarbar/vtkParaViewScalarBar.cpp \
+    imagejockey/paraviewscalarbar/vtkPVScalarBarRepresentation.cpp
 
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
@@ -524,7 +528,11 @@ HEADERS  += mainwindow.h \
     gslib/gslibparameterfiles/commonsimulationparameters.h \
     spatialindex/spatialindex.h \
     geostats/taumodel.h \
-    dialogs/mcmcdataimputationdialog.h
+    dialogs/mcmcdataimputationdialog.h \
+    imagejockey/paraviewscalarbar/vtkBoundingRectContextDevice2D.h \
+    imagejockey/paraviewscalarbar/vtkContext2DScalarBarActor.h \
+    imagejockey/paraviewscalarbar/vtkParaViewScalarBar.h \
+    imagejockey/paraviewscalarbar/vtkPVScalarBarRepresentation.h
 
 
 FORMS    += mainwindow.ui \
@@ -701,7 +709,10 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
                            -lvtkalglib$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingStencil$$_VTK_VERSION_SUFFIX \
-                -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX
+                -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX \
+                -lvtkRenderingContext2D$$_VTK_VERSION_SUFFIX \
+                -lvtkChartsCore$$_VTK_VERSION_SUFFIX \
+                -lvtkRenderingContextOpenGL2$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 

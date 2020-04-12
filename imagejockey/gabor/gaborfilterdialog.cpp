@@ -3,6 +3,7 @@
 #include <QInputDialog>
 #include <vtkAutoInit.h>
 VTK_MODULE_INIT(vtkRenderingOpenGL2) // VTK was built with vtkRenderingOpenGL2
+VTK_MODULE_INIT(vtkRenderingContextOpenGL2)//solves a "no override found..." runtime error
 VTK_MODULE_INIT(vtkInteractionStyle)
 VTK_MODULE_INIT(vtkRenderingFreeType)
 //------------------------------------------------------------------------------------------------
@@ -15,6 +16,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/svd/svdfactor.h"
 #include "imagejockey/imagejockeyutils.h"
 #include "imagejockey/gabor/gaborutils.h"
+#include "imagejockey/paraviewscalarbar/vtkParaViewScalarBar.h"
 #include <QProgressDialog>
 #include <QVTKOpenGLWidget.h>
 #include <QMessageBox>
@@ -36,6 +38,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkCellData.h>
 #include <vtkCubeAxesActor2D.h>
 #include <vtkTextProperty.h>
+#include <vtkDiscretizableColorTransferFunction.h>
 
 GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
                                      uint inputVariableIndex,
@@ -148,7 +151,6 @@ void GaborFilterDialog::updateDisplay()
 
     /////--------------------code to render the spectrogram cube-----------------------
     vtkSmartPointer<vtkActor> spectrogramActor = vtkSmartPointer<vtkActor>::New();
-    vtkSmartPointer<vtkScalarBarActor> scalarBarActor = vtkSmartPointer<vtkScalarBarActor>::New();
     {
         //Get user settings.
         double colorScaleMin = ui->txtColorScaleMin->text().toDouble();
@@ -213,45 +215,33 @@ void GaborFilterDialog::updateDisplay()
             threshold->Update();
         }
 
-        //Create a color table
-        vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+        //create a color interpolator object (black->yellow->red->white)
+        vtkSmartPointer<vtkDiscretizableColorTransferFunction> ctf = vtkSmartPointer<vtkDiscretizableColorTransferFunction>::New();
         {
-            size_t tableSize = 64; //number of shades
-            //create a color interpolator object (grayscale)
-            vtkSmartPointer<vtkColorTransferFunction> ctf = vtkSmartPointer<vtkColorTransferFunction>::New();
             ctf->SetColorSpaceToRGB();
-            ctf->AddRGBPoint(0.00, 0.000, 0.000, 0.000);
-            ctf->AddRGBPoint(0.33, 1.000, 1.000, 0.000);
-            ctf->AddRGBPoint(0.66, 1.000, 0.000, 0.000);
-            ctf->AddRGBPoint(1.00, 1.000, 1.000, 1.000);
-            //configure the color table object
-            lut->SetTableRange(colorScaleMin, colorScaleMax);
-            lut->SetNumberOfTableValues(tableSize);
-            for(size_t i = 0; i < tableSize; ++i)
-            {
-                double *rgb;
-                rgb = ctf->GetColor(static_cast<double>(i)/tableSize);
-                //the 5th parameter is transparency (0.0 == fully transparent, 1.0 == full opaque)
-                lut->SetTableValue( i, rgb[0], rgb[1], rgb[2] /*, i/(double)tableSize*/ );
-            }
-            lut->SetRampToLinear();
-            lut->Build();
+            double delta = colorScaleMax - colorScaleMin;
+            ctf->AddRGBPoint(colorScaleMin, 0.000, 0.000, 0.000);
+            ctf->AddRGBPoint(colorScaleMin + 0.33 * delta, 1.000, 1.000, 0.000);
+            ctf->AddRGBPoint(colorScaleMin + 0.66 * delta, 1.000, 0.000, 0.000);
+            ctf->AddRGBPoint(colorScaleMax, 1.000, 1.000, 1.000);
         }
 
         //Create a VTK mapper for the VTK grid
         vtkSmartPointer<vtkDataSetMapper> mapper = vtkSmartPointer<vtkDataSetMapper>::New();
         mapper->SetInputConnection( threshold->GetOutputPort() );
-        mapper->SetLookupTable( lut );
+        mapper->SetLookupTable( ctf );
         mapper->SetScalarRange( colorScaleMin, colorScaleMax );
 
         //Configure the spectrogram actor.
         spectrogramActor->GetProperty()->SetInterpolationToFlat();
         spectrogramActor->SetMapper( mapper );
 
-        //Confgure the correlation values scale bar
-        scalarBarActor->SetLookupTable( lut );
-        scalarBarActor->SetTitle("amplitude");
-        scalarBarActor->SetNumberOfLabels( 4 );
+        //Configure the correlation values scale bar
+        _scalarBar->SetLookupTable( ctf );
+        _scalarBar->SetTitle("amplitude");
+        //scalarBar->SetNumberOfLabels( 4 );
+        _scalarBar->SetRenderer( _renderer );
+        _scalarBar->SetInteractor( _vtkwidget->GetRenderWindow()->GetInteractor() );
 
         // Create a text style for the cube axes
         vtkSmartPointer<vtkTextProperty> tprop = vtkSmartPointer<vtkTextProperty>::New();
@@ -329,8 +319,6 @@ void GaborFilterDialog::updateDisplay()
     //Update the graphics system.
     _renderer->AddActor( spectrogramActor );
     _currentActors.push_back( spectrogramActor );
-    _renderer->AddActor2D( scalarBarActor );
-    _scaleBarActor = scalarBarActor;
     _renderer->AddActor( gridActor );
     _currentActors.push_back( gridActor );
     _renderer->ResetCamera();
@@ -492,7 +480,6 @@ void GaborFilterDialog::clearDisplay()
         _renderer->RemoveActor( *it );
         it = _currentActors.erase( it );
     }
-    _renderer->RemoveActor( _scaleBarActor );
     _renderer->RemoveViewProp( _axes.GetPointer() );
 }
 
