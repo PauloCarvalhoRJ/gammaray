@@ -17,6 +17,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/imagejockeyutils.h"
 #include "imagejockey/gabor/gaborutils.h"
 #include "imagejockey/paraviewscalarbar/vtkParaViewScalarBar.h"
+#include "util.h"
 #include <QProgressDialog>
 #include <QVTKOpenGLWidget.h>
 #include <QMessageBox>
@@ -54,6 +55,13 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     this->setWindowTitle( "Gabor Analysis Dialog" );
+
+    //double the width/height of the some panels for UHD displays
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
+        ui->frmConfig->setMaximumWidth( 2 * ui->frmConfig->maximumWidth() );
+        ui->frmKernelDisplay1->setMinimumHeight( 2 * ui->frmKernelDisplay1->minimumHeight() );
+        ui->frmKernelDisplay2->setMinimumHeight( 2 * ui->frmKernelDisplay2->minimumHeight() );
+    }
 
     ///-------------------setup the 3D viewer-------------------
     _vtkwidget = new QVTKOpenGLWidget();
