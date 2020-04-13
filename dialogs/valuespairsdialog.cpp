@@ -23,7 +23,10 @@ ValuesPairsDialog::ValuesPairsDialog(File *valuePairsFile, QWidget *parent) :
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     //set the icon to signal to the user the type of value pair list
-    ui->lblTypeIcon->setPixmap( m_valuePairsFile->getIcon().pixmap(16, 16) );
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        ui->lblTypeIcon->setPixmap( m_valuePairsFile->getIcon().pixmap(16, 16) );
+    else
+        ui->lblTypeIcon->setPixmap( m_valuePairsFile->getIcon().pixmap(32, 32) );
 
     //set the edit box for file name
     ui->txtFileName->setText( m_valuePairsFile->getFileName() );
