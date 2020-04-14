@@ -34,6 +34,8 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/verticalproportioncurvedialog.cpp \
+    domain/verticalproportioncurve.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
@@ -282,11 +284,13 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/verticalproportioncurvedialog.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
+    domain/verticalproportioncurve.h \
     geostats/mcmcdataimputation.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
@@ -538,6 +542,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/verticalproportioncurvedialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \

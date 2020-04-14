@@ -85,6 +85,7 @@
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
+#include "dialogs/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -461,6 +462,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _projectContextMenu->addAction("Create threshold c.d.f. ...", this, SLOT(onCreateThresholdCDF()));
             _projectContextMenu->addAction("Create categories definition ...", this, SLOT(onCreateCategoryDefinition()));
             _projectContextMenu->addAction("Add facies transition matrix...", this, SLOT(onAddFaciesTransitionMatrix()));
+            _projectContextMenu->addAction("Create vertical proportion curve...", this, SLOT(onCreateVerticalProportionCurve()));
         }
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
@@ -2946,6 +2948,12 @@ void MainWindow::onMakeFaciesTransitionMatrix()
     } else
         Application::instance()->logError("inWindow::onMakeFaciesTransitionMatrix(): no category definition.  Operation failed. This is likely a bug.");
 
+}
+
+void MainWindow::onCreateVerticalProportionCurve()
+{
+    VerticalProportionCurveDialog* vpcd = new VerticalProportionCurveDialog( this );
+    vpcd->show();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
