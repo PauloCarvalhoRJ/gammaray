@@ -26,7 +26,8 @@ enum class FileSelectorType : uint {
     GridFiles,                   /*!< Cartesian and Geo- grids can be selected. */
     PointAndSegmentSets,         /*!< Data files of point or segment set types can be selected. */
     VerticalTransiogramModels,   /*!< Vertical transiogram models can be selected. */
-    SegmentSets                  /*!< Segment sets only can be selected. */
+    SegmentSets,                 /*!< Segment sets only can be selected. */
+    CartesianGrids2D             /*!< Bidimensional Cartesian grids can be selected. */
 };
 
 /**
