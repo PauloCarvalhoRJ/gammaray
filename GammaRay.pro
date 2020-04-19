@@ -89,6 +89,7 @@ SOURCES += main.cpp\
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
     viewer3d/v3dmouseinteractor.cpp \
+    widgets/qlistwidgetdnd.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -343,6 +344,7 @@ HEADERS  += mainwindow.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
     viewer3d/v3dmouseinteractor.h \
+    widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
