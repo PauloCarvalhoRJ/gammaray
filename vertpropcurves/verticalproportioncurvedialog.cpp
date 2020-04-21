@@ -9,6 +9,7 @@
 #include "domain/datafile.h"
 #include "widgets/fileselectorwidget.h"
 #include "widgets/variableselector.h"
+#include "vertpropcurves/verticalproportioncurvesplot.h"
 #include <QDragEnterEvent>
 #include <QMimeData>
 
@@ -49,6 +50,10 @@ VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
     //to the first file if the desired sample file happens to be the first one in the list.
     m_cmbTopHorizon->onSelection( 0 );
     m_cmbBaseHorizon->onSelection( 0 );
+
+    //add the widget used to edit the calibration curves
+    m_VPCPlot = new VerticalProportionCurvesPlot( );
+    ui->frmDisplayVPC->layout()->addWidget( m_VPCPlot );
 
     setWindowTitle( "Create vertical proportion curves from data." );
 }

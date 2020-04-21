@@ -88,6 +88,7 @@ SOURCES += main.cpp\
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
     vertpropcurves/verticalproportioncurvedialog.cpp \
+    vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
     widgets/qlistwidgetdnd.cpp \
     widgets/variogrammodellist.cpp \
@@ -343,6 +344,7 @@ HEADERS  += mainwindow.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
     vertpropcurves/verticalproportioncurvedialog.h \
+    vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
     widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \

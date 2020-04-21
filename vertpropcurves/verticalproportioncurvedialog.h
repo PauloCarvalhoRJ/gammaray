@@ -10,6 +10,7 @@ class VerticalProportionCurveDialog;
 class FileSelectorWidget;
 class Attribute;
 class VariableSelector;
+class VerticalProportionCurvesPlot;
 
 class VerticalProportionCurveDialog : public QDialog
 {
@@ -52,6 +53,8 @@ private:
     FileSelectorWidget* m_cmbBaseHorizon;
     VariableSelector* m_cmbTopVariable;
     VariableSelector* m_cmbBaseVariable;
+
+    VerticalProportionCurvesPlot* m_VPCPlot;
 
     std::vector<Attribute*> m_categoricalAttributes;
 
