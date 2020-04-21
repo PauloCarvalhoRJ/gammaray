@@ -85,7 +85,7 @@
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
-#include "dialogs/verticalproportioncurvedialog.h"
+#include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"

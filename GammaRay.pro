@@ -34,7 +34,6 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
-    dialogs/verticalproportioncurvedialog.cpp \
     domain/verticalproportioncurve.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
@@ -88,6 +87,7 @@ SOURCES += main.cpp\
     domain/plot.cpp \
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
+    vertpropcurves/verticalproportioncurvedialog.cpp \
     viewer3d/v3dmouseinteractor.cpp \
     widgets/qlistwidgetdnd.cpp \
     widgets/variogrammodellist.cpp \
@@ -285,7 +285,6 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
-    dialogs/verticalproportioncurvedialog.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
@@ -343,6 +342,7 @@ HEADERS  += mainwindow.h \
     domain/plot.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
+    vertpropcurves/verticalproportioncurvedialog.h \
     viewer3d/v3dmouseinteractor.h \
     widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \
