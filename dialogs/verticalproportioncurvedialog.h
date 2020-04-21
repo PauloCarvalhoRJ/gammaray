@@ -9,6 +9,7 @@ class VerticalProportionCurveDialog;
 
 class FileSelectorWidget;
 class Attribute;
+class VariableSelector;
 
 class VerticalProportionCurveDialog : public QDialog
 {
@@ -33,6 +34,10 @@ public:
     void dropEvent(QDropEvent *e);
     //@}
 
+private Q_SLOTS:
+    void onRun();
+    void onSave();
+
 private:
     void tryToAddAttribute(Attribute *attribute);
 
@@ -45,6 +50,8 @@ private:
     FileSelectorWidget* m_cmbFallBackPDF;
     FileSelectorWidget* m_cmbTopHorizon;
     FileSelectorWidget* m_cmbBaseHorizon;
+    VariableSelector* m_cmbTopVariable;
+    VariableSelector* m_cmbBaseVariable;
 
     std::vector<Attribute*> m_categoricalAttributes;
 

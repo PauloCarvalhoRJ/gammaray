@@ -8,6 +8,7 @@
 #include "domain/categorydefinition.h"
 #include "domain/datafile.h"
 #include "widgets/fileselectorwidget.h"
+#include "widgets/variableselector.h"
 #include <QDragEnterEvent>
 #include <QMimeData>
 
@@ -32,6 +33,22 @@ VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
     ui->frmCmbTopHorizon->layout()->addWidget( m_cmbTopHorizon );
     m_cmbBaseHorizon = new FileSelectorWidget( FileSelectorType::CartesianGrids2D );
     ui->frmCmbBaseHorizon->layout()->addWidget( m_cmbBaseHorizon );
+
+    //top and base horizons' variables with the depth values
+    m_cmbTopVariable = new VariableSelector( );
+    ui->frmCmbTopVariable->layout()->addWidget( m_cmbTopVariable );
+    m_cmbBaseVariable = new VariableSelector( );
+    ui->frmCmbBaseVariable->layout()->addWidget( m_cmbBaseVariable );
+    connect( m_cmbTopHorizon, SIGNAL(dataFileSelected( DataFile* )),
+             m_cmbTopVariable, SLOT(onListVariables( DataFile* ) ) );
+    connect( m_cmbBaseHorizon, SIGNAL(dataFileSelected( DataFile* )),
+             m_cmbBaseVariable, SLOT(onListVariables( DataFile* ) ) );
+
+    //calling the onSelection slot on the file selectors causes the variable comboboxes to update,
+    //so they show up populated otherwise the user is required to choose another file and then back
+    //to the first file if the desired sample file happens to be the first one in the list.
+    m_cmbTopHorizon->onSelection( 0 );
+    m_cmbBaseHorizon->onSelection( 0 );
 
     setWindowTitle( "Create vertical proportion curves from data." );
 }
@@ -102,6 +119,16 @@ void VerticalProportionCurveDialog::dropEvent(QDropEvent *e)
     }
 }
 
+void VerticalProportionCurveDialog::onRun()
+{
+
+}
+
+void VerticalProportionCurveDialog::onSave()
+{
+
+}
+
 
 void VerticalProportionCurveDialog::tryToAddAttribute(Attribute *attribute)
 {
@@ -154,8 +181,11 @@ void VerticalProportionCurveDialog::updateVariablesList()
 {
     ui->lstVariables->clear();
     for( Attribute* attribute : m_categoricalAttributes ){
-        QListWidgetItem* item = new QListWidgetItem( attribute->getIcon(), attribute->getName() );
+        QListWidgetItem* item = new QListWidgetItem( attribute->getIcon(),
+                                                     attribute->getName() + " (" + attribute->getContainingFile()->getName() + ")" );
         item->setData( Qt::UserRole, reinterpret_cast<uint64_t>( attribute ) );
         ui->lstVariables->addItem( item );
     }
+    //readjusts the list widget's width to fit the content.
+    ui->lstVariables->setMinimumWidth( ui->lstVariables->sizeHintForColumn(0) + 5 );
 }
