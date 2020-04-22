@@ -22,6 +22,25 @@ public:
      */
     void setNumberOfCurves( size_t number );
 
+    /**
+     * Fills the plot area with the given color between the calibration curve given by base_curve index and the one
+     * immediately to the right of it.  If base_curve is -1 or less, the "base curve" will be the plot left edge.
+     * If base_curve is the index of the highest one or higher, the "rightmost curve" will be the plot right edge.
+     * @param label Text that will appear in the plot legend (e.g. Sandstone).
+     */
+    void fillColor(const QColor &color, int base_curve , const QString label );
+
+    /** Sets the given curve base, resulting in a flat line at the given value.
+      *  The value must be between 0.0 and 100.0 (will be truncated otherwise).
+      * Other curves will also be adjusted to prevent crossing.
+      */
+    void setCurveBase( int index, double value );
+
+    /** Changes the geometry of the fill areas to match the calibration curves.
+     * Does nothing if there are no fill areas between the curves.
+     */
+    void updateFillAreas();
+
 public slots:
     void insertCurve( int axis, double base );
 
@@ -34,6 +53,11 @@ private:
 
     /** Removes the filled areas between the calibration curves. */
     void clearFillAreas();
+
+    /**
+     *  Updates the curves other than the given one so they do not cross each other.
+     */
+    void pushCurves( QwtPlotCurve* curve );
 
     /** The number of curves desired by the user. */
     size_t m_nCurves;

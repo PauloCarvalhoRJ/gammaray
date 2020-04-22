@@ -59,7 +59,139 @@ void VerticalProportionCurvesPlot::setNumberOfCurves(size_t number)
 
     //add the curves
     for( size_t i = 0; i < m_nCurves; ++i){
-        insertCurve( Qt::Horizontal, step * (i+1));
+        insertCurve( Qt::Vertical, step * (i+1));
+    }
+}
+
+void VerticalProportionCurvesPlot::fillColor(const QColor &color, int base_curve, const QString label)
+{
+    //does nothing if there is no proportion curve.
+    if( m_curves.size() == 0 )
+        return;
+
+    //get the number curve points (assumes all curves have the same number of points)
+    int nData = m_curves[0]->data()->size();
+
+    //correct for possibly out-of-range base curve index
+    if( base_curve > (int)m_curves.size()-1 )
+        base_curve = (int)m_curves.size()-1;
+    if( base_curve < -1 )
+        base_curve = -1;
+
+    //get the index of the curve to the right
+    int right_curve = base_curve + 1;
+
+    //create a y, x_base, x_right sample collection object
+    QVector<QwtIntervalSample> intervals( nData );
+
+    //get the x intervals between the target curves
+    for ( int i = 0; i < nData; ++i )
+    {
+        double left;
+        double right;
+        double y = 0.0;
+
+        if( base_curve >= 0 ){
+            left = m_curves[base_curve]->sample(i).x();
+            y = m_curves[base_curve]->sample(i).y();
+        }else
+            left = 0.0;
+
+        if( right_curve < (int)m_curves.size() ){
+            right = m_curves[right_curve]->sample(i).x();
+            y = m_curves[right_curve]->sample(i).y();
+        }else
+            right = 100.0;
+
+        intervals[i] = QwtIntervalSample( y, QwtInterval( left, right ) );
+    }
+
+    //create and plot a interval curve object
+    QwtPlotIntervalCurve *d_intervalCurve = new QwtPlotIntervalCurve( label );
+    d_intervalCurve->setRenderHint( QwtPlotItem::RenderAntialiased );
+    QColor bg( color );
+    bg.setAlpha( 75 );
+    d_intervalCurve->setBrush( QBrush( bg ) );
+    d_intervalCurve->setStyle( QwtPlotIntervalCurve::Tube );
+    d_intervalCurve->setSamples( intervals );
+    d_intervalCurve->setLegendIconSize( QSize( m_legendIconSize, m_legendIconSize ) );
+    d_intervalCurve->attach( this );
+
+    //store the pointer of the new interval curve
+    m_fillAreas.push_back( d_intervalCurve );
+}
+
+void VerticalProportionCurvesPlot::setCurveBase(int index, double value)
+{
+    QwtPlotCurve* curve = m_curves[index];
+
+    QVector<double> xData( curve->dataSize() );
+    QVector<double> yData( curve->dataSize() );
+    //for each curve point
+    for ( int i = 0; i < static_cast<int>( curve->dataSize() ); i++ ) {
+        const QPointF sample = curve->sample( i );
+        xData[i] = sample.x();
+        yData[i] = value;
+    }
+
+    //updates the curve points
+    curve->setSamples( xData, yData );
+
+    //prevents potential crossings
+    pushCurves( curve );
+}
+
+void VerticalProportionCurvesPlot::updateFillAreas()
+{
+    //does nothing if there is no proportion curve.
+    if( m_curves.size() == 0 )
+        return;
+
+    //get the number curve points (assumes all curves have the same number of points)
+    int nPoints = m_curves[0]->data()->size();
+
+    //get number of fill areas between
+    int nFills = m_fillAreas.size();
+
+    //does nothing if there are no fill areas
+    if( nFills == 0 )
+        return;
+
+    for( int iFill = 0; iFill < nFills; ++iFill){
+
+        //get the index of the base curve (can be -1 to indicate the base is constant at 0.0%)
+        int base_curve = iFill - 1;
+
+        //get the index of the top curve
+        int right_curve = base_curve + 1;
+
+        //create a y, x_base, x_right sample collection object
+        QVector<QwtIntervalSample> intervals( nPoints );
+
+        //get the x intervals between the target curves
+        for ( int i = 0; i < nPoints; ++i )
+        {
+            double left;
+            double right;
+            double y = 0.0;
+
+            if( base_curve >= 0 ){
+                left = m_curves[base_curve]->sample(i).x();
+                y = m_curves[base_curve]->sample(i).y();
+            }else
+                left = 0.0;
+
+            if( right_curve < (int)m_curves.size() ){
+                right = m_curves[right_curve]->sample(i).x();
+                y = m_curves[right_curve]->sample(i).y();
+            }else
+                right = 100.0;
+
+            intervals[i] = QwtIntervalSample( y, QwtInterval( left, right ) );
+        }
+
+        //update the fill area geometry
+        m_fillAreas[iFill]->setSamples( intervals );
     }
 }
 
@@ -140,4 +272,63 @@ void VerticalProportionCurvesPlot::clearFillAreas()
         //delete *it; //assuming autoDelete is on for this QwtPlot
     }
     m_fillAreas.clear();
+}
+
+void VerticalProportionCurvesPlot::pushCurves(QwtPlotCurve *curve)
+{
+    std::vector<QwtPlotCurve*> curvesRight;
+    std::vector<QwtPlotCurve*> curvesLeft;
+
+    //get the index of the changed curve;
+    std::vector<QwtPlotCurve*>::iterator it = m_curves.begin();
+    int indexOfCurve = 0;
+    for(; it != m_curves.end(); ++it, ++indexOfCurve)
+        if( *it == curve ){
+            //++indexOfCurve;
+            break;
+        }
+
+    //get the curves to the right of the changed curve
+    for( size_t i = indexOfCurve+1; i < m_curves.size(); ++i)
+        curvesRight.push_back( m_curves[i] );
+
+    //get the curves to the left of the changed curve
+    for( int i = indexOfCurve-1; i >= 0; --i)
+        curvesLeft.push_back( m_curves[i] );
+
+    //push to the right all curves to the right of the changed curve
+    it = curvesRight.begin();
+    for(; it != curvesRight.end(); ++it){
+        QVector<double> xData( (*it)->dataSize() );
+        QVector<double> yData( (*it)->dataSize() );
+        //for each curve point
+        for ( int i = 0; i < static_cast<int>( (*it)->dataSize() ); i++ ) {
+            const QPointF sample = (*it)->sample( i );
+            xData[i] = sample.x();
+            yData[i] = sample.y();
+            //if the X of the curve to the right is lower, forces it to equal the X of the changed curve
+            if( xData[i] < curve->sample(i).x() )
+                xData[i] = curve->sample(i).x();
+        }
+        //updates the curve points
+        (*it)->setSamples( xData, yData );
+    }
+
+    //push to the left all curves to the left of the changed curve
+    it = curvesLeft.begin();
+    for(; it != curvesLeft.end(); ++it){
+        QVector<double> xData( (*it)->dataSize() );
+        QVector<double> yData( (*it)->dataSize() );
+        //for each curve point
+        for ( int i = 0; i < static_cast<int>( (*it)->dataSize() ); i++ ) {
+            const QPointF sample = (*it)->sample( i );
+            xData[i] = sample.x();
+            yData[i] = sample.y();
+            //if the X of the curve to the left is higher, forces it to equal the X of the changed curve
+            if( xData[i] > curve->sample(i).x() )
+                xData[i] = curve->sample(i).x();
+        }
+        //updates the curve points
+        (*it)->setSamples( xData, yData );
+    }
 }

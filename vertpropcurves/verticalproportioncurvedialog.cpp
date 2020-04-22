@@ -27,6 +27,10 @@ VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
     //enables this dialog as a drop destination in DnD operations
     setAcceptDrops(true);
 
+    //add the widget used to edit the calibration curves
+    m_VPCPlot = new VerticalProportionCurvesPlot( );
+    ui->frmDisplayVPC->layout()->addWidget( m_VPCPlot );
+
     //add the fallback PDF file selector
     m_cmbFallBackPDF = new FileSelectorWidget( FileSelectorType::PDFs );
     ui->frmCmbFallbackPDF->layout()->addWidget( m_cmbFallBackPDF );
@@ -54,10 +58,6 @@ VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
     //to the first file if the desired sample file happens to be the first one in the list.
     m_cmbTopHorizon->onSelection( 0 );
     m_cmbBaseHorizon->onSelection( 0 );
-
-    //add the widget used to edit the calibration curves
-    m_VPCPlot = new VerticalProportionCurvesPlot( );
-    ui->frmDisplayVPC->layout()->addWidget( m_VPCPlot );
 
     setWindowTitle( "Create vertical proportion curves from data." );
 }
@@ -150,9 +150,8 @@ void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
 
     //redefine the number of curves in the curves plot widget.
     if( m_fallbackPDF->getCategoryDefinition() ) {
-        //m_VPCPlot->setNumberOfCurves( m_fallbackPDF->getCategoryDefinition()->getCategoryCount() );
-        CONTINUE_HERE_THE_CALL_BELOW_IS_CRASHING;
-        m_VPCPlot->setNumberOfCurves( 3 );
+        m_fallbackPDF->getCategoryDefinition()->loadQuintuplets();
+        updateCurvesOfPlot( m_fallbackPDF->getCategoryDefinition()->getCategoryCount() );
     } else {
         m_VPCPlot->setNumberOfCurves( 2 );
         Application::instance()->logError("VerticalProportionCurveDialog::onFallbackPDFChanged(): the fallback PDF's CategoryDefinition is null.");
@@ -224,4 +223,23 @@ void VerticalProportionCurveDialog::updateVariablesList()
     }
     //readjusts the list widget's width to fit the content.
     ui->lstVariables->setMinimumWidth( ui->lstVariables->sizeHintForColumn(0) + 5 );
+}
+
+void VerticalProportionCurveDialog::updateCurvesOfPlot( int nCategories )
+{
+    //for categorical variables the calibration curves separate the categories, thus -1.
+    m_VPCPlot->setNumberOfCurves( nCategories-1 );
+    //fills the areas between the curves with the colors of the categories
+    CategoryDefinition *cd = m_fallbackPDF->getCategoryDefinition();
+    cd->loadQuintuplets();
+    double curveBase = 0.0;
+    for( int i = 0; i < nCategories; ++i ){
+        m_VPCPlot->fillColor( Util::getGSLibColor( cd->getCategoryColorByCode( m_fallbackPDF->get1stValue( i ) ) ) ,
+                                       i-1,
+                                       cd->getCategoryNameByCode( m_fallbackPDF->get1stValue( i ) ) );
+        if( i > 0 )
+            m_VPCPlot->setCurveBase( i-1, curveBase * 100.0 );
+        curveBase += m_fallbackPDF->get2ndValue( i );
+    }
+    m_VPCPlot->updateFillAreas();
 }

@@ -49,6 +49,8 @@ private:
 
     void updateVariablesList();
 
+    void updateCurvesOfPlot(int nCategories);
+
     Ui::VerticalProportionCurveDialog *ui;
 
     FileSelectorWidget* m_cmbFallBackPDF;
