@@ -7,6 +7,7 @@
 #include "domain/project.h"
 #include "domain/categorydefinition.h"
 #include "domain/datafile.h"
+#include "domain/categorypdf.h"
 #include "widgets/fileselectorwidget.h"
 #include "widgets/variableselector.h"
 #include "vertpropcurves/verticalproportioncurvesplot.h"
@@ -15,7 +16,8 @@
 
 VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::VerticalProportionCurveDialog)
+    ui(new Ui::VerticalProportionCurveDialog),
+    m_fallbackPDF( nullptr )
 {
     ui->setupUi(this);
 
@@ -28,6 +30,8 @@ VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
     //add the fallback PDF file selector
     m_cmbFallBackPDF = new FileSelectorWidget( FileSelectorType::PDFs );
     ui->frmCmbFallbackPDF->layout()->addWidget( m_cmbFallBackPDF );
+    connect( m_cmbFallBackPDF, SIGNAL(fileSelected( File* )), this, SLOT(onFallbackPDFChanged( File* )) );
+    m_cmbFallBackPDF->onSelection( 0 ); //to evoke the onFallbackPDFChanged() slot
 
     //the top and base horizons selectors
     m_cmbTopHorizon = new FileSelectorWidget( FileSelectorType::CartesianGrids2D );
@@ -134,31 +138,58 @@ void VerticalProportionCurveDialog::onSave()
 
 }
 
+void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
+{
+    m_fallbackPDF = dynamic_cast< CategoryPDF* >( pdf );
+    if( ! m_fallbackPDF )
+        Application::instance()->logError("VerticalProportionCurveDialog::onFallbackPDFChanged(): passed file is null or is not of CategoryPDF class.");
+
+    //clear the list with categorical variables
+    m_categoricalAttributes.clear();
+    updateVariablesList();
+
+    //redefine the number of curves in the curves plot widget.
+    if( m_fallbackPDF->getCategoryDefinition() ) {
+        //m_VPCPlot->setNumberOfCurves( m_fallbackPDF->getCategoryDefinition()->getCategoryCount() );
+        CONTINUE_HERE_THE_CALL_BELOW_IS_CRASHING;
+        m_VPCPlot->setNumberOfCurves( 3 );
+    } else {
+        m_VPCPlot->setNumberOfCurves( 2 );
+        Application::instance()->logError("VerticalProportionCurveDialog::onFallbackPDFChanged(): the fallback PDF's CategoryDefinition is null.");
+    }
+}
+
 
 void VerticalProportionCurveDialog::tryToAddAttribute(Attribute *attribute)
 {
     CategoryDefinition* CDofFirst = nullptr;
-    if( ! m_categoricalAttributes.empty() ){
-        //get info from the first attribute added
-        DataFile* parentOfFirst = dynamic_cast<DataFile*>( m_categoricalAttributes.front()->getContainingFile() );
-        CDofFirst = parentOfFirst->getCategoryDefinition( m_categoricalAttributes.front() );
 
-        //get info from the attribute to be added
-        DataFile* myParent = dynamic_cast<DataFile*>( attribute->getContainingFile() );
-        CategoryDefinition* myCD = myParent->getCategoryDefinition( attribute );
+    if( ! m_fallbackPDF ) {
+        Application::instance()->logError( "VerticalProportionCurveDialog::tryToAddAttribute(): fallback PDF not provided.", true );
+        return;
+    } else
+        CDofFirst = m_fallbackPDF->getCategoryDefinition();
 
-        //the category defininion must be the same
-        if( CDofFirst != myCD ){
-            Application::instance()->logError( "VerticalProportionCurveDialog::tryToAddAttribute(): all attributes must be associated to the same categorical definition.", true );
+    if( ! CDofFirst ) {
+        Application::instance()->logError( "VerticalProportionCurveDialog::tryToAddAttribute(): could not retrieve the category definition associated with the fallback PDF.", true );
+        return;
+    }
+
+    //get info from the attribute to be added
+    DataFile* myParent = dynamic_cast<DataFile*>( attribute->getContainingFile() );
+    CategoryDefinition* myCD = myParent->getCategoryDefinition( attribute );
+
+    //the category defininion must be the same as the fallback PDF's
+    if( CDofFirst != myCD ){
+        Application::instance()->logError( "VerticalProportionCurveDialog::tryToAddAttribute(): all attributes must be associated to the same categorical definition of the fallback PDF.", true );
+        return;
+    }
+
+    //it can't be added twice
+    for( Attribute* at : m_categoricalAttributes ){
+        if( at == attribute ){
+            Application::instance()->logError( "VerticalProportionCurveDialog::tryToAddAttribute(): the attribute has already been added.", true );
             return;
-        }
-
-        //it can't be added twice
-        for( Attribute* at : m_categoricalAttributes ){
-            if( at == attribute ){
-                Application::instance()->logError( "VerticalProportionCurveDialog::tryToAddAttribute(): the attribute has already been added.", true );
-                return;
-            }
         }
     }
 

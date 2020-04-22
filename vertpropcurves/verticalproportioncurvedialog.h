@@ -11,6 +11,8 @@ class FileSelectorWidget;
 class Attribute;
 class VariableSelector;
 class VerticalProportionCurvesPlot;
+class File;
+class CategoryPDF;
 
 class VerticalProportionCurveDialog : public QDialog
 {
@@ -38,6 +40,7 @@ public:
 private Q_SLOTS:
     void onRun();
     void onSave();
+    void onFallbackPDFChanged( File* pdf );
 
 private:
     void tryToAddAttribute(Attribute *attribute);
@@ -55,6 +58,8 @@ private:
     VariableSelector* m_cmbBaseVariable;
 
     VerticalProportionCurvesPlot* m_VPCPlot;
+
+    CategoryPDF* m_fallbackPDF;
 
     std::vector<Attribute*> m_categoricalAttributes;
 
