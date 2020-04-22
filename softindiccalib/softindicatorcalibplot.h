@@ -119,6 +119,12 @@ private:
     /** The number of curves desired by the user. */
     size_t m_nCurves;
 
+    /** The size of the curve handles in pixels. */
+    size_t m_handleSize;
+
+    /** The size of the legend icons in pixels. */
+    size_t m_legendIconSize;
+
 private slots:
     /** This must be triggered when a curve is changed. */
     void onCurveChanged( QwtPlotCurve* changed_curve );
