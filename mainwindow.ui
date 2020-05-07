@@ -240,7 +240,7 @@
      <x>0</x>
      <y>0</y>
      <width>463</width>
-     <height>21</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -286,6 +286,7 @@
     <addaction name="actionMachine_Learning"/>
     <addaction name="actionVariographic_Decomposition"/>
     <addaction name="actionTransiography"/>
+    <addaction name="actionThin_Section_Analysis"/>
    </widget>
    <widget class="QMenu" name="menuSimulation">
     <property name="enabled">
@@ -433,6 +434,11 @@
   <action name="actionData_Imputation_with_MCMC">
    <property name="text">
     <string>Data Imputation with MCMC</string>
+   </property>
+  </action>
+  <action name="actionThin_Section_Analysis">
+   <property name="text">
+    <string>Thin Section Analysis</string>
    </property>
   </action>
  </widget>
@@ -784,6 +790,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionThin_Section_Analysis</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onThinSectionAnalysis()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -806,5 +828,6 @@
   <slot>openTransiography()</slot>
   <slot>onMCRFSim()</slot>
   <slot>onDataImputationWithMCMC()</slot>
+  <slot>onThinSectionAnalysis()</slot>
  </slots>
 </ui>

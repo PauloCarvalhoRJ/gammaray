@@ -223,6 +223,7 @@ private slots:
     void onFlipTopBottom();
     void onExtractMidPoints();
     void onMakeFaciesTransitionMatrix();
+    void onThinSectionAnalysis();
 
 private:
     /**

@@ -2939,6 +2939,11 @@ void MainWindow::onMakeFaciesTransitionMatrix()
 
 }
 
+void MainWindow::onThinSectionAnalysis()
+{
+
+}
+
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
