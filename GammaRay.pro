@@ -87,6 +87,7 @@ SOURCES += main.cpp\
     domain/plot.cpp \
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
+    vertpropcurves/vecticalproportioncurvescanvaspicker.cpp \
     vertpropcurves/verticalproportioncurvedialog.cpp \
     vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
@@ -343,6 +344,7 @@ HEADERS  += mainwindow.h \
     domain/plot.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
+    vertpropcurves/vecticalproportioncurvescanvaspicker.h \
     vertpropcurves/verticalproportioncurvedialog.h \
     vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
