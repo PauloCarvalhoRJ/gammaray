@@ -1,4 +1,5 @@
 #include "verticalproportioncurvesplot.h"
+#include "vertpropcurves/vecticalproportioncurvescanvaspicker.h"
 
 #include <qwt_plot_grid.h>
 #include <qwt_scale_widget.h>
@@ -6,6 +7,7 @@
 #include <qwt_plot_curve.h>
 #include <qwt_symbol.h>
 #include <qwt_plot_intervalcurve.h>
+#include <qwt_legend.h>
 
 #include "util.h"
 
@@ -45,6 +47,14 @@ VerticalProportionCurvesPlot::VerticalProportionCurvesPlot( QWidget *parent ) :
     insertCurve( Qt::Vertical, Qt::white, 70.0, QString() );
 
     replot();
+
+    insertLegend( new QwtLegend() );
+
+    // The canvas picker handles all mouse and key
+    // events on the plot canvas
+    VecticalProportionCurvesCanvasPicker* vpccp = new VecticalProportionCurvesCanvasPicker( this ); //TODO: delete?
+    //To be notified when a calibration curve is edited by the used.
+    connect( vpccp, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onCurveChanged(QwtPlotCurve*)) );
 }
 
 void VerticalProportionCurvesPlot::setNumberOfCurves(size_t number)
@@ -59,7 +69,7 @@ void VerticalProportionCurvesPlot::setNumberOfCurves(size_t number)
 
     //add the curves
     for( size_t i = 0; i < m_nCurves; ++i){
-        insertCurve( Qt::Vertical, step * (i+1));
+        insertCurve( Qt::Vertical, step * (i+1) );
     }
 }
 
@@ -113,6 +123,7 @@ void VerticalProportionCurvesPlot::fillColor(const QColor &color, int base_curve
     bg.setAlpha( 75 );
     d_intervalCurve->setBrush( QBrush( bg ) );
     d_intervalCurve->setStyle( QwtPlotIntervalCurve::Tube );
+    d_intervalCurve->setOrientation( Qt::Horizontal );
     d_intervalCurve->setSamples( intervals );
     d_intervalCurve->setLegendIconSize( QSize( m_legendIconSize, m_legendIconSize ) );
     d_intervalCurve->attach( this );
@@ -130,8 +141,8 @@ void VerticalProportionCurvesPlot::setCurveBase(int index, double value)
     //for each curve point
     for ( int i = 0; i < static_cast<int>( curve->dataSize() ); i++ ) {
         const QPointF sample = curve->sample( i );
-        xData[i] = sample.x();
-        yData[i] = value;
+        xData[i] = value;
+        yData[i] = sample.y();
     }
 
     //updates the curve points
@@ -331,4 +342,10 @@ void VerticalProportionCurvesPlot::pushCurves(QwtPlotCurve *curve)
         //updates the curve points
         (*it)->setSamples( xData, yData );
     }
+}
+
+void VerticalProportionCurvesPlot::onCurveChanged(QwtPlotCurve *changed_curve)
+{
+    pushCurves( changed_curve );
+    updateFillAreas();
 }

@@ -150,6 +150,7 @@ void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
 
     //redefine the number of curves in the curves plot widget.
     if( m_fallbackPDF->getCategoryDefinition() ) {
+        m_fallbackPDF->loadPairs();
         m_fallbackPDF->getCategoryDefinition()->loadQuintuplets();
         updateCurvesOfPlot( m_fallbackPDF->getCategoryDefinition()->getCategoryCount() );
     } else {

@@ -77,6 +77,11 @@ private:
 
     /** The size of the legend icons in pixels. */
     size_t m_legendIconSize;
+
+private Q_SLOTS:
+    /** This must be triggered when a curve is changed. */
+    void onCurveChanged( QwtPlotCurve* changed_curve );
+
 };
 
 #endif // VERTICALPROPORTIONCURVESPLOT_H
