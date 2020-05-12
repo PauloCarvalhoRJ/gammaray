@@ -41,6 +41,7 @@ SOURCES += main.cpp\
     domain/projectcomponent.cpp \
     domain/objectgroup.cpp \
     domain/projectroot.cpp \
+    thinsectionanalysis/thinsectionanalysisdialog.cpp \
     util.cpp \
     domain/pointset.cpp \
     domain/attribute.cpp \
@@ -284,6 +285,7 @@ HEADERS  += mainwindow.h \
     domain/objectgroup.h \
     domain/projectroot.h \
     geostats/mcmcdataimputation.h \
+    thinsectionanalysis/thinsectionanalysisdialog.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
@@ -545,6 +547,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
+    thinsectionanalysis/thinsectionanalysisdialog.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \

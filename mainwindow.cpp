@@ -85,6 +85,7 @@
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
+#include "thinsectionanalysis/thinsectionanalysisdialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -2941,7 +2942,8 @@ void MainWindow::onMakeFaciesTransitionMatrix()
 
 void MainWindow::onThinSectionAnalysis()
 {
-
+    ThinSectionAnalysisDialog* tsad = new ThinSectionAnalysisDialog( this );
+    tsad->open();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
