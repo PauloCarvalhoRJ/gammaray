@@ -41,6 +41,7 @@ private Q_SLOTS:
     void onRun();
     void onSave();
     void onFallbackPDFChanged( File* pdf );
+    void onEditCurves();
 
 private:
     void tryToAddAttribute(Attribute *attribute);

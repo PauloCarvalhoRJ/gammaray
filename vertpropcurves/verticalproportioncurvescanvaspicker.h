@@ -1,5 +1,5 @@
-#ifndef VECTICALPROPORTIONCURVESCANVASPICKER_H
-#define VECTICALPROPORTIONCURVESCANVASPICKER_H
+#ifndef VERTICALPROPORTIONCURVESCANVASPICKER_H
+#define VERTICALPROPORTIONCURVESCANVASPICKER_H
 
 #include <QObject>
 
@@ -9,11 +9,13 @@ class QwtPlot;
 class QwtPlotCurve;
 class VerticalProportionCurvesPlot;
 
-class VecticalProportionCurvesCanvasPicker : public QObject
+class VerticalProportionCurvesCanvasPicker : public QObject
 {
     Q_OBJECT
 public:
-    VecticalProportionCurvesCanvasPicker( QwtPlot *plot );
+    VerticalProportionCurvesCanvasPicker( QwtPlot *plot );
+    virtual ~VerticalProportionCurvesCanvasPicker();
+
     virtual bool eventFilter( QObject *, QEvent * );
 
     virtual bool event( QEvent * );
@@ -39,4 +41,4 @@ private:
     int d_selectedPoint;
 };
 
-#endif // VECTICALPROPORTIONCURVESCANVASPICKER_H
+#endif // VERTICALPROPORTIONCURVESCANVASPICKER_H

@@ -1,4 +1,4 @@
-#include "vecticalproportioncurvescanvaspicker.h"
+#include "verticalproportioncurvescanvaspicker.h"
 #include "vertpropcurves/verticalproportioncurvesplot.h"
 
 #include <qapplication.h>
@@ -12,7 +12,7 @@
 #include <qwt_plot_curve.h>
 #include <qwt_plot_directpainter.h>
 
-VecticalProportionCurvesCanvasPicker::VecticalProportionCurvesCanvasPicker( QwtPlot *plot ):
+VerticalProportionCurvesCanvasPicker::VerticalProportionCurvesCanvasPicker( QwtPlot *plot ):
     QObject( plot ),
     d_selectedCurve( nullptr ),
     d_selectedPoint( -1 )
@@ -43,17 +43,22 @@ VecticalProportionCurvesCanvasPicker::VecticalProportionCurvesCanvasPicker( QwtP
     shiftCurveCursor( true );
 }
 
-VerticalProportionCurvesPlot *VecticalProportionCurvesCanvasPicker::plot()
+VerticalProportionCurvesCanvasPicker::~VerticalProportionCurvesCanvasPicker()
+{
+    plot()->canvas()->setCursor( Qt::CrossCursor );
+}
+
+VerticalProportionCurvesPlot *VerticalProportionCurvesCanvasPicker::plot()
 {
     return qobject_cast<VerticalProportionCurvesPlot *>( parent() );
 }
 
-const VerticalProportionCurvesPlot *VecticalProportionCurvesCanvasPicker::plot() const
+const VerticalProportionCurvesPlot *VerticalProportionCurvesCanvasPicker::plot() const
 {
     return qobject_cast<const VerticalProportionCurvesPlot *>( parent() );
 }
 
-bool VecticalProportionCurvesCanvasPicker::event( QEvent *ev )
+bool VerticalProportionCurvesCanvasPicker::event( QEvent *ev )
 {
     if ( ev->type() == QEvent::User )
     {
@@ -63,7 +68,7 @@ bool VecticalProportionCurvesCanvasPicker::event( QEvent *ev )
     return QObject::event( ev );
 }
 
-bool VecticalProportionCurvesCanvasPicker::eventFilter( QObject *object, QEvent *event )
+bool VerticalProportionCurvesCanvasPicker::eventFilter( QObject *object, QEvent *event )
 {
     if ( plot() == NULL || object != plot()->canvas() )
         return false;
@@ -190,7 +195,7 @@ bool VecticalProportionCurvesCanvasPicker::eventFilter( QObject *object, QEvent 
 // Select the point at a position. If there is no point
 // deselect the selected point
 
-void VecticalProportionCurvesCanvasPicker::select( const QPoint &pos )
+void VerticalProportionCurvesCanvasPicker::select( const QPoint &pos )
 {
     QwtPlotCurve *curve = NULL;
     double dist = 10e10;
@@ -228,7 +233,7 @@ void VecticalProportionCurvesCanvasPicker::select( const QPoint &pos )
 }
 
 // Move the selected point
-void VecticalProportionCurvesCanvasPicker::moveBy( int dx, int dy )
+void VerticalProportionCurvesCanvasPicker::moveBy( int dx, int dy )
 {
     if ( dx == 0 && dy == 0 )
         return;
@@ -248,7 +253,7 @@ void VecticalProportionCurvesCanvasPicker::moveBy( int dx, int dy )
 }
 
 // Move the selected point
-void VecticalProportionCurvesCanvasPicker::move( const QPoint &pos )
+void VerticalProportionCurvesCanvasPicker::move( const QPoint &pos )
 {
     if ( !d_selectedCurve )
         return;
@@ -303,7 +308,7 @@ void VecticalProportionCurvesCanvasPicker::move( const QPoint &pos )
 }
 
 // Hightlight the selected point
-void VecticalProportionCurvesCanvasPicker::showCursor( bool showIt )
+void VerticalProportionCurvesCanvasPicker::showCursor( bool showIt )
 {
     if ( !d_selectedCurve )
         return;
@@ -322,7 +327,7 @@ void VecticalProportionCurvesCanvasPicker::showCursor( bool showIt )
 }
 
 // Select the next/previous curve
-void VecticalProportionCurvesCanvasPicker::shiftCurveCursor( bool up )
+void VerticalProportionCurvesCanvasPicker::shiftCurveCursor( bool up )
 {
     QwtPlotItemIterator it;
 
@@ -370,7 +375,7 @@ void VecticalProportionCurvesCanvasPicker::shiftCurveCursor( bool up )
 }
 
 // Select the next/previous neighbour of the selected point
-void VecticalProportionCurvesCanvasPicker::shiftPointCursor( bool up )
+void VerticalProportionCurvesCanvasPicker::shiftPointCursor( bool up )
 {
     if ( !d_selectedCurve )
         return;

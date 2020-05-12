@@ -1,5 +1,5 @@
 #include "verticalproportioncurvesplot.h"
-#include "vertpropcurves/vecticalproportioncurvescanvaspicker.h"
+#include "vertpropcurves/verticalproportioncurvescanvaspicker.h"
 
 #include <qwt_plot_grid.h>
 #include <qwt_scale_widget.h>
@@ -16,9 +16,11 @@ VerticalProportionCurvesPlot::VerticalProportionCurvesPlot( QWidget *parent ) :
     m_nCurves(2),
     m_nPoints(11),
     m_handleSize(8),
-    m_legendIconSize(16)
+    m_legendIconSize(16),
+    m_isEditable( false ),
+    m_VCPPicker( nullptr )
 {
-    setTitle( "Vertical proportion curve." );
+    setTitle( "Vertical proportion curves" );
 
     //set icon and curves handles sizes depending on display resolution
     if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ) {
@@ -49,12 +51,6 @@ VerticalProportionCurvesPlot::VerticalProportionCurvesPlot( QWidget *parent ) :
     replot();
 
     insertLegend( new QwtLegend() );
-
-    // The canvas picker handles all mouse and key
-    // events on the plot canvas
-    VecticalProportionCurvesCanvasPicker* vpccp = new VecticalProportionCurvesCanvasPicker( this ); //TODO: delete?
-    //To be notified when a calibration curve is edited by the used.
-    connect( vpccp, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onCurveChanged(QwtPlotCurve*)) );
 }
 
 void VerticalProportionCurvesPlot::setNumberOfCurves(size_t number)
@@ -120,12 +116,13 @@ void VerticalProportionCurvesPlot::fillColor(const QColor &color, int base_curve
     QwtPlotIntervalCurve *d_intervalCurve = new QwtPlotIntervalCurve( label );
     d_intervalCurve->setRenderHint( QwtPlotItem::RenderAntialiased );
     QColor bg( color );
-    bg.setAlpha( 75 );
+    bg.setAlpha( 90 );
     d_intervalCurve->setBrush( QBrush( bg ) );
     d_intervalCurve->setStyle( QwtPlotIntervalCurve::Tube );
     d_intervalCurve->setOrientation( Qt::Horizontal );
     d_intervalCurve->setSamples( intervals );
     d_intervalCurve->setLegendIconSize( QSize( m_legendIconSize, m_legendIconSize ) );
+    d_intervalCurve->setPen( QColor(), 0.0, Qt::NoPen );
     d_intervalCurve->attach( this );
 
     //store the pointer of the new interval curve
@@ -206,6 +203,24 @@ void VerticalProportionCurvesPlot::updateFillAreas()
     }
 }
 
+void VerticalProportionCurvesPlot::setEditable(bool value)
+{
+    m_isEditable = value;
+
+    showHideCurveHandles();
+
+    if( m_isEditable ){
+        // The canvas picker handles all mouse and key
+        // events on the plot canvas
+        m_VCPPicker = new VerticalProportionCurvesCanvasPicker( this );
+        //To be notified when a calibration curve is edited by the user.
+        connect( m_VCPPicker, SIGNAL(curveChanged(QwtPlotCurve*)), this, SLOT(onCurveChanged(QwtPlotCurve*)) );
+    } else
+        delete m_VCPPicker;
+
+    replot();
+}
+
 void VerticalProportionCurvesPlot::insertCurve(int axis, double base)
 {
     Qt::Orientation o;
@@ -222,9 +237,7 @@ void VerticalProportionCurvesPlot::insertCurve(Qt::Orientation o, const QColor &
 {
     QwtPlotCurve *curve = new QwtPlotCurve( label );
 
-    curve->setPen( c );
-    curve->setSymbol( new QwtSymbol( QwtSymbol::Ellipse,
-        Qt::gray, c, QSize( m_handleSize, m_handleSize ) ) );
+    curve->setPen( c, 0.0, Qt::NoPen );
 
     double x[m_nPoints];
     double y[m_nPoints];
@@ -260,6 +273,8 @@ void VerticalProportionCurvesPlot::insertCurve(Qt::Orientation o, const QColor &
         curve->setLegendIconSize( QSize( 0, 0 ) );
 
     m_curves.push_back( curve );
+
+    showHideCurveHandles();
 }
 
 void VerticalProportionCurvesPlot::clearCurves()
@@ -341,6 +356,20 @@ void VerticalProportionCurvesPlot::pushCurves(QwtPlotCurve *curve)
         }
         //updates the curve points
         (*it)->setSamples( xData, yData );
+    }
+}
+
+void VerticalProportionCurvesPlot::showHideCurveHandles()
+{
+    std::vector<QwtPlotCurve*>::iterator it = m_curves.begin();
+    for(; it != m_curves.end(); ++it){
+        if( m_isEditable )
+            (*it)->setSymbol( new QwtSymbol( QwtSymbol::Ellipse,
+                                             Qt::gray,
+                                             (*it)->pen().color(),
+                                             QSize( m_handleSize, m_handleSize ) ) );
+        else
+            (*it)->setSymbol( new QwtSymbol( QwtSymbol::NoSymbol ) ); //the curve deletes the previous QwtSymbol object as it takes ownsership of the pointer.
     }
 }
 

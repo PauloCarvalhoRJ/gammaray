@@ -159,6 +159,11 @@ void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
     }
 }
 
+void VerticalProportionCurveDialog::onEditCurves()
+{
+    m_VPCPlot->setEditable( ui->btnEditCurves->isChecked() );
+}
+
 
 void VerticalProportionCurveDialog::tryToAddAttribute(Attribute *attribute)
 {

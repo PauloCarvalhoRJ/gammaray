@@ -270,6 +270,12 @@
        </item>
        <item>
         <widget class="QDoubleSpinBox" name="dblSpinResolutionPercent">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="suffix">
           <string>%</string>
          </property>
@@ -296,6 +302,12 @@
        </item>
        <item>
         <widget class="QDoubleSpinBox" name="dblSpinWindowPercent">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="suffix">
           <string>%</string>
          </property>
@@ -310,6 +322,32 @@
          </property>
          <property name="value">
           <double>3.000000000000000</double>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnEditCurves">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string>Edit curves.</string>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset resource="../resources.qrc">
+           <normaloff>:/icons32/editCurve32</normaloff>:/icons32/editCurve32</iconset>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
          </property>
         </widget>
        </item>
@@ -439,8 +477,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>442</x>
-     <y>370</y>
+     <x>578</x>
+     <y>373</y>
     </hint>
     <hint type="destinationlabel">
      <x>352</x>
@@ -455,8 +493,8 @@
    <slot>onRun()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>481</x>
-     <y>71</y>
+     <x>578</x>
+     <y>80</y>
     </hint>
     <hint type="destinationlabel">
      <x>460</x>
@@ -471,8 +509,8 @@
    <slot>onSave()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>480</x>
-     <y>338</y>
+     <x>578</x>
+     <y>346</y>
     </hint>
     <hint type="destinationlabel">
      <x>466</x>
@@ -480,9 +518,26 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnEditCurves</sender>
+   <signal>clicked()</signal>
+   <receiver>VerticalProportionCurveDialog</receiver>
+   <slot>onEditCurves()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>536</x>
+     <y>71</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>518</x>
+     <y>84</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onRun()</slot>
   <slot>onSave()</slot>
+  <slot>onEditCurves()</slot>
  </slots>
 </ui>
