@@ -548,7 +548,6 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
-    dialogs/verticalproportioncurvedialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
@@ -564,6 +563,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
+    vertpropcurves/verticalproportioncurvedialog.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \
