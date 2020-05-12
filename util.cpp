@@ -2503,7 +2503,7 @@ void Util::getTopCoordinate(double x0, double y0, double z0,
     if( z1 > z0 )
         { x = x1; y = y1; z = z1; }
     else
-    { x = x0; y = y0; z = z0; }
+        { x = x0; y = y0; z = z0; }
 }
 
 QString Util::formatAsSingleLine(QStringList list, QString separator)
@@ -2515,4 +2515,10 @@ QString Util::formatAsSingleLine(QStringList list, QString separator)
         result += element;
     }
     return result;
+}
+
+QStringList Util::getListOfImageFileExtensions()
+{
+    return QStringList() << "png" << "jpg" << "jpeg" << "gif" << "tiff"
+                         << "tif" << "bmp";
 }

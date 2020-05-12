@@ -806,6 +806,9 @@ public:
 
     /** Format the given list of strings as single-line string with the given separator. **/
     static QString formatAsSingleLine( QStringList list, QString separator = " " );
+
+    /** Returns a list of image file extensions (without period). */
+    static QStringList getListOfImageFileExtensions();
 };
 
 #endif // UTIL_H
