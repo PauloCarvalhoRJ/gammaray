@@ -77,9 +77,18 @@
       </property>
       <property name="maximumSize">
        <size>
-        <width>100</width>
+        <width>16777215</width>
         <height>16777215</height>
        </size>
+      </property>
+      <property name="dragEnabled">
+       <bool>true</bool>
+      </property>
+      <property name="dragDropMode">
+       <enum>QAbstractItemView::DragOnly</enum>
+      </property>
+      <property name="selectionMode">
+       <enum>QAbstractItemView::ExtendedSelection</enum>
       </property>
      </widget>
      <widget class="QFrame" name="frame_2">
@@ -89,56 +98,84 @@
       <property name="frameShadow">
        <enum>QFrame::Raised</enum>
       </property>
-      <widget class="QWidget" name="">
-       <property name="geometry">
-        <rect>
-         <x>10</x>
-         <y>10</y>
-         <width>371</width>
-         <height>141</height>
-        </rect>
-       </property>
-       <layout class="QGridLayout" name="gridLayout">
-        <item row="0" column="0">
-         <widget class="QLabel" name="label_2">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>plane polarization images</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="label_3">
-          <property name="font">
-           <font>
-            <weight>75</weight>
-            <bold>true</bold>
-           </font>
-          </property>
-          <property name="text">
-           <string>cross polarization images</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignCenter</set>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="0">
-         <widget class="QListWidget" name="lstPlanePolarizationImages"/>
-        </item>
-        <item row="1" column="1">
-         <widget class="QListWidget" name="lstCrossPolarizationImages"/>
-        </item>
-       </layout>
-      </widget>
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <layout class="QGridLayout" name="gridLayout">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_2">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>plane polarization images</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLabel" name="label_3">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>cross polarization images</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QListWidget" name="lstPlanePolarizationImages">
+           <property name="dragDropMode">
+            <enum>QAbstractItemView::DropOnly</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QListWidget" name="lstCrossPolarizationImages">
+           <property name="dragDropMode">
+            <enum>QAbstractItemView::DropOnly</enum>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="lblImgPlanePolarization">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLabel" name="lblImgCrossPolarization">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
      </widget>
     </widget>
    </item>
@@ -177,8 +214,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>463</x>
-     <y>350</y>
+     <x>531</x>
+     <y>369</y>
     </hint>
     <hint type="destinationlabel">
      <x>413</x>
@@ -193,8 +230,8 @@
    <slot>onOpenDir()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>160</x>
-     <y>16</y>
+     <x>531</x>
+     <y>24</y>
     </hint>
     <hint type="destinationlabel">
      <x>192</x>
@@ -202,8 +239,42 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>lstPlanePolarizationImages</sender>
+   <signal>clicked(QModelIndex)</signal>
+   <receiver>ThinSectionAnalysisDialog</receiver>
+   <slot>onPlanePolarizationImageSelected()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>209</x>
+     <y>106</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>226</x>
+     <y>31</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lstCrossPolarizationImages</sender>
+   <signal>clicked(QModelIndex)</signal>
+   <receiver>ThinSectionAnalysisDialog</receiver>
+   <slot>onCrossPolarizationImageSelected()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>384</x>
+     <y>82</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>385</x>
+     <y>30</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onOpenDir()</slot>
+  <slot>onPlanePolarizationImageSelected()</slot>
+  <slot>onCrossPolarizationImageSelected()</slot>
  </slots>
 </ui>

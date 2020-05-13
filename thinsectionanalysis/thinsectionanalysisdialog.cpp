@@ -54,4 +54,23 @@ void ThinSectionAnalysisDialog::onDirectoryChanged()
         QIcon fileIcon = m_qFileIconProvider->icon( fileInfo );
         ui->lstFiles->addItem( new QListWidgetItem( fileIcon, fileName ) );
     }
+
+    //Clear the lists of the images selected as plane and cross polarizations
+    ui->lstPlanePolarizationImages->clear();
+    ui->lstCrossPolarizationImages->clear();
+}
+
+void ThinSectionAnalysisDialog::onPlanePolarizationImageSelected()
+{
+    ui->lstCrossPolarizationImages->setCurrentRow( ui->lstPlanePolarizationImages->currentRow() );
+}
+
+void ThinSectionAnalysisDialog::onCrossPolarizationImageSelected()
+{
+    ui->lstPlanePolarizationImages->setCurrentRow( ui->lstCrossPolarizationImages->currentRow() );
+}
+
+void ThinSectionAnalysisDialog::onUpdateImageDisplays()
+{
+
 }

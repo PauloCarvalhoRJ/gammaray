@@ -30,6 +30,12 @@ private Q_SLOTS:
 
     void onDirectoryChanged();
 
+    void onPlanePolarizationImageSelected();
+
+    void onCrossPolarizationImageSelected();
+
+    void onUpdateImageDisplays();
+
 };
 
 #endif // THINSECTIONANALYSISDIALOG_H

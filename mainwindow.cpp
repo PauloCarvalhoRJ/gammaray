@@ -2943,7 +2943,7 @@ void MainWindow::onMakeFaciesTransitionMatrix()
 void MainWindow::onThinSectionAnalysis()
 {
     ThinSectionAnalysisDialog* tsad = new ThinSectionAnalysisDialog( this );
-    tsad->open();
+    tsad->show();
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
