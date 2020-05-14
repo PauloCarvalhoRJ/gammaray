@@ -34,6 +34,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/verticalproportioncurve.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
@@ -287,6 +288,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
