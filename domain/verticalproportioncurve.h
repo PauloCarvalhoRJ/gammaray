@@ -4,14 +4,18 @@
 #include "domain/datafile.h"
 
 /**
- * The VerticalProportionCurve class models a Vertical Proportion Curve, a series of values defining the expected proportion
- * of categories (e.g. lithofacies) along the vertical.  The vertical scale of the curve is relative, varying from 1.0 at top
- * and 0.0 at the base.  The absolute depth at which a certain proportion occurs should be computed on the fly with respect
- * to some reference such as top and base horizons or max/min depth of point sets or segment sets.  The curves are represented
- * by polygonal lines between top and base. The curve points are values between 0.0 and 1.0 and are stored as columns of a
- * GEO-EAS file (similiarly to the data sets).  These values logically must be in ascending order from first column to last
- * column. The proportion of a given category is computed by the delta between two poly lines (or between 0.0 and 1st poly line
- * or between last poly line and 1.0) at any given relative depth.
+ * The VerticalProportionCurve class models a Vertical Proportion Curve, a series of values defining
+ * the expected proportion of categories (e.g. lithofacies) along the vertical.  The vertical scale of
+ * the curve is relative, varying from 1.0 at top and 0.0 at the base.  The absolute depth at which a
+ * certain proportion occurs should be computed on the fly with respect to some reference such as top
+ * and base horizons or max/min depth of point sets or segment sets.  The curves are represented by polygonal
+ * lines between top and base. The curve points are values between 0.0 and 1.0 and are stored as columns of a
+ * GEO-EAS file (similiarly to the data sets).  These values logically must be in ascending order from first
+ * column to last column. The proportion of a given category is computed by the delta between two poly lines
+ * (or between 0.0 and 1st poly line or between last poly line and 1.0) at any given relative depth.
+ *
+ * Although this class extends DataFile, it does so to reuse the file reading/writing infrastructure
+ * as VPC's are not spatial objects like wells, drillholes, reservoirs, etc.
  */
 class VerticalProportionCurve : public DataFile
 {
@@ -43,6 +47,11 @@ public:
     virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
     virtual void getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
+
+    // ICalcPropertyCollection interface
+public:
+    virtual void getSpatialAndTopologicalCoordinates( int iRecord, double& x, double& y, double& z, int& i, int& j, int& k );
+    virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 
 protected:
     ///--------------data read from metadata file------------

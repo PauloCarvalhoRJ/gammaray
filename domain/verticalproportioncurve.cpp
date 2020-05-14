@@ -53,7 +53,8 @@ void VerticalProportionCurve::updateMetaDataFile()
 
 bool VerticalProportionCurve::isDataFile()
 {
-    //this class only uses DataFile's ready infrastructure to read/save data.
+    //this class only reuses DataFile's infrastructure to read/save data,
+    //as it is not a data file representing a spatial object.
     return false;
 }
 
@@ -115,4 +116,14 @@ void VerticalProportionCurve::getDataSpatialLocation(uint line, double &x, doubl
 bool VerticalProportionCurve::isTridimensional()
 {
     assert( false && "VerticalProportionCurve::isTridimensional(): a VerticalProportionCurve is not a spatial object." );
+}
+
+void VerticalProportionCurve::getSpatialAndTopologicalCoordinates(int iRecord, double &x, double &y, double &z, int &i, int &j, int &k)
+{
+    assert( false && "VerticalProportionCurve::getSpatialAndTopologicalCoordinates(): a VerticalProportionCurve is not a spatial object." );
+}
+
+double VerticalProportionCurve::getNeighborValue(int iRecord, int iVar, int dI, int dJ, int dK)
+{
+    assert( false && "VerticalProportionCurve::getNeighborValue(): a VerticalProportionCurve is not a spatial object." );
 }
