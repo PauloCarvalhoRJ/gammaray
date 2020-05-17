@@ -63,14 +63,26 @@ void ThinSectionAnalysisDialog::onDirectoryChanged()
 void ThinSectionAnalysisDialog::onPlanePolarizationImageSelected()
 {
     ui->lstCrossPolarizationImages->setCurrentRow( ui->lstPlanePolarizationImages->currentRow() );
+    onUpdateImageDisplays();
 }
 
 void ThinSectionAnalysisDialog::onCrossPolarizationImageSelected()
 {
     ui->lstPlanePolarizationImages->setCurrentRow( ui->lstCrossPolarizationImages->currentRow() );
+    onUpdateImageDisplays();
 }
 
 void ThinSectionAnalysisDialog::onUpdateImageDisplays()
 {
+    QImage imagePP( ui->lblDirectory->text() + "/" + ui->lstPlanePolarizationImages->currentItem()->text() );
+    QPixmap pixPP = QPixmap::fromImage(imagePP);
+    ui->lblImgPlanePolarization->setPixmap( pixPP.scaled( ui->lblImgPlanePolarization->size(),
+                                                          Qt::KeepAspectRatio,
+                                                          Qt::SmoothTransformation) );
 
+    QImage imagePX( ui->lblDirectory->text() + "/" + ui->lstCrossPolarizationImages->currentItem()->text() );
+    QPixmap pixPX = QPixmap::fromImage(imagePX);
+    ui->lblImgCrossPolarization->setPixmap( pixPX.scaled( ui->lblImgCrossPolarization->size(),
+                                                          Qt::KeepAspectRatio,
+                                                          Qt::SmoothTransformation) );
 }
