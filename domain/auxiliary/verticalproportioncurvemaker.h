@@ -53,24 +53,24 @@ public:
         //retrieve category definition
         CategoryDefinition* cd = VPCMakerAdapters::getAssociatedCategoryDefinition( m_dataFileWithFacies, m_variableIndex );
         assert( cd && "VerticalProportionCurveMaker::makeInDepthInterval(): null CategoryDefinition." );
-        //create an empty FTM
+        //create an empty VPC
         VerticalProportionCurve ftm("", cd->getName() );
         //traverse trajectory in steps of size h counting facies transitions
         //from end (early in geologic time) to begining (late in geologic time).
-        double trajectoryLength = VPCMakerAdapters::getTrajectoryLength( m_dataFileWithFacies );
-        int previousFaciesCode = -9999; //hopefully no one uses -9999 as code.
-        for( double distance = trajectoryLength; distance >= 0.0; distance -= h ){
-            int faciesCode = -9998;
-            double readValue = VPCMakerAdapters::getValueInTrajectory
-                               ( m_dataFileWithFacies, m_variableIndex, distance, tolerance );
-            if( std::isfinite( readValue ) ){
-                faciesCode = static_cast<int>( readValue );
-                if( /*faciesCode != previousFaciesCode &&*/ previousFaciesCode != -9999 ){
-                    ftm.incrementCount( previousFaciesCode, faciesCode );
-                }
-                previousFaciesCode = faciesCode;
-            }
-        }
+//        double trajectoryLength = VPCMakerAdapters::getTrajectoryLength( m_dataFileWithFacies );
+//        int previousFaciesCode = -9999; //hopefully no one uses -9999 as code.
+//        for( double distance = trajectoryLength; distance >= 0.0; distance -= h ){
+//            int faciesCode = -9998;
+//            double readValue = VPCMakerAdapters::getValueInTrajectory
+//                               ( m_dataFileWithFacies, m_variableIndex, distance, tolerance );
+//            if( std::isfinite( readValue ) ){
+//                faciesCode = static_cast<int>( readValue );
+//                if( /*faciesCode != previousFaciesCode &&*/ previousFaciesCode != -9999 ){
+//                    ftm.incrementCount( previousFaciesCode, faciesCode );
+//                }
+//                previousFaciesCode = faciesCode;
+//            }
+//        }
         return ftm;
     }
 
