@@ -36,6 +36,7 @@ SOURCES += main.cpp\
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/verticalproportioncurve.cpp \
+    geometry/intersectionfinder.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
@@ -295,6 +296,7 @@ HEADERS  += mainwindow.h \
     domain/objectgroup.h \
     domain/projectroot.h \
     domain/verticalproportioncurve.h \
+    geometry/intersectionfinder.h \
     geostats/mcmcdataimputation.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
