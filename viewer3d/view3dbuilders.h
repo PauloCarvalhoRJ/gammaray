@@ -10,6 +10,7 @@ class CartesianGrid;
 class GeoGrid;
 class View3DWidget;
 class SegmentSet;
+class vtkUnstructuredGrid;
 
 /** Marks cells as visible or visible due to several reasons. */
 enum class InvisibiltyFlag : int {
@@ -39,6 +40,13 @@ public:
     static View3DViewData build( CartesianGrid* object, View3DWidget * widget3D );  //cartesian grid geometry only
 	static View3DViewData build( GeoGrid* object, View3DWidget * widget3D );  //GeoGrid mesh (no property)
 	//@}
+
+    /** Makes a VTK surface from the z values in a 2D Cartesian grid.
+     * Returns null ponter in case of error or failure (sent to the application's error log).
+     */
+    static vtkSmartPointer<vtkUnstructuredGrid> makeSurfaceFrom2DGridWithZvalues(
+                                                 CartesianGrid* cartesianGrid,
+                                                 Attribute* attributeWithZValues);
 
 private:
     static View3DViewData buildForAttributeFromPointSet( PointSet* pointSet, Attribute* attribute, View3DWidget * widget3D );
