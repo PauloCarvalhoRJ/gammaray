@@ -52,6 +52,8 @@ private:
 
     void updateCurvesOfPlot(int nCategories);
 
+    void computeProportionsForASegmentSet( Attribute* at );
+
     Ui::VerticalProportionCurveDialog *ui;
 
     FileSelectorWidget* m_cmbFallBackPDF;

@@ -2,15 +2,20 @@
 #include "ui_verticalproportioncurvedialog.h"
 
 #include "domain/application.h"
-#include "domain/projectcomponent.h"
 #include "domain/attribute.h"
-#include "domain/project.h"
+#include "domain/cartesiangrid.h"
 #include "domain/categorydefinition.h"
-#include "domain/datafile.h"
 #include "domain/categorypdf.h"
+#include "domain/datafile.h"
+#include "domain/project.h"
+#include "domain/projectcomponent.h"
+#include "domain/segmentset.h"
+#include "domain/auxiliary/verticalproportioncurvemaker.h"
+#include "geometry/intersectionfinder.h"
+#include "vertpropcurves/verticalproportioncurvesplot.h"
 #include "widgets/fileselectorwidget.h"
 #include "widgets/variableselector.h"
-#include "vertpropcurves/verticalproportioncurvesplot.h"
+
 #include <QDragEnterEvent>
 #include <QMimeData>
 
@@ -130,7 +135,17 @@ void VerticalProportionCurveDialog::dropEvent(QDropEvent *e)
 
 void VerticalProportionCurveDialog::onRun()
 {
-
+    //for each categorical attribute
+    for( Attribute* at : m_categoricalAttributes ){
+        //get its parent file
+        File* parentFile = at->getContainingFile();
+        if( parentFile->getTypeName() == "SEGMENTSET" ){
+            computeProportionsForASegmentSet( at );
+        } else {
+            Application::instance()->logWarn("VerticalProportionCurveDialog::onRun(): data files of type " +
+                                              parentFile->getTypeName() + " not currently supported.  Ignored.");
+        }
+    }
 }
 
 void VerticalProportionCurveDialog::onSave()
@@ -248,4 +263,76 @@ void VerticalProportionCurveDialog::updateCurvesOfPlot( int nCategories )
         curveBase += m_fallbackPDF->get2ndValue( i );
     }
     m_VPCPlot->updateFillAreas();
+}
+
+void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *at)
+{
+    //Get and load the segment set
+    //We can assume the attribute's parent data file is a segment set.
+    SegmentSet* ss = dynamic_cast< SegmentSet* >( at->getContainingFile() );
+    ss->loadData();
+
+    //Get and load the horizons
+    CartesianGrid* cgTop  = dynamic_cast< CartesianGrid* >( m_cmbTopHorizon->getSelectedFile() );
+    CartesianGrid* cgBase = dynamic_cast< CartesianGrid* >( m_cmbBaseHorizon->getSelectedFile() );
+    if( !cgTop or !cgBase ){
+        Application::instance()->logError( "VerticalProportionCurveDialog::computeProportionsForASegmentSet(): "
+                                           "One horizon is missing or is not a Cartesian grid.", true );
+        return;
+    }
+    cgTop->loadData();
+    cgBase->loadData();
+
+    //find the depth at which the segment set intersects top horizon
+    double top = std::numeric_limits<double>::quiet_NaN();
+    {
+        IntersectionFinder intFinder;
+        intFinder.initWithSurface( cgTop, m_cmbTopVariable->getSelectedVariableGEOEASIndex()-1 );
+        std::vector< Vector3D > intersections = intFinder.getIntersections( ss );
+        if( intersections.empty() ){
+            Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
+                                             ss->getName() + " does not intersect top horizon.  Using its topmost depth.");
+            top = std::max( ss->max( ss->getZindex()-1 ), ss->max( ss->getZFinalIndex()-1 ) );
+        } else if( intersections.size() > 1 ){
+            Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
+                                              ss->getName() + " intersects top horizon more than once and was ignored.");
+            return;
+        } else
+            top = intersections[0].z;
+    }
+
+    //find the depth at which the segment set intersects base horizon
+    double base = std::numeric_limits<double>::quiet_NaN();
+    {
+        IntersectionFinder intFinder;
+        intFinder.initWithSurface( cgBase, m_cmbBaseVariable->getSelectedVariableGEOEASIndex()-1 );
+        std::vector< Vector3D > intersections = intFinder.getIntersections( ss );
+        if( intersections.empty() ){
+            Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
+                                             ss->getName() + " does not intersect base horizon.  Using its bottommost depth.");
+            base = std::min( ss->min( ss->getZindex()-1 ), ss->min( ss->getZFinalIndex()-1 ) );
+        } else if( intersections.size() > 1 ){
+            Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
+                                              ss->getName() + " intersects base horizon more than once and was ignored.");
+            return;
+        } else
+            base = intersections[0].z;
+    }
+
+    //sanity checks
+    if( base > top ) {
+        Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): "
+                                         "intersection base depth is higher than intersection top depth. "
+                                         "This is likely due to swapped base and top horizons.  Ignored.");
+        return;
+    }
+
+    //compute the curves
+    VerticalProportionCurveMaker< SegmentSet > vpcMaker( ss, at->getAttributeGEOEASgivenIndex()-1 );
+    vpcMaker.makeInDepthInterval( ui->dblSpinResolutionPercent->value() / 100.0,
+                                  ui->dblSpinWindowPercent->value() / 100.0,
+                                  top,
+                                  base,
+                                  *m_fallbackPDF );
+
 }

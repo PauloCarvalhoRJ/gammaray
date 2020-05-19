@@ -54,7 +54,7 @@ public:
         CategoryDefinition* cd = VPCMakerAdapters::getAssociatedCategoryDefinition( m_dataFileWithFacies, m_variableIndex );
         assert( cd && "VerticalProportionCurveMaker::makeInDepthInterval(): null CategoryDefinition." );
         //create an empty VPC
-        VerticalProportionCurve ftm("", cd->getName() );
+        VerticalProportionCurve vpc("", cd->getName() );
         //traverse trajectory in steps of size h counting facies transitions
         //from end (early in geologic time) to begining (late in geologic time).
 //        double trajectoryLength = VPCMakerAdapters::getTrajectoryLength( m_dataFileWithFacies );
@@ -71,7 +71,7 @@ public:
 //                previousFaciesCode = faciesCode;
 //            }
 //        }
-        return ftm;
+        return vpc;
     }
 
 private:
