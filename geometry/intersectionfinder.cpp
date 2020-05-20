@@ -7,6 +7,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkOBBTree.h>
 #include <vtkUnstructuredGrid.h>
+#include <vtkGeometryFilter.h>
 
 IntersectionFinder::IntersectionFinder() :
     m_tree( nullptr )
@@ -19,19 +20,33 @@ void IntersectionFinder::initWithSurface( CartesianGrid *cg, int variableIndexOf
     // Get the variable with the z values.
     Attribute* attributeWithZvalues = cg->getAttributeFromGEOEASIndex( variableIndexOfZ + 1 );
 
-    // Make a surface object.
+    // Make a surface object from the data.
     vtkSmartPointer< vtkUnstructuredGrid > surface =
             View3DBuilders::makeSurfaceFrom2DGridWithZvalues( cg, attributeWithZvalues );
 
+    // Sanity check.
     if( ! surface ){
         Application::instance()->logError( "IntersectionFinder::initWithSurface(): null surface."
                                            " Check console for error messages." );
         return;
     }
 
-    // Create the VTK locator
+    // Extract the geometry (vtkPolyData) from the grid as required by vtkOBBTree API.
+    vtkSmartPointer<vtkGeometryFilter> geometryFilter =  vtkSmartPointer<vtkGeometryFilter>::New();
+    geometryFilter->SetInputData( surface );
+    geometryFilter->Update();
+    vtkSmartPointer<vtkPolyData> polydata = geometryFilter->GetOutput();
+
+    // Sanity check.
+    if( ! polydata->GetNumberOfPoints() ){
+        Application::instance()->logError( "IntersectionFinder::initWithSurface(): extracting the geometry of a "
+                                           "vtkUnstructuredGrid resulted in an empty object." );
+        return;
+    }
+
+    // Create the VTK locator.
     m_tree = vtkSmartPointer<vtkOBBTree>::New();
-    m_tree->SetDataSet( surface );
+    m_tree->SetDataSet( polydata );
     m_tree->BuildLocator();
 }
 
@@ -73,8 +88,6 @@ std::vector<Vector3D> IntersectionFinder::getIntersections(const SegmentSet *seg
             result.push_back( intersect );
         }
     }
-
-    intersectPoints->Delete();
 
     return result;
 }

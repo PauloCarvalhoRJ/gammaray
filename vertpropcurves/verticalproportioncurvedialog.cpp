@@ -283,7 +283,7 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
     cgTop->loadData();
     cgBase->loadData();
 
-    //find the depth at which the segment set intersects top horizon
+    //find the depth at which the segment set intersects the top horizon
     double top = std::numeric_limits<double>::quiet_NaN();
     {
         IntersectionFinder intFinder;
@@ -297,11 +297,14 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                               ss->getName() + " intersects top horizon more than once and was ignored.");
             return;
-        } else
+        } else {
             top = intersections[0].z;
+            Application::instance()->logInfo( ss->getName() + " intersects " + m_cmbTopVariable->getSelectedVariableName() +
+                                              " top horizon at z = " + QString::number( top ) + ".");
+        }
     }
 
-    //find the depth at which the segment set intersects base horizon
+    //find the depth at which the segment set intersects the base horizon
     double base = std::numeric_limits<double>::quiet_NaN();
     {
         IntersectionFinder intFinder;
@@ -315,8 +318,11 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                               ss->getName() + " intersects base horizon more than once and was ignored.");
             return;
-        } else
+        } else {
             base = intersections[0].z;
+            Application::instance()->logInfo( ss->getName() + " intersects " + m_cmbBaseVariable->getSelectedVariableName() +
+                                              " base horizon at z = " + QString::number( base ) + ".");
+        }
     }
 
     //sanity checks
@@ -334,5 +340,4 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
                                   top,
                                   base,
                                   *m_fallbackPDF );
-
 }
