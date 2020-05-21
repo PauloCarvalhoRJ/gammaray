@@ -36,6 +36,8 @@ private Q_SLOTS:
 
     void onUpdateImageDisplays();
 
+    void onRun();
+
 };
 
 #endif // THINSECTIONANALYSISDIALOG_H
