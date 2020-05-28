@@ -25,8 +25,8 @@ public:
     ValuePairs(QString path) : File( path ){}
 
     int getPairCount(){ return m_pairs.count(); }
-    T1 get1stValue( int pair_index ){ return m_pairs.at(pair_index).first; }
-    T2 get2ndValue( int pair_index ){ return m_pairs.at(pair_index).second; }
+    T1 get1stValue( int pair_index ) const { return m_pairs.at(pair_index).first; }
+    T2 get2ndValue( int pair_index ) const { return m_pairs.at(pair_index).second; }
     void addPair( T1 first, T2 second ){ m_pairs.append( QPair<T1,T2>( first, second ) ); }
     void clear(){ m_pairs.clear(); }
 
