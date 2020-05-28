@@ -15,3 +15,35 @@ namespace VPCMakerAdapters {
     }
 }
 //------------------------------------------------------------------------------------//
+
+//-------------------specializations of the populateSpatialIndex() template function---------------//
+namespace VPCMakerAdapters {
+    template <>
+    void populateSpatialIndex<SegmentSet>( SegmentSet* dataFile, SpatialIndex& spatialIndex ){
+        spatialIndex.fill( dataFile, 0.000001 );
+    }
+}
+//------------------------------------------------------------------------------------//
+
+//-------------------specializations of the getValue() template function---------------//
+namespace VPCMakerAdapters {
+    template <>
+    double getValue<DataFile>( DataFile* dataFile, int variableIndex, int dataIndex ){
+        return dataFile->data( dataIndex, variableIndex );
+    }
+    template <>
+    double getValue<SegmentSet>( SegmentSet* dataFile, int variableIndex, int dataIndex ){
+        return getValue<DataFile>( dataFile, variableIndex, dataIndex );
+    }
+}
+//------------------------------------------------------------------------------------//
+
+
+//-------------------specializations of the populateSpatialIndex() template function---------------//
+namespace VPCMakerAdapters {
+    template <>
+    double getSupportSize<SegmentSet>( SegmentSet* dataFile, int dataIndex ){
+        return dataFile->getSegmentLenght( dataIndex );
+    }
+}
+//------------------------------------------------------------------------------------//

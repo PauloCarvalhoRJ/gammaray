@@ -3,6 +3,15 @@
 
 #include "domain/datafile.h"
 
+/** An entry in the Vertical Proportion Curve */
+struct VPCEntry{
+    VPCEntry( double pRelativeDepth ) : relativeDepth( pRelativeDepth ){}
+    /** The relave depth varying between 0.0 (base) and 1.0 (top). */
+    double relativeDepth;
+    /** The proportions of facies varying between 0.0 (0%) and 1.0 (100%) and summing up 1.0. */
+    std::vector<double> proportions;
+};
+
 /**
  * The VerticalProportionCurve class models a Vertical Proportion Curve, a series of values defining
  * the expected proportion of categories (e.g. lithofacies) along the vertical.  The vertical scale of
@@ -22,6 +31,21 @@ class VerticalProportionCurve : public DataFile
 public:
     VerticalProportionCurve( QString path, QString associatedCategoryDefinitionName );
 
+    /** Adds a new entry with zeros for all categories for the given relative depth (0.0==base, 1.0==top). */
+    void addNewEntry( double relativeDepth );
+
+    /** Returns the current number of entries in this VPC. */
+    int getEntriesCount();
+
+    /** Sets a proportion value for a given category in one of the entries. */
+    void setProportion( int entryIndex, int categoryCode, double proportion );
+
+    /**
+     * Returns the pointer to the CategoryDefinition object whose name is
+     * in m_associatedCategoryDefinitionName.  Returns nullptr it the name
+     * is not set or the object with the name does not exist.
+     */
+    CategoryDefinition* getAssociatedCategoryDefinition() const;
 
     // ProjectComponent interface
 public:
@@ -56,6 +80,8 @@ public:
 protected:
     ///--------------data read from metadata file------------
     QString m_associatedCategoryDefinitionName;
+
+    std::vector< VPCEntry > m_entries;
 };
 
 #endif // VERTICALPROPORTIONCURVE_H

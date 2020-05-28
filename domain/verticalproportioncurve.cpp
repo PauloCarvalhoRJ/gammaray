@@ -4,12 +4,49 @@
 #include <QTextStream>
 #include <cassert>
 
+#include "domain/application.h"
+#include "domain/project.h"
+#include "domain/objectgroup.h"
+#include "domain/categorydefinition.h"
 
 VerticalProportionCurve::VerticalProportionCurve(QString path, QString associatedCategoryDefinitionName) :
     DataFile( path ),
     m_associatedCategoryDefinitionName( associatedCategoryDefinitionName )
 {
 
+}
+
+void VerticalProportionCurve::addNewEntry(double relativeDepth)
+{
+    m_entries.push_back( VPCEntry( relativeDepth ) );
+}
+
+int VerticalProportionCurve::getEntriesCount()
+{
+    return m_entries.size();
+}
+
+void VerticalProportionCurve::setProportion(int entryIndex, int categoryCode, double proportion)
+{
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    assert( cd && "VerticalProportionCurve::setProportion(): No CategoryDefinition was found.  "
+                  "Be sure to set a name of an existing CategoryDefinition before calling this method" );
+
+    int categoryIndex = cd->getCategoryIndex( categoryCode );
+
+    m_entries[ entryIndex ].proportions[ categoryIndex ] = proportion;
+}
+
+CategoryDefinition *VerticalProportionCurve::getAssociatedCategoryDefinition() const
+{
+    CategoryDefinition* result = dynamic_cast<CategoryDefinition*>( Application::instance()->
+                                                                               getProject()->
+                                                                        getResourcesGroup()->
+                                                                     getChildByName( m_associatedCategoryDefinitionName ) );
+    if( ! result )
+        Application::instance()->logError( "VerticalProportionCurve::getAssociatedCategoryDefinition(): "
+                                           "object does not exist or an object of different type was found." );
+    return result;
 }
 
 QIcon VerticalProportionCurve::getIcon()
