@@ -106,8 +106,13 @@ public:
 
             //for each of the data found within the current z window.
             for( uint rowIndex : rowIndexes ){
+                //get the value from the dtaa set (supposedly the category code).
+                double value = VPCMakerAdapters::getValue( m_dataFileWithFacies, m_variableIndex, rowIndex );
+                //skip uninformed data.
+                if( m_dataFileWithFacies->isNDV( value ) )
+                    continue;
                 //get the category code.
-                int categoryCode = VPCMakerAdapters::getValue( m_dataFileWithFacies, m_variableIndex, rowIndex );
+                int categoryCode = static_cast<int>(value);
                 //get its index in the category definition.
                 int categoryIndex = cd->getCategoryIndex( categoryCode );
                 //get the category count (1 for point sets and length for segment sets, for example).
@@ -121,14 +126,28 @@ public:
             //adds a new all-zero entry to the VPC for the current relative depth.
             vpc.addNewEntry( center );
 
-            //compute and assign the proportions for each category.
-            for( int categoryIndex = 0; categoryIndex < sums.size(); ++categoryIndex ){
-                //get the category code.
-                int categoryCode = cd->getCategoryCode( categoryIndex );
-                //compute its proportion.
-                double proportion = sums[ categoryIndex ] / total;
-                //assign it to the last added entry of VPC object.
-                vpc.setProportion( vpc.getEntriesCount()-1, categoryCode, proportion );
+            //if there were data...
+            if( total > 0.0 ){
+                //...compute and assign the proportions for each category.
+                for( int categoryIndex = 0; categoryIndex < sums.size(); ++categoryIndex ){
+                    //get the category code.
+                    int categoryCode = cd->getCategoryCode( categoryIndex );
+                    //compute its proportion.
+                    double proportion = sums[ categoryIndex ] / total;
+                    //assign it to the last added entry of VPC object.
+                    vpc.setProportion( vpc.getEntriesCount()-1, categoryCode, proportion );
+                }
+            //if no valid data were found in the z window....
+            } else {
+                //... assign the proportions of the fallback PDF.
+                for( int categoryIndex = 0; categoryIndex < sums.size(); ++categoryIndex ){
+                    //get the category code.
+                    int categoryCode = cd->getCategoryCode( categoryIndex );
+                    //get proportion from the fallback PDF.
+                    double proportion = fallBackPDF.get2ndValue( categoryIndex );
+                    //assign it to the last added entry of VPC object.
+                    vpc.setProportion( vpc.getEntriesCount()-1, categoryCode, proportion );
+                }
             }
 
         }
