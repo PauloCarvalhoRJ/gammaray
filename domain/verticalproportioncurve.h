@@ -2,14 +2,25 @@
 #define VERTICALPROPORTIONCURVE_H
 
 #include "domain/datafile.h"
+#include "domain/categorydefinition.h"
 
 /** An entry in the Vertical Proportion Curve */
 struct VPCEntry{
-    VPCEntry( double pRelativeDepth ) : relativeDepth( pRelativeDepth ){}
+    VPCEntry( double pRelativeDepth, const CategoryDefinition* cd ) :
+        relativeDepth( pRelativeDepth ), proportions( cd->getCategoryCount() ){}
     /** The relave depth varying between 0.0 (base) and 1.0 (top). */
     double relativeDepth;
     /** The proportions of facies varying between 0.0 (0%) and 1.0 (100%) and summing up 1.0. */
     std::vector<double> proportions;
+};
+
+/** Reasons for incompatibility between two VPCs. */
+enum class VPCIncompatibilityReason : uint {
+    NULL_CATEGORY_DEFINITION,
+    DIFFERENT_CATEGORY_DEFINITIONS,
+    DIFFERENT_ENTRY_COUNTS,
+    DIFFERENT_PROPORTION_COUNTS,
+    DIFFERENT_RELATIVE_DEPTHS
 };
 
 /**
@@ -35,10 +46,41 @@ public:
     void addNewEntry( double relativeDepth );
 
     /** Returns the current number of entries in this VPC. */
-    int getEntriesCount();
+    int getEntriesCount() const;
+
+    /** Returns the number of proportion values in the first entry in this curve.
+     * If this curve is empty (no entries), it returns zero.
+     */
+    int getProportionsCount() const;
 
     /** Sets a proportion value for a given category in one of the entries. */
     void setProportion( int entryIndex, int categoryCode, double proportion );
+
+    /** Returns whether this VPC has proportions entries. */
+    bool isEmpty() const;
+
+    /** Sets this VPC as the mean of the VPCs passed as parameter.
+     * If the curves are not compatible for some reason (e.g. different number of entries),
+     * the method fails (returns false).  If there is only one curve, the curve values are copied
+     * to this curve.  Nothing changes if the passed vector is empty.
+     * @note This method does not change the other properties of this object.  It only
+     *       changes the values in the m_entries member.
+     */
+    bool setAsMeanOf( const std::vector< VerticalProportionCurve >& curves );
+
+    /** Returns whether this VPC is compatible with another VPC.  This means whether
+     * Both VPCs refer to the same CategoryDefinition object, the number of entries is the same,
+     * the number of proportions in each entry is the same and the relative depths (0.0==base, 1.0==top)
+     * are the same.
+     * @param reason Output parameter to know the reason for incompatibility.
+     */
+    bool isCompatibleWith( const VerticalProportionCurve& otherVPC,
+                           VPCIncompatibilityReason& reason ) const;
+
+    /** Returns the relative depth (0.0==base, 1.0==top) for the i-th entry of the curve.
+     * Returns NaN (not-a-number) if the curve has no entries or the passed index is invalid.
+     */
+    double getRelativeDepth( uint entryIndex ) const;
 
     /**
      * Returns the pointer to the CategoryDefinition object whose name is

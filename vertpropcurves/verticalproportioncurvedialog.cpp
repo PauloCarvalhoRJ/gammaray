@@ -135,17 +135,29 @@ void VerticalProportionCurveDialog::dropEvent(QDropEvent *e)
 
 void VerticalProportionCurveDialog::onRun()
 {
+    std::vector< VerticalProportionCurve > curves;
+
     //for each categorical attribute
     for( Attribute* at : m_categoricalAttributes ){
         //get its parent file
         File* parentFile = at->getContainingFile();
         if( parentFile->getTypeName() == "SEGMENTSET" ){
-            computeProportionsForASegmentSet( at );
+            //compute the vertical proportion curve
+            VerticalProportionCurve vpc = computeProportionsForASegmentSet( at );
+            if( vpc.isEmpty() )
+                Application::instance()->logWarn("VerticalProportionCurveDialog::onRun(): VPC for variable "
+                                                 + at->getName() + " of file " + parentFile->getName() + " failed.");
+            else
+                curves.push_back( vpc );
         } else {
             Application::instance()->logWarn("VerticalProportionCurveDialog::onRun(): data files of type " +
-                                              parentFile->getTypeName() + " not currently supported.  Ignored.");
+                                              parentFile->getTypeName() + " not currently supported.  Variable "
+                                             + at->getName() + " of file " + parentFile->getName() + " ignored.");
         }
     }
+
+    //make a mean VPC from the individual VPCs for each categorical variable.
+
 }
 
 void VerticalProportionCurveDialog::onSave()
@@ -265,7 +277,7 @@ void VerticalProportionCurveDialog::updateCurvesOfPlot( int nCategories )
     m_VPCPlot->updateFillAreas();
 }
 
-void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *at)
+VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *at)
 {
     //Get and load the segment set
     //We can assume the attribute's parent data file is a segment set.
@@ -278,7 +290,7 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
     if( !cgTop or !cgBase ){
         Application::instance()->logError( "VerticalProportionCurveDialog::computeProportionsForASegmentSet(): "
                                            "One horizon is missing or is not a Cartesian grid.", true );
-        return;
+        return VerticalProportionCurve("", "");
     }
     cgTop->loadData();
     cgBase->loadData();
@@ -296,7 +308,7 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
         } else if( intersections.size() > 1 ){
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                               ss->getName() + " intersects top horizon more than once and was ignored.");
-            return;
+            return VerticalProportionCurve("", "");
         } else {
             top = intersections[0].z;
             Application::instance()->logInfo( ss->getName() + " intersects " + m_cmbTopVariable->getSelectedVariableName() +
@@ -317,7 +329,7 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
         } else if( intersections.size() > 1 ){
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                               ss->getName() + " intersects base horizon more than once and was ignored.");
-            return;
+            return VerticalProportionCurve("", "");
         } else {
             base = intersections[0].z;
             Application::instance()->logInfo( ss->getName() + " intersects " + m_cmbBaseVariable->getSelectedVariableName() +
@@ -330,12 +342,12 @@ void VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *
         Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): "
                                          "intersection base depth is higher than intersection top depth. "
                                          "This is likely due to swapped base and top horizons.  Ignored.");
-        return;
+        return VerticalProportionCurve("", "");
     }
 
-    //compute the curves
+    //compute and return the curves
     VerticalProportionCurveMaker< SegmentSet > vpcMaker( ss, at->getAttributeGEOEASgivenIndex()-1 );
-    vpcMaker.makeInDepthInterval( ui->dblSpinResolutionPercent->value() / 100.0,
+    return vpcMaker.makeInDepthInterval( ui->dblSpinResolutionPercent->value() / 100.0,
                                   ui->dblSpinWindowPercent->value() / 100.0,
                                   top,
                                   base,

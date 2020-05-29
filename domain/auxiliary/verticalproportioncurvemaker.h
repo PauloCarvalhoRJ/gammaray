@@ -72,6 +72,9 @@ public:
         CategoryDefinition* cd = VPCMakerAdapters::getAssociatedCategoryDefinition( m_dataFileWithFacies, m_variableIndex );
         assert( cd && "VerticalProportionCurveMaker::makeInDepthInterval(): null CategoryDefinition." );
 
+        //ensure the fallback PDF has been loaded.
+        assert( fallBackPDF.getPairCount() !=0 && "VerticalProportionCurveMaker::makeInDepthInterval(): fallback CategoryPDF not loaded." );
+
         //load the category definitions.
         cd->readFromFS();
 

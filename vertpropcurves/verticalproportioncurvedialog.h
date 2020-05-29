@@ -13,6 +13,7 @@ class VariableSelector;
 class VerticalProportionCurvesPlot;
 class File;
 class CategoryPDF;
+class VerticalProportionCurve;
 
 class VerticalProportionCurveDialog : public QDialog
 {
@@ -52,7 +53,7 @@ private:
 
     void updateCurvesOfPlot(int nCategories);
 
-    void computeProportionsForASegmentSet( Attribute* at );
+    VerticalProportionCurve computeProportionsForASegmentSet( Attribute* at );
 
     Ui::VerticalProportionCurveDialog *ui;
 

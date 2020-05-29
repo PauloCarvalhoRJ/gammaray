@@ -7,7 +7,6 @@
 #include "domain/application.h"
 #include "domain/project.h"
 #include "domain/objectgroup.h"
-#include "domain/categorydefinition.h"
 
 VerticalProportionCurve::VerticalProportionCurve(QString path, QString associatedCategoryDefinitionName) :
     DataFile( path ),
@@ -18,12 +17,23 @@ VerticalProportionCurve::VerticalProportionCurve(QString path, QString associate
 
 void VerticalProportionCurve::addNewEntry(double relativeDepth)
 {
-    m_entries.push_back( VPCEntry( relativeDepth ) );
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    assert( cd && cd->getCategoryCount() > 0 && "VerticalProportionCurve::addNewEntry(): "
+                                                "Category definition is null or is empty/not loaded." );
+    m_entries.push_back( VPCEntry( relativeDepth, cd ) );
 }
 
-int VerticalProportionCurve::getEntriesCount()
+int VerticalProportionCurve::getEntriesCount() const
 {
     return m_entries.size();
+}
+
+int VerticalProportionCurve::getProportionsCount() const
+{
+    if( isEmpty() )
+        return 0;
+    else
+        return m_entries[0].proportions.size();
 }
 
 void VerticalProportionCurve::setProportion(int entryIndex, int categoryCode, double proportion)
@@ -35,6 +45,109 @@ void VerticalProportionCurve::setProportion(int entryIndex, int categoryCode, do
     int categoryIndex = cd->getCategoryIndex( categoryCode );
 
     m_entries[ entryIndex ].proportions[ categoryIndex ] = proportion;
+}
+
+bool VerticalProportionCurve::isEmpty() const
+{
+    return m_entries.empty();
+}
+
+bool VerticalProportionCurve::setAsMeanOf(const std::vector<VerticalProportionCurve> &curves)
+{
+    if( curves.empty() )
+        //does nothing.
+        return true;
+    else if( curves.size() == 1 ){
+        //simply copies the entries of the single other curve.
+        m_entries = std::vector< VPCEntry >( curves[0].m_entries.begin(), curves[0].m_entries.end() );
+        return true;
+    } else {
+        //check compatibility amongst the curves passed.
+        const VerticalProportionCurve& firstVPC = curves[0];
+        VPCIncompatibilityReason incompatibilityReason;
+        for( int iCurve = 1; iCurve < curves.size(); ++iCurve ){
+            const VerticalProportionCurve& vpc = curves[iCurve];
+            if( ! firstVPC.isCompatibleWith( vpc, incompatibilityReason ) ){
+                switch (incompatibilityReason) {
+                case VPCIncompatibilityReason::DIFFERENT_ENTRY_COUNTS:
+                    Application::instance()->logError( "VerticalProportionCurve::setAsMeanOf(): curve " +
+                                                       QString::number( iCurve + 1 ) +
+                                                       " showed a different entry count.");
+                    break;
+                case VPCIncompatibilityReason::NULL_CATEGORY_DEFINITION:
+                    Application::instance()->logError( "VerticalProportionCurve::setAsMeanOf(): first curve or curve " +
+                                                       QString::number( iCurve + 1 ) +
+                                                       " has a null category definition.");
+                    break;
+                case VPCIncompatibilityReason::DIFFERENT_RELATIVE_DEPTHS:
+                    Application::instance()->logError( "VerticalProportionCurve::setAsMeanOf():  curve " +
+                                                       QString::number( iCurve + 1 ) +
+                                                       " has different relative depths in its entries.");
+                    break;
+                case VPCIncompatibilityReason::DIFFERENT_PROPORTION_COUNTS:
+                    Application::instance()->logError( "VerticalProportionCurve::setAsMeanOf():  curve " +
+                                                       QString::number( iCurve + 1 ) +
+                                                       " has different proportion values in its entries.");
+                    break;
+                case VPCIncompatibilityReason::DIFFERENT_CATEGORY_DEFINITIONS:
+                    Application::instance()->logError( "VerticalProportionCurve::setAsMeanOf():  curve " +
+                                                       QString::number( iCurve + 1 ) +
+                                                       " refers to different category definitions.");
+                    break;
+                }
+                return false;
+            }
+        }
+        //make mean.  If execution reachs this point, then all curves are compatible.
+        TODO_MAKE_MEAN_COMPUTATION;
+    }
+}
+
+bool VerticalProportionCurve::isCompatibleWith(const VerticalProportionCurve &otherVPC,
+                                               VPCIncompatibilityReason &reason) const
+{
+    CategoryDefinition* myCD = getAssociatedCategoryDefinition();
+    CategoryDefinition* otherCD = otherVPC.getAssociatedCategoryDefinition();
+
+    if( !myCD || !otherCD ){
+        reason = VPCIncompatibilityReason::NULL_CATEGORY_DEFINITION;
+        return false;
+    }
+
+    if( myCD != otherCD ){
+        reason = VPCIncompatibilityReason::DIFFERENT_CATEGORY_DEFINITIONS;
+        return false;
+    }
+
+    if( getEntriesCount() != otherVPC.getEntriesCount() ){
+        reason = VPCIncompatibilityReason::DIFFERENT_ENTRY_COUNTS;
+        return false;
+    }
+
+    if( getProportionsCount() != otherVPC.getProportionsCount() ){
+        reason = VPCIncompatibilityReason::DIFFERENT_PROPORTION_COUNTS;
+        return false;
+    }
+
+    bool sameRelativeDepths = true;
+    for( int iEntry = 0; iEntry < getEntriesCount();  ++iEntry ){
+        if( ! Util::almostEqual2sComplement( getRelativeDepth( iEntry ),
+                                             otherVPC.getRelativeDepth( iEntry ),
+                                             1 ) ){
+            reason = VPCIncompatibilityReason::DIFFERENT_RELATIVE_DEPTHS;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+double VerticalProportionCurve::getRelativeDepth( uint entryIndex ) const
+{
+    if( isEmpty() || entryIndex >= m_entries.size() )
+        return std::numeric_limits<double>::quiet_NaN();
+    else
+        return m_entries[ entryIndex ].relativeDepth;
 }
 
 CategoryDefinition *VerticalProportionCurve::getAssociatedCategoryDefinition() const
