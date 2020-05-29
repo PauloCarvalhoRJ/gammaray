@@ -23,7 +23,7 @@ class Quintuplets : public File
 public:
     Quintuplets(QString path) : File( path ){}
 
-    int getQuintupletCount(){ return m_quintuplets.count(); }
+    int getQuintupletCount() const { return m_quintuplets.count(); }
 
     T1 get1stValue( int quintuplet_index ){ return std::get<0>( m_quintuplets.at(quintuplet_index) ); }
     T2 get2ndValue( int quintuplet_index ){ return std::get<1>( m_quintuplets.at(quintuplet_index) ); }
