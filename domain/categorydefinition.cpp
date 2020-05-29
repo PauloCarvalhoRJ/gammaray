@@ -14,7 +14,7 @@ CategoryDefinition::~CategoryDefinition()
     clearStashOfCreatedParameters();
 }
 
-int CategoryDefinition::getCategoryCount()
+int CategoryDefinition::getCategoryCount() const
 {
     int count = getQuintupletCount();
     if( ! count )

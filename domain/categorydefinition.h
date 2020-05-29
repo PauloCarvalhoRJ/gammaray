@@ -21,7 +21,7 @@ public:
     CategoryDefinition( QString path );
     ~CategoryDefinition();
 
-    int getCategoryCount();
+    int getCategoryCount() const;
 
     int getCategoryCode( int category_index ){ return get1stValue(category_index); }
     int getColorCode( int category_index ){ return get2ndValue(category_index); }
