@@ -62,6 +62,7 @@ bool VerticalProportionCurve::setAsMeanOf(const std::vector<VerticalProportionCu
         m_entries = std::vector< VPCEntry >( curves[0].m_entries.begin(), curves[0].m_entries.end() );
         return true;
     } else {
+
         //check compatibility amongst the curves passed.
         const VerticalProportionCurve& firstVPC = curves[0];
         VPCIncompatibilityReason incompatibilityReason;
@@ -98,9 +99,45 @@ bool VerticalProportionCurve::setAsMeanOf(const std::vector<VerticalProportionCu
                 return false;
             }
         }
+
         //make mean.  If execution reachs this point, then all curves are compatible.
-        TODO_MAKE_MEAN_COMPUTATION;
-    }
+        CategoryDefinition* cd = getAssociatedCategoryDefinition();
+
+        //initialize the entries by the number of entries in the 1st VPC (assumes all VPCs are compatible).
+        for( int iEntry = 0; iEntry < curves[0].m_entries.size(); ++iEntry ){
+            const VPCEntry& vpcEntry = curves[0].m_entries[iEntry];
+            m_entries.push_back( VPCEntry( curves[0].m_entries[iEntry].relativeDepth, cd ) );
+        }
+
+        //for each curve
+        for( const VerticalProportionCurve& curve : curves ){
+            //for each entry
+            for( int iEntry = 0; iEntry < curve.m_entries.size(); ++iEntry ){
+                const VPCEntry& vpcEntry = curve.m_entries[iEntry];
+                //accumlate sum for the computation of the mean after the loop
+                //over the curves finish
+                std::transform( m_entries[iEntry].proportions.begin( ),
+                                m_entries[iEntry].proportions.end( ),
+                                vpcEntry.proportions.begin( ),
+                                m_entries[iEntry].proportions.begin( ),
+                                std::plus<double>( ));
+            }
+        }
+
+        //compute the mean
+        for( int iEntry = 0; iEntry < m_entries.size(); ++iEntry ){
+            //divide all the sums of proportions for each entry by the number of curves.
+            std::transform( m_entries[iEntry].proportions.begin(),
+                            m_entries[iEntry].proportions.end(),
+                            m_entries[iEntry].proportions.begin(),
+                            std::bind( std::divides<double>(), std::placeholders::_1, curves.size() ) );
+            //Rescale the values in the entry, so they sum up to 1.0.
+            Util::unitize( m_entries[iEntry].proportions );
+        }
+
+        return true;
+
+    } //if number of curves is > 2
 }
 
 bool VerticalProportionCurve::isCompatibleWith(const VerticalProportionCurve &otherVPC,

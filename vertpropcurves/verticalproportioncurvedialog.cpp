@@ -156,7 +156,24 @@ void VerticalProportionCurveDialog::onRun()
         }
     }
 
-    //make a mean VPC from the individual VPCs for each categorical variable.
+    if( ! curves.empty() ) {
+
+        //Get the category definition of the case.
+        CategoryDefinition *cd = m_fallbackPDF->getCategoryDefinition();
+
+        //make a mean VPC from the individual VPCs for each categorical variable.
+        VerticalProportionCurve meanVPC( "", cd->getName() );
+        bool ok = meanVPC.setAsMeanOf( curves );
+
+        if( ok ){
+            m_VPCPlot->setNumberOfPoints( meanVPC.getEntriesCount() );
+
+            TODO_BUG_10_PERCENT_RESOLUTION_SHOULD_YIELD_11_POINTS_DEFINING_10_SEGMENTS;
+            Application::instance()->logInfo( "--------- " + QString::number( meanVPC.getEntriesCount() ) );
+
+            updateCurvesOfPlot();
+        }
+    }
 
 }
 
@@ -179,7 +196,7 @@ void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
     if( m_fallbackPDF->getCategoryDefinition() ) {
         m_fallbackPDF->loadPairs();
         m_fallbackPDF->getCategoryDefinition()->loadQuintuplets();
-        updateCurvesOfPlot( m_fallbackPDF->getCategoryDefinition()->getCategoryCount() );
+        updateCurvesOfPlot( );
     } else {
         m_VPCPlot->setNumberOfCurves( 2 );
         Application::instance()->logError("VerticalProportionCurveDialog::onFallbackPDFChanged(): the fallback PDF's CategoryDefinition is null.");
@@ -258,13 +275,16 @@ void VerticalProportionCurveDialog::updateVariablesList()
     ui->lstVariables->setMinimumWidth( ui->lstVariables->sizeHintForColumn(0) + 5 );
 }
 
-void VerticalProportionCurveDialog::updateCurvesOfPlot( int nCategories )
+void VerticalProportionCurveDialog::updateCurvesOfPlot( )
 {
-    //for categorical variables the calibration curves separate the categories, thus -1.
-    m_VPCPlot->setNumberOfCurves( nCategories-1 );
     //fills the areas between the curves with the colors of the categories
     CategoryDefinition *cd = m_fallbackPDF->getCategoryDefinition();
     cd->loadQuintuplets();
+
+    int nCategories = cd->getCategoryCount();
+
+    //for categorical variables the calibration curves separate the categories, thus -1.
+    m_VPCPlot->setNumberOfCurves( nCategories-1 );
     double curveBase = 0.0;
     for( int i = 0; i < nCategories; ++i ){
         m_VPCPlot->fillColor( Util::getGSLibColor( cd->getCategoryColorByCode( m_fallbackPDF->get1stValue( i ) ) ) ,

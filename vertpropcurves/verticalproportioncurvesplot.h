@@ -45,6 +45,11 @@ public:
     /** Enables or disbales whether the user can change the curves vertexes. */
     void setEditable( bool value );
 
+    /** Sets the number of points per curve. Only the m_nPoints member is updated.
+     * To update the curves, it is necessary to remake them via the other methods.
+     */
+    void setNumberOfPoints( int number );
+
 public slots:
     /** Inserts a new curve with a constant default value (base parameter) */
     void insertCurve( int axis, double base );

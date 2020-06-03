@@ -51,7 +51,7 @@ private:
 
     void updateVariablesList();
 
-    void updateCurvesOfPlot(int nCategories);
+    void updateCurvesOfPlot();
 
     VerticalProportionCurve computeProportionsForASegmentSet( Attribute* at );
 

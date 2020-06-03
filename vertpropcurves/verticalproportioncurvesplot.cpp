@@ -221,6 +221,11 @@ void VerticalProportionCurvesPlot::setEditable(bool value)
     replot();
 }
 
+void VerticalProportionCurvesPlot::setNumberOfPoints(int number)
+{
+    m_nPoints = number;
+}
+
 void VerticalProportionCurvesPlot::insertCurve(int axis, double base)
 {
     Qt::Orientation o;
