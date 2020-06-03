@@ -806,6 +806,13 @@ public:
 
     /** Format the given list of strings as single-line string with the given separator. **/
     static QString formatAsSingleLine( QStringList list, QString separator = " " );
+
+    /** Rescale the values so they sum up to 1.0. Example: 70, 10, 20 -> 0.7, 0.1, 0.2.
+     * This is an in-place operation, so if you need to keep the original values, then you need
+     * to make a copy of the vector prior to calling this method.
+     * @warning Does not work with negative values! For this, one needs a softmax function.
+     */
+    static void unitize( std::vector<double>& values );
 };
 
 #endif // UTIL_H
