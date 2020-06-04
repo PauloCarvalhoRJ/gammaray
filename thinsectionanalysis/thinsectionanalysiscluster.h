@@ -4,6 +4,8 @@
 #include <vector>
 #include <array>
 #include <memory>
+#include <QString>
+#include <QColor>
 
 class ThinSectionAnalysisCluster{
 
@@ -31,6 +33,14 @@ public:
      */
     void merge( const ThinSectionAnalysisCluster& otherCluster );
 
+    /** Returns the name given to the cluster. */
+    QString getName() const { return m_name; }
+    void setName( const QString name ){ m_name = name; }
+
+    /** Sets the color uses to visually represent this cluster. */
+    void setColor( const QColor color ){ m_color = color; }
+    QColor getColor( ) const { return m_color; }
+
     /** Reference to the vector of feature vectors of all pixels. */
     const std::vector< std::array< float, 12 > >& refFeatureVectors;
 
@@ -44,6 +54,10 @@ public:
 
     /** Flag used to mark a cluster for deletion. */
     bool toDelete;
+
+private:
+    QString m_name;
+    QColor m_color;
 };
 
 typedef std::shared_ptr< ThinSectionAnalysisCluster > ThinSectionAnalysisClusterPtr;

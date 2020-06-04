@@ -2,6 +2,8 @@
 #include "ui_thinsectionanalysisdialog.h"
 
 #include "domain/application.h"
+#include "thinsectionanalysis/thinsectionanalysisresultsdialog.h"
+#include "thinsectionanalysis/thinsectionanalysiscluster.h"
 
 #include <QFileDialog>
 #include <QFileIconProvider>
@@ -254,83 +256,13 @@ void ThinSectionAnalysisDialog::onRun()
     }
     ///========================================================================================================
 
-    // Before proceeding to the clustering algorithm, let's define a small local class
-    // to encapsulate cluster data and functionality into a single unit.
-    struct Cluster{
-        //the constructor must accept the reference to the vector of the feature vectors
-        //of all pixels to reuse it across all clusters
-        Cluster( const std::vector< std::array< float, 12 > >& pRefFeatureVectors ) :
-            refFeatureVectors( pRefFeatureVectors ),
-            center( {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f} ),
-            toDelete( false )
-            {}
-        //adds a pixel index to this cluster and updates its center
-        void addPixelIndex( uint pixelIndex ){
-            pixelIndexes.push_back( pixelIndex );
-            //mean updating: https://math.stackexchange.com/questions/106700/incremental-averageing
-            for( uchar j = 0; j < 12; ++j )
-                center[j] += ( refFeatureVectors[pixelIndex][j] - center[j] ) / pixelIndexes.size();
-        }
-        // Computes the similarity of two 12-element vectors according to
-        // Izadi et al (2020): "Altered mineral segmentation using incremental-dynamic clustering", eq 2.
-        // the result varies between 0.0 (least similar) and 1.0 (most similar).
-        float similarity(const std::array< float, 12 >& v1, const std::array< float, 12 >& v2) const
-        {
-            return 1 / ( 1 + std::sqrt( (v1[ 0]-v2[ 0])*(v1[ 0]-v2[ 0])+
-                                        (v1[ 1]-v2[ 1])*(v1[ 1]-v2[ 1])+
-                                        (v1[ 2]-v2[ 2])*(v1[ 2]-v2[ 2])+
-                                        (v1[ 3]-v2[ 3])*(v1[ 3]-v2[ 3])+
-                                        (v1[ 4]-v2[ 4])*(v1[ 4]-v2[ 4])+
-                                        (v1[ 5]-v2[ 5])*(v1[ 5]-v2[ 5])+
-                                        (v1[ 6]-v2[ 6])*(v1[ 6]-v2[ 6])+
-                                        (v1[ 7]-v2[ 7])*(v1[ 7]-v2[ 7])+
-                                        (v1[ 8]-v2[ 8])*(v1[ 8]-v2[ 8])+
-                                        (v1[ 9]-v2[ 9])*(v1[ 9]-v2[ 9])+
-                                        (v1[10]-v2[10])*(v1[10]-v2[10])+
-                                        (v1[11]-v2[11])*(v1[11]-v2[11]) ) );
-        }
-        //returns whether the given pixel is similar to this cluster
-        bool isSimilar( uint pixelIndex, float sigma ) const{
-            return similarity( center, refFeatureVectors[pixelIndex] ) >= sigma;
-        }
-        //adds the pixel indexes of another cluster to this cluster's pixelIndexes list
-        //and updates the center
-        void merge( const Cluster& otherCluster ){
-            //update the center (average of two averages)
-            float mySum[12]    = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
-            for( uchar j = 0; j < 12; ++j ) {
-                //get the sum of this cluster by multiplying the mean by the current count
-                mySum[j] = center[j] * pixelIndexes.size();
-                //adds the sum of the other cluster, which is calculated the same way
-                mySum[j] += otherCluster.center[j] * otherCluster.pixelIndexes.size();
-                //the new average is then the grand sum divided by the combined number of elements
-                center[j] = mySum[j] / ( pixelIndexes.size() + otherCluster.pixelIndexes.size() );
-            }
-            //adds the pixel indexes of the other cluster
-            pixelIndexes.insert( pixelIndexes.end(),
-                                 otherCluster.pixelIndexes.begin(),
-                                 otherCluster.pixelIndexes.end() );
-        }
-        //reference to the vector of feature vectors of all pixels
-        const std::vector< std::array< float, 12 > >& refFeatureVectors;
-        //the cluster only stores pixel indexes, not the feature vectors to save memory
-        //theses indexes refer to feature vectors in refFeatureVectors
-        std::vector<uint> pixelIndexes;
-        //the average feature vector of all pixels indexed by this cluster.
-        std::array< float, 12 > center;
-        //flag used to mark a cluster for deletion
-        bool toDelete;
-    };
-
-    //let's also define a smart pointer to Cluster objects
-    typedef std::shared_ptr< Cluster > ClusterPtr;
 
     //the collection of clusters
-    std::vector< ClusterPtr > clusters;
+    std::vector< ThinSectionAnalysisClusterPtr > clusters;
     clusters.reserve( 5000 ); //5k clusters is a fairly large number
 
     //adds the first cluster with the first pixel
-    ClusterPtr firstCluster = std::make_shared<Cluster>( featureVectors );
+    ThinSectionAnalysisClusterPtr firstCluster = std::make_shared<ThinSectionAnalysisCluster>( featureVectors );
     firstCluster->addPixelIndex( 0 );
     clusters.push_back( firstCluster );
 
@@ -356,7 +288,7 @@ void ThinSectionAnalysisDialog::onRun()
         for( int iCluster = 0; iCluster < clusters.size(); ++iCluster ){
 
             //...get the pointer to it.
-            ClusterPtr cluster = clusters[iCluster];
+            ThinSectionAnalysisClusterPtr cluster = clusters[iCluster];
 
             //if the pixel fits in the cluster...
             if( cluster->isSimilar( iPixelIndex, ui->dblSpinSimilarityThreshold->value() )){
@@ -371,7 +303,7 @@ void ThinSectionAnalysisDialog::onRun()
         if( clusterIndexesThatReceivedThePixel.empty() ){
 
             //...creates a new cluster and puts the pixel in it.
-            ClusterPtr cluster = std::make_shared<Cluster>( featureVectors );
+            ThinSectionAnalysisClusterPtr cluster = std::make_shared<ThinSectionAnalysisCluster>( featureVectors );
             cluster->addPixelIndex( iPixelIndex );
             clusters.push_back( cluster );
 
@@ -380,7 +312,7 @@ void ThinSectionAnalysisDialog::onRun()
         } else if( clusterIndexesThatReceivedThePixel.size() > 1 ){
 
             //get the first cluster that received the pixel
-            ClusterPtr firstCluster = clusters[ clusterIndexesThatReceivedThePixel[0] ];
+            ThinSectionAnalysisClusterPtr firstCluster = clusters[ clusterIndexesThatReceivedThePixel[0] ];
 
             //remove its index from the list of clusters that received the pixel
             clusterIndexesThatReceivedThePixel.erase( clusterIndexesThatReceivedThePixel.begin() );
@@ -398,7 +330,7 @@ void ThinSectionAnalysisDialog::onRun()
                 std::remove_if(
                     clusters.begin(),
                     clusters.end(),
-                    [](ClusterPtr& cluster) -> bool {
+                    [](ThinSectionAnalysisClusterPtr& cluster) -> bool {
                         return cluster->toDelete;
                     }
                 ),
@@ -416,36 +348,53 @@ void ThinSectionAnalysisDialog::onRun()
     } //cluster algorithm loop
     ///========================================================================================================
 
+    QString outputImagePath = ui->lblDirectory->text() + "/clusters.png";
 
-    //generate an image by painting the pixels with random contrasting colors
+    ///========================================================================================================
+    // a) generate an image by painting the pixels with random contrasting colors.
+    // b) set some properties for the clusters.
     QImage imageOutput( imagePPRGB.size(), QImage::Format_ARGB32 );
     uchar r, g, b;
     uint clusterCount = 0;
     progressDialog.setLabelText("Genereating output image...");
     progressDialog.setMinimum(0);
+    progressDialog.setMaximum( clusters.size() );
     progressDialog.setValue(0);
-    for( const ClusterPtr& cluster : clusters  ){
-        //assign a constrasting color to the clusters
+    //for each cluster
+    int sequential = 0;
+    for( ThinSectionAnalysisClusterPtr& cluster : clusters  ){
+        //assign a constrasting color to the cluster's pixels
         //GSLib's colors form a good sequence of constrasting colors
         QColor clusterColor = Util::getGSLibColor( (clusterCount++) % Util::getMaxGSLibColorCode() + 1 );
         r = clusterColor.red();
         g = clusterColor.green();
         b = clusterColor.blue();
+        //for each pixel assigned to the cluster
         for( uint iPixel : cluster->pixelIndexes ){
-//            imageOutputData[ bytesPerPixel * iPixel + 0 ] = 0;
-//            imageOutputData[ bytesPerPixel * iPixel + 1 ] = 255;
-//            imageOutputData[ bytesPerPixel * iPixel + 2 ] = 0;
-//            imageOutputData[ bytesPerPixel * iPixel + 3 ] = 0;
+            //convert its index to a lin x col coordinate
             uint line = iPixel / nCols;
             uint column = iPixel % nCols;
+            //set the pixel color
             imageOutput.setPixel( column, line, qRgb( r, g, b ) );
         }
+        //give a name to the cluster
+        cluster->setName( QString::number( ++sequential ) );
+        //assign the color to the cluster
+        cluster->setColor( clusterColor );
         //update the progress bar
         progressDialog.setValue(clusterCount);
         QApplication::processEvents();
     }
+    imageOutput.save( outputImagePath );
+    ///========================================================================================================
 
-    imageOutput.save( ui->lblDirectory->text() + "/clusters.png" );
+    ///========================================================================================================
+    // Show a dilog so the user can work on the results.
+    ThinSectionAnalysisResultsDialog* tsard = new ThinSectionAnalysisResultsDialog( this );
+    tsard->setClusters( clusters );
+    tsard->setOutputImage( outputImagePath );
+    tsard->show();
+    ///========================================================================================================
 
     Application::instance()->logInfo("Thin section analysis completed.");
 }
