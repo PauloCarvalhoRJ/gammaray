@@ -41,7 +41,9 @@ SOURCES += main.cpp\
     domain/projectcomponent.cpp \
     domain/objectgroup.cpp \
     domain/projectroot.cpp \
+    thinsectionanalysis/thinsectionanalysiscluster.cpp \
     thinsectionanalysis/thinsectionanalysisdialog.cpp \
+    thinsectionanalysis/thinsectionanalysisresultsdialog.cpp \
     util.cpp \
     domain/pointset.cpp \
     domain/attribute.cpp \
@@ -88,6 +90,7 @@ SOURCES += main.cpp\
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
     viewer3d/v3dmouseinteractor.cpp \
+    widgets/barchartwidget.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -285,7 +288,9 @@ HEADERS  += mainwindow.h \
     domain/objectgroup.h \
     domain/projectroot.h \
     geostats/mcmcdataimputation.h \
+    thinsectionanalysis/thinsectionanalysiscluster.h \
     thinsectionanalysis/thinsectionanalysisdialog.h \
+    thinsectionanalysis/thinsectionanalysisresultsdialog.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
@@ -337,6 +342,7 @@ HEADERS  += mainwindow.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
     viewer3d/v3dmouseinteractor.h \
+    widgets/barchartwidget.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
@@ -548,6 +554,8 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
     thinsectionanalysis/thinsectionanalysisdialog.ui \
+    thinsectionanalysis/thinsectionanalysisresultsdialog.ui \
+    widgets/barchartwidget.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \
