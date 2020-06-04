@@ -277,7 +277,8 @@ SOURCES += main.cpp\
     gslib/gslibparameterfiles/commonsimulationparameters.cpp \
     spatialindex/spatialindex.cpp \
     geostats/taumodel.cpp \
-    dialogs/mcmcdataimputationdialog.cpp
+    dialogs/mcmcdataimputationdialog.cpp \
+    widgets/imageviewerwidget.cpp
 
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
@@ -532,7 +533,8 @@ HEADERS  += mainwindow.h \
     gslib/gslibparameterfiles/commonsimulationparameters.h \
     spatialindex/spatialindex.h \
     geostats/taumodel.h \
-    dialogs/mcmcdataimputationdialog.h
+    dialogs/mcmcdataimputationdialog.h \
+    widgets/imageviewerwidget.h
 
 
 FORMS    += mainwindow.ui \
