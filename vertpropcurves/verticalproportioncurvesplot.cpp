@@ -149,6 +149,26 @@ void VerticalProportionCurvesPlot::setCurveBase(int index, double value)
     pushCurves( curve );
 }
 
+void VerticalProportionCurvesPlot::setCurveValues(int curveIndex, const std::vector<double> &values, double factor)
+{
+    QwtPlotCurve* curve = m_curves[ curveIndex ];
+
+    QVector<double> xData( curve->dataSize() );
+    QVector<double> yData( curve->dataSize() );
+
+    for ( int i = 0; i < static_cast<int>( curve->dataSize() ); i++ ) {
+        const QPointF sample = curve->sample( i );
+        xData[i] = values[i] * factor;
+        yData[i] = sample.y();
+    }
+
+    //updates the curve points
+    curve->setSamples( xData, yData );
+
+    //prevents potential crossings
+    pushCurves( curve );
+}
+
 void VerticalProportionCurvesPlot::updateFillAreas()
 {
     //does nothing if there is no proportion curve.

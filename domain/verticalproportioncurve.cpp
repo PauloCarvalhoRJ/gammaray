@@ -199,6 +199,32 @@ CategoryDefinition *VerticalProportionCurve::getAssociatedCategoryDefinition() c
     return result;
 }
 
+std::vector<double> VerticalProportionCurve::getNthProportions(uint proportionIndex) const
+{
+    std::vector<double> result( m_entries.size() );
+
+    int iEntry = -1;
+    for( const VPCEntry& entry : m_entries )
+        result[++iEntry] = entry.proportions[ proportionIndex ];
+
+    return result;
+}
+
+std::vector<double> VerticalProportionCurve::getNthCumulativeProportions(uint proportionIndex) const
+{
+    std::vector<double> result( m_entries.size() );
+
+    int iEntry = -1;
+    for( const VPCEntry& entry : m_entries ){
+        double cumulativeProportion = 0.0;
+        for( int iProportion = 0; iProportion <= proportionIndex; ++iProportion)
+            cumulativeProportion += entry.proportions[ iProportion ];
+        result[++iEntry] = cumulativeProportion;
+    }
+
+    return result;
+}
+
 QIcon VerticalProportionCurve::getIcon()
 {
     return QIcon(":icons32/vpc32");

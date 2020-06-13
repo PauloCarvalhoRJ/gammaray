@@ -62,12 +62,16 @@ public:
      * @param top         Initial depth.
      * @param base        Final depth.
      * @param fallBackPDF The fallback PDF sets default proportions when no data is found in a given step.
+     * @param epsilon     A small positive value used to ensure the number of iterations reaches the end
+     *                    as the innacuracies of floating point number arithmetic may prevent the
+     *                    loop to reach the top depth due to inaccurate depth step.
      */
     VerticalProportionCurve makeInDepthInterval( double resolution,
                                                  double window,
                                                  double top,
                                                  double base,
-                                                 const CategoryPDF& fallBackPDF ){
+                                                 const CategoryPDF& fallBackPDF,
+                                                 double epsilon = 0.000001 ){
         //retrieve category definition.
         CategoryDefinition* cd = VPCMakerAdapters::getAssociatedCategoryDefinition( m_dataFileWithFacies, m_variableIndex );
         assert( cd && "VerticalProportionCurveMaker::makeInDepthInterval(): null CategoryDefinition." );
@@ -99,7 +103,7 @@ public:
         //and the computation of proportions is made within a z window around
         //the center z of the step.
         for( double centerZ = base, center = 0.0;
-             centerZ <= top;
+             centerZ <= ( top + epsilon );
              centerZ += zStep, center += resolution ){
 
             //get the data row indexes contained in the window.

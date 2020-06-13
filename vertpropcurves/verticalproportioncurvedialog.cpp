@@ -166,12 +166,19 @@ void VerticalProportionCurveDialog::onRun()
         bool ok = meanVPC.setAsMeanOf( curves );
 
         if( ok ){
+
+            //sets the number of samples (number of entries).
             m_VPCPlot->setNumberOfPoints( meanVPC.getEntriesCount() );
-
-            TODO_BUG_10_PERCENT_RESOLUTION_SHOULD_YIELD_11_POINTS_DEFINING_10_SEGMENTS;
-            Application::instance()->logInfo( "--------- " + QString::number( meanVPC.getEntriesCount() ) );
-
             updateCurvesOfPlot();
+
+            //the last curve is ignored because the last curve correspond to the right border
+            //of the chart.
+            for( int iCurve = 0; iCurve < meanVPC.getProportionsCount()-1; ++iCurve ){
+                m_VPCPlot->setCurveValues( iCurve, meanVPC.getNthProportions( iCurve ), 100.0 );
+            }
+
+            //update the painted areas between the curves.
+            m_VPCPlot->updateFillAreas();
         }
     }
 

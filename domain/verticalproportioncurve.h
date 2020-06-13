@@ -89,6 +89,13 @@ public:
      */
     CategoryDefinition* getAssociatedCategoryDefinition() const;
 
+    /** Returns the n-th proportion values of all entries. */
+    std::vector< double > getNthProportions( uint proportionIndex ) const;
+
+    /** Returns the n-th cumulative (that is, summung all values from the first proportion)
+     * proportion values of all entries. */
+    std::vector< double > getNthCumulativeProportions( uint proportionIndex ) const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
