@@ -106,6 +106,8 @@ public:
              centerZ <= ( top + epsilon );
              centerZ += zStep, center += resolution ){
 
+            SPATIAL_INDEX_IS_PROBABLY_RETURNING_INCORRECT_DATA;
+
             //get the data row indexes contained in the window.
             double queryMinZ = std::max( centerZ - zHalfWindowSize, base ); //cap query at base, in case the window extends below it.
             double queryMaxZ = std::min( centerZ + zHalfWindowSize, top ); //cap query at top, in case the window extends above it.
