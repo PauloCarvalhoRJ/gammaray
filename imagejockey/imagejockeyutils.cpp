@@ -21,6 +21,7 @@
 #include <vtkAppendPolyData.h>
 #include <vtkFloatArray.h>
 #include <vtkShepardMethod.h>
+#include <vtkCellData.h>
 #include "imagejockey/widgets/ijquick3dviewer.h"
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
@@ -360,6 +361,9 @@ void ImageJockeyUtils::removeOpenPolyLines(vtkSmartPointer<vtkPolyData> &polyDat
 
     // Assign the closed lines to the final poly data.
     polyDataSansOpenLines->SetLines( closedLines );
+
+    // Save possible scalar values that may exist in the vertexes.
+    polyDataSansOpenLines->GetPointData()->SetScalars( joinedPolyData->GetPointData()->GetScalars() );
 
     // Remove unused vertexes.
     vtkSmartPointer<vtkCleanPolyData> cleaner = vtkSmartPointer<vtkCleanPolyData>::New();
