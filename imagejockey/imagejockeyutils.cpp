@@ -445,6 +445,56 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
     polyDataToModify = cleaner->GetOutput();
 }
 
+std::vector<std::vector<ImageJockeyUtils::TimeSeriesEntry> > ImageJockeyUtils::unwindAsTimeSeries(
+        const vtkSmartPointer<vtkPolyData> &polyData,
+        double centerX, double centerY, double centerZ,
+        int repeats )
+{
+    std::vector< std::vector<ImageJockeyUtils::TimeSeriesEntry> > result;
+
+    // If there is no geometry nor polylines, there is nothing to do.
+    if ( polyData->GetNumberOfPoints() == 0 || polyData->GetNumberOfLines() == 0 )
+        return result;
+
+    // Get poly lines.
+    vtkSmartPointer<vtkCellArray> in_Lines = polyData->GetLines();
+
+    // Traverse the input poly lines.
+    in_Lines->InitTraversal();
+    vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
+    double vertexCoords[3];
+    while( in_Lines->GetNextCell( vertexIdList ) ){
+
+        std::vector< ImageJockeyUtils::TimeSeriesEntry > entries;
+
+        // unwind the polygon a given number of times
+        // TODO: this is not very clever.  Better to traverse the VTK object once
+        //       and then simply copy the elements by the number of times set in repeats parameter.
+        for( int iCycle = 0; iCycle < repeats; ++iCycle )
+            for( int iVertex = 0; iVertex < vertexIdList->GetNumberOfIds(); ++iVertex ){
+                polyData->GetPoint( vertexIdList->GetId( iVertex ), vertexCoords );
+                double x = vertexCoords[0] - centerX;
+                double y = vertexCoords[1] - centerY;
+                double z = vertexCoords[2] - centerZ;
+                double radius = std::sqrt( x*x + y*y + z*z );
+                double azimuth = getAzimuth( x, y, 0.0, 0.0 );
+
+                //TODO: this code hasn't been verified whether it actually works (gets the scalar value)
+                double scalar = 0.0;
+                if( polyData->GetPointData() && polyData->GetPointData()->GetScalars() )
+                    scalar = polyData->GetPointData()->GetScalars()->GetTuple( vertexIdList->GetId( iVertex ) )[0];
+
+                // ATTENTION: be careful with the order of values!!! Check definition of
+                // struct ImageJockeyUtils::TimeSeriesEntry
+                entries.push_back( { azimuth, x, y, z, radius, scalar } );
+            }
+
+        result.push_back( entries );
+    }
+
+    return result;
+}
+
 void ImageJockeyUtils::fitEllipses(const vtkSmartPointer<vtkPolyData> &polyData,
 								   vtkSmartPointer<vtkPolyData> &ellipses,
 								   double &mean_error,
