@@ -87,6 +87,7 @@ SOURCES += main.cpp\
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
     viewer3d/v3dmouseinteractor.cpp \
+    widgets/linechartwidget.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -339,6 +340,7 @@ HEADERS  += mainwindow.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
     viewer3d/v3dmouseinteractor.h \
+    widgets/linechartwidget.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
@@ -553,6 +555,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
+    widgets/linechartwidget.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \
