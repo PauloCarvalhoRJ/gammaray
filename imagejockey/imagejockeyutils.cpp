@@ -398,6 +398,9 @@ void ImageJockeyUtils::removeNonConcentricPolyLines(vtkSmartPointer<vtkPolyData>
     // Initially set all the points in the result.
     result->SetPoints( polyDataToModify->GetPoints() );
 
+    // Save any scalars that the vertexes of the input data may have.
+    result->GetPointData()->SetScalars( polyDataToModify->GetPointData()->GetScalars() );
+
 	// Prepare a container of line definitions for the result.
     vtkSmartPointer<vtkCellArray> linesForResult = vtkSmartPointer<vtkCellArray>::New();
 
