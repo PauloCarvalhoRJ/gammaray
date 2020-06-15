@@ -171,11 +171,10 @@ void VerticalProportionCurveDialog::onRun()
             m_VPCPlot->setNumberOfPoints( meanVPC.getEntriesCount() );
             updateCurvesOfPlot();
 
-            //the last curve is ignored because the last curve correspond to the right border
+            //the last curve is ignored because the last curve would be the right border
             //of the chart.
-            for( int iCurve = 0; iCurve < meanVPC.getProportionsCount()-1; ++iCurve ){
-                m_VPCPlot->setCurveValues( iCurve, meanVPC.getNthProportions( iCurve ), 100.0 );
-            }
+            for( int iCurve = 0; iCurve < meanVPC.getProportionsCount()-1; ++iCurve )
+                m_VPCPlot->setCurveValues( iCurve, meanVPC.getNthCumulativeProportions( iCurve ), 100.0 );
 
             //update the painted areas between the curves.
             m_VPCPlot->updateFillAreas();

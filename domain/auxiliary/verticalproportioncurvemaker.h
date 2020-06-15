@@ -93,11 +93,7 @@ public:
         //builds the internal spatial index for the input data set.
         VPCMakerAdapters::populateSpatialIndex( m_dataFileWithFacies, m_spatialIndex );
 
-        //create a vector to hold the summations for each category so we can compute
-        //their proportions later.
-        std::vector< double > sums( cd->getCategoryCount() );
-        double total = 0.0;
-
+        //For each window.
         //traverse the z interval from the base to the top z.
         //the traversal is made by advancing in z steps from base to top
         //and the computation of proportions is made within a z window around
@@ -106,7 +102,12 @@ public:
              centerZ <= ( top + epsilon );
              centerZ += zStep, center += resolution ){
 
-            SPATIAL_INDEX_IS_PROBABLY_RETURNING_INCORRECT_DATA;
+            //create a vector to hold the summations for each category so we can compute
+            //their proportions later.
+            std::vector< double > sums( cd->getCategoryCount() );
+
+            //initialize the grand total for the entire window
+            double total = 0.0;
 
             //get the data row indexes contained in the window.
             double queryMinZ = std::max( centerZ - zHalfWindowSize, base ); //cap query at base, in case the window extends below it.
