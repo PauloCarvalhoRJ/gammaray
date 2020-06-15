@@ -96,6 +96,10 @@ public:
      * proportion values of all entries. */
     std::vector< double > getNthCumulativeProportions( uint proportionIndex ) const;
 
+    /** Prints the values of this curve in tabular form.
+     * Useful for debugging or to generate data files. */
+    void print() const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

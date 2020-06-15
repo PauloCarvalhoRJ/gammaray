@@ -225,6 +225,15 @@ std::vector<double> VerticalProportionCurve::getNthCumulativeProportions(uint pr
     return result;
 }
 
+void VerticalProportionCurve::print() const
+{
+    for( const VPCEntry& entry : m_entries ){
+        for( int iProportion = 0; iProportion < entry.proportions.size(); ++iProportion)
+            std::cout << entry.proportions[ iProportion ] << '\t';
+        std::cout << std::endl;
+    }
+}
+
 QIcon VerticalProportionCurve::getIcon()
 {
     return QIcon(":icons32/vpc32");
