@@ -468,26 +468,34 @@ std::vector<std::vector<ImageJockeyUtils::TimeSeriesEntry> > ImageJockeyUtils::u
         std::vector< ImageJockeyUtils::TimeSeriesEntry > entries;
 
         // unwind the polygon a given number of times
-        // TODO: this is not very clever.  Better to traverse the VTK object once
-        //       and then simply copy the elements by the number of times set in repeats parameter.
-        for( int iCycle = 0; iCycle < repeats; ++iCycle )
+        double azimuthOffset = 0.0; //the azimuth allows repeating the cycle many times
+        for( int iCycle = 0; iCycle < repeats; ++iCycle ){
+            double azimuth = 0.0;
+            double previousAzimuth = -180.0;
             for( int iVertex = 0; iVertex < vertexIdList->GetNumberOfIds(); ++iVertex ){
                 polyData->GetPoint( vertexIdList->GetId( iVertex ), vertexCoords );
                 double x = vertexCoords[0] - centerX;
                 double y = vertexCoords[1] - centerY;
                 double z = vertexCoords[2] - centerZ;
                 double radius = std::sqrt( x*x + y*y + z*z );
-                double azimuth = getAzimuth( x, y, 0.0, 0.0 );
+                azimuth = getAzimuth( x, y, 0.0, 0.0 );
 
                 //TODO: this code hasn't been verified whether it actually works (gets the scalar value)
                 double scalar = 0.0;
                 if( polyData->GetPointData() && polyData->GetPointData()->GetScalars() )
                     scalar = polyData->GetPointData()->GetScalars()->GetTuple( vertexIdList->GetId( iVertex ) )[0];
 
+                FORCE_WINDING_ORDER_TO_MATCH_AZIMUTH_CONVENTION_THAT_IS_CLOCKWISE;
+
                 // ATTENTION: be careful with the order of values!!! Check definition of
                 // struct ImageJockeyUtils::TimeSeriesEntry
-                entries.push_back( { azimuth, x, y, z, radius, scalar } );
-            }
+                if( azimuth > previousAzimuth ) { //do not go back in time!
+                    entries.push_back( { azimuthOffset + azimuth, x, y, z, radius, scalar } );
+                    previousAzimuth = azimuth;
+                }
+            } // for each vertex
+            azimuthOffset += azimuth;
+        } // for each repetition
 
         result.push_back( entries );
     }
