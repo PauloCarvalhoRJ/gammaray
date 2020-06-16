@@ -56,3 +56,13 @@ void ThinSectionAnalysisCluster::merge( const ThinSectionAnalysisCluster& otherC
                          otherCluster.pixelIndexes.begin(),
                          otherCluster.pixelIndexes.end() );
 }
+
+double ThinSectionAnalysisCluster::getProportion() const
+{
+    return m_proportion;
+}
+
+void ThinSectionAnalysisCluster::setProportion(double proportion)
+{
+    m_proportion = proportion;
+}

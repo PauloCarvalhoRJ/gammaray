@@ -3,7 +3,7 @@
 
 #include <QDialog>
 
-#include "thinsectionanalysis/thinsectionanalysiscluster.h"
+#include "thinsectionanalysis/thinsectionanalysisclusterset.h"
 
 namespace Ui {
 class ThinSectionAnalysisResultsDialog;
@@ -21,7 +21,7 @@ public:
     ~ThinSectionAnalysisResultsDialog();
 
     /** Sets the resulting clusters of pixels for this results dialog. */
-    void setClusters(const std::vector<ThinSectionAnalysisClusterPtr> &clusters );
+    void setClusters( ThinSectionAnalysisClusterSetPtr clusterSet );
 
     /** Sets the path to the image painted with the clusters' colors. */
     void setOutputImage( const QString path );
@@ -32,6 +32,8 @@ private:
     BarChartWidget* m_barChartWidget;
 
     ImageViewerWidget* m_imageViewerWidget;
+
+    ThinSectionAnalysisClusterSetPtr m_clusterSet;
 };
 
 #endif // THINSECTIONANALYSISRESULTSDIALOG_H

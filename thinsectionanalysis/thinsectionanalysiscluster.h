@@ -41,6 +41,10 @@ public:
     void setColor( const QColor color ){ m_color = color; }
     QColor getColor( ) const { return m_color; }
 
+    /** Proportion must be between 0.0 (0%) and 1.0 (100%). */
+    double getProportion() const;
+    void setProportion(double proportion);
+
     /** Reference to the vector of feature vectors of all pixels. */
     const std::vector< std::array< float, 12 > >& refFeatureVectors;
 
@@ -58,6 +62,7 @@ public:
 private:
     QString m_name;
     QColor m_color;
+    double m_proportion; //1.0 == 100%
 };
 
 typedef std::shared_ptr< ThinSectionAnalysisCluster > ThinSectionAnalysisClusterPtr;

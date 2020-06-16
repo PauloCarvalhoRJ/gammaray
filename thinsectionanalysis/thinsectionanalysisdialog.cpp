@@ -258,13 +258,13 @@ void ThinSectionAnalysisDialog::onRun()
 
 
     //the collection of clusters
-    std::vector< ThinSectionAnalysisClusterPtr > clusters;
-    clusters.reserve( 5000 ); //5k clusters is a fairly large number
+    ThinSectionAnalysisClusterSetPtr clusters = std::make_shared< ThinSectionAnalysisClusterSet >();
+    clusters->reserve( 5000 ); //5k clusters is a fairly large number
 
     //adds the first cluster with the first pixel
     ThinSectionAnalysisClusterPtr firstCluster = std::make_shared<ThinSectionAnalysisCluster>( featureVectors );
     firstCluster->addPixelIndex( 0 );
-    clusters.push_back( firstCluster );
+    clusters->addCluster( firstCluster );
 
     //This list is to keep track of the clusters that will receive a same pixel.
     //Clusters that reference a same pixel must be merged.
@@ -285,10 +285,10 @@ void ThinSectionAnalysisDialog::onRun()
         clusterIndexesThatReceivedThePixel.clear();
 
         //for each cluster...
-        for( int iCluster = 0; iCluster < clusters.size(); ++iCluster ){
+        for( int iCluster = 0; iCluster < clusters->getClusterCount(); ++iCluster ){
 
             //...get the pointer to it.
-            ThinSectionAnalysisClusterPtr cluster = clusters[iCluster];
+            ThinSectionAnalysisClusterPtr cluster = clusters->getCluster(iCluster);
 
             //if the pixel fits in the cluster...
             if( cluster->isSimilar( iPixelIndex, ui->dblSpinSimilarityThreshold->value() )){
@@ -305,14 +305,14 @@ void ThinSectionAnalysisDialog::onRun()
             //...creates a new cluster and puts the pixel in it.
             ThinSectionAnalysisClusterPtr cluster = std::make_shared<ThinSectionAnalysisCluster>( featureVectors );
             cluster->addPixelIndex( iPixelIndex );
-            clusters.push_back( cluster );
+            clusters->addCluster( cluster );
 
         //if the pixel fitted to more than one cluster, such clusters
         //must be merged.
         } else if( clusterIndexesThatReceivedThePixel.size() > 1 ){
 
             //get the first cluster that received the pixel
-            ThinSectionAnalysisClusterPtr firstCluster = clusters[ clusterIndexesThatReceivedThePixel[0] ];
+            ThinSectionAnalysisClusterPtr firstCluster = clusters->getCluster( clusterIndexesThatReceivedThePixel[0] );
 
             //remove its index from the list of clusters that received the pixel
             clusterIndexesThatReceivedThePixel.erase( clusterIndexesThatReceivedThePixel.begin() );
@@ -320,22 +320,13 @@ void ThinSectionAnalysisDialog::onRun()
             //for each of the other clusters that received the pixel...
             for( int clusterIndexThatReceivedThePixel : clusterIndexesThatReceivedThePixel ) {
                 //...merge it into the first cluster that received the pixel
-                firstCluster->merge( *clusters[ clusterIndexThatReceivedThePixel ] );
+                firstCluster->merge( *( clusters->getCluster( clusterIndexThatReceivedThePixel ) ) );
                 //...mark it for deletion.
-                clusters[ clusterIndexThatReceivedThePixel ]->toDelete = true;
+                clusters->getCluster( clusterIndexThatReceivedThePixel )->toDelete = true;
             }
 
             //purge clusters marked for deletion
-            clusters.erase(
-                std::remove_if(
-                    clusters.begin(),
-                    clusters.end(),
-                    [](ThinSectionAnalysisClusterPtr& cluster) -> bool {
-                        return cluster->toDelete;
-                    }
-                ),
-                clusters.end()
-            );
+            clusters->purgeClustersMarkedForDeletion();
 
         } // if the pixel was assigned to more than cluster or to none at all
 
@@ -358,11 +349,11 @@ void ThinSectionAnalysisDialog::onRun()
     uint clusterCount = 0;
     progressDialog.setLabelText("Genereating output image...");
     progressDialog.setMinimum(0);
-    progressDialog.setMaximum( clusters.size() );
+    progressDialog.setMaximum( clusters->getClusterCount() );
     progressDialog.setValue(0);
     //for each cluster
     int sequential = 0;
-    for( ThinSectionAnalysisClusterPtr& cluster : clusters  ){
+    for( ThinSectionAnalysisClusterPtr cluster : clusters->getClusters()  ){
         //assign a constrasting color to the cluster's pixels
         //GSLib's colors form a good sequence of constrasting colors
         QColor clusterColor = Util::getGSLibColor( (clusterCount++) % Util::getMaxGSLibColorCode() + 1 );

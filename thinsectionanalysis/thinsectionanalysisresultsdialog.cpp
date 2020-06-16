@@ -4,6 +4,7 @@
 #include "widgets/barchartwidget.h"
 #include "widgets/imageviewerwidget.h"
 #include "thinsectionanalysis/thinsectionanalysiscluster.h"
+#include "thinsectionanalysis/thinsectionanalysistablemodel.h"
 
 ThinSectionAnalysisResultsDialog::ThinSectionAnalysisResultsDialog(QWidget *parent) :
     QDialog(parent),
@@ -22,7 +23,7 @@ ThinSectionAnalysisResultsDialog::ThinSectionAnalysisResultsDialog(QWidget *pare
     m_barChartWidget->setMaxY( 100.0 );
     m_barChartWidget->setAxisYLabel( "%" );
     m_barChartWidget->setAxisXLabel( "clusters" );
-    ui->frmRightPane->layout()->addWidget( m_barChartWidget );
+    ui->tabHistogram->layout()->addWidget( m_barChartWidget );
 
     //adds the image viewer widget to the left pane of the dialog.
     m_imageViewerWidget = new ImageViewerWidget();
@@ -34,21 +35,25 @@ ThinSectionAnalysisResultsDialog::~ThinSectionAnalysisResultsDialog()
     delete ui;
 }
 
-void ThinSectionAnalysisResultsDialog::setClusters( const std::vector<ThinSectionAnalysisClusterPtr>& clusters )
+void ThinSectionAnalysisResultsDialog::setClusters( ThinSectionAnalysisClusterSetPtr clusterSet )
 {
-    //compute total number of elements in all clusters
-    int total = 0;
-    for( const ThinSectionAnalysisClusterPtr& cluster : clusters )
-        total += cluster->pixelIndexes.size();
-    //adds the bars to the chart, assging a percentage of the total.
-    double maxPercent = 0.0;
-    for( const ThinSectionAnalysisClusterPtr& cluster : clusters ) {
-        double percent = cluster->pixelIndexes.size() / static_cast<double>( total ) * 100.0;
-        maxPercent = std::max( maxPercent, percent );
-        m_barChartWidget->addBar( cluster->getName(), percent, cluster->getColor() );
-    }
+    //sets the member pointer.
+    m_clusterSet = clusterSet;
+
+    //compute the proportion of each cluster
+    clusterSet->computeClustersProportions();
+
+    //adds the bars to the chart, assiging a percentage of the total.
+    for( const ThinSectionAnalysisClusterPtr cluster : clusterSet->getClusters() )
+        m_barChartWidget->addBar( cluster->getName(), cluster->getProportion() * 100.0, cluster->getColor() );
+
     //adjusts the max value for the Y axis.
-    m_barChartWidget->setMaxY( maxPercent );
+    m_barChartWidget->setMaxY( m_clusterSet->getMaxProportion() * 100.0 );
+
+    ThinSectionAnalysisTableModel* tableModel = new ThinSectionAnalysisTableModel();
+    tableModel->setClusters( clusterSet );
+
+    ui->tableView->setModel( tableModel );
 }
 
 void ThinSectionAnalysisResultsDialog::setOutputImage(const QString path)
