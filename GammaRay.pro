@@ -42,8 +42,10 @@ SOURCES += main.cpp\
     domain/objectgroup.cpp \
     domain/projectroot.cpp \
     thinsectionanalysis/thinsectionanalysiscluster.cpp \
+    thinsectionanalysis/thinsectionanalysisclusterset.cpp \
     thinsectionanalysis/thinsectionanalysisdialog.cpp \
     thinsectionanalysis/thinsectionanalysisresultsdialog.cpp \
+    thinsectionanalysis/thinsectionanalysistablemodel.cpp \
     util.cpp \
     domain/pointset.cpp \
     domain/attribute.cpp \
@@ -290,8 +292,10 @@ HEADERS  += mainwindow.h \
     domain/projectroot.h \
     geostats/mcmcdataimputation.h \
     thinsectionanalysis/thinsectionanalysiscluster.h \
+    thinsectionanalysis/thinsectionanalysisclusterset.h \
     thinsectionanalysis/thinsectionanalysisdialog.h \
     thinsectionanalysis/thinsectionanalysisresultsdialog.h \
+    thinsectionanalysis/thinsectionanalysistablemodel.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
