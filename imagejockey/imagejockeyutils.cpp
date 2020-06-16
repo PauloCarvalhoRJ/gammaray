@@ -459,46 +459,52 @@ std::vector<std::vector<ImageJockeyUtils::TimeSeriesEntry> > ImageJockeyUtils::u
     // Get poly lines.
     vtkSmartPointer<vtkCellArray> in_Lines = polyData->GetLines();
 
-    // Traverse the input poly lines.
+    // For each input poly line.
     in_Lines->InitTraversal();
     vtkSmartPointer<vtkIdList> vertexIdList = vtkSmartPointer<vtkIdList>::New();
     double vertexCoords[3];
     while( in_Lines->GetNextCell( vertexIdList ) ){
 
+        // create a storage for the time series entry
         std::vector< ImageJockeyUtils::TimeSeriesEntry > entries;
 
         // unwind the polygon a given number of times
-        double azimuthOffset = 0.0; //the azimuth allows repeating the cycle many times
         for( int iCycle = 0; iCycle < repeats; ++iCycle ){
-            double azimuth = 0.0;
-            double previousAzimuth = -180.0;
+
             for( int iVertex = 0; iVertex < vertexIdList->GetNumberOfIds(); ++iVertex ){
                 polyData->GetPoint( vertexIdList->GetId( iVertex ), vertexCoords );
                 double x = vertexCoords[0] - centerX;
                 double y = vertexCoords[1] - centerY;
                 double z = vertexCoords[2] - centerZ;
                 double radius = std::sqrt( x*x + y*y + z*z );
-                azimuth = getAzimuth( x, y, 0.0, 0.0 );
+                double azimuth = getAzimuth( x, y, 0.0, 0.0 );
 
                 //TODO: this code hasn't been verified whether it actually works (gets the scalar value)
                 double scalar = 0.0;
                 if( polyData->GetPointData() && polyData->GetPointData()->GetScalars() )
                     scalar = polyData->GetPointData()->GetScalars()->GetTuple( vertexIdList->GetId( iVertex ) )[0];
 
-                FORCE_WINDING_ORDER_TO_MATCH_AZIMUTH_CONVENTION_THAT_IS_CLOCKWISE;
-
                 // ATTENTION: be careful with the order of values!!! Check definition of
                 // struct ImageJockeyUtils::TimeSeriesEntry
-                if( azimuth > previousAzimuth ) { //do not go back in time!
-                    entries.push_back( { azimuthOffset + azimuth, x, y, z, radius, scalar } );
-                    previousAzimuth = azimuth;
-                }
-            } // for each vertex
-            azimuthOffset += azimuth;
-        } // for each repetition
+                entries.push_back( { (360.0*iCycle) + azimuth, x, y, z, radius, scalar } );
 
+            } // for each vertex
+
+        } // for each repetition of the cycle
+
+        //sort the entries by phase/time
+        struct TimeSeriesSorterByPhase {
+          bool operator() (const ImageJockeyUtils::TimeSeriesEntry& a,
+                           const ImageJockeyUtils::TimeSeriesEntry& b) {
+              return a.phase < b.phase ;
+          }
+        } timeSeriesSorterByPhase;
+        std::sort( entries.begin(), entries.end(), timeSeriesSorterByPhase );
+
+        //keep the result
         result.push_back( entries );
-    }
+
+    } // for each poly line
 
     return result;
 }
