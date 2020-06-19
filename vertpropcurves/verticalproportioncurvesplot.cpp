@@ -9,6 +9,8 @@
 #include <qwt_plot_intervalcurve.h>
 #include <qwt_legend.h>
 
+#include <cassert>
+
 #include "util.h"
 
 VerticalProportionCurvesPlot::VerticalProportionCurvesPlot( QWidget *parent ) :
@@ -151,6 +153,8 @@ void VerticalProportionCurvesPlot::setCurveBase(int index, double value)
 
 void VerticalProportionCurvesPlot::setCurveValues(int curveIndex, const std::vector<double> &values, double factor)
 {
+    assert( curveIndex < m_curves.size() && "VerticalProportionCurvesPlot::setCurveValues(): curve index out of range." );
+
     QwtPlotCurve* curve = m_curves[ curveIndex ];
 
     QVector<double> xData( curve->dataSize() );
