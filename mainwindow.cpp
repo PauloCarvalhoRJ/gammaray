@@ -491,7 +491,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Fit variogram model...", this, SLOT(onFitVModelToExperimentalVariogram()));
             }
             if( Util::isIn( _right_clicked_file->getFileType(), {"VMODEL","VERTICALTRANSIOGRAMMODEL"} ) ){
-                _projectContextMenu->addAction("Review", this, SLOT(onDisplayVariogramModel()));
+                _projectContextMenu->addAction("Review", this, SLOT(onDisplayObject()));
             }
             if( _right_clicked_file->getFileType() == "POINTSET" ){
                 _projectContextMenu->addAction("Create estimation/simulation grid...", this, SLOT(onCreateGrid()));
@@ -1260,7 +1260,7 @@ void MainWindow::onFitVModelToExperimentalVariogram()
     vad->show();
 }
 
-void MainWindow::onDisplayVariogramModel()
+void MainWindow::onDisplayObject()
 {
     if( _right_clicked_file->getFileType() == "VMODEL" ){
         //get pointer to the variogram model object right-clicked by the user

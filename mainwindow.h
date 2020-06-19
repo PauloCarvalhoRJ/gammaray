@@ -143,7 +143,7 @@ private slots:
     void onDisplayPlot();
     void onDisplayExperimentalVariogram();
     void onFitVModelToExperimentalVariogram();
-    void onDisplayVariogramModel();
+    void onDisplayObject();
     void onCreateVariogramModel();
     void onCreateGrid();
     void onCleanTmpFiles();
