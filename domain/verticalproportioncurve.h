@@ -29,13 +29,13 @@ enum class VPCIncompatibilityReason : uint {
  * the curve is relative, varying from 1.0 at top and 0.0 at the base.  The absolute depth at which a
  * certain proportion occurs should be computed on the fly with respect to some reference such as top
  * and base horizons or max/min depth of point sets or segment sets.  The curves are represented by polygonal
- * lines between top and base. The curve points are values between 0.0 and 1.0 and are stored as columns of a
- * GEO-EAS file (similiarly to the data sets).  These values logically must be in ascending order from first
- * column to last column. The proportion of a given category is computed by the delta between two poly lines
- * (or between 0.0 and 1st poly line or between last poly line and 1.0) at any given relative depth.
+ * lines between top and base. The relative depth and proportions for each facies are values between 0.0 and 1.0
+ * and are stored as columns of a GEO-EAS file (similiarly to the data sets).  Each line of the GEO-EAS file
+ * corresponds to a relative depth.  The column names in the resulting GEO-EAS files are generated sequentially
+ * for conformance to the file format and have no meaning.
  *
  * Although this class extends DataFile, it does so to reuse the file reading/writing infrastructure
- * as VPC's are not spatial objects like wells, drillholes, reservoirs, etc.
+ * as VPC's are not spatial objects like wells, drillholes, horizons, etc.
  */
 class VerticalProportionCurve : public DataFile
 {
@@ -100,6 +100,17 @@ public:
      * Useful for debugging or to generate data files. */
     void print() const;
 
+    /** Sets vertical proportion curve metadata from the accompaining .md file, if it exists.
+     * Nothing happens if the metadata file does not exist.  If it exists, it calls
+     * #setInfo() with the metadata read from the .md file.
+     */
+    void setInfoFromMetadataFile();
+
+    /**
+     * @param associatedCategoryDefinition Pass empty text to unset the value.
+     */
+    void setInfo( QString associatedCategoryDefinitionName );
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
@@ -124,6 +135,8 @@ public:
     virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
     virtual void getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
+    virtual void writeToFS();
+    virtual void readFromFS();
 
     // ICalcPropertyCollection interface
 public:
@@ -136,5 +149,7 @@ protected:
 
     std::vector< VPCEntry > m_entries;
 };
+
+typedef std::shared_ptr<VerticalProportionCurve> VerticalProportionCurvePtr;
 
 #endif // VERTICALPROPORTIONCURVE_H

@@ -3,6 +3,8 @@
 
 #include <QDialog>
 
+#include "domain/verticalproportioncurve.h"
+
 namespace Ui {
 class VerticalProportionCurveDialog;
 }
@@ -13,7 +15,6 @@ class VariableSelector;
 class VerticalProportionCurvesPlot;
 class File;
 class CategoryPDF;
-class VerticalProportionCurve;
 
 class VerticalProportionCurveDialog : public QDialog
 {
@@ -26,7 +27,9 @@ class VerticalProportionCurveDialog : public QDialog
     };
 
 public:
-    explicit VerticalProportionCurveDialog(QWidget *parent = nullptr);
+    /** Pass a pointer to an existing vertical proportion curve object to display and edit it. */
+    explicit VerticalProportionCurveDialog( VerticalProportionCurve* vpc = nullptr,
+                                            QWidget *parent = nullptr);
     ~VerticalProportionCurveDialog();
 
     /**
@@ -53,6 +56,15 @@ private:
 
     void updateCurvesOfPlot();
 
+    void saveNew();
+
+    void saveExisting();
+
+    /** Rereads data from m_currentVPC object and updates the plot accordingly.
+     * Does nothing if m_currentVPC is a null pointer.
+     */
+    void updatePlotWithCurrentVPC();
+
     VerticalProportionCurve computeProportionsForASegmentSet( Attribute* at );
 
     Ui::VerticalProportionCurveDialog *ui;
@@ -70,6 +82,8 @@ private:
     std::vector<Attribute*> m_categoricalAttributes;
 
     DragOrigin m_dragOrigin;
+
+    VerticalProportionCurve* m_currentVPC;
 };
 
 #endif // VERTICALPROPORTIONCURVEDIALOG_H

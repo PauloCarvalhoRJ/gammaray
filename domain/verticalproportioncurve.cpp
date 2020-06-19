@@ -234,6 +234,33 @@ void VerticalProportionCurve::print() const
     }
 }
 
+void VerticalProportionCurve::setInfoFromMetadataFile()
+{
+    QString md_file_path( this->_path );
+    QFile md_file( md_file_path.append(".md") );
+    QString associatedCDname;
+    if( md_file.exists() ){
+        md_file.open( QFile::ReadOnly | QFile::Text );
+        QTextStream in(&md_file);
+        for (int i = 0; !in.atEnd(); ++i)
+        {
+           QString line = in.readLine();
+           if( line.startsWith( "ASSOCIATED_CATEGORY_DEFINITION:" ) ){
+               associatedCDname = line.split(":")[1];
+           }
+        }
+        md_file.close();
+    }
+    this->setInfo( associatedCDname );
+}
+
+void VerticalProportionCurve::setInfo(QString associatedCategoryDefinitionName)
+{
+    m_associatedCategoryDefinitionName = associatedCategoryDefinitionName;
+    //updates the sub-tree of child objects.
+    updateChildObjectsCollection();
+}
+
 QIcon VerticalProportionCurve::getIcon()
 {
     return QIcon(":icons32/vpc32");
@@ -295,9 +322,9 @@ void VerticalProportionCurve::deleteFromFS()
 
 bool VerticalProportionCurve::isWeight(Attribute *at)
 {
-    Q_UNUSED( at )
-    assert( false && "VerticalProportionCurve::isWeight(): VerticalProportionCurve is a data file, "
-                     "but calling isWeight() on it makes no sense." );
+    //Vertical Proportion Curves are not supposed to have attributes, but, as it reuses DataFile,
+    //the framework may call this anyway.
+    return false;
 }
 
 Attribute *VerticalProportionCurve::getVariableOfWeight(Attribute *weight)
@@ -338,6 +365,51 @@ void VerticalProportionCurve::getDataSpatialLocation(uint line, double &x, doubl
 bool VerticalProportionCurve::isTridimensional()
 {
     assert( false && "VerticalProportionCurve::isTridimensional(): a VerticalProportionCurve is not a spatial object." );
+}
+
+void VerticalProportionCurve::writeToFS()
+{
+    //populate the _data member so we can reuse DataFile's writeToFS()
+    for( const VPCEntry& entry : m_entries ){
+        std::vector<double> record;
+        record.push_back( entry.relativeDepth );
+        for( double proportion : entry.proportions )
+            record.push_back( proportion );
+        _data.push_back( record );
+    }
+
+    //save the proportions
+    DataFile::writeToFS();
+
+    //after saving, we can discard the data frame, which is only necessary
+    //to reuse DataFile's IO functionalities.
+    _data.clear();
+}
+
+void VerticalProportionCurve::readFromFS()
+{
+    CategoryDefinition* cd = getAssociatedCategoryDefinition();
+    if( ! cd ){
+        Application::instance()->logError("VerticalProportionCurve::readFromFS(): CategoryDefinition is null."
+                                          " Operation failed.");
+        return;
+    }
+
+    //read the data in file into the DataFile::_data table.
+    DataFile::readFromFS();
+
+    //create entries from the data table.
+    int colCount = getDataColumnCount();
+    for( int iRow = 0; iRow < getDataLineCount(); ++iRow ){
+        double relativeDepth = data( iRow, 0 );
+        VPCEntry entry( relativeDepth, cd );
+        for( int iCol = 1; iCol < colCount; ++iCol )
+            entry.proportions[iCol-1] = data( iRow, iCol );
+        m_entries.push_back( entry );
+    }
+
+    //The data table is no longer needed.
+    _data.clear();
 }
 
 void VerticalProportionCurve::getSpatialAndTopologicalCoordinates(int iRecord, double &x, double &y, double &z, int &i, int &j, int &k)

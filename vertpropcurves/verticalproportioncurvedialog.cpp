@@ -17,12 +17,15 @@
 #include "widgets/variableselector.h"
 
 #include <QDragEnterEvent>
+#include <QInputDialog>
 #include <QMimeData>
+#include <QMessageBox>
 
-VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
+VerticalProportionCurveDialog::VerticalProportionCurveDialog(VerticalProportionCurve *vpc, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::VerticalProportionCurveDialog),
-    m_fallbackPDF( nullptr )
+    m_fallbackPDF( nullptr ),
+    m_currentVPC( vpc )
 {
     ui->setupUi(this);
 
@@ -65,6 +68,14 @@ VerticalProportionCurveDialog::VerticalProportionCurveDialog(QWidget *parent) :
     m_cmbBaseHorizon->onSelection( 0 );
 
     setWindowTitle( "Create vertical proportion curves from data." );
+
+    if( m_currentVPC ) { //if the user wants to view/edit an existing curve
+        ui->frmLeftPane->hide();
+        ui->frmConfig->hide();
+        setWindowTitle( "Review vertical proportion curve: " + m_currentVPC->getName() );
+        m_currentVPC->readFromFS();
+        updatePlotWithCurrentVPC();
+    }
 }
 
 VerticalProportionCurveDialog::~VerticalProportionCurveDialog()
@@ -162,30 +173,26 @@ void VerticalProportionCurveDialog::onRun()
         CategoryDefinition *cd = m_fallbackPDF->getCategoryDefinition();
 
         //make a mean VPC from the individual VPCs for each categorical variable.
-        VerticalProportionCurve meanVPC( "", cd->getName() );
-        bool ok = meanVPC.setAsMeanOf( curves );
-
-        if( ok ){
-
-            //sets the number of samples (number of entries).
-            m_VPCPlot->setNumberOfPoints( meanVPC.getEntriesCount() );
-            updateCurvesOfPlot();
-
-            //the last curve is ignored because the last curve would be the right border
-            //of the chart.
-            for( int iCurve = 0; iCurve < meanVPC.getProportionsCount()-1; ++iCurve )
-                m_VPCPlot->setCurveValues( iCurve, meanVPC.getNthCumulativeProportions( iCurve ), 100.0 );
-
-            //update the painted areas between the curves.
-            m_VPCPlot->updateFillAreas();
-        }
+        if( m_currentVPC && ! m_currentVPC->hasParent() ) //do not delete the object if it has been added to the project
+            delete m_currentVPC;
+        m_currentVPC = new VerticalProportionCurve( "", cd->getName() );
+        bool ok = m_currentVPC->setAsMeanOf( curves );
+        if( ok )
+            updatePlotWithCurrentVPC();
     }
 
 }
 
 void VerticalProportionCurveDialog::onSave()
 {
-
+    if( ! m_currentVPC ){
+        QMessageBox::critical( this, "Error", QString("No curve to save. Run computation at least once."));
+        return;
+    }
+    if( m_currentVPC->hasParent() )
+        saveExisting();
+    else
+        saveNew();
 }
 
 void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
@@ -193,6 +200,13 @@ void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
     m_fallbackPDF = dynamic_cast< CategoryPDF* >( pdf );
     if( ! m_fallbackPDF )
         Application::instance()->logError("VerticalProportionCurveDialog::onFallbackPDFChanged(): passed file is null or is not of CategoryPDF class.");
+
+    //if there is a current VPC, but is has not been added
+    //to the project, delete it.
+    if( m_currentVPC && ! m_currentVPC->hasParent() ){
+        delete m_currentVPC;
+        m_currentVPC = nullptr;
+    }
 
     //clear the list with categorical variables
     m_categoricalAttributes.clear();
@@ -283,23 +297,127 @@ void VerticalProportionCurveDialog::updateVariablesList()
 
 void VerticalProportionCurveDialog::updateCurvesOfPlot( )
 {
-    //fills the areas between the curves with the colors of the categories
-    CategoryDefinition *cd = m_fallbackPDF->getCategoryDefinition();
-    cd->loadQuintuplets();
+    //The colors of the categories will be used to fill the areas in the plot.
+    CategoryDefinition *cd = nullptr;
+    {
+        //If there is a curve already...
+        if( m_currentVPC )
+            //...use the one defined in it.
+            cd = m_currentVPC->getAssociatedCategoryDefinition();
+        //If the category definition is still unknown...
+        if( ! cd )
+            //...use whatever selected by the user
+            cd = m_fallbackPDF->getCategoryDefinition();
+        //If we still don't have a category definition...
+        if( ! cd )
+            //...give up.
+            return;
+        //Load the data of the category definition.
+        cd->loadQuintuplets();
+    }
 
     int nCategories = cd->getCategoryCount();
 
     //for categorical variables the calibration curves separate the categories, thus -1.
     m_VPCPlot->setNumberOfCurves( nCategories-1 );
-    double curveBase = 0.0;
-    for( int i = 0; i < nCategories; ++i ){
-        m_VPCPlot->fillColor( Util::getGSLibColor( cd->getCategoryColorByCode( m_fallbackPDF->get1stValue( i ) ) ) ,
-                                       i-1,
-                                       cd->getCategoryNameByCode( m_fallbackPDF->get1stValue( i ) ) );
-        if( i > 0 )
-            m_VPCPlot->setCurveBase( i-1, curveBase * 100.0 );
-        curveBase += m_fallbackPDF->get2ndValue( i );
+
+    //if we don't have a vpc...
+    if( ! m_currentVPC ){
+        //show the curves according to default proportions from the fallback PDF
+        double curveBase = 0.0;
+        for( int i = 0; i < nCategories; ++i ){
+            m_VPCPlot->fillColor( Util::getGSLibColor( cd->getCategoryColorByCode( m_fallbackPDF->get1stValue( i ) ) ) ,
+                                           i-1,
+                                           cd->getCategoryNameByCode( m_fallbackPDF->get1stValue( i ) ) );
+            if( i > 0 )
+                m_VPCPlot->setCurveBase( i-1, curveBase * 100.0 );
+            curveBase += m_fallbackPDF->get2ndValue( i );
+        }
+    } else { // if we have a vpc, provide the filled areas as required by its category definition.
+        for( int i = 0; i < nCategories; ++i ){
+            m_VPCPlot->fillColor( Util::getGSLibColor( cd->getColorCode( i ) ) ,
+                                           i-1,
+                                           cd->getCategoryName( i ) );
+            if( i > 0 )
+                m_VPCPlot->setCurveBase( i-1, i * 100.0 / nCategories ); //make up a base value for the curves
+        }
     }
+
+    m_VPCPlot->updateFillAreas();
+}
+
+void VerticalProportionCurveDialog::saveNew()
+{
+    QString suggestedName = "VPC_from_";
+    suggestedName += m_cmbBaseVariable->getSelectedVariableName();
+    suggestedName += "_to_";
+    suggestedName += m_cmbTopVariable->getSelectedVariableName();
+    suggestedName += "_resol_";
+    suggestedName += QString::number( static_cast<int>( ui->dblSpinResolutionPercent->value() ) );
+    suggestedName += "_window_";
+    suggestedName += QString::number( static_cast<int>( ui->dblSpinWindowPercent->value() ) );
+
+    //open file rename dialog
+    bool ok;
+    QString newName = QInputDialog::getText(this, "Name the new file",
+                                             "New vertical proportion curve name:", QLineEdit::Normal,
+                                             suggestedName, &ok);
+
+    //do saving steps for a new VPC file.
+    if (ok && !newName.isEmpty()){
+
+        //sets the path.
+        m_currentVPC->setPath( Application::instance()->getProject()->getPath() + '/' + newName );
+
+        //Give meaningful column names for the GEO-EAS format.
+        //Without this step, the system would create meaningless default names in the file.
+        {
+            //the leading relative depth
+            Attribute* at = new Attribute( "Relative depth", 1 );
+            m_currentVPC->addChild( at );
+
+            //the proportion of each facies follow on
+            CategoryDefinition *cd = m_fallbackPDF->getCategoryDefinition();
+            int nCategories = cd->getCategoryCount();
+            for( int i = 0; i < nCategories; ++i ){
+                Attribute* at = new Attribute( "Proportion of " + cd->getCategoryName(i), 2 + i );
+                m_currentVPC->addChild( at );
+            }
+        }
+
+        //save the file data.
+        m_currentVPC->writeToFS();
+
+        //save the metadata file.
+        m_currentVPC->updateMetaDataFile();
+
+        //add the project file to the project
+        Application::instance()->getProject()->addVerticalProportionCurve( m_currentVPC );
+
+    }
+}
+
+void VerticalProportionCurveDialog::saveExisting()
+{
+    //save the file data (updates).
+    m_currentVPC->writeToFS();
+}
+
+void VerticalProportionCurveDialog::updatePlotWithCurrentVPC()
+{
+    if( ! m_currentVPC )
+        return;
+
+    //sets the number of samples (number of entries).
+    m_VPCPlot->setNumberOfPoints( m_currentVPC->getEntriesCount() );
+    updateCurvesOfPlot();
+
+    //the last curve is ignored because the last curve would be the right border
+    //of the chart.
+    for( int iCurve = 0; iCurve < m_currentVPC->getProportionsCount()-1; ++iCurve )
+        m_VPCPlot->setCurveValues( iCurve, m_currentVPC->getNthCumulativeProportions( iCurve ), 100.0 );
+
+    //update the painted areas between the curves.
     m_VPCPlot->updateFillAreas();
 }
 
