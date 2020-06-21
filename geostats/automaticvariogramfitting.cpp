@@ -1700,6 +1700,21 @@ double AutomaticVariogramFitting::evaluateModel(const std::vector<IJVariographic
     return objectiveFunction( *m_cg, *inputData, vw, m );
 }
 
+void AutomaticVariogramFitting::printModel(const std::vector<IJVariographicStructure2D> &model,
+                                           bool breakLineAtEachStructure)
+{
+    for( const IJVariographicStructure2D& structure : model ){
+        std::cout << structure.range << '\t'
+                  << structure.rangeRatio << '\t'
+                  << structure.azimuth << '\t'
+                  << structure.contribution << '\t';
+        if( breakLineAtEachStructure )
+            std::cout << std::endl;
+    }
+    if( ! breakLineAtEachStructure )
+        std::cout << std::endl;
+}
+
 void AutomaticVariogramFitting::movePointAlongLineForLSRS(int m,
         int i,
         int k,
