@@ -4,6 +4,8 @@
 #include "domain/attribute.h"
 #include "domain/cartesiangrid.h"
 #include "domain/application.h"
+#include "domain/pointset.h"
+#include "domain/project.h"
 #include "imagejockey/widgets/ijgridviewerwidget.h"
 #include "spectral/spectral.h"
 #include "imagejockey/svd/svdfactor.h"
@@ -20,6 +22,7 @@
 #include <QLineSeries>
 #include <QChartView>
 #include <QValueAxis>
+
 
 AutomaticVarFitDialog::AutomaticVarFitDialog(Attribute *at, QWidget *parent) :
     QDialog(parent),
@@ -460,6 +463,78 @@ void AutomaticVarFitDialog::onMethodTabChanged(int tabIndex)
         ui->btnRunExperiments->setEnabled( false );
 }
 
+void AutomaticVarFitDialog::onResetAccumulatedScatterDataOfExperiments()
+{
+    if( ! m_accumulatedStructuresForClusterAnalysis.empty() ) {
+        QMessageBox::StandardButton reply;
+        reply = QMessageBox::question( this, "Confirm operation", "There are " +
+                                       QString::number( m_accumulatedStructuresForClusterAnalysis.size() ) +
+                                       " accumulated fitted structures.  Are you sure you want to discard them?", \
+                                       QMessageBox::Yes | QMessageBox::No );
+        if( reply == QMessageBox::Yes ){
+            m_accumulatedStructuresForClusterAnalysis.clear();
+        }
+    }
+}
+
+void AutomaticVarFitDialog::onSaveScatterDataOfExperiments()
+{
+    if( m_accumulatedStructuresForClusterAnalysis.empty() ){
+        Application::instance()->logError( "AutomaticVarFitDialog::onSaveScatterDataOfExperiments(): "
+                                           "No accumulated data to save.", true );
+        return;
+    }
+
+    //open a file naming dialog for the user
+    QString suggested_name = "AutoVarFit_scatter_data.xyz";
+    bool ok;
+    QString ps_file_name = QInputDialog::getText(this, "Name the new file",
+                                                 "New point set file with experiments scatter data: ",
+                                                 QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //get the number of accumulated fitted structures
+    int nRows = m_accumulatedStructuresForClusterAnalysis.size();
+
+    //create a new Point Set object to receive the parameters of the variogram structures as data
+    PointSet* new_ps = new PointSet( Application::instance()->getProject()->getPath() +
+                                     '/' + suggested_name );
+
+    // Crate the data columns representing each parameter.
+    new_ps->addEmptyDataColumn( "range" , nRows );
+    new_ps->addEmptyDataColumn( "ranges ratio" , nRows );
+    new_ps->addEmptyDataColumn( "azimuth" , nRows );
+    new_ps->addEmptyDataColumn( "contribution" , nRows );
+
+    //compute mid points for the PointSet object
+    for( int iRow = 0; iRow < nRows; ++iRow ){
+        const IJVariographicStructure2D& structure = m_accumulatedStructuresForClusterAnalysis[iRow];
+        new_ps->setData( iRow, 0, structure.range );
+        new_ps->setData( iRow, 1, structure.rangeRatio );
+        new_ps->setData( iRow, 2, Util::radiansToHalfAzimuth( structure.azimuth, true ) );
+        new_ps->setData( iRow, 3, structure.contribution );
+    }
+
+    //commit data to file system
+    new_ps->writeToFS();
+
+    //set appropriate metadata
+    new_ps->setInfo( 1, //these indexes are GEO-EAS indexes (1st == 1)
+                     2,
+                     3,
+                     "");
+
+    //save the metadata
+    new_ps->updateMetaDataFile();
+
+    //adds the new scatter data file (a point set) to the project.
+    Application::instance()->getProject()->addDataFile( new_ps );
+
+    //show the newly created object in main window's project tree
+    Application::instance()->refreshProjectTree();
+}
+
 void AutomaticVarFitDialog::runExperimentsWithSAandGD(const AutomaticVarFitExperimentsDialog& expParDiag)
 {
     switch ( expParDiag.getParameterIndex() ) {
@@ -538,6 +613,10 @@ void AutomaticVarFitDialog::runExperimentsWithSAandGD(
                                                      QString("seed=%1;Ti=%2;Tf=%3;hop=%4").arg(seed).arg(tInitial).arg(tFinal).arg(hopFactor),
                                                      m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
                                                  } );
+                    //accumulate the fitted structures if requested.
+                    if( ui->chkGenerateScatterData->isChecked() )
+                        m_accumulatedStructuresForClusterAnalysis.
+                                insert(m_accumulatedStructuresForClusterAnalysis.end(), model.begin(), model.end());
                 }
 
     //----------------Set chart title and show the curves--------------------
@@ -599,6 +678,10 @@ void AutomaticVarFitDialog::runExperimentsWithLSRS(int seedI, int seedF, int see
                                              QString("seed=%1;nLines=%2").arg(seed).arg(nLines),
                                              m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
                                          } );
+            //accumulate the fitted structures if requested.
+            if( ui->chkGenerateScatterData->isChecked() )
+                m_accumulatedStructuresForClusterAnalysis.
+                        insert(m_accumulatedStructuresForClusterAnalysis.end(), model.begin(), model.end());
         }
 
     //----------------Set chart title and show the curves--------------------
@@ -698,6 +781,10 @@ void AutomaticVarFitDialog::runExperimentsWithPSO(int    seedI,          int see
                                                                   arg(seed).arg(nParticles).arg(inertia).arg(acceleration1).arg(acceleration2),
                                                          m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
                                                      } );
+                        //accumulate the fitted structures if requested.
+                        if( ui->chkGenerateScatterData->isChecked() )
+                            m_accumulatedStructuresForClusterAnalysis.
+                                    insert(m_accumulatedStructuresForClusterAnalysis.end(), model.begin(), model.end());
                     }
 
     //----------------Set chart title and show the curves--------------------
@@ -828,6 +915,10 @@ void AutomaticVarFitDialog::runExperimentsWithGenetic(int seedI,            int 
                                                                       arg(seed).arg(iPopSize).arg((int)selSize).arg(xOverProb).arg((int)pointOfXOver).arg(mutRate),
                                                              m_autoVarFit.getObjectiveFunctionValuesOfLastRun()
                                                          } );
+                            //accumulate the fitted structures if requested.
+                            if( ui->chkGenerateScatterData->isChecked() )
+                                m_accumulatedStructuresForClusterAnalysis.
+                                        insert(m_accumulatedStructuresForClusterAnalysis.end(), model.begin(), model.end());
                     }
 
     //----------------Set chart title and show the curves--------------------

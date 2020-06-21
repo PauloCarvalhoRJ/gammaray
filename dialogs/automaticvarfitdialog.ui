@@ -213,13 +213,95 @@
        </spacer>
       </item>
       <item>
-       <widget class="QPushButton" name="btnRunExperiments">
-        <property name="enabled">
-         <bool>true</bool>
+       <widget class="QFrame" name="frame_3">
+        <property name="frameShape">
+         <enum>QFrame::Panel</enum>
         </property>
-        <property name="text">
-         <string>experiments</string>
+        <property name="frameShadow">
+         <enum>QFrame::Raised</enum>
         </property>
+        <property name="lineWidth">
+         <number>1</number>
+        </property>
+        <layout class="QHBoxLayout" name="horizontalLayout_5">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label_37">
+           <property name="text">
+            <string>Experiments:  </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QCheckBox" name="chkGenerateScatterData">
+           <property name="toolTip">
+            <string>Enable this to accumulate experiment data for cluster analysis.</string>
+           </property>
+           <property name="text">
+            <string>scatter data</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnRunExperiments">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="toolTip">
+            <string>Run experiments.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/icons32/play32</normaloff>:/icons32/play32</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnResetScatterData">
+           <property name="toolTip">
+            <string>Reset all accumulated scatter data.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/icons32/clean32</normaloff>:/icons32/clean32</iconset>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="btnSaveScatterData">
+           <property name="toolTip">
+            <string>Save scatter data as a point set file.</string>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset resource="../resources.qrc">
+             <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>
@@ -1125,8 +1207,8 @@
    <slot>onDoWithSAandGD()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>109</x>
-     <y>112</y>
+     <x>656</x>
+     <y>332</y>
     </hint>
     <hint type="destinationlabel">
      <x>184</x>
@@ -1141,8 +1223,8 @@
    <slot>onDoWithLSRS()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>101</x>
-     <y>108</y>
+     <x>648</x>
+     <y>224</y>
     </hint>
     <hint type="destinationlabel">
      <x>209</x>
@@ -1157,8 +1239,8 @@
    <slot>onDoWithPSO()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>101</x>
-     <y>109</y>
+     <x>648</x>
+     <y>250</y>
     </hint>
     <hint type="destinationlabel">
      <x>270</x>
@@ -1173,8 +1255,8 @@
    <slot>onDoWithGenetic()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>101</x>
-     <y>110</y>
+     <x>648</x>
+     <y>276</y>
     </hint>
     <hint type="destinationlabel">
      <x>256</x>
@@ -1189,8 +1271,8 @@
    <slot>onVarmapMethodChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>579</x>
-     <y>53</y>
+     <x>483</x>
+     <y>49</y>
     </hint>
     <hint type="destinationlabel">
      <x>756</x>
@@ -1205,8 +1287,8 @@
    <slot>onDoWithManual()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>101</x>
-     <y>99</y>
+     <x>513</x>
+     <y>111</y>
     </hint>
     <hint type="destinationlabel">
      <x>796</x>
@@ -1221,8 +1303,8 @@
    <slot>onNumberOfStructuresChanged(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>299</x>
-     <y>53</y>
+     <x>246</x>
+     <y>48</y>
     </hint>
     <hint type="destinationlabel">
      <x>487</x>
@@ -1237,8 +1319,8 @@
    <slot>onRunExperiments()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>863</x>
-     <y>53</y>
+     <x>867</x>
+     <y>48</y>
     </hint>
     <hint type="destinationlabel">
      <x>920</x>
@@ -1253,8 +1335,8 @@
    <slot>onObjectiveFunctionChanged()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>728</x>
-     <y>43</y>
+     <x>629</x>
+     <y>49</y>
     </hint>
     <hint type="destinationlabel">
      <x>695</x>
@@ -1278,6 +1360,38 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnResetScatterData</sender>
+   <signal>clicked()</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onResetAccumulatedScatterDataOfExperiments()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>880</x>
+     <y>41</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>860</x>
+     <y>53</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnSaveScatterData</sender>
+   <signal>clicked()</signal>
+   <receiver>AutomaticVarFitDialog</receiver>
+   <slot>onSaveScatterDataOfExperiments()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>905</x>
+     <y>41</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>891</x>
+     <y>52</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onDoWithSAandGD()</slot>
@@ -1290,5 +1404,7 @@
   <slot>onRunExperiments()</slot>
   <slot>onObjectiveFunctionChanged()</slot>
   <slot>onMethodTabChanged(int)</slot>
+  <slot>onResetAccumulatedScatterDataOfExperiments()</slot>
+  <slot>onSaveScatterDataOfExperiments()</slot>
  </slots>
 </ui>

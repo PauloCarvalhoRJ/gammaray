@@ -34,6 +34,8 @@ private:
 
     AutomaticVariogramFitting m_autoVarFit;
 
+    std::vector< IJVariographicStructure2D > m_accumulatedStructuresForClusterAnalysis;
+
 private Q_SLOTS:
 
     void onDoWithSAandGD();
@@ -50,6 +52,10 @@ private Q_SLOTS:
     void onObjectiveFunctionChanged();
 
     void onMethodTabChanged( int tabIndex );
+
+    void onResetAccumulatedScatterDataOfExperiments();
+
+    void onSaveScatterDataOfExperiments();
 
 private:
     void runExperimentsWithSAandGD(const AutomaticVarFitExperimentsDialog& expParDiag);
