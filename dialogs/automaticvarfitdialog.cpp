@@ -499,7 +499,7 @@ void AutomaticVarFitDialog::onSaveScatterDataOfExperiments()
 
     //create a new Point Set object to receive the parameters of the variogram structures as data
     PointSet* new_ps = new PointSet( Application::instance()->getProject()->getPath() +
-                                     '/' + suggested_name );
+                                     '/' + ps_file_name );
 
     // Crate the data columns representing each parameter.
     new_ps->addEmptyDataColumn( "range" , nRows );
