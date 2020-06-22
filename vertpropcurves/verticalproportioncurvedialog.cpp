@@ -189,6 +189,9 @@ void VerticalProportionCurveDialog::onSave()
         QMessageBox::critical( this, "Error", QString("No curve to save. Run computation at least once."));
         return;
     }
+
+    updateCurrentVPCWithPlot();
+
     if( m_currentVPC->hasParent() )
         saveExisting();
     else
@@ -394,6 +397,9 @@ void VerticalProportionCurveDialog::saveNew()
         //add the project file to the project
         Application::instance()->getProject()->addVerticalProportionCurve( m_currentVPC );
 
+        //refresh the project tree widget
+        Application::instance()->refreshProjectTree();
+
     }
 }
 
@@ -419,6 +425,33 @@ void VerticalProportionCurveDialog::updatePlotWithCurrentVPC()
 
     //update the painted areas between the curves.
     m_VPCPlot->updateFillAreas();
+}
+
+void VerticalProportionCurveDialog::updateCurrentVPCWithPlot()
+{
+    CategoryDefinition* cd = m_currentVPC->getAssociatedCategoryDefinition();
+    for( int iEntry = 0; iEntry < m_currentVPC->getEntriesCount(); ++iEntry ){
+        for( int iCategory = 0; iCategory < cd->getCategoryCount(); ++iCategory ){
+
+            int categoryCode = cd->getCategoryCode( iCategory );
+
+            //The proportion of a category is a difference between two curves.
+            double proportion = 0.0;
+            if( iCategory == 0 )                             //first category
+                proportion =   m_VPCPlot->getCurveValue( iCategory,   iEntry )
+                             - 0.0; //the "curve" to the left is the chart left border, that is, zero.
+            else if( iCategory+1 == cd->getCategoryCount() ) //last category
+                proportion =   100.0 //the "curve" to the right is the chart right border, that is, 100.0.
+                             - m_VPCPlot->getCurveValue( iCategory-1, iEntry );
+            else                                             //categories in the middle
+                proportion =   m_VPCPlot->getCurveValue( iCategory,   iEntry )
+                             - m_VPCPlot->getCurveValue( iCategory-1, iEntry );
+            proportion /= 100.0; //unitize back to 0.0-1.0
+
+            m_currentVPC->setProportion( iEntry, categoryCode, proportion );
+
+        }
+    }
 }
 
 VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASegmentSet(Attribute *at)

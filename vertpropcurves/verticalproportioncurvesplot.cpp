@@ -173,6 +173,18 @@ void VerticalProportionCurvesPlot::setCurveValues(int curveIndex, const std::vec
     pushCurves( curve );
 }
 
+double VerticalProportionCurvesPlot::getCurveValue( int curveIndex, int sampleIndex )
+{
+    assert( curveIndex < m_curves.size() && "VerticalProportionCurvesPlot::getCurveValue(): "
+                                            "curve index out of range." );
+
+    QwtPlotCurve* curve = m_curves[ curveIndex ];
+
+    const QPointF sample = curve->sample( sampleIndex );
+
+    return sample.x();
+}
+
 void VerticalProportionCurvesPlot::updateFillAreas()
 {
     //does nothing if there is no proportion curve.

@@ -398,7 +398,10 @@ void VerticalProportionCurve::readFromFS()
     //read the data in file into the DataFile::_data table.
     DataFile::readFromFS();
 
-    //create entries from the data table.
+    //discard current entries (if any).
+    m_entries.clear();
+
+    //re-create entries from the data table.
     int colCount = getDataColumnCount();
     for( int iRow = 0; iRow < getDataLineCount(); ++iRow ){
         double relativeDepth = data( iRow, 0 );

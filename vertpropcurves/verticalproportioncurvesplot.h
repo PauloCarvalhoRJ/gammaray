@@ -37,7 +37,7 @@ public:
       */
     void setCurveBase( int index, double value );
 
-    /** Sets the values for given a curve by its index.
+    /** Sets the values for a given curve by its index.
       * The values must be between 0.0 and 100.0 (will be truncated otherwise).
       * Other curves may also be adjusted to prevent crossing.
       * Sample index zero means the one at the base (0.0%).
@@ -45,6 +45,13 @@ public:
       * @param factor The input values will be multiplied by.
       */
     void setCurveValues( int curveIndex, const std::vector<double>& values, double factor = 1.0 );
+
+    /** Returns the value for a given curve and for a given sample by their indexex.
+      * The returned value varies between 0.0 and 100.0.
+      * Sample index zero means the one at the base (0.0%).
+      * Curve index zero means the leftmost one.
+      */
+    double getCurveValue( int curveIndex, int sampleIndex );
 
     /** Changes the geometry of the fill areas to match the curves.
      * Does nothing if there are no fill areas between the curves.

@@ -65,6 +65,11 @@ private:
      */
     void updatePlotWithCurrentVPC();
 
+    /** Gets the curve values in the plot widget and assign the proportions
+     * to the verticala proportion curve object.
+     */
+    void updateCurrentVPCWithPlot();
+
     VerticalProportionCurve computeProportionsForASegmentSet( Attribute* at );
 
     Ui::VerticalProportionCurveDialog *ui;
