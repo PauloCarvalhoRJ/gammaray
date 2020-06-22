@@ -367,7 +367,8 @@ double AutomaticVariogramFitting::objectiveFunctionVARFIT( const IJAbstractCarte
                 SpatialLocation gridCenter = m_cg->getCenter();
                 double x, y, z;
 
-                //compute the sum of all distances
+                //compute the weights as a function of inverse distance from the center of the map
+                //which correspond to hx=0, hy=0 of the variogram.
                 {
                     for( int k = 0; k < nK; ++k )
                         for( int j = 0; j < nJ; ++j )
