@@ -62,6 +62,11 @@ void BarChartWidget::addBar(const QString categoryName,
     m_series->append(set);
 }
 
+void BarChartWidget::clearBars()
+{
+    m_series->clear();
+}
+
 void BarChartWidget::setMaxY(double value)
 {
     m_chart->axisY( m_series )->setMax( value );

@@ -27,6 +27,9 @@ public:
     /** Adds a bar set consisting of a single bar (common histogram). */
     void addBar(const QString categoryName, double value , const QColor color);
 
+    /** Removes all current bars. */
+    void clearBars();
+
     /** Sets the maximum value for the Y axis of the chart. */
     void setMaxY( double value );
 
