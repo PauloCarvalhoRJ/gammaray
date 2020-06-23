@@ -11,6 +11,7 @@ class ThinSectionAnalysisResultsDialog;
 
 class BarChartWidget;
 class ImageViewerWidget;
+class ThinSectionAnalysisTableModel;
 
 class ThinSectionAnalysisResultsDialog : public QDialog
 {
@@ -34,6 +35,15 @@ private:
     ImageViewerWidget* m_imageViewerWidget;
 
     ThinSectionAnalysisClusterSetPtr m_clusterSet;
+
+    ThinSectionAnalysisTableModel* m_tableModel;
+
+private Q_SLOTS:
+
+    void updateBarChart();
+
+    void onDataEdited();
+
 };
 
 #endif // THINSECTIONANALYSISRESULTSDIALOG_H
