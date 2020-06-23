@@ -194,7 +194,7 @@
         </item>
         <item>
          <property name="text">
-          <string>VARMAP-based</string>
+          <string>VARFIT-based</string>
          </property>
         </item>
        </widget>
