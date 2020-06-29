@@ -28,8 +28,8 @@ public:
     /** Returns whether the given pixel is similar to this cluster. */
     bool isSimilar( unsigned int pixelIndex, float sigma ) const;
 
-    /** Adds the pixel indexes of another cluster to this cluster's pixelIndexes list
-     * and updates the center.
+    /** Adds the pixel indexes of another cluster to this cluster's pixelIndexes list,
+     * updates the center and sums the proportions.
      */
     void merge( const ThinSectionAnalysisCluster& otherCluster );
 
@@ -41,7 +41,10 @@ public:
     void setColor( const QColor color ){ m_color = color; }
     QColor getColor( ) const { return m_color; }
 
-    /** Proportion must be between 0.0 (0%) and 1.0 (100%). */
+    /** Proportion must be between 0.0 (0%) and 1.0 (100%).  This is merely a setter/getter.
+     * The proportion value must be computed elsewhere, such as in
+     * ThinSectionAnalysisClusterSet::computeClustersProportions().
+     */
     double getProportion() const;
     void setProportion(double proportion);
 

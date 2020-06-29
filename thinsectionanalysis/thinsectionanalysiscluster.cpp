@@ -55,6 +55,8 @@ void ThinSectionAnalysisCluster::merge( const ThinSectionAnalysisCluster& otherC
     pixelIndexes.insert( pixelIndexes.end(),
                          otherCluster.pixelIndexes.begin(),
                          otherCluster.pixelIndexes.end() );
+    //adds the proportion of the other cluster
+    m_proportion += otherCluster.getProportion();
 }
 
 double ThinSectionAnalysisCluster::getProportion() const

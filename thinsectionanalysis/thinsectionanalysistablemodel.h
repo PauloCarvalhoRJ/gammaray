@@ -7,6 +7,9 @@
 
 /** This is a model class used to present cluster data in the QTabelView object present in
  * ThinSectionAnalysisResultsDialog.
+ *
+ * Good source on working with the model/view design in Qt:
+ * https://doc.qt.io/qt-5/modelview.html - Model/View Tutorial
  */
 class ThinSectionAnalysisTableModel : public QAbstractTableModel
 {

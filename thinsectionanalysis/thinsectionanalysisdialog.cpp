@@ -339,7 +339,7 @@ void ThinSectionAnalysisDialog::onRun()
     } //cluster algorithm loop
     ///========================================================================================================
 
-    QString outputImagePath = ui->lblDirectory->text() + "/clusters.png";
+    clusters->setSegmentedImagePath( ui->lblDirectory->text() + "/clusters.png" );
 
     ///========================================================================================================
     // a) generate an image by painting the pixels with random contrasting colors.
@@ -376,14 +376,14 @@ void ThinSectionAnalysisDialog::onRun()
         progressDialog.setValue(clusterCount);
         QApplication::processEvents();
     }
-    imageOutput.save( outputImagePath );
+    imageOutput.save( clusters->getSegmentedImagePath() );
     ///========================================================================================================
 
     ///========================================================================================================
     // Show a dilog so the user can work on the results.
     ThinSectionAnalysisResultsDialog* tsard = new ThinSectionAnalysisResultsDialog( this );
     tsard->setClusters( clusters );
-    tsard->setOutputImage( outputImagePath );
+    tsard->setOutputImage( clusters->getSegmentedImagePath() );
     tsard->show();
     ///========================================================================================================
 
