@@ -2,6 +2,7 @@
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 #include "gslib/gslibparams/widgets/widgetgslibparmultivaluedfixed.h"
 #include "util.h"
+#include "domain/application.h"
 
 CategoryDefinition::CategoryDefinition(QString path) : IntIntQStringQColorQStringQuintuplets ( path )
 {
@@ -11,6 +12,15 @@ CategoryDefinition::~CategoryDefinition()
 {
     //TODO: delete the objects in m_createdParameters here.
     clearStashOfCreatedParameters();
+}
+
+int CategoryDefinition::getCategoryCount() const
+{
+    int count = getQuintupletCount();
+    if( ! count )
+        Application::instance()->logWarn("CategoryDefinition::getCategoryCount(): returned zero categories.  "
+                                         "Maybe a prior call to loadQuintuplets() or readFromFS() is missing.");
+    return count;
 }
 
 QString CategoryDefinition::getCategoryNameByCode(int category_code)

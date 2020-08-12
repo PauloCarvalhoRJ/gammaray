@@ -520,6 +520,38 @@ QList<uint> SpatialIndex::getNearestFromCartesianGrid(const GridCell &gridCell,
     return result;
 }
 
+QList<uint> SpatialIndex::getWithinZInterval(double zInitial, double zFinal)
+{
+    assert( m_dataFile && "SpatialIndexPoints::getWithinZInterval(): No data file.  Make sure there a call to DataSet::fill() prior to making queries.");
+
+    QList<uint> result;
+
+    //Get the bounding box as a function of the search neighborhood centered at the data cell.
+    //In this case the box extends to infinity in x and y axes.  Hence, in practice, we will
+    //query the index by all objects that fall in a z interval.
+    double maxX = std::numeric_limits<double>::max();
+    double maxY = std::numeric_limits<double>::max();
+    double maxZ = zFinal;
+    double minX = -std::numeric_limits<double>::max();
+    double minY = -std::numeric_limits<double>::max();
+    double minZ = zInitial;
+    Box searchBB( Point3D( minX, minY, minZ ),
+                  Point3D( maxX, maxY, maxZ ));
+
+    //Get all the points within the bounding box of the search neighborhood.
+    //This step improves performance because the actual inside/outside test of the search
+    //neighborhood implementation may be slow.
+    std::vector<BoxAndDataIndex> poinsInSearchBB;
+    m_rtree.query( bgi::intersects( searchBB ), std::back_inserter( poinsInSearchBB ) );
+
+    //Get all the row indexes of the samples that intersect the z interval.
+    std::vector<BoxAndDataIndex>::iterator it = poinsInSearchBB.begin();
+    for(; it != poinsInSearchBB.end(); ++it)
+        result.push_back( (*it).second );
+
+    return result;
+}
+
 void SpatialIndex::clear()
 {
 	m_rtree.clear();

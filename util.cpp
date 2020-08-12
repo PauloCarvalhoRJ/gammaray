@@ -2516,3 +2516,19 @@ QString Util::formatAsSingleLine(QStringList list, QString separator)
     }
     return result;
 }
+
+void Util::unitize(std::vector<double> &values)
+{
+    //normalize the entry: get the sum of proportion values across the entry.
+    //ATTENTION: The last parameter not only sets the initial value of the summation, it also
+    //           defines the type to be used during the summation.
+    //           Hence, do not replace the "0.0" for "0" or "0.0f" for instance, because std::accumulate
+    //           may iterate casting all values to int or to float. Ideally one must use
+    //           decltype(values)::value_type(0) instead of a plain value, but
+    //           currently passing a reference to a vector is not compiling.
+    double total = std::accumulate(values.begin(), values.end(), 0.0);
+
+    //divide all values by the total so each entry sums up to 1.0.
+    std::transform( values.begin(), values.end(), values.begin(),
+                    std::bind( std::divides<double>(), std::placeholders::_1, total ) );
+}

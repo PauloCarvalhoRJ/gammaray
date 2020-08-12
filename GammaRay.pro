@@ -34,6 +34,9 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    domain/auxiliary/verticalproportioncurvemaker.cpp \
+    domain/verticalproportioncurve.cpp \
+    geometry/intersectionfinder.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
@@ -86,8 +89,12 @@ SOURCES += main.cpp\
     domain/plot.cpp \
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
+    vertpropcurves/verticalproportioncurvedialog.cpp \
+    vertpropcurves/verticalproportioncurvescanvaspicker.cpp \
+    vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
     widgets/linechartwidget.cpp \
+    widgets/qlistwidgetdnd.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -283,11 +290,14 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
+    domain/verticalproportioncurve.h \
+    geometry/intersectionfinder.h \
     geostats/mcmcdataimputation.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
@@ -339,8 +349,12 @@ HEADERS  += mainwindow.h \
     domain/plot.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
+    vertpropcurves/verticalproportioncurvedialog.h \
+    vertpropcurves/verticalproportioncurvescanvaspicker.h \
+    vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
     widgets/linechartwidget.h \
+    widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
@@ -556,6 +570,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
     widgets/linechartwidget.ui \
+    vertpropcurves/verticalproportioncurvedialog.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \

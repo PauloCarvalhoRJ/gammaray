@@ -120,6 +120,14 @@ public:
                                             const std::vector<double> *simulatedData = nullptr
                                             ) const;
 
+    /**
+     * Returns the data line indexes of the data lines that happen to be partially or entirely
+     * within the given Z interval.  This query is useful, for example, to find data contained bewteen two
+     * horizons or two well markers. The indexes are the data line indexes (file data lines) of the
+     * DataFile used fill the index.
+     */
+    QList<uint> getWithinZInterval( double zInitial, double zFinal );
+
     /** Clears the spatial index. */
 	void clear();
 
