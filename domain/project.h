@@ -22,6 +22,7 @@ class CategoryPDF;
 class ProjectComponent;
 class IJAbstractCartesianGrid;
 class VerticalTransiogramModel;
+class VerticalProportionCurve;
 
 /**
  * @brief The Project class holds all information about a geostats study.
@@ -73,6 +74,9 @@ public:
 
     /** Adds the given vertical transiogram model object to this project. */
     void addVerticalTransiogramModel( VerticalTransiogramModel *vtm );
+
+    /** Adds the given vertical proportion curve object to this project. */
+    void addVerticalProportionCurve( VerticalProportionCurve *vpc );
 
     /** Adds the given generic file object as a resource. */
     void addResourceFile( File *file );

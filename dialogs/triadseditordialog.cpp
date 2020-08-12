@@ -5,6 +5,7 @@
 #include "domain/project.h"
 #include "domain/categorydefinition.h"
 #include "domain/univariatecategoryclassification.h"
+#include "util.h"
 #include <QMessageBox>
 #include <QDir>
 
@@ -21,7 +22,10 @@ TriadsEditorDialog::TriadsEditorDialog(File *triadsFile, QWidget *parent) :
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     //set the icon to signal to the user the type of value pair list
-    ui->lblIcon->setPixmap( m_triadsFile->getIcon().pixmap(16, 16) );
+    if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI )
+        ui->lblIcon->setPixmap( m_triadsFile->getIcon().pixmap(16, 16) );
+    else
+        ui->lblIcon->setPixmap( m_triadsFile->getIcon().pixmap(32, 32) );
 
     //set the edit box for file name
     ui->txtFileName->setText( m_triadsFile->getFileName() );

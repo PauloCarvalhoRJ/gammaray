@@ -183,7 +183,14 @@ void IJQuick3DViewer::display( const spectral::array & grid, double colorScaleMi
 {
 	vtkSmartPointer<vtkImageData> out = vtkSmartPointer<vtkImageData>::New();
 	ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, grid );
-	display( out, colorScaleMin, colorScaleMax );
+    display( out, colorScaleMin, colorScaleMax );
+}
+
+void IJQuick3DViewer::display(const spectral::array &grid)
+{
+    double min = grid.min();
+    double max = grid.max();
+    display( grid, min, max );
 }
 
 void IJQuick3DViewer::clearScene()

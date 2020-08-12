@@ -66,7 +66,7 @@
        </property>
        <property name="icon">
         <iconset resource="../resources.qrc">
-         <normaloff>:/icons/save16</normaloff>:/icons/save16</iconset>
+         <normaloff>:/icons32/save32</normaloff>:/icons32/save32</iconset>
        </property>
       </widget>
      </item>

@@ -85,6 +85,7 @@
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
+#include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
 #include "spectral/svd.h"
@@ -120,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //puts application name and version in window title bar.
     this->setWindowTitle(APP_NAME_VER);
     //maximizes the window
+    this->resize(800, 600); //WEIRD! this is needed so showMaximized() works properly in UHD displays under Windows.
     this->showMaximized();
     //retore main window splitter position
     ui->splitter->restoreState( Application::instance()->getMainWindowSplitterSetting() );
@@ -187,6 +189,14 @@ MainWindow::MainWindow(QWidget *parent) :
         Application::instance()->logInfo( QString("Number of logical processors: ").append( QString::number( numOfCPUs ) ) );
     else
         Application::instance()->logInfo( QString("Number of logical processors: unable to detect.") );
+
+    //show 3D antialising option.
+    if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA") )
+        Application::instance()->logInfo( "3D Antialiasing option: MSAA." );
+    else if( Util::programWasCalledWithCommandLineArgument("-aa=none"))
+        Application::instance()->logWarn( "3D Antialiasing option: DISABLED!" );
+    else
+        Application::instance()->logInfo( "3D Antialiasing option: FXAA (default)." );
 
     //add a custom menu item to the QTextEdit's standard context menu.
     ui->txtedMessages->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -452,6 +462,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             _projectContextMenu->addAction("Create threshold c.d.f. ...", this, SLOT(onCreateThresholdCDF()));
             _projectContextMenu->addAction("Create categories definition ...", this, SLOT(onCreateCategoryDefinition()));
             _projectContextMenu->addAction("Add facies transition matrix...", this, SLOT(onAddFaciesTransitionMatrix()));
+            _projectContextMenu->addAction("Create vertical proportion curve...", this, SLOT(onCreateVerticalProportionCurve()));
         }
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
@@ -479,8 +490,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Plot", this, SLOT(onDisplayExperimentalVariogram()));
                 _projectContextMenu->addAction("Fit variogram model...", this, SLOT(onFitVModelToExperimentalVariogram()));
             }
-            if( Util::isIn( _right_clicked_file->getFileType(), {"VMODEL","VERTICALTRANSIOGRAMMODEL"} ) ){
-                _projectContextMenu->addAction("Review", this, SLOT(onDisplayVariogramModel()));
+            if( Util::isIn( _right_clicked_file->getFileType(), {"VMODEL","VERTICALTRANSIOGRAMMODEL", "VERTICALPROPORTIONCURVE"} ) ){
+                _projectContextMenu->addAction("Review", this, SLOT(onDisplayObject()));
             }
             if( _right_clicked_file->getFileType() == "POINTSET" ){
                 _projectContextMenu->addAction("Create estimation/simulation grid...", this, SLOT(onCreateGrid()));
@@ -1249,7 +1260,7 @@ void MainWindow::onFitVModelToExperimentalVariogram()
     vad->show();
 }
 
-void MainWindow::onDisplayVariogramModel()
+void MainWindow::onDisplayObject()
 {
     if( _right_clicked_file->getFileType() == "VMODEL" ){
         //get pointer to the variogram model object right-clicked by the user
@@ -1257,9 +1268,14 @@ void MainWindow::onDisplayVariogramModel()
         this->createOrReviewVariogramModel( vm );
     }
     if( _right_clicked_file->getFileType() == "VERTICALTRANSIOGRAMMODEL" ){
-        //get pointer to the variogram model object right-clicked by the user
+        //get pointer to the vertical transiogram model object right-clicked by the user
         VerticalTransiogramModel* vtm = dynamic_cast<VerticalTransiogramModel*>( _right_clicked_file );
         this->createOrReviewVerticalTransiogramModel( vtm );
+    }
+    if( _right_clicked_file->getFileType() == "VERTICALPROPORTIONCURVE" ){
+        //get pointer to the vertical proportion curve object right-clicked by the user
+        VerticalProportionCurve* vpc = dynamic_cast<VerticalProportionCurve*>( _right_clicked_file );
+        this->createOrReviewVerticalProportionCurve( vpc );
     }
 }
 
@@ -2939,6 +2955,12 @@ void MainWindow::onMakeFaciesTransitionMatrix()
 
 }
 
+void MainWindow::onCreateVerticalProportionCurve()
+{
+    VerticalProportionCurveDialog* vpcd = new VerticalProportionCurveDialog( nullptr, this );
+    vpcd->show();
+}
+
 void MainWindow::onCreateGeoGridFromBaseAndTop()
 {
 	//open the renaming dialog
@@ -3341,6 +3363,12 @@ void MainWindow::createOrReviewVerticalTransiogramModel(VerticalTransiogramModel
 {
     TransiogramDialog* td = new TransiogramDialog( vtm, this );
     td->show();
+}
+
+void MainWindow::createOrReviewVerticalProportionCurve(VerticalProportionCurve *vpc)
+{
+    VerticalProportionCurveDialog* vpcd = new VerticalProportionCurveDialog( vpc, this );
+    vpcd->show();
 }
 
 void MainWindow::doAddDataFile(const QString filePath )

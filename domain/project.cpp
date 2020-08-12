@@ -27,6 +27,7 @@
 #include "domain/segmentset.h"
 #include "domain/faciestransitionmatrix.h"
 #include "domain/verticaltransiogrammodel.h"
+#include "domain/verticalproportioncurve.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
 {
@@ -274,6 +275,20 @@ Project::Project(const QString path) : QAbstractItemModel()
                 //reads FaciesTransitionMatrix metadata from the .md file
                 vtm->setInfoFromMetadataFile();
            }
+           //found a Vertical Proportion Curve file reference in gammaray.prj
+           if( line.startsWith( "VERTICALPROPORTIONCURVE:" )){
+               //get file name
+                QString verticalProportionCurve_file = line.split(":")[1];
+                //make file path
+                QFile vpc_file( this->_project_directory->absoluteFilePath( verticalProportionCurve_file ) );
+                //create VerticalProportionCurve object from file
+                VerticalProportionCurve *vpc = new VerticalProportionCurve( vpc_file.fileName(), "" );
+                //add the object to its correct directory in the project tree structure
+                this->_resources->addChild( vpc );
+                vpc->setParent( this->_resources );
+                //reads VerticalProportionCurve metadata from the .md file
+                vpc->setInfoFromMetadataFile();
+           }
         }
         prj_file.close();
     }
@@ -424,6 +439,13 @@ void Project::addVerticalTransiogramModel(VerticalTransiogramModel *vtm)
 {
     this->_variograms->addChild( vtm );
     vtm->setParent( this->_variograms );
+    this->save();
+}
+
+void Project::addVerticalProportionCurve(VerticalProportionCurve *vpc)
+{
+    this->_resources->addChild( vpc );
+    vpc->setParent( this->_resources );
     this->save();
 }
 
