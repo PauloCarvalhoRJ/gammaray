@@ -350,6 +350,14 @@ public:
      */
     double evaluateModel( const std::vector< IJVariographicStructure2D >& variogramStructures ) const;
 
+    /**
+     * Prints to std::cout the variogram model parameters as tabulated values in a single line.
+     * The order of the structures follow as they appear in the model.
+     * Order of the parameters per structure: range, rangeRatio, azimuth and contribution.
+     */
+    static void printModel( const std::vector< IJVariographicStructure2D >& model,
+                            bool breakLineAtEachStructure = false );
+
 private Q_SLOTS:
 
     void onSaveAResult( spectral::array* result );

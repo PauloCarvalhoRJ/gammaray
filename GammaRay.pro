@@ -34,6 +34,9 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    domain/auxiliary/verticalproportioncurvemaker.cpp \
+    domain/verticalproportioncurve.cpp \
+    geometry/intersectionfinder.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
@@ -91,8 +94,13 @@ SOURCES += main.cpp\
     domain/plot.cpp \
     domain/experimentalvariogram.cpp \
     domain/variogrammodel.cpp \
+    vertpropcurves/verticalproportioncurvedialog.cpp \
+    vertpropcurves/verticalproportioncurvescanvaspicker.cpp \
+    vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
     widgets/barchartwidget.cpp \
+    widgets/linechartwidget.cpp \
+    widgets/qlistwidgetdnd.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -280,16 +288,23 @@ SOURCES += main.cpp\
     spatialindex/spatialindex.cpp \
     geostats/taumodel.cpp \
     dialogs/mcmcdataimputationdialog.cpp \
-    widgets/imageviewerwidget.cpp
+    widgets/imageviewerwidget.cpp \
+    imagejockey/paraviewscalarbar/vtkBoundingRectContextDevice2D.cpp \
+    imagejockey/paraviewscalarbar/vtkContext2DScalarBarActor.cpp \
+    imagejockey/paraviewscalarbar/vtkParaViewScalarBar.cpp \
+    imagejockey/paraviewscalarbar/vtkPVScalarBarRepresentation.cpp
 
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
+    domain/verticalproportioncurve.h \
+    geometry/intersectionfinder.h \
     geostats/mcmcdataimputation.h \
     thinsectionanalysis/thinsectionanalysiscluster.h \
     thinsectionanalysis/thinsectionanalysisclusterset.h \
@@ -346,8 +361,13 @@ HEADERS  += mainwindow.h \
     domain/plot.h \
     domain/experimentalvariogram.h \
     domain/variogrammodel.h \
+    vertpropcurves/verticalproportioncurvedialog.h \
+    vertpropcurves/verticalproportioncurvescanvaspicker.h \
+    vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
     widgets/barchartwidget.h \
+    widgets/linechartwidget.h \
+    widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
@@ -538,7 +558,11 @@ HEADERS  += mainwindow.h \
     spatialindex/spatialindex.h \
     geostats/taumodel.h \
     dialogs/mcmcdataimputationdialog.h \
-    widgets/imageviewerwidget.h
+    widgets/imageviewerwidget.h \
+    imagejockey/paraviewscalarbar/vtkBoundingRectContextDevice2D.h \
+    imagejockey/paraviewscalarbar/vtkContext2DScalarBarActor.h \
+    imagejockey/paraviewscalarbar/vtkParaViewScalarBar.h \
+    imagejockey/paraviewscalarbar/vtkPVScalarBarRepresentation.h
 
 
 FORMS    += mainwindow.ui \
@@ -562,6 +586,8 @@ FORMS    += mainwindow.ui \
     thinsectionanalysis/thinsectionanalysisdialog.ui \
     thinsectionanalysis/thinsectionanalysisresultsdialog.ui \
     widgets/barchartwidget.ui \
+    widgets/linechartwidget.ui \
+    vertpropcurves/verticalproportioncurvedialog.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \
@@ -718,7 +744,10 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
                            -lvtkalglib$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingStencil$$_VTK_VERSION_SUFFIX \
-                -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX
+                -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX \
+                -lvtkRenderingContext2D$$_VTK_VERSION_SUFFIX \
+                -lvtkChartsCore$$_VTK_VERSION_SUFFIX \
+                -lvtkRenderingContextOpenGL2$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
@@ -792,7 +821,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.3
+VERSION = 6.5
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

@@ -60,6 +60,12 @@ View3DWidget::View3DWidget(QWidget *parent)
         ui->splitter_2->restoreState(state);
     }
 
+    // MSAA aliasing (these must be BEFORE creating a QVTKOpenGLWidget.
+    if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA") ){
+        vtkOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples ( 8 );
+        QSurfaceFormat::setDefaultFormat ( QVTKOpenGLWidget::defaultFormat() );
+    }
+
     _vtkwidget = new QVTKOpenGLWidget();
 
     //===========VTK TEST CODE==========================================
@@ -80,19 +86,22 @@ View3DWidget::View3DWidget(QWidget *parent)
     _renderer->SetBackground(0.9, 0.9, 1);
     _renderer->SetBackground2(0.5, 0.5, 1);
 
-    // enable antialiasing (fast approximate method)
-    _renderer->UseFXAAOn();
+    if( ! ( Util::programWasCalledWithCommandLineArgument("-aa=none") ||
+            Util::programWasCalledWithCommandLineArgument("-aa=MSAA") ) ) {
+        // enable antialiasing (fast approximate method)
+        _renderer->UseFXAAOn();
 
-    // configure the FXAA antialiasing
-    vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
-    fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
-    //fxaaOptions->SetSubpixelContrastThreshold(1/2.0);
-    //fxaaOptions->SetRelativeContrastThreshold(0.125);
-    //fxaaOptions->SetHardContrastThreshold(0.045);
-    //fxaaOptions->SetSubpixelBlendLimit(0.75);
-    //fxaaOptions->SetSubpixelContrastThreshold(0.25);
-    //fxaaOptions->SetUseHighQualityEndpoints(true);
-    //fxaaOptions->SetEndpointSearchIterations(12);
+        // configure the FXAA antialiasing
+        vtkSmartPointer<vtkFXAAOptions> fxaaOptions = _renderer->GetFXAAOptions();
+        fxaaOptions->SetSubpixelBlendLimit( 1/2.0 );
+        //fxaaOptions->SetSubpixelContrastThreshold(1/2.0);
+        //fxaaOptions->SetRelativeContrastThreshold(0.125);
+        //fxaaOptions->SetHardContrastThreshold(0.045);
+        //fxaaOptions->SetSubpixelBlendLimit(0.75);
+        //fxaaOptions->SetSubpixelContrastThreshold(0.25);
+        //fxaaOptions->SetUseHighQualityEndpoints(true);
+        //fxaaOptions->SetEndpointSearchIterations(12);
+    }
 
     //    renderer->AddActor( sphereActor );  // VTK TEST CODE
     //    vtkRenderWindow* renwin = vtkRenderWindow::New();
@@ -103,6 +112,11 @@ View3DWidget::View3DWidget(QWidget *parent)
     _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
     _vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
+
+    //MSAA aliasing
+    if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA")){
+        _vtkwidget->GetRenderWindow()->SetMultiSamples( 4 );
+    }
 
     //----------------------adding the orientation axes-------------------------
     vtkSmartPointer<vtkAxesActor> axes = vtkSmartPointer<vtkAxesActor>::New();
@@ -392,20 +406,17 @@ void View3DWidget::onVerticalExaggerationChanged(double value)
     _renderer->GetActiveCamera()->SetModelTransformMatrix(xform);
 
     // redraw the scene (none of these works :( )
-    //    _renderer->Render();
-    //    _vtkwidget->GetRenderWindow()->GetInteractor()->Render();
-    //    _vtkwidget->GetRenderWindow()->Render();
-    //    _vtkwidget->repaint();
-
-    // Perturb the splitter to force a redraw.
-    // TODO: find out a more elegant way to make the VTK widget redraw
     {
-        QList<int> oldSizes = ui->splitter->sizes();
-        QList<int> tmpSizes = oldSizes;
-        tmpSizes[0] = oldSizes[0] + 1;
-        tmpSizes[1] = oldSizes[1] - 1;
-        ui->splitter->setSizes(tmpSizes);
-        qApp->processEvents();
-        ui->splitter->setSizes(oldSizes);
+        _vtkwidget->GetRenderWindow()->GetInteractor()->Render();
+        _vtkwidget->GetRenderWindow()->Render();
+        _vtkwidget->repaint();
+        QApplication::sendPostedEvents();
+        //this->parentWidget()->update();
+        _renderer->Modified();
+        _renderer->Render();
+        vtkSmartPointer< vtkRenderWindow > renderWindow = _vtkwidget->GetRenderWindow();
+        renderWindow->Render();
+        renderWindow->Modified();
+        QApplication::processEvents();
     }
 }

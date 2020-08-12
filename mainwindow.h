@@ -25,6 +25,7 @@ class IJAbstractCartesianGrid;
 class GeoGrid;
 class DataFile;
 class VerticalTransiogramModel;
+class VerticalProportionCurve;
 
 class MainWindow : public QMainWindow
 {
@@ -143,7 +144,7 @@ private slots:
     void onDisplayPlot();
     void onDisplayExperimentalVariogram();
     void onFitVModelToExperimentalVariogram();
-    void onDisplayVariogramModel();
+    void onDisplayObject();
     void onCreateVariogramModel();
     void onCreateGrid();
     void onCleanTmpFiles();
@@ -224,6 +225,7 @@ private slots:
     void onExtractMidPoints();
     void onMakeFaciesTransitionMatrix();
     void onThinSectionAnalysis();
+    void onCreateVerticalProportionCurve();
 
 private:
     /**
@@ -307,6 +309,12 @@ private:
      * an existing vertical transiogram model.
      */
     void createOrReviewVerticalTransiogramModel( VerticalTransiogramModel* vtm );
+
+    /**
+     * This method is used to create (vtm == nullptr) or review (vtm != nullptr)
+     * an existing vertical proportion curve.
+     */
+    void createOrReviewVerticalProportionCurve( VerticalProportionCurve* vpc );
 };
 
 #endif // MAINWINDOW_H

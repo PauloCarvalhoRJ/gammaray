@@ -73,7 +73,7 @@ public:
     void setCurveColor( int index, QColor color );
 
     /** Sets the given curve base, resulting in a flat line at the given value.
-      *  The value must be between 0.0 and 100.0 (will be truncated otherside).
+      *  The value must be between 0.0 and 100.0 (will be truncated otherwise).
       * Other curves will also be adjusted to prevent undue crossing.
       */
     void setCurveBase( int index, double value );
@@ -118,6 +118,12 @@ private:
 
     /** The number of curves desired by the user. */
     size_t m_nCurves;
+
+    /** The size of the curve handles in pixels. */
+    size_t m_handleSize;
+
+    /** The size of the legend icons in pixels. */
+    size_t m_legendIconSize;
 
 private slots:
     /** This must be triggered when a curve is changed. */

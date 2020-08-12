@@ -44,6 +44,9 @@ public:
 	/** Renders the passed regular grid.  Its values are mapped to a grayscale set between given values. */
 	void display( const spectral::array& grid, double colorScaleMin, double colorScaleMax );
 
+    /** Renders the passed regular grid.  Its values are mapped to a grayscale set between min. and max. values. */
+    void display( const spectral::array& grid );
+
 	/** Removes the actor(s) currently being displayed (if any). */
 	void clearScene();
 

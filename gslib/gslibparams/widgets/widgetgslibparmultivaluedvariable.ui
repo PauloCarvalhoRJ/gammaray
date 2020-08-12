@@ -70,7 +70,7 @@
         </property>
         <property name="icon">
          <iconset resource="../../../resources.qrc">
-          <normaloff>:/icons/bclosed</normaloff>:/icons/bclosed</iconset>
+          <normaloff>:/icons32/bclosed32</normaloff>:/icons32/bclosed32</iconset>
         </property>
        </widget>
       </item>
@@ -84,7 +84,7 @@
         </property>
         <property name="icon">
          <iconset resource="../../../resources.qrc">
-          <normaloff>:/icons/bopen</normaloff>:/icons/bopen</iconset>
+          <normaloff>:/icons32/bopen32</normaloff>:/icons32/bopen32</iconset>
         </property>
        </widget>
       </item>

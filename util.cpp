@@ -1067,7 +1067,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5" << "5.3" << "5.1"
+    previousVersions  << "6.3" << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5" << "5.3" << "5.1"
                       << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3" << "4.0"
                       << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
                       << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0"
@@ -2521,4 +2521,20 @@ QStringList Util::getListOfImageFileExtensions()
 {
     return QStringList() << "png" << "jpg" << "jpeg" << "gif" << "tiff"
                          << "tif" << "bmp";
+}
+
+void Util::unitize(std::vector<double> &values)
+{
+    //normalize the entry: get the sum of proportion values across the entry.
+    //ATTENTION: The last parameter not only sets the initial value of the summation, it also
+    //           defines the type to be used during the summation.
+    //           Hence, do not replace the "0.0" for "0" or "0.0f" for instance, because std::accumulate
+    //           may iterate casting all values to int or to float. Ideally one must use
+    //           decltype(values)::value_type(0) instead of a plain value, but
+    //           currently passing a reference to a vector is not compiling.
+    double total = std::accumulate(values.begin(), values.end(), 0.0);
+
+    //divide all values by the total so each entry sums up to 1.0.
+    std::transform( values.begin(), values.end(), values.begin(),
+                    std::bind( std::divides<double>(), std::placeholders::_1, total ) );
 }

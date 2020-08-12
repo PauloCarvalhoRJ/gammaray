@@ -215,6 +215,21 @@ public:
 											  double toleranceRadius,
 											  int numberOfVertexesThreshold = 0);
 
+    /**
+     * Returns the X, Y, Z, radius ( sqrt(X^2 + Y^2 + X^2) ) and scalar (if present) of the vertexes as
+     * time-series data, that is: as functions of the independent variable phase.
+     * The returned X, Y and Z coordiantes are with respect to a reference centerX, centerY, centerZ
+     * location, which is normally the center of the closed polygons.
+     * The outer vector corresponds to the polygons found in the input vtkPolyData object.
+     * The inner vector corresponds to the vertexes found in a polygon.
+     * @param repeats Repeats the unwinding a number of times so the periodicity can be better assessed.
+     *                Default number is 1.
+     */
+    struct TimeSeriesEntry{ double phase, x, y, z, radius, scalar; };
+    static std::vector< std::vector< TimeSeriesEntry > > unwindAsTimeSeries(const vtkSmartPointer<vtkPolyData>& polyData,
+                                                            double centerX, double centerY, double centerZ,
+                                                            int repeats = 1);
+
     /** Fits ellipses to each poly line in the input poly data.  The ellipses are stored
 	 * in another poly data object to be referenced in passed VTK smart pointer.  If the passed
 	 * pointer is null, no ellipses poly is generated and the function only returns the ellipses stats (faster execution).

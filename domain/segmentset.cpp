@@ -201,7 +201,7 @@ void SegmentSet::getBoundingBox(uint dataLineIndex, double &minX, double &minY, 
 {
     //initialize the results to ensure the returned extrema are those of the segment.
     minX = minY = minZ = std::numeric_limits<double>::max();
-    maxX = maxY = maxZ = std::numeric_limits<double>::min();
+    maxX = maxY = maxZ = -std::numeric_limits<double>::max();
     //set the max's and min's
     minX = std::min( minX, dataConst( dataLineIndex, getXindex()-1 ) );
     minY = std::min( minY, dataConst( dataLineIndex, getYindex()-1 ) );

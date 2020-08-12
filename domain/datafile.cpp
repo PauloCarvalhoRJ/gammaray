@@ -541,7 +541,7 @@ double DataFile::getCalcValue(int iVar, int iRecord)
 
 void DataFile::setCalcValue(int iVar, int iRecord, double value)
 {
-    if( std::isnan(value) ) {
+    if( std::isnan(value) || std::isinf(value) ) {
 		if( hasNoDataValue() )
 			value = getNoDataValueAsDouble();
 		else

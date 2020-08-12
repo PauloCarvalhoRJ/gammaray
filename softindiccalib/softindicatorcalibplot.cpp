@@ -9,12 +9,21 @@
 #include <qwt_legend.h>
 
 #include "softindicatorcalibcanvaspicker.h"
+#include "util.h"
 
 SoftIndicatorCalibPlot::SoftIndicatorCalibPlot(QWidget *parent) :
     QwtPlot(parent),
-    m_nCurves(2)
+    m_nCurves(2),
+    m_handleSize(8),
+    m_legendIconSize(16)
 {
     setTitle( "Soft indicator calibration." );
+
+    //set icon and curves handles sizes depending on display resolution
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ) {
+        m_handleSize = 16;
+        m_legendIconSize = 32;
+    }
 
     QwtPlotGrid *grid = new QwtPlotGrid;
     grid->setMajorPen( Qt::black, 0, Qt::DotLine );
@@ -244,7 +253,7 @@ void SoftIndicatorCalibPlot::fillColor(const QColor &color, int base_curve, cons
     d_intervalCurve->setBrush( QBrush( bg ) );
     d_intervalCurve->setStyle( QwtPlotIntervalCurve::Tube );
     d_intervalCurve->setSamples( intervals );
-    d_intervalCurve->setLegendIconSize( QSize( 16, 16 ) );
+    d_intervalCurve->setLegendIconSize( QSize( m_legendIconSize, m_legendIconSize ) );
     d_intervalCurve->attach( this );
 
     //store the pointer of the new interval curve
@@ -255,7 +264,7 @@ void SoftIndicatorCalibPlot::setCurveLabel(int index, QString label)
 {
     QwtPlotCurve* curve = m_curves[index];
     curve->setTitle( label );
-    curve->setLegendIconSize( QSize( 16, 16 ) );
+    curve->setLegendIconSize( QSize( m_legendIconSize, m_legendIconSize ) );
 }
 
 void SoftIndicatorCalibPlot::setCurveColor(int index, QColor color)
@@ -303,7 +312,7 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
 
     curve->setPen( c );
     curve->setSymbol( new QwtSymbol( QwtSymbol::Ellipse,
-        Qt::gray, c, QSize( 8, 8 ) ) );
+        Qt::gray, c, QSize( m_handleSize, m_handleSize ) ) );
 
 	const size_t nPoints = 11;
     double x[nPoints];
@@ -333,7 +342,7 @@ void SoftIndicatorCalibPlot::insertCurve(Qt::Orientation o, const QColor &c, dou
 
     //put legend icon if label text is set
     if( ! label.isEmpty() )
-        curve->setLegendIconSize( QSize( 16, 16 ) );
+        curve->setLegendIconSize( QSize( m_legendIconSize, m_legendIconSize ) );
     else
         curve->setLegendIconSize( QSize( 0, 0 ) );
 

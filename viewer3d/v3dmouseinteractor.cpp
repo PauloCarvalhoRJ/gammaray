@@ -92,18 +92,18 @@ void v3dMouseInteractor::OnLeftButtonUp()
             vtkDataSet* dataSet = cellPicker->GetDataSet();
             vtkCellData* cellData = dataSet->GetCellData();
             vtkDataArray* dataArray = cellData->GetScalars();
-            if(  dataArray->GetNumberOfComponents() <= 200 ){
-                double values[200]; //TODO
+            if( dataArray && dataArray->GetNumberOfComponents() <= 200 ){
+                double values[200]; //200 fields is a fairly large number.
                 dataArray->GetTuple( cellPicker->GetCellId(), values );
                 QString valuesText = "NO VALUES";
                 for( int i = 0; i < dataArray->GetNumberOfComponents(); ++i )
                     if( i == 0)
                         valuesText = QString::number(values[0]);
                     else
-                        valuesText = valuesText + "; " + QString::number(values[0]);
+                        valuesText = valuesText + "; " + QString::number(values[i]);
                 Application::instance()->logInfo( "Picked value(s): " + valuesText);
             } else
-                Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): probing not possible if VTK object has more than 200 fields in it." );
+                Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): probing not possible if VTK object has no fields or more than 200 fields in it." );
         }
     }
 

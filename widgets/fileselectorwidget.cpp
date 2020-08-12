@@ -45,16 +45,28 @@ FileSelectorWidget::FileSelectorWidget(FileSelectorType filesOfTypes, bool show_
         m_filesOfTypes == FileSelectorType::PointSets ||
         m_filesOfTypes == FileSelectorType::GridFiles ||
         m_filesOfTypes == FileSelectorType::PointAndSegmentSets ||
-        m_filesOfTypes == FileSelectorType::SegmentSets ){
+        m_filesOfTypes == FileSelectorType::SegmentSets ||
+        m_filesOfTypes == FileSelectorType::CartesianGrids2D ){
         og = project->getDataFilesGroup();
         for( int i = 0; i < og->getChildCount(); ++i){
             File* varFile = (File*)og->getChildByIndex( i );
             bool toAdd = ( m_filesOfTypes == FileSelectorType::DataFiles ) ||
                          ( m_filesOfTypes == FileSelectorType::PointSets && varFile->getFileType() == "POINTSET" ) ||
                          ( m_filesOfTypes == FileSelectorType::CartesianGrids && varFile->getFileType() == "CARTESIANGRID" ) ||
+                         ( m_filesOfTypes == FileSelectorType::CartesianGrids2D && varFile->getFileType() == "CARTESIANGRID" ) ||
                          ( m_filesOfTypes == FileSelectorType::GridFiles && ( varFile->getFileType() == "CARTESIANGRID" || varFile->getFileType() == "GEOGRID" ) ) ||
                          ( m_filesOfTypes == FileSelectorType::PointAndSegmentSets && ( varFile->getFileType() == "POINTSET" || varFile->getFileType() == "SEGMENTSET" ) ) ||
                          ( m_filesOfTypes == FileSelectorType::SegmentSets && ( varFile->getFileType() == "SEGMENTSET" )  );
+            //-----------Particular case of the CartesianGrid2D filter.-------------
+            if( toAdd )
+                if( m_filesOfTypes == FileSelectorType::CartesianGrids2D ){
+                    DataFile* dfAspect = dynamic_cast< DataFile* >( varFile );
+                    if( ! dfAspect )
+                        Application::instance()->logWarn("FileSelectorWidget::FileSelectorWidget(): object expected to be a DataFile is not a DataFile. This is likely a bug.");
+                    else if( dfAspect->isTridimensional() )
+                        toAdd = false;
+                }
+            //----------------------------------------------------------------------
             if( toAdd )
                 ui->cmbFile->addItem( varFile->getIcon(), varFile->getName() );
         }
