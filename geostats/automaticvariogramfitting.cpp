@@ -356,7 +356,7 @@ double AutomaticVariogramFitting::objectiveFunctionVARFIT( const IJAbstractCarte
         static Attribute* currentAttribute2 = nullptr; //this is initialized when the program loads
         if( weights.data().empty() || currentAttribute2 != m_at ){
             objectiveFunctionlock.lock(); //this lock prevents two threads from populating the static (global) variable at once.
-            weights = spectral::array( nI, nJ, nK, 0.0 );
+            spectral::array weights_tmp = spectral::array( nI, nJ, nK, 0.0 );
             if( weights.data().empty() || currentAttribute2 != m_at ){ //repeat the outer if() to avoid unnecessary recomputing the weights
                                                                       //conversely, the role of the outer if is to wrap the lock so the
                                                                       //threads don't queue.
@@ -367,7 +367,8 @@ double AutomaticVariogramFitting::objectiveFunctionVARFIT( const IJAbstractCarte
                 SpatialLocation gridCenter = m_cg->getCenter();
                 double x, y, z;
 
-                //compute the sum of all distances
+                //compute the weights as a function of inverse distance from the center of the map
+                //which correspond to hx=0, hy=0 of the variogram.
                 {
                     for( int k = 0; k < nK; ++k )
                         for( int j = 0; j < nJ; ++j )
@@ -375,12 +376,15 @@ double AutomaticVariogramFitting::objectiveFunctionVARFIT( const IJAbstractCarte
                                 m_cg->getCellLocation( i, j, k, x, y, z );
                                 double d = gridCenter.distanceTo( x, y, z );
                                 if( d < 0.0001 ){ //if the separation is too small (results in large weight), this usually happens at the center
-                                    weights( i, j, k ) = 0.0; //takes the opportunity to save the inv. lag distance beforehand
+                                    weights_tmp( i, j, k ) = 0.0; //takes the opportunity to save the inv. lag distance beforehand
                                 }else{
-                                    weights( i, j, k ) = 1.0/d / ( 6.28*d/meanSampleSpacing ); //takes the opportunity to save the inv. lag distance beforehand
+                                    weights_tmp( i, j, k ) = 1.0/d / ( 6.28*d/meanSampleSpacing ); //takes the opportunity to save the inv. lag distance beforehand
                                 }
                             }
                 }
+
+                //after all weights have been calculated, set them to the static variable
+                weights = weights_tmp;
             }
 
             objectiveFunctionlock.unlock();
