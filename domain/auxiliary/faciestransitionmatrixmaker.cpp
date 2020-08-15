@@ -98,7 +98,8 @@ namespace FTMMakerAdapters {
                                      SegmentSet* segmentSet,
                                      int dataColumnWithFaciesCodes,
                                      DataSetOrderForFaciesString dataIndexOrder,
-                                     int groupByVariableIndex ){
+                                     int groupByVariableIndex,
+                                     bool ignoreGaps ){
 
         std::vector< std::vector< int > > result;
 
@@ -167,10 +168,10 @@ namespace FTMMakerAdapters {
                         faciesSequence.push_back( faciesCode );
                 }else{ // for the other segments...
                     //if the current segment doesn't connect to the previous...
-                    if( ! Util::areConnected(  currentHeadX,  currentHeadY,  currentHeadZ,
-                                               currentTailX,  currentTailY,  currentTailZ,
-                                              previousHeadX, previousHeadY, previousHeadZ,
-                                              previousTailX, previousTailY, previousTailZ ) ){
+                    if( ! ignoreGaps && ! Util::areConnected(  currentHeadX,  currentHeadY,  currentHeadZ,
+                                                               currentTailX,  currentTailY,  currentTailZ,
+                                                              previousHeadX, previousHeadY, previousHeadZ,
+                                                              previousTailX, previousTailY, previousTailZ ) ){
                         // ...append the previous string to the result to be returned.
                         if( ! faciesSequence.empty() )
                             result.push_back( faciesSequence );
@@ -261,10 +262,15 @@ namespace FTMMakerAdapters {
                                      DataFile* dataFile,
                                      int dataColumnWithFaciesCodes,
                                      DataSetOrderForFaciesString dataIndexOrder,
-                                     int groupByVariableIndex ){
+                                     int groupByVariableIndex,
+                                     bool ignoreGaps ){
         if( dataFile->getFileType() == "SEGMENTSET" ){
             SegmentSet* segmentSet = dynamic_cast<SegmentSet*>( dataFile );
-            return getFaciesSequence<SegmentSet>( segmentSet, dataColumnWithFaciesCodes, dataIndexOrder, groupByVariableIndex );
+            return getFaciesSequence<SegmentSet>( segmentSet,
+                                                  dataColumnWithFaciesCodes,
+                                                  dataIndexOrder,
+                                                  groupByVariableIndex,
+                                                  ignoreGaps );
         } else {
             Application::instance()->logError("FTMMakerAdapters::getFaciesSequence<DataFile>(): Unsupported data file type: "
                                               + dataFile->getFileType() + ". Returned empty sequence." );

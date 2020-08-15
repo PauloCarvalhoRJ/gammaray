@@ -2910,7 +2910,7 @@ void MainWindow::onMakeFaciesTransitionMatrix()
     //get pointer to the data file.
     DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
 
-    //crate an FTM make auxiliary object.
+    //crate an FTM maker auxiliary object.
     FaciesTransitionMatrixMaker<DataFile> ftmMaker( df, _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
     //if data file is a point or segment set...
@@ -2925,7 +2925,9 @@ void MainWindow::onMakeFaciesTransitionMatrix()
     }
 
     // Compute FTM from alternating facies in data from -Z to +Z.
-    FaciesTransitionMatrix ftm = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
+    bool ignoreGaps = ftmd.isIgnoreGapsChecked();
+    FaciesTransitionMatrix ftm = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP,
+                                                      ignoreGaps );
 
     // Ask the user for a name for the FTM file.
     bool ok;

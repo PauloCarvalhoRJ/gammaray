@@ -15,6 +15,8 @@ public:
     explicit FaciesTransitionMatrixOptionsDialog(QWidget *parent = nullptr);
     ~FaciesTransitionMatrixOptionsDialog();
 
+    bool isIgnoreGapsChecked();
+
 private:
     Ui::FaciesTransitionMatrixOptionsDialog *ui;
 };
