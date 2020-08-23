@@ -44,10 +44,10 @@ View3DViewData PointSet::build3DViewObjects(View3DWidget *widget3D)
 
 void PointSet::getSpatialAndTopologicalCoordinates(int iRecord, double & x, double & y, double & z, int & i, int & j, int & k)
 {
-	x = data( iRecord, getXindex() );
-	y = data( iRecord, getYindex() );
+    x = data( iRecord, getXindex() - 1 );
+    y = data( iRecord, getYindex() - 1 );
 	if( is3D() )
-		z = data( iRecord, getZindex() );
+        z = data( iRecord, getZindex() - 1 );
 	else
 		z = 0.0;
 	//Point sets don't have topological coordinates, they don't even have topology.

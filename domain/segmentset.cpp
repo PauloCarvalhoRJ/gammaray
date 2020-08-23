@@ -326,19 +326,19 @@ View3DViewData SegmentSet::build3DViewObjects(View3DWidget *widget3D)
 void SegmentSet::getSpatialAndTopologicalCoordinates(int iRecord, double &x, double &y, double &z, int &i, int &j, int &k)
 {
 
-    double xi = data( iRecord, getXindex() );
-    double yi = data( iRecord, getYindex() );
+    double xi = data( iRecord, getXindex() - 1 );
+    double yi = data( iRecord, getYindex() - 1 );
     double zi;
     if( is3D() )
-        zi = data( iRecord, getZindex() );
+        zi = data( iRecord, getZindex() - 1 );
     else
         zi = 0.0;
 
-    double xf = data( iRecord, getXFinalIndex() );
-    double yf = data( iRecord, getYFinalIndex() );
+    double xf = data( iRecord, getXFinalIndex() - 1 );
+    double yf = data( iRecord, getYFinalIndex() - 1 );
     double zf;
     if( is3D() )
-        zf = data( iRecord, getZFinalIndex() );
+        zf = data( iRecord, getZFinalIndex() - 1 );
     else
         zf = 0.0;
 
