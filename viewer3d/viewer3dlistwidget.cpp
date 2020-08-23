@@ -55,7 +55,7 @@ void Viewer3DListWidget::dropEvent(QDropEvent *e)
     }
 
     //Create a list item with the object information
-    QListWidgetItem* item = new QListWidgetItem( object->getIcon(), object->getName() );
+    QListWidgetItem* item = new QListWidgetItem( object->getIcon(), object->getNameWithParents() );
     View3DListRecord data( object_locator, getNextInstance( object_locator ) );
     QVariant qv; //the QVariant is necessary to wrap the custom class for storage as list item data
     qv.setValue( data );
