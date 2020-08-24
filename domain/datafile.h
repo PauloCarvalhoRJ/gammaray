@@ -411,6 +411,11 @@ public:
      */
     void replaceDataFrame( const std::vector< std::vector<double> >& dataTable );
 
+    /** Returns (via output parameters) the center/centroid of the object represented by this dataset.
+     * The returned boolean informs whether the computation of the center failed (false) for some reason.
+     */
+    virtual bool getCenter( double& x, double& y, double& z );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();

@@ -703,6 +703,16 @@ void DataFile::replaceDataFrame( const std::vector<std::vector<double> > &dataTa
     _data = dataTable;
 }
 
+bool DataFile::getCenter(double &x, double &y, double &z)
+{
+    Q_UNUSED( x )
+    Q_UNUSED( y )
+    Q_UNUSED( z )
+    Application::instance()->logError( "DataFile::getCenter(): Default implementation called.  Objects of type "
+                                       + getTypeName() + " must provide one according to their particular geometry." );
+    return false;
+}
+
 void DataFile::replacePhysicalFile(const QString from_file_path)
 {
     // copies the source file over the current physical file in project.
