@@ -108,7 +108,7 @@ public:
 // File interface
 public:
 	virtual bool canHaveMetaData();
-	virtual QString getFileType();
+    virtual QString getFileType() const;
 	virtual void updateMetaDataFile();
 	virtual bool isDataFile(){ return true; }
 	bool isDistribution(){ return false; }

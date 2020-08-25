@@ -98,7 +98,7 @@ public:
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
-    virtual QString getTypeName();
+    virtual QString getTypeName() const;
     virtual void save( QTextStream *txt_stream );
     virtual View3DViewData build3DViewObjects( View3DWidget *widget3D );
 
@@ -109,7 +109,7 @@ public:
 
     // File interface
 public:
-    virtual QString getFileType();
+    virtual QString getFileType() const;
     virtual void updateMetaDataFile();
 
     // DataFile interface
@@ -119,6 +119,7 @@ public:
     virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
+    virtual bool getCenter( double& x, double& y, double& z ) const;
 
     // PointSet interface
 public:

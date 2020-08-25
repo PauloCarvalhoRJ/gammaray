@@ -45,7 +45,7 @@ public:
     /**
      * Returns whether the Z coordinate was defined.
      */
-    bool is3D();
+    bool is3D() const;
 
     /**
      *  Adds a new variable-weight relationship in the form given by their
@@ -89,7 +89,7 @@ public:
     // File interface
 public:
     bool canHaveMetaData();
-    QString getFileType();
+    QString getFileType() const;
     void updateMetaDataFile();
     bool isDataFile(){ return true; }
 	bool isDistribution(){ return false; }

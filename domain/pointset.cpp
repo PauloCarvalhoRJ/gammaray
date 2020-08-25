@@ -260,7 +260,7 @@ int PointSet::getZindex() const
     return this->_z_field_index;
 }
 
-bool PointSet::is3D()
+bool PointSet::is3D() const
 {
     return getZindex() > 0;
 }
@@ -299,7 +299,7 @@ bool PointSet::canHaveMetaData()
     return true;
 }
 
-QString PointSet::getFileType()
+QString PointSet::getFileType() const
 {
     return "POINTSET";
 }
