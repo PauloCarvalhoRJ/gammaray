@@ -19,8 +19,14 @@ class ProjectComponent
 public:
     ProjectComponent();
     virtual ~ProjectComponent();
-	virtual QString getName() const = 0; //user-given name to identify the object
-    virtual QString getPresentationName(); //text composition, by default equals getName(), but may include other information such as parameter index
+    /** User-given name to identify the object. */
+    virtual QString getName() const = 0;
+    /** Text composition, by default equals getName(), but may include other information such as parameter index. */
+    virtual QString getPresentationName();
+    /** Returns the name of the object followed by the parent's enclosed in parenthesis e.g.: "amplitude (well_A1.txt)".
+     * Returns getName() if the object does not have a parent.
+     */
+    virtual QString getNameWithParents() const;
     virtual QIcon getIcon() = 0;
     virtual bool isFile() const = 0;
     virtual bool isAttribute() = 0;

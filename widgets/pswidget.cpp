@@ -23,6 +23,10 @@ PSWidget::PSWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    //sets 150dpi for default resolution in UHD displays.
+    if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI )
+        _current_plot_dpi = 150 ;
+
     _lblImage = new QLabelWithCrossHairs();
     ui->scrollAreaWidgetContents->layout()->addWidget( _lblImage );
 
