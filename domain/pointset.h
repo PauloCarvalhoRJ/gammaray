@@ -85,6 +85,7 @@ public:
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
     virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
+    virtual bool getCenter( double& x, double& y, double& z ) const;
 
     // File interface
 public:

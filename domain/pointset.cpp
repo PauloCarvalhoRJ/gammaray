@@ -173,7 +173,30 @@ void PointSet::getDataSpatialLocation(uint line, double &x, double &y, double &z
 
 bool PointSet::isTridimensional()
 {
-	return is3D();
+    return is3D();
+}
+
+bool PointSet::getCenter(double &x, double &y, double &z) const
+{
+    if( getDataLineCount() == 0){
+        Application::instance()->logError("PointSet::getCenter(): data not loaded."
+                                          " Maybe a prior call to readFromFS() is missing. ");
+        return false;
+    } else {
+        double meanX = 0.0, meanY = 0.0, meanZ = 0.0;
+        //sums up the mid points of each segment
+        for( int iDataLine = 0; iDataLine < getDataLineCount(); ++iDataLine ){
+            meanX += dataConst( iDataLine, _x_field_index - 1 ) ; //x,y,z is in data file directly
+            meanY += dataConst( iDataLine, _y_field_index - 1 ) ; //x,y,z is in data file directly
+            if( is3D() ) //returns z=0.0 for datasets in 2D.
+                meanZ += dataConst( iDataLine, _z_field_index - 1 ) ; //x,y,z is in data file directly
+        }
+        //returns the means of the coordinates.
+        x = meanX / getDataLineCount();
+        y = meanY / getDataLineCount();
+        z = meanZ / getDataLineCount();
+        return true;
+    }
 }
 
 void PointSet::setInfoFromMetadataFile()
