@@ -41,7 +41,7 @@ public:
     QString getMetaDataFilePath();
 
     /** Returns a string with the file type (e.g.: "POINTSET") */
-    virtual QString getFileType() = 0;
+    virtual QString getFileType() const = 0;
 
     /** Updates the physical metadata file, if applicable.
       * Subclasses without metadata can implement an empty method.*/
@@ -112,7 +112,7 @@ public:
     virtual bool isFile() const;
 	virtual bool isAttribute();
     virtual QString getObjectLocator();
-    virtual QString getTypeName(){ return getFileType(); }
+    virtual QString getTypeName() const { return getFileType(); }
 };
 
 #endif // __VVVV___FILE_H

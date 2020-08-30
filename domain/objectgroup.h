@@ -32,7 +32,7 @@ public:
     bool isFile() const;
     bool isAttribute();
     virtual QString getObjectLocator();
-    virtual QString getTypeName(){ return "ObjectGroup"; }
+    virtual QString getTypeName() const { return "ObjectGroup"; }
 };
 
 #endif // OBJECTGROUP_H

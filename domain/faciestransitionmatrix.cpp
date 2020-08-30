@@ -508,7 +508,7 @@ QIcon FaciesTransitionMatrix::getIcon()
     return QIcon(":icons32/transmat32");
 }
 
-QString FaciesTransitionMatrix::getTypeName()
+QString FaciesTransitionMatrix::getTypeName() const
 {
     return "FACIESTRANSITIONMATRIX";
 }
@@ -525,7 +525,7 @@ bool FaciesTransitionMatrix::canHaveMetaData()
     return true;
 }
 
-QString FaciesTransitionMatrix::getFileType()
+QString FaciesTransitionMatrix::getFileType() const
 {
     return getTypeName();
 }

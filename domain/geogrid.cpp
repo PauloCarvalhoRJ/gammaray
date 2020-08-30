@@ -949,7 +949,7 @@ bool GeoGrid::canHaveMetaData()
 	return true;
 }
 
-QString GeoGrid::getFileType()
+QString GeoGrid::getFileType() const
 {
 	return "GEOGRID";
 }

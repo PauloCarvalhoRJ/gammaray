@@ -46,7 +46,7 @@ public:
     // File interface
 public:
     bool canHaveMetaData(){ return false; }
-    QString getFileType(){ return "CATEGORYPDF"; }
+    QString getFileType() const { return "CATEGORYPDF"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
     bool isDataFile(){ return false; }

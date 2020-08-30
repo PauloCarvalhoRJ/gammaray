@@ -30,7 +30,7 @@ public:
     virtual QIcon getIcon() = 0;
     virtual bool isFile() const = 0;
     virtual bool isAttribute() = 0;
-    virtual QString getTypeName() = 0;
+    virtual QString getTypeName() const = 0;
 
     /** Returns a string that uniquely identify an object in the project.
      *  Use the findObject() function to fetch the object pointer given a locator.

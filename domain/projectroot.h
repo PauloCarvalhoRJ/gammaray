@@ -21,7 +21,7 @@ public:
     bool isFile() const;
     bool isAttribute();
     virtual QString getObjectLocator();
-    virtual QString getTypeName(){ return "ProjectRoot"; }
+    virtual QString getTypeName() const { return "ProjectRoot"; }
 };
 
 #endif // PROJECTROOT_H

@@ -59,7 +59,7 @@ public:
     // File interface
 public:
     bool canHaveMetaData(){ return false; }
-    QString getFileType(){ return "CATEGORYDEFINITION"; }
+    QString getFileType() const { return "CATEGORYDEFINITION"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
     virtual QWidget *createContentElementWidget();

@@ -281,13 +281,13 @@ public:
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
-    virtual QString getTypeName();
+    virtual QString getTypeName() const;
     virtual void save(QTextStream *txt_stream);
 
     // File interface
 public:
     virtual bool canHaveMetaData();
-    virtual QString getFileType();
+    virtual QString getFileType() const;
     virtual void updateMetaDataFile();
     virtual void writeToFS();
     virtual void readFromFS();

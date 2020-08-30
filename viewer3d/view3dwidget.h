@@ -25,6 +25,7 @@ class QListWidgetItem;
 class View3DConfigWidget;
 class View3DVerticalExaggerationWidget;
 class vtkRenderer;
+class View3DTextConfigWidget;
 
 class View3DWidget : public QWidget
 {
@@ -35,7 +36,7 @@ public:
     ~View3DWidget();
 
     /** Returns the VTK renderer used to paint the scene on this widget's canvas. */
-    vtkSmartPointer<vtkRenderer> getRenderer() { return _renderer; }
+    vtkSmartPointer<vtkRenderer> getRenderer() { return _rendererMainScene; }
 
 private:
     Ui::View3DWidget *ui;
@@ -44,8 +45,12 @@ private:
     // out of scope
     vtkSmartPointer<vtkOrientationMarkerWidget> _vtkAxesWidget;
 
-    // the VTK renderer (add VTK actors to it to build the scene).
-    vtkSmartPointer<vtkRenderer> _renderer;
+    // the main VTK renderer (add VTK actors of geo-objects to it to build the scene).
+    vtkSmartPointer<vtkRenderer> _rendererMainScene;
+
+    // the VTK renderer for always-on-top objects (e.g. labels, symbols, etc.) so they
+    // are not occluded by objects in the main scene.
+    vtkSmartPointer<vtkRenderer> _rendererForeground;
 
     // the Qt widget containing a VTK viewport
     QVTKOpenGLWidget *_vtkwidget;
@@ -64,6 +69,9 @@ private:
     // the floating widget for configuring the vertical scale.
     View3DVerticalExaggerationWidget *_verticalExaggWiget;
 
+    // the floating widget for configuring the text labels in the 3D scene.
+    View3DTextConfigWidget *_textConfigWiget;
+
     // removes the current 3D viewing config widget.
     void removeCurrentConfigWidget();
 
@@ -72,6 +80,9 @@ private:
                                   unsigned long vtkNotUsed(event),
                                   void* arg,
                                   void* vtkNotUsed(whatIsThis) );
+
+    // applies the current text style set by the user to the passed text actor.
+    void applyCurrentTextStyle( vtkSmartPointer<vtkBillboardTextActor3D> textActor );
 
 private slots:
     void onNewObject(const View3DListRecord object_info);
@@ -84,6 +95,8 @@ private slots:
     void onConfigWidgetChanged();
     void onVerticalExaggeration();
     void onVerticalExaggerationChanged(double value);
+    void onTextStyle();
+    void onTextConfigChanged();
 };
 
 #endif // VIEW3DWIDGET_H

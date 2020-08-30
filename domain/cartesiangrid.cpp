@@ -512,7 +512,7 @@ bool CartesianGrid::canHaveMetaData()
     return true;
 }
 
-QString CartesianGrid::getFileType()
+QString CartesianGrid::getFileType() const
 {
     return "CARTESIANGRID";
 }
