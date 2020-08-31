@@ -356,6 +356,9 @@ public:
 
     /** Skeletonizes gridded data so only values along thin lines remain. */
     static spectral::array skeletonize( const spectral::array& inputData );
+
+    static spectral::array meanFilter(const spectral::array& inputData, int windowSize);
+
 };
 
 #endif // IMAGEJOCKEYUTILS_H
