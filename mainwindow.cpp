@@ -3069,7 +3069,45 @@ void MainWindow::onFilterMedian()
 
 void MainWindow::onFilterGaussian()
 {
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
 
+    //ask the user for sigma parameter (standard deviation) for the filter.
+    bool ok = false;
+    double sigma = QInputDialog::getDouble(this, "Enter sigma parameter",
+                      "Sigma parameter (standard deviation in cell count units): ", 3.0, 0.1, 100.0, 1,
+                       &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_GaussianFiltered_sigma_" + QString::number( sigma ) );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New Gaussian filtered variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the Gaussian filter.
+    spectral::array result = ImageJockeyUtils::gaussianFilter( *a, sigma );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    //save the filtered result to the grid in the project
+    cg->appendAsNewVariable(new_variable_name, result );
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()

@@ -31,6 +31,7 @@
 #include <itkRescaleIntensityImageFilter.hxx>
 #include <itkMeanImageFilter.h>
 #include <itkMedianImageFilter.h>
+#include <itkSmoothingRecursiveGaussianImageFilter.h>
 #include <ludecomposition.h> //third party header library for the LU_solve() function call
                              // in ImageJockeyUtils::interpolateNullValuesThinPlateSpline()
                              // replace with gauss-elim.h (slower) with you run into numerical issues.
@@ -1255,14 +1256,31 @@ spectral::array ImageJockeyUtils::medianFilter(const spectral::array &inputData,
 
     //create median filter
     using FilterType = itk::MedianImageFilter<Image3DType, Image3DType>;
-    FilterType::Pointer meanFilter = FilterType::New();
+    FilterType::Pointer medianFilter = FilterType::New();
 
     //set the filter's window
     FilterType::InputSizeType radius;
     radius.Fill( windowSize );
 
     //configure the filter
-    meanFilter->SetRadius(radius);
+    medianFilter->SetRadius(radius);
+    medianFilter->SetInput( inputImage );
+
+    //return the filter's output as an spectral::array object
+    return itkImage3DToSpectralArray( medianFilter->GetOutput() );
+}
+
+spectral::array ImageJockeyUtils::gaussianFilter(const spectral::array &inputData, float sigma)
+{
+    //convert input spectral::array to ITK image
+    Image3DType::Pointer inputImage = spectralArrayToitkImage3D( inputData );
+
+    //create median filter
+    using FilterType = itk::SmoothingRecursiveGaussianImageFilter<Image3DType, Image3DType>;
+    FilterType::Pointer meanFilter = FilterType::New();
+
+    //configure the filter
+    meanFilter->SetSigma( sigma );
     meanFilter->SetInput( inputImage );
 
     //return the filter's output as an spectral::array object
