@@ -362,6 +362,9 @@ public:
      */
     static spectral::array meanFilter(const spectral::array& inputData, int windowSize);
 
+    /** Performs the median filter on the passed gridded data.
+     * @param windowSize The size of the convolution kernel in cells.  Zero results in a simply copy of values.
+     */
     static spectral::array medianFilter(const spectral::array& inputData, int windowSize);
 };
 
