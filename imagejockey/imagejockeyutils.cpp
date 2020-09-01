@@ -30,6 +30,7 @@
 #include <itkPNGImageIOFactory.h>
 #include <itkRescaleIntensityImageFilter.hxx>
 #include <itkMeanImageFilter.h>
+#include <itkMedianImageFilter.h>
 #include <ludecomposition.h> //third party header library for the LU_solve() function call
                              // in ImageJockeyUtils::interpolateNullValuesThinPlateSpline()
                              // replace with gauss-elim.h (slower) with you run into numerical issues.
@@ -1242,6 +1243,27 @@ spectral::array ImageJockeyUtils::meanFilter(const spectral::array &inputData, i
 //        writer->SetInput( rescaler->GetOutput() );
 //        writer->Update();
 //    }
+
+    //return the filter's output as an spectral::array object
+    return itkImage3DToSpectralArray( meanFilter->GetOutput() );
+}
+
+spectral::array ImageJockeyUtils::medianFilter(const spectral::array &inputData, int windowSize)
+{
+    //convert input spectral::array to ITK image
+    Image3DType::Pointer inputImage = spectralArrayToitkImage3D( inputData );
+
+    //create median filter
+    using FilterType = itk::MedianImageFilter<Image3DType, Image3DType>;
+    FilterType::Pointer meanFilter = FilterType::New();
+
+    //set the filter's window
+    FilterType::InputSizeType radius;
+    radius.Fill( windowSize );
+
+    //configure the filter
+    meanFilter->SetRadius(radius);
+    meanFilter->SetInput( inputImage );
 
     //return the filter's output as an spectral::array object
     return itkImage3DToSpectralArray( meanFilter->GetOutput() );

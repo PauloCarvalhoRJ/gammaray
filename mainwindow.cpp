@@ -3026,7 +3026,45 @@ void MainWindow::onFilterMean()
 
 void MainWindow::onFilterMedian()
 {
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
 
+    //ask the user for the window size for the filter.
+    bool ok = false;
+    int windowSize = QInputDialog::getInt(this, "Enter window size for the filter",
+                      "Window size in cells (min == 0 to simply copy values, max == 9999): ", 3, 0, 9999, 1,
+                       &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_MedianFiltered_window_" + QString::number( windowSize ) );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New median filtered variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the median filter.
+    spectral::array result = ImageJockeyUtils::medianFilter( *a, windowSize );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    //save the filtered result to the grid in the project
+    cg->appendAsNewVariable(new_variable_name, result );
 }
 
 void MainWindow::onFilterGaussian()
