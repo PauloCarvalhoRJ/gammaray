@@ -26,7 +26,7 @@ public:
 
 // File interface
 public:
-    QString getFileType(){ return "UNIDIST"; }
+    QString getFileType() const { return "UNIDIST"; }
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return true; }
     virtual void readFromFS();

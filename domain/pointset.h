@@ -45,7 +45,7 @@ public:
     /**
      * Returns whether the Z coordinate was defined.
      */
-    bool is3D();
+    bool is3D() const;
 
     /**
      *  Adds a new variable-weight relationship in the form given by their
@@ -85,11 +85,12 @@ public:
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
     virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
+    virtual bool getCenter( double& x, double& y, double& z ) const;
 
     // File interface
 public:
     bool canHaveMetaData();
-    QString getFileType();
+    QString getFileType() const;
     void updateMetaDataFile();
     bool isDataFile(){ return true; }
 	bool isDistribution(){ return false; }

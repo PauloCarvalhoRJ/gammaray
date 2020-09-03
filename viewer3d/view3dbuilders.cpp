@@ -49,6 +49,8 @@
 #include <vtkTubeFilter.h>
 #include <vtkLine.h>
 #include <vtkQuad.h>
+#include <vtkBillboardTextActor3D.h>
+#include <vtkTextProperty.h>
 
 #include <QMessageBox>
 #include <QPushButton>
@@ -125,7 +127,20 @@ View3DViewData View3DBuilders::build(PointSet *object, View3DWidget */*widget3D*
     actor->SetMapper(mapper);
     actor->GetProperty()->SetPointSize(3);
 
-    return View3DViewData( actor );
+    //create an actor for the label
+    double cX, cY, cZ;
+    vtkSmartPointer<vtkBillboardTextActor3D> textActor;
+    if( pointSet->getCenter( cX, cY, cZ ) ){
+        textActor = vtkSmartPointer<vtkBillboardTextActor3D>::New();
+        textActor->SetInput ( pointSet->getName().toStdString().c_str() );
+        textActor->SetPosition( cX, cY, cZ );
+        //text style (calls to textActor->GetTextProperty()->... to set font size, color, etc.) is
+        //controlled via user settings in the View3DWidget class.
+    }
+
+    View3DViewData v3dd( actor );
+    v3dd.labelActor = textActor;
+    return v3dd;
 }
 
 View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
@@ -353,7 +368,20 @@ View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet,
     actor->SetMapper(mapper);
     actor->GetProperty()->SetPointSize(3);
 
-    return View3DViewData(actor);
+    //create an actor for the label
+    double cX, cY, cZ;
+    vtkSmartPointer<vtkBillboardTextActor3D> textActor;
+    if( pointSet->getCenter( cX, cY, cZ ) ){
+        textActor = vtkSmartPointer<vtkBillboardTextActor3D>::New();
+        textActor->SetInput ( pointSet->getName().toStdString().c_str() );
+        textActor->SetPosition( cX, cY, cZ );
+        //text style (calls to textActor->GetTextProperty()->... to set font size, color, etc.) is
+        //controlled via user settings in the View3DWidget class.
+    }
+
+    View3DViewData v3dd( actor );
+    v3dd.labelActor = textActor;
+    return v3dd;
 }
 
 View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segmentSet,
@@ -441,8 +469,20 @@ View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segme
     tubeActor->GetProperty()->SetOpacity(1.0); //Make the tube have some transparency.
     tubeActor->SetMapper(tubeMapper);
 
+    //create an actor for the label
+    double cX, cY, cZ;
+    vtkSmartPointer<vtkBillboardTextActor3D> textActor;
+    if( segmentSet->getCenter( cX, cY, cZ ) ){
+        textActor = vtkSmartPointer<vtkBillboardTextActor3D>::New();
+        textActor->SetInput ( segmentSet->getName().toStdString().c_str() );
+        textActor->SetPosition( cX, cY, cZ );
+        //text style (calls to textActor->GetTextProperty()->... to set font size, color, etc.) is
+        //controlled via user settings in the View3DWidget class.
+    }
+
     View3DViewData v3dd( tubeActor );
     v3dd.tubeFilter = tubeFilter;
+    v3dd.labelActor = textActor;
     return v3dd;
 }
 

@@ -99,6 +99,7 @@ SOURCES += main.cpp\
     vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
     widgets/barchartwidget.cpp \
+    viewer3d/view3dtextconfigwidget.cpp \
     widgets/linechartwidget.cpp \
     widgets/qlistwidgetdnd.cpp \
     widgets/variogrammodellist.cpp \
@@ -366,6 +367,7 @@ HEADERS  += mainwindow.h \
     vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
     widgets/barchartwidget.h \
+    viewer3d/view3dtextconfigwidget.h \
     widgets/linechartwidget.h \
     widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \
@@ -586,6 +588,7 @@ FORMS    += mainwindow.ui \
     thinsectionanalysis/thinsectionanalysisdialog.ui \
     thinsectionanalysis/thinsectionanalysisresultsdialog.ui \
     widgets/barchartwidget.ui \
+    viewer3d/view3dtextconfigwidget.ui \
     widgets/linechartwidget.ui \
     vertpropcurves/verticalproportioncurvedialog.ui \
     widgets/variogrammodellist.ui \

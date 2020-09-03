@@ -102,6 +102,7 @@
 #include "imagejockey/ijabstractcartesiangrid.h"
 #include "imagejockey/gabor/gaborfilterdialog.h"
 #include "imagejockey/wavelet/wavelettransformdialog.h"
+#include "imagejockey/imagejockeyutils.h"
 #include "domain/auxiliary/valuestransferer.h"
 #include "domain/verticaltransiogrammodel.h"
 
@@ -113,7 +114,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_subMenuFilterBy    ( new QMenu("Filter by",           this) ),
     m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
     m_subMenuMapAs( new QMenu("Map as", this) ),
-    m_subMenuFlipData( new QMenu("Flip data", this) )
+    m_subMenuFlipData( new QMenu("Flip data", this) ),
+    m_subMenuMovingWindowFilters( new QMenu("Moving window filter", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -572,6 +574,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuCategorize );
             }
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
+                makeMenuMovingWindowFilters();
+                _projectContextMenu->addMenu( m_subMenuMovingWindowFilters );
                 _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
                 _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
                 _projectContextMenu->addAction("EMD analysis", this, SLOT(onEMD()));
@@ -2911,7 +2915,7 @@ void MainWindow::onMakeFaciesTransitionMatrix()
     //get pointer to the data file.
     DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
 
-    //crate an FTM make auxiliary object.
+    //crate an FTM maker auxiliary object.
     FaciesTransitionMatrixMaker<DataFile> ftmMaker( df, _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1 );
 
     //if data file is a point or segment set...
@@ -2926,7 +2930,9 @@ void MainWindow::onMakeFaciesTransitionMatrix()
     }
 
     // Compute FTM from alternating facies in data from -Z to +Z.
-    FaciesTransitionMatrix ftm = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
+    bool ignoreGaps = ftmd.isIgnoreGapsChecked();
+    FaciesTransitionMatrix ftm = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP,
+                                                      ignoreGaps );
 
     // Ask the user for a name for the FTM file.
     bool ok;
@@ -2966,6 +2972,149 @@ void MainWindow::onCreateVerticalProportionCurve()
 {
     VerticalProportionCurveDialog* vpcd = new VerticalProportionCurveDialog( nullptr, this );
     vpcd->show();
+}
+
+void MainWindow::onFilterMean()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //ask the user for the window size for the filter.
+    bool ok = false;
+    int windowSize = QInputDialog::getInt(this, "Enter window size for the filter",
+                      "Window size in cells (min == 0 to simply copy values, max == 9999): ", 3, 0, 9999, 1,
+                       &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_MeanFiltered_window_" + QString::number( windowSize ) );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New mean filtered variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the mean filter.
+    spectral::array result = ImageJockeyUtils::meanFilter( *a, windowSize );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+//    //debug the output result
+//    {
+//        SVDFactor* gridSVD = new SVDFactor( std::move(result), 1, 0.42,
+//                                         0.0,
+//                                         0.0,
+//                                         0.0,
+//                                         1.0,
+//                                         1.0,
+//                                         1.0, 0.0 );
+//        IJGridViewerWidget* ijgv = new IJGridViewerWidget( true, false, true );
+//        ijgv->setFactor( gridSVD );
+//        ijgv->show();
+//    }
+
+    //save the filtered result to the grid in the project
+    cg->appendAsNewVariable(new_variable_name, result );
+}
+
+void MainWindow::onFilterMedian()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //ask the user for the window size for the filter.
+    bool ok = false;
+    int windowSize = QInputDialog::getInt(this, "Enter window size for the filter",
+                      "Window size in cells (min == 0 to simply copy values, max == 9999): ", 3, 0, 9999, 1,
+                       &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_MedianFiltered_window_" + QString::number( windowSize ) );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New median filtered variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the median filter.
+    spectral::array result = ImageJockeyUtils::medianFilter( *a, windowSize );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    //save the filtered result to the grid in the project
+    cg->appendAsNewVariable(new_variable_name, result );
+}
+
+void MainWindow::onFilterGaussian()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //ask the user for sigma parameter (standard deviation) for the filter.
+    bool ok = false;
+    double sigma = QInputDialog::getDouble(this, "Enter sigma parameter",
+                      "Sigma parameter (standard deviation in cell count units): ", 3.0, 0.1, 100.0, 1,
+                       &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_GaussianFiltered_sigma_" + QString::number( sigma ) );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New Gaussian filtered variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the Gaussian filter.
+    spectral::array result = ImageJockeyUtils::gaussianFilter( *a, sigma );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    //save the filtered result to the grid in the project
+    cg->appendAsNewVariable(new_variable_name, result );
 }
 
 void MainWindow::onCreateGeoGridFromBaseAndTop()
@@ -3346,6 +3495,14 @@ void MainWindow::makeMenuFlipData()
     m_subMenuFlipData->addAction( "in U direction (East-West)", this,   SLOT(onFlipEastWest()));
     m_subMenuFlipData->addAction( "in V direction (North-South)", this, SLOT(onFlipNorthSouth()));
     m_subMenuFlipData->addAction( "in W direction (Top-Bottom)", this,  SLOT(onFlipTopBottom()));
+}
+
+void MainWindow::makeMenuMovingWindowFilters()
+{
+    m_subMenuMovingWindowFilters->clear(); //remove any previously added item actions
+    m_subMenuMovingWindowFilters->addAction( "Mean", this,   SLOT(onFilterMean()));
+    m_subMenuMovingWindowFilters->addAction( "Median", this, SLOT(onFilterMedian()));
+    m_subMenuMovingWindowFilters->addAction( "Gaussian", this,  SLOT(onFilterGaussian()));
 }
 
 void MainWindow::makeMenuMapAs()

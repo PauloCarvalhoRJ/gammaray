@@ -43,12 +43,15 @@ namespace FTMMakerAdapters {
      *        to be used to group the data.  That is, to treat each group as a separate data set.  This is
      *        mainly useful with single files that contains data from multiple sources (e.g. drill holes).
      *        The variable is normally some interger valued id (e.g. well number).
+     * @param ignoreGaps If true, samples not connected in space are treated as if they were connected
+     *                   in the sequence.
      */
     template <typename Klass> std::vector< std::vector< int > > getFaciesSequence(
                                                 Klass* dataFile,
                                                 int dataColumnWithFaciesCodes,
                                                 DataSetOrderForFaciesString dataIndexOrder,
-                                                int groupByVariableIndex = -1 );
+                                                int groupByVariableIndex = -1,
+                                                bool ignoreGaps = false );
 }
 
 /** This is a template class used to make facies transition matrices for different
@@ -107,9 +110,10 @@ public:
     /**
      * Computes a facies transition matrix by simply counting facies changes between data elements
      * along some sequence (e.g. from last to first) of the object passed in the constructor.
-     *
+     * @param ignoreGaps If true, samples not connected in space are treated as if they were connected
+     *                   in the sequence.
      */
-    FaciesTransitionMatrix makeSimple( DataSetOrderForFaciesString dataIndexOrder ){
+    FaciesTransitionMatrix makeSimple( DataSetOrderForFaciesString dataIndexOrder, bool ignoreGaps ){
         //retrieve category definition
         CategoryDefinition* cd = FTMMakerAdapters::getAssociatedCategoryDefinition( m_dataFileWithFacies, m_variableIndex );
         assert( cd && "FaciesTransitionMatrixMaker::makeSimple(): null CategoryDefinition." );
@@ -119,7 +123,11 @@ public:
         ftm.initialize();
 
         std::vector< std::vector< int > > faciesStrings =
-                FTMMakerAdapters::getFaciesSequence( m_dataFileWithFacies, m_variableIndex, dataIndexOrder, m_groupByColumn );
+                FTMMakerAdapters::getFaciesSequence( m_dataFileWithFacies,
+                                                     m_variableIndex,
+                                                     dataIndexOrder,
+                                                     m_groupByColumn,
+                                                     ignoreGaps );
 
         //each facies string is treated separately (e.g. traces of a seismic volume)
         for( const std::vector< int >& faciesString : faciesStrings ){

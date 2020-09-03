@@ -135,5 +135,6 @@
         <file alias="vpc32">art/iconsHD/vpc32.png</file>
         <file alias="recycle32">art/iconsHD/recycle32.png</file>
         <file alias="editCurve32">art/iconsHD/editCurve32.png</file>
+        <file alias=" v3Dfont32">art/iconsHD/v3Dfont32.png</file>
     </qresource>
 </RCC>

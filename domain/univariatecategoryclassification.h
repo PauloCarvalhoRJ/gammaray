@@ -43,7 +43,7 @@ public:
     // File interface
 public:
     bool canHaveMetaData(){ return false; }
-    QString getFileType(){ return "UNIVARIATECATEGORYCLASSIFICATION"; }
+    QString getFileType() const { return "UNIVARIATECATEGORYCLASSIFICATION"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
     QWidget *createContentElementWidget();

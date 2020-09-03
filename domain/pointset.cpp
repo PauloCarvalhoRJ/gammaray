@@ -44,10 +44,10 @@ View3DViewData PointSet::build3DViewObjects(View3DWidget *widget3D)
 
 void PointSet::getSpatialAndTopologicalCoordinates(int iRecord, double & x, double & y, double & z, int & i, int & j, int & k)
 {
-	x = data( iRecord, getXindex() );
-	y = data( iRecord, getYindex() );
+    x = data( iRecord, getXindex() - 1 );
+    y = data( iRecord, getYindex() - 1 );
 	if( is3D() )
-		z = data( iRecord, getZindex() );
+        z = data( iRecord, getZindex() - 1 );
 	else
 		z = 0.0;
 	//Point sets don't have topological coordinates, they don't even have topology.
@@ -173,7 +173,30 @@ void PointSet::getDataSpatialLocation(uint line, double &x, double &y, double &z
 
 bool PointSet::isTridimensional()
 {
-	return is3D();
+    return is3D();
+}
+
+bool PointSet::getCenter(double &x, double &y, double &z) const
+{
+    if( getDataLineCount() == 0){
+        Application::instance()->logError("PointSet::getCenter(): data not loaded."
+                                          " Maybe a prior call to readFromFS() is missing. ");
+        return false;
+    } else {
+        double meanX = 0.0, meanY = 0.0, meanZ = 0.0;
+        //sums up the mid points of each segment
+        for( int iDataLine = 0; iDataLine < getDataLineCount(); ++iDataLine ){
+            meanX += dataConst( iDataLine, _x_field_index - 1 ) ; //x,y,z is in data file directly
+            meanY += dataConst( iDataLine, _y_field_index - 1 ) ; //x,y,z is in data file directly
+            if( is3D() ) //returns z=0.0 for datasets in 2D.
+                meanZ += dataConst( iDataLine, _z_field_index - 1 ) ; //x,y,z is in data file directly
+        }
+        //returns the means of the coordinates.
+        x = meanX / getDataLineCount();
+        y = meanY / getDataLineCount();
+        z = meanZ / getDataLineCount();
+        return true;
+    }
 }
 
 void PointSet::setInfoFromMetadataFile()
@@ -260,7 +283,7 @@ int PointSet::getZindex() const
     return this->_z_field_index;
 }
 
-bool PointSet::is3D()
+bool PointSet::is3D() const
 {
     return getZindex() > 0;
 }
@@ -299,7 +322,7 @@ bool PointSet::canHaveMetaData()
     return true;
 }
 
-QString PointSet::getFileType()
+QString PointSet::getFileType() const
 {
     return "POINTSET";
 }

@@ -26,7 +26,7 @@ public:
 
 // File interface
 public:
-    QString getFileType(){ return "EXPVARIOGRAM"; }
+    QString getFileType() const { return "EXPVARIOGRAM"; }
     virtual bool canHaveMetaData(){ return true; }
     virtual void updateMetaDataFile();
     bool isDataFile(){ return false; }

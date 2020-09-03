@@ -16,7 +16,7 @@ public:
 
 // File interface
 public:
-    QString getFileType(){ return "BIDIST"; }
+    QString getFileType() const { return "BIDIST"; }
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return true; }
 

@@ -135,7 +135,7 @@ public:
 
 // File interface
 public:
-    QString getFileType(){ return "VMODEL"; }
+    QString getFileType() const { return "VMODEL"; }
     virtual bool canHaveMetaData(){ return false; }
     virtual void updateMetaDataFile(){;}
     bool isDataFile(){ return false; }
