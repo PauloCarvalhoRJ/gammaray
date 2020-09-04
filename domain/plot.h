@@ -13,7 +13,7 @@ public:
 
 // File interface
 public:
-    QString getFileType(){ return "PLOT"; }
+    QString getFileType() const { return "PLOT"; }
     virtual bool canHaveMetaData(){ return false; }
     virtual void updateMetaDataFile(){;}
     bool isDataFile(){ return false; }

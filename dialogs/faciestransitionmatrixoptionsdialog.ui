@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="label">
      <property name="text">
-      <string>Options to make a Facies Transition Matrix file (currently fixed):</string>
+      <string>Options to make a Facies Transition Matrix file (some are currently fixed):</string>
      </property>
     </widget>
    </item>
@@ -32,6 +32,13 @@
     <widget class="QLabel" name="label_3">
      <property name="text">
       <string>Type: [ X ]Counts  [   ]Probabilities</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="chkIgnoreGaps">
+     <property name="text">
+      <string>Ignore gaps (disconnected samples will be treated as connected in sequence)</string>
      </property>
     </widget>
    </item>

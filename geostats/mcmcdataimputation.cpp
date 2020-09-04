@@ -305,7 +305,7 @@ bool MCMCDataImputation::run()
             }
 
             // Compute FTM from alternating facies in data from -Z to +Z.
-            FaciesTransitionMatrix ftmOfRealization = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP );
+            FaciesTransitionMatrix ftmOfRealization = ftmMaker.makeSimple( DataSetOrderForFaciesString::FROM_BOTTOM_TO_TOP, false );
 
             // If the FTM of the realization has illegal transitions...
             if( m_enforceFTM->hasInexistentTransitions( ftmOfRealization, m_enforceThreshold ) ){

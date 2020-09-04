@@ -356,6 +356,22 @@ public:
 
     /** Skeletonizes gridded data so only values along thin lines remain. */
     static spectral::array skeletonize( const spectral::array& inputData );
+
+    /** Performs the mean filter on the passed gridded data.
+     * @param windowSize The size of the convolution kernel in cells.  Zero results in a simply copy of values.
+     */
+    static spectral::array meanFilter(const spectral::array& inputData, int windowSize);
+
+    /** Performs the median filter on the passed gridded data.
+     * @param windowSize The size of the convolution kernel in cells.  Zero results in a simply copy of values.
+     */
+    static spectral::array medianFilter(const spectral::array& inputData, int windowSize);
+
+    /** Performs the Gaussian filter on the passed gridded data.
+     * @param sigma The standard deviation (in cell count units) parameter of the Gaussian-bell-shaped
+     *              kernel of the filter.
+     */
+    static spectral::array gaussianFilter(const spectral::array& inputData, float sigma);
 };
 
 #endif // IMAGEJOCKEYUTILS_H

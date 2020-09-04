@@ -14,3 +14,8 @@ FaciesTransitionMatrixOptionsDialog::~FaciesTransitionMatrixOptionsDialog()
 {
     delete ui;
 }
+
+bool FaciesTransitionMatrixOptionsDialog::isIgnoreGapsChecked()
+{
+    return ui->chkIgnoreGaps->isChecked();
+}

@@ -9,6 +9,7 @@ class vtkExtractGrid;
 class vtkDataSetMapper;
 class vtkThreshold;
 class vtkTubeFilter;
+class vtkBillboardTextActor3D;
 
 
 /** This class is just a data structure to hold objects and info related to 3D visualization of a domain object.
@@ -57,6 +58,9 @@ public:
 
     /** The tube filter is used to render segment sets with adjustable diameter. */
     vtkSmartPointer<vtkTubeFilter> tubeFilter;
+
+    /** An object may provide a VTKActor with its label text. */
+    vtkSmartPointer<vtkBillboardTextActor3D> labelActor;
 
     /** Sampling rate. Default is 1: 1 cell per 1 sample in each topological direction (I, J, K). */
     int samplingRate;

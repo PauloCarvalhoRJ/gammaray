@@ -18,7 +18,7 @@ public:
     // File interface
 public:
     bool canHaveMetaData(){ return false; }
-    QString getFileType(){ return "THRESHOLDCDF"; }
+    QString getFileType() const { return "THRESHOLDCDF"; }
     void updateMetaDataFile(){}
     virtual bool isEditable(){ return true; }
     bool isDataFile(){ return false; }

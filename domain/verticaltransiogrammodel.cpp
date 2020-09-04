@@ -202,7 +202,7 @@ QIcon VerticalTransiogramModel::getIcon()
     return QIcon(":icons32/transiogram32");
 }
 
-QString VerticalTransiogramModel::getTypeName()
+QString VerticalTransiogramModel::getTypeName() const
 {
     return "VERTICALTRANSIOGRAMMODEL";
 }
@@ -219,7 +219,7 @@ bool VerticalTransiogramModel::canHaveMetaData()
     return true;
 }
 
-QString VerticalTransiogramModel::getFileType()
+QString VerticalTransiogramModel::getFileType() const
 {
     return getTypeName();
 }

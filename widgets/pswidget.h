@@ -10,7 +10,7 @@ class PSWidget;
 class QLabelWithCrossHairs;
 
 /**
- * @brief The PSWidget class is a widget to view the Postscript files produced by
+ * @brief The PSWidget class is a widget to view the Postscript files, such as the ones produced by
  * GSLib plot programs.
  */
 class PSWidget : public QWidget

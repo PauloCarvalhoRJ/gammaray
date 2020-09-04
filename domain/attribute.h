@@ -40,7 +40,7 @@ public:
 	virtual QString getPresentationName();
     virtual QString getObjectLocator();
     virtual View3DViewData build3DViewObjects( View3DWidget * widget3D );
-    virtual QString getTypeName(){ return "Attribute"; }
+    virtual QString getTypeName() const { return "Attribute"; }
     virtual View3DConfigWidget* build3DViewerConfigWidget(View3DViewData viewObjects);
 
 //IJAbstractVariable interface

@@ -29,6 +29,9 @@
 #include <itkImageFileWriter.hxx>
 #include <itkPNGImageIOFactory.h>
 #include <itkRescaleIntensityImageFilter.hxx>
+#include <itkMeanImageFilter.h>
+#include <itkMedianImageFilter.h>
+#include <itkSmoothingRecursiveGaussianImageFilter.h>
 #include <ludecomposition.h> //third party header library for the LU_solve() function call
                              // in ImageJockeyUtils::interpolateNullValuesThinPlateSpline()
                              // replace with gauss-elim.h (slower) with you run into numerical issues.
@@ -1083,4 +1086,203 @@ spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
                     result( i, j, k ) = std::numeric_limits<double>::quiet_NaN();
             }
     return result;
+}
+
+
+// Local function to create an ITK image object from an spectral::array object.
+typedef itk::Image<float, 2>  Image3DType;
+Image3DType::Pointer spectralArrayToitkImage3D( const spectral::array &inputData ) {
+    //get data array dimensions
+    int nI = inputData.M();
+    int nJ = inputData.N();
+    int nK = inputData.K();
+    // create and fill the ITK image object.
+    Image3DType::Pointer itkImage = Image3DType::New();
+    {
+        Image3DType::IndexType start;
+        start.Fill(0);
+        Image3DType::SizeType size;
+        size[0] = nI;
+        size[1] = nJ;
+        size[2] = nK;
+        Image3DType::RegionType region(start, size);
+        itkImage->SetRegions(region);
+        itkImage->Allocate();
+        itkImage->FillBuffer(0);
+        for(unsigned int k = 0; k < nK; ++k)
+            for(unsigned int j = 0; j < nJ; ++j)
+                for(unsigned int i = 0; i < nI; ++i){
+                    itk::Index<2> index;
+                    index[0] = i;
+                    index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                    index[2] = nK - 1 - k;
+                    if( std::isfinite( inputData(i, j, k) ) )
+                        itkImage->SetPixel(index, inputData(i, j, k) );
+                    else
+                        itkImage->SetPixel(index, std::numeric_limits<float>::quiet_NaN() );
+                }
+    }
+    //return the ITK image object
+    return itkImage;
+}
+
+spectral::array itkImage3DToSpectralArray( const Image3DType::Pointer inputImage ){
+//    //debug input ITK image
+//    {
+//        // Rescale the values and convert the image
+//        // so that it can be seen as a PNG file
+//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
+//        RescaleType::Pointer rescaler = RescaleType::New();
+//        rescaler->SetInput( inputImage );
+//        rescaler->SetOutputMinimum(0);
+//        rescaler->SetOutputMaximum(255);
+//        rescaler->Update();
+//        //save the converted umage as PNG file
+//        itk::PNGImageIOFactory::RegisterOneFactory();
+//        typedef itk::ImageFileWriter< PngImageType > WriterType;
+//        WriterType::Pointer writer = WriterType::New();
+//        writer->SetFileName("~itkImageDebug.png");
+//        writer->SetInput( rescaler->GetOutput() );
+//        writer->Update();
+//    }
+
+    //Weird!
+    //This is a dummy call to make GetLargestPossibleRegion() return the correct image size,
+    //otherwise (0, 0, 0) is always returned.  Apparently the correct size is returned
+    //when ITK's algorithms "touch" the image.
+    {
+        typedef itk::Image<unsigned char, 3>  PngImageType;
+        typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
+        RescaleType::Pointer rescaler = RescaleType::New();
+        rescaler->SetInput( inputImage );
+        rescaler->SetOutputMinimum(0);
+        rescaler->SetOutputMaximum(255);
+        rescaler->Update();
+    }
+
+    //Get image grid dimensions.
+    Image3DType::RegionType region = inputImage->GetLargestPossibleRegion();
+    Image3DType::SizeType size = region.GetSize();
+    int nI = size[0];
+    int nJ = size[1];
+    int nK = size[2];
+    if( nK == 0 ) //2D images are 1 pixel tall, not zero!
+        nK = 1;
+
+    //prepare to return the result
+    spectral::array result( static_cast<spectral::index>(nI),
+                            static_cast<spectral::index>(nJ),
+                            static_cast<spectral::index>(nK) );
+    for(unsigned int k = 0; k < nK; ++k)
+        for(unsigned int j = 0; j < nJ; ++j)
+            for(unsigned int i = 0; i < nI; ++i){
+                itk::Index<2> index;
+                index[0] = i;
+                index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
+                index[2] = nK - 1 - k;
+                float pxValue = inputImage->GetPixel( index );
+                //the cells marked as valid receive the value from the original input data.
+                result( i, j, k ) = pxValue;
+            }
+    return result;
+}
+
+spectral::array ImageJockeyUtils::meanFilter(const spectral::array &inputData, int windowSize)
+{
+    //convert input spectral::array to ITK image
+    Image3DType::Pointer inputImage = spectralArrayToitkImage3D( inputData );
+
+//    //debug input ITK image
+//    {
+//        // Rescale the values and convert the image
+//        // so that it can be seen as a PNG file
+//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
+//        RescaleType::Pointer rescaler = RescaleType::New();
+//        rescaler->SetInput( inputImage );
+//        rescaler->SetOutputMinimum(0);
+//        rescaler->SetOutputMaximum(255);
+//        rescaler->Update();
+//        //save the converted umage as PNG file
+//        itk::PNGImageIOFactory::RegisterOneFactory();
+//        typedef itk::ImageFileWriter< PngImageType > WriterType;
+//        WriterType::Pointer writer = WriterType::New();
+//        writer->SetFileName("~itkImageDebug.png");
+//        writer->SetInput( rescaler->GetOutput() );
+//        writer->Update();
+//    }
+
+    //create mean filter
+    using FilterType = itk::MeanImageFilter<Image3DType, Image3DType>;
+    FilterType::Pointer meanFilter = FilterType::New();
+
+    //set the filter's window
+    FilterType::InputSizeType radius;
+    radius.Fill( windowSize );
+
+    //configure the filter
+    meanFilter->SetRadius(radius);
+    meanFilter->SetInput( inputImage );
+
+//    //debug output ITK image
+//    {
+//        // Rescale the values and convert the image
+//        // so that it can be seen as a PNG file
+//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
+//        RescaleType::Pointer rescaler = RescaleType::New();
+//        rescaler->SetInput( meanFilter->GetOutput() );
+//        rescaler->SetOutputMinimum(0);
+//        rescaler->SetOutputMaximum(255);
+//        rescaler->Update();
+//        //save the converted umage as PNG file
+//        itk::PNGImageIOFactory::RegisterOneFactory();
+//        typedef itk::ImageFileWriter< PngImageType > WriterType;
+//        WriterType::Pointer writer = WriterType::New();
+//        writer->SetFileName("~itkImageDebug.png");
+//        writer->SetInput( rescaler->GetOutput() );
+//        writer->Update();
+//    }
+
+    //return the filter's output as an spectral::array object
+    return itkImage3DToSpectralArray( meanFilter->GetOutput() );
+}
+
+spectral::array ImageJockeyUtils::medianFilter(const spectral::array &inputData, int windowSize)
+{
+    //convert input spectral::array to ITK image
+    Image3DType::Pointer inputImage = spectralArrayToitkImage3D( inputData );
+
+    //create median filter
+    using FilterType = itk::MedianImageFilter<Image3DType, Image3DType>;
+    FilterType::Pointer medianFilter = FilterType::New();
+
+    //set the filter's window
+    FilterType::InputSizeType radius;
+    radius.Fill( windowSize );
+
+    //configure the filter
+    medianFilter->SetRadius(radius);
+    medianFilter->SetInput( inputImage );
+
+    //return the filter's output as an spectral::array object
+    return itkImage3DToSpectralArray( medianFilter->GetOutput() );
+}
+
+spectral::array ImageJockeyUtils::gaussianFilter(const spectral::array &inputData, float sigma)
+{
+    //convert input spectral::array to ITK image
+    Image3DType::Pointer inputImage = spectralArrayToitkImage3D( inputData );
+
+    //create median filter
+    using FilterType = itk::SmoothingRecursiveGaussianImageFilter<Image3DType, Image3DType>;
+    FilterType::Pointer meanFilter = FilterType::New();
+
+    //configure the filter
+    meanFilter->SetSigma( sigma );
+    meanFilter->SetInput( inputImage );
+
+    //return the filter's output as an spectral::array object
+    return itkImage3DToSpectralArray( meanFilter->GetOutput() );
 }

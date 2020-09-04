@@ -93,6 +93,7 @@ SOURCES += main.cpp\
     vertpropcurves/verticalproportioncurvescanvaspicker.cpp \
     vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
+    viewer3d/view3dtextconfigwidget.cpp \
     widgets/linechartwidget.cpp \
     widgets/qlistwidgetdnd.cpp \
     widgets/variogrammodellist.cpp \
@@ -353,6 +354,7 @@ HEADERS  += mainwindow.h \
     vertpropcurves/verticalproportioncurvescanvaspicker.h \
     vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
+    viewer3d/view3dtextconfigwidget.h \
     widgets/linechartwidget.h \
     widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \
@@ -569,6 +571,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
+    viewer3d/view3dtextconfigwidget.ui \
     widgets/linechartwidget.ui \
     vertpropcurves/verticalproportioncurvedialog.ui \
     widgets/variogrammodellist.ui \
@@ -804,7 +807,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.5
+VERSION = 6.6
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

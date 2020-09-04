@@ -225,6 +225,9 @@ private slots:
     void onExtractMidPoints();
     void onMakeFaciesTransitionMatrix();
     void onCreateVerticalProportionCurve();
+    void onFilterMean();
+    void onFilterMedian();
+    void onFilterGaussian();
 
 private:
     /**
@@ -292,6 +295,15 @@ private:
       * Creates the items of sub-menu "Flip data".
       */
     void makeMenuFlipData();
+
+    /**
+     * The pointer to the sub-menu "Moving window filters" of the project tree context menu.
+     */
+    QMenu* m_subMenuMovingWindowFilters;
+    /**
+      * Creates the items of sub-menu "Moving window filters".
+      */
+    void makeMenuMovingWindowFilters();
 
 	/**
 	 * Lists the attributes currently being viewed in the quick view dialog.

@@ -16,6 +16,14 @@ QString ProjectComponent::getPresentationName()
     return this->getName();
 }
 
+QString ProjectComponent::getNameWithParents() const
+{
+    if( hasParent() )
+        return getName() + " (" + _parent->getName() + ')';
+    else
+        return getName();
+}
+
 bool ProjectComponent::hasChildren()
 {
     return !(this->_children.empty());

@@ -306,7 +306,7 @@ QIcon SegmentSet::getIcon()
     return QIcon(":icons32/segmentset32");
 }
 
-QString SegmentSet::getTypeName()
+QString SegmentSet::getTypeName() const
 {
     return getFileType();
 }
@@ -326,19 +326,19 @@ View3DViewData SegmentSet::build3DViewObjects(View3DWidget *widget3D)
 void SegmentSet::getSpatialAndTopologicalCoordinates(int iRecord, double &x, double &y, double &z, int &i, int &j, int &k)
 {
 
-    double xi = data( iRecord, getXindex() );
-    double yi = data( iRecord, getYindex() );
+    double xi = data( iRecord, getXindex() - 1 );
+    double yi = data( iRecord, getYindex() - 1 );
     double zi;
     if( is3D() )
-        zi = data( iRecord, getZindex() );
+        zi = data( iRecord, getZindex() - 1 );
     else
         zi = 0.0;
 
-    double xf = data( iRecord, getXFinalIndex() );
-    double yf = data( iRecord, getYFinalIndex() );
+    double xf = data( iRecord, getXFinalIndex() - 1 );
+    double yf = data( iRecord, getYFinalIndex() - 1 );
     double zf;
     if( is3D() )
-        zf = data( iRecord, getZFinalIndex() );
+        zf = data( iRecord, getZFinalIndex() - 1 );
     else
         zf = 0.0;
 
@@ -352,7 +352,7 @@ void SegmentSet::getSpatialAndTopologicalCoordinates(int iRecord, double &x, dou
     k = 0;
 }
 
-QString SegmentSet::getFileType()
+QString SegmentSet::getFileType() const
 {
     return "SEGMENTSET";
 }
@@ -429,6 +429,32 @@ double SegmentSet::getProportion(int variableIndex, double value0, double value1
         return lengthYES / ( lengthYES + lengthNO );
     else
         return 0.0;
+}
+
+bool SegmentSet::getCenter(double &x, double &y, double &z) const
+{
+    if( getDataLineCount() == 0){
+        Application::instance()->logError("SegmentSet::getCenter(): data not loaded."
+                                          " Maybe a prior call to readFromFS() is missing. ");
+        return false;
+    } else {
+        double meanX = 0.0, meanY = 0.0, meanZ = 0.0;
+        //sums up the mid points of each segment
+        for( int iDataLine = 0; iDataLine < getDataLineCount(); ++iDataLine ){
+            meanX += ( dataConst( iDataLine, _x_field_index - 1 ) +
+                       dataConst( iDataLine, _x_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+            meanY += ( dataConst( iDataLine, _y_field_index - 1 ) +
+                       dataConst( iDataLine, _y_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+            if( is3D() ) //returns z=0.0 for datasets in 2D.
+                meanZ += ( dataConst( iDataLine, _z_field_index - 1 ) +
+                           dataConst( iDataLine, _z_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+        }
+        //returns the means of the segments mid points.
+        x = meanX / getDataLineCount();
+        y = meanY / getDataLineCount();
+        z = meanZ / getDataLineCount();
+        return true;
+    }
 }
 
 void SegmentSet::setInfoFromOtherPointSet(PointSet *otherPS)

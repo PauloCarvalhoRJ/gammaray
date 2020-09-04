@@ -266,7 +266,7 @@ QIcon VerticalProportionCurve::getIcon()
     return QIcon(":icons32/vpc32");
 }
 
-QString VerticalProportionCurve::getTypeName()
+QString VerticalProportionCurve::getTypeName() const
 {
     return "VERTICALPROPORTIONCURVE";
 }
@@ -283,7 +283,7 @@ bool VerticalProportionCurve::canHaveMetaData()
     return true;
 }
 
-QString VerticalProportionCurve::getFileType()
+QString VerticalProportionCurve::getFileType() const
 {
     return getTypeName();
 }
