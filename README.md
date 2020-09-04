@@ -12,6 +12,7 @@ If you enjoyed this project, you might also enjoy GeostatsPy: https://github.com
 Python script to convert Eclipse grids to Paraview-compatible VTU format: https://github.com/BinWang0213/PyGRDECL
 
 VERSION HISTORY:<br>
+&nbsp;&nbsp;&nbsp;Version 6.6   - Mean, median and Gaussian filters, improvements and bug fixes.<br>
 &nbsp;&nbsp;&nbsp;Version 6.5   - vertical proportion curves, improvements Automatic Variogram Fitting, enhancements and several fixes.<br>
 &nbsp;&nbsp;&nbsp;Version 6.3   - improvements to data imputation with MCMC and parameter experiments for Automatic Variogram Fitting.<br>
 &nbsp;&nbsp;&nbsp;Version 6.2   - data imputation with Markov Chains-Monte Carlo simulation and filtering of data sets.<br>
