@@ -34,6 +34,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/sectiondialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
@@ -292,6 +293,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/sectiondialog.h \
     domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
@@ -558,6 +560,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/sectiondialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
