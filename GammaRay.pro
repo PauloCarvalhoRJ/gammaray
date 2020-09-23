@@ -35,6 +35,7 @@ SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
+    domain/section.cpp \
     domain/verticalproportioncurve.cpp \
     geometry/intersectionfinder.cpp \
     geostats/mcmcdataimputation.cpp \
@@ -297,6 +298,7 @@ HEADERS  += mainwindow.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
+    domain/section.h \
     domain/verticalproportioncurve.h \
     geometry/intersectionfinder.h \
     geostats/mcmcdataimputation.h \
