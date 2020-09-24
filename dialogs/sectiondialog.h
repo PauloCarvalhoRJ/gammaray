@@ -15,6 +15,11 @@ public:
     explicit SectionDialog(QWidget *parent = nullptr);
     ~SectionDialog();
 
+public Q_SLOTS:
+    void onChoosePointSet();
+    void onChooseCartesianGrid();
+    void onCreate();
+
 private:
     Ui::SectionDialog *ui;
 };

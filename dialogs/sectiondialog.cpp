@@ -1,6 +1,10 @@
 #include "sectiondialog.h"
 #include "ui_sectiondialog.h"
 
+#include <QFileDialog>
+
+#include "util.h"
+
 SectionDialog::SectionDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::SectionDialog)
@@ -16,4 +20,35 @@ SectionDialog::SectionDialog(QWidget *parent) :
 SectionDialog::~SectionDialog()
 {
     delete ui;
+}
+
+void SectionDialog::onChoosePointSet()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Choose point set file:",
+                                                Util::getLastBrowsedDirectory());
+    if( path.isEmpty() )
+        return;
+
+    ui->txtPathToPointSet->setText( path );
+
+
+    Util::saveLastBrowsedDirectoryOfFile( path );
+}
+
+void SectionDialog::onChooseCartesianGrid()
+{
+    QString path = QFileDialog::getOpenFileName(this, "Choose Cartesian grid file:",
+                                                Util::getLastBrowsedDirectory());
+    if( path.isEmpty() )
+        return;
+
+    ui->txtPathToCartesainGrid->setText( path );
+
+
+    Util::saveLastBrowsedDirectoryOfFile( path );
+}
+
+void SectionDialog::onCreate()
+{
+
 }

@@ -26,7 +26,7 @@
       <enum>QFrame::Plain</enum>
      </property>
      <property name="verticalScrollBarPolicy">
-      <enum>Qt::ScrollBarAlwaysOff</enum>
+      <enum>Qt::ScrollBarAsNeeded</enum>
      </property>
      <property name="horizontalScrollBarPolicy">
       <enum>Qt::ScrollBarAlwaysOff</enum>
@@ -55,6 +55,23 @@ X and Y: the areal coordinates of each &quot;fold&quot;; Z1 and Z2: the starting
 Both files will be copied to the project directory and will appear as child objects of the parent Section object in the project tree.</string>
      </property>
     </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="label_3">
+       <property name="text">
+        <string>Name for the Section object:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="txtName"/>
+     </item>
+    </layout>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -114,6 +131,13 @@ Both files will be copied to the project directory and will appear as child obje
       </spacer>
      </item>
      <item>
+      <widget class="QPushButton" name="btnCreate">
+       <property name="text">
+        <string>Create and close</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnDismiss">
        <property name="text">
         <string>Dismiss</string>
@@ -133,8 +157,8 @@ Both files will be copied to the project directory and will appear as child obje
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>359</x>
-     <y>361</y>
+     <x>438</x>
+     <y>394</y>
     </hint>
     <hint type="destinationlabel">
      <x>277</x>
@@ -146,11 +170,11 @@ Both files will be copied to the project directory and will appear as child obje
    <sender>btnChoosePointSet</sender>
    <signal>clicked()</signal>
    <receiver>SectionDialog</receiver>
-   <slot>onChoosePoinSet()</slot>
+   <slot>onChoosePointSet()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>417</x>
-     <y>316</y>
+     <x>438</x>
+     <y>337</y>
     </hint>
     <hint type="destinationlabel">
      <x>443</x>
@@ -165,8 +189,8 @@ Both files will be copied to the project directory and will appear as child obje
    <slot>onChooseCartesianGrid()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>417</x>
-     <y>340</y>
+     <x>438</x>
+     <y>366</y>
     </hint>
     <hint type="destinationlabel">
      <x>443</x>
@@ -174,9 +198,26 @@ Both files will be copied to the project directory and will appear as child obje
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnCreate</sender>
+   <signal>clicked()</signal>
+   <receiver>SectionDialog</receiver>
+   <slot>onCreate()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>318</x>
+     <y>388</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>340</x>
+     <y>399</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
-  <slot>onChoosePoinSet()</slot>
+  <slot>onChoosePointSet()</slot>
   <slot>onChooseCartesianGrid()</slot>
+  <slot>onCreate()</slot>
  </slots>
 </ui>
