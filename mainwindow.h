@@ -228,6 +228,7 @@ private slots:
     void onFilterMean();
     void onFilterMedian();
     void onFilterGaussian();
+    void onAddSection();
 
 private:
     /**
