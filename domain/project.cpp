@@ -28,6 +28,7 @@
 #include "domain/faciestransitionmatrix.h"
 #include "domain/verticaltransiogrammodel.h"
 #include "domain/verticalproportioncurve.h"
+#include "domain/section.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
 {
@@ -454,6 +455,13 @@ void Project::addResourceFile(File *file)
     this->_resources->addChild( file );
     file->setParent( this->_resources );
     this->save();
+}
+
+void Project::addSection(Section *section)
+{
+    _data_files->addChild( section );
+    section->setParent( _data_files );
+    save();
 }
 
 void Project::importPlot(const QString from_path, const QString new_file_name)
