@@ -813,6 +813,9 @@ public:
      * @warning Does not work with negative values! For this, one needs a softmax function.
      */
     static void unitize( std::vector<double>& values );
+
+    /** Returns whether the file exists, given its path. */
+    static bool fileExists( QString path );
 };
 
 #endif // UTIL_H

@@ -2532,3 +2532,9 @@ void Util::unitize(std::vector<double> &values)
     std::transform( values.begin(), values.end(), values.begin(),
                     std::bind( std::divides<double>(), std::placeholders::_1, total ) );
 }
+
+bool Util::fileExists(QString path)
+{
+    QFile file( path );
+    return file.exists();
+}
