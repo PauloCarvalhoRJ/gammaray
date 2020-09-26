@@ -2538,3 +2538,10 @@ bool Util::fileExists(QString path)
     QFile file( path );
     return file.exists();
 }
+
+QString Util::getParentDirectory(QString path)
+{
+    QFileInfo fileInfo( path );
+    QDir dir = fileInfo.dir();
+    return dir.canonicalPath();
+}

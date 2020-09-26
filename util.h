@@ -816,6 +816,9 @@ public:
 
     /** Returns whether the file exists, given its path. */
     static bool fileExists( QString path );
+
+    /** Returns the parent directory of the given path. */
+    static QString getParentDirectory( QString path );
 };
 
 #endif // UTIL_H
