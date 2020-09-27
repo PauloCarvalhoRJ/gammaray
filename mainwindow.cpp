@@ -1139,6 +1139,11 @@ void MainWindow::onSetNDV()
 {
     DataFile* data_file = dynamic_cast<DataFile*>(_right_clicked_file);
 
+    if( !data_file ){
+        Application::instance()->logError("MainWindow::onSetNDV(): Object is not a data file.");
+        return;
+    }
+
     bool ok;
     QString new_ndv = QInputDialog::getText(this, "Set no-data value",
                                              "Current no-data value (blank == not set):", QLineEdit::Normal,
