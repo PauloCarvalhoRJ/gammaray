@@ -116,16 +116,16 @@ void Section::updateMetaDataFile()
     out << "POINTSET:" << (this->m_PointSet ? this->m_PointSet->getName() : "") << '\n';
     out << "CARTESIANGRID:" << (this->m_CartesianGrid ? this->m_CartesianGrid->getName() : "") << '\n';
     file.close();
+    //Also updates the metadata file of its two component objects.
+    if( m_CartesianGrid )
+        m_CartesianGrid->updateMetaDataFile();
+    if( m_PointSet )
+        m_PointSet->updateMetaDataFile();
 }
 
 QIcon Section::getIcon()
 {
     return QIcon(":icons32/section32");
-}
-
-QString Section::getObjectLocator()
-{
-    return _parent->getObjectLocator() + '/' + getName();
 }
 
 void Section::save(QTextStream *txt_stream)

@@ -58,9 +58,6 @@ public:
     // ProjectComponent interface
 public:
     virtual QIcon getIcon() override;
-    virtual bool isFile() const override { return false; }
-    virtual bool isAttribute() override { return false; }
-    virtual QString getObjectLocator() override;
     virtual QString getTypeName() const override { return "SECTION"; }
     virtual void save(QTextStream *txt_stream) override;
 
