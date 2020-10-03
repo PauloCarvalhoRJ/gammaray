@@ -7,6 +7,8 @@
 #include "domain/cartesiangrid.h"
 #include "domain/application.h"
 #include "domain/project.h"
+#include "viewer3d/view3dviewdata.h"
+#include "viewer3d/view3dbuilders.h"
 
 Section::Section(QString path) : File(path),
     m_PointSet( nullptr ),
@@ -133,4 +135,9 @@ void Section::save(QTextStream *txt_stream)
     (*txt_stream) << this->getFileType() << ":" << this->getFileName() << '\n';
     //also saves the metadata file.
     this->updateMetaDataFile();
+}
+
+View3DViewData Section::build3DViewObjects(View3DWidget *widget3D)
+{
+    return View3DBuilders::build( this, widget3D );
 }

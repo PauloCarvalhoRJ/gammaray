@@ -6,6 +6,7 @@
 #include "domain/cartesiangrid.h"
 #include "domain/geogrid.h"
 #include "domain/segmentset.h"
+#include "domain/section.h"
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
 
@@ -74,7 +75,8 @@ View3DViewData View3DBuilders::build(ProjectComponent *object, View3DWidget */*w
 {
     Application::instance()->logError("view3DBuilders::build(): graphic builder for objects of type \"" +
                                       object->getTypeName()
-                                      + "\" not found.");
+                                      + "\" not found.  Maybe it needs to implement "
+                                        "ProjectComponent::build3DViewObjects().");
     return View3DViewData();
 }
 
@@ -206,6 +208,11 @@ View3DViewData View3DBuilders::build(CartesianGrid *object, View3DWidget * widge
 View3DViewData View3DBuilders::build(GeoGrid * object, View3DWidget * widget3D)
 {
     return buildForGeoGridMesh( object, widget3D );
+}
+
+View3DViewData View3DBuilders::build(Section *object, View3DWidget *widget3D)
+{
+    return buildForSection( object, widget3D );
 }
 
 vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZvalues(
@@ -1287,6 +1294,115 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *car
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     //actor->GetProperty()->EdgeVisibilityOn();
+
+    return View3DViewData( actor );
+}
+
+View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *widget3D)
+{
+    Q_UNUSED( widget3D )
+
+    vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+
+//    double length = 10;
+//    double rangeAngle = 180;
+//    double option = 2;
+
+//    int dAngle = 10;
+//    int dLength = 10;
+
+//    double angleIncrease = rangeAngle / dAngle; //120.0 / gridSize;
+//    double lengthIncrease = length / dLength; //120.0 / gridSize;
+
+//    for (unsigned int r = 0; r < length; r = r + lengthIncrease)
+//    {
+//        for (double theta = 0; theta <= 180; theta = theta + angleIncrease)
+//        {
+//            r = sqrt( r*r );
+//            double xx = cos(theta*(3.14159 / 180.0))*(r + option);
+//            double yy = sin(theta*(3.14159 / 180.0))*(r + option);
+//            points->InsertNextPoint(xx, yy, 0); // Make most of the points the same height
+//        }
+//    }
+
+//    // Specify the dimensions of the grid
+//    structuredGrid->SetDimensions(dAngle+1, dLength, 1);
+//    structuredGrid->SetPoints(points);
+
+
+    // Get the Section's component data files.
+    PointSet* sectionPathPS = section->getPointSet();
+    CartesianGrid* sectionDataCG = section->getCartesianGrid();
+
+    // Sanity checks.
+    if( ! sectionPathPS ){
+        Application::instance()->logError("View3DBuilders::buildForSection(): Section without a point set "
+                                          "defining its geographic path.", true);
+        return View3DViewData();
+    }
+    if( ! sectionDataCG ){
+        Application::instance()->logError("View3DBuilders::buildForSection(): Section without a Cartesian grid "
+                                          "containing its data.", true);
+        return View3DViewData();
+    }
+
+    // Load the data files.
+    sectionPathPS->loadData();
+    sectionDataCG->loadData();
+
+    // Get geometry data.
+    int nCols = sectionDataCG->getNI();
+    int nRows = sectionDataCG->getNK(); //number of rows of a section is the number of layers of its data grid.
+    int nSegments = sectionPathPS->getDataLineCount()-1; //if the PS has two entries, it defines one section segment.
+
+    // Sanity check.
+    if( nSegments < 1 ){
+        Application::instance()->logError("View3DBuilders::buildForSection(): Section must have at least one segment.", true);
+        return View3DViewData();
+    }
+
+    // For each horizon (from top of the "fence" to the bottom).
+    for( int iHorizon = 0; iHorizon < nRows+1; ++iHorizon ){
+
+        // For each section segment.
+        for( int iSegment = 0;  iSegment < nSegments; ++iSegment){
+            //See documentation of the Section class for point set convention regarding variable order.
+            double segment_Xi    = sectionPathPS->data( iSegment,   0 ); //X is 1st variable per the section format
+            double segment_Yi    = sectionPathPS->data( iSegment,   1 ); //Y is 2nd variable per the section format
+            double segment_topZi = sectionPathPS->data( iSegment,   2 ); //Z1 is 3rd variable per the section format
+            double segment_botZi = sectionPathPS->data( iSegment,   3 ); //Z2 is 4th variable per the section format
+            double segment_Xf    = sectionPathPS->data( iSegment+1, 0 );
+            double segment_Yf    = sectionPathPS->data( iSegment+1, 1 );
+            double segment_topZf = sectionPathPS->data( iSegment+1, 2 );
+            double segment_botZf = sectionPathPS->data( iSegment+1, 3 );
+            int nSegmentCols     = sectionPathPS->data( iSegment,   4 ); //data grid column is 5th variable per the section format
+
+
+            //For each column divider in the segment
+            {
+
+            } // For each column divider in the segment
+        } // For each section segment
+    } // For each horizon
+
+
+
+
+    // Specify the dimensions of the grid.
+    structuredGrid->SetDimensions(nCols+1, nRows+1, 1);
+    structuredGrid->SetPoints(points);
+
+    // Create a mapper for the vtkStructuredGrid.
+    vtkSmartPointer<vtkDataSetMapper> gridMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    gridMapper->SetInputData(structuredGrid);
+
+    // Create an actor for the scene in the main 3D view widget.
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(gridMapper);
+    actor->GetProperty()->EdgeVisibilityOn();
+    actor->GetProperty()->SetRepresentationToWireframe();
+    actor->GetProperty()->SetEdgeColor(0, 0, 1);
 
     return View3DViewData( actor );
 }

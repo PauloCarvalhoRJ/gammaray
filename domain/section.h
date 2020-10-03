@@ -31,12 +31,14 @@ public:
      * @note ATTENTION! The previous point set, if set, is deleted!
      */
     void setPointSet( PointSet* pointSet );
+    PointSet* getPointSet(){ return m_PointSet; }
 
     /** Sets the Cartesian grid mentioned in this class' documentation.
      * The previously set point set, if any, is removed from this object's child.
      * @note ATTENTION! The previous Cartesian set, if set, is deleted!
      */
     void setCartesianGrid( CartesianGrid* cartesianGrid );
+    CartesianGrid* getCartesianGrid(){ return m_CartesianGrid; }
 
     /** Sets point set metadata from the accompaining .md file, if it exists.
      * Nothing happens if the metadata file does not exist.  If it exists, it calls
@@ -60,6 +62,7 @@ public:
     virtual QIcon getIcon() override;
     virtual QString getTypeName() const override { return "SECTION"; }
     virtual void save(QTextStream *txt_stream) override;
+    virtual View3DViewData build3DViewObjects( View3DWidget * widget3D ) override;
 
 protected:
     PointSet* m_PointSet;
