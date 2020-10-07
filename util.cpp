@@ -13,6 +13,7 @@
 #include <QPushButton>
 #include <cassert>
 #include <stdint.h>
+#include <chrono>
 #include "exceptions/invalidgslibdatafileexception.h"
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
@@ -2531,4 +2532,13 @@ void Util::unitize(std::vector<double> &values)
     //divide all values by the total so each entry sums up to 1.0.
     std::transform( values.begin(), values.end(), values.begin(),
                     std::bind( std::divides<double>(), std::placeholders::_1, total ) );
+}
+
+long long Util::getUnixTimeStamp()
+{
+    using namespace std::chrono;
+    milliseconds ms = duration_cast< milliseconds >(
+        system_clock::now().time_since_epoch()
+    ); //number of milliseconds since 1970
+    return ms.count();
 }
