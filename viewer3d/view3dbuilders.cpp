@@ -1305,32 +1305,6 @@ View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *w
     vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
     vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
 
-//    double length = 10;
-//    double rangeAngle = 180;
-//    double option = 2;
-
-//    int dAngle = 10;
-//    int dLength = 10;
-
-//    double angleIncrease = rangeAngle / dAngle; //120.0 / gridSize;
-//    double lengthIncrease = length / dLength; //120.0 / gridSize;
-
-//    for (unsigned int r = 0; r < length; r = r + lengthIncrease)
-//    {
-//        for (double theta = 0; theta <= 180; theta = theta + angleIncrease)
-//        {
-//            r = sqrt( r*r );
-//            double xx = cos(theta*(3.14159 / 180.0))*(r + option);
-//            double yy = sin(theta*(3.14159 / 180.0))*(r + option);
-//            points->InsertNextPoint(xx, yy, 0); // Make most of the points the same height
-//        }
-//    }
-
-//    // Specify the dimensions of the grid
-//    structuredGrid->SetDimensions(dAngle+1, dLength, 1);
-//    structuredGrid->SetPoints(points);
-
-
     // Get the Section's component data files.
     PointSet* sectionPathPS = section->getPointSet();
     CartesianGrid* sectionDataCG = section->getCartesianGrid();
@@ -1354,6 +1328,7 @@ View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *w
     // Get geometry data.
     int nCols = sectionDataCG->getNI();
     int nRows = sectionDataCG->getNK(); //number of rows of a section is the number of layers of its data grid.
+    int nHorizons = nRows + 1;
     int nSegments = sectionPathPS->getDataLineCount()-1; //if the PS has two entries, it defines one section segment.
 
     // Sanity check.
@@ -1362,32 +1337,58 @@ View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *w
         return View3DViewData();
     }
 
-    // For each horizon (from top of the "fence" to the bottom).
-    for( int iHorizon = 0; iHorizon < nRows+1; ++iHorizon ){
+    // For each horizon (from bottom of the "fence" to the top).
+    for( int iHorizon = 0; iHorizon < nHorizons; ++iHorizon ){
 
         // For each section segment.
         for( int iSegment = 0;  iSegment < nSegments; ++iSegment){
+
             //See documentation of the Section class for point set convention regarding variable order.
             double segment_Xi    = sectionPathPS->data( iSegment,   0 ); //X is 1st variable per the section format
             double segment_Yi    = sectionPathPS->data( iSegment,   1 ); //Y is 2nd variable per the section format
             double segment_topZi = sectionPathPS->data( iSegment,   2 ); //Z1 is 3rd variable per the section format
             double segment_botZi = sectionPathPS->data( iSegment,   3 ); //Z2 is 4th variable per the section format
+            int dataColIni       = sectionPathPS->data( iSegment,   4 ); //data grid column is 5th variable per the section format
             double segment_Xf    = sectionPathPS->data( iSegment+1, 0 );
             double segment_Yf    = sectionPathPS->data( iSegment+1, 1 );
             double segment_topZf = sectionPathPS->data( iSegment+1, 2 );
             double segment_botZf = sectionPathPS->data( iSegment+1, 3 );
-            int nSegmentCols     = sectionPathPS->data( iSegment,   4 ); //data grid column is 5th variable per the section format
-
+            int dataColFin       = sectionPathPS->data( iSegment+1, 4 ) - 1; //data grid column is 5th variable per the section format
+            if( iSegment + 1 == nSegments ) //the last segment's final column is not the first column of the next segment (it can't be!)
+                ++dataColFin;
+            int nDataColumnsOfSegment = dataColFin - dataColIni + 1;
+            int nColumnDividersOfSegment = nDataColumnsOfSegment + 1;
 
             //For each column divider in the segment
-            {
+            for( int iColumnDivider = 0; iColumnDivider < nColumnDividersOfSegment; ++iColumnDivider ){
+
+                //The last vertex of the previous segment is the first vertex
+                //of the current vertex.  That is, only the first segment defines
+                //its first vertex.  For the other segments, this step is skipped.
+                if( iSegment != 0 && iColumnDivider == 0 )
+                    continue;
+
+                //The deltas of X,Y coordinate are simple because the geologic section is vertical.
+                double segmentDeltaX = segment_Xf - segment_Xi;
+                double segmentDeltaY = segment_Yf - segment_Yi;
+
+                //The delta z is bit more complicated because depth can vary along the section.
+                //Furthermore, we have a bottom and a top z in the head and tail of the section segment.
+                double segmentHeadDeltaZ = segment_topZi - segment_botZi;
+                double segmentTailDeltaZ = segment_topZf - segment_botZf;
+                double segmentHeadZ = segment_botZi + segmentHeadDeltaZ / nHorizons * iHorizon;
+                double segmentTailZ = segment_botZf + segmentTailDeltaZ / nHorizons * iHorizon;
+                double segmentDeltaZ = segmentTailZ - segmentHeadZ;
+
+                //Compute the vertex location in space and adds it to the collection.
+                double x = segment_Xi + segmentDeltaX / nDataColumnsOfSegment * iColumnDivider;
+                double y = segment_Yi + segmentDeltaY / nDataColumnsOfSegment * iColumnDivider;
+                double z = segmentHeadZ + segmentDeltaZ / nDataColumnsOfSegment * iColumnDivider;
+                points->InsertNextPoint(x, y, z);
 
             } // For each column divider in the segment
         } // For each section segment
     } // For each horizon
-
-
-
 
     // Specify the dimensions of the grid.
     structuredGrid->SetDimensions(nCols+1, nRows+1, 1);
