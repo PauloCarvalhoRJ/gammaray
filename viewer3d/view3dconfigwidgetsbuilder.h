@@ -9,6 +9,7 @@ class Attribute;
 class CartesianGrid;
 class GeoGrid;
 class SegmentSet;
+class PointSet;
 
 /**
  * This class groups static functions to build 3D viewer configuration widgets for the several domain objects.
@@ -51,6 +52,12 @@ private:
     /** Specific builder for an Attribute in a SegmentSet.*/
     static View3DConfigWidget* buildForAttributeInSegmentSet(
             SegmentSet* segmentSet,
+            Attribute* attribute,
+            View3DViewData viewObjects );
+
+    /** Specific builder for an Attribute in a PointSet.*/
+    static View3DConfigWidget* buildForAttributeInPointSet(
+            PointSet* pointSet,
             Attribute* attribute,
             View3DViewData viewObjects );
 };
