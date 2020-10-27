@@ -12,6 +12,7 @@ class View3DWidget;
 class SegmentSet;
 class vtkUnstructuredGrid;
 class Section;
+class vtkStructuredGrid;
 
 /** Marks cells as visible or visible due to several reasons. */
 enum class InvisibiltyFlag : int {
@@ -118,6 +119,14 @@ private:
 
     /** Specific builder for Section outline without property. */
     static View3DViewData buildForSection( Section* section, View3DWidget* widget3D );
+
+    /** Specific builder for an Attribute in a Section. */
+    static View3DViewData buildForAttributeSection( Section* section, Attribute* attribute, View3DWidget* widget3D );
+
+    /** Makes a VTK "fence" surface representing the geometry of a geologic section.
+     * Returns null ponter in case of error or failure (sent to the application's error log).
+     */
+    static vtkSmartPointer<vtkStructuredGrid> makeSurfaceFromSection( Section* section );
 };
 
 #endif // VIEW3DBUILDERS_H

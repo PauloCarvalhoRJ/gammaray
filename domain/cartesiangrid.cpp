@@ -681,7 +681,16 @@ bool CartesianGrid::isUVWOfAGeoGrid()
 		File* parentFileAspect = dynamic_cast<File*>( this->getParent() );
 		return parentFileAspect->getFileType() == "GEOGRID";
 	}
-	return false;
+    return false;
+}
+
+bool CartesianGrid::isDataStoreOfaGeologicSection()
+{
+    if( this->getParent() && this->getParent()->isFile() ){
+        File* parentFileAspect = dynamic_cast<File*>( this->getParent() );
+        return parentFileAspect->getFileType() == "SECTION";
+    }
+    return false;
 }
 
 double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)

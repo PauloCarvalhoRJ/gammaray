@@ -86,6 +86,11 @@ public:
 	 */
 	bool isUVWOfAGeoGrid();
 
+    /** Returns whether this Cartesian grid is beind used as data store for a Section.
+     * In other words: returns whether this grid is child of a Section file in the project tree.
+     */
+    bool isDataStoreOfaGeologicSection();
+
 //GridFile interface
 	virtual bool XYZtoIJK( double x, double y, double z,
 						   uint& i,   uint& j,   uint& k );
