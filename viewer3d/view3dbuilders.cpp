@@ -1392,7 +1392,7 @@ View3DViewData View3DBuilders::buildForAttributeSection(Section *section, Attrib
     //read sample values
     values->Allocate( nX * nY * nZ );
     visibility->Allocate( nX * nY * nZ );
-    for( int k = nZ-1; k >= 0; --k){ //VTK's grid scan order is not the same as GSLIb's.
+    for( int k = 0; k < nZ; ++k){
         for( int j = 0; j < nY; ++j){ //well, nY is always 1 for a geologic section.
             for( int i = 0; i < nX; ++i){
                 // sample value
