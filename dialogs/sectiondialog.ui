@@ -37,7 +37,7 @@
      <property name="plainText">
       <string>A geologic section is a special object that is defined by two data files:
 
-1) A PointSet file in GEO-EAS format (like all point sets) defining the XY locations at which the section &quot;folds&quot;.  The first six columns must follow this format:
+1) A PointSet file in GEO-EAS format (like all point sets) defining the XY locations at which the section &quot;folds&quot;.  The first five columns must follow this format:
 
 &lt;begin of file&gt;
 Section locations
