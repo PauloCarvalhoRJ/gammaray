@@ -18,8 +18,6 @@ namespace Ui
 class View3DWidget;
 }
 
-class View3DStyle;
-
 class QVTKOpenGLWidget;
 class QListWidgetItem;
 class View3DConfigWidget;

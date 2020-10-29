@@ -152,7 +152,6 @@ SOURCES += main.cpp\
     viewer3d/view3dwidget.cpp \
     widgets/projecttreeview.cpp \
     viewer3d/viewer3dlistwidget.cpp \
-    viewer3d/view3dstyle.cpp \
     viewer3d/view3dbuilders.cpp \
     viewer3d/view3dcolortables.cpp \
     viewer3d/view3dconfigwidget.cpp \
@@ -415,7 +414,6 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dwidget.h \
     widgets/projecttreeview.h \
     viewer3d/viewer3dlistwidget.h \
-    viewer3d/view3dstyle.h \
     viewer3d/view3dbuilders.h \
     viewer3d/view3dcolortables.h \
     viewer3d/view3dconfigwidget.h \
