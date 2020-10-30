@@ -7,7 +7,6 @@
 #include "domain/application.h"
 #include "domain/project.h"
 #include "domain/projectcomponent.h"
-#include "view3dstyle.h"
 
 Viewer3DListWidget::Viewer3DListWidget( QWidget *parent ) : QListWidget( parent )
 {
