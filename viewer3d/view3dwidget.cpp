@@ -472,7 +472,7 @@ void View3DWidget::onVerticalExaggerationChanged(double value)
     }
 
     //Call this slot to update the scaling of the picking marker.
-    m_myInteractor->OnMouseWheelForward();
+    m_myInteractor->rescalePickMarkerActor();
 }
 
 void View3DWidget::onTextStyle()
