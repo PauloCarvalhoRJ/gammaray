@@ -10,6 +10,8 @@
 #include "viewer3d/view3dbuilders.h"
 #include "domain/application.h"
 #include "geogrid.h"
+#include "domain/section.h"
+#include "domain/pointset.h"
 
 #include "spectral/spectral.h" //eigen third party library
 
@@ -661,10 +663,39 @@ double CartesianGrid::getMin(int column)
 
 void CartesianGrid::getSpatialAndTopologicalCoordinates(int iRecord, double & x, double & y, double & z, int & i, int & j, int & k)
 {
-	indexToIJK( iRecord, (uint&)i, (uint&)j, (uint&)k );
-	x = _x0 + i * _dx;
-	y = _y0 + j * _dy;
-	z = _z0 + k * _dz;
+    if( isUVWOfAGeoGrid() ){
+        GeoGrid* parentGeoGrid = dynamic_cast< GeoGrid* >( getParent() );
+        parentGeoGrid->getSpatialAndTopologicalCoordinates( iRecord, x, y, z, i, j, k );
+    } else if (  isDataStoreOfaGeologicSection() ){
+        indexToIJK( iRecord, (uint&)i, (uint&)j, (uint&)k );
+        Section* parentSection = dynamic_cast< Section* >( getParent() );
+        parentSection->IKtoXYZ( i, k, x, y, z );
+    } else {
+        indexToIJK( iRecord, (uint&)i, (uint&)j, (uint&)k );
+        x = _x0 + i * _dx;
+        y = _y0 + j * _dy;
+        z = _z0 + k * _dz;
+    }
+}
+
+void CartesianGrid::computationWillStart()
+{
+    GridFile::computationWillStart(); //the usual call to loadData() for the grid.
+
+    //If this grid is the data store of a geologic section...
+    if( isDataStoreOfaGeologicSection() ){
+        //...also loads the point set file with the geometry information (required
+        //for the calculator to work such as obtaining spatial coordinates).
+        Section* parentSection = dynamic_cast<Section*>( getParent() );
+        PointSet* pointSetSibling = parentSection->getPointSet();
+        if( pointSetSibling )
+            pointSetSibling->loadData();
+        else
+            Application::instance()->logError("CartesianGrid::computationWillStart(): This grid file belongs to a "
+                                              "geologic section.  The point set file defining the geometry was not "
+                                              "found.  It is necessary to compute necessary information for the "
+                                              "calculator to work.");
+    }
 }
 
 

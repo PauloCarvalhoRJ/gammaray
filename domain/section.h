@@ -31,20 +31,26 @@ public:
      * @note ATTENTION! The previous point set, if set, is deleted!
      */
     void setPointSet( PointSet* pointSet );
-    PointSet* getPointSet(){ return m_PointSet; }
+    PointSet* getPointSet() const { return m_PointSet; }
 
     /** Sets the Cartesian grid mentioned in this class' documentation.
      * The previously set point set, if any, is removed from this object's child.
      * @note ATTENTION! The previous Cartesian set, if set, is deleted!
      */
     void setCartesianGrid( CartesianGrid* cartesianGrid );
-    CartesianGrid* getCartesianGrid(){ return m_CartesianGrid; }
+    CartesianGrid* getCartesianGrid() const { return m_CartesianGrid; }
 
     /** Sets point set metadata from the accompaining .md file, if it exists.
      * Nothing happens if the metadata file does not exist.  If it exists, it calls
      * #setPointSet() and setCartesianGrid() with objects built from the metadata read
      * from the .md file.*/
     void setInfoFromMetadataFile();
+
+    /** Returns, via output parameters, the center of the cell given its topological
+     * coordinates.  Recall that, for a geologic section, the number of rows is always 1,
+     * So only tje I and K indexes are necessary to uniquely address a given value in the section.
+     */
+    void IKtoXYZ( uint i, uint k, double& x, double& y, double& z ) const;
 
     //File interface
 public:

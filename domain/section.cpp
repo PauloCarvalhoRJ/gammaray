@@ -2,6 +2,7 @@
 
 #include <QFile>
 #include <QTextStream>
+#include <cassert>
 
 #include "domain/pointset.h"
 #include "domain/cartesiangrid.h"
@@ -72,6 +73,83 @@ void Section::setInfoFromMetadataFile()
         }
         md_file.close();
     }
+}
+
+void Section::IKtoXYZ(uint i, uint k, double &x, double &y, double &z) const
+{
+    //Get the section's component data files.
+    PointSet* sectionPathPS = getPointSet();
+    CartesianGrid* sectionDataCG = getCartesianGrid();
+
+    //sanity checks
+    assert( sectionPathPS->getDataLineCount() && "Section::IKtoXYZ(): Pointset with section path not loaded. Maybe a prior call to DataFile::readFromFS() is missing." );
+    assert( sectionDataCG->getDataLineCount() && "Section::IKtoXYZ(): Cartesian grid with section data not loaded. Maybe a prior call to DataFile::readFromFS() is missing." );
+
+    //Get some info of the component data files.
+    int nSegments = sectionPathPS->getDataLineCount()-1; //if the PS has two entries, it defines one section segment.
+    int nRows = sectionDataCG->getNK(); //number of rows of a section is the number of layers of its data grid.
+    int nHorizons = nRows + 1;
+
+    //determine the section segment where the desired column is.
+    int iSegment, dataColIni, dataColFin;
+    for( iSegment = 0;  iSegment < nSegments; ++iSegment){
+        dataColIni = sectionPathPS->data( iSegment,   4 ); //data grid column is 5th variable per the section format
+        dataColFin = sectionPathPS->data( iSegment+1, 4 ) - 1; //data grid column is 5th variable per the section format
+        if( iSegment + 1 == nSegments ) //the last segment's final column is not the first column of the next segment (it can't be!)
+            ++dataColFin;
+        if( i >= dataColIni && i <= dataColFin ){
+            ++iSegment;
+            break;
+        }
+    }
+    --iSegment; //for's last iteration cause an aditional increment
+    int nDataColumnsOfSegment = dataColFin - dataColIni + 1;
+
+    //Get geometry of the entire section segment there the cell is.
+    //See documentation of the Section class for point set convention regarding variable order.
+    double segment_Xi    = sectionPathPS->data( iSegment,   0 ); //X is 1st variable per the section format
+    double segment_Yi    = sectionPathPS->data( iSegment,   1 ); //Y is 2nd variable per the section format
+    double segment_topZi = sectionPathPS->data( iSegment,   2 ); //Z1 is 3rd variable per the section format
+    double segment_botZi = sectionPathPS->data( iSegment,   3 ); //Z2 is 4th variable per the section format
+    double segment_Xf    = sectionPathPS->data( iSegment+1, 0 );
+    double segment_Yf    = sectionPathPS->data( iSegment+1, 1 );
+    double segment_topZf = sectionPathPS->data( iSegment+1, 2 );
+    double segment_botZf = sectionPathPS->data( iSegment+1, 3 );
+
+    //The deltas of X,Y coordinate are simple because the geologic section is vertical.
+    double segmentDeltaX = segment_Xf - segment_Xi;
+    double segmentDeltaY = segment_Yf - segment_Yi;
+
+    //The delta z is a bit more complicated because depth can vary along the section.
+    //Furthermore, we have a bottom and a top z in the head and tail of the section segment.
+    double segmentHeadDeltaZ  = segment_topZi - segment_botZi;
+    double segmentTailDeltaZ  = segment_topZf - segment_botZf;
+    double segmentHeadZlower  = segment_botZi + segmentHeadDeltaZ / nHorizons * k;
+    double segmentTailZlower  = segment_botZf + segmentTailDeltaZ / nHorizons * k;
+    double segmentDeltaZlower = segmentTailZlower - segmentHeadZlower;
+    double segmentHeadZupper  = segment_botZi + segmentHeadDeltaZ / nHorizons * ( k + 1 );
+    double segmentTailZupper  = segment_botZf + segmentTailDeltaZ / nHorizons * ( k + 1 );
+    double segmentDeltaZupper = segmentTailZupper - segmentHeadZlower;
+
+    //Compute the vertexes that define the cell's geometry.
+    int columnOffset = i - dataColIni;
+    double x1 = segment_Xi        + segmentDeltaX      / nDataColumnsOfSegment * columnOffset;
+    double y1 = segment_Yi        + segmentDeltaY      / nDataColumnsOfSegment * columnOffset;
+    double z1 = segmentHeadZlower + segmentDeltaZlower / nDataColumnsOfSegment * columnOffset;
+    double x2 = segment_Xi        + segmentDeltaX      / nDataColumnsOfSegment * ( columnOffset + 1 );
+    double y2 = segment_Yi        + segmentDeltaY      / nDataColumnsOfSegment * ( columnOffset + 1 );
+    double z2 = segmentHeadZlower + segmentDeltaZlower / nDataColumnsOfSegment * ( columnOffset + 1 );
+    double x3 = x2;
+    double y3 = y2;
+    double z3 = segmentHeadZupper + segmentDeltaZupper / nDataColumnsOfSegment * ( columnOffset + 1 );
+    double x4 = x1;
+    double y4 = y1;
+    double z4 = segmentHeadZupper + segmentDeltaZupper / nDataColumnsOfSegment * columnOffset;
+
+    //finally, compute the cell center
+    x = ( x1 + x2 + x3 + x4 ) / 4.0;
+    y = ( y1 + y2 + y3 + y4 ) / 4.0;
+    z = ( z1 + z2 + z3 + z4 ) / 4.0;
 }
 
 void Section::deleteFromFS()

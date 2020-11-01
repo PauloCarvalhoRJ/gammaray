@@ -165,6 +165,7 @@ public:
 // ICalcPropertyCollection interface
 public:
 	virtual void getSpatialAndTopologicalCoordinates(int iRecord, double& x, double& y, double& z, int& i, int& j, int& k );
+    virtual void computationWillStart();
 
 private:
     double _x0, _y0, _z0, _dx, _dy, _dz, _rot;
