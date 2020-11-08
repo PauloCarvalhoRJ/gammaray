@@ -696,6 +696,14 @@ void CartesianGrid::computationWillStart()
                                               "found.  It is necessary to compute necessary information for the "
                                               "calculator to work.");
     }
+
+    //If this grid is the data store of a geologic grid...
+    if( isUVWOfAGeoGrid() ){
+        //...also loads the mesh file with the geometry information (required
+        //for the calculator to work such as obtaining spatial coordinates).
+        GeoGrid* parentGeoGrid = dynamic_cast<GeoGrid*>( getParent() );
+        parentGeoGrid->loadMesh();
+    }
 }
 
 
