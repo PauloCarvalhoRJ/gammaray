@@ -369,8 +369,12 @@ View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet,
     pointCloud->GetPointData()->SetScalars( values );
     pointCloud->GetPointData()->SetActiveScalars("values");
 
-    //assign a color table
-    vtkSmartPointer<vtkLookupTable> lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max);
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( pointSet->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
     // Create a visualization parameters object
     vtkSmartPointer<vtkPolyDataMapper> mapper =
