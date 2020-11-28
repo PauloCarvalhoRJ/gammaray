@@ -941,15 +941,17 @@ void DataFile::convertToCategorical(uint column, CategoryDefinition *cd, int fal
     // for each data row...
     std::vector<std::vector<double>>::iterator it = _data.begin();
     for (; it != _data.end(); ++it) {
+        double originalValue = (*it).at(column);
         //...get the input value
-        int candidateCode = static_cast<int>( (*it).at(column) );
+        //The categorical code is an integer, so making sure it is properly rounded off.
+        int candidateCode = static_cast<int>( std::round( originalValue ) );
         //...check whether the value is a valid category code
         if ( cd->codeExists( candidateCode ) )
             //...append the code to the current row.
             (*it).push_back( candidateCode );
         else {
             //...if the invalid value is a no-data-value...
-            if( hasNoDataValue() && isNDV( candidateCode ) )
+            if( hasNoDataValue() && isNDV( originalValue ) )
                 //...result is also no-data-value
                 (*it).push_back( getNoDataValueAsDouble() );
             else

@@ -9,6 +9,7 @@
 #include "view3dconfigwidgets/v3dcfgwidforattributein3dcartesiangrid.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h"
+#include "view3dconfigwidgets/v3dcfgwidforattributeinpointset.h"
 
 View3DConfigWidgetsBuilder::View3DConfigWidgetsBuilder()
 {
@@ -45,6 +46,9 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute, View
     } else if( fileType == "SEGMENTSET" ) {
         SegmentSet* ss = dynamic_cast<SegmentSet*>( file );
         return buildForAttributeInSegmentSet( ss, attribute, viewObjects );
+    } else if( fileType == "POINTSET" ) {
+        PointSet* ps = dynamic_cast<PointSet*>( file );
+        return buildForAttributeInPointSet( ps, attribute, viewObjects );
     } else {
         Application::instance()->logError("View3DConfigWidgetsBuilder::build(Attribute *): Config widget unavailable for Attributes of file type: " + fileType);
         return nullptr;
@@ -75,4 +79,11 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeInSegmentSet(Se
                                                                               View3DViewData viewObjects)
 {
     return new V3DCfgWidForAttributeInSegmentSet( segmentSet, attribute, viewObjects );
+}
+
+View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeInPointSet(PointSet *pointSet,
+                                                                            Attribute *attribute,
+                                                                            View3DViewData viewObjects)
+{
+    return new V3DCfgWidForAttributeInPointSet( pointSet, attribute, viewObjects );
 }
