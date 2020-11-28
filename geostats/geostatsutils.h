@@ -141,6 +141,13 @@ public:
 	 * see theory in Ma et al. (2014) - Factorial kriging for multiscale modelling.
 	 */
 	static MatrixNXM<double> makepMatrixForFK(int nst);
+
+    /** Creates a new variable in the passed Cartesian grid containing a random phase
+     * field for the reverse Fourier transform step in the Fourier Integral Method.
+     */
+    static void makeRandomPhaseFieldForFIM( CartesianGrid* cg,
+                                            QString nameForTheNewField,
+                                            int seedForRandomNumberGenerator );
 };
 
 #endif // GEOSTATSUTILS_H

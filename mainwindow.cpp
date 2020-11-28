@@ -502,6 +502,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ){
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
                 _projectContextMenu->addAction("Resample", this, SLOT(onResampleGrid()));
+                _projectContextMenu->addAction("Add random phase for FFT", this, SLOT(onAddRandomPhaseForFFT()));
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
@@ -1796,6 +1797,43 @@ void MainWindow::onResampleGrid()
     Application::instance()->getProject()->importCartesianGrid( new_cg, new_cg_name );
 
     Application::instance()->logInfo("Grid resampling completed.");
+}
+
+void MainWindow::onAddRandomPhaseForFFT()
+{
+    CartesianGrid* cg = dynamic_cast<CartesianGrid*>( _right_clicked_file );
+
+    if( ! cg ){
+        Application::instance()->logError("MainWindow::onAddRandomPhaseForFFT(): Dataset is not a Cartesian grid.");
+        return;
+    }
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Add random phase for FFT",
+                                             "New name for variable with random phase:", QLineEdit::Normal,
+                                             "phase_", &ok );
+
+    //if the user didn't cancel the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //Asks the user for the seed for the random number generator.
+    //The system proposes a seed based on system time.
+    int proposedSeed = Util::getUnixTimeStamp() << 32 >> 32; //gets only the last 32 bits of the timestamp
+    ok = false;
+    int seed = QInputDialog::getInt(this, "Set seed for random number generator",
+                      "Seed for random number generator:",
+                       proposedSeed,
+                       0,
+                       std::numeric_limits<int>::max(),
+                       1,
+                       &ok);
+    if(!ok) return;
+
+    //make the random phase field.
+    GeostatsUtils::makeRandomPhaseFieldForFIM( cg, new_var_name, seed );
 }
 
 void MainWindow::onMultiVariogram()
