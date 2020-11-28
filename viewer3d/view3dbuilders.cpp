@@ -6,6 +6,7 @@
 #include "domain/cartesiangrid.h"
 #include "domain/geogrid.h"
 #include "domain/segmentset.h"
+#include "domain/section.h"
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
 
@@ -74,7 +75,8 @@ View3DViewData View3DBuilders::build(ProjectComponent *object, View3DWidget */*w
 {
     Application::instance()->logError("view3DBuilders::build(): graphic builder for objects of type \"" +
                                       object->getTypeName()
-                                      + "\" not found.");
+                                      + "\" not found.  Maybe it needs to implement "
+                                        "ProjectComponent::build3DViewObjects().");
     return View3DViewData();
 }
 
@@ -160,21 +162,8 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
         return buildForAttributeFromSegmentSet( static_cast<SegmentSet*>(file), attribute, widget3D );
     } else if( fileType == "CARTESIANGRID" ) {
         CartesianGrid* cg = (CartesianGrid*)file;
-        if( ! cg->isUVWOfAGeoGrid() ){ //cg is a stand-alone Cartesian grid
-			if( cg->getNZ() < 2 ){
-                QMessageBox msgBox;
-                msgBox.setText("Display 2D grid as?");
-                QAbstractButton* pButtonUseFlat = msgBox.addButton("Flat grid at z = 0.0", QMessageBox::YesRole);
-                msgBox.addButton("Surface w/ z = variable", QMessageBox::NoRole);
-                msgBox.exec();
-                if ( msgBox.clickedButton() == pButtonUseFlat )
-                    return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
-                else
-                    return buildForSurfaceCartesianGrid2D( cg, attribute, widget3D );
-			} else {
-				return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
-			}
-        } else { //cg is the UVW aspect of a GeoGrid: present the option to display it either with true geometry or as UVW cube
+        if( cg->isUVWOfAGeoGrid() ){ //cg is the UVW aspect of a GeoGrid: present the option to display it
+                                     // either with true geometry or as UVW cube
             QMessageBox msgBox;
             msgBox.setText("Which way to display the attribute?");
             QAbstractButton* pButtonUseGeoGrid = msgBox.addButton("In XYZ GeoGrid", QMessageBox::YesRole);
@@ -184,7 +173,33 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
                 return buildForAttributeGeoGrid( dynamic_cast<GeoGrid*>(cg->getParent()), attribute, widget3D );
             else
                 return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
-		}
+        } else if( cg->isDataStoreOfaGeologicSection() ) { //cg is the data storage of a Section: present
+                                                           // the option to display it either with true geometry
+                                                           //or as plain cube
+            QMessageBox msgBox;
+            msgBox.setText("Which way to display the attribute?");
+            QAbstractButton* pButtonUseSection = msgBox.addButton("In geologic section", QMessageBox::YesRole);
+            msgBox.addButton("As Cartesian grid", QMessageBox::NoRole);
+            msgBox.exec();
+            if ( msgBox.clickedButton() == pButtonUseSection )
+                return buildForAttributeSection( dynamic_cast<Section*>(cg->getParent()), attribute, widget3D );
+            else
+                return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
+        } else { //cg is a stand-alone Cartesian grid
+            if( cg->getNZ() < 2 ){
+                QMessageBox msgBox;
+                msgBox.setText("Display 2D grid as?");
+                QAbstractButton* pButtonUseFlat = msgBox.addButton("Flat grid at z = 0.0", QMessageBox::YesRole);
+                msgBox.addButton("Surface w/ z = variable", QMessageBox::NoRole);
+                msgBox.exec();
+                if ( msgBox.clickedButton() == pButtonUseFlat )
+                    return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
+                else
+                    return buildForSurfaceCartesianGrid2D( cg, attribute, widget3D );
+            } else {
+                return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
+            }
+        }
     } else {
         Application::instance()->logError("View3DBuilders::build(Attribute *): Attribute belongs to unsupported file type: " + fileType);
         return View3DViewData();
@@ -206,6 +221,11 @@ View3DViewData View3DBuilders::build(CartesianGrid *object, View3DWidget * widge
 View3DViewData View3DBuilders::build(GeoGrid * object, View3DWidget * widget3D)
 {
     return buildForGeoGridMesh( object, widget3D );
+}
+
+View3DViewData View3DBuilders::build(Section *object, View3DWidget *widget3D)
+{
+    return buildForSection( object, widget3D );
 }
 
 vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZvalues(
@@ -1293,4 +1313,234 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *car
     //actor->GetProperty()->EdgeVisibilityOn();
 
     return View3DViewData( actor );
+}
+
+View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *widget3D)
+{
+    Q_UNUSED( widget3D )
+
+    //Make VTK object representing the geometry of the geologic section (looks like a fence).
+    vtkSmartPointer<vtkStructuredGrid> structuredGrid = makeSurfaceFromSection( section );
+
+    //sanity check.
+    if( ! structuredGrid ){
+        Application::instance()->logError("View3DBuilders::buildForSection(): visual representation object not created. "
+                                          "Check previous messages for reasons.", true);
+        return View3DViewData();
+    }
+
+    // Create a mapper for the vtkStructuredGrid.
+    vtkSmartPointer<vtkDataSetMapper> gridMapper = vtkSmartPointer<vtkDataSetMapper>::New();
+    gridMapper->SetInputData(structuredGrid);
+
+    // Create an actor for the scene in the main 3D view widget.
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(gridMapper);
+    actor->GetProperty()->EdgeVisibilityOn();
+    actor->GetProperty()->SetRepresentationToWireframe();
+    actor->GetProperty()->SetEdgeColor(0, 0, 1);
+
+    return View3DViewData( actor );
+}
+
+View3DViewData View3DBuilders::buildForAttributeSection(Section *section, Attribute *attribute, View3DWidget *widget3D)
+{
+    Q_UNUSED( widget3D )
+
+    //Make VTK object representing the geometry of the geologic section (looks like a fence).
+    vtkSmartPointer<vtkStructuredGrid> structuredGrid = makeSurfaceFromSection( section );
+
+    //sanity check.
+    if( ! structuredGrid ){
+        Application::instance()->logError("View3DBuilders::buildForAttributeSection(): visual representation "
+                                          "object not created. "
+                                          "Check previous messages for reasons.", true);
+        return View3DViewData();
+    }
+
+    //assumes the parent object of the Attribute is a Cartesian grid.
+    CartesianGrid* cartesianGrid = dynamic_cast< CartesianGrid* >( attribute->getParent() );
+
+    //sanity check.
+    if( ! cartesianGrid ){
+        Application::instance()->logError("View3DBuilders::buildForAttributeSection(): attribute's parent object"
+                                          " is not a Cartesian grid.", true);
+        return View3DViewData();
+    }
+
+    //load grid data
+    cartesianGrid->loadData();
+
+    //get the variable index in parent data file
+    uint var_index = cartesianGrid->getFieldGEOEASIndex( attribute->getName() );
+
+    //get the max and min of the selected variable
+    double min = cartesianGrid->min( var_index-1 );
+    double max = cartesianGrid->max( var_index-1 );
+
+    //get grid geometric parameters (loading data is not necessary)
+    int nX = cartesianGrid->getNX();
+    int nY = cartesianGrid->getNY();
+    int nZ = cartesianGrid->getNZ();
+
+    //create a VTK array to store the sample values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("values");
+
+    //create a visibility array. Cells with visibility >= 1 will be
+    //visible, and < 1 will be invisible.
+    vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+    visibility->SetNumberOfComponents(1);
+    visibility->SetName("Visibility");
+
+    //read sample values
+    values->Allocate( nX * nY * nZ );
+    visibility->Allocate( nX * nY * nZ );
+    for( int k = 0; k < nZ; ++k){
+        for( int j = 0; j < nY; ++j){ //well, nY is always 1 for a geologic section.
+            for( int i = 0; i < nX; ++i){
+                // sample value
+                double value = cartesianGrid->dataIJK( var_index - 1,
+                                                       i,
+                                                       j,
+                                                       k );
+                values->InsertNextValue( value );
+                // visibility flag
+                if( cartesianGrid->isNDV( value ) )
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+                else
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+            }
+        }
+    }
+
+    //assign the grid values to the grid cells
+    structuredGrid->GetCellData()->SetScalars( values );
+    structuredGrid->GetCellData()->AddArray( visibility );
+
+    // threshold to make unvalued cells invisible
+    vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
+    threshold->SetInputData( structuredGrid );
+    threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
+    threshold->Update();
+
+    //create a color table according to variable type (continuous or categorical)
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attribute->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable( cartesianGrid->getCategoryDefinition( attribute ), false );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
+
+    // Create mapper (visualization parameters)
+    vtkSmartPointer<vtkDataSetMapper> mapper =
+            vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputConnection( threshold->GetOutputPort() );
+    mapper->SetLookupTable(lut);
+    mapper->SetScalarRange(min, max);
+    mapper->Update();
+
+    // Create an actor for the scene in the main 3D view widget.
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper( mapper );
+    actor->GetProperty()->EdgeVisibilityOff();
+
+    return View3DViewData( actor );
+}
+
+vtkSmartPointer<vtkStructuredGrid> View3DBuilders::makeSurfaceFromSection(Section *section)
+{
+    vtkSmartPointer<vtkStructuredGrid> structuredGrid = vtkSmartPointer<vtkStructuredGrid>::New();
+    vtkSmartPointer<vtkPoints> points = vtkSmartPointer<vtkPoints>::New();
+
+    // Get the Section's component data files.
+    PointSet* sectionPathPS = section->getPointSet();
+    CartesianGrid* sectionDataCG = section->getCartesianGrid();
+
+    // Sanity checks.
+    if( ! sectionPathPS ){
+        Application::instance()->logError("View3DBuilders::makeSurfaceFromSection(): Section without a point set "
+                                          "defining its geographic path.", true);
+        return nullptr;
+    }
+    if( ! sectionDataCG ){
+        Application::instance()->logError("View3DBuilders::makeSurfaceFromSection(): Section without a Cartesian grid "
+                                          "containing its data.", true);
+        return nullptr;
+    }
+
+    // Load the data files.
+    sectionPathPS->loadData();
+    sectionDataCG->loadData();
+
+    // Get geometry data.
+    int nCols = sectionDataCG->getNI();
+    int nRows = sectionDataCG->getNK(); //number of rows of a section is the number of layers of its data grid.
+    int nHorizons = nRows + 1;
+    int nSegments = sectionPathPS->getDataLineCount()-1; //if the PS has two entries, it defines one section segment.
+
+    // Sanity check.
+    if( nSegments < 1 ){
+        Application::instance()->logError("View3DBuilders::makeSurfaceFromSection(): Section must have at least one segment.", true);
+        return nullptr;
+    }
+
+    // For each horizon (from bottom of the "fence" to the top).
+    for( int iHorizon = 0; iHorizon < nHorizons; ++iHorizon ){
+
+        // For each section segment.
+        for( int iSegment = 0;  iSegment < nSegments; ++iSegment){
+
+            //See documentation of the Section class for point set convention regarding variable order.
+            double segment_Xi    = sectionPathPS->data( iSegment,   0 ); //X is 1st variable per the section format
+            double segment_Yi    = sectionPathPS->data( iSegment,   1 ); //Y is 2nd variable per the section format
+            double segment_topZi = sectionPathPS->data( iSegment,   2 ); //Z1 is 3rd variable per the section format
+            double segment_botZi = sectionPathPS->data( iSegment,   3 ); //Z2 is 4th variable per the section format
+            int dataColIni       = sectionPathPS->data( iSegment,   4 ); //data grid column is 5th variable per the section format
+            double segment_Xf    = sectionPathPS->data( iSegment+1, 0 );
+            double segment_Yf    = sectionPathPS->data( iSegment+1, 1 );
+            double segment_topZf = sectionPathPS->data( iSegment+1, 2 );
+            double segment_botZf = sectionPathPS->data( iSegment+1, 3 );
+            int dataColFin       = sectionPathPS->data( iSegment+1, 4 ) - 1; //data grid column is 5th variable per the section format
+            if( iSegment + 1 == nSegments ) //the last segment's final column is not the first column of the next segment (it can't be!)
+                ++dataColFin;
+            int nDataColumnsOfSegment = dataColFin - dataColIni + 1;
+            int nColumnDividersOfSegment = nDataColumnsOfSegment + 1;
+
+            //For each column divider in the segment
+            for( int iColumnDivider = 0; iColumnDivider < nColumnDividersOfSegment; ++iColumnDivider ){
+
+                //The last vertex of the previous segment is the first vertex
+                //of the current vertex.  That is, only the first segment defines
+                //its first vertex.  For the other segments, this step is skipped.
+                if( iSegment != 0 && iColumnDivider == 0 )
+                    continue;
+
+                //The deltas of X,Y coordinate are simple because the geologic section is vertical.
+                double segmentDeltaX = segment_Xf - segment_Xi;
+                double segmentDeltaY = segment_Yf - segment_Yi;
+
+                //The delta z is bit more complicated because depth can vary along the section.
+                //Furthermore, we have a bottom and a top z in the head and tail of the section segment.
+                double segmentHeadDeltaZ = segment_topZi - segment_botZi;
+                double segmentTailDeltaZ = segment_topZf - segment_botZf;
+                double segmentHeadZ = segment_botZi + segmentHeadDeltaZ / nHorizons * iHorizon;
+                double segmentTailZ = segment_botZf + segmentTailDeltaZ / nHorizons * iHorizon;
+                double segmentDeltaZ = segmentTailZ - segmentHeadZ;
+
+                //Compute the vertex location in space and adds it to the collection.
+                double x = segment_Xi + segmentDeltaX / nDataColumnsOfSegment * iColumnDivider;
+                double y = segment_Yi + segmentDeltaY / nDataColumnsOfSegment * iColumnDivider;
+                double z = segmentHeadZ + segmentDeltaZ / nDataColumnsOfSegment * iColumnDivider;
+                points->InsertNextPoint(x, y, z);
+
+            } // For each column divider in the segment
+        } // For each section segment
+    } // For each horizon
+
+    // Specify the dimensions of the grid.
+    structuredGrid->SetDimensions(nCols+1, nRows+1, 1);
+    structuredGrid->SetPoints(points);
+
+    return structuredGrid;
 }

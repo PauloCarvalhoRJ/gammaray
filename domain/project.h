@@ -23,6 +23,7 @@ class ProjectComponent;
 class IJAbstractCartesianGrid;
 class VerticalTransiogramModel;
 class VerticalProportionCurve;
+class Section;
 
 /**
  * @brief The Project class holds all information about a geostats study.
@@ -80,6 +81,9 @@ public:
 
     /** Adds the given generic file object as a resource. */
     void addResourceFile( File *file );
+
+    /** Adds the given geologic section object under the Data Files group. */
+    void addSection( Section* section );
 
     /** Creates a new plot object given path to a plot file and its new name once
      * in the project.  The file is copied into the project's directory, renamed

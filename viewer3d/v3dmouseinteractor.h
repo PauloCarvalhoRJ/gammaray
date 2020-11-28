@@ -28,6 +28,8 @@ public:
     void setParentView3DWidget( View3DWidget* parentView3DWidget ){ m_ParentView3DWidget = parentView3DWidget; }
     View3DWidget* getParentView3DWidget( ){ return m_ParentView3DWidget; }
 
+    void rescalePickMarkerActor();
+
 protected:
 
     bool m_isDragging;
@@ -40,8 +42,6 @@ protected:
     View3DWidget* m_ParentView3DWidget;
 
     vtkSmartPointer<vtkMath> m_vtkMathObj;
-
-    void rescalePickMarkerActor();
 };
 
 #endif // V3DMOUSEINTERACTOR_H

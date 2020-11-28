@@ -4,8 +4,6 @@
 #include <QListWidget>
 #include "view3dlistrecord.h"
 
-class View3DStyle;
-
 /** This is a QListWidget subclass tailored to support certain operations on GammaRay project objects.
  * If you use Qt Creator, you can use the "Promote to..." option from the context menu when you right click
  * on the QListWidget on the form's object list. You then have to enter the name of the subclass (Viewer3DListWidget)

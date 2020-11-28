@@ -2542,3 +2542,16 @@ long long Util::getUnixTimeStamp()
     ); //number of milliseconds since 1970
     return ms.count();
 }
+
+bool Util::fileExists(QString path)
+{
+    QFile file( path );
+    return file.exists();
+}
+
+QString Util::getParentDirectory(QString path)
+{
+    QFileInfo fileInfo( path );
+    QDir dir = fileInfo.dir();
+    return dir.canonicalPath();
+}

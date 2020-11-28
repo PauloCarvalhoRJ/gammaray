@@ -28,6 +28,7 @@
 #include "domain/faciestransitionmatrix.h"
 #include "domain/verticaltransiogrammodel.h"
 #include "domain/verticalproportioncurve.h"
+#include "domain/section.h"
 
 Project::Project(const QString path) : QAbstractItemModel()
 {
@@ -289,6 +290,24 @@ Project::Project(const QString path) : QAbstractItemModel()
                 //reads VerticalProportionCurve metadata from the .md file
                 vpc->setInfoFromMetadataFile();
            }
+           //found a Section file reference in gammaray.prj
+           if( line.startsWith( "SECTION:" )){
+               //get file name
+                QString section_file_name = line.split(":")[1];
+                //make file path
+                QFile section_file( this->_project_directory->absoluteFilePath( section_file_name ) );
+                //create Section object from file path
+                //NOTE: Sections do not have a physical data file as they are composed by two files:
+                //      A point set and a Cartesian grid.  The physical files are managed by the respective
+                //      PointSet and CartesianGrid objects that are children of the Section object in the project
+                //      tree.
+                Section *section = new Section( section_file.fileName() );
+                //add the object to its correct directory in the project tree structure
+                this->_data_files->addChild( section );
+                section->setParent( this->_data_files );
+                //reads Section metadata from the .md file (loads the children PointSet and CartesianGrid objects).
+                section->setInfoFromMetadataFile();
+           }
         }
         prj_file.close();
     }
@@ -454,6 +473,13 @@ void Project::addResourceFile(File *file)
     this->_resources->addChild( file );
     file->setParent( this->_resources );
     this->save();
+}
+
+void Project::addSection(Section *section)
+{
+    _data_files->addChild( section );
+    section->setParent( _data_files );
+    save();
 }
 
 void Project::importPlot(const QString from_path, const QString new_file_name)
@@ -752,6 +778,14 @@ QModelIndex Project::parent(const QModelIndex &child) const
         return QModelIndex();
     ProjectComponent *childItem = static_cast<ProjectComponent*>(child.internalPointer());
     ProjectComponent *parentItem = childItem->getParent();
+    if( ! parentItem ){
+        Application::instance()->logError("Project::parent(): " + childItem->getName() +
+                                          " is set as a child object of some other object, but it is not linked"
+                                          " to its parent (pointer to parent object is null).  "
+                                          "This is likely due to an importer or object constructor"
+                                          " code with a bug.", true);
+        return QModelIndex();
+    }
     if (parentItem == this->_root)
         return QModelIndex();
     return createIndex(parentItem->getIndexInParent(), 0, parentItem);

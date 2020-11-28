@@ -85,6 +85,7 @@
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/choosevariabledialog.h"
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
+#include "dialogs/sectiondialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -454,6 +455,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         //build context menu for the Data Files group
         if ( index.isValid() && index.internalPointer() == project->getDataFilesGroup()) {
             _projectContextMenu->addAction("Add data file...", this, SLOT(onAddDataFile()));
+            _projectContextMenu->addAction("Add geologic section...", this, SLOT(onAddSection()));
         }
         //build context menu for the Variograms group
         if ( index.isValid() && index.internalPointer() == project->getVariogramsGroup()) {
@@ -866,6 +868,12 @@ void MainWindow::onAddDataFile()
     doAddDataFile( file );
 }
 
+void MainWindow::onAddSection()
+{
+    SectionDialog* sd = new SectionDialog( this );
+    sd->show();
+}
+
 void MainWindow::onRemoveFile()
 {
     int ret = QMessageBox::warning(this, "Confirm removal operation",
@@ -1131,6 +1139,11 @@ void MainWindow::onDecluster()
 void MainWindow::onSetNDV()
 {
     DataFile* data_file = dynamic_cast<DataFile*>(_right_clicked_file);
+
+    if( !data_file ){
+        Application::instance()->logError("MainWindow::onSetNDV(): Object is not a data file.");
+        return;
+    }
 
     bool ok;
     QString new_ndv = QInputDialog::getText(this, "Set no-data value",
