@@ -18,14 +18,13 @@ namespace Ui
 class View3DWidget;
 }
 
-class View3DStyle;
-
 class QVTKOpenGLWidget;
 class QListWidgetItem;
 class View3DConfigWidget;
 class View3DVerticalExaggerationWidget;
 class vtkRenderer;
 class View3DTextConfigWidget;
+class v3dMouseInteractor;
 
 class View3DWidget : public QWidget
 {
@@ -37,6 +36,9 @@ public:
 
     /** Returns the VTK renderer used to paint the scene on this widget's canvas. */
     vtkSmartPointer<vtkRenderer> getRenderer() { return _rendererMainScene; }
+
+    /** Returns the current vertical exaggeration setting, */
+    double getVerticalExaggeration() const;
 
 private:
     Ui::View3DWidget *ui;
@@ -71,6 +73,9 @@ private:
 
     // the floating widget for configuring the text labels in the 3D scene.
     View3DTextConfigWidget *_textConfigWiget;
+
+    // The class that customizes mouse events to provide a custo mouse interacation.
+    vtkSmartPointer<v3dMouseInteractor> m_myInteractor;
 
     // removes the current 3D viewing config widget.
     void removeCurrentConfigWidget();

@@ -13,6 +13,7 @@
 #include <QPushButton>
 #include <cassert>
 #include <stdint.h>
+#include <chrono>
 #include "exceptions/invalidgslibdatafileexception.h"
 #include "domain/application.h"
 #include "domain/cartesiangrid.h"
@@ -1067,9 +1068,9 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "6.5" << "6.3" << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5" << "5.3" << "5.1"
-                      << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3" << "4.0"
-                      << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
+    previousVersions  << "6.6" << "6.5" << "6.3" << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5"
+                      << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3"
+                      << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
                       << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0"
                       << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1"
                       << "1.2" << "1.1.0" << "1.0.1" << "1.0";
@@ -2531,4 +2532,26 @@ void Util::unitize(std::vector<double> &values)
     //divide all values by the total so each entry sums up to 1.0.
     std::transform( values.begin(), values.end(), values.begin(),
                     std::bind( std::divides<double>(), std::placeholders::_1, total ) );
+}
+
+long long Util::getUnixTimeStamp()
+{
+    using namespace std::chrono;
+    milliseconds ms = duration_cast< milliseconds >(
+        system_clock::now().time_since_epoch()
+    ); //number of milliseconds since 1970
+    return ms.count();
+}
+
+bool Util::fileExists(QString path)
+{
+    QFile file( path );
+    return file.exists();
+}
+
+QString Util::getParentDirectory(QString path)
+{
+    QFileInfo fileInfo( path );
+    QDir dir = fileInfo.dir();
+    return dir.canonicalPath();
 }

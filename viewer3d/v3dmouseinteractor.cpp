@@ -13,6 +13,8 @@
 
 #include <sstream>
 
+#include "viewer3d/view3dwidget.h"
+
 // Implementation of the New() function for this class.
 vtkStandardNewMacro(v3dMouseInteractor);
 
@@ -163,7 +165,9 @@ void v3dMouseInteractor::rescalePickMarkerActor()
         totalSquared = std::sqrt(m_vtkMathObj->Distance2BetweenPoints( objectPosition, cameraPosition ));
         newScale = totalSquared / 20000;    // The denominator value is an abitary number that gives the desired size of the objects on screen.
         Application::instance()->logInfo( "Distance to picked location: " + QString::number(totalSquared) );
-        m_pickMarkerActor->SetScale( newScale );
+        m_pickMarkerActor->SetScale( newScale,
+                                     newScale,
+                                     newScale / m_ParentView3DWidget->getVerticalExaggeration() );
 
         this->GetDefaultRenderer()->Render();
     }

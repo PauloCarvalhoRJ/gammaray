@@ -7,10 +7,12 @@
 #include "ijkdelta.h"
 #include "util.h"
 #include "ijkdeltascache.h"
+#include "imagejockey/imagejockeyutils.h"
 
 #include <cmath>
 #include <limits>
 #include <iostream>
+#include <random>
 
 //the aniso transforms only change if variogram model changes
 struct AnisoCache{
@@ -429,5 +431,116 @@ MatrixNXM<double> GeostatsUtils::makepMatrixForFK(int nst )
 {
 	//TODO: the authors in the paper didn't give details on how to build the p matrix.
 	MatrixNXM<double> matrix( nst, 1, 1.0 );
-	return matrix;
+    return matrix;
+}
+
+void GeostatsUtils::makeRandomPhaseFieldForFIM(CartesianGrid *cg,
+                                               QString nameForTheNewField,
+                                               int seedForRandomNumberGenerator)
+{
+    //TODO: add support for 3D grids.
+    if( cg->isTridimensional() ){
+        Application::instance()->logError("GeostatsUtils::makeRandomPhaseFieldForFIM(): 3D Cartesian grids currently not"
+                                          " supported.  Contact the developers.", true);
+        return;
+    }
+
+    //Load data from file.
+    cg->loadData();
+    int newVarIndex = cg->addEmptyDataColumn( nameForTheNewField, cg->getDataLineCount() );
+
+    //Get the grid's central column, row and trace.
+    int centerI = cg->getNI() / 2;
+    int centerJ = cg->getNJ() / 2;
+    int centerK = cg->getNK() / 2;
+
+    //The value at the very center (zero frequency) of the phase spectrum is zero.
+    cg->setData( cg->IJKtoIndex( centerI, centerJ, centerK ), newVarIndex, 0.0 );
+
+    //initialize the random number generator with the user-given seed
+    std::mt19937 randomNumberGenerator;
+    randomNumberGenerator.seed( seedForRandomNumberGenerator );
+
+    //Set an uniform distribution between -PI and +PI
+    std::uniform_real_distribution<double> uniformDistributionAngles( -ImageJockeyUtils::PI,
+                                                                       ImageJockeyUtils::PI );
+
+    //Generating the phases along the center row.
+    for( int i = 1; i <= centerI; ++i ){
+        //draw a phase value.
+        double phase = uniformDistributionAngles( randomNumberGenerator );
+        //set the phases in a symmetric fashion.
+        if( centerI - i >= 0 )
+            cg->setData( cg->IJKtoIndex( centerI - i,
+                                         centerJ,
+                                         centerK ), newVarIndex,  phase );
+        if( centerI + i < cg->getNI() )
+            cg->setData( cg->IJKtoIndex( centerI + i,
+                                         centerJ,
+                                         centerK ), newVarIndex, -phase );
+    }
+
+    //Generating the phases along the center row.
+    for( int j = 1; j <= centerJ; ++j ){
+        //draw a phase value.
+        double phase = uniformDistributionAngles( randomNumberGenerator );
+        //set the phases in a symmetric fashion.
+        if( centerJ - j >= 0 )
+            cg->setData( cg->IJKtoIndex( centerI,
+                                         centerJ - j,
+                                         centerK ), newVarIndex,  phase );
+        if( centerJ + j < cg->getNJ() )
+            cg->setData( cg->IJKtoIndex( centerI,
+                                         centerJ + j,
+                                         centerK ), newVarIndex, -phase );
+    }
+
+//    //Generating the phases along the center trace.
+//    for( int k = 1; k <= centerK; ++k ){
+//        //draw a phase value.
+//        double phase = uniformDistributionAngles( randomNumberGenerator );
+//        //set the phases in a symmetric fashion.
+//        if( centerK - k >= 0 )
+//            cg->setData( cg->IJKtoIndex( centerI,
+//                                         centerJ,
+//                                         centerK - k ), newVarIndex,  phase );
+//        if( centerK + k < cg->getNK() )
+//            cg->setData( cg->IJKtoIndex( centerI,
+//                                         centerJ,
+//                                         centerK + k ), newVarIndex, -phase );
+//    }
+
+    //Generating the phases in the center IJ plane (SW and NE quadrants)
+    for( int i = 0; i < centerI; ++i )
+        for( int j = 0; j < centerJ; ++j ){
+            //draw a phase value.
+            double phase = uniformDistributionAngles( randomNumberGenerator );
+            //set the phases in a symmetric fashion.
+            cg->setData( cg->IJKtoIndex( i,
+                                         j,
+                                         centerK), newVarIndex,  phase );
+            if( cg->getNI() - i > centerI && cg->getNJ() - j > centerJ &&
+                i > 0 && j > 0)
+                cg->setData( cg->IJKtoIndex( cg->getNI() - i,
+                                             cg->getNJ() - j,
+                                             centerK), newVarIndex,  -phase );
+        }
+
+    //Generating the phases in the center IJ plane (NW and SE quadrants)
+    for( int i = centerI+1; i <= cg->getNI(); ++i )
+        for( int j = 0; j < centerJ; ++j ){
+            //draw a phase value.
+            double phase = uniformDistributionAngles( randomNumberGenerator );
+            //set the phases in a symmetric fashion.
+            if( i < cg->getNI() )
+                cg->setData( cg->IJKtoIndex( i,
+                                             j,
+                                             centerK), newVarIndex,  phase );
+            if( 2*centerI - i < cg->getNI() && 2*centerJ - j < cg->getNJ() )
+                cg->setData( cg->IJKtoIndex( 2*centerI - i,
+                                             2*centerJ - j,
+                                             centerK), newVarIndex,  -phase );
+        }
+
+    cg->writeToFS();
 }

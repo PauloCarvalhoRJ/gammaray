@@ -168,6 +168,7 @@ private slots:
     void onFFT();
     void onNDVEstimation();
     void onResampleGrid();
+    void onAddRandomPhaseForFFT();
     void onMultiVariogram();
     void onHistpltsim();
     void onRFFT();
@@ -228,6 +229,7 @@ private slots:
     void onFilterMean();
     void onFilterMedian();
     void onFilterGaussian();
+    void onAddSection();
 
 private:
     /**

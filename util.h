@@ -813,6 +813,18 @@ public:
      * @warning Does not work with negative values! For this, one needs a softmax function.
      */
     static void unitize( std::vector<double>& values );
+
+    /** Returns the Unix-style timestamp that is the number of milliseconds
+     * since 00:00 UTC, Jan 1st, 1970.
+     */
+    static long long getUnixTimeStamp();
+
+    /** Returns whether the file exists, given its path. */
+    static bool fileExists( QString path );
+
+    /** Returns the parent directory of the given path. */
+    static QString getParentDirectory( QString path );
+
 };
 
 #endif // UTIL_H

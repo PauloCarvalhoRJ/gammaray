@@ -34,7 +34,9 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/sectiondialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
+    domain/section.cpp \
     domain/verticalproportioncurve.cpp \
     geometry/intersectionfinder.cpp \
     geostats/mcmcdataimputation.cpp \
@@ -93,6 +95,7 @@ SOURCES += main.cpp\
     vertpropcurves/verticalproportioncurvescanvaspicker.cpp \
     vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.cpp \
     viewer3d/view3dtextconfigwidget.cpp \
     widgets/linechartwidget.cpp \
     widgets/qlistwidgetdnd.cpp \
@@ -150,7 +153,6 @@ SOURCES += main.cpp\
     viewer3d/view3dwidget.cpp \
     widgets/projecttreeview.cpp \
     viewer3d/viewer3dlistwidget.cpp \
-    viewer3d/view3dstyle.cpp \
     viewer3d/view3dbuilders.cpp \
     viewer3d/view3dcolortables.cpp \
     viewer3d/view3dconfigwidget.cpp \
@@ -291,12 +293,14 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/sectiondialog.h \
     domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
     domain/projectcomponent.h \
     domain/objectgroup.h \
     domain/projectroot.h \
+    domain/section.h \
     domain/verticalproportioncurve.h \
     geometry/intersectionfinder.h \
     geostats/mcmcdataimputation.h \
@@ -354,6 +358,7 @@ HEADERS  += mainwindow.h \
     vertpropcurves/verticalproportioncurvescanvaspicker.h \
     vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.h \
     viewer3d/view3dtextconfigwidget.h \
     widgets/linechartwidget.h \
     widgets/qlistwidgetdnd.h \
@@ -411,7 +416,6 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dwidget.h \
     widgets/projecttreeview.h \
     viewer3d/viewer3dlistwidget.h \
-    viewer3d/view3dstyle.h \
     viewer3d/view3dbuilders.h \
     viewer3d/view3dcolortables.h \
     viewer3d/view3dconfigwidget.h \
@@ -556,6 +560,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/sectiondialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
@@ -571,6 +576,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.ui \
     viewer3d/view3dtextconfigwidget.ui \
     widgets/linechartwidget.ui \
     vertpropcurves/verticalproportioncurvedialog.ui \
@@ -807,7 +813,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.6
+VERSION = 6.7
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

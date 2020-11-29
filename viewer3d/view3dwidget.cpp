@@ -143,10 +143,10 @@ View3DWidget::View3DWidget(QWidget *parent)
 
     // Customize event handling through a subclass of vtkInteractorStyleTrackballCamera.
     // This allows picking and probing by clicking on objects in the scene, for example.
-    vtkSmartPointer<v3dMouseInteractor> myInteractor = vtkSmartPointer<v3dMouseInteractor>::New();
-    myInteractor->setParentView3DWidget( this );
-    myInteractor->SetDefaultRenderer(_rendererMainScene);
-    _vtkwidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle( myInteractor );
+    m_myInteractor = vtkSmartPointer<v3dMouseInteractor>::New();
+    m_myInteractor->setParentView3DWidget( this );
+    m_myInteractor->SetDefaultRenderer(_rendererMainScene);
+    _vtkwidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle( m_myInteractor );
 
     // Set callback for any event
     vtkSmartPointer<vtkCallbackCommand> callBackCommand = vtkSmartPointer<vtkCallbackCommand>::New();
@@ -218,6 +218,11 @@ View3DWidget::~View3DWidget()
     qs.setValue("viewer3dsplitter", ui->splitter->saveState());
     qs.setValue("viewer3dsplitter2", ui->splitter_2->saveState());
     delete ui;
+}
+
+double View3DWidget::getVerticalExaggeration() const
+{
+    return _verticalExaggWiget->getVerticalExaggeration();
 }
 
 void View3DWidget::removeCurrentConfigWidget()
@@ -465,6 +470,9 @@ void View3DWidget::onVerticalExaggerationChanged(double value)
         renderWindow->Modified();
         QApplication::processEvents();
     }
+
+    //Call this slot to update the scaling of the picking marker.
+    m_myInteractor->rescalePickMarkerActor();
 }
 
 void View3DWidget::onTextStyle()
