@@ -45,7 +45,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 View3DWidget::View3DWidget(QWidget *parent)
     : QWidget(parent), ui(new Ui::View3DWidget), _currentCfgWidget(nullptr),
       _verticalExaggWiget(nullptr),
-      _textConfigWiget(nullptr)
+      _textConfigWiget(nullptr),
+      m_perspectiveProjection( true )
 {
     ui->setupUi(this);
 
@@ -219,6 +220,7 @@ View3DWidget::View3DWidget(QWidget *parent)
         ui->btnVerticalExaggeration->setIcon( QIcon(":icons32/vertexag32") );
         ui->btnFont->setIconSize( QSize( 64, 64 ) );
         ui->btnRuler->setIconSize( QSize( 64, 64 ) );
+        ui->btnProjection->setIconSize( QSize( 64, 64 ) );
     }
 }
 
@@ -520,4 +522,19 @@ void View3DWidget::onRuler()
         m_distanceWidget->SetWidgetStateToStart(); //"resets" the measurement tool
         m_distanceWidget->On();
     }
+}
+
+void View3DWidget::onProjection()
+{
+    if( m_perspectiveProjection ){
+        _rendererMainScene->GetActiveCamera()->ParallelProjectionOn();
+        m_perspectiveProjection = false;
+        ui->btnProjection->setIcon( QIcon(":icons32/v3DprojPar32") );
+    } else {
+        _rendererMainScene->GetActiveCamera()->ParallelProjectionOff();
+        m_perspectiveProjection = true;
+        ui->btnProjection->setIcon( QIcon(":icons32/v3DprojPer32") );
+    }
+    // redraw the scene
+    _vtkwidget->GetRenderWindow()->Render();
 }

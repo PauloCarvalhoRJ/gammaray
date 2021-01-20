@@ -81,6 +81,9 @@ private:
     // The distance measuring tool.
     vtkSmartPointer<vtkDistanceWidget> m_distanceWidget;
 
+    // If this is false, parallel projection is used.
+    bool m_perspectiveProjection;
+
     // removes the current 3D viewing config widget.
     void removeCurrentConfigWidget();
 
@@ -107,6 +110,7 @@ private slots:
     void onTextStyle();
     void onTextConfigChanged();
     void onRuler();
+    void onProjection();
 };
 
 #endif // VIEW3DWIDGET_H

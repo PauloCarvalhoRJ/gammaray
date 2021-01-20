@@ -137,5 +137,7 @@
         <file alias=" v3Dfont32">art/iconsHD/v3Dfont32.png</file>
         <file alias="section32">art/iconsHD/section32.png</file>
         <file alias="v3Druler">art/iconsHD/v3Druler.png</file>
+        <file alias="v3DprojPar32">art/iconsHD/v3DprojPar32.png</file>
+        <file alias="v3DprojPer32">art/iconsHD/v3DprojPer32.png</file>
     </qresource>
 </RCC>
