@@ -29,6 +29,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkCallbackCommand.h>
 #include <vtkBillboardTextActor3D.h>
 #include <vtkTextProperty.h>
+#include <vtkDistanceWidget.h>
+#include <vtkDistanceRepresentation.h>
 
 #include "domain/application.h"
 #include "domain/project.h"
@@ -197,6 +199,13 @@ View3DWidget::View3DWidget(QWidget *parent)
     connect(_textConfigWiget, SIGNAL(change()), this,
             SLOT(onTextConfigChanged()));
 
+    // Creates, but doesn't show, the distance measuring widget.
+    m_distanceWidget = vtkSmartPointer<vtkDistanceWidget>::New();
+    m_distanceWidget->SetInteractor( _vtkwidget->GetRenderWindow()->GetInteractor() );
+    m_distanceWidget->CreateDefaultRepresentation();
+    static_cast<vtkDistanceRepresentation *>(m_distanceWidget->GetRepresentation())
+                  ->SetLabelFormat("%-#6.3f");
+
     if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
         ui->btnGlobal->setIconSize( QSize( 64, 64 ) );
         ui->btnGlobal->setIcon( QIcon(":icons32/v3Dglobal32") );
@@ -209,6 +218,7 @@ View3DWidget::View3DWidget(QWidget *parent)
         ui->btnVerticalExaggeration->setIconSize( QSize( 64, 64 ) );
         ui->btnVerticalExaggeration->setIcon( QIcon(":icons32/vertexag32") );
         ui->btnFont->setIconSize( QSize( 64, 64 ) );
+        ui->btnRuler->setIconSize( QSize( 64, 64 ) );
     }
 }
 
@@ -500,4 +510,14 @@ void View3DWidget::onTextConfigChanged()
 
     // redraw the scene
     _vtkwidget->GetRenderWindow()->Render();
+}
+
+void View3DWidget::onRuler()
+{
+    if( m_distanceWidget->GetEnabled() )
+        m_distanceWidget->Off();
+    else{
+        m_distanceWidget->SetWidgetStateToStart(); //"resets" the measurement tool
+        m_distanceWidget->On();
+    }
 }

@@ -23,6 +23,7 @@ class QListWidgetItem;
 class View3DConfigWidget;
 class View3DVerticalExaggerationWidget;
 class vtkRenderer;
+class vtkDistanceWidget;
 class View3DTextConfigWidget;
 class v3dMouseInteractor;
 
@@ -77,6 +78,9 @@ private:
     // The class that customizes mouse events to provide a custo mouse interacation.
     vtkSmartPointer<v3dMouseInteractor> m_myInteractor;
 
+    // The distance measuring tool.
+    vtkSmartPointer<vtkDistanceWidget> m_distanceWidget;
+
     // removes the current 3D viewing config widget.
     void removeCurrentConfigWidget();
 
@@ -102,6 +106,7 @@ private slots:
     void onVerticalExaggerationChanged(double value);
     void onTextStyle();
     void onTextConfigChanged();
+    void onRuler();
 };
 
 #endif // VIEW3DWIDGET_H

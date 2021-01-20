@@ -353,6 +353,29 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="btnRuler">
+            <property name="toolTip">
+             <string>Toggle distance measurement tool.</string>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+            <property name="icon">
+             <iconset resource="../resources.qrc">
+              <normaloff>:/icons32/v3Druler</normaloff>:/icons32/v3Druler</iconset>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
            <spacer name="verticalSpacer">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -497,6 +520,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnRuler</sender>
+   <signal>clicked()</signal>
+   <receiver>View3DWidget</receiver>
+   <slot>onRuler()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>571</x>
+     <y>238</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>612</x>
+     <y>298</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onViewAll()</slot>
@@ -506,5 +545,6 @@
   <slot>onObjectsListItemActivated(QListWidgetItem*)</slot>
   <slot>onVerticalExaggeration()</slot>
   <slot>onTextStyle()</slot>
+  <slot>onRuler()</slot>
  </slots>
 </ui>
