@@ -1,4 +1,5 @@
 #include "faciestransitionmatrixmaker.h"
+#include "domain/pointset.h"
 #include "domain/segmentset.h"
 #include "domain/application.h"
 
@@ -17,6 +18,7 @@
 
 //-------------------specializations of the getTrajectoryLength() template function---------------//
 namespace FTMMakerAdapters {
+
     template <>
     double getTrajectoryLength<SegmentSet>( SegmentSet* dataFile ){
         double result = 0.0;
@@ -25,27 +27,58 @@ namespace FTMMakerAdapters {
         }
         return result;
     }
+
+    template <>
+    double getTrajectoryLength<PointSet>( PointSet* dataFile ){
+        double result = 0.0;
+        double lastX, lastY, lastZ;
+        assert( dataFile->getDataLineCount() > 0 && "getTrajectoryLength<PointSet>: no data.  "
+                                                    "Make sure there is a prior call to a data loading method." );
+        dataFile->getDataSpatialLocation( 0, lastX, lastY, lastZ );
+        for( int i = 1; i < dataFile->getDataLineCount(); ++i ){
+            double x, y, z;
+            dataFile->getDataSpatialLocation( i, x, y, z );
+            double dx = x - lastX;
+            double dy = y - lastY;
+            double dz = z - lastZ;
+            result += std::sqrt( dx*dx + dy*dy + dz*dz );
+            lastX = x;
+            lastY = y;
+            lastZ = z;
+        }
+        return result;
+    }
+
 }
 //------------------------------------------------------------------------------------//
 
 
 //-------------------specializations of the getAssociatedCategoryDefinition() template function---------------//
 namespace FTMMakerAdapters {
+
     template <>
     CategoryDefinition* getAssociatedCategoryDefinition<DataFile>( DataFile* dataFile, int variableIndex ){
         Attribute* at = dataFile->getAttributeFromGEOEASIndex( variableIndex+1 );
         return dataFile->getCategoryDefinition( at );
     }
+
     template <>
     CategoryDefinition* getAssociatedCategoryDefinition<SegmentSet>( SegmentSet* dataFile, int variableIndex ){
         return getAssociatedCategoryDefinition<DataFile>( dataFile, variableIndex );
     }
+
+    template <>
+    CategoryDefinition* getAssociatedCategoryDefinition<PointSet>( PointSet* dataFile, int variableIndex ){
+        return getAssociatedCategoryDefinition<DataFile>( dataFile, variableIndex );
+    }
+
 }
 //------------------------------------------------------------------------------------//
 
 
 //-------------------specializations of the getValueInTrajectory() template function---------------//
 namespace FTMMakerAdapters {
+
     template <>
     double getValueInTrajectory<SegmentSet>( SegmentSet* dataFile, int variableIndex,
                                              double distance, double tolerance ){
@@ -74,9 +107,44 @@ namespace FTMMakerAdapters {
             distanceBeforeCurrentSegment += segmentLength + dataFile->getDistanceToNextSegment( i );
         }
         if( dataFile->getDataLineCount() == 0 )
-            Application::instance()->logWarn( "FTMMakerAdapters::getValueInTrajectory<SegmentSet>(): No data.  Didn't you forget to load the file before?" );
+            Application::instance()->logWarn( "FTMMakerAdapters::getValueInTrajectory<SegmentSet>(): No data.  Did you forget to load the file beforehand?" );
         return std::numeric_limits<double>::quiet_NaN();
     }
+
+    template <>
+    double getValueInTrajectory<PointSet>( PointSet* dataFile, int variableIndex,
+                                           double distance, double tolerance ){
+        double lastX = 0.0, lastY = 0.0, lastZ = 0.0;
+        //keep track of distance traversed in the trajectory
+        double distanceUpToCurrentSample = 0.0;
+        //for each segment
+        for( int i = 0; i < dataFile->getDataLineCount(); ++i ){
+            //keep track of distance traversed up to current sample.
+            if( i > 0 ) {
+                double x, y, z;
+                dataFile->getDataSpatialLocation( i, x, y, z );
+                double dx = x - lastX;
+                double dy = y - lastY;
+                double dz = z - lastZ;
+                distanceUpToCurrentSample += std::sqrt( dx*dx + dy*dy + dz*dz );
+                lastX = x;
+                lastY = y;
+                lastZ = z;
+            } else
+                dataFile->getDataSpatialLocation( 0, lastX, lastY, lastZ );
+            //if current sample falls within the queried distance plus or minus tolerance
+            if( distanceUpToCurrentSample >= (distance - tolerance)
+                &&
+                distanceUpToCurrentSample <= (distance + tolerance) )
+            {
+                return dataFile->data( i, variableIndex );
+            }
+        }
+        if( dataFile->getDataLineCount() == 0 )
+            Application::instance()->logWarn( "FTMMakerAdapters::getValueInTrajectory<PointSet>(): No data.  Did you forget to load the file beforehand?" );
+        return std::numeric_limits<double>::quiet_NaN();
+    }
+
 }
 //------------------------------------------------------------------------------------//
 

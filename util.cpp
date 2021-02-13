@@ -2276,6 +2276,21 @@ std::vector<hFTM> Util::computeFaciesTransitionMatrices(std::vector<Attribute*>&
                 //add its counts to the global FTM for a given h
                 hftm.second.add( ftm );
             }
+        } else if ( dataFile->getFileType() == "POINTSET" ) {
+            //load data from file system
+            dataFile->readFromFS();
+            //make an auxiliary object to count facies transitions at given separations
+            FaciesTransitionMatrixMaker<PointSet> ftmMaker( dynamic_cast<PointSet*>(dataFile),
+                                                              at->getAttributeGEOEASgivenIndex()-1 );
+            //for each separation h
+            for( hFTM& hftm : hFTMs ){
+                Application::instance()->logInfo("   working on h = " + QString::number( hftm.first ) + "...");
+                QApplication::processEvents();
+                //make a Facies Transion Matrix for a given h
+                FaciesTransitionMatrix ftm = ftmMaker.makeAlongTrajectory( hftm.first, toleranceCoefficient * hftm.first );
+                //add its counts to the global FTM for a given h
+                hftm.second.add( ftm );
+            }
         } else {
             Application::instance()->logError("Util::computeFaciesTransitionMatrix(): Data files of type " +
                                                dataFile->getFileType()+ " not currently supported.  Transiogram calculation will be incomplete or not done at all.", true);
