@@ -262,18 +262,25 @@ void IJGridViewerWidget::onImportSliceDataFromPNG()
     QImage image = pixmap.toImage();
 
     //Get the pixel gray levels ( image J origin is at top left )
+    bool nonGrayWarnIssued = false;
     for( int j = 0; j < slice->getNJ(); ++j )
         for( int i = 0; i < slice->getNI(); ++i ){
             //Get the color of the pixel.
 			QColor color = image.pixelColor( i, slice->getNJ()-1-j );
             //Check whether it is gray.
-            if( color.red() != color.blue() || color.red() != color.green() ){
-                QMessageBox::critical( this, "Error", QString("Image contains non-gray pixels."));
-                delete slice;
-                return;
+            if( !nonGrayWarnIssued && ( color.red() != color.blue() || color.red() != color.green() ) ){
+                QMessageBox::StandardButton reply = QMessageBox::warning( this, "Warning",
+                                                               QString("Image contains non-gray pixels. "
+                                                               "Green channel values will be used.  Continue?"),
+                                                               QMessageBox::Yes|QMessageBox::No );
+                if( reply == QMessageBox::No ){
+                    delete slice;
+                    return;
+                }
+                nonGrayWarnIssued = true; //to warn just once.
             }
-            //Compute the value from the gray level
-            int level = color.blue(); //could be either from red or green.
+            //Compute the value from the gray level (green by default)
+            int level = color.green();
             double value = min + level / 255.0 * (max - min);
             //If the pixel is transparent, set the value to NaN.
             if( color.alpha() == 0 )
