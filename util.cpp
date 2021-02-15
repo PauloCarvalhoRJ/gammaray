@@ -44,12 +44,12 @@
 #include <QProgressDialog>
 #include "spectral/spectral.h"
 #include <QStringBuilder>
+#include <QMessageBox>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
-#include <QMessageBox>
 #endif
 #ifdef Q_OS_LINUX
   #include <stdlib.h>
