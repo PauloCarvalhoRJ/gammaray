@@ -291,7 +291,7 @@ void VerticalProportionCurveDialog::updateVariablesList()
     for( Attribute* attribute : m_categoricalAttributes ){
         QListWidgetItem* item = new QListWidgetItem( attribute->getIcon(),
                                                      attribute->getName() + " (" + attribute->getContainingFile()->getName() + ")" );
-        item->setData( Qt::UserRole, reinterpret_cast<uint64_t>( attribute ) );
+        item->setData( Qt::UserRole, QVariant::fromValue( reinterpret_cast<uint64_t>( attribute ) ) );
         ui->lstVariables->addItem( item );
     }
     //readjusts the list widget's width to fit the content.
