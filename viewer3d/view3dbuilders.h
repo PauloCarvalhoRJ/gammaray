@@ -46,10 +46,12 @@ public:
 
     /** Makes a VTK surface from the z values in a 2D Cartesian grid.
      * Returns null ponter in case of error or failure (sent to the application's error log).
+     * The optional attributeToPaintWith provides the values to paint the surface with.
      */
     static vtkSmartPointer<vtkUnstructuredGrid> makeSurfaceFrom2DGridWithZvalues(
                                                  CartesianGrid* cartesianGrid,
-                                                 Attribute* attributeWithZValues);
+                                                 Attribute* attributeWithZValues,
+                                                 Attribute* attributeToPaintWith = nullptr );
 
 private:
     static View3DViewData buildForAttributeFromPointSet( PointSet* pointSet, Attribute* attribute, View3DWidget * widget3D );
@@ -115,6 +117,16 @@ private:
     static View3DViewData buildForSurfaceCartesianGrid2D(
                                       CartesianGrid* cartesianGrid,
                                       Attribute* attribute,
+                                      View3DWidget * widget3D);
+
+    /** Specific builder for an Attribute in a 2D (nZ < 2) Cartesian grid.
+     * The grid is displayed as a surface whose height is given by the variable attributeZ and
+     * painted with the values of the variable attributePaintWith.
+     */
+    static View3DViewData buildForSurfaceCartesianGrid2Dpainted(
+                                      CartesianGrid* cartesianGrid,
+                                      Attribute* attributeZ,
+                                      Attribute* attributePaintWith,
                                       View3DWidget * widget3D);
 
     /** Specific builder for Section outline without property. */
