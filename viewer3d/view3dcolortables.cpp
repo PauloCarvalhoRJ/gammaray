@@ -33,7 +33,9 @@ QString View3dColorTables::getColorTableName(ColorTable ct)
     }
 }
 
-vtkSmartPointer<vtkLookupTable> View3dColorTables::getCategoricalColorTable( CategoryDefinition *cd, bool useGSLibColors )
+vtkSmartPointer<vtkLookupTable> View3dColorTables::getCategoricalColorTable( CategoryDefinition *cd,
+                                                                             bool useGSLibColors,
+                                                                             double alphaForNDV )
 {
     cd->loadQuintuplets();
     int catCount = cd->getCategoryCount();
@@ -67,11 +69,11 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getCategoricalColorTable( Cat
             lut->SetTableValue(i, rgb[0], rgb[1], rgb[2], 1.0);
             lut->SetAnnotation(i, QString::number(i).toStdString() );
         } else {
-            lut->SetTableValue(i, 1.0, 0.0, 1.0, 0.3); //ilegal color codes are rendered as pink 70% transparent.
+            lut->SetTableValue(i, 1.0, 0.0, 1.0, alphaForNDV); //ilegal color codes are rendered as pink transparent.
             lut->SetAnnotation(i, "UNKNOWN CATEGORY" );
         }
     }
-    lut->SetNanColor( 1.0, 0.0, 1.0, 0.3 ); //unvalued locations are rendered as pink 70% transparent.
+    lut->SetNanColor( 1.0, 0.0, 1.0, alphaForNDV ); //unvalued locations are rendered as pink transparent.
     lut->IndexedLookupOn();
     lut->Build();
 
