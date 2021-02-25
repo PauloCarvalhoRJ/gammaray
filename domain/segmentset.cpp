@@ -177,6 +177,16 @@ double SegmentSet::getDistanceToNextSegment(int iRecord)
     return std::sqrt( dx*dx + dy*dy + dz*dz );
 }
 
+double SegmentSet::getDistanceToNextSegmentConst(int iRecord) const
+{
+    if( iRecord == getDataLineCount() - 1 )
+        return 0.0;
+    double dx = dataConst( iRecord+1, getXindex()-1 ) - dataConst( iRecord, getXFinalIndex()-1 );
+    double dy = dataConst( iRecord+1, getYindex()-1 ) - dataConst( iRecord, getYFinalIndex()-1 );
+    double dz = dataConst( iRecord+1, getZindex()-1 ) - dataConst( iRecord, getZFinalIndex()-1 );
+    return std::sqrt( dx*dx + dy*dy + dz*dz );
+}
+
 void SegmentSet::computeSegmentLenghts(QString variable_name)
 {
     //load the data

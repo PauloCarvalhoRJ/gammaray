@@ -23,8 +23,15 @@ public:
 
     /** Returns the itersections between the passed SegmentSet and the object used to initialize this finder.
      * May return an empty collection in case of no intersection.
+     * NOTE: This method only considers the segments.  Gaps in the trajectory are not considered.  Hence, if
+     * the input geometry passes through gaps in the segment set, for example, this method will return an empty list.
      */
     std::vector< Vector3D > getIntersections( const SegmentSet* segmentSet );
+
+    /** Does the same as getIntersections( const SegmentSet* ) but connects possible gaps
+     * in the segment set for the purpose of finding intersections.
+     */
+    std::vector< Vector3D > getIntersectionsConnectingGaps( const SegmentSet* segmentSet );
 
 private:
     vtkSmartPointer<vtkOBBTree> m_tree;

@@ -91,3 +91,79 @@ std::vector<Vector3D> IntersectionFinder::getIntersections(const SegmentSet *seg
 
     return result;
 }
+
+std::vector<Vector3D> IntersectionFinder::getIntersectionsConnectingGaps(const SegmentSet *segmentSet)
+{
+    std::vector<Vector3D> result;
+
+    vtkSmartPointer<vtkPoints> intersectPoints = vtkSmartPointer<vtkPoints>::New();
+
+    if( ! segmentSet->getDataLineCount() ){
+        Application::instance()->logError("IntersectionFinder::getIntersectionsConnectingGaps(SegmentSet): No data. "
+                                          "Perhaps a prior call to DataFile::loadData() is missing.");
+        return std::vector<Vector3D>();
+    }
+
+    //for each segment
+    for( int iSegment = 0; iSegment < segmentSet->getDataLineCount(); ++iSegment ) {
+
+        //get the segment's vertexes
+        double vi[3] = { segmentSet->dataConst( iSegment, segmentSet->getXindex()-1 ),
+                         segmentSet->dataConst( iSegment, segmentSet->getYindex()-1 ),
+                         segmentSet->dataConst( iSegment, segmentSet->getZindex()-1 ) };
+        double vf[3] = { segmentSet->dataConst( iSegment, segmentSet->getXFinalIndex()-1 ),
+                         segmentSet->dataConst( iSegment, segmentSet->getYFinalIndex()-1 ),
+                         segmentSet->dataConst( iSegment, segmentSet->getZFinalIndex()-1 ) };
+
+        //compute intersection
+        intersectPoints->Reset();
+        m_tree->IntersectWithLine(vi, vf, intersectPoints, nullptr);
+
+        // get the intersection points (if any)
+        double intersection[3];
+        for(int i = 0; i < intersectPoints->GetNumberOfPoints(); ++i ) {
+            intersectPoints->GetPoint(i, intersection);
+            Vector3D intersect;
+            intersect.x = intersection[0];
+            intersect.y = intersection[1];
+            intersect.z = intersection[2];
+            result.push_back( intersect );
+        }
+
+        //from the 2nd segment and on, consider any gaps as part of the trajectory.
+        if( iSegment > 0 ) {
+
+            // If there is a gap between current and previus segments...
+            if( ! Util::almostEqual2sComplement( 0.0,
+                                                 segmentSet->getDistanceToNextSegmentConst( iSegment-1 ),
+                                                 1 ) ) {
+
+                //get the line starting at the tail vertex of the previous segment and the head vertex
+                //of the current segment.
+                double vi[3] = { segmentSet->dataConst( iSegment-1, segmentSet->getXFinalIndex()-1 ),
+                                 segmentSet->dataConst( iSegment-1, segmentSet->getYFinalIndex()-1 ),
+                                 segmentSet->dataConst( iSegment-1, segmentSet->getZFinalIndex()-1 ) };
+                double vf[3] = { segmentSet->dataConst( iSegment,   segmentSet->getXindex()-1 ),
+                                 segmentSet->dataConst( iSegment,   segmentSet->getYindex()-1 ),
+                                 segmentSet->dataConst( iSegment,   segmentSet->getZindex()-1 ) };
+
+                //compute intersection
+                intersectPoints->Reset();
+                m_tree->IntersectWithLine(vi, vf, intersectPoints, nullptr);
+
+                // get the intersection points (if any)
+                double intersection[3];
+                for(int i = 0; i < intersectPoints->GetNumberOfPoints(); ++i ) {
+                    intersectPoints->GetPoint(i, intersection);
+                    Vector3D intersect;
+                    intersect.x = intersection[0];
+                    intersect.y = intersection[1];
+                    intersect.z = intersection[2];
+                    result.push_back( intersect );
+                }
+            }
+        }
+    }
+
+    return result;
+}

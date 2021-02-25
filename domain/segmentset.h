@@ -54,6 +54,12 @@ public:
      */
     double getDistanceToNextSegment( int iRecord );
 
+    /** Does the same as getDistanceToNextSegment() but with constness, that is,
+     * it does not load data from the file automatically.  An explicit call
+     * to readFromFS() is necessary prior to calling this method.
+     */
+    double getDistanceToNextSegmentConst( int iRecord ) const;
+
     /**
      * Adds a new variable containing the lengths of the segments.  The values can be useful
      * for debiasing, for instance.

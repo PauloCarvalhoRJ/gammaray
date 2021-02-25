@@ -477,7 +477,7 @@ VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASeg
     {
         IntersectionFinder intFinder;
         intFinder.initWithSurface( cgTop, m_cmbTopVariable->getSelectedVariableGEOEASIndex()-1 );
-        std::vector< Vector3D > intersections = intFinder.getIntersections( ss );
+        std::vector< Vector3D > intersections = intFinder.getIntersectionsConnectingGaps( ss );
         if( intersections.empty() ){
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                              ss->getName() + " does not intersect top horizon.  Using its topmost depth.");
@@ -498,7 +498,7 @@ VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASeg
     {
         IntersectionFinder intFinder;
         intFinder.initWithSurface( cgBase, m_cmbBaseVariable->getSelectedVariableGEOEASIndex()-1 );
-        std::vector< Vector3D > intersections = intFinder.getIntersections( ss );
+        std::vector< Vector3D > intersections = intFinder.getIntersectionsConnectingGaps( ss );
         if( intersections.empty() ){
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                              ss->getName() + " does not intersect base horizon.  Using its bottommost depth.");
