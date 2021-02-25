@@ -94,12 +94,11 @@ public:
         double zStep = ( top - base ) * resolution;
         if( zStep <= epsilon ){
             Application::instance()->logWarn("VerticalProportionCurveMaker::makeInDepthInterval(): "
-                                             "top z lower than or equal to base z. Z step truncated to epsilon (" +
-                                             QString::number(epsilon) + "). "
-                                             "Unexpected results may ensue.  Check for touching or "
+                                             "top z lower than or equal to base z. It is not possible to "
+                                             "compute proportions.  Returning empty VPC.  Check for touching or "
                                              "crossing horizons around " +
                                              VPCMakerAdapters::getName( m_dataFileWithFacies ) );
-            zStep = epsilon;
+            return vpc;
         }
         assert( zStep > 0.0 && "VerticalProportionCurveMaker::makeInDepthInterval(): top z lower than or equal to base z." );
         double zHalfWindowSize = ( top - base ) * window / 2.0;
