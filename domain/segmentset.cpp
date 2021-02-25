@@ -310,6 +310,20 @@ double SegmentSet::getSegmentHeight(int iRecord) const
     return std::abs( dz );
 }
 
+void SegmentSet::getHeadLocation(double &x, double &y, double &z) const
+{
+    x = dataConst( 0, getXindex()-1 );
+    y = dataConst( 0, getYindex()-1 );
+    z = dataConst( 0, getZindex()-1 );
+}
+
+void SegmentSet::getTailLocation(double &x, double &y, double &z) const
+{
+    x = dataConst( getDataLineCount()-1, getXFinalIndex()-1 );
+    y = dataConst( getDataLineCount()-1, getYFinalIndex()-1 );
+    z = dataConst( getDataLineCount()-1, getZFinalIndex()-1 );
+}
+
 
 QIcon SegmentSet::getIcon()
 {

@@ -101,6 +101,12 @@ public:
      */
     double getSegmentHeight( int iRecord ) const;
 
+    /** Returns via output parameters the x,y,z coordinate of the head vertex of the first segment. */
+    void getHeadLocation( double& x, double& y, double& z ) const;
+
+    /** Returns via output parameters the x,y,z coordinate of the tail vertex of the last segment. */
+    void getTailLocation( double& x, double& y, double& z ) const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();
