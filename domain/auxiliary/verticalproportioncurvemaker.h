@@ -4,6 +4,7 @@
 #include "domain/verticalproportioncurve.h"
 #include "domain/categorydefinition.h"
 #include "domain/categorypdf.h"
+#include "domain/application.h"
 #include "spatialindex/spatialindex.h"
 #include <cassert>
 
@@ -34,6 +35,10 @@ namespace VPCMakerAdapters {
      */
     template <typename Klass> double getSupportSize( Klass* dataFile, int dataIndex );
 
+    /**
+     * Simply returns the name of the data file.
+     */
+    template <typename Klass> QString getName( Klass* dataFile );
 }
 
 /** This is a template class used to make vertical proportion curves for different
@@ -87,6 +92,15 @@ public:
 
         //compute step and window in z units.
         double zStep = ( top - base ) * resolution;
+        if( zStep <= epsilon ){
+            Application::instance()->logWarn("VerticalProportionCurveMaker::makeInDepthInterval(): "
+                                             "top z lower than or equal to base z. Z step truncated to epsilon (" +
+                                             QString::number(epsilon) + "). "
+                                             "Unexpected results may ensue.  Check for touching or "
+                                             "crossing horizons around " +
+                                             VPCMakerAdapters::getName( m_dataFileWithFacies ) );
+            zStep = epsilon;
+        }
         assert( zStep > 0.0 && "VerticalProportionCurveMaker::makeInDepthInterval(): top z lower than or equal to base z." );
         double zHalfWindowSize = ( top - base ) * window / 2.0;
 
