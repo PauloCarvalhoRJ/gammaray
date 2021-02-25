@@ -469,8 +469,16 @@ VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASeg
                                            "One horizon is missing or is not a Cartesian grid.", true );
         return VerticalProportionCurve("", "");
     }
+    if( cgTop->isTridimensional() || cgBase->isTridimensional() ){
+        Application::instance()->logError( "VerticalProportionCurveDialog::computeProportionsForASegmentSet(): "
+                                           "The horizons must be 2D grids.", true );
+        return VerticalProportionCurve("", "");
+    }
     cgTop->loadData();
     cgBase->loadData();
+
+    bool intersectsTopHorizon = true;
+    bool intersectsBaseHorizon = true;
 
     //find the depth at which the segment set intersects the top horizon
     double top = std::numeric_limits<double>::quiet_NaN();
@@ -479,6 +487,7 @@ VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASeg
         intFinder.initWithSurface( cgTop, m_cmbTopVariable->getSelectedVariableGEOEASIndex()-1 );
         std::vector< Vector3D > intersections = intFinder.getIntersectionsConnectingGaps( ss );
         if( intersections.empty() ){
+            intersectsTopHorizon = false;
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                              ss->getName() + " does not intersect top horizon.  Using its topmost depth.");
             top = std::max( ss->max( ss->getZindex()-1 ), ss->max( ss->getZFinalIndex()-1 ) );
@@ -500,6 +509,7 @@ VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASeg
         intFinder.initWithSurface( cgBase, m_cmbBaseVariable->getSelectedVariableGEOEASIndex()-1 );
         std::vector< Vector3D > intersections = intFinder.getIntersectionsConnectingGaps( ss );
         if( intersections.empty() ){
+            intersectsBaseHorizon = false;
             Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): " +
                                              ss->getName() + " does not intersect base horizon.  Using its bottommost depth.");
             base = std::min( ss->min( ss->getZindex()-1 ), ss->min( ss->getZFinalIndex()-1 ) );
@@ -520,6 +530,38 @@ VerticalProportionCurve VerticalProportionCurveDialog::computeProportionsForASeg
                                          "intersection base depth is higher than intersection top depth. "
                                          "This is likely due to swapped base and top horizons.  Ignored.");
         return VerticalProportionCurve("", "");
+    }
+    if( !intersectsTopHorizon && !intersectsBaseHorizon ){
+        //get the locations of the starting and ending vertexes of the segment set
+        double headX, headY, headZ, tailX, tailY, tailZ;
+        ss->getHeadLocation( headX, headY, headZ );
+        ss->getTailLocation( tailX, tailY, tailZ );
+
+        //get the head and tail z's projected at both horizons (four z values)
+        uint i, j, k;
+        cgTop->XYZtoIJK( headX, headY, 0.0, i, j, k );
+        double headZProjectedAtTopHorizon = cgTop->dataIJK(
+                     m_cmbTopVariable->getSelectedVariableGEOEASIndex()-1, i, j, k );
+        cgTop->XYZtoIJK( tailX, tailY, 0.0, i, j, k );
+        double tailZProjectedAtTopHorizon = cgTop->dataIJK(
+                     m_cmbTopVariable->getSelectedVariableGEOEASIndex()-1, i, j, k );
+        cgBase->XYZtoIJK( headX, headY, 0.0, i, j, k );
+        double headZProjectedAtBaseHorizon = cgBase->dataIJK(
+                    m_cmbBaseVariable->getSelectedVariableGEOEASIndex()-1, i, j, k );
+        cgBase->XYZtoIJK( tailX, tailY, 0.0, i, j, k );
+        double tailZProjectedAtBaseHorizon = cgBase->dataIJK(
+                    m_cmbBaseVariable->getSelectedVariableGEOEASIndex()-1, i, j, k );
+
+        //if both head and tail z are above the top horizon OR below the base horizon
+        //the segment set is not between the horizons.  Hence, it cannot take part in
+        //the computation of proportions.
+        if( ( headZ < headZProjectedAtBaseHorizon && tailZ < tailZProjectedAtBaseHorizon ) ||
+            ( headZ > headZProjectedAtTopHorizon  && tailZ > tailZProjectedAtTopHorizon  ) ){
+            Application::instance()->logWarn("VerticalProportionCurveDialog::computeProportionsForASegmentSet(): "
+                                             + ss->getName() + " does not intersect either horizons and is either"
+                                             " completely above the top horizon or completely below the base horizon.  Ignored.");
+            return VerticalProportionCurve("", "");
+        }
     }
 
     //compute and return the curves
