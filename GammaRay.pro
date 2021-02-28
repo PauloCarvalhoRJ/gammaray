@@ -39,6 +39,8 @@ SOURCES += main.cpp\
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
     geometry/intersectionfinder.cpp \
+    geometry/quadrilateral.cpp \
+    geometry/triangle.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
@@ -303,6 +305,8 @@ HEADERS  += mainwindow.h \
     domain/section.h \
     domain/verticalproportioncurve.h \
     geometry/intersectionfinder.h \
+    geometry/quadrilateral.h \
+    geometry/triangle.h \
     geostats/mcmcdataimputation.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
