@@ -48,7 +48,7 @@ public:
 
     /** Returns, via output parameters, the center of the cell given its topological
      * coordinates.  Recall that, for a geologic section, the number of rows is always 1,
-     * So only tje I and K indexes are necessary to uniquely address a given value in the section.
+     * So only the I and K indexes are necessary to uniquely address a given value in the section.
      */
     void IKtoXYZ( uint i, uint k, double& x, double& y, double& z ) const;
 
