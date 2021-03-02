@@ -56,6 +56,7 @@
 #include "domain/segmentset.h"
 #include "domain/faciestransitionmatrix.h"
 #include "domain/auxiliary/faciestransitionmatrixmaker.h"
+#include "domain/section.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -528,6 +529,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Compute segment lengths", this, SLOT(onSegmentLengths()));
                 _projectContextMenu->addAction("Convert to point set (mid points)", this, SLOT(onExtractMidPoints()));
             }
+            if( _right_clicked_file->getFileType() == "SECTION" ){
+                _projectContextMenu->addAction("Convert to point set (centroids)", this, SLOT(onExtractSectionCentroids()));
+            }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
         //build context menu for an attribute
@@ -872,6 +876,30 @@ void MainWindow::onAddSection()
 {
     SectionDialog* sd = new SectionDialog( this );
     sd->show();
+}
+
+void MainWindow::onExtractSectionCentroids()
+{
+    //We can assume the selected file is a Section.
+    Section* sec = dynamic_cast<Section*>( _right_clicked_file );
+
+    QString suggested_name = sec->getName() + "_as_centroids";
+    //open the renaming dialog
+    bool ok;
+    QString ps_file_name = QInputDialog::getText(this, "Name the new file",
+                                                 "New point set file:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //create the point set with the centroids
+    sec->readFromFS();
+    PointSet* ps = sec->toPointSetCentroids( ps_file_name );
+
+    //attach the object to the project tree
+    Application::instance()->getProject()->addDataFile( ps );
+
+    //show the newly created object in main window's project tree
+    Application::instance()->refreshProjectTree();
 }
 
 void MainWindow::onRemoveFile()

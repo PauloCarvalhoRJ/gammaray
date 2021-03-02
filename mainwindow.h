@@ -230,6 +230,7 @@ private slots:
     void onFilterMedian();
     void onFilterGaussian();
     void onAddSection();
+    void onExtractSectionCentroids();
 
 private:
     /**
