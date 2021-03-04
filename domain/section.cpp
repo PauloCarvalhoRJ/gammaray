@@ -206,14 +206,14 @@ Quadrilateral Section::makeQuadrilateral(uint i, uint k) const
 
     //The delta z is a bit more complicated because depth can vary along the section.
     //Furthermore, we have a bottom and a top z in the head and tail of the section segment.
-    double segmentHeadDeltaZ  = segment_topZi - segment_botZi;
-    double segmentTailDeltaZ  = segment_topZf - segment_botZf;
-    double segmentHeadZlower  = segment_botZi + segmentHeadDeltaZ / nHorizons * k;
-    double segmentTailZlower  = segment_botZf + segmentTailDeltaZ / nHorizons * k;
+    double segmentHeadDeltaZ  = segment_topZi     - segment_botZi;
+    double segmentTailDeltaZ  = segment_topZf     - segment_botZf;
+    double segmentHeadZlower  = segment_botZi     + segmentHeadDeltaZ / nHorizons * k;
+    double segmentTailZlower  = segment_botZf     + segmentTailDeltaZ / nHorizons * k;
     double segmentDeltaZlower = segmentTailZlower - segmentHeadZlower;
-    double segmentHeadZupper  = segment_botZi + segmentHeadDeltaZ / nHorizons * ( k + 1 );
-    double segmentTailZupper  = segment_botZf + segmentTailDeltaZ / nHorizons * ( k + 1 );
-    double segmentDeltaZupper = segmentTailZupper - segmentHeadZlower;
+    double segmentHeadZupper  = segment_botZi     + segmentHeadDeltaZ / nHorizons * ( k + 1 );
+    double segmentTailZupper  = segment_botZf     + segmentTailDeltaZ / nHorizons * ( k + 1 );
+    double segmentDeltaZupper = segmentTailZupper - segmentHeadZupper;
 
     //Compute the vertexes that define the cell's geometry.
     int columnOffset = i - dataColIni;
