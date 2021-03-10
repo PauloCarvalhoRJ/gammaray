@@ -164,7 +164,7 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
                     double vBase = cg->dataIJK( columnIndexBase, i, j, 0 );
                     double vTop = cg->dataIJK( columnIndexTop, i, j, 0 );
                     //compute the depth (z) of the current vertex.
-                    double depth = vBase + ( k / (double)zone.nHorizonSlices ) * ( vTop - vBase );
+                    double depth = vBase + ( k / (double)(nKVertexesZone-1) ) * ( vTop - vBase );
                     //create and set the position of the vertex
                     VertexRecordPtr vertex( new VertexRecord() );
                     double x, y, z;
@@ -189,8 +189,12 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
     //allocate the cell definition list
     m_cellDefsPart.reserve( nCells );
 
+    //assign the vertexes of each cell, thus defining them
     uint vertexKoffset = 0;
-    for( const GeoGridZone zone : zones ){
+    for ( std::vector<GeoGridZone>::const_reverse_iterator iZone = zones.crbegin();
+          iZone != zones.crend();
+          ++iZone ) { //traversing from base->top (inverse of user-entered order)
+        const GeoGridZone& zone = *(iZone);
         uint nKCellsZone = zone.nHorizonSlices;
         //assign vertexes id's to the cells
         for( uint k = 0; k < nKCellsZone; ++k ){
@@ -211,7 +215,7 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
                 }
             }
         }
-        vertexKoffset += nKCellsZone + 1;
+        vertexKoffset += nKCellsZone+1;
     }
 
     //initialize member variables
