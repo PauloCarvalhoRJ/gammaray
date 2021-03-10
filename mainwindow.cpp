@@ -87,6 +87,7 @@
 #include "dialogs/choosevariabledialog.h"
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
 #include "dialogs/sectiondialog.h"
+#include "dialogs/populatewithproportionsfromvpcdialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -814,6 +815,45 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 }
             }
         }
+        //if one object is a Vertical Proportion Curve (VPC) and the other object is a Cartesian grid
+        // then the user wants to populate the grid with the proportions read from the VPC.
+        if( index1.isValid() && index2.isValid() ){
+            //Get the files pointers
+            File* file1 = nullptr;
+            File* file2 = nullptr;
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isFile() ){
+                file1 = static_cast<File*>( index1.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+                file2 = static_cast<File*>( index2.internalPointer() );
+            }
+            //determine the target Cartesian grid file and VPC with the source of proportions
+            VerticalProportionCurve* vpc = nullptr;
+            CartesianGrid* cg = nullptr;
+            if( file1 ){
+                if( file1->getFileType() == "VERTICALPROPORTIONCURVE" )
+                    vpc = dynamic_cast<VerticalProportionCurve*>( file1 );
+                else if( file1->getFileType() == "CARTESIANGRID" )
+                    cg = dynamic_cast<CartesianGrid*>( file1 );
+            }
+            if( file2 ){
+                if( file2->getFileType() == "VERTICALPROPORTIONCURVE" )
+                    vpc = dynamic_cast<VerticalProportionCurve*>( file2 );
+                else if( file2->getFileType() == "CARTESIANGRID" )
+                    cg = dynamic_cast<CartesianGrid*>( file2 );
+            }
+
+            //if user selected a VPC and a 3D Certesian grid (VPCs are meaningless for 2D grids).
+            if( vpc && cg && cg->isTridimensional() ) {
+                _right_clicked_cartesian_grid = cg;
+                _right_clicked_VPC = vpc;
+                QString menu_caption = "Populate ";
+                menu_caption.append( cg->getName());
+                menu_caption.append(" w/ proportions from ");
+                menu_caption.append( vpc->getName());
+                _projectContextMenu->addAction(menu_caption, this, SLOT(onPopulateGridWithProportions()));
+            }
+        }
     //three items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 3 ) {
         QModelIndex index1 = selected_indexes.first();
@@ -900,6 +940,14 @@ void MainWindow::onExtractSectionCentroids()
 
     //show the newly created object in main window's project tree
     Application::instance()->refreshProjectTree();
+}
+
+void MainWindow::onPopulateGridWithProportions()
+{
+    PopulateWithProportionsFromVPCDialog* ppvpc = new PopulateWithProportionsFromVPCDialog( this );
+    ppvpc->setCartesianGrid( _right_clicked_cartesian_grid );
+    ppvpc->setVPC( _right_clicked_VPC );
+    ppvpc->show();
 }
 
 void MainWindow::onRemoveFile()

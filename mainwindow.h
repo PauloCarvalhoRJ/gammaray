@@ -120,6 +120,8 @@ private:
     GeoGrid* _right_clicked_geo_grid;
     //pointer to right clicked DataFile (set in onProjectContextMenu() slot)
     DataFile* _right_clicked_data_file;
+    //pointer to right clicked VerticalProportionCurve (set in onProjectContextMenu() slot)
+    VerticalProportionCurve* _right_clicked_VPC;
 
 private slots:
     void onProjectContextMenu(const QPoint &mouse_location);
@@ -231,6 +233,7 @@ private slots:
     void onFilterGaussian();
     void onAddSection();
     void onExtractSectionCentroids();
+    void onPopulateGridWithProportions();
 
 private:
     /**
