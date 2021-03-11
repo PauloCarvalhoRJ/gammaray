@@ -62,5 +62,7 @@ void PopulateWithProportionsFromVPCDialog::onProcess()
     uint baseK = ui->spinBaseK->value();
     uint topK = ui->spinTopK->value();
 
+    m_vpc->readFromFS();
+
     m_cg->fillWithProportions( m_vpc, baseK, topK );
 }

@@ -7,6 +7,7 @@
 #include "domain/application.h"
 #include "domain/project.h"
 #include "domain/objectgroup.h"
+#include "domain/attribute.h"
 
 VerticalProportionCurve::VerticalProportionCurve(QString path, QString associatedCategoryDefinitionName) :
     DataFile( path ),
@@ -261,6 +262,36 @@ void VerticalProportionCurve::setInfo(QString associatedCategoryDefinitionName)
     updateChildObjectsCollection();
 }
 
+QString VerticalProportionCurve::getProportionVariableName( uint proportionIndex ) const
+{
+    //First column (0 index, 1 GeoEAS index) is the relative depth.
+    //First proportion is the second column.
+    Attribute* at = getAttributeFromGEOEASIndex( proportionIndex + 2 );
+    assert( at && "VerticalProportionCurve::getProportionVariableName(): no such attribute.  Check for "
+                  "indexes out of range or a missing prior call to VerticalProportionCurve::readFromFS()." );
+    return at->getName();
+}
+
+double VerticalProportionCurve::getProportionAt(uint proportionIndex, double relativeDepth) const
+{
+    //traverse all entries in this VPC.
+    for( uint iEntry = 1; iEntry < m_entries.size(); ++iEntry ){
+        VPCEntry entry0 = m_entries[ iEntry-1 ];
+        VPCEntry entry1 = m_entries[  iEntry  ];
+        //if the queried relative depth falls between two entries...
+        if( relativeDepth >= entry0.relativeDepth && relativeDepth <= entry1.relativeDepth ){
+            //...interpolates the proportion between them.
+            return Util::linearInterpolation( relativeDepth,
+                                              entry0.relativeDepth,
+                                              entry1.relativeDepth,
+                                              entry0.proportions[ proportionIndex ],
+                                              entry1.proportions[ proportionIndex ]
+                                              );
+        }
+    }
+    return std::numeric_limits<double>::quiet_NaN();
+}
+
 QIcon VerticalProportionCurve::getIcon()
 {
     return QIcon(":icons32/vpc32");
@@ -400,6 +431,9 @@ void VerticalProportionCurve::readFromFS()
 
     //discard current entries (if any).
     m_entries.clear();
+
+    //makes sure the associated category definition file is loaded.
+    cd->readFromFS();
 
     //re-create entries from the data table.
     int colCount = getDataColumnCount();
