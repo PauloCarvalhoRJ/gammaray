@@ -955,7 +955,8 @@ void MainWindow::onGeoGridExportAsGRDECL()
 {
     QString grdeclFilePath = QFileDialog::getSaveFileName(this,
                                                           "Save GeoGrid as Eclipse grid (*.grdecl)",
-                                                          Util::getLastBrowsedDirectory());
+                                                          Util::getLastBrowsedDirectory(),
+                                                          "ASCII Eclipse format (*.grdecl);;All files (*.*)");
     if( ! grdeclFilePath.isEmpty() ){
         GeoGrid* gg = dynamic_cast<GeoGrid*>( _right_clicked_file );
         if( gg ){
