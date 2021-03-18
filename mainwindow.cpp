@@ -520,7 +520,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
 			if( _right_clicked_file->getFileType() == "GEOGRID" ){
 				_projectContextMenu->addAction("Compute cell volumes", this, SLOT(onGeoGridCellVolumes()));
-			}
+                _projectContextMenu->addAction("Export as .GRDECL", this, SLOT(onGeoGridExportAsGRDECL()));
+            }
             if( _right_clicked_file->getFileType() == "FACIESTRANSITIONMATRIX" ){
                 _projectContextMenu->addAction("Set/Change associated category definition", this, SLOT(onSetCategoryDefinitionOfAFasciesTransitionMatrix()));
                 _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
@@ -948,6 +949,19 @@ void MainWindow::onPopulateGridWithProportions()
     ppvpc->setCartesianGrid( _right_clicked_cartesian_grid );
     ppvpc->setVPC( _right_clicked_VPC );
     ppvpc->show();
+}
+
+void MainWindow::onGeoGridExportAsGRDECL()
+{
+    QString grdeclFilePath = QFileDialog::getSaveFileName(this,
+                                                          "Save GeoGrid as Eclipse grid (*.grdecl)",
+                                                          Util::getLastBrowsedDirectory());
+    if( ! grdeclFilePath.isEmpty() ){
+        GeoGrid* gg = dynamic_cast<GeoGrid*>( _right_clicked_file );
+        if( gg ){
+            gg->exportToEclipseGridGRDECL( grdeclFilePath );
+        }
+    }
 }
 
 void MainWindow::onRemoveFile()

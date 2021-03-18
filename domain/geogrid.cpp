@@ -816,7 +816,164 @@ Hexahedron GeoGrid::makeHexahedron( uint cellIndex )
 		hexa.v[i].y = y;
 		hexa.v[i].z = z;
 	}
-	return hexa;
+    return hexa;
+}
+
+void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
+{
+    //TODO: implement a test for odd non-pillar-grid like geometry.
+    Application::instance()->logWarn("GeoGrid::exportToEclipseGridGRDECL(): assuming the GeoGrid "
+                                     "has a pillar-grid like geometry!");
+
+
+    //load grid data and geometry
+    loadData();
+    loadMesh();
+
+    //get some griding info.
+    const uint nI = getNI();
+    const uint nJ = getNJ();
+    const uint nK = getNK();
+
+    //open the file for output
+    QFile outputFile( filePath );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+
+    //the SPECGRID section declares grid cell counts along the three axes.
+    out << "SPECGRID" << '\n';
+    out << nI << ' ' << nJ << ' ' << nK << " 1 F\n";
+    out << "/\n\n";
+
+    //the COORD section declares the starting and ending (x,y,z)'s of the fibers delimiting
+    //where the cell stacks will be placed.
+    out << "COORD" << '\n';
+    uint cellVertexesIDs[8];
+    uint runLengthIndex;
+    double x, y, z;
+    for( uint j = 0; j < nJ; ++j )
+        for( uint i = 0; i < nI; ++i ) {
+            //output the southernmost, westernmost, bottommost vertex of the
+            //bottommost cell in the current volume trace.
+            runLengthIndex = IJKtoIndex( i, j, 0 );
+            getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+            getMeshVertexLocation( cellVertexesIDs[0], x, y, z );
+            out << x << ' ' << y << ' ' << z << "     ";
+            //output the southernmost, westernmost, topmost vertex of the
+            //topmost cell in the current volume trace.
+            runLengthIndex = IJKtoIndex( i, j, nK-1 );
+            getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+            getMeshVertexLocation( cellVertexesIDs[4], x, y, z );
+            out << x << ' ' << y << ' ' << z << '\n';
+            //for the easternmost traces of W-E rows, we also...
+            if( i == nI-1 ){
+                //output the southernmost, easternmost, bottommost vertex of the
+                //bottommost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, 0 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[1], x, y, z );
+                out << x << ' ' << y << ' ' << z << "     ";
+                //output the southernmost, easternmost, topmost vertex of the
+                //topmost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, nK-1 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[5], x, y, z );
+                out << x << ' ' << y << ' ' << z << '\n';
+            }
+            //for the northernmost traces of S-N columns, we also...
+            if( j == nJ-1 ){
+                //output the nothernmost, westernmost, bottommost vertex of the
+                //bottommost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, 0 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[3], x, y, z );
+                out << x << ' ' << y << ' ' << z << "     ";
+                //output the the northernmost, westernmost, topmost vertex of the
+                //topmost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, nK-1 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[7], x, y, z );
+                out << x << ' ' << y << ' ' << z << '\n';
+            }
+            //for the northernmost, easternmost trace of the entire grid, we also...
+            if( i == nI-1 && j == nJ-1 ){
+                //output the nothernmost, easternmost, bottommost vertex of the
+                //bottommost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, 0 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[2], x, y, z );
+                out << x << ' ' << y << ' ' << z << "     ";
+                //output the northernmost, easternmost, topmost vertex of the
+                //topmost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, nK-1 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[6], x, y, z );
+                out << x << ' ' << y << ' ' << z << '\n';
+            }
+        }
+    out << "/\n\n";
+
+    //the ZCORN section declares the eight Z depths (four for the bottom and four for the top) that define
+    // the geometry of one cell between four fibers.  The fibers are defined in the COORD section.
+    out << "ZCORN" << '\n';
+    for( uint j = 0; j < nJ; ++j )
+        for( uint i = 0; i < nI; ++i )
+            for( uint k = 0; k < nK; ++k ){
+                //output the four Z values of the base of the cell
+                runLengthIndex = IJKtoIndex( i, j, k );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[0], x, y, z );
+                out << z << ' ';
+                getMeshVertexLocation( cellVertexesIDs[1], x, y, z );
+                out << z << ' ';
+                getMeshVertexLocation( cellVertexesIDs[3], x, y, z );
+                out << z << ' ';
+                getMeshVertexLocation( cellVertexesIDs[2], x, y, z );
+                out << z << '\n';
+                //output the four Z values of the base of the cell
+                getMeshVertexLocation( cellVertexesIDs[4], x, y, z );
+                out << z << ' ';
+                getMeshVertexLocation( cellVertexesIDs[5], x, y, z );
+                out << z << ' ';
+                getMeshVertexLocation( cellVertexesIDs[7], x, y, z );
+                out << z << ' ';
+                getMeshVertexLocation( cellVertexesIDs[6], x, y, z );
+                out << z << '\n';
+            }
+    out << "/\n\n";
+
+    //the ACTNUM section contains the flags that sets the visibility of a cell.
+    //In our case, all cells are visible unless some creterion is defined in future
+    //developments of this exporter.
+    out << "ACTNUM" << '\n';
+    for( uint j = 0; j < nJ; ++j )
+        for( uint i = 0; i < nI; ++i ){
+            for( uint k = 0; k < nK; ++k )
+                out << '1' << ' ';
+            out << '\n';
+        }
+    out << "/\n\n";
+
+    //Now we output one custom section for each property filling the grid.
+    //The property values are filled in the same scan order of the flags in the
+    //ACTNUM section.
+    uint nProperties = getDataColumnCount();
+    CartesianGrid* gridsDataStore = getUnderlyingCartesianGrid();
+    for( uint iProperty = 0; iProperty < nProperties; ++iProperty ){
+        Attribute* at = gridsDataStore->getAttributeFromGEOEASIndex( iProperty+1 );
+        //The name of the section is the name of the property (with illegal characters
+        //replaces with unserscores)
+        out << at->getScriptCompatibleName() << '\n';
+        for( uint j = 0; j < nJ; ++j )
+            for( uint i = 0; i < nI; ++i ){
+                for( uint k = 0; k < nK; ++k )
+                    out << dataIJK( iProperty, i, j, k ) << ' ';
+                out << '\n';
+            }
+        out << "/\n\n";
+    }
+
+    outputFile.close();
 }
 
 void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z) const

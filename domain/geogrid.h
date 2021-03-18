@@ -184,6 +184,15 @@ public:
 	 */
 	Hexahedron makeHexahedron( uint cellIndex );
 
+    /**
+     * Exports this GeoGrid as ASCII Eclipse Grid (.grdecl format).
+     * This format is broadly supported by most geomodeling software.
+     * @note This method currently assumes the geometry is pillar-grid like, that is,
+     *       the cells are arranged in stacks.  A prior test for odd geometries should
+     *       be implemented when new GeoGrid constructors or importers are made available.
+     */
+    void exportToEclipseGridGRDECL( const QString filePath );
+
 //GridFile interface
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,
                            double& x, double& y, double& z ) const;
