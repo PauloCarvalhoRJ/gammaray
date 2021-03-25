@@ -20,6 +20,7 @@
 #include <QProgressDialog>
 #include <QTextStream>
 #include <QThread>
+#include <QApplication>
 
 #include <cassert>
 
@@ -819,7 +820,7 @@ Hexahedron GeoGrid::makeHexahedron( uint cellIndex )
     return hexa;
 }
 
-void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
+void GeoGrid::exportToEclipseGridGRDECL(const QString filePath, bool invertSignZ)
 {
     //TODO: implement a test for odd non-pillar-grid like geometry.
     Application::instance()->logWarn("GeoGrid::exportToEclipseGridGRDECL(): assuming the GeoGrid "
@@ -830,16 +831,30 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
     loadData();
     loadMesh();
 
+    //define Z sign inversion.
+    int signZ = 1;
+    if( invertSignZ )
+        signZ = -1;
+
     //get some griding info.
     const uint nI = getNI();
     const uint nJ = getNJ();
     const uint nK = getNK();
+
+    //show a progress dialog
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Exporting GeoGrid to Eclipse Grid ASCII format...");
+    progressDialog.setMinimum(0);
+    progressDialog.setValue(0);
+    progressDialog.setMaximum( 0 );
 
     //open the file for output
     QFile outputFile( filePath );
     outputFile.open( QFile::WriteOnly | QFile::Text );
     QTextStream out(&outputFile);
 
+    //set max number of significant digits to 12 is good enough for the Eclipse Grid ASCII format.
     out.setRealNumberPrecision(12);
 
     //the SPECGRID section declares grid cell counts along the three axes.
@@ -853,20 +868,20 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
     uint cellVertexesIDs[8];
     uint runLengthIndex;
     double x, y, z;
-    for( uint j = 0; j < nJ; ++j )
+    for( uint j = 0; j < nJ; ++j ) {
         for( uint i = 0; i < nI; ++i ) {
             //output the southernmost, westernmost, bottommost vertex of the
             //bottommost cell in the current volume trace.
             runLengthIndex = IJKtoIndex( i, j, 0 );
             getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
             getMeshVertexLocation( cellVertexesIDs[0], x, y, z );
-            out << x << ' ' << y << ' ' << z << "     ";
+            out << x << ' ' << y << ' ' << signZ*z << "     ";
             //output the southernmost, westernmost, topmost vertex of the
             //topmost cell in the current volume trace.
             runLengthIndex = IJKtoIndex( i, j, nK-1 );
             getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
             getMeshVertexLocation( cellVertexesIDs[4], x, y, z );
-            out << x << ' ' << y << ' ' << z << '\n';
+            out << x << ' ' << y << ' ' << signZ*z << '\n';
             //for the easternmost traces, we also...
             if( i == nI-1 ){
                 //output the southernmost, easternmost, bottommost vertex of the
@@ -874,15 +889,17 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
                 runLengthIndex = IJKtoIndex( i, j, 0 );
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[1], x, y, z );
-                out << x << ' ' << y << ' ' << z << "     ";
+                out << x << ' ' << y << ' ' << signZ*z << "     ";
                 //output the southernmost, easternmost, topmost vertex of the
                 //topmost cell in the current volume trace.
                 runLengthIndex = IJKtoIndex( i, j, nK-1 );
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[5], x, y, z );
-                out << x << ' ' << y << ' ' << z << '\n';
+                out << x << ' ' << y << ' ' << signZ*z << '\n';
             }
         }
+        QApplication::processEvents(); //let Qt do repainting
+    }
 
     //for the northernmost traces, we also...
     for( uint i = 0; i < nI; ++i ){
@@ -891,13 +908,14 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
         runLengthIndex = IJKtoIndex( i, nJ-1, 0 );
         getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
         getMeshVertexLocation( cellVertexesIDs[3], x, y, z );
-        out << x << ' ' << y << ' ' << z << "     ";
+        out << x << ' ' << y << ' ' << signZ*z << "     ";
         //output the the northernmost, westernmost, topmost vertex of the
         //topmost cell in the current volume trace.
         runLengthIndex = IJKtoIndex( i, nJ-1, nK-1 );
         getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
         getMeshVertexLocation( cellVertexesIDs[7], x, y, z );
-        out << x << ' ' << y << ' ' << z << '\n';
+        out << x << ' ' << y << ' ' << signZ*z << '\n';
+        QApplication::processEvents(); //let Qt do repainting
     }
 
     //for the northernmost, easternmost trace of the entire grid, we also...
@@ -907,21 +925,22 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
         runLengthIndex = IJKtoIndex( nI-1, nJ-1, 0 );
         getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
         getMeshVertexLocation( cellVertexesIDs[2], x, y, z );
-        out << x << ' ' << y << ' ' << z << "     ";
+        out << x << ' ' << y << ' ' << signZ*z << "     ";
         //output the northernmost, easternmost, topmost vertex of the
         //topmost cell in the current volume trace.
         runLengthIndex = IJKtoIndex( nI-1, nJ-1, nK-1 );
         getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
         getMeshVertexLocation( cellVertexesIDs[6], x, y, z );
-        out << x << ' ' << y << ' ' << z << '\n';
+        out << x << ' ' << y << ' ' << signZ*z << '\n';
     }
 
     out << "/\n\n";
 
     //the ZCORN section declares the eight Z depths (four for the bottom and four for the top) that define
-    // the geometry of one cell between four fibers.  The fibers are defined in the COORD section.
+    // the geometry of one cell supported by four fibers.  The fibers are defined in the COORD section.
     // The Z axis is pointed downwards (left-hand rule) in the Eclipse standard, thus we need to scan the grid from
-    // top->bottom as the Z axis in GammaRay is pointed upwards (right-hand rule).
+    // top->bottom as the Z axis in GammaRay is pointed upwards (right-hand rule).  Also, it is necessary to invert
+    // the sign of negative Z values.
     out << "ZCORN" << '\n';
 
     //----------------------------------------------------
@@ -937,22 +956,22 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
                 runLengthIndex = IJKtoIndex( i, j, k );
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[0], x, y, z );
-                out << z << '\n';
+                out << signZ*z << '\n';
                 //output the southeastern, base z
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[1], x, y, z );
-                out << z << '\n';
+                out << signZ*z << '\n';
             }
             for( uint i = 0; i < nI; ++i ) {
                 //output the northwestern, base z
                 runLengthIndex = IJKtoIndex( i, j, k );
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[3], x, y, z );
-                out << z << '\n';
+                out << signZ*z << '\n';
                 //output the northeastern, base z
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[2], x, y, z );
-                out << z << '\n';
+                out << signZ*z << '\n';
             }
         }
 
@@ -964,25 +983,26 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
                 runLengthIndex = IJKtoIndex( i, j, k );
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[4], x, y, z );
-                out << z << '\n';
+                out << signZ*z << '\n';
                 //output the southeastern, top z
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
-                getMeshVertexLocation( cellVertexesIDs[6], x, y, z );
-                out << z << '\n';
+                getMeshVertexLocation( cellVertexesIDs[5], x, y, z );
+                out << signZ*z << '\n';
             }
             for( uint i = 0; i < nI; ++i ) {
                 //output the northwestern, top z
                 runLengthIndex = IJKtoIndex( i, j, k );
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[7], x, y, z );
-                out << z << '\n';
+                out << signZ*z << '\n';
                 //output the northeastern, top z
                 getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
                 getMeshVertexLocation( cellVertexesIDs[6], x, y, z );
-                out << z << '\n';
+                out << signZ*z << '\n';
             }
         }
 
+        QApplication::processEvents(); //let Qt do repainting
     }
     out << "/\n\n";
 
@@ -990,12 +1010,14 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
     //In our case, all cells are visible unless some creterion is defined in future
     //developments of this exporter.
     out << "ACTNUM" << '\n';
-    for( uint j = 0; j < nJ; ++j )
-        for( uint i = 0; i < nI; ++i ){
-            for( uint k = 0; k < nK; ++k )
-                out << '1' << ' ';
-            out << '\n';
+    for( uint k = 0; k < nK; ++k ) {
+        for( uint j = 0; j < nJ; ++j ) {
+            for( uint i = 0; i < nI; ++i ){
+                out << '1' << '\n';
+            }
         }
+        QApplication::processEvents(); //let Qt do repainting
+    }
     out << "/\n\n";
 
     //Now we output one custom section for each property filling the grid.
@@ -1008,12 +1030,14 @@ void GeoGrid::exportToEclipseGridGRDECL(const QString filePath)
         //The name of the section is the name of the property (with illegal characters
         //replaces with unserscores)
         out << at->getScriptCompatibleName() << '\n';
-        for( uint j = 0; j < nJ; ++j )
-            for( uint i = 0; i < nI; ++i ){
-                for( uint k = 0; k < nK; ++k )
-                    out << dataIJK( iProperty, i, j, k ) << ' ';
-                out << '\n';
+        for( uint k = 0; k < nK; ++k ) {
+            for( uint j = 0; j < nJ; ++j ) {
+                for( uint i = 0; i < nI; ++i ){
+                    out << dataIJK( iProperty, i, j, k ) << '\n';
+                }
             }
+            QApplication::processEvents(); //let Qt do repainting
+        }
         out << "/\n\n";
     }
 

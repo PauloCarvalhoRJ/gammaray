@@ -958,9 +958,12 @@ void MainWindow::onGeoGridExportAsGRDECL()
                                                           Util::getLastBrowsedDirectory(),
                                                           "ASCII Eclipse format (*.grdecl);;All files (*.*)");
     if( ! grdeclFilePath.isEmpty() ){
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Export GeoGrid to Eclipse ASCII format",
+                                                        "Invert Z sign?",
+                                                        QMessageBox::Yes|QMessageBox::No);
         GeoGrid* gg = dynamic_cast<GeoGrid*>( _right_clicked_file );
         if( gg ){
-            gg->exportToEclipseGridGRDECL( grdeclFilePath );
+            gg->exportToEclipseGridGRDECL( grdeclFilePath, reply == QMessageBox::Yes );
         }
     }
 }
