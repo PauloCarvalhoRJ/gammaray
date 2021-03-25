@@ -1,0 +1,121 @@
+###############################################################################################################
+# This script is used to build GammaRay in Travis CI continuous integration service (https://travis-ci.com)   #
+# under Ubuntu Linux v18.04 (identified as "bionic" in Travis).  Travis instantiates a virtual machine with   #
+# the OS from scratch for each build, thus it is necessary to install or build all of GammaRay's dependencies #
+# everytime.                                                                                                  #
+###############################################################################################################
+
+language: cpp
+compiler: gcc
+dist: bionic
+
+install:
+  # make sure all package listings are up-to-date
+  - sudo apt-get update -y
+  # the tree command
+  - sudo apt-get install tree
+  # Qt5
+  - sudo apt-get install -qq libqt5webkit5-dev qtdeclarative5-dev libqt5x11extras5-dev qttools5-dev
+  - export QMAKE=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
+  # this installs the CMake files that are helpful to build software with CMake and depending on Qt.
+  - sudo apt-get install qtbase5-dev
+  # this installs Qt Charts, which is required by GammaRay
+  - sudo apt-get install libqt5charts5 libqt5charts5-dev
+  # latest Boost library (devel package, that is: with the headers and linktime libraries in addition to the runtime libraries)
+  - sudo apt-get install libboost-all-dev
+  # the Fastest Fourier Transform in the West (v3) library (devel package)
+  #- sudo apt-get install -y fftw3-dev
+  - sudo apt-get install -y libfftw3-dev
+  # the GNU Scientific Libray
+  - sudo apt-get install libgsl-dev
+  # the Insight Toolkit libraries with advanced algorithms for image processing. 
+  #- sudo apt-get install cmake insighttoolkit3-examples libfftw3-dev libinsighttoolkit3-dev libinsighttoolkit3.6 python-insighttoolkit3 tcl8.4 tcl8.4-insighttoolkit3 tk8.4
+  - sudo apt-get install libinsighttoolkit4-dev
+  # The Qt Widgets for Technical apllications libraries.
+  # Qwt depends on Qt
+  - sudo apt-get install -qq libqwt-dev
+  # The Visualization Toolkit: must build from sources (currently not installable with apt-get).
+  # VTK depends on Qt
+  - sudo apt-get install cmake
+  - git clone --depth 1 --branch v8.1.0 https://gitlab.kitware.com/vtk/vtk.git VTK-src
+  - mkdir VTK-build
+  - mkdir VTK-install
+  - cd VTK-build
+  - cmake -DVTK_QT_VERSION:STRING=5
+          -DQT_QMAKE_EXECUTABLE:PATH=/usr/lib/x86_64-linux-gnu/qt5/bin/qmake
+          -DVTK_Group_Qt:BOOL=ON
+          -DCMAKE_PREFIX_PATH:PATH=/usr/lib/x86_64-linux-gnu/cmake
+          -DBUILD_SHARED_LIBS:BOOL=ON
+          -DBUILD_TESTING:BOOL=OFF
+          -DBUILD_EXAMPLES:BOOL=OFF
+          -DCMAKE_INSTALL_PREFIX=../VTK-install
+          ../VTK-src 
+  #- make -j$(($(nproc) - 1))  --> this doesn't work on Travis CI. It was supposed to get the number of cores
+  - make -j16
+  - make install
+  - cd ..
+  # Installs the locate command and the mlocate file location database (this is not needed in the .travis.yml final version)
+  - sudo apt-get install mlocate 
+  # Indexes all the files in the mlocate database (this is not needed in the .travis.yml final version)
+  - sudo updatedb
+
+# Start virtual X server, from https://docs.travis-ci.com/user/gui-and-headless-browsers/
+#before_script:
+#  - "export DISPLAY=:99.0"
+#  - "sh -e /etc/init.d/xvfb start"
+#  - sleep 3 # give xvfb some time to start
+
+env:
+  - BOOST_INCLUDE=/usr/include
+    FFTW3_INCLUDE=/usr/include
+    FFTW3_LIB=/usr/lib/x86_64-linux-gnu
+    GSL_INCLUDE=/usr/include
+    GSL_LIB=/usr/lib/x86_64-linux-gnu
+    ITK_INCLUDE=/usr/include/ITK-4.12
+    ITK_LIB=/usr/lib
+    ITK_VERSION_SUFFIX=-4.12
+    QWT_INCLUDE=/usr/include/qwt
+    QWT_LIB=/usr/lib
+    VTK_INCLUDE=./VTK-install/include/vtk-8.1
+    VTK_LIB=./VTK-install/lib
+    VTK_VERSION_SUFFIX=-8.1
+
+script: 
+  #Check directory listings
+  #- ls -al
+  #- ls /usr/include
+  #- tree /usr/lib
+  #- tree ../GammaRay_release
+  #- tree /usr/lib/x86_64-linux-gnu/qt5
+  #- tree /usr/lib/x86_64-linux-gnu/cmake
+  #- ls VTK-src
+  #Locate where the dependency headers are
+  - locate geometry.hpp
+  - locate fftw3.h
+  - locate gsl_sort.h
+  - locate itkGaborImageSource.h
+  - locate qwt_slider.h
+  - locate vtkLookupTable.h
+  #Locate where the dependency libraries are
+  - locate libfftw3
+  - locate libgsl
+  - locate libitk
+  - locate libqwt
+  - locate qwt.so
+  - locate libvtk
+  #Build the calculator script engine library.
+  - $QMAKE libCalcScripting.pro "CONFIG+=release" "CONFIG+=qtquickcompiler"
+  - make
+  #Build the program itself.
+  #NOTE: The "QMAKE_CFLAGS_ISYSTEM=-I" overwrites the default value (-isystem).  The -isystem flag
+  #      tells the compiler the headers inside the following directory are system headers, thus suppressing
+  #      excessive compiler warnings that are often issued with them.  However, the -isystem flag is known
+  #      to cause certain system libraries (e.g. <stdlib.h>) to be not found with versions of Qt later than
+  #      5.10 and with newer compilers.  It is safe to disable -isystem, but if you build this in QtCreator or
+  #      other IDE, the excessive warnings coming from ITK and VTK headers may result in a crash or irresponsiveness.
+  #      REFERENCES: https://github.com/OxfordSKA/OSKAR/issues/10
+  #                  https://github.com/machinekit/QtQuickVcp/issues/278 
+  - $QMAKE GammaRay.pro "CONFIG+=release" "CONFIG+=qtquickcompiler" "QMAKE_CFLAGS_ISYSTEM=-I"
+  - make
+  #Show what was built.
+  - tree ../GammaRay_release
