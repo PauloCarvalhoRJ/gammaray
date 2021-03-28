@@ -235,6 +235,7 @@ private slots:
     void onExtractSectionCentroids();
     void onPopulateGridWithProportions();
     void onGeoGridExportAsGRDECL();
+    void onExtractRegularSteps();
 
 private:
     /**

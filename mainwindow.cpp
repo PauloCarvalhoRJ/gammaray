@@ -530,6 +530,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Compute segment lengths", this, SLOT(onSegmentLengths()));
                 _projectContextMenu->addAction("Convert to point set (mid points)", this, SLOT(onExtractMidPoints()));
+                _projectContextMenu->addAction("Convert to point set (regular steps)", this, SLOT(onExtractRegularSteps()));
             }
             if( _right_clicked_file->getFileType() == "SECTION" ){
                 _projectContextMenu->addAction("Convert to point set (centroids)", this, SLOT(onExtractSectionCentroids()));
@@ -966,6 +967,35 @@ void MainWindow::onGeoGridExportAsGRDECL()
             gg->exportToEclipseGridGRDECL( grdeclFilePath, reply == QMessageBox::Yes );
         }
     }
+}
+
+void MainWindow::onExtractRegularSteps()
+{
+    SegmentSet* ss = dynamic_cast<SegmentSet*>( _right_clicked_file );
+
+    QString suggested_name = ss->getName() + "_regular_points";
+    //open the renaming dialog
+    bool ok;
+    QString ps_file_name = QInputDialog::getText(this, "Name the new file",
+                                                 "New point set file:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //ask the user for the desired step size (the lower the more points in the output).
+    double step = QInputDialog::getDouble(this, "Step size",
+                                             "Enter the step size in length units:",
+                                             0.1, 0.0001, 100000.0, 4, &ok);
+    if(! ok ) return;
+
+    //create the regular-point point set
+    ss->readFromFS();
+    PointSet* ps = ss->toPointSetRegularlySpaced( ps_file_name, step );
+
+    //attach the object to the project tree
+    Application::instance()->getProject()->addDataFile( ps );
+
+    //show the newly created object in main window's project tree
+    Application::instance()->refreshProjectTree();
 }
 
 void MainWindow::onRemoveFile()
