@@ -73,6 +73,17 @@ public:
      */
     PointSet* createPointSetByFiltering( uint column, double vMin, double vMax );
 
+    /**
+     * Duplicates the given data row.  The new data row is appended right after the original
+     * data row.  If the row index is out of range or if the data set is empty, a crash may ensue.
+     * Client code is responsible for commiting the changed data to the physical file by calling writeToFS().
+     * @note This method was not added to the DataFile superclass as coloning individual data
+     *       rows breaks the data order of gridded data sets.
+     * @note Coloning data rows potentially involves reallocating large quantities of data, so it may be slow
+     *       if called too often.  Use sparingly.
+     */
+    void cloneDataLine( uint row );
+
     //DataFile interface
 public:
     /** Returns whether the passed Attribute is a weight according to the file's metadata. */

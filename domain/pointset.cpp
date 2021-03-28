@@ -317,6 +317,20 @@ PointSet *PointSet::createPointSetByFiltering(uint column, double vMin, double v
     return newPS;
 }
 
+void PointSet::cloneDataLine(uint row)
+{
+    //get a copy of the desired data line.
+    const std::vector< double > rowDataToCopy = _data[ row ];
+
+    //get the vector iterator refering to the first data record.
+    std::vector< std::vector<double> >::iterator itFirstElement;
+    itFirstElement = _data.begin();
+
+    //std::vector.insert() inserts elements BEFORE the given index, hence we increase the
+    //given index by 1 so the copied data row is added AFTER the original data record.
+    _data.insert( itFirstElement + row + 1, rowDataToCopy );
+}
+
 bool PointSet::canHaveMetaData()
 {
     return true;
