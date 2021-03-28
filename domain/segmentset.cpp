@@ -290,6 +290,91 @@ PointSet *SegmentSet::toPointSetMidPoints(const QString& psName ) const
     return new_ps;
 }
 
+PointSet *SegmentSet::toPointSetRegularlySpaced(const QString &psName, double step) const
+{
+    int nDataRows = getDataLineCount();
+    int nDataColumns = getDataColumnCountConst();
+    assert( nDataRows && "SegmentSet::toPointSetRegularlySpaced(): zero data lines. "
+                         "Perhaps a prior call to DataFile::readFromFS() is missing.");
+
+    //copies this segment set's file as a new file
+    QString psFilePath = Application::instance()->getProject()->getPath() + "/" + psName;
+    Util::copyFile( getPath(), psFilePath );
+    PointSet* new_ps = new PointSet( psFilePath );
+
+    //load the data
+    new_ps->loadData();
+    new_ps->updateChildObjectsCollection();
+
+    //append the new data columns for the regular points coordinates
+    int iColumnRSx = new_ps->addEmptyDataColumn( "regSampleX", nDataRows );
+    int iColumnRSy = new_ps->addEmptyDataColumn( "regSampleY", nDataRows );
+    int iColumnRSz = new_ps->addEmptyDataColumn( "regSampleZ", nDataRows );
+
+    //the output data set will likely have more entries than this input segment set.
+    //so we must keep track of additional data records added to the output point set.
+    uint iRowOutputOffset = 0;
+
+    //compute regular points for the PointSet object
+    for( int iRow = 0; iRow < nDataRows; ++iRow ){
+
+        //get the segment's starting and ending coordinates
+        double x0 = dataConst( iRow, getXindex()-1 );
+        double y0 = dataConst( iRow, getYindex()-1 );
+        double z0 = dataConst( iRow, getZindex()-1 );
+        double x1 = dataConst( iRow, getXFinalIndex()-1 );
+        double y1 = dataConst( iRow, getYFinalIndex()-1 );
+        double z1 = dataConst( iRow, getZFinalIndex()-1 );
+
+        //get the current segment length.
+        double segment_length = getSegmentLenghtConst( iRow );
+
+        //the portion of the segment length traversed.
+        double processed_length = 0.0;
+
+        //while the segment hasn't been completely traversed.
+        for( uint iStep = 0; processed_length <= segment_length; ++iStep ){
+
+            //linearly interpolates a XYZ coordinate between the extremes of the segment.
+            double x = Util::linearInterpolation( processed_length, 0.0, segment_length, x0, x1 );
+            double y = Util::linearInterpolation( processed_length, 0.0, segment_length, y0, y1 );
+            double z = Util::linearInterpolation( processed_length, 0.0, segment_length, z0, z1 );
+
+            //the first point is always written and corresponds to the starting vertex of the segment.
+            //the segment may shorter than the user-given step.  The other points along the segment line
+            //are clone entries of that first entry.
+            if( iStep > 0 ){
+                ++iRowOutputOffset;
+                new_ps->cloneDataLine( iRow + iRowOutputOffset );
+            }
+
+            //outputs the interpolated XYZ coordinates.
+            new_ps->setData( iRow + iRowOutputOffset, iColumnRSx, x );
+            new_ps->setData( iRow + iRowOutputOffset, iColumnRSy, y );
+            new_ps->setData( iRow + iRowOutputOffset, iColumnRSz, z );
+
+            //increase the processed length by the user-given step.
+            processed_length += step;
+        }
+    }
+
+    //commit data to file system
+    new_ps->writeToFS();
+
+    //set appropriate metadata
+    new_ps->setInfo( iColumnRSx+1, //these indexes are GEO-EAS indexes (1st == 1)
+                     iColumnRSy+1,
+                     iColumnRSz+1,
+                     getNoDataValue(),
+                     getWeightsVariablesPairs(),
+                     getNSVarVarTrnTriads(),
+                     getCategoricalAttributes() );
+    new_ps->updateMetaDataFile();
+
+    //return the pointer to the created object
+    return new_ps;
+}
+
 SegmentSet* SegmentSet::createSegmentSetByFiltering(uint column, double vMin, double vMax)
 {
     //Create new empty point set.

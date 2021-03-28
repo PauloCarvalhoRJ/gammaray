@@ -82,10 +82,20 @@ public:
     /**
      * Creates a new PointSet object containing the data of this SegmentSet.
      * The coordinates of the point set are that of the mid points of the segments.
-     * The function creates a new physical data file matching the newly created PointSet
+     * The function also creates a new physical data file matching the newly created PointSet
      * in the project's directory using the passed name as file name.
      */
     PointSet* toPointSetMidPoints(const QString &psName) const;
+
+    /**
+     * Creates a new PointSet object containing the data of this SegmentSet.
+     * The coordinates of the point set are that of the segments regularely sampled.
+     * The function also creates a new physical data file matching the newly created PointSet
+     * in the project's directory using the passed name as file name.
+     * @param step Value in length units that dictates the sampling ratio, so the lower the value
+     *             the more dense is the resulting point set.
+     */
+    PointSet* toPointSetRegularlySpaced(const QString &psName, double step) const;
 
     /**
      * Creates a new segment set object similar to this one but with the data filtered
