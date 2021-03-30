@@ -162,8 +162,18 @@ public:
 
 	/**
 	 * Creates and returns a vector containing the geometries of the six faces of a cell.
+         * The vertexes in the returned faces are ordered so the faces are all counter-clockwise
+         * as seen from the inside, which is the original order per the convention of the GeoGrid.
 	 */
 	std::vector<Face3D> getFaces( uint cellIndex );
+
+        /**
+         * Does the same as getFaces(), but the returned faces are all counter-clockwise
+         * as seen from the OUTSIDE, which is the opposite of the original order per the
+         * convention of the GeoGrid.
+         */
+        std::vector<Face3D> getFacesInvertedWinding( uint cellIndex );
+
 
 	/**
 	 * Adds a new variable containing the volumes of the cells.  The values can be useful

@@ -515,6 +515,7 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
 		double u = -1.0;
 		double v = -1.0;
 		double w = -1.0;
+
         if( XYZtoUVW( x, y, z, u, v, w ) ){
 			empty = false;
 			//assign them to the point set
@@ -760,7 +761,59 @@ std::vector<Face3D> GeoGrid::getFaces( uint cellIndex )
 	fs[5].v[3] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
 	//----------------------------------------------------
 
-	return fs;
+    return fs;
+}
+
+std::vector<Face3D> GeoGrid::getFacesInvertedWinding(uint cellIndex)
+{
+    //get the cell geometry definition (vertexes' indexes).
+    CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndex );
+
+    //get the vertex data of the cell
+    VertexRecordPtr vd[8];
+    vd[0] = m_vertexesPart.at( cellDef->vId[0] );
+    vd[1] = m_vertexesPart.at( cellDef->vId[1] );
+    vd[2] = m_vertexesPart.at( cellDef->vId[2] );
+    vd[3] = m_vertexesPart.at( cellDef->vId[3] );
+    vd[4] = m_vertexesPart.at( cellDef->vId[4] );
+    vd[5] = m_vertexesPart.at( cellDef->vId[5] );
+    vd[6] = m_vertexesPart.at( cellDef->vId[6] );
+    vd[7] = m_vertexesPart.at( cellDef->vId[7] );
+
+    //------------make the six face geometries------------
+    std::vector<Face3D> fs( 6 );
+    fs[0].v[0] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+    fs[0].v[1] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+    fs[0].v[2] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+    fs[0].v[3] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+
+    fs[1].v[0] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+    fs[1].v[1] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+    fs[1].v[2] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+    fs[1].v[3] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+
+    fs[2].v[0] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+    fs[2].v[1] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+    fs[2].v[2] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+    fs[2].v[3] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+
+    fs[3].v[0] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+    fs[3].v[1] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+    fs[3].v[2] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+    fs[3].v[3] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+
+    fs[4].v[0] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+    fs[4].v[1] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+    fs[4].v[2] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+    fs[4].v[3] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+
+    fs[5].v[0] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+    fs[5].v[1] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+    fs[5].v[2] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+    fs[5].v[3] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+    //----------------------------------------------------
+
+    return fs;
 }
 
 void GeoGrid::computeCellVolumes(QString variable_name)
@@ -1097,16 +1150,16 @@ SpatialLocation GeoGrid::getCenter()
 bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k )
 {
 	if( m_spatialIndex->isEmpty() )
-        m_spatialIndex->fill( this );
+        m_spatialIndex->fillWithCenters( this, 0.0001 );
 
     assert( ! m_spatialIndex->isEmpty() && "GeoGrid::XYZtoIJK(): the spatial index is not supposed to be"
                                            " empty when calling this method." );
 
 	//Get the nearest cells.
-    QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 200 );
+    QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 5 );
 
 	//if the spatial search failed, assumes it fell outside the grid
-	if( cellIndexes.empty() )
+    if( cellIndexes.empty() )
 		return false;
 
 	//the test location
@@ -1116,10 +1169,10 @@ bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k 
 	QList<uint>::iterator itCellIndex = cellIndexes.begin();
 	for( ; itCellIndex != cellIndexes.end(); ++itCellIndex ){
 		//get the cell's faces geometry .
-		std::vector<Face3D> fs = getFaces( *itCellIndex );
+        Hexahedron hexa = makeHexahedron( *itCellIndex );
 		//if the location is inside the cell
-		if( Util::isInside( p, fs ) ){
-			//return the cell's topological coordinates
+        if( hexa.isInside( p ) ){
+            //return the cell's topological coordinates
 			this->indexToIJK( *itCellIndex, i, j, k );
 			return true;
 		}
