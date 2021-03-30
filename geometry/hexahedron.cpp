@@ -91,5 +91,12 @@ double Hexahedron::getVolume() const
 {
 	return getPyramid0().getVolume() +
 		   getPyramid1().getVolume() +
-		   getPyramid2().getVolume();
+           getPyramid2().getVolume();
+}
+
+bool Hexahedron::isInside(const Vertex3D point) const
+{
+    return getPyramid0().isInside( point ) ||
+           getPyramid1().isInside( point ) ||
+           getPyramid2().isInside( point );
 }

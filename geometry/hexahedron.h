@@ -42,6 +42,12 @@ public:
 
 	/** Returns the volume of this hexahedron. */
 	double getVolume() const;
+
+    /** Returns whether the given pouint is inside the hexahedron.
+     *  This test does not require a specific winding order like
+     *  the potentially faster Util::isInside().
+     */
+    bool isInside( const Vertex3D point ) const;
 };
 
 #endif // HEXAHEDRON_H
