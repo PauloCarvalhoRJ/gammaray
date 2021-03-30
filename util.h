@@ -826,6 +826,16 @@ public:
     /** Returns the parent directory of the given path. */
     static QString getParentDirectory( QString path );
 
+    /** Returns 1 for a positive number, -1 for a negative one and
+     * 0 for zero values (implements signum()).
+     * @note Triggers the compiler warning -Wtype-limits if type of test value
+     *       is unsigned ( unsigned is always positive and the test for < 0 does not make sense).
+     */
+    template <typename T>
+    static int sign(T value) {
+        return (T(0) < value) - (value < T(0));
+    }
+
 };
 
 #endif // UTIL_H
