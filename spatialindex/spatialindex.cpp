@@ -96,7 +96,42 @@ void SpatialIndex::fill(CartesianGrid * cg)
     m_rtree = RStarRtree( boxes );
 }
 
-void SpatialIndex::fill(GeoGrid * gg)
+void SpatialIndex::fillWithBBoxes(GeoGrid *gg)
+{
+    //first clear the index.
+    clear();
+
+    //set the data file as the passed GeoGrid
+    setDataFile( gg );
+
+    //load the GeoGrid's mesh
+    gg->loadMesh();
+
+    //for each data line...
+    uint totlines = gg->getDataLineCount();
+    if( totlines == 0 )
+        Application::instance()->logWarn("SpatialIndex::fill(GeoGrid *): no data.  Make sure data was loaded prior to indexing.");
+
+    std::vector< BoxAndDataIndex > boxes;
+    boxes.reserve( totlines );
+
+    for( uint iLine = 0; iLine < totlines; ++iLine){
+        //get the cell's bounding box (each line corresponds to a cell)
+        double minX, minY, minZ, maxX, maxY, maxZ;
+        gg->getBoundingBox( iLine, minX, minY, minZ, maxX, maxY, maxZ );
+
+        //make the bounding box object
+        Box box( Point3D(minX, minY, minZ),
+                 Point3D(maxX, maxY, maxZ) );
+        //insert the box representing the cell's bounding box into the spatial index.
+        //m_rtree.insert( std::make_pair(box, iLine) );
+        boxes.push_back( std::make_pair(box, iLine) );
+    }
+
+    m_rtree = RStarRtree( boxes );
+}
+
+void SpatialIndex::fillWithCenters(GeoGrid * gg, double tolerance)
 {
 	//first clear the index.
 	clear();
@@ -116,13 +151,25 @@ void SpatialIndex::fill(GeoGrid * gg)
     boxes.reserve( totlines );
 
     for( uint iLine = 0; iLine < totlines; ++iLine){
-		//get the cell's bounding box (each line corresponds to a cell)
 		double minX, minY, minZ, maxX, maxY, maxZ;
-		gg->getBoundingBox( iLine, minX, minY, minZ, maxX, maxY, maxZ );
+        uint i, j, k;
+        double x, y, z;
+
+        //get the cell's center
+        gg->indexToIJK( iLine, i, j, k );
+        gg->IJKtoXYZ( i, j, k, x, y, z ); //IJKtoXYZ() should return the cell's center per the GridFile contract.
+        minX = x - tolerance;
+        minY = y - tolerance;
+        minZ = z - tolerance;
+        maxX = x + tolerance;
+        maxY = y + tolerance;
+        maxZ = z + tolerance;
+
 		//make the bounding box object
 		Box box( Point3D(minX, minY, minZ),
 				 Point3D(maxX, maxY, maxZ) );
-		//insert the box representing the point into the spatial index.
+
+        //insert the box representing the center into the spatial index.
         //m_rtree.insert( std::make_pair(box, iLine) );
         boxes.push_back( std::make_pair(box, iLine) );
     }

@@ -43,10 +43,16 @@ public:
      */
 	void fill( CartesianGrid* cg );
 
-	/** Fills the index with the GeoGrid cells (bulk load).
+    /** Fills the index with the GeoGrid cell bounding boxes (bulk load).
      * It erases current index.
-	 */
-	void fill( GeoGrid* gg );
+     */
+    void fillWithBBoxes( GeoGrid* gg );
+
+    /** Fills the index with the GeoGrid cell centers (bulk load).
+     * It erases current index.
+     * @param tolerance Sets the size of the bounding boxes around each cell center.
+     */
+    void fillWithCenters( GeoGrid* gg, double tolerance );
 
     /** Fills the index with the SegmentSet segments (bulk load).
      * It erases current index.
