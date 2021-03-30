@@ -626,7 +626,8 @@ public:
     static QString getGSLibVariogramStructureName(uint it);
 
 	/** Thests whether the passed point (as Vertex3D) is inside the polyhedron (as a vector of Face3D).
-	 * This assumes the polyhedron is convex and the faces are all counter-clockwise.
+     * This assumes the polyhedron is convex and the faces are all counter-clockwise as seen from outside.
+     * source: https://stackoverflow.com/questions/8877872/determining-if-a-point-is-inside-a-polyhedron
 	 */
 	static bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs );
 
