@@ -571,3 +571,25 @@ void SegmentSet::setInfoFromOtherPointSet(PointSet *otherPS)
     Q_UNUSED( otherPS );
     assert( false && "Calling setInfoFromOtherPointSet() for a SegmentSet is illegal.");
 }
+
+void SegmentSet::deleteVariable(uint columnToDelete)
+{
+    if( isCoordinate( columnToDelete )){
+        Application::instance()->logError("SegmentSet::deleteVariable(): cannot remove spatial coordinates.");
+        return;
+    }
+
+    uint columnToDeleteGEOEAS = columnToDelete+1; //first GEO-EAS index is 1, not zero.
+
+    //it may be necessary to update the indexes of the fields set as the coordinates of the tail
+    //of this segment set.
+    if( _x_final_field_index > columnToDeleteGEOEAS )
+        --_x_final_field_index;
+    if( _y_final_field_index > columnToDeleteGEOEAS )
+        --_y_final_field_index;
+    if( _z_final_field_index > columnToDeleteGEOEAS )
+        --_z_final_field_index;
+
+    //call superclass' deleteVariable() to do the rest of the job
+    PointSet::deleteVariable( columnToDelete );
+}

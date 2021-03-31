@@ -144,6 +144,14 @@ void PointSet::deleteVariable(uint columnToDelete)
     }
     _wgt_var_pairs.swap(temp);
 
+    //it may be necessary to update the indexes of the fields set as the coordinates of this point set.
+    if( _x_field_index > columnToDeleteGEOEAS )
+        --_x_field_index;
+    if( _y_field_index > columnToDeleteGEOEAS )
+        --_y_field_index;
+    if( _z_field_index > columnToDeleteGEOEAS )
+        --_z_field_index;
+
     //call superclass' deleteVariable() to do the rest of the job
 	DataFile::deleteVariable( columnToDelete );
 }

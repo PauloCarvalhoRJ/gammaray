@@ -146,6 +146,7 @@ public:
     // PointSet interface
 public:
     virtual void setInfoFromOtherPointSet( PointSet* otherPS );
+    virtual void deleteVariable(uint columnToDelete) override;
 
 protected:
     int _x_final_field_index; //index start at 1. Zero means not set.
