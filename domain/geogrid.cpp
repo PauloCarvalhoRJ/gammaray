@@ -709,7 +709,11 @@ bool GeoGrid::XYZtoUVW(double x, double y, double z, double &u, double &v, doubl
 	v = dv * j + dv * local_v;
 	w = dw * k + dw * local_w;
 
-	return true;
+    //enforcing sanity
+    if( std::isfinite( u ) && std::isfinite( v ) && std::isfinite( w ) )
+        return true;
+    else
+        return false;
 }
 
 std::vector<Face3D> GeoGrid::getFaces( uint cellIndex )
@@ -1156,7 +1160,7 @@ bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k 
                                            " empty when calling this method." );
 
 	//Get the nearest cells.
-    QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 5 );
+    QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 20 );
 
 	//if the spatial search failed, assumes it fell outside the grid
     if( cellIndexes.empty() )
