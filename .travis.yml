@@ -119,3 +119,4 @@ script:
   - make
   #Show what was built.
   - tree ../GammaRay_release
+
