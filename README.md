@@ -2,6 +2,7 @@
 [![Documentation Status](https://readthedocs.org/projects/gammaray/badge/?version=latest)](https://gammaray.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.com/PauloCarvalhoRJ/gammaray.svg?branch=master)](https://travis-ci.com/PauloCarvalhoRJ/gammaray)
                  
+<center><img src="https://github.com/PauloCarvalhoRJ/gammaray/blob/master/frontpage.png"/></center>
 
 Repository of the GammaRay geostatistics software.
 
