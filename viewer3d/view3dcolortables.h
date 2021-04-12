@@ -29,9 +29,14 @@ public:
 
     /** Makes a color table for a categorical variable.
      * @param useGSLibColors If true, uses the RGB colors restriced to GSLib standard colors (GSLib color codes).
-     *                       If false, uses the RGB values specified in the custom color field of the category definition.
+     *                       If false, uses the RGB values specified in the custom color field of
+     *                       the category definition.
+     * @param alphaForNDV The alpha channel value for unvalued locations. Default is 0.3 (70% transparency).
+     *                    If alpha > 0.0, the unvalued locations are rendered in pink.
      */
-    static vtkSmartPointer<vtkLookupTable> getCategoricalColorTable(CategoryDefinition *cd , bool useGSLibColors);
+    static vtkSmartPointer<vtkLookupTable> getCategoricalColorTable(CategoryDefinition *cd ,
+                                                                    bool useGSLibColors,
+                                                                    double alphaForNDV = 0.3);
 
 private:
     /** Code example for implementing color tables with predefined colors. */

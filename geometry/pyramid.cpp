@@ -52,5 +52,12 @@ Tetrahedron Pyramid::getTetrahedron1() const
 
 double Pyramid::getVolume() const
 {
-	return getTetrahedron0().getVolume() + getTetrahedron1().getVolume();
+    return getTetrahedron0().getVolume() +
+           getTetrahedron1().getVolume();
+}
+
+bool Pyramid::isInside(const Vertex3D point) const
+{
+    return getTetrahedron0().isInside( point ) ||
+           getTetrahedron1().isInside( point );
 }

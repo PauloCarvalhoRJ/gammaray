@@ -2,6 +2,7 @@
 #define SECTION_H
 
 #include "domain/file.h"
+#include "geometry/quadrilateral.h"
 
 class PointSet;
 class CartesianGrid;
@@ -48,9 +49,29 @@ public:
 
     /** Returns, via output parameters, the center of the cell given its topological
      * coordinates.  Recall that, for a geologic section, the number of rows is always 1,
-     * So only tje I and K indexes are necessary to uniquely address a given value in the section.
+     * So only the I and K indexes are necessary to uniquely address a given value in the section.
      */
     void IKtoXYZ( uint i, uint k, double& x, double& y, double& z ) const;
+
+    /**
+     * Creates a new PointSet object containing the data of this Section.
+     * The coordinates of the point set are that of the centroids of the section's cells.
+     * The function creates a new physical data file matching the newly created PointSet
+     * in the project's directory using the passed name as file name.
+     */
+    PointSet* toPointSetCentroids(const QString &psName) const;
+
+    /**
+     * Computes the area of the cell given its address in the Section's grid.
+     * Recall that nJ == 1 for a Section.
+     */
+    double getCellArea( uint i, uint k ) const;
+
+    /**
+     * Creates a Quadrilateral object from a cell's geometry data given the cell's index in the
+     * Section's grid.
+     */
+    Quadrilateral makeQuadrilateral( uint i, uint k ) const;
 
     //File interface
 public:

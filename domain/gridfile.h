@@ -14,6 +14,8 @@ enum class FlipDataDirection : uint {
     W_DIRECTION
 };
 
+class VerticalProportionCurve;
+
 /** Abstract class for all domain classes that have grid topology (IJK coordinates). */
 class GridFile : public DataFile
 {
@@ -115,6 +117,20 @@ public:
      *  variable.
      */
     void flipData( uint iVariable, QString newVariableName, FlipDataDirection direction );
+
+    /**
+     * Fills the grid with the proportions read from the given VerticalPropotionCurve object.
+     * New variables are created for each of the proportions.  The names of the new variables are copied
+     * from the ones in VPC object.  If already there are variables with the same names, the values
+     * are simply copied over, which allows assignment of proportions from multiple VPCs for different
+     * stratigraphic intervals delimited by the baseK and topK parameters, provided the proportion names
+     * are the same across the VPCs.
+     * @param baseK The k-slice corresponding to the base of the VPC.
+     * @param topK The k-slice corresponding to the top of the VPC.
+     */
+    void fillWithProportions( const VerticalProportionCurve* vpc,
+                              uint baseK,
+                              uint topK );
 
 // ICalcPropertyCollection interface
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );

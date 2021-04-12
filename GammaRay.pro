@@ -34,11 +34,14 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/populatewithproportionsfromvpcdialog.cpp \
     dialogs/sectiondialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
     geometry/intersectionfinder.cpp \
+    geometry/quadrilateral.cpp \
+    geometry/triangle.cpp \
     geostats/mcmcdataimputation.cpp \
         mainwindow.cpp \
     domain/project.cpp \
@@ -293,6 +296,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/populatewithproportionsfromvpcdialog.h \
     dialogs/sectiondialog.h \
     domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
@@ -303,6 +307,8 @@ HEADERS  += mainwindow.h \
     domain/section.h \
     domain/verticalproportioncurve.h \
     geometry/intersectionfinder.h \
+    geometry/quadrilateral.h \
+    geometry/triangle.h \
     geostats/mcmcdataimputation.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
@@ -560,6 +566,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/populatewithproportionsfromvpcdialog.ui \
     dialogs/sectiondialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
@@ -813,7 +820,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.7
+VERSION = 6.9
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

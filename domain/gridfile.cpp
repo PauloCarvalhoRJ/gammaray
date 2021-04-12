@@ -3,6 +3,7 @@
 #include "spectral/spectral.h"
 #include "domain/categorydefinition.h"
 #include "domain/attribute.h"
+#include "domain/verticalproportioncurve.h"
 
 GridFile::GridFile( QString path ) : DataFile( path )
 {
@@ -202,6 +203,60 @@ void GridFile::flipData(uint iVariable, QString newVariableName, FlipDataDirecti
         }
     }
 
+    writeToFS();
+
+    //update the project tree in the main window.
+    Application::instance()->refreshProjectTree();
+}
+
+void GridFile::fillWithProportions(const VerticalProportionCurve *vpc, uint baseK, uint topK)
+{
+    //compute some useful metrics.
+    uint nSlices = topK - baseK + 1; //number os k-slices
+    double dPercentPerSlice = 1.0 / nSlices; //total of relative depth per k-slice
+
+    //reads data from file system.
+    readFromFS();
+
+    //for each proportion
+    uint nProp = vpc->getProportionsCount();
+    assert( nProp > 0 && "GridFile::fillWithProportions(): no proportions.  Possible it is missing a prior call to "
+                         "VerticalProportionCurve::readFromFS()." );
+    for( uint iProp = 0; iProp < nProp; ++iProp ){
+
+        //get the name given to the proportion (e.g. "Proportion of Shale")
+        QString propName = vpc->getProportionVariableName( iProp );
+
+        //check whether there is not a child with such name in this data set.
+        ProjectComponent* pc = this->getChildByName( propName, true );
+        if( !pc ) { //a child object with the name does not exist.
+            //adds a zero-valued column with the name of the proportion variable.
+            this->addEmptyDataColumn( propName, getDataLineCount() );
+            pc = this->getChildByName( propName, true );
+        }
+
+        //get the index of the variable to be populated with the proportion values.
+        uint iColumnInThisFile = pc->getIndexInParent();
+
+        //for each k-slice of the grid.
+        uint nI = getNI();
+        uint nJ = getNJ();
+        for( uint k = baseK; k <= topK; ++k ){
+
+            //compute the relative depth (0.0 == base, 1.0 == top) of the current k-slice.
+            double relativeDepthAtCenterOfSlice = ( k - baseK ) * dPercentPerSlice + dPercentPerSlice / 2.0;
+
+            //get the proportion value at the relative depth.
+            double proportion = vpc->getProportionAt( iProp, relativeDepthAtCenterOfSlice );
+
+            //fill the k-slice with the proportion value.
+            for( uint j = 0; j < nJ; ++j )
+                for( uint i = 0; i < nI; ++i )
+                    setDataIJK( iColumnInThisFile, i, j, k, proportion );
+        }
+    }
+
+    //commit data to filesystem
     writeToFS();
 
     //update the project tree in the main window.

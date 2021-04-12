@@ -56,6 +56,7 @@
 #include "domain/segmentset.h"
 #include "domain/faciestransitionmatrix.h"
 #include "domain/auxiliary/faciestransitionmatrixmaker.h"
+#include "domain/section.h"
 #include "util.h"
 #include "dialogs/nscoredialog.h"
 #include "dialogs/distributionmodelingdialog.h"
@@ -86,6 +87,7 @@
 #include "dialogs/choosevariabledialog.h"
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
 #include "dialogs/sectiondialog.h"
+#include "dialogs/populatewithproportionsfromvpcdialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -518,7 +520,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
 			if( _right_clicked_file->getFileType() == "GEOGRID" ){
 				_projectContextMenu->addAction("Compute cell volumes", this, SLOT(onGeoGridCellVolumes()));
-			}
+                _projectContextMenu->addAction("Export as .GRDECL", this, SLOT(onGeoGridExportAsGRDECL()));
+            }
             if( _right_clicked_file->getFileType() == "FACIESTRANSITIONMATRIX" ){
                 _projectContextMenu->addAction("Set/Change associated category definition", this, SLOT(onSetCategoryDefinitionOfAFasciesTransitionMatrix()));
                 _projectContextMenu->addAction("Entropy for cyclicity analysis", this, SLOT(onEntropyCyclicityAnalysis()));
@@ -527,6 +530,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "SEGMENTSET" ){
                 _projectContextMenu->addAction("Compute segment lengths", this, SLOT(onSegmentLengths()));
                 _projectContextMenu->addAction("Convert to point set (mid points)", this, SLOT(onExtractMidPoints()));
+                _projectContextMenu->addAction("Convert to point set (regular steps)", this, SLOT(onExtractRegularSteps()));
+            }
+            if( _right_clicked_file->getFileType() == "SECTION" ){
+                _projectContextMenu->addAction("Convert to point set (centroids)", this, SLOT(onExtractSectionCentroids()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -810,6 +817,45 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 }
             }
         }
+        //if one object is a Vertical Proportion Curve (VPC) and the other object is a Cartesian grid
+        // then the user wants to populate the grid with the proportions read from the VPC.
+        if( index1.isValid() && index2.isValid() ){
+            //Get the files pointers
+            File* file1 = nullptr;
+            File* file2 = nullptr;
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isFile() ){
+                file1 = static_cast<File*>( index1.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+                file2 = static_cast<File*>( index2.internalPointer() );
+            }
+            //determine the target Cartesian grid file and VPC with the source of proportions
+            VerticalProportionCurve* vpc = nullptr;
+            CartesianGrid* cg = nullptr;
+            if( file1 ){
+                if( file1->getFileType() == "VERTICALPROPORTIONCURVE" )
+                    vpc = dynamic_cast<VerticalProportionCurve*>( file1 );
+                else if( file1->getFileType() == "CARTESIANGRID" )
+                    cg = dynamic_cast<CartesianGrid*>( file1 );
+            }
+            if( file2 ){
+                if( file2->getFileType() == "VERTICALPROPORTIONCURVE" )
+                    vpc = dynamic_cast<VerticalProportionCurve*>( file2 );
+                else if( file2->getFileType() == "CARTESIANGRID" )
+                    cg = dynamic_cast<CartesianGrid*>( file2 );
+            }
+
+            //if user selected a VPC and a 3D Certesian grid (VPCs are meaningless for 2D grids).
+            if( vpc && cg && cg->isTridimensional() ) {
+                _right_clicked_cartesian_grid = cg;
+                _right_clicked_VPC = vpc;
+                QString menu_caption = "Populate ";
+                menu_caption.append( cg->getName());
+                menu_caption.append(" w/ proportions from ");
+                menu_caption.append( vpc->getName());
+                _projectContextMenu->addAction(menu_caption, this, SLOT(onPopulateGridWithProportions()));
+            }
+        }
     //three items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 3 ) {
         QModelIndex index1 = selected_indexes.first();
@@ -872,6 +918,84 @@ void MainWindow::onAddSection()
 {
     SectionDialog* sd = new SectionDialog( this );
     sd->show();
+}
+
+void MainWindow::onExtractSectionCentroids()
+{
+    //We can assume the selected file is a Section.
+    Section* sec = dynamic_cast<Section*>( _right_clicked_file );
+
+    QString suggested_name = sec->getName() + "_as_centroids";
+    //open the renaming dialog
+    bool ok;
+    QString ps_file_name = QInputDialog::getText(this, "Name the new file",
+                                                 "New point set file:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //create the point set with the centroids
+    sec->readFromFS();
+    PointSet* ps = sec->toPointSetCentroids( ps_file_name );
+
+    //attach the object to the project tree
+    Application::instance()->getProject()->addDataFile( ps );
+
+    //show the newly created object in main window's project tree
+    Application::instance()->refreshProjectTree();
+}
+
+void MainWindow::onPopulateGridWithProportions()
+{
+    PopulateWithProportionsFromVPCDialog* ppvpc = new PopulateWithProportionsFromVPCDialog( this );
+    ppvpc->setCartesianGrid( _right_clicked_cartesian_grid );
+    ppvpc->setVPC( _right_clicked_VPC );
+    ppvpc->show();
+}
+
+void MainWindow::onGeoGridExportAsGRDECL()
+{
+    QString grdeclFilePath = QFileDialog::getSaveFileName(this,
+                                                          "Save GeoGrid as Eclipse grid (*.grdecl)",
+                                                          Util::getLastBrowsedDirectory(),
+                                                          "ASCII Eclipse format (*.grdecl);;All files (*.*)");
+    if( ! grdeclFilePath.isEmpty() ){
+        QMessageBox::StandardButton reply = QMessageBox::question(this, "Export GeoGrid to Eclipse ASCII format",
+                                                        "Invert Z sign?",
+                                                        QMessageBox::Yes|QMessageBox::No);
+        GeoGrid* gg = dynamic_cast<GeoGrid*>( _right_clicked_file );
+        if( gg ){
+            gg->exportToEclipseGridGRDECL( grdeclFilePath, reply == QMessageBox::Yes );
+        }
+    }
+}
+
+void MainWindow::onExtractRegularSteps()
+{
+    SegmentSet* ss = dynamic_cast<SegmentSet*>( _right_clicked_file );
+
+    QString suggested_name = ss->getName() + "_regular_points";
+    //open the renaming dialog
+    bool ok;
+    QString ps_file_name = QInputDialog::getText(this, "Name the new file",
+                                                 "New point set file:", QLineEdit::Normal, suggested_name, &ok);
+    if( ! ok )
+        return;
+
+    //ask the user for the desired step size (the lower the more points in the output).
+    double step = QInputDialog::getDouble(this, "Step size",
+                                             "Enter the step size in length units:",
+                                             0.1, 0.0001, 100000.0, 4, &ok);
+    if(! ok ) return;
+
+    //create the regular-point point set
+    ss->readFromFS();
+    PointSet* ps = ss->toPointSetRegularlySpaced( ps_file_name, step );
+
+    //attach the object to the project tree
+    Application::instance()->getProject()->addDataFile( ps );
+
+    //show the newly created object in main window's project tree
+    Application::instance()->refreshProjectTree();
 }
 
 void MainWindow::onRemoveFile()

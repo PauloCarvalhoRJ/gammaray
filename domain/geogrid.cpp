@@ -20,6 +20,7 @@
 #include <QProgressDialog>
 #include <QTextStream>
 #include <QThread>
+#include <QApplication>
 
 #include <cassert>
 
@@ -164,7 +165,7 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
                     double vBase = cg->dataIJK( columnIndexBase, i, j, 0 );
                     double vTop = cg->dataIJK( columnIndexTop, i, j, 0 );
                     //compute the depth (z) of the current vertex.
-                    double depth = vBase + ( k / (double)zone.nHorizonSlices ) * ( vTop - vBase );
+                    double depth = vBase + ( k / (double)(nKVertexesZone-1) ) * ( vTop - vBase );
                     //create and set the position of the vertex
                     VertexRecordPtr vertex( new VertexRecord() );
                     double x, y, z;
@@ -189,8 +190,12 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
     //allocate the cell definition list
     m_cellDefsPart.reserve( nCells );
 
+    //assign the vertexes of each cell, thus defining them
     uint vertexKoffset = 0;
-    for( const GeoGridZone zone : zones ){
+    for ( std::vector<GeoGridZone>::const_reverse_iterator iZone = zones.crbegin();
+          iZone != zones.crend();
+          ++iZone ) { //traversing from base->top (inverse of user-entered order)
+        const GeoGridZone& zone = *(iZone);
         uint nKCellsZone = zone.nHorizonSlices;
         //assign vertexes id's to the cells
         for( uint k = 0; k < nKCellsZone; ++k ){
@@ -211,7 +216,7 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
                 }
             }
         }
-        vertexKoffset += nKCellsZone + 1;
+        vertexKoffset += nKCellsZone+1;
     }
 
     //initialize member variables
@@ -510,6 +515,7 @@ PointSet *GeoGrid::unfold( PointSet *inputPS, QString nameForNewPointSet )
 		double u = -1.0;
 		double v = -1.0;
 		double w = -1.0;
+
         if( XYZtoUVW( x, y, z, u, v, w ) ){
 			empty = false;
 			//assign them to the point set
@@ -703,7 +709,11 @@ bool GeoGrid::XYZtoUVW(double x, double y, double z, double &u, double &v, doubl
 	v = dv * j + dv * local_v;
 	w = dw * k + dw * local_w;
 
-	return true;
+    //enforcing sanity
+    if( std::isfinite( u ) && std::isfinite( v ) && std::isfinite( w ) )
+        return true;
+    else
+        return false;
 }
 
 std::vector<Face3D> GeoGrid::getFaces( uint cellIndex )
@@ -755,7 +765,59 @@ std::vector<Face3D> GeoGrid::getFaces( uint cellIndex )
 	fs[5].v[3] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
 	//----------------------------------------------------
 
-	return fs;
+    return fs;
+}
+
+std::vector<Face3D> GeoGrid::getFacesInvertedWinding(uint cellIndex)
+{
+    //get the cell geometry definition (vertexes' indexes).
+    CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndex );
+
+    //get the vertex data of the cell
+    VertexRecordPtr vd[8];
+    vd[0] = m_vertexesPart.at( cellDef->vId[0] );
+    vd[1] = m_vertexesPart.at( cellDef->vId[1] );
+    vd[2] = m_vertexesPart.at( cellDef->vId[2] );
+    vd[3] = m_vertexesPart.at( cellDef->vId[3] );
+    vd[4] = m_vertexesPart.at( cellDef->vId[4] );
+    vd[5] = m_vertexesPart.at( cellDef->vId[5] );
+    vd[6] = m_vertexesPart.at( cellDef->vId[6] );
+    vd[7] = m_vertexesPart.at( cellDef->vId[7] );
+
+    //------------make the six face geometries------------
+    std::vector<Face3D> fs( 6 );
+    fs[0].v[0] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+    fs[0].v[1] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+    fs[0].v[2] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+    fs[0].v[3] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+
+    fs[1].v[0] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+    fs[1].v[1] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+    fs[1].v[2] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+    fs[1].v[3] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+
+    fs[2].v[0] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+    fs[2].v[1] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+    fs[2].v[2] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+    fs[2].v[3] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+
+    fs[3].v[0] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+    fs[3].v[1] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+    fs[3].v[2] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+    fs[3].v[3] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+
+    fs[4].v[0] = Vertex3D{ vd[1]->X, vd[1]->Y, vd[1]->Z };
+    fs[4].v[1] = Vertex3D{ vd[5]->X, vd[5]->Y, vd[5]->Z };
+    fs[4].v[2] = Vertex3D{ vd[4]->X, vd[4]->Y, vd[4]->Z };
+    fs[4].v[3] = Vertex3D{ vd[0]->X, vd[0]->Y, vd[0]->Z };
+
+    fs[5].v[0] = Vertex3D{ vd[7]->X, vd[7]->Y, vd[7]->Z };
+    fs[5].v[1] = Vertex3D{ vd[6]->X, vd[6]->Y, vd[6]->Z };
+    fs[5].v[2] = Vertex3D{ vd[2]->X, vd[2]->Y, vd[2]->Z };
+    fs[5].v[3] = Vertex3D{ vd[3]->X, vd[3]->Y, vd[3]->Z };
+    //----------------------------------------------------
+
+    return fs;
 }
 
 void GeoGrid::computeCellVolumes(QString variable_name)
@@ -812,7 +874,231 @@ Hexahedron GeoGrid::makeHexahedron( uint cellIndex )
 		hexa.v[i].y = y;
 		hexa.v[i].z = z;
 	}
-	return hexa;
+    return hexa;
+}
+
+void GeoGrid::exportToEclipseGridGRDECL(const QString filePath, bool invertSignZ)
+{
+    //TODO: implement a test for odd non-pillar-grid like geometry.
+    Application::instance()->logWarn("GeoGrid::exportToEclipseGridGRDECL(): assuming the GeoGrid "
+                                     "has a pillar-grid like geometry!");
+
+
+    //load grid data and geometry
+    loadData();
+    loadMesh();
+
+    //define Z sign inversion.
+    int signZ = 1;
+    if( invertSignZ )
+        signZ = -1;
+
+    //get some griding info.
+    const uint nI = getNI();
+    const uint nJ = getNJ();
+    const uint nK = getNK();
+
+    //show a progress dialog
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Exporting GeoGrid to Eclipse Grid ASCII format...");
+    progressDialog.setMinimum(0);
+    progressDialog.setValue(0);
+    progressDialog.setMaximum( 0 );
+
+    //open the file for output
+    QFile outputFile( filePath );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+
+    //set max number of significant digits to 12 is good enough for the Eclipse Grid ASCII format.
+    out.setRealNumberPrecision(12);
+
+    //the SPECGRID section declares grid cell counts along the three axes.
+    out << "SPECGRID" << '\n';
+    out << nI << ' ' << nJ << ' ' << nK << " 1 F\n";
+    out << "/\n\n";
+
+    //the COORD section declares the starting and ending (x,y,z)'s of the fibers delimiting
+    //where the cell stacks will be placed.
+    out << "COORD" << '\n';
+    uint cellVertexesIDs[8];
+    uint runLengthIndex;
+    double x, y, z;
+    for( uint j = 0; j < nJ; ++j ) {
+        for( uint i = 0; i < nI; ++i ) {
+            //output the southernmost, westernmost, bottommost vertex of the
+            //bottommost cell in the current volume trace.
+            runLengthIndex = IJKtoIndex( i, j, 0 );
+            getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+            getMeshVertexLocation( cellVertexesIDs[0], x, y, z );
+            out << x << ' ' << y << ' ' << signZ*z << "     ";
+            //output the southernmost, westernmost, topmost vertex of the
+            //topmost cell in the current volume trace.
+            runLengthIndex = IJKtoIndex( i, j, nK-1 );
+            getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+            getMeshVertexLocation( cellVertexesIDs[4], x, y, z );
+            out << x << ' ' << y << ' ' << signZ*z << '\n';
+            //for the easternmost traces, we also...
+            if( i == nI-1 ){
+                //output the southernmost, easternmost, bottommost vertex of the
+                //bottommost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, 0 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[1], x, y, z );
+                out << x << ' ' << y << ' ' << signZ*z << "     ";
+                //output the southernmost, easternmost, topmost vertex of the
+                //topmost cell in the current volume trace.
+                runLengthIndex = IJKtoIndex( i, j, nK-1 );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[5], x, y, z );
+                out << x << ' ' << y << ' ' << signZ*z << '\n';
+            }
+        }
+        QApplication::processEvents(); //let Qt do repainting
+    }
+
+    //for the northernmost traces, we also...
+    for( uint i = 0; i < nI; ++i ){
+        //output the nothernmost, westernmost, bottommost vertex of the
+        //bottommost cell in the current volume trace.
+        runLengthIndex = IJKtoIndex( i, nJ-1, 0 );
+        getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+        getMeshVertexLocation( cellVertexesIDs[3], x, y, z );
+        out << x << ' ' << y << ' ' << signZ*z << "     ";
+        //output the the northernmost, westernmost, topmost vertex of the
+        //topmost cell in the current volume trace.
+        runLengthIndex = IJKtoIndex( i, nJ-1, nK-1 );
+        getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+        getMeshVertexLocation( cellVertexesIDs[7], x, y, z );
+        out << x << ' ' << y << ' ' << signZ*z << '\n';
+        QApplication::processEvents(); //let Qt do repainting
+    }
+
+    //for the northernmost, easternmost trace of the entire grid, we also...
+    {
+        //output the nothernmost, easternmost, bottommost vertex of the
+        //bottommost cell in the current volume trace.
+        runLengthIndex = IJKtoIndex( nI-1, nJ-1, 0 );
+        getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+        getMeshVertexLocation( cellVertexesIDs[2], x, y, z );
+        out << x << ' ' << y << ' ' << signZ*z << "     ";
+        //output the northernmost, easternmost, topmost vertex of the
+        //topmost cell in the current volume trace.
+        runLengthIndex = IJKtoIndex( nI-1, nJ-1, nK-1 );
+        getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+        getMeshVertexLocation( cellVertexesIDs[6], x, y, z );
+        out << x << ' ' << y << ' ' << signZ*z << '\n';
+    }
+
+    out << "/\n\n";
+
+    //the ZCORN section declares the eight Z depths (four for the bottom and four for the top) that define
+    // the geometry of one cell supported by four fibers.  The fibers are defined in the COORD section.
+    // The Z axis is pointed downwards (left-hand rule) in the Eclipse standard, thus we need to scan the grid from
+    // top->bottom as the Z axis in GammaRay is pointed upwards (right-hand rule).  Also, it is necessary to invert
+    // the sign of negative Z values.
+    out << "ZCORN" << '\n';
+
+    //----------------------------------------------------
+    //------------FOR EACH K-SLICE------------------------
+    //----------------------------------------------------
+    for( uint k = 0; k < nK; ++k ){
+
+        //------FIRST ALL THE BASES OF THE CELLS------------
+
+        for( uint j = 0; j < nJ; ++j ){
+            for( uint i = 0; i < nI; ++i ) {
+                //output the southwestern, base z
+                runLengthIndex = IJKtoIndex( i, j, k );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[0], x, y, z );
+                out << signZ*z << '\n';
+                //output the southeastern, base z
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[1], x, y, z );
+                out << signZ*z << '\n';
+            }
+            for( uint i = 0; i < nI; ++i ) {
+                //output the northwestern, base z
+                runLengthIndex = IJKtoIndex( i, j, k );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[3], x, y, z );
+                out << signZ*z << '\n';
+                //output the northeastern, base z
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[2], x, y, z );
+                out << signZ*z << '\n';
+            }
+        }
+
+        //------THEN ALL THE TOPS OF THE CELLS------------
+
+        for( uint j = 0; j < nJ; ++j ){
+            for( uint i = 0; i < nI; ++i ) {
+                //output the southwestern, top z
+                runLengthIndex = IJKtoIndex( i, j, k );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[4], x, y, z );
+                out << signZ*z << '\n';
+                //output the southeastern, top z
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[5], x, y, z );
+                out << signZ*z << '\n';
+            }
+            for( uint i = 0; i < nI; ++i ) {
+                //output the northwestern, top z
+                runLengthIndex = IJKtoIndex( i, j, k );
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[7], x, y, z );
+                out << signZ*z << '\n';
+                //output the northeastern, top z
+                getMeshCellDefinition( runLengthIndex, cellVertexesIDs );
+                getMeshVertexLocation( cellVertexesIDs[6], x, y, z );
+                out << signZ*z << '\n';
+            }
+        }
+
+        QApplication::processEvents(); //let Qt do repainting
+    }
+    out << "/\n\n";
+
+    //the ACTNUM section contains the flags that sets the visibility of a cell.
+    //In our case, all cells are visible unless some creterion is defined in future
+    //developments of this exporter.
+    out << "ACTNUM" << '\n';
+    for( uint k = 0; k < nK; ++k ) {
+        for( uint j = 0; j < nJ; ++j ) {
+            for( uint i = 0; i < nI; ++i ){
+                out << '1' << '\n';
+            }
+        }
+        QApplication::processEvents(); //let Qt do repainting
+    }
+    out << "/\n\n";
+
+    //Now we output one custom section for each property filling the grid.
+    //The property values are filled in the same scan order of the flags in the
+    //ACTNUM section.
+    uint nProperties = getDataColumnCount();
+    CartesianGrid* gridsDataStore = getUnderlyingCartesianGrid();
+    for( uint iProperty = 0; iProperty < nProperties; ++iProperty ){
+        Attribute* at = gridsDataStore->getAttributeFromGEOEASIndex( iProperty+1 );
+        //The name of the section is the name of the property (with illegal characters
+        //replaces with unserscores)
+        out << at->getScriptCompatibleName() << '\n';
+        for( uint k = 0; k < nK; ++k ) {
+            for( uint j = 0; j < nJ; ++j ) {
+                for( uint i = 0; i < nI; ++i ){
+                    out << dataIJK( iProperty, i, j, k ) << '\n';
+                }
+            }
+            QApplication::processEvents(); //let Qt do repainting
+        }
+        out << "/\n\n";
+    }
+
+    outputFile.close();
 }
 
 void GeoGrid::IJKtoXYZ(uint i, uint j, uint k, double & x, double & y, double & z) const
@@ -868,13 +1154,16 @@ SpatialLocation GeoGrid::getCenter()
 bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k )
 {
 	if( m_spatialIndex->isEmpty() )
-		m_spatialIndex->fill( this );
+        m_spatialIndex->fillWithCenters( this, 0.0001 );
+
+    assert( ! m_spatialIndex->isEmpty() && "GeoGrid::XYZtoIJK(): the spatial index is not supposed to be"
+                                           " empty when calling this method." );
 
 	//Get the nearest cells.
-	QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 5 );
+    QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 20 );
 
 	//if the spatial search failed, assumes it fell outside the grid
-	if( cellIndexes.empty() )
+    if( cellIndexes.empty() )
 		return false;
 
 	//the test location
@@ -884,10 +1173,10 @@ bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k 
 	QList<uint>::iterator itCellIndex = cellIndexes.begin();
 	for( ; itCellIndex != cellIndexes.end(); ++itCellIndex ){
 		//get the cell's faces geometry .
-		std::vector<Face3D> fs = getFaces( *itCellIndex );
+        Hexahedron hexa = makeHexahedron( *itCellIndex );
 		//if the location is inside the cell
-		if( Util::isInside( p, fs ) ){
-			//return the cell's topological coordinates
+        if( hexa.isInside( p ) ){
+            //return the cell's topological coordinates
 			this->indexToIJK( *itCellIndex, i, j, k );
 			return true;
 		}

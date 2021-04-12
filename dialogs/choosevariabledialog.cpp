@@ -3,13 +3,17 @@
 
 #include "widgets/variableselector.h"
 
-ChooseVariableDialog::ChooseVariableDialog(DataFile *df, const QString title, const QString caption, QWidget *parent) :
+ChooseVariableDialog::ChooseVariableDialog(DataFile *df,
+                                           const QString title,
+                                           const QString caption,
+                                           bool showNotSet,
+                                           QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ChooseVariableDialog),
     m_df(df)
 {
     ui->setupUi(this);
-    m_variableSelector = new VariableSelector( true );
+    m_variableSelector = new VariableSelector( showNotSet );
     m_variableSelector->onListVariables( df );
     ui->layoutForCategorySelector->addWidget( m_variableSelector );
     ui->lblCaption->setText( caption );

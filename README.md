@@ -2,6 +2,7 @@
 [![Documentation Status](https://readthedocs.org/projects/gammaray/badge/?version=latest)](https://gammaray.readthedocs.io/en/latest/?badge=latest)
 [![Build Status](https://travis-ci.com/PauloCarvalhoRJ/gammaray.svg?branch=master)](https://travis-ci.com/PauloCarvalhoRJ/gammaray)
                  
+<center><img src="https://github.com/PauloCarvalhoRJ/gammaray/blob/master/frontpage.png"/></center>
 
 Repository of the GammaRay geostatistics software.
 
@@ -14,6 +15,7 @@ If you enjoyed this project, you might also enjoy GeostatsPy: https://github.com
 Python script to convert Eclipse grids to Paraview-compatible VTU format: https://github.com/BinWang0213/PyGRDECL
 
 VERSION HISTORY:<br>
+&nbsp;&nbsp;&nbsp;Version 6.9   - Export geologic grids as Eclipse grids, multiple other new features, enhancements and fixes.<br>
 &nbsp;&nbsp;&nbsp;Version 6.7   - New data type: Geologic section.<br>
 &nbsp;&nbsp;&nbsp;Version 6.6   - Mean, median and Gaussian filters, improvements and bug fixes.<br>
 &nbsp;&nbsp;&nbsp;Version 6.5   - vertical proportion curves, improvements Automatic Variogram Fitting, enhancements and several fixes.<br>

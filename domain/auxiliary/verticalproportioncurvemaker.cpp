@@ -47,3 +47,12 @@ namespace VPCMakerAdapters {
     }
 }
 //------------------------------------------------------------------------------------//
+
+//-------------------specializations of the getName() template function---------------//
+namespace VPCMakerAdapters {
+    template <>
+    QString getName<SegmentSet>( SegmentSet* dataFile ){
+        return dataFile->getName();
+    }
+}
+//------------------------------------------------------------------------------------//

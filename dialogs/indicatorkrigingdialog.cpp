@@ -446,10 +446,14 @@ void IndicatorKrigingDialog::onSave()
             for(int i = 0; i < pdf->getPairCount(); ++i){
                 //make a meaningful name
                 QString proposed_name( prefix );
-                if( cd )
+                if( cd ){
+                    cd->readFromFS(); //making sure the categorical information is loaded from the file.
                     proposed_name.append( cd->getCategoryName( i ) );
-                else
+                } else {
+                    Application::instance()->logWarn("IndicatorKrigingDialog::onSave(): null CategoryDefinition. Using "
+                                                     "generic category names for the output variables.");
                     proposed_name.append( "Category_" ).append( pdf->get1stValue( i ) );
+                }
 
                 //the estimates normally follow the order of the categories in the resulting grid
                 Attribute* values = m_cg_estimation->getAttributeFromGEOEASIndex( i + 1 );

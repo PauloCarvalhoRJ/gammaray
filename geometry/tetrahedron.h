@@ -29,6 +29,18 @@ public:
 	std::vector<Vertex3D> v;
 
 	double getVolume() const;
+
+    bool isInside( const Vertex3D queryPoint ) const;
+
+protected:
+    /** Returns whether queryPoint is on the same side of referenceVertex with respect to
+     * the plane defined by v1, v2 and v3.
+     */
+    bool isSameSide( const Vertex3D v1,
+                     const Vertex3D v2,
+                     const Vertex3D v3,
+                     const Vertex3D referenceVertex,
+                     const Vertex3D queryPoint ) const;
 };
 
 #endif // TETRAHEDRON_H

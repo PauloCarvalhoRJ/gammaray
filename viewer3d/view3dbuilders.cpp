@@ -7,6 +7,7 @@
 #include "domain/geogrid.h"
 #include "domain/segmentset.h"
 #include "domain/section.h"
+#include "dialogs/choosevariabledialog.h"
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
 
@@ -188,14 +189,23 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
         } else { //cg is a stand-alone Cartesian grid
             if( cg->getNZ() < 2 ){
                 QMessageBox msgBox;
-                msgBox.setText("Display 2D grid as?");
-                QAbstractButton* pButtonUseFlat = msgBox.addButton("Flat grid at z = 0.0", QMessageBox::YesRole);
-                msgBox.addButton("Surface w/ z = variable", QMessageBox::NoRole);
+                msgBox.setText("Display 2D grid as a surface:");
+                QAbstractButton* pButtonUseFlat = msgBox.addButton("z = 0.0", QMessageBox::YesRole);
+                QAbstractButton* pButtonUseZOwn = msgBox.addButton("z = " +
+                                                                   attribute->getName(), QMessageBox::NoRole);
+                msgBox.addButton("painted w/ another variable", QMessageBox::NoRole);
                 msgBox.exec();
                 if ( msgBox.clickedButton() == pButtonUseFlat )
                     return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
-                else
+                else if( msgBox.clickedButton() == pButtonUseZOwn )
                     return buildForSurfaceCartesianGrid2D( cg, attribute, widget3D );
+                else {
+                    //The user must choose another variable of the same dataset to paint the surface with.
+                    ChooseVariableDialog cvd( cg, "Select variable.", "Paint surface with:", false );
+                    cvd.exec();
+                    Attribute* attributePaintWith = cg->getAttributeFromGEOEASIndex( cvd.getSelectedVariableIndex()+1 );
+                    return buildForSurfaceCartesianGrid2Dpainted( cg, attribute, attributePaintWith, widget3D );
+                }
             } else {
                 return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
             }
@@ -230,7 +240,8 @@ View3DViewData View3DBuilders::build(Section *object, View3DWidget *widget3D)
 
 vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZvalues(
         CartesianGrid *cartesianGrid,
-        Attribute *attributeWithZValues)
+        Attribute *attributeWithZValues,
+        Attribute *attributeToPaintWith)
 {
     if( cartesianGrid->getNK() > 1){
         Application::instance()->logError("View3DBuilders::makeSurfaceFrom2DGridWithZvalues(): "
@@ -245,7 +256,10 @@ vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZv
     }
 
     //get the variable index in parent data file
-    uint var_index = cartesianGrid->getFieldGEOEASIndex( attributeWithZValues->getName() );
+    uint var_index_zvals = cartesianGrid->getFieldGEOEASIndex( attributeWithZValues->getName() );
+    uint var_index_paint = 0;
+    if( attributeToPaintWith )
+        var_index_paint = cartesianGrid->getFieldGEOEASIndex( attributeToPaintWith->getName() );
 
     //create a VTK array to store the sample values
     vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
@@ -259,26 +273,32 @@ vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZv
 
     //get the max and min of the selected variable
     cartesianGrid->loadData();
-    double min = cartesianGrid->min( var_index-1 );
-    double max = cartesianGrid->max( var_index-1 );
+    double minPaint = -std::numeric_limits<double>::max();
+    double maxPaint =  std::numeric_limits<double>::max();
+    if( var_index_paint ) {
+        minPaint = cartesianGrid->min( var_index_paint-1 );
+        maxPaint = cartesianGrid->max( var_index_paint-1 );
+    }
 
     //get the grid dimension of the 2D grid
     uint nI = cartesianGrid->getNI();
     uint nJ = cartesianGrid->getNJ();
 
-    //read sample values
-    values->Allocate( nI * nJ );
-    visibility->Allocate( nI * nJ );
-    for( int j = 0; j < nJ; ++j){
-        for( int i = 0; i < nI; ++i){
-            // sample value
-            double value = cartesianGrid->dataIJK( var_index - 1, i, j, 0);
-            values->InsertNextValue( value );
-            // visibility flag
-            if( cartesianGrid->isNDV( value ) )
-                visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
-            else
-                visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+    //read sample values of the paint variable
+    if( var_index_paint ) { //if there is an attribute to paint the surface with.
+        values->Allocate( nI * nJ );
+        visibility->Allocate( nI * nJ );
+        for( int j = 0; j < nJ; ++j){
+            for( int i = 0; i < nI; ++i){
+                // sample value
+                double value = cartesianGrid->dataIJK( var_index_paint - 1, i, j, 0);
+                values->InsertNextValue( value );
+                // visibility flag
+                if( cartesianGrid->isNDV( value ) )
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+                else
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+            }
         }
     }
 
@@ -293,7 +313,7 @@ vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZv
         //get cell location in space
         cartesianGrid->getCellLocation( ii, jj, 0, x, y, z );
         //get sample value
-        double sampleValue = cartesianGrid->dataIJK( var_index - 1, ii, jj, 0);
+        double sampleValue = cartesianGrid->dataIJK( var_index_zvals - 1, ii, jj, 0);
         //make vertex with sample value as z
         quadVertexes->InsertPoint(i, x, y, sampleValue);
     }
@@ -312,6 +332,12 @@ vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZv
         unstructuredGrid->InsertNextCell( quad->GetCellType(), quad->GetPointIds() );
     }
     unstructuredGrid->SetPoints(quadVertexes);
+
+    if( var_index_paint ) { //if there is an attribute to paint the surface with.
+        //assign the grid values to the grid cells
+        unstructuredGrid->GetPointData()->SetScalars( values     );
+        unstructuredGrid->GetPointData()->AddArray  ( visibility );
+    }
 
     return unstructuredGrid;
 }
@@ -1313,6 +1339,53 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *car
     //actor->GetProperty()->EdgeVisibilityOn();
 
     return View3DViewData( actor );
+}
+
+View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2Dpainted(CartesianGrid *cartesianGrid,
+                                                                     Attribute *attributeZ,
+                                                                     Attribute *attributePaintWith,
+                                                                     View3DWidget *widget3D)
+{
+    // Make surface object from the input data.
+    vtkSmartPointer< vtkUnstructuredGrid > unstructuredGrid =
+            makeSurfaceFrom2DGridWithZvalues( cartesianGrid, attributeZ, attributePaintWith );
+
+    if( ! unstructuredGrid ){
+        Application::instance()->logError("View3DBuilders::buildForSurfaceCartesianGrid2Dpainted(): "
+                                          "null surface.  Check output pane for error messages.");
+        return View3DViewData();
+    }
+
+    //get the max and min of the selected variable to paint with.
+    cartesianGrid->loadData();
+    uint var_index_paint = cartesianGrid->getFieldGEOEASIndex( attributePaintWith->getName() );
+    double minPaint = cartesianGrid->min( var_index_paint-1 );
+    double maxPaint = cartesianGrid->max( var_index_paint-1 );
+
+    //create a color table according to the type (continuous or categorical) of the variable
+    //to paint with.
+    vtkSmartPointer<vtkLookupTable> lut;
+    if( attributePaintWith->isCategorical() )
+        lut = View3dColorTables::getCategoricalColorTable(
+                    cartesianGrid->getCategoryDefinition( attributePaintWith ), false, 0.0 );
+    else
+        lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, minPaint, maxPaint );
+
+    // Create mapper (visualization parameters)
+    vtkSmartPointer<vtkDataSetMapper> mapper =
+            vtkSmartPointer<vtkDataSetMapper>::New();
+    mapper->SetInputData( unstructuredGrid );
+    mapper->SetLookupTable(lut);
+    mapper->SetScalarRange(minPaint, maxPaint);
+    mapper->ScalarVisibilityOn();
+    mapper->Update();
+
+    // Finally, pass everything to the actor and return it.
+    vtkSmartPointer<vtkActor> actor =
+            vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+
+    return View3DViewData( actor, mapper );
 }
 
 View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *widget3D)

@@ -162,8 +162,18 @@ public:
 
 	/**
 	 * Creates and returns a vector containing the geometries of the six faces of a cell.
+         * The vertexes in the returned faces are ordered so the faces are all counter-clockwise
+         * as seen from the inside, which is the original order per the convention of the GeoGrid.
 	 */
 	std::vector<Face3D> getFaces( uint cellIndex );
+
+        /**
+         * Does the same as getFaces(), but the returned faces are all counter-clockwise
+         * as seen from the OUTSIDE, which is the opposite of the original order per the
+         * convention of the GeoGrid.
+         */
+        std::vector<Face3D> getFacesInvertedWinding( uint cellIndex );
+
 
 	/**
 	 * Adds a new variable containing the volumes of the cells.  The values can be useful
@@ -183,6 +193,19 @@ public:
 	 * Creates a Hexahedron object from a cell's geometry data given the cell's index.
 	 */
 	Hexahedron makeHexahedron( uint cellIndex );
+
+    /**
+     * Exports this GeoGrid as ASCII Eclipse Grid (.grdecl format).
+     * This format is broadly supported by most geomodeling software.
+     * @param invertSignZ if true (default), inverts the sign of the Z coordinates. The Eclipse Grid format
+     *        Works with the inverted Z axis, that is, positive depth values mean bellow sea level, being a standard designed
+     *        for the petroleum industry.  GammaRay, being a more general framework, works with the more usual
+     *        Z axis pointing upwards, that is, depths below sea level translate to negative depth values.
+     * @note This method currently assumes the geometry is pillar-grid like, that is,
+     *       the cells are arranged in stacks.  A prior test for odd geometries should
+     *       be implemented when new GeoGrid constructors or importers are made available.
+     */
+    void exportToEclipseGridGRDECL( const QString filePath, bool invertSignZ );
 
 //GridFile interface
 	virtual void IJKtoXYZ( uint i,    uint j,    uint k,

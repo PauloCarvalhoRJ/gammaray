@@ -54,6 +54,12 @@ public:
      */
     double getDistanceToNextSegment( int iRecord );
 
+    /** Does the same as getDistanceToNextSegment() but with constness, that is,
+     * it does not load data from the file automatically.  An explicit call
+     * to readFromFS() is necessary prior to calling this method.
+     */
+    double getDistanceToNextSegmentConst( int iRecord ) const;
+
     /**
      * Adds a new variable containing the lengths of the segments.  The values can be useful
      * for debiasing, for instance.
@@ -76,10 +82,20 @@ public:
     /**
      * Creates a new PointSet object containing the data of this SegmentSet.
      * The coordinates of the point set are that of the mid points of the segments.
-     * The function creates a new physical data file matching the newly created PointSet
+     * The function also creates a new physical data file matching the newly created PointSet
      * in the project's directory using the passed name as file name.
      */
     PointSet* toPointSetMidPoints(const QString &psName) const;
+
+    /**
+     * Creates a new PointSet object containing the data of this SegmentSet.
+     * The coordinates of the point set are that of the segments regularely sampled.
+     * The function also creates a new physical data file matching the newly created PointSet
+     * in the project's directory using the passed name as file name.
+     * @param step Value in length units that dictates the sampling ratio, so the lower the value
+     *             the more dense is the resulting point set.
+     */
+    PointSet* toPointSetRegularlySpaced(const QString &psName, double step) const;
 
     /**
      * Creates a new segment set object similar to this one but with the data filtered
@@ -94,6 +110,12 @@ public:
      * NOTE: make sure a prior call to DataFile::readFromFS() was made to load segment data.
      */
     double getSegmentHeight( int iRecord ) const;
+
+    /** Returns via output parameters the x,y,z coordinate of the head vertex of the first segment. */
+    void getHeadLocation( double& x, double& y, double& z ) const;
+
+    /** Returns via output parameters the x,y,z coordinate of the tail vertex of the last segment. */
+    void getTailLocation( double& x, double& y, double& z ) const;
 
     // ProjectComponent interface
 public:
@@ -124,6 +146,7 @@ public:
     // PointSet interface
 public:
     virtual void setInfoFromOtherPointSet( PointSet* otherPS );
+    virtual void deleteVariable(uint columnToDelete) override;
 
 protected:
     int _x_final_field_index; //index start at 1. Zero means not set.

@@ -77,13 +77,97 @@ void Section::setInfoFromMetadataFile()
 
 void Section::IKtoXYZ(uint i, uint k, double &x, double &y, double &z) const
 {
+    //Get the cell's geometry.
+    Quadrilateral quad = makeQuadrilateral( i, k );
+
+    //Compute the cell center.
+    x = ( quad.v[0].x + quad.v[1].x + quad.v[2].x + quad.v[3].x ) / 4.0;
+    y = ( quad.v[0].y + quad.v[1].y + quad.v[2].y + quad.v[3].y ) / 4.0;
+    z = ( quad.v[0].z + quad.v[1].z + quad.v[2].z + quad.v[3].z ) / 4.0;
+}
+
+PointSet *Section::toPointSetCentroids(const QString &psName) const
+{
+    //Get the section's data.
+    CartesianGrid* sectionDataCG = getCartesianGrid();
+
+    //sanity checks
+    assert( sectionDataCG->getDataLineCount() && "Section::toPointSetCentroids(): Cartesian grid with "
+                                                 "section data not loaded. Maybe a prior call to "
+                                                 "DataFile::readFromFS() is missing." );
+
+    int nDataRows = sectionDataCG->getDataLineCount();
+    int nDataColumns = sectionDataCG->getDataColumnCountConst();
+    assert( nDataRows && "Section::toPointSetCentroids(): zero data lines. "
+                         "Perhaps a prior call to DataFile::readFromFS() is missing.");
+
+    //copies this segment set's file as a new file
+    QString psFilePath = Application::instance()->getProject()->getPath() + "/" + psName;
+    Util::copyFile( sectionDataCG->getPath(), psFilePath );
+    PointSet* new_ps = new PointSet( psFilePath );
+
+    //load the data
+    new_ps->loadData();
+    new_ps->updateChildObjectsCollection();
+
+    //append the new data columns for the mid points coordinates and segment lengths
+    int iColumnCx        = new_ps->addEmptyDataColumn( "centroidX", nDataRows );
+    int iColumnCy        = new_ps->addEmptyDataColumn( "centroidY", nDataRows );
+    int iColumnCz        = new_ps->addEmptyDataColumn( "centroidZ", nDataRows );
+    int iColumnCellAreas = new_ps->addEmptyDataColumn( "cell_area", nDataRows );
+
+    //compute mid points for the PointSet object
+    int nI = sectionDataCG->getNI();
+    int nK = sectionDataCG->getNK();
+    for( int k = 0; k < nK; ++k ){
+        for( int i = 0; i < nI; ++i ){
+            double center_x;
+            double center_y;
+            double center_z;
+
+            IKtoXYZ( i, k, center_x, center_y, center_z );
+
+            int iDataLine = k * nI + i;
+            new_ps->setData( iDataLine, iColumnCx, center_x );
+            new_ps->setData( iDataLine, iColumnCy, center_y );
+            new_ps->setData( iDataLine, iColumnCz, center_z );
+            //compute the cellsize
+            new_ps->setData( iDataLine, iColumnCellAreas, getCellArea( i, k ) );
+        }
+    }
+
+    //commit data to file system
+    new_ps->writeToFS();
+
+    //set appropriate metadata
+    new_ps->setInfo( iColumnCx+1, //these indexes are GEO-EAS indexes (1st == 1)
+                     iColumnCy+1,
+                     iColumnCz+1,
+                     sectionDataCG->getNoDataValue(),
+                     QMap<uint, uint>(),
+                     sectionDataCG->getNSVarVarTrnTriads(),
+                     sectionDataCG->getCategoricalAttributes() );
+    new_ps->updateMetaDataFile();
+
+    //return the pointer to the created object
+    return new_ps;
+}
+
+double Section::getCellArea(uint i, uint k) const
+{
+    Quadrilateral quad = makeQuadrilateral( i, k );
+    return quad.getArea();
+}
+
+Quadrilateral Section::makeQuadrilateral(uint i, uint k) const
+{
     //Get the section's component data files.
     PointSet* sectionPathPS = getPointSet();
     CartesianGrid* sectionDataCG = getCartesianGrid();
 
     //sanity checks
-    assert( sectionPathPS->getDataLineCount() && "Section::IKtoXYZ(): Pointset with section path not loaded. Maybe a prior call to DataFile::readFromFS() is missing." );
-    assert( sectionDataCG->getDataLineCount() && "Section::IKtoXYZ(): Cartesian grid with section data not loaded. Maybe a prior call to DataFile::readFromFS() is missing." );
+    assert( sectionPathPS->getDataLineCount() && "Section::makeQuadrilateral(): Pointset with section path not loaded. Maybe a prior call to DataFile::readFromFS() is missing." );
+    assert( sectionDataCG->getDataLineCount() && "Section::makeQuadrilateral(): Cartesian grid with section data not loaded. Maybe a prior call to DataFile::readFromFS() is missing." );
 
     //Get some info of the component data files.
     int nSegments = sectionPathPS->getDataLineCount()-1; //if the PS has two entries, it defines one section segment.
@@ -122,14 +206,14 @@ void Section::IKtoXYZ(uint i, uint k, double &x, double &y, double &z) const
 
     //The delta z is a bit more complicated because depth can vary along the section.
     //Furthermore, we have a bottom and a top z in the head and tail of the section segment.
-    double segmentHeadDeltaZ  = segment_topZi - segment_botZi;
-    double segmentTailDeltaZ  = segment_topZf - segment_botZf;
-    double segmentHeadZlower  = segment_botZi + segmentHeadDeltaZ / nHorizons * k;
-    double segmentTailZlower  = segment_botZf + segmentTailDeltaZ / nHorizons * k;
+    double segmentHeadDeltaZ  = segment_topZi     - segment_botZi;
+    double segmentTailDeltaZ  = segment_topZf     - segment_botZf;
+    double segmentHeadZlower  = segment_botZi     + segmentHeadDeltaZ / nHorizons * k;
+    double segmentTailZlower  = segment_botZf     + segmentTailDeltaZ / nHorizons * k;
     double segmentDeltaZlower = segmentTailZlower - segmentHeadZlower;
-    double segmentHeadZupper  = segment_botZi + segmentHeadDeltaZ / nHorizons * ( k + 1 );
-    double segmentTailZupper  = segment_botZf + segmentTailDeltaZ / nHorizons * ( k + 1 );
-    double segmentDeltaZupper = segmentTailZupper - segmentHeadZlower;
+    double segmentHeadZupper  = segment_botZi     + segmentHeadDeltaZ / nHorizons * ( k + 1 );
+    double segmentTailZupper  = segment_botZf     + segmentTailDeltaZ / nHorizons * ( k + 1 );
+    double segmentDeltaZupper = segmentTailZupper - segmentHeadZupper;
 
     //Compute the vertexes that define the cell's geometry.
     int columnOffset = i - dataColIni;
@@ -146,10 +230,21 @@ void Section::IKtoXYZ(uint i, uint k, double &x, double &y, double &z) const
     double y4 = y1;
     double z4 = segmentHeadZupper + segmentDeltaZupper / nDataColumnsOfSegment * columnOffset;
 
-    //finally, compute the cell center
-    x = ( x1 + x2 + x3 + x4 ) / 4.0;
-    y = ( y1 + y2 + y3 + y4 ) / 4.0;
-    z = ( z1 + z2 + z3 + z4 ) / 4.0;
+    //Create and return the Quadrilateral object.
+    Quadrilateral quad;
+    quad.v[0].x = x1;
+    quad.v[0].y = y1;
+    quad.v[0].z = z1;
+    quad.v[1].x = x2;
+    quad.v[1].y = y2;
+    quad.v[1].z = z2;
+    quad.v[2].x = x3;
+    quad.v[2].y = y3;
+    quad.v[2].z = z3;
+    quad.v[3].x = x4;
+    quad.v[3].y = y4;
+    quad.v[3].z = z4;
+    return quad;
 }
 
 void Section::deleteFromFS()
@@ -170,7 +265,7 @@ void Section::deleteFromFS()
 
 void Section::writeToFS()
 {
-    //A Section does not actually have data.  Its data are in the two component objects.
+    //A Section does not actually have any data.  Its data are in the two component objects.
     if( m_CartesianGrid )
         m_CartesianGrid->writeToFS();
     if( m_PointSet )
@@ -179,7 +274,7 @@ void Section::writeToFS()
 
 void Section::readFromFS()
 {
-    //A Section does not actually have data.  Its data are in the two component objects.
+    //A Section does not actually have any data.  Its data are in the two component objects.
     if( m_CartesianGrid )
         m_CartesianGrid->readFromFS();
     if( m_PointSet )

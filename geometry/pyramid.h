@@ -38,6 +38,8 @@ public:
 
 	/** Returns the volume of this pyramid. */
 	double getVolume() const;
+
+    bool isInside( const Vertex3D point ) const;
 };
 
 #endif // PYRAMID_H

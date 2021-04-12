@@ -29,6 +29,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkCallbackCommand.h>
 #include <vtkBillboardTextActor3D.h>
 #include <vtkTextProperty.h>
+#include <vtkDistanceWidget.h>
+#include <vtkDistanceRepresentation.h>
 
 #include "domain/application.h"
 #include "domain/project.h"
@@ -43,7 +45,8 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 View3DWidget::View3DWidget(QWidget *parent)
     : QWidget(parent), ui(new Ui::View3DWidget), _currentCfgWidget(nullptr),
       _verticalExaggWiget(nullptr),
-      _textConfigWiget(nullptr)
+      _textConfigWiget(nullptr),
+      m_perspectiveProjection( true )
 {
     ui->setupUi(this);
 
@@ -197,6 +200,13 @@ View3DWidget::View3DWidget(QWidget *parent)
     connect(_textConfigWiget, SIGNAL(change()), this,
             SLOT(onTextConfigChanged()));
 
+    // Creates, but doesn't show, the distance measuring widget.
+    m_distanceWidget = vtkSmartPointer<vtkDistanceWidget>::New();
+    m_distanceWidget->SetInteractor( _vtkwidget->GetRenderWindow()->GetInteractor() );
+    m_distanceWidget->CreateDefaultRepresentation();
+    static_cast<vtkDistanceRepresentation *>(m_distanceWidget->GetRepresentation())
+                  ->SetLabelFormat("%-#6.3f");
+
     if( Util::getDisplayResolutionClass() == DisplayResolution::HIGH_DPI ){
         ui->btnGlobal->setIconSize( QSize( 64, 64 ) );
         ui->btnGlobal->setIcon( QIcon(":icons32/v3Dglobal32") );
@@ -209,6 +219,8 @@ View3DWidget::View3DWidget(QWidget *parent)
         ui->btnVerticalExaggeration->setIconSize( QSize( 64, 64 ) );
         ui->btnVerticalExaggeration->setIcon( QIcon(":icons32/vertexag32") );
         ui->btnFont->setIconSize( QSize( 64, 64 ) );
+        ui->btnRuler->setIconSize( QSize( 64, 64 ) );
+        ui->btnProjection->setIconSize( QSize( 64, 64 ) );
     }
 }
 
@@ -498,6 +510,31 @@ void View3DWidget::onTextConfigChanged()
             applyCurrentTextStyle( labelActor );
     }
 
+    // redraw the scene
+    _vtkwidget->GetRenderWindow()->Render();
+}
+
+void View3DWidget::onRuler()
+{
+    if( m_distanceWidget->GetEnabled() )
+        m_distanceWidget->Off();
+    else{
+        m_distanceWidget->SetWidgetStateToStart(); //"resets" the measurement tool
+        m_distanceWidget->On();
+    }
+}
+
+void View3DWidget::onProjection()
+{
+    if( m_perspectiveProjection ){
+        _rendererMainScene->GetActiveCamera()->ParallelProjectionOn();
+        m_perspectiveProjection = false;
+        ui->btnProjection->setIcon( QIcon(":icons32/v3DprojPar32") );
+    } else {
+        _rendererMainScene->GetActiveCamera()->ParallelProjectionOff();
+        m_perspectiveProjection = true;
+        ui->btnProjection->setIcon( QIcon(":icons32/v3DprojPer32") );
+    }
     // redraw the scene
     _vtkwidget->GetRenderWindow()->Render();
 }

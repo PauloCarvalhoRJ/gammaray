@@ -111,6 +111,18 @@ public:
      */
     void setInfo( QString associatedCategoryDefinitionName );
 
+    /** Returns the name given to the data column containing the values of all
+     * entries for a proportion given its index.
+     */
+    QString getProportionVariableName( uint proportionIndex ) const;
+
+    /** Returns a proportion value at the given relative depth (0.0 == base, 1.0 == top)
+     * A linear interpolation is performed for relative depth values not explicitly
+     * present in the entries.
+     * @note To not be confused with the totally unrelated DataFile::getProportion().
+     */
+    double getProportionAt(uint proportionIndex, double relativeDepth) const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

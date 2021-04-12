@@ -44,12 +44,12 @@
 #include <QProgressDialog>
 #include "spectral/spectral.h"
 #include <QStringBuilder>
+#include <QMessageBox>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
   #include <windows.h>
   #include <psapi.h>
-#include <QMessageBox>
 #endif
 #ifdef Q_OS_LINUX
   #include <stdlib.h>
@@ -1068,7 +1068,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "6.6" << "6.5" << "6.3" << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5"
+    previousVersions  << "6.7" << "6.6" << "6.5" << "6.3" << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5"
                       << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3"
                       << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
                       << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0"
@@ -2266,6 +2266,21 @@ std::vector<hFTM> Util::computeFaciesTransitionMatrices(std::vector<Attribute*>&
             dataFile->readFromFS();
             //make an auxiliary object to count facies transitions at given separations
             FaciesTransitionMatrixMaker<SegmentSet> ftmMaker( dynamic_cast<SegmentSet*>(dataFile),
+                                                              at->getAttributeGEOEASgivenIndex()-1 );
+            //for each separation h
+            for( hFTM& hftm : hFTMs ){
+                Application::instance()->logInfo("   working on h = " + QString::number( hftm.first ) + "...");
+                QApplication::processEvents();
+                //make a Facies Transion Matrix for a given h
+                FaciesTransitionMatrix ftm = ftmMaker.makeAlongTrajectory( hftm.first, toleranceCoefficient * hftm.first );
+                //add its counts to the global FTM for a given h
+                hftm.second.add( ftm );
+            }
+        } else if ( dataFile->getFileType() == "POINTSET" ) {
+            //load data from file system
+            dataFile->readFromFS();
+            //make an auxiliary object to count facies transitions at given separations
+            FaciesTransitionMatrixMaker<PointSet> ftmMaker( dynamic_cast<PointSet*>(dataFile),
                                                               at->getAttributeGEOEASgivenIndex()-1 );
             //for each separation h
             for( hFTM& hftm : hFTMs ){

@@ -144,6 +144,14 @@ void PointSet::deleteVariable(uint columnToDelete)
     }
     _wgt_var_pairs.swap(temp);
 
+    //it may be necessary to update the indexes of the fields set as the coordinates of this point set.
+    if( _x_field_index > columnToDeleteGEOEAS )
+        --_x_field_index;
+    if( _y_field_index > columnToDeleteGEOEAS )
+        --_y_field_index;
+    if( _z_field_index > columnToDeleteGEOEAS )
+        --_z_field_index;
+
     //call superclass' deleteVariable() to do the rest of the job
 	DataFile::deleteVariable( columnToDelete );
 }
@@ -315,6 +323,20 @@ PointSet *PointSet::createPointSetByFiltering(uint column, double vMin, double v
     newPS->setInfoFromOtherPointSet( this );
     //Return the new filtered data set.
     return newPS;
+}
+
+void PointSet::cloneDataLine(uint row)
+{
+    //get a copy of the desired data line.
+    const std::vector< double > rowDataToCopy = _data[ row ];
+
+    //get the vector iterator refering to the first data record.
+    std::vector< std::vector<double> >::iterator itFirstElement;
+    itFirstElement = _data.begin();
+
+    //std::vector.insert() inserts elements BEFORE the given index, hence we increase the
+    //given index by 1 so the copied data row is added AFTER the original data record.
+    _data.insert( itFirstElement + row + 1, rowDataToCopy );
 }
 
 bool PointSet::canHaveMetaData()

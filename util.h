@@ -626,7 +626,8 @@ public:
     static QString getGSLibVariogramStructureName(uint it);
 
 	/** Thests whether the passed point (as Vertex3D) is inside the polyhedron (as a vector of Face3D).
-	 * This assumes the polyhedron is convex and the faces are all counter-clockwise.
+     * This assumes the polyhedron is convex and the faces are all counter-clockwise as seen from outside.
+     * source: https://stackoverflow.com/questions/8877872/determining-if-a-point-is-inside-a-polyhedron
 	 */
 	static bool isInside( const Vertex3D& p, const std::vector<Face3D>& fs );
 
@@ -824,6 +825,16 @@ public:
 
     /** Returns the parent directory of the given path. */
     static QString getParentDirectory( QString path );
+
+    /** Returns 1 for a positive number, -1 for a negative one and
+     * 0 for zero values (implements signum()).
+     * @note Triggers the compiler warning -Wtype-limits if type of test value
+     *       is unsigned ( unsigned is always positive and the test for < 0 does not make sense).
+     */
+    template <typename T>
+    static int sign(T value) {
+        return (T(0) < value) - (value < T(0));
+    }
 
 };
 
