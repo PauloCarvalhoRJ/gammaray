@@ -1,4 +1,5 @@
 #include "datasaver.h"
+#include "domain/application.h"
 #include <QTextStream>
 #include <sstream>    // std::stringstream
 #include <iomanip>      // std::setprecision
@@ -20,6 +21,15 @@ void DataSaver::doSave()
         //updates the progress
         if( ! ( linesSavedSoFar % 1000 ) ){ //update progress for each 1000 lines to not impact performance much
             emit progress( (int)(linesSavedSoFar) );
+        }
+        //sanity check
+        if( (*itDataLine).empty() ){
+            Application::instance()->logWarn("DataSaver::doSave(): Empty data record at data line " +
+                                             QString::number( linesSavedSoFar ) +
+                                             ". Ignoring, but this signals ill-written code that changes or creates data in "
+                                             "the DataFile::_data member.");
+            ++linesSavedSoFar;
+            continue;
         }
         std::vector<double>::const_iterator itDataColumn = (*itDataLine).cbegin();
         //output the value in the first column
