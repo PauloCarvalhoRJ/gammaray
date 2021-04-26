@@ -344,8 +344,8 @@ PointSet *SegmentSet::toPointSetRegularlySpaced(const QString &psName, double st
             //the segment may shorter than the user-given step.  The other points along the segment line
             //are clone entries of that first entry.
             if( iStep > 0 ){
-                ++iRowOutputOffset;
                 new_ps->cloneDataLine( iRow + iRowOutputOffset );
+                ++iRowOutputOffset;
             }
 
             //outputs the interpolated XYZ coordinates.
