@@ -146,5 +146,5 @@ script:
   #Show what was built.
   - tree ../GammaRay_release
 
-  after_failure:  
+after_failure:  
   - tail -n 500 vtk_build_log.txt
