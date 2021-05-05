@@ -147,4 +147,4 @@ script:
   - tree ../GammaRay_release
 
   after_failure:  
-    - tail -n 500 vtk_build_log.txt
+  - tail -n 500 vtk_build_log.txt
