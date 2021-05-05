@@ -3,6 +3,30 @@
 # under Ubuntu Linux v18.04 (identified as "bionic" in Travis).  Travis instantiates a virtual machine with   #
 # the OS from scratch for each build, thus it is necessary to install or build all of GammaRay's dependencies #
 # everytime.                                                                                                  #
+#                                                                                                             #
+# Possible workarounds to build abort due to lengthy log in Travis CI:                                        #
+#                                                                                                             #
+# 1) You can pipe the verbose output of your command to a file and display the last 500-1000 lines on build   #
+# failure, e.g.                                                                                               #
+#                                                                                                             #
+# script:  - command ... > cmd_output.txt                                                                     #
+# after_failure:  - tail -n 500 cmd_output.txt                                                                #
+#                                                                                                             #
+#                                                                                                             #
+# 2) If you cannot see the error in the last 500-1000 lines of logs, you could upload your entire log file to #
+# sites like chunk.io or transfer.sh like this:                                                               #
+#                                                                                                             #
+# script:  - command ... > cmd_output.txt                                                                     #
+# after_failure:  - curl -T cmd_output.txt chunk.io                                                           #
+#                                                                                                             #
+#                                                                                                             #
+# The curl command would give you back a chunk.io URL (e.g.http://chunk.io/f/1edae590c82d46deb930b4237828d809)#
+# where you can access your whole log file. Ensure you have no sensitive data in your build logs if you use   #
+# this method.                                                                                                #
+#                                                                                                             #
+# 3) Lastly, you can upload your command's log output file to S3 using your S3 credentials and our artifacts  #
+# addon. You can see the documentation on how to do this here:                                                #
+#          http://docs.travis-ci.com/user/uploading-artifacts/.                                               #
 ###############################################################################################################
 
 language: cpp
@@ -36,6 +60,8 @@ install:
   - sudo apt-get install -qq libqwt-dev
   # The Visualization Toolkit: must build from sources (currently not installable with apt-get).
   # VTK depends on Qt
+  # ATTENTION: the build log is being redirected to a file called vtk_build_log.txt to avoid job termination due to 
+  #            excessive messages being sent over the internet per Travis CI fair use policy.
   - sudo apt-get install cmake
   - git clone --depth 1 --branch v8.1.0 https://gitlab.kitware.com/vtk/vtk.git VTK-src
   - mkdir VTK-build
@@ -49,7 +75,7 @@ install:
           -DBUILD_TESTING:BOOL=OFF
           -DBUILD_EXAMPLES:BOOL=OFF
           -DCMAKE_INSTALL_PREFIX=../VTK-install
-          ../VTK-src 
+          ../VTK-src > vtk_build_log.txt
   #- make -j$(($(nproc) - 1))  --> this doesn't work on Travis CI. It was supposed to get the number of cores
   - make -j16
   - make install
@@ -120,3 +146,5 @@ script:
   #Show what was built.
   - tree ../GammaRay_release
 
+  after_failure:  
+    - tail -n 500 vtk_build_log.txt
