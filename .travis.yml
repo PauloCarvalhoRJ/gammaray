@@ -77,7 +77,8 @@ install:
   #- make -j$(($(nproc) - 1))  --> this doesn't work on Travis CI. It was supposed to get the number of cores
   # ATTENTION: the build log is being redirected to a file called vtk_build_log.txt to avoid job termination due to 
   #            excessive messages being sent over the internet per Travis CI fair use policy.
-  - make -j16 > vtk_build_log.txt
+  #            The travis_wait disables the timeout due to lack of output messages.
+  - travis_wait make -j16 > vtk_build_log.txt
   - make install
   - cd ..
   # Installs the locate command and the mlocate file location database (this is not needed in the .travis.yml final version)
