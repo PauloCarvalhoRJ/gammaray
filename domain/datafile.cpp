@@ -365,7 +365,7 @@ bool DataFile::isNormal(Attribute *at)
     return _nsvar_var_trn.contains(index_in_GEOEAS_file);
 }
 
-bool DataFile::isCategorical(Attribute *at)
+bool DataFile::isCategorical(const Attribute *at)
 {
     uint index_in_GEOEAS_file = this->getFieldGEOEASIndex(at->getName());
     QList<QPair<uint, QString>>::iterator it = _categorical_attributes.begin();
@@ -376,7 +376,7 @@ bool DataFile::isCategorical(Attribute *at)
     return false;
 }
 
-CategoryDefinition *DataFile::getCategoryDefinition(Attribute *at)
+CategoryDefinition *DataFile::getCategoryDefinition(const Attribute *at)
 {
     assert( at && "DataFile::getCategoryDefinition(): attribute is nullptr.");
     uint index_in_GEOEAS_file = this->getFieldGEOEASIndex(at->getName());
