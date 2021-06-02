@@ -482,6 +482,26 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
         return false;
     }
 
+    //TODO: isUVWOfAGeoGrid() has a string comparison, so this may be a performance bottleneck.
+    if( isUVWOfAGeoGrid() ){
+        GeoGrid* parentGG = dynamic_cast<GeoGrid*>( getParent() );
+        return  parentGG->XYZtoIJK( x, y, z, i, j, k );
+    }
+
+    //TODO: isDataStoreOfaGeologicSection() has a string comparison, so this may be a performance bottleneck.
+    if( isDataStoreOfaGeologicSection() ){
+        {
+            static bool messageFired = false;
+            if( ! messageFired ){ //this is to avoid a flood of messages to the message panel, since this method
+                                  //is normally called multiple times.
+                Application::instance()->logError("CartesianGrid::XYZtoIJK(): the Cartesian grid belongs to a geologic section."
+                                                  " This operation is not currently supported. Report this to the developers.");
+                messageFired = true;
+            }
+        }
+        return false;
+    }
+
     //compute the indexes from the spatial location.
     double xWest = _x0 - _dx/2.0;
     double ySouth = _y0 - _dy/2.0;
