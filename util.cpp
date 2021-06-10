@@ -929,7 +929,7 @@ qint64 Util::getDirectorySize(const QString path)
 void Util::clearDirectory(const QString path)
 {
     QDir dir(path);
-    dir.setNameFilters(QStringList() << "*.*");
+    dir.setNameFilters(QStringList() << "*");
     dir.setFilter(QDir::Files);
     foreach(QString dirFile, dir.entryList()) //foreach is a Qt macro
     {
