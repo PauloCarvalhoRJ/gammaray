@@ -34,6 +34,10 @@ double TauModel::getFinalProbability(unsigned int categoryIndex) const
     double pa = m_probsMarginal[ categoryIndex ];
     double a = ( 1.0 - pa ) / pa;
 
+    //returns zero probability if the marginal probability is lower than 0.01%.
+    if( pa < 0.0001 )
+        return 0.0;
+
     //update ratio with the sources of information
     double x = 1.0;
     for( unsigned int sourceIndex = 0; sourceIndex < m_probsOtherSources.size(); ++sourceIndex ){
