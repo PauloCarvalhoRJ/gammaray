@@ -67,6 +67,7 @@ bool MCRFSim::isOKtoRun()
         m_lastError = "Global PDF not provided.";
         return false;
     } else {
+        m_pdf->readFromFS();
         m_dfPrimary = dynamic_cast<DataFile*>( m_atPrimary->getContainingFile() );
         if( ! m_dfPrimary ){
             m_lastError = "The file of input categorical variable is not a DataFile object.";
@@ -96,8 +97,8 @@ bool MCRFSim::isOKtoRun()
             m_lastError = "Category definition of input variable must be the same object as that the PDF is based on.";
             return false;
         }
-        if( m_pdf->hasZeroOrLessProb() ){
-            m_lastError = "PDF has zero or negative probability values.";
+        if( m_pdf->hasNegativeProbabilities() ){
+            m_lastError = "PDF has negative probability values.";
             return false;
         }
         m_pdf->loadPairs();
@@ -382,6 +383,10 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
             uint probColumnIndex = m_probFields[ categoryIndex ]->getAttributeGEOEASgivenIndex() - 1;
             double probabilityFromSecondary = simulationCell.readValueFromDataSet( probColumnIndex );
+            //if the value in the probability field is null, use the probability from the global PDF as default.
+            if( Util::almostEqual2sComplement( m_simGridNDV, probabilityFromSecondary, 1 ) ){
+                probabilityFromSecondary = m_pdf->get2ndValue( categoryIndex );
+            }
             tauModelCopy.setProbabilityFromSource( categoryIndex,
                                                   static_cast<uint>( ProbabilitySource::FROM_SECONDARY_DATA ),
                                                   probabilityFromSecondary );
