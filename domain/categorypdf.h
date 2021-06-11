@@ -26,6 +26,9 @@ public:
     /** Returns whether there is one (or more) zero (or less) probabilities. */
     bool hasZeroOrLessProb() const;
 
+    /** Returns whether there is one (or more) negative probabilities. */
+    bool hasNegativeProbabilities() const;
+
     /**
      * Returns a category code given a cumulative frequency.
      * The passed cumulative frequency is normally drawn from a random number generator.
