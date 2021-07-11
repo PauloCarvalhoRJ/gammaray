@@ -69,6 +69,33 @@ double CategoryPDF::sumProbs() const
     return sum;
 }
 
+std::vector<double> CategoryPDF::getProbabilities() const
+{
+    std::vector<double> result;
+    result.reserve( m_pairs.size() );
+    for( const QPair<int, double>& idp : m_pairs )
+        result.push_back( idp.second );
+    return result;
+}
+
+void CategoryPDF::setProbabilities( const std::vector<double> &probabilities )
+{
+    uint index = 0;
+    for( double prob : probabilities ){
+        m_pairs[index].second = prob;
+        ++index;
+    }
+}
+
+void CategoryPDF::forceSumToOne()
+{
+    std::vector<double> probs = getProbabilities();
+    double sum = std::accumulate(probs.begin(), probs.end(), 0.0);
+    //divide all elements to their sum.
+    std::transform(probs.begin(), probs.end(), probs.begin(), [sum](double &c){ return c/sum; });
+    setProbabilities( probs );
+}
+
 QIcon CategoryPDF::getIcon()
 {
     if( Util::getDisplayResolutionClass() == DisplayResolution::NORMAL_DPI)
