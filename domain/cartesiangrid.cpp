@@ -164,7 +164,33 @@ void CartesianGrid::setInfoFromOtherCG(CartesianGrid *other_cg, bool copyCategor
     if( copyCategoricalAttributesList )
         categorical_attributes = other_cg->getCategoricalAttributes();
     this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal,
-				   ndv, nsvar_var_trn_triads, categorical_attributes);
+                   ndv, nsvar_var_trn_triads, categorical_attributes);
+}
+
+void CartesianGrid::setInfoFromOtherCGonlyGridSpecs(CartesianGrid *other_cg)
+{
+    double x0 = 0.0, y0 = 0.0, z0 = 0.0;
+    double dx = 0.0, dy = 0.0, dz = 0.0;
+    uint nx = 0, ny = 0, nz = 0;
+    double rot = 0.0;
+    uint nreal = 0;
+    QString ndv;
+    QMap<uint, QPair<uint, QString> > nsvar_var_trn_triads;
+    QList< QPair<uint, QString> > categorical_attributes;
+    x0 = other_cg->getX0();
+    y0 = other_cg->getY0();
+    z0 = other_cg->getZ0();
+    nx = other_cg->getNX();
+    ny = other_cg->getNY();
+    nz = other_cg->getNZ();
+    dx = other_cg->getDX();
+    dy = other_cg->getDY();
+    dz = other_cg->getDZ();
+    rot = other_cg->getRot();
+    nreal = 1;
+    ndv = "";
+    this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal,
+                   ndv, nsvar_var_trn_triads, categorical_attributes);
 }
 
 void CartesianGrid::setInfoFromSVDFactor(const SVDFactor * factor)

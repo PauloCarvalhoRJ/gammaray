@@ -35,6 +35,13 @@ public:
      */
     void setInfoFromOtherCG( CartesianGrid* other_cg, bool copyCategoricalAttributesList = true );
 
+    /** Sets the cartesian grid metadata by copying only the grid parameters from another grid, specified by
+     * the given pointer.  Non-geometric metadata such as category variable list, no-data value, etc. are
+     * set to default values.  This method is usually called to create a new grid with the same parameters of
+     * another grid.
+     */
+    void setInfoFromOtherCGonlyGridSpecs( CartesianGrid* other_cg );
+
 	/** Sets the cartesian grid metadata with the grid parameters of the passed grid object.
 	 */
 	void setInfoFromSVDFactor( const SVDFactor* factor );

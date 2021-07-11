@@ -236,6 +236,7 @@ private slots:
     void onPopulateGridWithProportions();
     void onGeoGridExportAsGRDECL();
     void onExtractRegularSteps();
+    void onCreateGridSameGridSpecs();
 
 private:
     /**

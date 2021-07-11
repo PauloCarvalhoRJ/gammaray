@@ -507,6 +507,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
                 _projectContextMenu->addAction("Resample", this, SLOT(onResampleGrid()));
                 _projectContextMenu->addAction("Add random phase for FFT", this, SLOT(onAddRandomPhaseForFFT()));
+                _projectContextMenu->addAction("Create grid with same specs", this, SLOT(onCreateGridSameGridSpecs()));
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
@@ -996,6 +997,43 @@ void MainWindow::onExtractRegularSteps()
 
     //show the newly created object in main window's project tree
     Application::instance()->refreshProjectTree();
+}
+
+void MainWindow::onCreateGridSameGridSpecs()
+{
+    CartesianGrid* selected_cg = dynamic_cast<CartesianGrid*>( _right_clicked_file );
+
+    //sanity check
+    if( ! selected_cg ){
+        Application::instance()->logError("MainWindow::onCreateGridSameGridSpecs(): "
+                                          "selected file is not a Cartesian grid.");
+        return;
+    }
+
+    bool ok;
+    //propose a name based on the point set name.
+    QString proposed_name( _right_clicked_file->getName() );
+    proposed_name.append( "_new" );
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid file",
+                                             "New grid file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_cg_name.isEmpty()){
+        //make a tmp file path
+        QString file_path = Application::instance()->getProject()->getPath() + '/' + new_cg_name;
+
+        //create a new grid object corresponding to a file to be created in the tmp directory
+        CartesianGrid* cg = new CartesianGrid( file_path );
+
+        //set the geometry info entered by the user
+        cg->setInfoFromOtherCGonlyGridSpecs( selected_cg );
+
+        //create the physical GEO-EAS grid file with binary values forming a checkerboard pattern.
+        Util::createGEOEAScheckerboardGrid( cg, file_path );
+
+        //import the newly created grid file as a project item
+        Application::instance()->getProject()->importCartesianGrid( cg, new_cg_name );
+    }
 }
 
 void MainWindow::onRemoveFile()
