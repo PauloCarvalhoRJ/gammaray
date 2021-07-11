@@ -536,6 +536,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "SECTION" ){
                 _projectContextMenu->addAction("Convert to point set (centroids)", this, SLOT(onExtractSectionCentroids()));
             }
+            if( _right_clicked_file->getFileType() == "CATEGORYPDF" ){
+                _projectContextMenu->addAction("Make summation to 1.0", this, SLOT(onMakeSummationTo1()));
+            }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
         //build context menu for an attribute
@@ -1033,6 +1036,20 @@ void MainWindow::onCreateGridSameGridSpecs()
 
         //import the newly created grid file as a project item
         Application::instance()->getProject()->importCartesianGrid( cg, new_cg_name );
+    }
+}
+
+void MainWindow::onMakeSummationTo1()
+{
+    CategoryPDF* pdf = dynamic_cast<CategoryPDF*>( _right_clicked_file );
+    if( pdf ){
+        pdf->loadPairs();
+        pdf->forceSumToOne();
+        pdf->savePairs();
+        onEdit();
+    } else {
+        Application::instance()->logError("MainWindow::onMakeSummationTo1(): Unsupported file type: " +
+                                          _right_clicked_file->getFileType() );
     }
 }
 
