@@ -836,6 +836,23 @@ public:
         return (T(0) < value) - (value < T(0));
     }
 
+    /**
+     * Computes new values proportional to the original ones such that they are
+     * in the [0.0 1.0] range and sum up to 1.0.  This computation is done in-place.
+     */
+    static void softmax( std::vector<double>& in_out );
+
+    /**
+     * Prints a vector's contents to std::out.  This is usually called for debugging
+     * purposes.
+     */
+    template <typename T>
+    static int print( const std::vector<T>& vec ) {
+        for (const auto value: vec)
+          std::cout << value << ' ';
+        std::cout << '\n';
+    }
+
 };
 
 #endif // UTIL_H

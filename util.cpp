@@ -2570,3 +2570,15 @@ QString Util::getParentDirectory(QString path)
     QDir dir = fileInfo.dir();
     return dir.canonicalPath();
 }
+
+void Util::softmax(std::vector<double> &in_out )
+{
+    ulong size = static_cast<ulong>( in_out.size() );
+
+    double sum = 0;
+    for (ulong i = 0; i < size; ++i)
+      sum += std::exp( in_out[i] );
+
+    for (ulong i = 0; i < size; ++i)
+      in_out[i] = std::exp( in_out[i] ) / sum;
+}
