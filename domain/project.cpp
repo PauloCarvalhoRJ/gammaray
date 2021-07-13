@@ -386,6 +386,48 @@ QString Project::getPath()
     return this->_project_directory->canonicalPath();
 }
 
+void Project::addFile(File *file)
+{
+    if( file->getFileType() == "VERTICALTRANSIOGRAMMODEL" ){
+        addVerticalTransiogramModel( dynamic_cast<VerticalTransiogramModel*>( file ) );
+    } else if( file->getFileType() == "CATEGORYPDF" ){
+        addCategoryPDF( dynamic_cast<CategoryPDF*>( file ) );
+    } else if( file->getFileType() == "CATEGORYDEFINITION" ){
+        addCategoryDefinition( dynamic_cast<CategoryDefinition*>( file ) );
+    } else if( file->getFileType() == "CARTESIANGRID" ){
+        addDataFile( dynamic_cast<CartesianGrid*>( file ) );
+    } else if( file->getFileType() == "POINTSET" ){
+        addDataFile( dynamic_cast<PointSet*>( file ) );
+    } else if( file->getFileType() == "SEGMENTSET" ){
+        addDataFile( dynamic_cast<SegmentSet*>( file ) );
+    } else if( file->getFileType() == "VMODEL" ){
+        addVariogramModel( dynamic_cast<VariogramModel*>( file ) );
+    } else if( file->getFileType() == "FACIESTRANSITIONMATRIX" ){
+        addResourceFile( dynamic_cast<FaciesTransitionMatrix*>( file ) );
+    } else if( file->getFileType() == "VERTICALPROPORTIONCURVE" ){
+        addResourceFile( dynamic_cast<VerticalProportionCurve*>( file ) );
+    } else if( file->getFileType() == "GEOGRID" ){
+        addDataFile( dynamic_cast<GeoGrid*>( file ) );
+    } else if( file->getFileType() == "SECTION" ){
+        addSection( dynamic_cast<Section*>( file ) );
+    } else if( file->getFileType() == "PLOT" ){
+        addPlot( dynamic_cast<Plot*>( file ) );
+    } else if( file->getFileType() == "UNIDIST" ){
+        addDistribution( dynamic_cast<UnivariateDistribution*>( file ) );
+    } else if( file->getFileType() == "BIDIST" ){
+        addDistribution( dynamic_cast<BivariateDistribution*>( file ) );
+    } else if( file->getFileType() == "EXPVARIOGRAM" ){
+        addExperimentalVariogram( dynamic_cast<ExperimentalVariogram*>( file ) );
+    } else if( file->getFileType() == "THRESHOLDCDF" ){
+        addThresholdCDF( dynamic_cast<ThresholdCDF*>( file ) );
+    } else if( file->getFileType() == "UNIVARIATECATEGORYCLASSIFICATION" ){
+        addResourceFile( dynamic_cast<UnivariateCategoryClassification*>( file ) );
+    } else {
+        Application::instance()->logError("Project::addFile(): Unsupported file type: " + file->getFileType() );
+        return;
+    }
+}
+
 void Project::addDataFile(DataFile *df)
 {
 	QFile dataFile( df->getPath() );
@@ -444,6 +486,13 @@ void Project::addThresholdCDF(ThresholdCDF *tcdf)
 {
     this->_resources->addChild( tcdf );
     tcdf->setParent( this->_resources );
+    this->save();
+}
+
+void Project::addCategoryDefinition(CategoryDefinition *cat_def)
+{
+    this->_resources->addChild( cat_def );
+    cat_def->setParent( this->_resources );
     this->save();
 }
 

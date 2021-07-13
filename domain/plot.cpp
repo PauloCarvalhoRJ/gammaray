@@ -8,6 +8,12 @@ Plot::Plot( QString path ) : File( path )
 {
 }
 
+File *Plot::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new Plot( duplicateFilePath );
+}
+
 QIcon Plot::getIcon()
 {
     QFileInfo fileInfo( this->_path);

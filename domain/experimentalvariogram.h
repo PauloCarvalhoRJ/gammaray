@@ -13,6 +13,7 @@ public:
 
     /** Sets experimental variogram metadata. */
     void setInfo( const QString vargplt_par_file );
+
     /** Sets experimental variogram metadata from the accompaining .md file, if it exists.
      Nothing happens if the metadata file does not exist.  If it exists, it calls
      #setInfo(const QString) with the metadata read from the .md file.*/
@@ -31,7 +32,7 @@ public:
     virtual void updateMetaDataFile();
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; }
-
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 // ProjectComponent interface
 public:

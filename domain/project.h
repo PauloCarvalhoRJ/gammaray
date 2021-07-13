@@ -18,12 +18,14 @@ class ExperimentalVariogram;
 class VariogramModel;
 class Distribution;
 class ThresholdCDF;
+class CategoryDefinition;
 class CategoryPDF;
 class ProjectComponent;
 class IJAbstractCartesianGrid;
 class VerticalTransiogramModel;
 class VerticalProportionCurve;
 class Section;
+class FaciesTransitionMatrix;
 
 /**
  * @brief The Project class holds all information about a geostats study.
@@ -52,6 +54,11 @@ public:
     /** Returns the path to the project directory. */
     QString getPath();
 
+    /** Adds the given File object to this project. The exact behavior depends
+     * on the concrete class derived from File.
+     */
+    void addFile( File *file );
+
     /** Adds the given data file object to this project. */
     void addDataFile( DataFile *df );
 
@@ -69,6 +76,9 @@ public:
 
     /** Adds the given threshold c.d.f. object to this project. */
     void addThresholdCDF( ThresholdCDF *tcdf );
+
+    /** Adds the given category definition object to this project. */
+    void addCategoryDefinition( CategoryDefinition *cat_def );
 
     /** Adds the given category p.d.f. object to this project. */
     void addCategoryPDF( CategoryPDF *cpdf );

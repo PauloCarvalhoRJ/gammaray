@@ -23,6 +23,7 @@ public:
     virtual bool isEditable(){ return true; }
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; } //Although a CDF is technically a distribution, it doesn't inherit Distribution
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 };
 
 #endif // THRESHOLDCDF_H

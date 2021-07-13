@@ -30,6 +30,7 @@ public:
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return true; }
     virtual void readFromFS();
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 // ProjectComponent interface
 public:

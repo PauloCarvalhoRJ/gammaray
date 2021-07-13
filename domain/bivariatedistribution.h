@@ -19,6 +19,7 @@ public:
     QString getFileType() const { return "BIDIST"; }
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return true; }
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 // ProjectComponent interface
 public:

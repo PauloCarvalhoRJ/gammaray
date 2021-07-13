@@ -497,6 +497,14 @@ void SegmentSet::updateMetaDataFile()
     file.close();
 }
 
+File *SegmentSet::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    SegmentSet* newSS = new SegmentSet( duplicateFilePath );
+    newSS->setInfoFromMetadataFile();
+    return newSS;
+}
+
 double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
 {
     switch ( whichCoord ) {

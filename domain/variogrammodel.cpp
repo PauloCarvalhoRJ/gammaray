@@ -257,7 +257,13 @@ VariogramModel VariogramModel::makeVModelWithoutNugget()
 	result.m_Azimuth = m_Azimuth;
 	result.m_Dip = m_Dip;
 	result.m_Roll = m_Roll;
-	return result;
+    return result;
+}
+
+File *VariogramModel::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new VariogramModel( duplicateFilePath );
 }
 
 bool VariogramModel::forceReread() const

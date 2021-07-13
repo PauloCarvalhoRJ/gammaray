@@ -643,6 +643,12 @@ void FaciesTransitionMatrix::deleteFromFS()
     file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
 }
 
+File *FaciesTransitionMatrix::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new FaciesTransitionMatrix( duplicateFilePath, m_associatedCategoryDefinitionName );
+}
+
 spectral::array FaciesTransitionMatrix::toSpectralArray()
 {
     //Make a spectral-compatible copy of this matrix.

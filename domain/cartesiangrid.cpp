@@ -602,6 +602,14 @@ void CartesianGrid::updateMetaDataFile()
     file.close();
 }
 
+File *CartesianGrid::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    CartesianGrid* newCG = new CartesianGrid( duplicateFilePath );
+    newCG->setInfoFromMetadataFile();
+    return newCG;
+}
+
 QIcon CartesianGrid::getIcon()
 {
 	if( m_nreal == 1){

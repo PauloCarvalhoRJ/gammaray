@@ -1281,7 +1281,28 @@ void GeoGrid::deleteFromFS()
 	//in addition, GeoGrids have a mesh file, which also needs to be deleted.
 	QFile file(this->getMeshFilePath());
 	file.remove(); // TODO: throw exception if remove() returns false (fails).  Also see
-				   // QIODevice::errorString() to see error message.
+    // QIODevice::errorString() to see error message.
+}
+
+File *GeoGrid::duplicatePhysicalFiles(const QString new_file_name)
+{
+    //duplicate the data and metadata files.
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+
+    //the GeoGrid has an extra file: the mesh file.  Duplicate it too.
+    QString originalMeshFilePath = getMeshFilePath();
+    QFileInfo qfileInfoMesh( originalMeshFilePath );
+    if( ! qfileInfoMesh.exists() )
+        Application::instance()->logWarn("GeoGrid::duplicateDataAndMetaDataFiles(): mesh file (.mesh) not found.");
+    QString directoryPath = qfileInfoMesh.absolutePath();
+    QString duplicateMetaDataFilePath = directoryPath + '/' + new_file_name + ".mesh";
+    if( qfileInfoMesh.exists() )
+        Util::copyFile( originalMeshFilePath, duplicateMetaDataFilePath);
+
+    GeoGrid* newGG = new GeoGrid( duplicateFilePath );
+    newGG->updateChildObjectsCollection();
+    newGG->setInfoFromMetadataFile();
+    return newGG;
 }
 
 QIcon GeoGrid::getIcon()

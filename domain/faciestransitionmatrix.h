@@ -295,6 +295,7 @@ public:
     virtual bool isDataFile();
     virtual bool isDistribution();
     virtual void deleteFromFS();
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 protected:
     ///--------------data read from metadata file------------

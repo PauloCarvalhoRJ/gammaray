@@ -473,9 +473,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
             _right_clicked_file = static_cast<File*>( index.internalPointer() );
-            //all files should be removable
+            //all files should be removable and copiable
             _projectContextMenu->addAction("Remove from project", this, SLOT(onRemoveFile()));
             _projectContextMenu->addAction("Remove and delete", this, SLOT(onRemoveAndDeleteFile()));
+            _projectContextMenu->addAction("Duplicate", this, SLOT(onDuplicateFile()));
             //for all those files editable with GammaRay editors (normaly any file that is not a data file)
             if( _right_clicked_file->isEditable() )
                 _projectContextMenu->addAction("Edit", this, SLOT(onEdit()));
@@ -1050,6 +1051,29 @@ void MainWindow::onMakeSummationTo1()
     } else {
         Application::instance()->logError("MainWindow::onMakeSummationTo1(): Unsupported file type: " +
                                           _right_clicked_file->getFileType() );
+    }
+}
+
+void MainWindow::onDuplicateFile()
+{
+    //propose a name based on the point set name.
+    bool ok;
+    QString proposed_name( _right_clicked_file->getName() );
+    proposed_name.append( "_copy" );
+    QString new_file_name = QInputDialog::getText(this, "Name the file",
+                                             "New file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_file_name.isEmpty()){
+        File* fileNew = _right_clicked_file->duplicatePhysicalFiles( new_file_name );
+        if( ! fileNew ){
+            Application::instance()->logError("MainWindow::onDuplicateFile(): operation failed.");
+            return;
+        } else {
+            Application::instance()->getProject()->addFile( fileNew );
+            //refreshes project tree display
+            Application::instance()->refreshProjectTree();
+        }
     }
 }
 

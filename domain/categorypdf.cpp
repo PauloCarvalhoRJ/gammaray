@@ -119,7 +119,13 @@ void CategoryPDF::save(QTextStream *txt_stream)
     }
 
     (*txt_stream) << this->getFileType() << ":" << this->getFileName()
-                                         << ',' << usedCategoryDefinitionName << '\n';
+                  << ',' << usedCategoryDefinitionName << '\n';
+}
+
+File *CategoryPDF::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new CategoryPDF( getCategoryDefinition(), duplicateFilePath );
 }
 
 bool CategoryPDF::setCategoryDefinition()

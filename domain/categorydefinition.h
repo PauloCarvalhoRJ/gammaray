@@ -68,6 +68,7 @@ public:
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; }
     virtual void clearLoadedContents();
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 protected:
     /** This member stores the pointers to the created GSLibParTypes

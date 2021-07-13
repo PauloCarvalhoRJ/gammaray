@@ -2580,5 +2580,40 @@ void Util::softmax(std::vector<double> &in_out )
       sum += std::exp( in_out[i] );
 
     for (ulong i = 0; i < size; ++i)
-      in_out[i] = std::exp( in_out[i] ) / sum;
+        in_out[i] = std::exp( in_out[i] ) / sum;
+}
+
+int Util::findAndReplace(const QString text_file_path,
+                          const QString RE_find_what,
+                          const QString replace_with)
+{
+    int countOfLinesWithReplacements = 0;
+    //open a new file for output
+    QFile outputFile( QString(text_file_path).append(".new") );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+    //open the current file for reading
+    QFile inputFile( text_file_path );
+    if ( inputFile.open(QIODevice::ReadOnly | QFile::Text ) ) {
+       QTextStream in(&inputFile);
+       while ( !in.atEnd() ){
+          QString line = in.readLine();
+          QString originalLine = line;
+          //replaces text
+          line.replace(QRegularExpression(RE_find_what), replace_with);
+          //writes the line with the replaced text to the new file
+          out << line << '\n';
+          //increases the counter if at least one replacemente took place.
+          if( originalLine != line )
+              ++countOfLinesWithReplacements;
+       }
+       inputFile.close();
+       //closes the output file
+       outputFile.close();
+       //deletes current file
+       inputFile.remove();
+       //renames the new file
+       outputFile.rename( QFile( text_file_path ).fileName() );
+    }
+    return countOfLinesWithReplacements;
 }

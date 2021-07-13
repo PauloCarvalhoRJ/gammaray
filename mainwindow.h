@@ -238,6 +238,7 @@ private slots:
     void onExtractRegularSteps();
     void onCreateGridSameGridSpecs();
     void onMakeSummationTo1();
+    void onDuplicateFile();
 
 private:
     /**

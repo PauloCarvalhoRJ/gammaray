@@ -853,6 +853,15 @@ public:
         std::cout << '\n';
     }
 
+    /**
+     * Does a find-and-replace in a text file.  The search string must
+     * be a regular expression.
+     * @returns The number of file lines where at least one replacement took place.
+     */
+    static int findAndReplace( const QString text_file_path,
+                               const QString RE_find_what,
+                               const QString replace_with );
+
 };
 
 #endif // UTIL_H

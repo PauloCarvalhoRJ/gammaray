@@ -17,3 +17,9 @@ void ThresholdCDF::save(QTextStream *txt_stream)
 {
     (*txt_stream) << this->getFileType() << ":" << this->getFileName() << '\n';
 }
+
+File *ThresholdCDF::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new ThresholdCDF( duplicateFilePath );
+}

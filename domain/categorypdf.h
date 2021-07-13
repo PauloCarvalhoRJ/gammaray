@@ -70,6 +70,7 @@ public:
     virtual bool isEditable(){ return true; }
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; } //Athough a PDF is technically a distribution, it doesn't inherit Distribution
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 private:
     CategoryDefinition *m_categoryDefinition;
