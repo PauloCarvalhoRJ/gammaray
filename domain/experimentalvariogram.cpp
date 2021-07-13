@@ -45,6 +45,39 @@ QString ExperimentalVariogram::getPathToVargpltPar()
     return m_path_to_vargplt_par;
 }
 
+void ExperimentalVariogram::deleteFromFS()
+{
+    File::deleteFromFS(); //delete the file itself.
+
+    //also deletes the metadata file
+    {
+        QFile file( this->getMetaDataFilePath() );
+        file.remove();
+    }
+
+    //also deletes the .vargplt file used for plotting afterwards
+    {
+        QFile file( getPathToVargpltPar() );
+        file.remove();
+    }
+
+
+    //also deletes the .legend text file used for plotting legends in the variogram chart
+    {
+        //Get the directory where the files are
+        QString dataFilePath = getPath();
+        QFileInfo qfileInfoDataFile( dataFilePath );
+        QString directoryPath = qfileInfoDataFile.absolutePath();
+
+        //Get the path to the .legend file
+        QString pathOfLegendFile  = directoryPath + '/' + getName() + ".legend";
+
+        //delete it
+        QFile file( pathOfLegendFile );
+        file.remove();
+    }
+}
+
 void ExperimentalVariogram::updateMetaDataFile()
 {
     QFile file( this->getMetaDataFilePath() );

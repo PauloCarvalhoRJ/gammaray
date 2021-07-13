@@ -27,6 +27,7 @@ public:
 
 // File interface
 public:
+    virtual void deleteFromFS();
     QString getFileType() const { return "EXPVARIOGRAM"; }
     virtual bool canHaveMetaData(){ return true; }
     virtual void updateMetaDataFile();
