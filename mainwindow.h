@@ -316,6 +316,15 @@ private:
       */
     void makeMenuMovingWindowFilters();
 
+    /**
+     * The pointer to the sub-menu "Data transforms" of the project tree context menu.
+     */
+    QMenu* m_subMenuDataTransforms;
+    /**
+      * Creates the items of sub-menu "Data transforms".
+      */
+    void makeMenuDataTransforms();
+
 	/**
 	 * Lists the attributes currently being viewed in the quick view dialog.
 	 */

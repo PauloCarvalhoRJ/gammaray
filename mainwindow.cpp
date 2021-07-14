@@ -117,7 +117,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
     m_subMenuMapAs( new QMenu("Map as", this) ),
     m_subMenuFlipData( new QMenu("Flip data", this) ),
-    m_subMenuMovingWindowFilters( new QMenu("Moving window filter", this) )
+    m_subMenuMovingWindowFilters( new QMenu("Moving window filter", this) ),
+    m_subMenuDataTransforms( new QMenu("Data transforms", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -590,11 +591,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 makeMenuMovingWindowFilters();
                 _projectContextMenu->addMenu( m_subMenuMovingWindowFilters );
-                _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
-                _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
-                _projectContextMenu->addAction("EMD analysis", this, SLOT(onEMD()));
-                _projectContextMenu->addAction("Gabor analysis", this, SLOT(onGabor()));
-                _projectContextMenu->addAction("Wavelet transform", this, SLOT(onWavelet()));
+                makeMenuDataTransforms();
+                _projectContextMenu->addMenu( m_subMenuDataTransforms );
                 _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
@@ -3750,6 +3748,16 @@ void MainWindow::makeMenuMovingWindowFilters()
     m_subMenuMovingWindowFilters->addAction( "Mean", this,   SLOT(onFilterMean()));
     m_subMenuMovingWindowFilters->addAction( "Median", this, SLOT(onFilterMedian()));
     m_subMenuMovingWindowFilters->addAction( "Gaussian", this,  SLOT(onFilterGaussian()));
+}
+
+void MainWindow::makeMenuDataTransforms()
+{
+    m_subMenuDataTransforms->clear(); //remove any previously added item actions
+    m_subMenuDataTransforms->addAction("FFT", this, SLOT(onFFT()));
+    m_subMenuDataTransforms->addAction("SVD factorization", this, SLOT(onSVD()));
+    m_subMenuDataTransforms->addAction("EMD analysis", this, SLOT(onEMD()));
+    m_subMenuDataTransforms->addAction("Gabor analysis", this, SLOT(onGabor()));
+    m_subMenuDataTransforms->addAction("Wavelet transform", this, SLOT(onWavelet()));
 }
 
 void MainWindow::makeMenuMapAs()
