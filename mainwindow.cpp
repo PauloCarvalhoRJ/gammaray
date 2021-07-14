@@ -1140,10 +1140,10 @@ void MainWindow::onNDVEstimationThinPlateSpline()
         return;
     }
 
-    //ask the user for power parameter.
+    //ask the user for lambda parameter.
     bool ok = false;
     double lambda = QInputDialog::getDouble(this, "Enter lambda parameter",
-                      "Lambda (0.0 = match all data; large value ~ least squares plane): ", 10.0, 0.0, 100000000.0, 0,
+                      "Lambda (0.0 = match all data; large value ~ least squares plane): ", 0.1, 0.0, 100000.0, 2,
                        &ok);
     if(!ok) return;
 
