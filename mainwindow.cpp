@@ -1107,7 +1107,7 @@ void MainWindow::onNDVEstimationShepard()
 
     //open the renaming dialog
     QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
-                                             "New Gaussian filtered variable:", QLineEdit::Normal,
+                                             "New interpolated variable:", QLineEdit::Normal,
                                              proposed_name, &ok);
     if( ! ok ){
         return;
@@ -1117,7 +1117,7 @@ void MainWindow::onNDVEstimationShepard()
     long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
     spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
 
-    //Perform the Gaussian filter.
+    //Perform the estimation.
     spectral::array result = ImageJockeyUtils::interpolateNullValuesShepard( *a,
                                                                              *cg,
                                                                              power,
@@ -1128,6 +1128,70 @@ void MainWindow::onNDVEstimationShepard()
 
     //save the filtered result to the grid in the project
     cg->appendAsNewVariable(new_variable_name, result );
+}
+
+void MainWindow::onNDVEstimationThinPlateSpline()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //ask the user for power parameter.
+    bool ok = false;
+    double lambda = QInputDialog::getDouble(this, "Enter lambda parameter",
+                      "Lambda (0.0 = match all data; large value ~ least squares plane): ", 10.0, 0.0, 100000000.0, 0,
+                       &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_NDV_est_spline" );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New interpolated variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the estimation.
+    int execution_status;
+    spectral::array result = ImageJockeyUtils::interpolateNullValuesThinPlateSpline( *a,
+                                                                                     *cg,
+                                                                                     lambda,
+                                                                                     execution_status );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    switch( execution_status ){
+    case 0: //normal termination
+        //save the filtered result to the grid in the project
+        cg->appendAsNewVariable( new_variable_name, result );
+        break;
+    case 1: //abend
+        Application::instance()->logError("MainWindow::onNDVEstimationThinPlateSpline(): "
+                                          "singular matrix.  Operation failed.", true);
+        break;
+    case 2: //abend
+        Application::instance()->logError("MainWindow::onNDVEstimationThinPlateSpline(): "
+                                          "premature termination.  Operation failed.", true);
+        break;
+    case 3: //abend
+        Application::instance()->logError("MainWindow::onNDVEstimationThinPlateSpline(): "
+                                          "innacurate solution.  Operation failed.", true);
+        break;
+    }
+
 }
 
 void MainWindow::onRemoveFile()
@@ -3820,6 +3884,7 @@ void MainWindow::makeMenuNDVestimation()
     m_subMenuNDVestimation->clear(); //remove any previously added item actions
     m_subMenuNDVestimation->addAction("via kriging", this, SLOT(onNDVEstimation()));
     m_subMenuNDVestimation->addAction("via Shepard's method", this, SLOT(onNDVEstimationShepard()));
+    m_subMenuNDVestimation->addAction("via thin plate spline", this, SLOT(onNDVEstimationThinPlateSpline()));
 }
 
 void MainWindow::makeMenuMapAs()

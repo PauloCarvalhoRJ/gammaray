@@ -240,6 +240,7 @@ private slots:
     void onMakeSummationTo1();
     void onDuplicateFile();
     void onNDVEstimationShepard();
+    void onNDVEstimationThinPlateSpline();
 
 private:
     /**
