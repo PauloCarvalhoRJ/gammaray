@@ -118,7 +118,8 @@ MainWindow::MainWindow(QWidget *parent) :
     m_subMenuMapAs( new QMenu("Map as", this) ),
     m_subMenuFlipData( new QMenu("Flip data", this) ),
     m_subMenuMovingWindowFilters( new QMenu("Moving window filter", this) ),
-    m_subMenuDataTransforms( new QMenu("Data transforms", this) )
+    m_subMenuDataTransforms( new QMenu("Data transforms", this) ),
+    m_subMenuNDVestimation( new QMenu("NDV estimation", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -593,7 +594,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addMenu( m_subMenuMovingWindowFilters );
                 makeMenuDataTransforms();
                 _projectContextMenu->addMenu( m_subMenuDataTransforms );
-                _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
+                makeMenuNDVestimation();
+                _projectContextMenu->addMenu( m_subMenuNDVestimation );
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
                 _projectContextMenu->addAction("Automatic variogram fitting", this, SLOT(onAutoVarFit()));
@@ -1073,6 +1075,59 @@ void MainWindow::onDuplicateFile()
             Application::instance()->refreshProjectTree();
         }
     }
+}
+
+void MainWindow::onNDVEstimationShepard()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //ask the user for power parameter.
+    bool ok = false;
+    double power = QInputDialog::getDouble(this, "Enter power parameter",
+                      "Inverse distance power: ", 2.0, 0.1, 100.0, 1,
+                       &ok);
+    if(!ok) return;
+
+    //ask the user for max distance factor.
+    ok = false;
+    double dist_factor = QInputDialog::getDouble(this, "Enter max. distance factor",
+                         "Max. distance factor (1.0 = use all data, 0.0 = min.): ", 0.1, 0.0, 1.0, 1,
+                         &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_NDV_est_Shepard" );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New Gaussian filtered variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the Gaussian filter.
+    spectral::array result = ImageJockeyUtils::interpolateNullValuesShepard( *a,
+                                                                             *cg,
+                                                                             power,
+                                                                             dist_factor );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    //save the filtered result to the grid in the project
+    cg->appendAsNewVariable(new_variable_name, result );
 }
 
 void MainWindow::onRemoveFile()
@@ -3758,6 +3813,13 @@ void MainWindow::makeMenuDataTransforms()
     m_subMenuDataTransforms->addAction("EMD analysis", this, SLOT(onEMD()));
     m_subMenuDataTransforms->addAction("Gabor analysis", this, SLOT(onGabor()));
     m_subMenuDataTransforms->addAction("Wavelet transform", this, SLOT(onWavelet()));
+}
+
+void MainWindow::makeMenuNDVestimation()
+{
+    m_subMenuNDVestimation->clear(); //remove any previously added item actions
+    m_subMenuNDVestimation->addAction("via kriging", this, SLOT(onNDVEstimation()));
+    m_subMenuNDVestimation->addAction("via Shepard's method", this, SLOT(onNDVEstimationShepard()));
 }
 
 void MainWindow::makeMenuMapAs()
