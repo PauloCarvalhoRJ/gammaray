@@ -70,19 +70,39 @@ long GridFile::append(const QString columnName,
 {
 	long index = addEmptyDataColumn( columnName, m_nI * m_nJ * m_nK );
 
+    bool hasNDV = hasNoDataValue();
+    double NDVasDouble = getNoDataValueAsDouble();
+    bool NaN_found_but_no_NDV = false;
+
 	ulong idx = 0;
 	for (ulong i = 0; i < m_nI; ++i) {
 		for (ulong j = 0; j < m_nJ; ++j) {
 			for (ulong k = 0; k < m_nK; ++k) {
 				double value = array.d_[idx];
+                //if there is an invalid value, replace it with the destination file's NDV
+                //or a default value if not (warn user after).
+                if( !std::isfinite( value ) ){
+                    if( !hasNDV ){
+                        value = -999.0;
+                        NaN_found_but_no_NDV = true;
+                    } else {
+                        value = NDVasDouble;
+                    }
+                }
 				setDataIJK( index, i, j, k, value );
 				++idx;
 			}
 		}
 	}
 
+    if( NaN_found_but_no_NDV )
+        Application::instance()->logWarn("GridFile::append(): NaNs were encountered but the destination grid file"
+                                          " does not have no-data value configured.  -999 was used as default.", true);
+
+
 	if( idx != m_nI * m_nJ * m_nK )
-		Application::instance()->logError("GridFile::append(): mismatch between number of data values added and grid cell count.");
+        Application::instance()->logError("GridFile::append(): mismatch between number of data values"
+                                          " added and grid cell count.");
 
 
     //if the new data column is to be a categorical variable
