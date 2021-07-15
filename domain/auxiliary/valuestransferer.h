@@ -31,6 +31,7 @@ private:
     bool transferFromCGtoPS();
     bool transferFromCGtoCG();
     bool transferFromCGtoSection();
+    bool transferFromPStoCG();
 };
 
 #endif // VALUESTRANSFERER_H
