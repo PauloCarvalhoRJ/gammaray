@@ -599,6 +599,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
                 _projectContextMenu->addAction("Automatic variogram fitting", this, SLOT(onAutoVarFit()));
+                _projectContextMenu->addAction("Map ridges, valleys, peaks or bottoms", this, SLOT(onMapRidgesOrValleys()));
                 // TODO: ROAD WORK
                 //_projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
@@ -1192,6 +1193,102 @@ void MainWindow::onNDVEstimationThinPlateSpline()
         break;
     }
 
+}
+
+void MainWindow::onMapRidgesOrValleys()
+{
+    //the parent file is surely a CartesianGrid.
+    CartesianGrid *cg = dynamic_cast<CartesianGrid*>( _right_clicked_attribute->getContainingFile() );
+
+    //which feature to map?
+    QMessageBox msgBox;
+    msgBox.setText("Which feature to map?");
+    QAbstractButton* pButtonRidges = msgBox.addButton(tr("Ridges"), QMessageBox::YesRole);
+    QAbstractButton* pButtonValleys = msgBox.addButton(tr("Valleys"), QMessageBox::NoRole);
+    QAbstractButton* pButtonPeaks = msgBox.addButton(tr("Peaks"), QMessageBox::ApplyRole);
+    QAbstractButton* pButtonBottoms = msgBox.addButton(tr("Bottoms"), QMessageBox::ResetRole);
+    msgBox.exec();
+
+    //suggest an appropriate new variable name
+    QString suggestedNameForOutputVariable = _right_clicked_attribute->getName();
+    if( msgBox.clickedButton() == pButtonRidges ){
+        suggestedNameForOutputVariable += "_ridges";
+    }else if( msgBox.clickedButton() == pButtonValleys ){
+        suggestedNameForOutputVariable += "_valleys";
+    }else if( msgBox.clickedButton() == pButtonPeaks ){
+        suggestedNameForOutputVariable += "_peaks";
+    }else if( msgBox.clickedButton() == pButtonBottoms ){
+        suggestedNameForOutputVariable += "_bottoms";
+    }
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new grid",
+                                             "New grid name:", QLineEdit::Normal,
+                                             suggestedNameForOutputVariable, &ok );
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //get the grid dimensions
+    uint nI = cg->getNI();
+    uint nJ = cg->getNJ();
+    uint nK = cg->getNK();
+
+    //user enters the half-window size
+    int halfWindowSize = QInputDialog::getInt(this, "Set half window size",
+                         "half search window size in cells:", 5, 1,
+                         std::max( std::max( nI, nJ ), nK ),
+                         1, &ok);
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //user enters the extremum thresold
+    double thresholdAbs = QInputDialog::getDouble(this, "Set extremum threshold",
+                         "Extrema smaller than this are discarded (0.0 = no discard):",
+                         0.0, 0.0, 100000000.0, 6, &ok);
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //Get input data as a raw data array
+    spectral::arrayPtr inputData( cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() ) ) ;
+
+    //Perform the computation according to the user choices
+    int count;
+    spectral::array result;
+    if( msgBox.clickedButton() == pButtonRidges ){
+        result = spectral::get_ridges_or_valleys( *inputData,
+                                                  spectral::ExtremumType::MAXIMUM ,
+                                                  halfWindowSize,
+                                                  thresholdAbs,
+                                                  count );
+    }else if( msgBox.clickedButton() == pButtonValleys ){
+        result = spectral::get_ridges_or_valleys( *inputData,
+                                                  spectral::ExtremumType::MINIMUM ,
+                                                  halfWindowSize,
+                                                  thresholdAbs,
+                                                  count );
+    }else if( msgBox.clickedButton() == pButtonPeaks ){
+        result = spectral::get_extrema_cells( *inputData,
+                                              spectral::ExtremumType::MAXIMUM ,
+                                              halfWindowSize,
+                                              thresholdAbs,
+                                              count );
+    }else if( msgBox.clickedButton() == pButtonBottoms ){
+        result = spectral::get_extrema_cells( *inputData,
+                                              spectral::ExtremumType::MINIMUM ,
+                                              halfWindowSize,
+                                              thresholdAbs,
+                                              count );
+    }
+
+    //writes out the result to the grid
+    cg->append( new_var_name, result );
 }
 
 void MainWindow::onRemoveFile()

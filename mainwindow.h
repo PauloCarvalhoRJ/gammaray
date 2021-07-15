@@ -241,6 +241,7 @@ private slots:
     void onDuplicateFile();
     void onNDVEstimationShepard();
     void onNDVEstimationThinPlateSpline();
+    void onMapRidgesOrValleys();
 
 private:
     /**
