@@ -242,6 +242,7 @@ private slots:
     void onNDVEstimationShepard();
     void onNDVEstimationThinPlateSpline();
     void onMapRidgesOrValleys();
+    void onSkeletonize();
 
 private:
     /**

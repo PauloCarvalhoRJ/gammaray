@@ -600,6 +600,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
                 _projectContextMenu->addAction("Automatic variogram fitting", this, SLOT(onAutoVarFit()));
                 _projectContextMenu->addAction("Map ridges, valleys, peaks or bottoms", this, SLOT(onMapRidgesOrValleys()));
+                _projectContextMenu->addAction("Skeletonize", this, SLOT(onSkeletonize()));
                 // TODO: ROAD WORK
                 //_projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
@@ -1223,8 +1224,8 @@ void MainWindow::onMapRidgesOrValleys()
 
     //user enters the name for the new variable
     bool ok;
-    QString new_var_name = QInputDialog::getText(this, "Create new grid",
-                                             "New grid name:", QLineEdit::Normal,
+    QString new_var_name = QInputDialog::getText(this, "Create new grid variable",
+                                             "New variable name:", QLineEdit::Normal,
                                              suggestedNameForOutputVariable, &ok );
     //abort if the user cancels the input box
     if ( !ok || new_var_name.isEmpty() ){
@@ -1286,6 +1287,39 @@ void MainWindow::onMapRidgesOrValleys()
                                               thresholdAbs,
                                               count );
     }
+
+    //writes out the result to the grid
+    cg->append( new_var_name, result );
+}
+
+void MainWindow::onSkeletonize()
+{
+    //the parent file is surely a CartesianGrid.
+    CartesianGrid *cg = dynamic_cast<CartesianGrid*>( _right_clicked_attribute->getContainingFile() );
+
+    //suggest an appropriate new variable name
+    QString suggestedNameForOutputVariable = _right_clicked_attribute->getName() + "_skeleton";
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new grid variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             suggestedNameForOutputVariable, &ok );
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //get the grid dimensions
+    uint nI = cg->getNI();
+    uint nJ = cg->getNJ();
+    uint nK = cg->getNK();
+
+    //Get input data as a raw data array
+    spectral::arrayPtr inputData( cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() ) ) ;
+
+    //Perform the computation
+    spectral::array result = ImageJockeyUtils::skeletonize( *inputData );
 
     //writes out the result to the grid
     cg->append( new_var_name, result );
