@@ -1077,7 +1077,8 @@ spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
                 index[0] = i;
                 index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                 index[2] = nK - 1 - k;
-                unsigned char pxValue = itkImage->GetPixel( index );
+                //unsigned char pxValue = itkImage->GetPixel( index );
+                unsigned char pxValue = rescaler->GetOutput()->GetPixel( index );
                 if( pxValue )
                     //the cells marked as valid receive the value from the original input data.
                     result( i, j, k ) = inputData( i, j, k );
