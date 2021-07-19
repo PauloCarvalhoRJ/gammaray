@@ -98,6 +98,15 @@ public:
      */
     bool isDataStoreOfaGeologicSection();
 
+    /** Returns a new Cartesian grid object that is a subgrid of this grid.  The returned grid is
+     * limited by the topological indexes passed as parameters.  All the data are also copied to
+     * the new returned grid.  This method does not add the new grid to the project tree nor creates
+     * the final physical files.
+     */
+    CartesianGrid* makeSubGrid( uint minI, uint maxI,
+                                uint minJ, uint maxJ,
+                                uint minK, uint maxK );
+
 //GridFile interface
 	virtual bool XYZtoIJK( double x, double y, double z,
 						   uint& i,   uint& j,   uint& k );

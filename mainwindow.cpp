@@ -88,6 +88,7 @@
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
 #include "dialogs/sectiondialog.h"
 #include "dialogs/populatewithproportionsfromvpcdialog.h"
+#include "dialogs/subgriddialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -509,6 +510,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ){
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
                 _projectContextMenu->addAction("Resample", this, SLOT(onResampleGrid()));
+                _projectContextMenu->addAction("Extract subgrid", this, SLOT(onExtractSubgrid()));
                 _projectContextMenu->addAction("Add random phase for FFT", this, SLOT(onAddRandomPhaseForFFT()));
                 _projectContextMenu->addAction("Create grid with same specs", this, SLOT(onCreateGridSameGridSpecs()));
             }
@@ -1323,6 +1325,19 @@ void MainWindow::onSkeletonize()
 
     //writes out the result to the grid
     cg->append( new_var_name, result );
+}
+
+void MainWindow::onExtractSubgrid()
+{
+    //========================user input part===============================
+
+    //Get the Cartesian grid object.
+    CartesianGrid* cg = dynamic_cast<CartesianGrid*>( _right_clicked_file );
+
+    //Get sampling rates from user
+    SubgridDialog* grd = new SubgridDialog( cg, this );
+
+    grd->show();
 }
 
 void MainWindow::onRemoveFile()

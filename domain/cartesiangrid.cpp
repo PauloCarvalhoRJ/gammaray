@@ -9,12 +9,14 @@
 #include "viewer3d/view3dviewdata.h"
 #include "viewer3d/view3dbuilders.h"
 #include "domain/application.h"
+#include "domain/project.h"
 #include "geogrid.h"
 #include "domain/section.h"
 #include "domain/pointset.h"
 
 #include "spectral/spectral.h" //eigen third party library
 
+#include <QFileInfo>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -784,6 +786,64 @@ bool CartesianGrid::isDataStoreOfaGeologicSection()
         return parentFileAspect->getFileType() == "SECTION";
     }
     return false;
+}
+
+CartesianGrid *CartesianGrid::makeSubGrid( uint minI, uint maxI,
+                                           uint minJ, uint maxJ,
+                                           uint minK, uint maxK )
+{
+    QString path = Application::instance()->getProject()->generateUniqueTmpFilePath(".dat");
+
+    QFileInfo fileInfo( path );
+
+    //make a physical copy of this grid
+    CartesianGrid* subgrid = dynamic_cast<CartesianGrid*>( duplicatePhysicalFiles( fileInfo.fileName() ) );
+
+    //load data from the copied files
+    subgrid->setInfoFromMetadataFile();
+    subgrid->readFromFS();
+    subgrid->updateChildObjectsCollection();
+
+    //At this point, the subgrid has the same dimensions of this grid and with all its data in memory.
+
+    //compute the new number of cells in each direction
+    uint newNI = maxI - minI + 1;
+    uint newNJ = maxJ - minJ + 1;
+    uint newNK = maxK - minK + 1;
+    uint newTotalNumberOfCells = newNI * newNJ * newNK;
+
+    //compute the new origin coordinates
+    double newX0 = _x0 + minI * _dx;
+    double newY0 = _y0 + minJ * _dy;
+    double newZ0 = _z0 + minK * _dz;
+
+    //Now, we have to make a new dataframe so the remaining data remains in the same
+    //positions in space.
+
+    //make the new data frame
+    uint nColumns = getDataColumnCount();
+    std::vector< std::vector<double> > newDataFrame(newTotalNumberOfCells, std::vector<double>( nColumns ));
+
+    //copy the data such that the values remain in their original positions in space
+    uint rowIndex = 0;
+    for( uint k = 0; k < newNK; ++k ) //for each Z-slice
+        for( uint j = 0; j < newNJ; ++j ) // for each column
+            for( uint i = 0; i < newNI; ++i ) {// for each row
+                newDataFrame[ rowIndex ] = subgrid->getDataRow( subgrid->IJKtoIndex( minI + i,
+                                                                                     minJ + j,
+                                                                                     minK + k ) );
+                ++rowIndex;
+            }
+
+    //update the data of the new grid and return it
+    subgrid->replaceDataFrame( newDataFrame );
+    subgrid->setOrigin( newX0, newY0, newZ0 );
+    subgrid->setCellGeometry( newNI, newNJ, newNK, _dx, _dy, _dz );
+
+    //delete the physical files per this method's contract
+    subgrid->deleteFromFS();
+
+    return subgrid;
 }
 
 double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
