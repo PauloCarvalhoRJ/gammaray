@@ -4,6 +4,8 @@
 #include "domain/cartesiangrid.h"
 #include "domain/application.h"
 #include "domain/project.h"
+#include "imagejockey/widgets/ijquick3dviewer.h"
+#include "widgets/variableselector.h"
 
 SubgridDialog::SubgridDialog(CartesianGrid *cg, QWidget *parent) :
     QDialog(parent),
@@ -44,6 +46,17 @@ SubgridDialog::SubgridDialog(CartesianGrid *cg, QWidget *parent) :
     ui->spinMinK->setValue( 0 );
 
     ui->txtGridName->setText( cg->getName() + "_subgrid" );
+
+    m_previewWidget = new IJQuick3DViewer();
+    ui->frmDisplay->layout()->addWidget( m_previewWidget );
+    m_previewWidget->hideDismissButton();
+
+    //The list with the secondary data grid variables;
+    m_variableForPreview = new VariableSelector();
+    ui->frmCmbVariable->layout()->addWidget( m_variableForPreview );
+    m_variableForPreview->onListVariables( m_cg );
+
+    adjustSize();
 }
 
 SubgridDialog::~SubgridDialog()
@@ -69,4 +82,23 @@ void SubgridDialog::onSave()
 
     //closes the dialog
     accept();
+}
+
+void SubgridDialog::onPreview()
+{
+    CartesianGrid* subgrid = m_cg->makeSubGrid( ui->spinMinI->value(), ui->spinMaxI->value(),
+                                                ui->spinMinJ->value(), ui->spinMaxJ->value(),
+                                                ui->spinMinK->value(), ui->spinMaxK->value() );
+
+    uint dataColumn = m_variableForPreview->getSelectedVariableGEOEASIndex() - 1;
+
+    spectral::array* data = subgrid->createSpectralArray( dataColumn );
+
+    double min = subgrid->min( dataColumn );
+    double max = subgrid->max( dataColumn );
+
+    m_previewWidget->display( *data, min, max, subgrid->getDX(), subgrid->getDY(), subgrid->getDZ() );
+
+    delete data;
+    delete subgrid;
 }

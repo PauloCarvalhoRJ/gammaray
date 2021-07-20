@@ -6,9 +6,15 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>385</width>
-    <height>174</height>
+    <width>270</width>
+    <height>250</height>
    </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>250</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
@@ -40,7 +46,7 @@
        </property>
       </widget>
      </item>
-     <item row="0" column="3" colspan="2">
+     <item row="0" column="3">
       <widget class="QSpinBox" name="spinMaxI">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
@@ -67,7 +73,7 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="3" colspan="2">
+     <item row="1" column="3">
       <widget class="QSpinBox" name="spinMaxJ"/>
      </item>
      <item row="2" column="0">
@@ -87,20 +93,99 @@
        </property>
       </widget>
      </item>
-     <item row="2" column="3" colspan="2">
+     <item row="2" column="3">
       <widget class="QSpinBox" name="spinMaxK"/>
      </item>
-     <item row="3" column="0">
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_4">
+     <item>
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>variable for preview:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QFrame" name="frmCmbVariable">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Raised</enum>
+       </property>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <property name="spacing">
+         <number>0</number>
+        </property>
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QFrame" name="frmDisplay">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2"/>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_2">
+     <item>
       <widget class="QLabel" name="label_7">
        <property name="text">
         <string>name for the new grid:</string>
        </property>
       </widget>
      </item>
-     <item row="3" column="1" colspan="3">
+     <item>
       <widget class="QLineEdit" name="txtGridName"/>
      </item>
-     <item row="3" column="4">
+     <item>
+      <widget class="QPushButton" name="btnPreview">
+       <property name="toolTip">
+        <string>preview</string>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset resource="../imagejockey/ijresources.qrc">
+         <normaloff>:/ijicons32/ijpreview32</normaloff>:/ijicons32/ijpreview32</iconset>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QPushButton" name="btnSave">
        <property name="toolTip">
         <string>save subgrid file</string>
@@ -115,19 +200,6 @@
       </widget>
      </item>
     </layout>
-   </item>
-   <item>
-    <spacer name="verticalSpacer">
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>20</width>
-       <height>40</height>
-      </size>
-     </property>
-    </spacer>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -157,6 +229,7 @@
  </widget>
  <resources>
   <include location="../resources.qrc"/>
+  <include location="../imagejockey/ijresources.qrc"/>
  </resources>
  <connections>
   <connection>
@@ -191,8 +264,25 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>btnPreview</sender>
+   <signal>clicked()</signal>
+   <receiver>SubgridDialog</receiver>
+   <slot>onPreview()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>294</x>
+     <y>99</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>279</x>
+     <y>123</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>onSave()</slot>
+  <slot>onPreview()</slot>
  </slots>
 </ui>
