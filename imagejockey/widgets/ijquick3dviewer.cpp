@@ -181,8 +181,15 @@ void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, do
 
 void IJQuick3DViewer::display( const spectral::array & grid, double colorScaleMin, double colorScaleMax )
 {
-	vtkSmartPointer<vtkImageData> out = vtkSmartPointer<vtkImageData>::New();
-	ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, grid );
+    display( grid, colorScaleMin, colorScaleMax, 1.0, 1.0, 1.0 );
+}
+
+void IJQuick3DViewer::display(const spectral::array &grid, double colorScaleMin, double colorScaleMax,
+                              double cell_size_I, double cell_size_J, double cell_size_K )
+{
+    vtkSmartPointer<vtkImageData> out = vtkSmartPointer<vtkImageData>::New();
+    auto f = [] (double x) { return x; }; //does-nothing lambda (requirement of ImageJockeyUtils::makeVTKImageDataFromSpectralArray())
+    ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, grid, f, cell_size_I, cell_size_J, cell_size_K );
     display( out, colorScaleMin, colorScaleMax );
 }
 
