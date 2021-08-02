@@ -77,3 +77,9 @@ void UnivariateDistribution::readFromFS()
 {
     m_data.loadData();
 }
+
+File *UnivariateDistribution::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new UnivariateDistribution( duplicateFilePath );
+}

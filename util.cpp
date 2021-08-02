@@ -929,7 +929,7 @@ qint64 Util::getDirectorySize(const QString path)
 void Util::clearDirectory(const QString path)
 {
     QDir dir(path);
-    dir.setNameFilters(QStringList() << "*.*");
+    dir.setNameFilters(QStringList() << "*");
     dir.setFilter(QDir::Files);
     foreach(QString dirFile, dir.entryList()) //foreach is a Qt macro
     {
@@ -1068,11 +1068,11 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "6.7" << "6.6" << "6.5" << "6.3" << "6.2" << "6.1" << "6.0" << "5.7.1" << "5.7" << "5.5"
-                      << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5" << "4.3.3" << "4.3"
-                      << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0" << "2.7.2" << "2.7.1"
-                      << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1" << "2.0"
-                      << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1"
+    previousVersions  << "6.9" << "6.7" << "6.6" << "6.5" << "6.3" << "6.2" << "6.1" << "6.0" << "5.7.1"
+                      << "5.7" << "5.5" << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5"
+                      << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0"
+                      << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1"
+                      << "2.0" << "1.7.1" << "1.7" << "1.6" << "1.5" << "1.4" << "1.3.1" << "1.3" << "1.2.1"
                       << "1.2" << "1.1.0" << "1.0.1" << "1.0";
     //Iterate through the list of previous versions
     QList<QString>::iterator itVersion = previousVersions.begin();
@@ -2569,4 +2569,51 @@ QString Util::getParentDirectory(QString path)
     QFileInfo fileInfo( path );
     QDir dir = fileInfo.dir();
     return dir.canonicalPath();
+}
+
+void Util::softmax(std::vector<double> &in_out )
+{
+    ulong size = static_cast<ulong>( in_out.size() );
+
+    double sum = 0;
+    for (ulong i = 0; i < size; ++i)
+      sum += std::exp( in_out[i] );
+
+    for (ulong i = 0; i < size; ++i)
+        in_out[i] = std::exp( in_out[i] ) / sum;
+}
+
+int Util::findAndReplace(const QString text_file_path,
+                          const QString RE_find_what,
+                          const QString replace_with)
+{
+    int countOfLinesWithReplacements = 0;
+    //open a new file for output
+    QFile outputFile( QString(text_file_path).append(".new") );
+    outputFile.open( QFile::WriteOnly | QFile::Text );
+    QTextStream out(&outputFile);
+    //open the current file for reading
+    QFile inputFile( text_file_path );
+    if ( inputFile.open(QIODevice::ReadOnly | QFile::Text ) ) {
+       QTextStream in(&inputFile);
+       while ( !in.atEnd() ){
+          QString line = in.readLine();
+          QString originalLine = line;
+          //replaces text
+          line.replace(QRegularExpression(RE_find_what), replace_with);
+          //writes the line with the replaced text to the new file
+          out << line << '\n';
+          //increases the counter if at least one replacemente took place.
+          if( originalLine != line )
+              ++countOfLinesWithReplacements;
+       }
+       inputFile.close();
+       //closes the output file
+       outputFile.close();
+       //deletes current file
+       inputFile.remove();
+       //renames the new file
+       outputFile.rename( QFile( text_file_path ).fileName() );
+    }
+    return countOfLinesWithReplacements;
 }

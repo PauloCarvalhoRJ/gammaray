@@ -105,6 +105,7 @@ public:
     void updateMetaDataFile();
     bool isDataFile(){ return true; }
 	bool isDistribution(){ return false; }
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
     // ProjectComponent interface
 public:

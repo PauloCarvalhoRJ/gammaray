@@ -1,5 +1,6 @@
 #include "file.h"
 #include "domain/application.h"
+#include "util.h"
 #include <QFile>
 #include <QFileInfo>
 #include <QDir>
@@ -104,6 +105,30 @@ qint64 File::getFileSize()
         return -1;
     QFileInfo info( _path );
     return info.size(); //returned type must be a 64-bit integer
+}
+
+QString File::duplicateDataAndMetaDataFiles(const QString new_file_name)
+{
+    QString originalMetaDataFilePath = getMetaDataFilePath();
+    QString originalFilePath = getPath();
+
+    QFileInfo qfileInfo( originalFilePath );
+    if( ! qfileInfo.exists() )
+        Application::instance()->logWarn("File::duplicateDataAndMetaDataFiles(): data file not found.");
+    QString directoryPath = qfileInfo.absolutePath();
+
+    QFileInfo qfileInfoMD( originalMetaDataFilePath );
+    if( ! qfileInfoMD.exists() && canHaveMetaData() )
+        Application::instance()->logWarn("File::duplicateDataAndMetaDataFiles(): metadata file (.md) not found.");
+
+    QString duplicateMetaDataFilePath = directoryPath + '/' + new_file_name + ".md";
+    QString duplicateFilePath = directoryPath + '/' + new_file_name;
+
+    Util::copyFile( originalFilePath,         duplicateFilePath );
+    if( qfileInfoMD.exists() )
+        Util::copyFile( originalMetaDataFilePath, duplicateMetaDataFilePath);
+
+    return duplicateFilePath;
 }
 
 

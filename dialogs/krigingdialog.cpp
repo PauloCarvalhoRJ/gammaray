@@ -128,6 +128,14 @@ void KrigingDialog::onParameters()
     //get the selected grid with secondary data (if any)
     CartesianGrid* sec_data_grid = (CartesianGrid*)m_cgSelectorSecondary->getSelectedDataFile();
 
+    //if a secondary variable (for LVM or KED) was selected, update the min and max values.
+    if( sec_data_grid ){
+        double minSecondary = sec_data_grid->min( m_cgSecondaryVariableSelector->getSelectedVariableGEOEASIndex()-1 );
+        double maxSecondary = sec_data_grid->max( m_cgSecondaryVariableSelector->getSelectedVariableGEOEASIndex()-1 );
+        data_min = std::min( data_min, minSecondary );
+        data_max = std::max( data_max, maxSecondary );
+    }
+
     //-----------------------------set kt3d parameters---------------------------
 
     if( ! m_gpf_kt3d ){
@@ -398,6 +406,15 @@ void KrigingDialog::preview()
 
     //get the tmp file path created by kte3d with the estimates and kriging variances
     QString grid_file_path = m_gpf_kt3d->getParameter<GSLibParFile*>(8)->_path;
+
+    //Sanity check
+    QFile grid_file( grid_file_path );
+    if( ! grid_file.exists( ) ){
+        Application::instance()->logError( "KrigingDialog::preview(): output file not generated.  "
+                                           "Check kt3d parameters and the output message pane for errors"
+                                           " issued by kt3d.", true );
+        return;
+    }
 
     //create a new grid object corresponding to the file created by kt3d
     m_cg_estimation = new CartesianGrid( grid_file_path );

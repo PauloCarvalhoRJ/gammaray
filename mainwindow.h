@@ -1,4 +1,4 @@
-#ifndef MAINWINDOW_H
+﻿#ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
 #include <QMainWindow>
@@ -236,6 +236,14 @@ private slots:
     void onPopulateGridWithProportions();
     void onGeoGridExportAsGRDECL();
     void onExtractRegularSteps();
+    void onCreateGridSameGridSpecs();
+    void onMakeSummationTo1();
+    void onDuplicateFile();
+    void onNDVEstimationShepard();
+    void onNDVEstimationThinPlateSpline();
+    void onMapRidgesOrValleys();
+    void onSkeletonize();
+    void onExtractSubgrid();
 
 private:
     /**
@@ -312,6 +320,24 @@ private:
       * Creates the items of sub-menu "Moving window filters".
       */
     void makeMenuMovingWindowFilters();
+
+    /**
+     * The pointer to the sub-menu "Data transforms" of the project tree context menu.
+     */
+    QMenu* m_subMenuDataTransforms;
+    /**
+      * Creates the items of sub-menu "Data transforms".
+      */
+    void makeMenuDataTransforms();
+
+    /**
+     * The pointer to the sub-menu "NDV estimation" of the project tree context menu.
+     */
+    QMenu* m_subMenuNDVestimation;
+    /**
+      * Creates the items of sub-menu "NDV estimation".
+      */
+    void makeMenuNDVestimation();
 
 	/**
 	 * Lists the attributes currently being viewed in the quick view dialog.

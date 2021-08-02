@@ -102,8 +102,27 @@ public:
 	  */
 	virtual bool isDistribution() = 0;
 
+    /**
+     * Duplicates all file system files associated with this File (data and metadata files).  The paths to them can be
+     * retrived via the returned new File object.
+     * @note This is not a clone operation, that is, in-memory member values are not copied.  They must be repopulated
+     *       with a call to readFromFS().
+     * @note The returned File object is not added to the Project tree automatically.
+     * @attention Classes that implement this method should receive treatment in the Project::addFile() method.  Failing to do
+     *            so results in a file copy not being added to the project tree with an error message.
+     */
+    virtual File* duplicatePhysicalFiles( const QString new_file_name ) = 0;
+
 protected:
     QString _path;
+
+    /**
+     * A convenience method for classes overriding duplicatePhysicalFiles().
+     * The method duplicates the main data file as well as the associated metadata file (.md) if they exist.
+     * @returns The complete path to the copied data file (the metadata file path is the same, but with
+     *          the extension .md appended).
+     */
+    QString duplicateDataAndMetaDataFiles( const QString new_file_name );
 
     // ProjectComponent interface
 public:

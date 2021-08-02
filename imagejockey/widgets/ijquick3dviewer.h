@@ -44,6 +44,11 @@ public:
 	/** Renders the passed regular grid.  Its values are mapped to a grayscale set between given values. */
 	void display( const spectral::array& grid, double colorScaleMin, double colorScaleMax );
 
+    /** Renders the passed regular grid with cell sizes given.
+     * Its values are mapped to a grayscale set between given values. */
+    void display( const spectral::array& grid, double colorScaleMin, double colorScaleMax,
+                  double cell_size_I, double cell_size_J, double cell_size_K );
+
     /** Renders the passed regular grid.  Its values are mapped to a grayscale set between min. and max. values. */
     void display( const spectral::array& grid );
 

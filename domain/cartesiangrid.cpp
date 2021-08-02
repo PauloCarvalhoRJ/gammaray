@@ -9,12 +9,14 @@
 #include "viewer3d/view3dviewdata.h"
 #include "viewer3d/view3dbuilders.h"
 #include "domain/application.h"
+#include "domain/project.h"
 #include "geogrid.h"
 #include "domain/section.h"
 #include "domain/pointset.h"
 
 #include "spectral/spectral.h" //eigen third party library
 
+#include <QFileInfo>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
@@ -164,7 +166,33 @@ void CartesianGrid::setInfoFromOtherCG(CartesianGrid *other_cg, bool copyCategor
     if( copyCategoricalAttributesList )
         categorical_attributes = other_cg->getCategoricalAttributes();
     this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal,
-				   ndv, nsvar_var_trn_triads, categorical_attributes);
+                   ndv, nsvar_var_trn_triads, categorical_attributes);
+}
+
+void CartesianGrid::setInfoFromOtherCGonlyGridSpecs(CartesianGrid *other_cg)
+{
+    double x0 = 0.0, y0 = 0.0, z0 = 0.0;
+    double dx = 0.0, dy = 0.0, dz = 0.0;
+    uint nx = 0, ny = 0, nz = 0;
+    double rot = 0.0;
+    uint nreal = 0;
+    QString ndv;
+    QMap<uint, QPair<uint, QString> > nsvar_var_trn_triads;
+    QList< QPair<uint, QString> > categorical_attributes;
+    x0 = other_cg->getX0();
+    y0 = other_cg->getY0();
+    z0 = other_cg->getZ0();
+    nx = other_cg->getNX();
+    ny = other_cg->getNY();
+    nz = other_cg->getNZ();
+    dx = other_cg->getDX();
+    dy = other_cg->getDY();
+    dz = other_cg->getDZ();
+    rot = other_cg->getRot();
+    nreal = 1;
+    ndv = "";
+    this->setInfo( x0, y0, z0, dx, dy, dz, nx, ny, nz, rot, nreal,
+                   ndv, nsvar_var_trn_triads, categorical_attributes);
 }
 
 void CartesianGrid::setInfoFromSVDFactor(const SVDFactor * factor)
@@ -482,10 +510,30 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
         return false;
     }
 
+    //TODO: isUVWOfAGeoGrid() has a string comparison, so this may be a performance bottleneck.
+    if( isUVWOfAGeoGrid() ){
+        GeoGrid* parentGG = dynamic_cast<GeoGrid*>( getParent() );
+        return  parentGG->XYZtoIJK( x, y, z, i, j, k );
+    }
+
+    //TODO: isDataStoreOfaGeologicSection() has a string comparison, so this may be a performance bottleneck.
+    if( isDataStoreOfaGeologicSection() ){
+        {
+            static bool messageFired = false;
+            if( ! messageFired ){ //this is to avoid a flood of messages to the message panel, since this method
+                                  //is normally called multiple times.
+                Application::instance()->logError("CartesianGrid::XYZtoIJK(): the Cartesian grid belongs to a geologic section."
+                                                  " This operation is not currently supported. Report this to the developers.");
+                messageFired = true;
+            }
+        }
+        return false;
+    }
+
     //compute the indexes from the spatial location.
-    double xWest = _x0 - _dx/2.0;
-    double ySouth = _y0 - _dy/2.0;
-    double zBottom = _z0 - _dz/2.0;
+    double xWest = _x0; //- _dx/2.0;
+    double ySouth = _y0; //- _dy/2.0;
+    double zBottom = _z0; //- _dz/2.0;
     i = (x - xWest) / _dx;
     j = (y - ySouth) / _dy;
     k = 0;
@@ -554,6 +602,14 @@ void CartesianGrid::updateMetaDataFile()
         out << "CATEGORICAL:" << (*k).first << "," << (*k).second << '\n';
     }
     file.close();
+}
+
+File *CartesianGrid::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    CartesianGrid* newCG = new CartesianGrid( duplicateFilePath );
+    newCG->setInfoFromMetadataFile();
+    return newCG;
 }
 
 QIcon CartesianGrid::getIcon()
@@ -730,6 +786,64 @@ bool CartesianGrid::isDataStoreOfaGeologicSection()
         return parentFileAspect->getFileType() == "SECTION";
     }
     return false;
+}
+
+CartesianGrid *CartesianGrid::makeSubGrid( uint minI, uint maxI,
+                                           uint minJ, uint maxJ,
+                                           uint minK, uint maxK )
+{
+    QString path = Application::instance()->getProject()->generateUniqueTmpFilePath(".dat");
+
+    QFileInfo fileInfo( path );
+
+    //make a physical copy of this grid
+    CartesianGrid* subgrid = dynamic_cast<CartesianGrid*>( duplicatePhysicalFiles( fileInfo.fileName() ) );
+
+    //load data from the copied files
+    subgrid->setInfoFromMetadataFile();
+    subgrid->readFromFS();
+    subgrid->updateChildObjectsCollection();
+
+    //At this point, the subgrid has the same dimensions of this grid and with all its data in memory.
+
+    //compute the new number of cells in each direction
+    uint newNI = maxI - minI + 1;
+    uint newNJ = maxJ - minJ + 1;
+    uint newNK = maxK - minK + 1;
+    uint newTotalNumberOfCells = newNI * newNJ * newNK;
+
+    //compute the new origin coordinates
+    double newX0 = _x0 + minI * _dx;
+    double newY0 = _y0 + minJ * _dy;
+    double newZ0 = _z0 + minK * _dz;
+
+    //Now, we have to make a new dataframe so the remaining data remains in the same
+    //positions in space.
+
+    //make the new data frame
+    uint nColumns = getDataColumnCount();
+    std::vector< std::vector<double> > newDataFrame(newTotalNumberOfCells, std::vector<double>( nColumns ));
+
+    //copy the data such that the values remain in their original positions in space
+    uint rowIndex = 0;
+    for( uint k = 0; k < newNK; ++k ) //for each Z-slice
+        for( uint j = 0; j < newNJ; ++j ) // for each column
+            for( uint i = 0; i < newNI; ++i ) {// for each row
+                newDataFrame[ rowIndex ] = subgrid->getDataRow( subgrid->IJKtoIndex( minI + i,
+                                                                                     minJ + j,
+                                                                                     minK + k ) );
+                ++rowIndex;
+            }
+
+    //update the data of the new grid and return it
+    subgrid->replaceDataFrame( newDataFrame );
+    subgrid->setOrigin( newX0, newY0, newZ0 );
+    subgrid->setCellGeometry( newNI, newNJ, newNK, _dx, _dy, _dz );
+
+    //delete the physical files per this method's contract
+    subgrid->deleteFromFS();
+
+    return subgrid;
 }
 
 double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)

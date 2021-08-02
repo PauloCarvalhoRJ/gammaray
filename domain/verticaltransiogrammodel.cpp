@@ -9,6 +9,7 @@
 #include <cassert>
 #include <QTextStream>
 #include <QFile>
+#include <QFileInfo>
 #include <tuple>
 
 VerticalTransiogramModel::VerticalTransiogramModel(QString path,
@@ -380,6 +381,13 @@ void VerticalTransiogramModel::deleteFromFS()
     //also deletes the metadata file
     QFile file( this->getMetaDataFilePath() );
     file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
+}
+
+File *VerticalTransiogramModel::duplicatePhysicalFiles( const QString new_file_name )
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+
+    return new VerticalTransiogramModel( duplicateFilePath, m_associatedCategoryDefinitionName );
 }
 
 void VerticalTransiogramModel::addFacies(QString faciesName)

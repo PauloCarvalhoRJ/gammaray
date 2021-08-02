@@ -54,35 +54,16 @@ public:
                                                  Attribute* attributeToPaintWith = nullptr );
 
 private:
+    /** Specific builder for an Attribute in a PointSet. */
     static View3DViewData buildForAttributeFromPointSet( PointSet* pointSet, Attribute* attribute, View3DWidget * widget3D );
 
+    /** Specific builder for an Attribute in a SegmentSet. */
     static View3DViewData buildForAttributeFromSegmentSet(SegmentSet* segmentSet, Attribute* attribute, View3DWidget * widget3D );
 
     /** Specific builder for a Cartesian grid that represents a 2D map (nZ < 2).
      *  The grid is displayed in the XY plane (Z=0).
     */
     static View3DViewData buildForMapCartesianGrid( CartesianGrid* cartesianGrid, View3DWidget * widget3D );
-
-    /** Specific builder for an Attribute in a Cartesian grid that represents a 2D map (nZ < 2).
-     *  The grid is displayed in the XY plane (Z=0).  The VTK model used is the vtkPlaneSource,
-     *  which as an algorithm that generates a polygonal mesh.
-     * @note Not used. Kept for future reference as vtkPlaneSource showed to be less efficient than vtkStructuredGrid
-     *       to render regular grids.
-     */
-    static View3DViewData buildForAttributeInMapCartesianGridWithVtkPlaneSource(
-            CartesianGrid* cartesianGrid,
-            Attribute* attribute,
-            View3DWidget * widget3D);
-
-    /** Specific builder for an Attribute in a Cartesian grid that represents a 2D map (nZ < 2).
-     *  The grid is displayed in the XY plane (Z=0).  The VTK model used is the vtkStructuredGrid,
-     *  which as a data structure that is regular grid and level-of-detail management.
-     * @note Not used. Kept for future reference as LOD is not working properly yet.
-     */
-    static View3DViewData buildForAttributeInMapCartesianGridWithVtkStructuredGridAndLOD(
-            CartesianGrid* cartesianGrid,
-            Attribute* attribute,
-            View3DWidget * widget3D);
 
     /** Specific builder for an Attribute in a Cartesian grid that represents a 2D map (nZ < 2).
      *  The grid is displayed in the XY plane (Z=0).  The VTK model used is the vtkStructuredGrid,

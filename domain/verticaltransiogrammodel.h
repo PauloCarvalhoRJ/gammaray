@@ -112,6 +112,7 @@ public:
     virtual bool isDataFile();
     virtual bool isDistribution();
     virtual void deleteFromFS();
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 private:
     ///--------------data read from metadata file------------

@@ -51,7 +51,7 @@ public:
     void addContentElementFromWidget( QWidget* w );
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; }
-
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 private:
     CategoryDefinition* m_categoryDefinition;

@@ -100,6 +100,13 @@ void UnivariateCategoryClassification::addContentElementFromWidget(QWidget *w)
                 widget->getCategoryCode());
 }
 
+File *UnivariateCategoryClassification::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    setCategoryDefinition();
+    return new UnivariateCategoryClassification( getCategoryDefinition(), duplicateFilePath );
+}
+
 bool UnivariateCategoryClassification::setCategoryDefinition()
 {
     if( ! m_categoryDefinition ){

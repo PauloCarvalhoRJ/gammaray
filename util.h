@@ -836,6 +836,32 @@ public:
         return (T(0) < value) - (value < T(0));
     }
 
+    /**
+     * Computes new values proportional to the original ones such that they are
+     * in the [0.0 1.0] range and sum up to 1.0.  This computation is done in-place.
+     */
+    static void softmax( std::vector<double>& in_out );
+
+    /**
+     * Prints a vector's contents to std::out.  This is usually called for debugging
+     * purposes.
+     */
+    template <typename T>
+    static int print( const std::vector<T>& vec ) {
+        for (const auto value: vec)
+          std::cout << value << ' ';
+        std::cout << '\n';
+    }
+
+    /**
+     * Does a find-and-replace in a text file.  The search string must
+     * be a regular expression.
+     * @returns The number of file lines where at least one replacement took place.
+     */
+    static int findAndReplace( const QString text_file_path,
+                               const QString RE_find_what,
+                               const QString replace_with );
+
 };
 
 #endif // UTIL_H

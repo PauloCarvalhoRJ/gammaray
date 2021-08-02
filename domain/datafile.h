@@ -134,13 +134,13 @@ public:
     /**
      * Returns whether the given attribute is a categorical variable.
      */
-    bool isCategorical( Attribute* at );
+    bool isCategorical(const Attribute *at );
 
     /**
      * Returns the category definition associated to the given attribute, supposedly categorical.
      * Returns nullptr if none is found, the attribute is not categorical or does not belong to this data file.
      */
-    CategoryDefinition *getCategoryDefinition( Attribute* at );
+    CategoryDefinition *getCategoryDefinition( const Attribute* at );
 
     /**
      * Returns the variable associated with the declustering weight attribute.

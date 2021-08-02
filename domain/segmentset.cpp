@@ -344,8 +344,8 @@ PointSet *SegmentSet::toPointSetRegularlySpaced(const QString &psName, double st
             //the segment may shorter than the user-given step.  The other points along the segment line
             //are clone entries of that first entry.
             if( iStep > 0 ){
-                ++iRowOutputOffset;
                 new_ps->cloneDataLine( iRow + iRowOutputOffset );
+                ++iRowOutputOffset;
             }
 
             //outputs the interpolated XYZ coordinates.
@@ -495,6 +495,14 @@ void SegmentSet::updateMetaDataFile()
         out << "CATEGORICAL:" << (*k).first << "," << (*k).second << '\n';
     }
     file.close();
+}
+
+File *SegmentSet::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    SegmentSet* newSS = new SegmentSet( duplicateFilePath );
+    newSS->setInfoFromMetadataFile();
+    return newSS;
 }
 
 double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)

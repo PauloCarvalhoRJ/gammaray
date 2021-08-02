@@ -133,6 +133,7 @@ public:
 public:
     virtual QString getFileType() const;
     virtual void updateMetaDataFile();
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
     // DataFile interface
 public:

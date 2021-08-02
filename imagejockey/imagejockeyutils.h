@@ -129,9 +129,9 @@ public:
     QString generateUniqueFilePathInDir(const QString directory, const QString file_extension);
 
     /**
-	 * Populates a vtkImageData object with the data from a spectral::array object.
-	 * Client code must create the vtkImageData object beforehand with a call to
-	 * vtkSmartPointer<vtkImageData>::New(), for example.
+     * Populates a vtkImageData object with the data from a spectral::array object.
+     * Client code must create the vtkImageData object beforehand with a call to
+     * vtkSmartPointer<vtkImageData>::New(), for example.
      * The client code must also define the grid geometry such as cell sizes and origin
      * (default are 1,1,1 and 0,0,0 respectively) because spectral::array only has only data values,
      * not geometry.
@@ -148,13 +148,17 @@ public:
      *                           makeVTKImageDataFromSpectralArray( out, in, lambda ); //pass lambda
      *                           makeVTKImageDataFromSpectralArray( out, in, g );      //pass function
      *                       }
-	 */
+     */
     template<typename TransformFunctor>
     static void makeVTKImageDataFromSpectralArray( vtkImageData* out,
                                                    const spectral::array& in,
-                                                   TransformFunctor functor ) {
+                                                   TransformFunctor functor,
+                                                   double cell_size_I,
+                                                   double cell_size_J,
+                                                   double cell_size_K ) {
         out->SetExtent(0, in.M()-1, 0, in.N()-1, 0, in.K()-1); //extent (indexes) of GammaRay grids start at i=0,j=0,k=0
         out->AllocateScalars(VTK_DOUBLE, 1); //each cell will contain one double value.
+        out->SetSpacing( cell_size_I, cell_size_J, cell_size_K ); //sets the cell sizes
         int* extent = out->GetExtent();
 
         for (int k = extent[4]; k <= extent[5]; ++k){
@@ -168,8 +172,20 @@ public:
     }
 
     /**
+     * An overload of makeVTKImageDataFromSpectralArray() that results in
+     * an image with unit-sized cells.
+     */
+    template<typename TransformFunctor>
+    static void makeVTKImageDataFromSpectralArray( vtkImageData* out,
+                                                   const spectral::array& in,
+                                                   TransformFunctor functor ) {
+        makeVTKImageDataFromSpectralArray( out, in, functor, 1.0, 1.0, 1.0 );
+    }
+
+    /**
      * An overload of makeVTKImageDataFromSpectralArray() that builds a default
-     * lambda that does not transform the values.
+     * lambda that does not transform the values and also results in
+     * an image with unit-sized cells.
      */
     static void makeVTKImageDataFromSpectralArray( vtkImageData* out,
                                                    const spectral::array& in ) {

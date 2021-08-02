@@ -1,4 +1,4 @@
-#ifndef CATEGORYPDF_H
+﻿#ifndef CATEGORYPDF_H
 #define CATEGORYPDF_H
 
 #include "valuepairs.h"
@@ -26,6 +26,9 @@ public:
     /** Returns whether there is one (or more) zero (or less) probabilities. */
     bool hasZeroOrLessProb() const;
 
+    /** Returns whether there is one (or more) negative probabilities. */
+    bool hasNegativeProbabilities() const;
+
     /**
      * Returns a category code given a cumulative frequency.
      * The passed cumulative frequency is normally drawn from a random number generator.
@@ -37,6 +40,22 @@ public:
 
     /** Returns the sum of the probabilities. */
     double sumProbs() const;
+
+    /** Returns a vector containing the PDF's probabilities. */
+    std::vector<double> getProbabilities() const;
+
+    /** Sets the probabilities contained in the passed vector.
+     * If the vector has fewer values than entries, the remaining entries will be unchanged.
+     * If the vector has more values than entries, the excess values will be ignored.
+     */
+    void setProbabilities( const std::vector<double>& probabilities );
+
+    /** Computes new probabilities such that they are proportional to the original ones
+     * and that they sum up exactly 1.0.
+     * NOTICE: This function assumes all elements are positive (negative probabilities have no meaning).
+     *         If you do have negative values, use Util::softmax().
+     */
+    void forceSumToOne();
 
     // ProjectComponent interface
 public:
@@ -51,6 +70,7 @@ public:
     virtual bool isEditable(){ return true; }
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; } //Athough a PDF is technically a distribution, it doesn't inherit Distribution
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 private:
     CategoryDefinition *m_categoryDefinition;

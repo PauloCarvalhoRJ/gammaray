@@ -88,6 +88,7 @@
 #include "dialogs/faciestransitionmatrixoptionsdialog.h"
 #include "dialogs/sectiondialog.h"
 #include "dialogs/populatewithproportionsfromvpcdialog.h"
+#include "dialogs/subgriddialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -117,7 +118,9 @@ MainWindow::MainWindow(QWidget *parent) :
     m_subMenuCategorize  ( new QMenu("Make categorical as", this) ),
     m_subMenuMapAs( new QMenu("Map as", this) ),
     m_subMenuFlipData( new QMenu("Flip data", this) ),
-    m_subMenuMovingWindowFilters( new QMenu("Moving window filter", this) )
+    m_subMenuMovingWindowFilters( new QMenu("Moving window filter", this) ),
+    m_subMenuDataTransforms( new QMenu("Data transforms", this) ),
+    m_subMenuNDVestimation( new QMenu("NDV estimation", this) )
 {
     //Import any registry/home user settings of a previous version
     Util::importSettingsFromPreviousVersion();
@@ -473,9 +476,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
         //build context menu for a file
         if ( index.isValid() && (static_cast<ProjectComponent*>( index.internalPointer() ))->isFile() ) {
             _right_clicked_file = static_cast<File*>( index.internalPointer() );
-            //all files should be removable
+            //all files should be removable and copiable
             _projectContextMenu->addAction("Remove from project", this, SLOT(onRemoveFile()));
             _projectContextMenu->addAction("Remove and delete", this, SLOT(onRemoveAndDeleteFile()));
+            _projectContextMenu->addAction("Duplicate", this, SLOT(onDuplicateFile()));
             //for all those files editable with GammaRay editors (normaly any file that is not a data file)
             if( _right_clicked_file->isEditable() )
                 _projectContextMenu->addAction("Edit", this, SLOT(onEdit()));
@@ -506,7 +510,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( _right_clicked_file->getFileType() == "CARTESIANGRID" ){
                 _projectContextMenu->addAction("Convert to point set", this, SLOT(onAddCoord()));
                 _projectContextMenu->addAction("Resample", this, SLOT(onResampleGrid()));
+                _projectContextMenu->addAction("Extract subgrid", this, SLOT(onExtractSubgrid()));
                 _projectContextMenu->addAction("Add random phase for FFT", this, SLOT(onAddRandomPhaseForFFT()));
+                _projectContextMenu->addAction("Create grid with same specs", this, SLOT(onCreateGridSameGridSpecs()));
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
@@ -534,6 +540,9 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             }
             if( _right_clicked_file->getFileType() == "SECTION" ){
                 _projectContextMenu->addAction("Convert to point set (centroids)", this, SLOT(onExtractSectionCentroids()));
+            }
+            if( _right_clicked_file->getFileType() == "CATEGORYPDF" ){
+                _projectContextMenu->addAction("Make summation to 1.0", this, SLOT(onMakeSummationTo1()));
             }
             _projectContextMenu->addAction("Open with external program", this, SLOT(onEditWithExternalProgram()));
         }
@@ -585,15 +594,15 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
             if( parent_file->getFileType() == "CARTESIANGRID"  ){
                 makeMenuMovingWindowFilters();
                 _projectContextMenu->addMenu( m_subMenuMovingWindowFilters );
-                _projectContextMenu->addAction("FFT", this, SLOT(onFFT()));
-                _projectContextMenu->addAction("SVD factorization", this, SLOT(onSVD()));
-                _projectContextMenu->addAction("EMD analysis", this, SLOT(onEMD()));
-                _projectContextMenu->addAction("Gabor analysis", this, SLOT(onGabor()));
-                _projectContextMenu->addAction("Wavelet transform", this, SLOT(onWavelet()));
-                _projectContextMenu->addAction("NDV estimation", this, SLOT(onNDVEstimation()));
+                makeMenuDataTransforms();
+                _projectContextMenu->addMenu( m_subMenuDataTransforms );
+                makeMenuNDVestimation();
+                _projectContextMenu->addMenu( m_subMenuNDVestimation );
 				_projectContextMenu->addAction("Quick view", this, SLOT(onQuickView()));
                 _projectContextMenu->addAction("Quick varmap", this, SLOT(onCovarianceMap()));
                 _projectContextMenu->addAction("Automatic variogram fitting", this, SLOT(onAutoVarFit()));
+                _projectContextMenu->addAction("Map ridges, valleys, peaks or bottoms", this, SLOT(onMapRidgesOrValleys()));
+                _projectContextMenu->addAction("Skeletonize", this, SLOT(onSkeletonize()));
                 // TODO: ROAD WORK
                 //_projectContextMenu->addAction("LVA data set", this, SLOT(onLVADataSet()));
                 CartesianGrid* cg = (CartesianGrid*)parent_file;
@@ -996,6 +1005,339 @@ void MainWindow::onExtractRegularSteps()
 
     //show the newly created object in main window's project tree
     Application::instance()->refreshProjectTree();
+}
+
+void MainWindow::onCreateGridSameGridSpecs()
+{
+    CartesianGrid* selected_cg = dynamic_cast<CartesianGrid*>( _right_clicked_file );
+
+    //sanity check
+    if( ! selected_cg ){
+        Application::instance()->logError("MainWindow::onCreateGridSameGridSpecs(): "
+                                          "selected file is not a Cartesian grid.");
+        return;
+    }
+
+    bool ok;
+    //propose a name based on the point set name.
+    QString proposed_name( _right_clicked_file->getName() );
+    proposed_name.append( "_new" );
+    QString new_cg_name = QInputDialog::getText(this, "Name the new grid file",
+                                             "New grid file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_cg_name.isEmpty()){
+        //make a tmp file path
+        QString file_path = Application::instance()->getProject()->getPath() + '/' + new_cg_name;
+
+        //create a new grid object corresponding to a file to be created in the tmp directory
+        CartesianGrid* cg = new CartesianGrid( file_path );
+
+        //set the geometry info entered by the user
+        cg->setInfoFromOtherCGonlyGridSpecs( selected_cg );
+
+        //create the physical GEO-EAS grid file with binary values forming a checkerboard pattern.
+        Util::createGEOEAScheckerboardGrid( cg, file_path );
+
+        //import the newly created grid file as a project item
+        Application::instance()->getProject()->importCartesianGrid( cg, new_cg_name );
+    }
+}
+
+void MainWindow::onMakeSummationTo1()
+{
+    CategoryPDF* pdf = dynamic_cast<CategoryPDF*>( _right_clicked_file );
+    if( pdf ){
+        pdf->loadPairs();
+        pdf->forceSumToOne();
+        pdf->savePairs();
+        onEdit();
+    } else {
+        Application::instance()->logError("MainWindow::onMakeSummationTo1(): Unsupported file type: " +
+                                          _right_clicked_file->getFileType() );
+    }
+}
+
+void MainWindow::onDuplicateFile()
+{
+    //propose a name based on the point set name.
+    bool ok;
+    QString proposed_name( _right_clicked_file->getName() );
+    proposed_name.append( "_copy" );
+    QString new_file_name = QInputDialog::getText(this, "Name the file",
+                                             "New file name:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+
+    if (ok && !new_file_name.isEmpty()){
+        File* fileNew = _right_clicked_file->duplicatePhysicalFiles( new_file_name );
+        if( ! fileNew ){
+            Application::instance()->logError("MainWindow::onDuplicateFile(): operation failed.");
+            return;
+        } else {
+            Application::instance()->getProject()->addFile( fileNew );
+            //refreshes project tree display
+            Application::instance()->refreshProjectTree();
+        }
+    }
+}
+
+void MainWindow::onNDVEstimationShepard()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //ask the user for power parameter.
+    bool ok = false;
+    double power = QInputDialog::getDouble(this, "Enter power parameter",
+                      "Inverse distance power: ", 2.0, 0.1, 100.0, 1,
+                       &ok);
+    if(!ok) return;
+
+    //ask the user for max distance factor.
+    ok = false;
+    double dist_factor = QInputDialog::getDouble(this, "Enter max. distance factor",
+                         "Max. distance factor (1.0 = use all data, 0.0 = min.): ", 0.1, 0.0, 1.0, 1,
+                         &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_NDV_est_Shepard" );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New interpolated variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the estimation.
+    spectral::array result = ImageJockeyUtils::interpolateNullValuesShepard( *a,
+                                                                             *cg,
+                                                                             power,
+                                                                             dist_factor );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    //save the filtered result to the grid in the project
+    cg->appendAsNewVariable(new_variable_name, result );
+}
+
+void MainWindow::onNDVEstimationThinPlateSpline()
+{
+    //Get the Cartesian grid (assumes the Attribute's parent file is one)
+    IJAbstractCartesianGrid* cg = dynamic_cast<IJAbstractCartesianGrid*>(
+                                 _right_clicked_attribute->getContainingFile());
+    if( ! cg ){
+        QMessageBox::critical( this, "Error", QString("No Cartesian grid selected."));
+        return;
+    }
+
+    //ask the user for lambda parameter.
+    bool ok = false;
+    double lambda = QInputDialog::getDouble(this, "Enter lambda parameter",
+                      "Lambda (0.0 = match all data; large value ~ least squares plane): ", 0.1, 0.0, 100000.0, 2,
+                       &ok);
+    if(!ok) return;
+
+    //propose a name for the new variable in the source grid
+    QString proposed_name( _right_clicked_attribute->getName() );
+    proposed_name.append( "_NDV_est_spline" );
+
+    //open the renaming dialog
+    QString new_variable_name = QInputDialog::getText(this, "Name the new variable",
+                                             "New interpolated variable:", QLineEdit::Normal,
+                                             proposed_name, &ok);
+    if( ! ok ){
+        return;
+    }
+
+    //Get the data
+    long selectedAttributeIndex = _right_clicked_attribute->getAttributeGEOEASgivenIndex()-1;
+    spectral::array* a = cg->createSpectralArray( selectedAttributeIndex );
+
+    //Perform the estimation.
+    int execution_status;
+    spectral::array result = ImageJockeyUtils::interpolateNullValuesThinPlateSpline( *a,
+                                                                                     *cg,
+                                                                                     lambda,
+                                                                                     execution_status );
+
+    //deallocate the intermediary spectral::array object
+    delete a;
+
+    switch( execution_status ){
+    case 0: //normal termination
+        //save the filtered result to the grid in the project
+        cg->appendAsNewVariable( new_variable_name, result );
+        break;
+    case 1: //abend
+        Application::instance()->logError("MainWindow::onNDVEstimationThinPlateSpline(): "
+                                          "singular matrix.  Operation failed.", true);
+        break;
+    case 2: //abend
+        Application::instance()->logError("MainWindow::onNDVEstimationThinPlateSpline(): "
+                                          "premature termination.  Operation failed.", true);
+        break;
+    case 3: //abend
+        Application::instance()->logError("MainWindow::onNDVEstimationThinPlateSpline(): "
+                                          "innacurate solution.  Operation failed.", true);
+        break;
+    }
+
+}
+
+void MainWindow::onMapRidgesOrValleys()
+{
+    //the parent file is surely a CartesianGrid.
+    CartesianGrid *cg = dynamic_cast<CartesianGrid*>( _right_clicked_attribute->getContainingFile() );
+
+    //which feature to map?
+    QMessageBox msgBox;
+    msgBox.setText("Which feature to map?");
+    QAbstractButton* pButtonRidges = msgBox.addButton(tr("Ridges"), QMessageBox::YesRole);
+    QAbstractButton* pButtonValleys = msgBox.addButton(tr("Valleys"), QMessageBox::NoRole);
+    QAbstractButton* pButtonPeaks = msgBox.addButton(tr("Peaks"), QMessageBox::ApplyRole);
+    QAbstractButton* pButtonBottoms = msgBox.addButton(tr("Bottoms"), QMessageBox::ResetRole);
+    msgBox.exec();
+
+    //suggest an appropriate new variable name
+    QString suggestedNameForOutputVariable = _right_clicked_attribute->getName();
+    if( msgBox.clickedButton() == pButtonRidges ){
+        suggestedNameForOutputVariable += "_ridges";
+    }else if( msgBox.clickedButton() == pButtonValleys ){
+        suggestedNameForOutputVariable += "_valleys";
+    }else if( msgBox.clickedButton() == pButtonPeaks ){
+        suggestedNameForOutputVariable += "_peaks";
+    }else if( msgBox.clickedButton() == pButtonBottoms ){
+        suggestedNameForOutputVariable += "_bottoms";
+    }
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new grid variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             suggestedNameForOutputVariable, &ok );
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //get the grid dimensions
+    uint nI = cg->getNI();
+    uint nJ = cg->getNJ();
+    uint nK = cg->getNK();
+
+    //user enters the half-window size
+    int halfWindowSize = QInputDialog::getInt(this, "Set half window size",
+                         "half search window size in cells:", 5, 1,
+                         std::max( std::max( nI, nJ ), nK ),
+                         1, &ok);
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //user enters the extremum thresold
+    double thresholdAbs = QInputDialog::getDouble(this, "Set extremum threshold",
+                         "Extrema smaller than this are discarded (0.0 = no discard):",
+                         0.0, 0.0, 100000000.0, 6, &ok);
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //Get input data as a raw data array
+    spectral::arrayPtr inputData( cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() ) ) ;
+
+    //Perform the computation according to the user choices
+    int count;
+    spectral::array result;
+    if( msgBox.clickedButton() == pButtonRidges ){
+        result = spectral::get_ridges_or_valleys( *inputData,
+                                                  spectral::ExtremumType::MAXIMUM ,
+                                                  halfWindowSize,
+                                                  thresholdAbs,
+                                                  count );
+    }else if( msgBox.clickedButton() == pButtonValleys ){
+        result = spectral::get_ridges_or_valleys( *inputData,
+                                                  spectral::ExtremumType::MINIMUM ,
+                                                  halfWindowSize,
+                                                  thresholdAbs,
+                                                  count );
+    }else if( msgBox.clickedButton() == pButtonPeaks ){
+        result = spectral::get_extrema_cells( *inputData,
+                                              spectral::ExtremumType::MAXIMUM ,
+                                              halfWindowSize,
+                                              thresholdAbs,
+                                              count );
+    }else if( msgBox.clickedButton() == pButtonBottoms ){
+        result = spectral::get_extrema_cells( *inputData,
+                                              spectral::ExtremumType::MINIMUM ,
+                                              halfWindowSize,
+                                              thresholdAbs,
+                                              count );
+    }
+
+    //writes out the result to the grid
+    cg->append( new_var_name, result );
+}
+
+void MainWindow::onSkeletonize()
+{
+    //the parent file is surely a CartesianGrid.
+    CartesianGrid *cg = dynamic_cast<CartesianGrid*>( _right_clicked_attribute->getContainingFile() );
+
+    //suggest an appropriate new variable name
+    QString suggestedNameForOutputVariable = _right_clicked_attribute->getName() + "_skeleton";
+
+    //user enters the name for the new variable
+    bool ok;
+    QString new_var_name = QInputDialog::getText(this, "Create new grid variable",
+                                             "New variable name:", QLineEdit::Normal,
+                                             suggestedNameForOutputVariable, &ok );
+    //abort if the user cancels the input box
+    if ( !ok || new_var_name.isEmpty() ){
+        return;
+    }
+
+    //get the grid dimensions
+    uint nI = cg->getNI();
+    uint nJ = cg->getNJ();
+    uint nK = cg->getNK();
+
+    //Get input data as a raw data array
+    spectral::arrayPtr inputData( cg->createSpectralArray( _right_clicked_attribute->getIndexInParentGrid() ) ) ;
+
+    //Perform the computation
+    spectral::array result = ImageJockeyUtils::skeletonize( *inputData );
+
+    //writes out the result to the grid
+    cg->append( new_var_name, result );
+}
+
+void MainWindow::onExtractSubgrid()
+{
+    //========================user input part===============================
+
+    //Get the Cartesian grid object.
+    CartesianGrid* cg = dynamic_cast<CartesianGrid*>( _right_clicked_file );
+
+    //Get sampling rates from user
+    SubgridDialog* grd = new SubgridDialog( cg, this );
+
+    grd->show();
 }
 
 void MainWindow::onRemoveFile()
@@ -3671,6 +4013,24 @@ void MainWindow::makeMenuMovingWindowFilters()
     m_subMenuMovingWindowFilters->addAction( "Mean", this,   SLOT(onFilterMean()));
     m_subMenuMovingWindowFilters->addAction( "Median", this, SLOT(onFilterMedian()));
     m_subMenuMovingWindowFilters->addAction( "Gaussian", this,  SLOT(onFilterGaussian()));
+}
+
+void MainWindow::makeMenuDataTransforms()
+{
+    m_subMenuDataTransforms->clear(); //remove any previously added item actions
+    m_subMenuDataTransforms->addAction("FFT", this, SLOT(onFFT()));
+    m_subMenuDataTransforms->addAction("SVD factorization", this, SLOT(onSVD()));
+    m_subMenuDataTransforms->addAction("EMD analysis", this, SLOT(onEMD()));
+    m_subMenuDataTransforms->addAction("Gabor analysis", this, SLOT(onGabor()));
+    m_subMenuDataTransforms->addAction("Wavelet transform", this, SLOT(onWavelet()));
+}
+
+void MainWindow::makeMenuNDVestimation()
+{
+    m_subMenuNDVestimation->clear(); //remove any previously added item actions
+    m_subMenuNDVestimation->addAction("via kriging", this, SLOT(onNDVEstimation()));
+    m_subMenuNDVestimation->addAction("via Shepard's method", this, SLOT(onNDVEstimationShepard()));
+    m_subMenuNDVestimation->addAction("via thin plate spline", this, SLOT(onNDVEstimationThinPlateSpline()));
 }
 
 void MainWindow::makeMenuMapAs()

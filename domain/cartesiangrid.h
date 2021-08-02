@@ -35,6 +35,13 @@ public:
      */
     void setInfoFromOtherCG( CartesianGrid* other_cg, bool copyCategoricalAttributesList = true );
 
+    /** Sets the cartesian grid metadata by copying only the grid parameters from another grid, specified by
+     * the given pointer.  Non-geometric metadata such as category variable list, no-data value, etc. are
+     * set to default values.  This method is usually called to create a new grid with the same parameters of
+     * another grid.
+     */
+    void setInfoFromOtherCGonlyGridSpecs( CartesianGrid* other_cg );
+
 	/** Sets the cartesian grid metadata with the grid parameters of the passed grid object.
 	 */
 	void setInfoFromSVDFactor( const SVDFactor* factor );
@@ -91,6 +98,15 @@ public:
      */
     bool isDataStoreOfaGeologicSection();
 
+    /** Returns a new Cartesian grid object that is a subgrid of this grid.  The returned grid is
+     * limited by the topological indexes passed as parameters.  All the data are also copied to
+     * the new returned grid.  This method does not add the new grid to the project tree nor creates
+     * the final physical files.
+     */
+    CartesianGrid* makeSubGrid( uint minI, uint maxI,
+                                uint minJ, uint maxJ,
+                                uint minK, uint maxK );
+
 //GridFile interface
 	virtual bool XYZtoIJK( double x, double y, double z,
 						   uint& i,   uint& j,   uint& k );
@@ -117,6 +133,7 @@ public:
 	virtual void updateMetaDataFile();
 	virtual bool isDataFile(){ return true; }
 	bool isDistribution(){ return false; }
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 // ProjectComponent interface
 public:

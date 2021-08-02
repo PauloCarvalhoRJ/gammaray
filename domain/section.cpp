@@ -1,6 +1,7 @@
 #include "section.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QTextStream>
 #include <cassert>
 
@@ -296,6 +297,74 @@ void Section::updateMetaDataFile()
         m_CartesianGrid->updateMetaDataFile();
     if( m_PointSet )
         m_PointSet->updateMetaDataFile();
+}
+
+File *Section::duplicatePhysicalFiles(const QString new_file_name)
+{
+    //The Section is a special case among the other files.  It only has a metadata file.
+    //So, it does not follow the usual protocol of other files to call File::duplicateDataAndMetaDataFiles() first.
+    //The Section is more like a subdirectory in the Project tree with two actual data files in it: a
+    //point set defining the "folds" of the "fence" and a 2D Cartesian grid containing the values pasted
+    //onto the "fence" like a texture.  These two files have their own metadata files, hence we have to copy
+    //five files in total.
+
+    //The five paths
+    QString originalMetaDataFilePath              = getMetaDataFilePath();
+    QString originalPointSetDataFilePath          = getPointSet()->getPath();
+    QString originalPointSetMetaDataFilePath      = getPointSet()->getMetaDataFilePath();
+    QString originalCartesianGridDataFilePath     = getCartesianGrid()->getPath();
+    QString originalCartesianGridMetaDataFilePath = getCartesianGrid()->getMetaDataFilePath();
+
+    //The five sanity checks
+    QFileInfo qfileInfoMD( originalMetaDataFilePath );
+    if( ! qfileInfoMD.exists() )
+        Application::instance()->logWarn("Section::duplicateDataAndMetaDataFiles(): metadata file not found.");
+    QString directoryPath = qfileInfoMD.absolutePath();
+    QFileInfo qfileInfoPS( originalPointSetDataFilePath );
+    if( ! qfileInfoPS.exists() )
+        Application::instance()->logWarn("Section::duplicateDataAndMetaDataFiles(): point set file not found.");
+    QFileInfo qfileInfoPSMD( originalPointSetMetaDataFilePath );
+    if( ! qfileInfoPSMD.exists() )
+        Application::instance()->logWarn("Section::duplicateDataAndMetaDataFiles(): point set's metadata file not found.");
+    QFileInfo qfileInfoCG( originalCartesianGridDataFilePath );
+    if( ! qfileInfoCG.exists() )
+        Application::instance()->logWarn("Section::duplicateDataAndMetaDataFiles(): Cartesian grid file not found.");
+    QFileInfo qfileInfoCGMD( originalCartesianGridMetaDataFilePath );
+    if( ! qfileInfoCGMD.exists() )
+        Application::instance()->logWarn("Section::duplicateDataAndMetaDataFiles(): Cartesian grid's metadata file not found.");
+
+    //The five paths of the future duplicate files
+    QString duplicateMetaDataFilePath = directoryPath + '/' + new_file_name + ".md";
+    QString duplicatePSFilePath       = directoryPath + '/' + new_file_name + "_locations";
+    QString duplicatePSMDFilePath     = directoryPath + '/' + new_file_name + "_locations.md";
+    QString duplicateCGFilePath       = directoryPath + '/' + new_file_name + "_data";
+    QString duplicateCGMDFilePath     = directoryPath + '/' + new_file_name + "_data.md";
+
+    //The five copy operations
+    Util::copyFile( originalMetaDataFilePath,              duplicateMetaDataFilePath );
+    Util::copyFile( originalPointSetDataFilePath,          duplicatePSFilePath );
+    Util::copyFile( originalPointSetMetaDataFilePath,      duplicatePSMDFilePath );
+    Util::copyFile( originalCartesianGridDataFilePath,     duplicateCGFilePath );
+    Util::copyFile( originalCartesianGridMetaDataFilePath, duplicateCGMDFilePath );
+
+    //Create the new point set to be a child object of the Section
+    PointSet* ps = new PointSet( duplicatePSFilePath );
+    ps->updateChildObjectsCollection();
+    ps->setInfoFromMetadataFile();
+
+    //Create the new Cartesian grid to be a child object of the Section
+    CartesianGrid* cg = new CartesianGrid( duplicateCGFilePath );
+    cg->updateChildObjectsCollection();
+    cg->setInfoFromMetadataFile();
+
+    //Create the new Section object to refer the new five files
+    Section* section = new Section( directoryPath + '/' + new_file_name );
+    section->setPointSet( ps );
+    section->setCartesianGrid( cg );
+    section->updateMetaDataFile(); //the duplicate's metadata file must be rewritten because both point set
+                                   //and cartesian grids were renamed.
+
+    return section;
 }
 
 QIcon Section::getIcon()

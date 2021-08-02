@@ -376,3 +376,11 @@ void PointSet::updateMetaDataFile()
     }
     file.close();
 }
+
+File *PointSet::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    PointSet* newPS = new PointSet( duplicateFilePath );
+    newPS->setInfoFromMetadataFile();
+    return newPS;
+}

@@ -38,6 +38,14 @@ bool CategoryPDF::hasZeroOrLessProb() const
     return false;
 }
 
+bool CategoryPDF::hasNegativeProbabilities() const
+{
+    for( const QPair<int, double>& idp : m_pairs )
+        if( idp.second < 0.0 )
+            return true;
+    return false;
+}
+
 int CategoryPDF::getFaciesFromCumulativeFrequency(double cumulativeProbability)
 {
     CategoryDefinition* cd = getCategoryDefinition();
@@ -59,6 +67,33 @@ double CategoryPDF::sumProbs() const
     for( const QPair<int, double>& idp : m_pairs )
         sum += idp.second;
     return sum;
+}
+
+std::vector<double> CategoryPDF::getProbabilities() const
+{
+    std::vector<double> result;
+    result.reserve( m_pairs.size() );
+    for( const QPair<int, double>& idp : m_pairs )
+        result.push_back( idp.second );
+    return result;
+}
+
+void CategoryPDF::setProbabilities( const std::vector<double> &probabilities )
+{
+    uint index = 0;
+    for( double prob : probabilities ){
+        m_pairs[index].second = prob;
+        ++index;
+    }
+}
+
+void CategoryPDF::forceSumToOne()
+{
+    std::vector<double> probs = getProbabilities();
+    double sum = std::accumulate(probs.begin(), probs.end(), 0.0);
+    //divide all elements to their sum.
+    std::transform(probs.begin(), probs.end(), probs.begin(), [sum](double &c){ return c/sum; });
+    setProbabilities( probs );
 }
 
 QIcon CategoryPDF::getIcon()
@@ -84,7 +119,13 @@ void CategoryPDF::save(QTextStream *txt_stream)
     }
 
     (*txt_stream) << this->getFileType() << ":" << this->getFileName()
-                                         << ',' << usedCategoryDefinitionName << '\n';
+                  << ',' << usedCategoryDefinitionName << '\n';
+}
+
+File *CategoryPDF::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new CategoryPDF( getCategoryDefinition(), duplicateFilePath );
 }
 
 bool CategoryPDF::setCategoryDefinition()

@@ -237,6 +237,7 @@ public:
 	virtual void writeToFS();
 	virtual void deleteFromFS();
     virtual bool isDistribution(){ return false; }
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 // ProjectComponent interface
 public:

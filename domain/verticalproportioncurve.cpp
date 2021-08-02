@@ -351,6 +351,14 @@ void VerticalProportionCurve::deleteFromFS()
     file.remove(); //TODO: throw exception if remove() returns false (fails).  Also see QIODevice::errorString() to see error message.
 }
 
+File *VerticalProportionCurve::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    VerticalProportionCurve* vpcNew = new VerticalProportionCurve( duplicateFilePath, m_associatedCategoryDefinitionName );
+    vpcNew->updateChildObjectsCollection();
+    return vpcNew;
+}
+
 bool VerticalProportionCurve::isWeight(Attribute *at)
 {
     //Vertical Proportion Curves are not supposed to have attributes, but, as it reuses DataFile,

@@ -201,6 +201,12 @@ void CategoryDefinition::clearLoadedContents()
     clearStashOfCreatedParameters();
 }
 
+File *CategoryDefinition::duplicatePhysicalFiles(const QString new_file_name)
+{
+    QString duplicateFilePath = duplicateDataAndMetaDataFiles( new_file_name );
+    return new CategoryDefinition( duplicateFilePath );
+}
+
 void CategoryDefinition::clearStashOfCreatedParameters()
 {
     QList<GSLibParType*>::iterator it = m_stashOfCreatedParameters.begin();

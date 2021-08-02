@@ -36,6 +36,7 @@ SOURCES += main.cpp\
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
     dialogs/populatewithproportionsfromvpcdialog.cpp \
     dialogs/sectiondialog.cpp \
+    dialogs/subgriddialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
@@ -298,6 +299,7 @@ HEADERS  += mainwindow.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
     dialogs/populatewithproportionsfromvpcdialog.h \
     dialogs/sectiondialog.h \
+    dialogs/subgriddialog.h \
     domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
@@ -568,6 +570,7 @@ FORMS    += mainwindow.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
     dialogs/populatewithproportionsfromvpcdialog.ui \
     dialogs/sectiondialog.ui \
+    dialogs/subgriddialog.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
@@ -820,7 +823,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.9
+VERSION = 6.12
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

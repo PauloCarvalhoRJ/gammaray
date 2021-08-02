@@ -15,9 +15,10 @@ public:
 public:
     QString getFileType() const { return "PLOT"; }
     virtual bool canHaveMetaData(){ return false; }
-    virtual void updateMetaDataFile(){;}
+    virtual void updateMetaDataFile(){}
     bool isDataFile(){ return false; }
 	bool isDistribution(){ return false; }
+    virtual File* duplicatePhysicalFiles( const QString new_file_name );
 
 // ProjectComponent interface
 public:
