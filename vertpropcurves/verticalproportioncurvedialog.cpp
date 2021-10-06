@@ -201,8 +201,10 @@ void VerticalProportionCurveDialog::onSave()
 void VerticalProportionCurveDialog::onFallbackPDFChanged( File *pdf )
 {
     m_fallbackPDF = dynamic_cast< CategoryPDF* >( pdf );
-    if( ! m_fallbackPDF )
+    if( ! m_fallbackPDF ) {
         Application::instance()->logError("VerticalProportionCurveDialog::onFallbackPDFChanged(): passed file is null or is not of CategoryPDF class.");
+        return;
+    }
 
     //if there is a current VPC, but is has not been added
     //to the project, delete it.
