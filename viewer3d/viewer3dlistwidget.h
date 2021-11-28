@@ -25,13 +25,16 @@ public:
 
     void dropEvent(QDropEvent *e);
 
-signals:
+Q_SIGNALS:
 
     /** Triggered when the user drops a project object. */
     void newObject( const View3DListRecord object_info );
 
     /** Triggered when the user removes an object from view. */
     void removeObject( const View3DListRecord object_info );
+
+    /** Triggered when the user hides/show an object being viewed. */
+    void showHideObject( const View3DListRecord object_info, bool show );
 
 private:
     //context menu for the list items
@@ -43,9 +46,10 @@ private:
      */
     uint getNextInstance( const QString object_locator );
 
-private slots:
+private Q_SLOTS:
     void onContextMenu(const QPoint &mouse_location);
     void onRemoveFromView();
+    void onItemChanged( QListWidgetItem* item );
 };
 
 #endif // VIEWER3DLISTWIDGET_H

@@ -14,6 +14,9 @@ Viewer3DListWidget::Viewer3DListWidget( QWidget *parent ) : QListWidget( parent 
     _contextMenu = new QMenu( this );
     this->setContextMenuPolicy( Qt::CustomContextMenu );
     connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this, SLOT(onContextMenu(const QPoint &)));
+
+    //intercepts when user clicks on the visibility checkbox and other actions.
+    connect(this, SIGNAL(itemChanged(QListWidgetItem*)), this, SLOT(onItemChanged(QListWidgetItem*)));
 }
 
 void Viewer3DListWidget::dragMoveEvent(QDragMoveEvent * /*e*/) {
@@ -55,6 +58,8 @@ void Viewer3DListWidget::dropEvent(QDropEvent *e)
 
     //Create a list item with the object information
     QListWidgetItem* item = new QListWidgetItem( object->getIcon(), object->getNameWithParents() );
+    item->setFlags( item->flags() | Qt::ItemIsUserCheckable );
+    item->setCheckState( Qt::Checked );
     View3DListRecord data( object_locator, getNextInstance( object_locator ) );
     QVariant qv; //the QVariant is necessary to wrap the custom class for storage as list item data
     qv.setValue( data );
@@ -111,4 +116,20 @@ void Viewer3DListWidget::onRemoveFromView()
                                       data.objectLocator + "(instance=" + QString::number( data.instance ) + ")" );
 
     emit removeObject( data );
+}
+
+void Viewer3DListWidget::onItemChanged(QListWidgetItem *item)
+{
+    if( ! item ){
+        Application::instance()->logError( "Viewer3DListWidget::onItemChanged(): null pointer to QListWidgetItem." );
+        return;
+    }
+
+    //notify listening code of user wanting to show/hide objects in the viewer.
+    View3DListRecord data = item->data( Qt::UserRole ).value<View3DListRecord>();
+    if( item->checkState() == Qt::Checked ){
+        emit showHideObject( data, true  );
+    } else if ( item->checkState() == Qt::Unchecked ){
+        emit showHideObject( data, false );
+    }
 }

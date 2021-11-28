@@ -96,9 +96,10 @@ private:
     // applies the current text style set by the user to the passed text actor.
     void applyCurrentTextStyle( vtkSmartPointer<vtkBillboardTextActor3D> textActor );
 
-private slots:
+private Q_SLOTS:
     void onNewObject(const View3DListRecord object_info);
     void onRemoveObject(const View3DListRecord object_info);
+    void onShowHideObject(const View3DListRecord object_info, bool show);
     void onViewAll();
     void onLookAtXY();
     void onLookAtXZ();

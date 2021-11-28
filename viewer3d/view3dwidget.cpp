@@ -183,6 +183,8 @@ View3DWidget::View3DWidget(QWidget *parent)
             SLOT(onNewObject(View3DListRecord)));
     connect(ui->listWidget, SIGNAL(removeObject(View3DListRecord)), this,
             SLOT(onRemoveObject(View3DListRecord)));
+    connect(ui->listWidget, SIGNAL(showHideObject(View3DListRecord, bool)), this,
+            SLOT(onShowHideObject(View3DListRecord, bool)));
 
     // Creates, but doesn't show, the floating widget to set the vertical exaggeration.
     _verticalExaggWiget = new View3DVerticalExaggerationWidget(this);
@@ -334,6 +336,27 @@ void View3DWidget::onRemoveObject(const View3DListRecord object_info)
 
     // TODO: verify whether the smart pointer manages memory after all local references to
     // the actor have been removed.
+}
+
+void View3DWidget::onShowHideObject(const View3DListRecord object_info, bool show)
+{
+    // Get from the list the visual objects associated with the object to be shown/hidden.
+    View3DViewData viewData = _currentObjects.value(object_info);
+
+    // Get the VTK actor matching the object locator.
+    vtkSmartPointer<vtkProp> actor = viewData.actor;
+
+    // Get the VTK actor of the label (if any).
+    vtkSmartPointer<vtkProp> labelActor = viewData.labelActor;
+    if( labelActor )
+        //Show/hide the label actor.
+        labelActor->SetVisibility( show );
+
+    // Show/hide the actor.
+    actor->SetVisibility( show );
+
+    // redraw the scene
+    _vtkwidget->GetRenderWindow()->Render();
 }
 
 void View3DWidget::onViewAll()
