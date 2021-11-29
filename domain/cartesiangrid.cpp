@@ -569,11 +569,20 @@ QString CartesianGrid::getFileType() const
 
 void CartesianGrid::updateMetaDataFile()
 {
-	//If this object does not have a physical file on its own, it doesn't have a metadata file.
-	//Instead, its metadata is set on the fly by its parent GeoGrid (see DataFile::updatePropertyCollection() method).
+    //If this grid serves as a data store for a GeoGrid, it doesn't have a metadata file.
+    //Instead, we must update the metadata of the parent GeoGrid (see DataFile::updatePropertyCollection() method).
 	//The Cartesian grid physical file belongs to the parent GeoGrid object and this one holds its metadata file.
-	if( isUVWOfAGeoGrid() )
-		return;
+    if( isUVWOfAGeoGrid() ){
+        GeoGrid* parentGG = dynamic_cast<GeoGrid*>( getParent() );
+        // NI, NJ and NK of a Cartesin grid that serves as data store for a geogrid
+        // are not supposed to change.
+        parentGG->setNoDataValue( getNoDataValue() );
+        parentGG->setNReal( getNumberOfRealizations() );
+        parentGG->replaceNormalScoredVariablesInformation( getNSVarVarTrnTriads() );
+        parentGG->replaceCategoricalAttributesInformation( getCategoricalAttributes() );
+        parentGG->updateMetaDataFile();
+        return;
+    }
 
     QFile file( this->getMetaDataFilePath() );
     file.open( QFile::WriteOnly | QFile::Text );

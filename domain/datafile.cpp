@@ -713,6 +713,18 @@ bool DataFile::getCenter(double &x, double &y, double &z) const
     return false;
 }
 
+void DataFile::replaceNormalScoredVariablesInformation(const QMap<uint, QPair<uint, QString> > &nsvar_var_trn)
+{
+    _nsvar_var_trn.clear();
+    _nsvar_var_trn.unite( nsvar_var_trn );
+}
+
+void DataFile::replaceCategoricalAttributesInformation(const QList<QPair<uint, QString> > &categorical_attributes)
+{
+    _categorical_attributes.clear();
+    _categorical_attributes << categorical_attributes;
+}
+
 void DataFile::replacePhysicalFile(const QString from_file_path)
 {
     // copies the source file over the current physical file in project.
