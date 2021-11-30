@@ -30,6 +30,12 @@ public:
 
     void rescalePickMarkerActor();
 
+    /** This was copied from vtkInteractorStyleTrackballCamera::Pan() and modified to correctly perform
+     * panning with a vertical exaggeration applied to Z axis.
+     * The only two changes are marked with comments in the .cpp file.
+     */
+    void Pan() override;
+
 protected:
 
     bool m_isDragging;

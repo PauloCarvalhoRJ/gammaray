@@ -172,3 +172,64 @@ void v3dMouseInteractor::rescalePickMarkerActor()
         this->GetDefaultRenderer()->Render();
     }
 }
+
+void v3dMouseInteractor::Pan()
+{
+    if (this->CurrentRenderer == nullptr)
+    {
+      return;
+    }
+
+    vtkRenderWindowInteractor* rwi = this->Interactor;
+
+    double viewFocus[4], focalDepth, viewPoint[3];
+    double newPickPoint[4], oldPickPoint[4], motionVector[3];
+
+    // Calculate the focal depth since we'll be using it a lot
+
+    vtkCamera* camera = this->CurrentRenderer->GetActiveCamera();
+    camera->GetFocalPoint(viewFocus);
+    this->ComputeWorldToDisplay(viewFocus[0], viewFocus[1], viewFocus[2], viewFocus);
+    focalDepth = viewFocus[2];
+
+    this->ComputeDisplayToWorld(
+      rwi->GetEventPosition()[0], rwi->GetEventPosition()[1], focalDepth, newPickPoint);
+
+    // Has to recalc old mouse point since the viewport has moved,
+    // so can't move it outside the loop
+
+    this->ComputeDisplayToWorld(
+      rwi->GetLastEventPosition()[0], rwi->GetLastEventPosition()[1], focalDepth, oldPickPoint);
+
+    // Camera motion is reversed
+
+    motionVector[0] = oldPickPoint[0] - newPickPoint[0];
+    motionVector[1] = oldPickPoint[1] - newPickPoint[1];
+    motionVector[2] = oldPickPoint[2] - newPickPoint[2];
+
+    camera->GetFocalPoint(viewFocus);
+    camera->GetPosition(viewPoint);
+
+    /***** All code above this point was copied from vtkInteractorStyleTrackballCamera::Pan(). ****/
+
+    //Changed from the original Pan() implementation in vtkInteractorStyleTrackballCamera
+    //to account for vertical exaggeration along Z axis
+    camera->SetFocalPoint(
+      motionVector[0] + viewFocus[0], motionVector[1] + viewFocus[1],
+            m_ParentView3DWidget->getVerticalExaggeration() * motionVector[2] + viewFocus[2]);
+
+    //Changed from the original Pan() implementation in vtkInteractorStyleTrackballCamera
+    //to account for vertical exaggeration along Z axis
+    camera->SetPosition(
+      motionVector[0] + viewPoint[0], motionVector[1] + viewPoint[1],
+            m_ParentView3DWidget->getVerticalExaggeration() * motionVector[2] + viewPoint[2]);
+
+    /***** All code balow this point was copied from vtkInteractorStyleTrackballCamera::Pan(). ****/
+
+    if (rwi->GetLightFollowCamera())
+    {
+      this->CurrentRenderer->UpdateLightsGeometryToFollowCamera();
+    }
+
+    rwi->Render();
+}
