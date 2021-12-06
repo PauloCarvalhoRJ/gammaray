@@ -377,7 +377,7 @@ bool ValuesTransferer::transferFromPStoCG()
             valuesForDestCG[ runLengthIndex ] = NDVofDest ;
 
         //update progress
-        if( ! ( iRow % progressUpdateStep ) ){
+        if( progressUpdateStep > 0 && ! ( iRow % progressUpdateStep ) ){
             progressDialog.setValue( iRow );
             QApplication::processEvents();
         }
