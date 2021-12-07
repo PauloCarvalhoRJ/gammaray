@@ -610,6 +610,8 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                     _right_clicked_attribute2 = nullptr; //onHistpltsim() is also used with two attributes selected
                     _projectContextMenu->addAction("Realizations histograms", this, SLOT(onHistpltsim()));
                 }
+                if( ! cg->isTridimensional() ) //GRD file format does not support volumes
+                    _projectContextMenu->addAction("Export as GRD file", this, SLOT(onExportToGRD()));
             }
             if( Util::isIn( parent_file->getFileType(), {"CARTESIANGRID","GEOGRID"} ) ){
                 makeMenuFlipData();
@@ -1338,6 +1340,64 @@ void MainWindow::onExtractSubgrid()
     SubgridDialog* grd = new SubgridDialog( cg, this );
 
     grd->show();
+}
+
+void MainWindow::onExportToGRD()
+{
+    //Get the Cartesian grid object. (assumes the right-clicked dataset is actually a Cartesian grid)
+    //NOTE: GRD does not support 3D grids.
+    //the parent file is surely a CartesianGrid.
+    CartesianGrid *cg = dynamic_cast<CartesianGrid*>( _right_clicked_attribute->getContainingFile() );
+
+    //User enters file path to save the image.
+    QString filePath = QFileDialog::getSaveFileName( this, "Select directory to save GRD file");
+    if( ! filePath.isEmpty() ){
+
+        //loads the data to get min/max of attribute as required by GRD format.
+       cg->loadData();
+
+        //open the file for writing
+        QFile file( filePath );
+        file.open( QFile::WriteOnly | QFile::Text );
+        QTextStream out(&file);
+
+        //shows a progress dialog
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0,0);
+        progressDialog.show();
+        progressDialog.setLabelText("Exporting GRD file...");
+
+        //write out the GRD grid header
+        out << "DSAA\n";
+        out << cg->getNX() << ' ' << cg->getNY() << '\n';
+        double leftEdgeX = cg->getOriginX() - cg->getDX()/2;
+        out << leftEdgeX << ' ' << ( leftEdgeX + cg->getNX() * cg->getDX() ) << '\n';
+        double bottomEdgeY = cg->getOriginY() - cg->getDY()/2;
+        out << bottomEdgeY << ' ' << ( bottomEdgeY + cg->getNY() * cg->getDY() ) << '\n';
+        int attribute_index = _right_clicked_attribute->getIndexInParentGrid();
+        out << cg->getMin( attribute_index ) << ' ' << cg->getMax( attribute_index ) << '\n';
+
+        //loop to output the values
+        int nI = cg->getNX();
+        int nJ = cg->getNY();
+
+        int counter = 0;
+        for( int j = 0; j < nJ; ++j ) {
+            for( int i = 0; i < nI; ++i, ++counter ){
+                if( i > 0 )
+                    out << ' ';
+                out << cg->dataIJK( attribute_index, i, j, 0 );
+                if( ! ( counter % 1000) )
+                    QCoreApplication::processEvents(); //let Qt repaint widgets (update the progress bar)
+            }
+            out << '\n';
+        }
+
+        //close file
+        file.close();
+
+    }else
+        return;
 }
 
 void MainWindow::onRemoveFile()
