@@ -300,6 +300,19 @@ vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZv
                     visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
             }
         }
+    } else { //hide vertexes whose Z values are invalid (no-data values)
+        visibility->Allocate( nI * nJ );
+        for( int j = 0; j < nJ; ++j){
+            for( int i = 0; i < nI; ++i){
+                // Z value
+                double z_value = cartesianGrid->dataIJK( var_index_zvals - 1, i, j, 0);
+                // visibility flag
+                if( cartesianGrid->isNDV( z_value ) )
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+                else
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+            }
+        }
     }
 
     // Create a VTK container with the points (mesh vertexes)
@@ -334,8 +347,10 @@ vtkSmartPointer<vtkUnstructuredGrid> View3DBuilders::makeSurfaceFrom2DGridWithZv
     unstructuredGrid->SetPoints(quadVertexes);
 
     if( var_index_paint ) { //if there is an attribute to paint the surface with.
-        //assign the grid values to the grid cells
+        //assign the grid values to the grid vertexes
         unstructuredGrid->GetPointData()->SetScalars( values     );
+        unstructuredGrid->GetPointData()->AddArray  ( visibility );
+    } else { // hide vertexes whose Z values are invalid (no-data-value)
         unstructuredGrid->GetPointData()->AddArray  ( visibility );
     }
 
@@ -1113,10 +1128,17 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *car
         return View3DViewData();
     }
 
+    // threshold to make vertexes with unvalued Z's invisible
+    vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
+    threshold->SetInputData( unstructuredGrid );
+    threshold->ThresholdByUpper(1); // Criterion is vertexes whose scalars are greater or equal to threshold.
+    threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "Visibility");
+    threshold->Update();
+
     // Create mapper (visualization parameters)
     vtkSmartPointer<vtkDataSetMapper> mapper =
             vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputData( unstructuredGrid );
+    mapper->SetInputConnection( threshold->GetOutputPort() );
     mapper->Update();
 
     // Finally, pass everything to the actor and return it.
@@ -1158,10 +1180,17 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2Dpainted(CartesianGr
     else
         lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, minPaint, maxPaint );
 
+    // threshold to make vertexes with unvalued Z's invisible
+    vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
+    threshold->SetInputData( unstructuredGrid );
+    threshold->ThresholdByUpper(1); // Criterion is vertexes whose scalars are greater or equal to threshold.
+    threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "Visibility");
+    threshold->Update();
+
     // Create mapper (visualization parameters)
     vtkSmartPointer<vtkDataSetMapper> mapper =
             vtkSmartPointer<vtkDataSetMapper>::New();
-    mapper->SetInputData( unstructuredGrid );
+    mapper->SetInputConnection( threshold->GetOutputPort() );
     mapper->SetLookupTable(lut);
     mapper->SetScalarRange(minPaint, maxPaint);
     mapper->ScalarVisibilityOn();
