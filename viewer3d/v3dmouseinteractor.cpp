@@ -44,70 +44,77 @@ void v3dMouseInteractor::OnLeftButtonUp()
         vtkSmartPointer<vtkPropPicker>  picker = vtkSmartPointer<vtkPropPicker>::New();
         picker->Pick(clickPos[0], clickPos[1], 0, this->GetDefaultRenderer());
 
-        // Get the cell of a 3D object under the 2D screen coordinates (ray casting).
-        vtkSmartPointer<vtkCellPicker>  cellPicker = vtkSmartPointer<vtkCellPicker>::New();
-        cellPicker->Pick(clickPos[0], clickPos[1], 0, this->GetDefaultRenderer());
+        // if a vtkActor or subclass was picked
+        if( picker->GetActor() ) {
 
-        //if something was picked
-        if( picker->GetActor() && cellPicker->GetCellId() != -1 ) {
+            // Get the cell of a 3D object under the 2D screen coordinates (ray casting).
+            vtkSmartPointer<vtkCellPicker>  cellPicker = vtkSmartPointer<vtkCellPicker>::New();
+            cellPicker->Pick(clickPos[0], clickPos[1], 0, this->GetDefaultRenderer());
 
-            // Get the picked location in world coordinates.
-            double* pos = picker->GetPickPosition();
+            //if an actor's cell was picked
+            if( cellPicker->GetCellId() != -1 ) {
 
-            // Print which actor has been picked.
-            std::stringstream str;
-            picker->GetActor()->Print( str );
-            Application::instance()->logInfo(  "Picked scene object info:\n" + QString( str.str().c_str() ) );
-            Application::instance()->logInfo(  "----- end of scene object info ------" );
+                // Get the picked location in world coordinates.
+                double* pos = picker->GetPickPosition();
 
-            // Draw/update the pick marker (small red sphere).
-            {
-                // Create a small sphere to mark the picked location on the scene.
-                vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
-                //sphereSource->SetCenter(pos[0], pos[1], pos[2]); //center is set via vtkActor::SetPosition() further below.
-                sphereSource->SetRadius(100.0);
+                // Print which actor has been picked.
+                std::stringstream str;
+                picker->GetActor()->Print( str );
+                Application::instance()->logInfo(  "Picked scene object info:\n" + QString( str.str().c_str() ) );
+                Application::instance()->logInfo(  "----- end of scene object info ------" );
 
-                // Create a mapper for the pick marker.
-                vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-                mapper->SetInputConnection(sphereSource->GetOutputPort());
+                // Draw/update the pick marker (small red sphere).
+                {
+                    // Create a small sphere to mark the picked location on the scene.
+                    vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+                    //sphereSource->SetCenter(pos[0], pos[1], pos[2]); //center is set via vtkActor::SetPosition() further below.
+                    sphereSource->SetRadius(100.0);
 
-                // (Re)create an actor for the pick marker.
-                m_pickMarkerActor = vtkSmartPointer<vtkActor>::New();
-                m_pickMarkerActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
-                m_pickMarkerActor->SetPosition( pos );
-                m_pickMarkerActor->SetMapper(mapper);
+                    // Create a mapper for the pick marker.
+                    vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+                    mapper->SetInputConnection(sphereSource->GetOutputPort());
 
-                // Adds the pick marker to the scene.
-                this->GetDefaultRenderer()->AddActor( m_pickMarkerActor );
+                    // (Re)create an actor for the pick marker.
+                    m_pickMarkerActor = vtkSmartPointer<vtkActor>::New();
+                    m_pickMarkerActor->GetProperty()->SetColor(1.0, 0.0, 0.0);
+                    m_pickMarkerActor->SetPosition( pos );
+                    m_pickMarkerActor->SetMapper(mapper);
 
-                // Rescale the actor so it stays with a constant size with respect to the canvas
-                // independently of zoom.
-                rescalePickMarkerActor();
-            }
+                    // Adds the pick marker to the scene.
+                    this->GetDefaultRenderer()->AddActor( m_pickMarkerActor );
 
-            // Output the picked location.
-            Application::instance()->logInfo( "Picked location (world coordinates): X="
-                      + QString::number(pos[0]) + " Y=" + QString::number(pos[1])
-                      + " Z=" + QString::number(pos[2]) );
+                    // Rescale the actor so it stays with a constant size with respect to the canvas
+                    // independently of zoom.
+                    rescalePickMarkerActor();
+                }
 
-            // Output the probed value at the picked location.
-            vtkDataSet* dataSet = cellPicker->GetDataSet();
-            vtkCellData* cellData = dataSet->GetCellData();
-            vtkDataArray* dataArray = cellData->GetScalars();
-            if( dataArray && dataArray->GetNumberOfComponents() <= 200 ){
-                double values[200]; //200 fields is a fairly large number.
-                dataArray->GetTuple( cellPicker->GetCellId(), values );
-                QString valuesText = "NO VALUES";
-                for( int i = 0; i < dataArray->GetNumberOfComponents(); ++i )
-                    if( i == 0)
-                        valuesText = QString::number(values[0]);
-                    else
-                        valuesText = valuesText + "; " + QString::number(values[i]);
-                Application::instance()->logInfo( "Picked value(s): " + valuesText);
-            } else
-                Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): probing not possible if VTK object has no fields or more than 200 fields in it." );
+                // Output the picked location.
+                Application::instance()->logInfo( "Picked location (world coordinates): X="
+                                                  + QString::number(pos[0]) + " Y=" + QString::number(pos[1])
+                        + " Z=" + QString::number(pos[2]) );
+
+                // Output the probed value at the picked location.
+                vtkDataSet* dataSet = cellPicker->GetDataSet();
+                vtkCellData* cellData = dataSet->GetCellData();
+                vtkDataArray* dataArray = cellData->GetScalars();
+                if( dataArray && dataArray->GetNumberOfComponents() <= 200 ){
+                    double values[200]; //200 fields is a fairly large number.
+                    dataArray->GetTuple( cellPicker->GetCellId(), values );
+                    QString valuesText = "NO VALUES";
+                    for( int i = 0; i < dataArray->GetNumberOfComponents(); ++i )
+                        if( i == 0)
+                            valuesText = QString::number(values[0]);
+                        else
+                            valuesText = valuesText + "; " + QString::number(values[i]);
+                    Application::instance()->logInfo( "Picked value(s): " + valuesText);
+                } else
+                    Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): probing not possible if VTK object has no fields or more than 200 fields in it." );
+            }// if a cell was picked
+        } //if a vtkActor was picked
+        else{ //something else was picked
+            Application::instance()->logError( "v3dMouseInteractor::OnLeftButtonUp(): an unsupported scene element was picked." );
         }
-    }
+    } //if user is not dragging the mouse
 
     m_isLBdown = false;
     m_isDragging = false;

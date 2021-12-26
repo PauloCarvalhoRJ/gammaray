@@ -1,3 +1,11 @@
+//----------Since we're not building with CMake, we need to init the VTK
+// modules------------------
+//--------------linking with the VTK libraries is often not
+// enough--------------------------------
+#include <vtkAutoInit.h>
+VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2); // Assuming VTK was built with OpenGL2 rendering backend
+//------------------------------------------------------------------------------------------------
+
 #include "view3dbuilders.h"
 #include "domain/application.h"
 #include "domain/projectcomponent.h"
@@ -53,6 +61,11 @@
 #include <vtkQuad.h>
 #include <vtkBillboardTextActor3D.h>
 #include <vtkTextProperty.h>
+#include <vtkImageData.h>
+#include <vtkSmartVolumeMapper.h>
+#include <vtkVolumeProperty.h>
+#include <vtkColorTransferFunction.h>
+#include <vtkPiecewiseFunction.h>
 
 #include <QMessageBox>
 #include <QPushButton>
@@ -173,7 +186,7 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
             if ( msgBox.clickedButton() == pButtonUseGeoGrid )
                 return buildForAttributeGeoGrid( dynamic_cast<GeoGrid*>(cg->getParent()), attribute, widget3D );
             else
-                return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
+                return buildForAttribute3DCartesianGridUserChoice( cg, attribute, widget3D );
         } else if( cg->isDataStoreOfaGeologicSection() ) { //cg is the data storage of a Section: present
                                                            // the option to display it either with true geometry
                                                            //or as plain cube
@@ -185,7 +198,7 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
             if ( msgBox.clickedButton() == pButtonUseSection )
                 return buildForAttributeSection( dynamic_cast<Section*>(cg->getParent()), attribute, widget3D );
             else
-                return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
+                return buildForAttribute3DCartesianGridUserChoice( cg, attribute, widget3D );
         } else { //cg is a stand-alone Cartesian grid
             if( cg->getNZ() < 2 ){
                 QMessageBox msgBox;
@@ -207,7 +220,7 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
                     return buildForSurfaceCartesianGrid2Dpainted( cg, attribute, attributePaintWith, widget3D );
                 }
             } else {
-                return buildForAttribute3DCartesianGridWithIJKClipping( cg, attribute, widget3D );
+                return buildForAttribute3DCartesianGridUserChoice( cg, attribute, widget3D );
             }
         }
     } else {
@@ -803,6 +816,24 @@ View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianG
     return View3DViewData(actor);
 }
 
+View3DViewData View3DBuilders::buildForAttribute3DCartesianGridUserChoice(CartesianGrid *cartesianGrid,
+                                                                          Attribute *attribute,
+                                                                          View3DWidget *widget3D)
+{
+    QMessageBox msgBox;
+    msgBox.setText("How to display the 3D Cartesian grid?\n"
+                   "-The classic rendering has a higher memory footprint but enables current features.\n"
+                   "-The volumetric option is recommended for large data sets but is still experimental.");
+    QAbstractButton* pButtonUseClassic = msgBox.addButton("classic", QMessageBox::YesRole);
+    /* QAbstractButton* pButtonUseVolumetric = */ msgBox.addButton("volumetric", QMessageBox::NoRole);
+    msgBox.exec();
+    if ( msgBox.clickedButton() == pButtonUseClassic )
+        return buildForAttribute3DCartesianGridWithIJKClipping( cartesianGrid, attribute, widget3D );
+    else
+        return buildForAttribute3DCGridIJKClippingVolumetric( cartesianGrid, attribute, widget3D );
+
+}
+
 View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(CartesianGrid *cartesianGrid,
                                                                                Attribute *attribute,
                                                                                View3DWidget */*widget3D*/)
@@ -1335,6 +1366,114 @@ View3DViewData View3DBuilders::buildForAttributeSection(Section *section, Attrib
     actor->GetProperty()->EdgeVisibilityOff();
 
     return View3DViewData( actor );
+}
+
+View3DViewData View3DBuilders::buildForAttribute3DCGridIJKClippingVolumetric(CartesianGrid *cartesianGrid,
+                                                                             Attribute *attribute,
+                                                                             View3DWidget *widget3D)
+{
+    //load grid data
+    cartesianGrid->loadData();
+
+    //get the variable index in parent data file
+    uint var_index = cartesianGrid->getFieldGEOEASIndex( attribute->getName() );
+
+    //get the max and min of the selected variable
+    double min = cartesianGrid->min( var_index-1 );
+    double max = cartesianGrid->max( var_index-1 );
+
+    //get grid geometric parameters (loading data is not necessary)
+    int nX = cartesianGrid->getNX();
+    int nY = cartesianGrid->getNY();
+    int nZ = cartesianGrid->getNZ();
+    double X0 = cartesianGrid->getX0();
+    double Y0 = cartesianGrid->getY0();
+    double Z0 = cartesianGrid->getZ0();
+    double dX = cartesianGrid->getDX() + cartesianGrid->getDX() / nX;
+    double dY = cartesianGrid->getDY() + cartesianGrid->getDY() / nY;
+    double dZ = cartesianGrid->getDZ() + cartesianGrid->getDZ() / nZ;
+    double X0frame = X0 - dX/2.0;
+    double Y0frame = Y0 - dY/2.0;
+    double Z0frame = Z0 - dZ/2.0;
+
+    //create a VTK array to store the sample values
+    vtkSmartPointer<vtkFloatArray> values = vtkSmartPointer<vtkFloatArray>::New();
+    values->SetName("values");
+
+    //create a visibility array. Cells with visibility >= 1 will be
+    //visible, and < 1 will be invisible.
+    vtkSmartPointer<vtkIntArray> visibility = vtkSmartPointer<vtkIntArray>::New();
+    visibility->SetNumberOfComponents(1);
+    visibility->SetName("Visibility");
+
+    //read sample values
+    values->Allocate( nX*nY*nZ );
+    visibility->Allocate( nX*nY*nZ );
+    for( int k = 0; k < nZ; ++k){
+        for( int j = 0; j < nY; ++j){
+            for( int i = 0; i < nX; ++i){
+                // sample value
+                double value = cartesianGrid->dataIJK( var_index - 1, i, j, k );
+                values->InsertNextValue( value );
+                // visibility flag
+                if( cartesianGrid->isNDV( value ) )
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::INVISIBLE_NDV_VALUE );
+                else
+                    visibility->InsertNextValue( (int)InvisibiltyFlag::VISIBLE );
+            }
+        }
+    }
+
+    //we don't need file's data anymore
+    cartesianGrid->freeLoadedData();
+
+    //create a volumetric object (regular 3D grid)
+    vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
+    imageData->SetSpacing( dX, dY, dZ );
+    imageData->SetOrigin( X0frame, Y0frame, Z0frame );
+    imageData->SetDimensions( nX+1, nY+1, nZ+1 ); //values in volumes reside in the vertexes (corner-point grid)
+
+    //assign the grid values to the volume cells
+    imageData->GetCellData()->SetScalars( values );
+    imageData->GetCellData()->AddArray( visibility );
+
+    // Create mapper (visualization parameters)
+    vtkSmartPointer<vtkSmartVolumeMapper> volumeMapper = vtkSmartPointer<vtkSmartVolumeMapper>::New();
+    volumeMapper->SetBlendModeToComposite(); // composite first
+    volumeMapper->SetInputData( imageData );
+    //volumeMapper->SetRequestedRenderModeToRayCast();
+    volumeMapper->Update();
+
+    //create a color transfer function (treats categorical variables as continuous values)
+    vtkSmartPointer<vtkColorTransferFunction> ctf;
+    if( attribute->isCategorical() )
+        ctf = View3dColorTables::getCategoricalColorTransferFunction
+                ( cartesianGrid->getCategoryDefinition( attribute ), false );
+    else
+        ctf = View3dColorTables::getColorTransferFunction( ColorTable::RAINBOW, min, max );
+
+    //create transfer mapping scalar value to opacity so unvalued cells are invisible
+    //if the user set a no-data value.
+    vtkSmartPointer<vtkPiecewiseFunction> otf = vtkSmartPointer<vtkPiecewiseFunction>::New();
+    if( cartesianGrid->hasNoDataValue() )
+        otf->AddPoint( cartesianGrid->getNoDataValueAsDouble(), 0.0 );
+    otf->AddPoint( min, 1.0 );
+    otf->AddPoint( max, 1.0 );
+
+    //this object instructs VTK on how to render the volume.
+    vtkSmartPointer<vtkVolumeProperty> volumeProperty = vtkSmartPointer<vtkVolumeProperty>::New();
+    volumeProperty->ShadeOff();
+    volumeProperty->SetColor(ctf);
+    volumeProperty->SetScalarOpacity(otf);
+    //volumeProperty->SetInterpolationType(VTK_LINEAR_INTERPOLATION);
+    volumeProperty->SetInterpolationType(VTK_NEAREST_INTERPOLATION);
+
+    // Finally, pass everything to the vtkVolume (some kind of actor) and return it.
+    vtkSmartPointer<vtkVolume> volume = vtkSmartPointer<vtkVolume>::New();
+    volume->SetMapper( volumeMapper );
+    volume->SetProperty( volumeProperty );
+
+    return View3DViewData( volume, vtkSmartPointer<vtkThreshold>::New(), volumeMapper );
 }
 
 vtkSmartPointer<vtkStructuredGrid> View3DBuilders::makeSurfaceFromSection(Section *section)

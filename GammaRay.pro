@@ -749,7 +749,8 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX \
                 -lvtkRenderingContext2D$$_VTK_VERSION_SUFFIX \
                 -lvtkChartsCore$$_VTK_VERSION_SUFFIX \
-                -lvtkRenderingContextOpenGL2$$_VTK_VERSION_SUFFIX
+                -lvtkRenderingContextOpenGL2$$_VTK_VERSION_SUFFIX \
+                -lvtkRenderingVolumeOpenGL2$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
