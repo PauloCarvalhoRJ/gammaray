@@ -15,6 +15,7 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2); // Assuming VTK was built with OpenG
 #include "domain/geogrid.h"
 #include "domain/segmentset.h"
 #include "domain/section.h"
+#include "domain/categorydefinition.h"
 #include "dialogs/choosevariabledialog.h"
 #include "view3dcolortables.h"
 #include "view3dwidget.h"
@@ -478,6 +479,16 @@ View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segme
     uint y1colIdx = segmentSet->getYFinalIndex() - 1;
     uint z1colIdx = segmentSet->getZFinalIndex() - 1;
 
+    //if the attribute is categorical, retrieve the object with the categorical definitions.
+    CategoryDefinition* cd = nullptr;
+    if( attribute->isCategorical() ) {
+        cd = segmentSet->getCategoryDefinition( attribute );
+        cd->loadQuintuplets();
+    }
+
+    //create a vector for possible caption text actors
+    std::vector< vtkSmartPointer<vtkBillboardTextActor3D> > captionActors;
+
     //get the array index of the target variable in parent data file
     uint var_index = segmentSet->getFieldGEOEASIndex( attribute->getName() );
 
@@ -505,9 +516,24 @@ View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segme
         segment->GetPointIds()->SetId( 0, id0 );
         segment->GetPointIds()->SetId( 1, id1 );
         segments->InsertNextCell( segment );
-        // take the opportunitu to load the sample values
+        // take the opportunity to load the sample values
         double value = segmentSet->data( i, var_index - 1 );
         values->InsertNextValue( value );
+        // if the attribute is categorical, add text actors with the category name
+        if( attribute->isCategorical() ){
+            //compute the segment's mid point.
+            double cX, cY, cZ;
+            segmentSet->getSegmentCenter( i, cX, cY, cZ );
+            //get the category name text
+            QString caption = cd->getCategoryNameByCode( value );
+            //create the text actor itself and ads it to the collection of caption texts
+            vtkSmartPointer<vtkBillboardTextActor3D> captionActor = vtkSmartPointer<vtkBillboardTextActor3D>::New();
+            captionActor->SetInput ( caption.toStdString().c_str() );
+            captionActor->SetPosition( cX, cY, cZ );
+            //text style (calls to textActor->GetTextProperty()->... to set font size, color, etc.) is
+            //controlled via user settings in the View3DWidget class.
+            captionActors.push_back( captionActor );
+        }
     }
 
     // build a polygonal line from the points and segments primitives
@@ -528,7 +554,7 @@ View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segme
     //create a color table according to variable type (continuous or categorical)
     vtkSmartPointer<vtkLookupTable> lut;
     if( attribute->isCategorical() )
-        lut = View3dColorTables::getCategoricalColorTable( segmentSet->getCategoryDefinition( attribute ), false );
+        lut = View3dColorTables::getCategoricalColorTable( cd, false );
     else
         lut = View3dColorTables::getColorTable( ColorTable::RAINBOW, min, max );
 
@@ -561,6 +587,7 @@ View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segme
     View3DViewData v3dd( tubeActor );
     v3dd.tubeFilter = tubeFilter;
     v3dd.labelActor = textActor;
+    v3dd.captionActors = captionActors;
     return v3dd;
 }
 

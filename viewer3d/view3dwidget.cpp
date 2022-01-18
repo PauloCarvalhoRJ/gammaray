@@ -252,7 +252,8 @@ void View3DWidget::removeCurrentConfigWidget()
     }
 }
 
-void View3DWidget::applyCurrentTextStyle(vtkSmartPointer<vtkBillboardTextActor3D> textActor)
+void View3DWidget::applyCurrentTextStyle(vtkSmartPointer<vtkBillboardTextActor3D> textActor,
+                                         bool ignoreVisibility)
 {
     textActor->GetTextProperty()->SetFontSize ( _textConfigWiget->getFontSize() );
     QColor fontColor = _textConfigWiget->getFontColor();
@@ -260,6 +261,7 @@ void View3DWidget::applyCurrentTextStyle(vtkSmartPointer<vtkBillboardTextActor3D
                                              fontColor.greenF(),
                                              fontColor.blueF() );
     textActor->GetTextProperty()->SetJustificationToCentered();
+    if( ! ignoreVisibility )
     textActor->SetVisibility( _textConfigWiget->isShowText() );
 }
 
@@ -297,8 +299,17 @@ void View3DWidget::onNewObject(const View3DListRecord object_info)
 
     // If object defined a label, adds it to the foreground scene.
     if( viewData.labelActor ) {
-        applyCurrentTextStyle( viewData.labelActor );
+        applyCurrentTextStyle( viewData.labelActor, false );
         _rendererForeground->AddActor ( viewData.labelActor );
+    }
+
+    // If object defined captions, adds them to the foreground scene.
+    if( ! viewData.captionActors.empty() ) {
+        for( vtkSmartPointer<vtkBillboardTextActor3D> captionActor : viewData.captionActors ){
+            applyCurrentTextStyle( captionActor, true ); //visibility of the captions is on a per-object basis, not globally.
+            _rendererForeground->AddActor( captionActor );
+            captionActor->VisibilityOff(); // >>>>>>> Visibility of captions are disbaled by default as they tend to clutter the view.
+        }
     }
 
     // redraw the scene
@@ -321,6 +332,13 @@ void View3DWidget::onRemoveObject(const View3DListRecord object_info)
     vtkSmartPointer<vtkProp> labelActor = viewData.labelActor;
     if( labelActor )
         _rendererForeground->RemoveActor( labelActor );
+
+    // Remove any caption text actors from the scene.
+    if( ! viewData.captionActors.empty() ) {
+        for( vtkSmartPointer<vtkBillboardTextActor3D> captionActor : viewData.captionActors ){
+            _rendererForeground->RemoveActor( captionActor );
+        }
+    }
 
     // redraw the scene
     _vtkwidget->GetRenderWindow()->Render();
@@ -351,6 +369,24 @@ void View3DWidget::onShowHideObject(const View3DListRecord object_info, bool sho
     if( labelActor )
         //Show/hide the label actor.
         labelActor->SetVisibility( show );
+
+    // If object defined captions, toggles their visibilty.
+    if( ! viewData.captionActors.empty() ) {
+
+        // TODO: checks whether the user enabled or disabled caption visibility
+        // the checkbox is in the Qt widget associated with the object.
+//        View3DConfigWidget *widget = nullptr;
+//        if (_currentCfgWidgets.contains(object_info)) {
+//            widget = _currentCfgWidgets[object_info];
+//            delete widget;
+//        }
+        // Use the code above as starting point so that the visibility toggle does not override
+        // the visibility setting specific to caption texts for an individual object.
+
+        for( vtkSmartPointer<vtkBillboardTextActor3D> captionActor : viewData.captionActors ){
+            captionActor->SetVisibility( show );
+        }
+    }
 
     // Show/hide the actor.
     actor->SetVisibility( show );
@@ -530,7 +566,15 @@ void View3DWidget::onTextConfigChanged()
         // Reconfigures the VTK actor of the label (if any).
         vtkSmartPointer<vtkBillboardTextActor3D> labelActor = viewData.labelActor;
         if( labelActor )
-            applyCurrentTextStyle( labelActor );
+            applyCurrentTextStyle( labelActor, false );
+
+        // Reconfigures the caption text actors (if any).
+        if( ! viewData.captionActors.empty() ) {
+            for( vtkSmartPointer<vtkBillboardTextActor3D> captionActor : viewData.captionActors ){
+                applyCurrentTextStyle( captionActor, true ); //visibility of the captions is on a per-object basis, not globally.
+            }
+        }
+
     }
 
     // redraw the scene

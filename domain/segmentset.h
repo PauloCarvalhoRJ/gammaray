@@ -117,6 +117,12 @@ public:
     /** Returns via output parameters the x,y,z coordinate of the tail vertex of the last segment. */
     void getTailLocation( double& x, double& y, double& z ) const;
 
+    /** Returns the coordinates of the segment's mid point.  The segment cooresponds to a data record
+     * in the underlying data file.
+     * NOTE: make sure a prior call to DataFile::readFromFS() was made to load segments data.
+     */
+    void getSegmentCenter( int iRecord, double& x, double& y, double& z ) const;
+
     // ProjectComponent interface
 public:
     virtual QIcon getIcon();

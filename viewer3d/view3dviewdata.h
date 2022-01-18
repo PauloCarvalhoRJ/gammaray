@@ -2,6 +2,7 @@
 #define VIEW3DVIEWDATA_H
 
 #include <vtkSmartPointer.h>
+#include <vector>
 
 class vtkProp;
 class vtkStructuredGridClip;
@@ -72,6 +73,9 @@ public:
 
     /** Some objects may have a configurable volume mapper. */
     vtkSmartPointer<vtkAbstractVolumeMapper> volumeMapper;
+
+    /** An object may have randomly placed captions (e.g. category names, descriptions, notes, etc.). */
+    std::vector< vtkSmartPointer<vtkBillboardTextActor3D> > captionActors;
 
     /** Sampling rate. Default is 1: 1 cell per 1 sample in each topological direction (I, J, K). */
     int samplingRate;
