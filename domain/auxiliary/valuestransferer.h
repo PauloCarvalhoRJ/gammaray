@@ -32,6 +32,7 @@ private:
     bool transferFromCGtoCG();
     bool transferFromCGtoSection();
     bool transferFromPStoCG();
+    bool transferFromGGtoGG();
 };
 
 #endif // VALUESTRANSFERER_H

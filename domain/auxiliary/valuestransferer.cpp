@@ -41,16 +41,26 @@ bool ValuesTransferer::transfer()
         else if( dfOrig->getFileType() == "POINTSET" && dfDest->getFileType() == "CARTESIANGRID" )
             return transferFromPStoCG();
         else if( dfOrig->getFileType() == "CARTESIANGRID" && dfDest->getFileType() == "CARTESIANGRID" ) {
+            //Cartesian grids can be used as data-store components of other data types, so, the exact
+            //data transfer routine depends on the types of their parent objects.
+            ProjectComponent* parentOfOrig = dfOrig->getParent();
             ProjectComponent* parentOfDest = dfDest->getParent();
-            if( parentOfDest->getTypeName() != "SECTION" ) { //if the destination Cartesian grid is not the data store
-                                                             //of a geologic section, select CG->CG transfer.
+            if( parentOfOrig->getTypeName() == "ObjectGroup" &&
+                parentOfDest->getTypeName() == "ObjectGroup" ) { //if both CG's are stand-alone
                 return transferFromCGtoCG();
-            } else {
-                Application::instance()->logInfo("ValuesTransferer::transfer(): destination Cartesian grid is the data store"
-                                                 " of a geologic section.  Data locations will be those defined by the Section"
-                                                 " geometry and not of the grid.");
+            } else if( parentOfOrig->getTypeName() == "ObjectGroup" &&
+                       parentOfDest->getTypeName() == "SECTION" ) {
                 return transferFromCGtoSection();
-            }
+            } else if( parentOfOrig->getTypeName() == "GEOGRID" &&
+                       parentOfDest->getTypeName() == "GEOGRID" ) {
+                return transferFromGGtoGG();
+            } else
+                Application::instance()->logError("ValuesTransferer::transfer(): collocated transfer of values from the "
+                                                  "Cartesian grid of a " +
+                                                  parentOfOrig->getTypeName()
+                                                  + " to the Cartesian grid of a " +
+                                                  parentOfDest->getTypeName()
+                                                  + " is not currently implemented.");
         } else
             Application::instance()->logError("ValuesTransferer::transfer(): collocated transfer of values from a " +
                                               dfOrig->getFileType()
@@ -391,6 +401,74 @@ bool ValuesTransferer::transferFromPStoCG()
 
     //adds the collocated values a new attribute to the destination data file
     cgDest->addNewDataColumn( m_newAttributeName, valuesForDestCG, cd );
+
+    return true;
+}
+
+bool ValuesTransferer::transferFromGGtoGG()
+{
+    //get the data sets as concrete data types
+    GeoGrid* ggDest = dynamic_cast<GeoGrid*>( m_dfDestination->getParent() );
+    GeoGrid* ggOrig = dynamic_cast<GeoGrid*>( m_atOrigin->getContainingFile()->getParent() );
+
+    if( !ggOrig || !ggDest ){
+        Application::instance()->logError( "ValuesTransferer::transferFromGGtoGG(): a parent of one of the Cartesian grids"
+                                           " is not a geologic grid or is a null pointer." );
+        return false;
+    }
+
+    //load everything from the filesystem
+    ggOrig->loadData();
+    ggOrig->loadMesh();
+    ggDest->loadData();
+    ggDest->loadMesh();
+
+    //get some data information
+    uint rowCount = ggDest->getDataLineCount();
+    uint atIndex = m_atOrigin->getAttributeGEOEASgivenIndex()-1;
+    double NDVofDest = ggDest->getNoDataValueAsDouble();
+
+    //create a vector to hold the collocated values
+    std::vector< double > collocatedValues;
+    collocatedValues.reserve( rowCount );
+
+    //////////////////////////////////
+    QProgressDialog progressDialog;
+    progressDialog.show();
+    progressDialog.setLabelText("Transfering collocated values...");
+    progressDialog.setMinimum( 0 );
+    progressDialog.setValue( 0 );
+    progressDialog.setMaximum( rowCount );
+    /////////////////////////////////
+
+    int progressUpdateStep = rowCount / 100;
+
+    //loop over the destination GeoGrid cells (one cell == one data record)
+    for( int iRow = 0; iRow < rowCount; ++iRow ){
+        uint i, j, k;
+        double x, y, z;
+        ggDest->indexToIJK( iRow, i, j, k );
+        ggDest->IJKtoXYZ( i, j, k, x, y, z );
+        double collocatedValue = ggOrig->valueAt( atIndex, x, y, z );
+        if( std::isfinite( collocatedValue ) && ! ggOrig->isNDV( collocatedValue ) )
+            collocatedValues.push_back( collocatedValue );
+        else
+            collocatedValues.push_back( NDVofDest );
+
+        if( progressUpdateStep > 0 && ! ( iRow % progressUpdateStep ) ){
+            progressDialog.setValue( iRow );
+            QApplication::processEvents();
+        }
+    }
+
+    //if the original variable is categorical, obtain the category definition object
+    //so it stays so in the destination data set.
+    CategoryDefinition* cd = nullptr; //a null category definition means that the variable is continuous.
+    if( ggOrig->isCategorical( m_atOrigin ) )
+        cd = ggOrig->getCategoryDefinition( m_atOrigin );
+
+    //adds the collocated values a new attribute to the destination data file
+    ggDest->addNewDataColumn( m_newAttributeName, collocatedValues, cd );
 
     return true;
 }

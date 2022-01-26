@@ -1160,7 +1160,7 @@ bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k 
                                            " empty when calling this method." );
 
 	//Get the nearest cells.
-    QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 20 );
+    QList<uint> cellIndexes = m_spatialIndex->getNearest( x, y, z, 1 );
 
 	//if the spatial search failed, assumes it fell outside the grid
     if( cellIndexes.empty() )
