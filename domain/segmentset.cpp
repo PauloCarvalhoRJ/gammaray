@@ -409,6 +409,13 @@ void SegmentSet::getTailLocation(double &x, double &y, double &z) const
     z = dataConst( getDataLineCount()-1, getZFinalIndex()-1 );
 }
 
+void SegmentSet::getSegmentCenter(int iRecord, double &x, double &y, double &z) const
+{
+    x = ( dataConst( iRecord, getXFinalIndex()-1 ) + dataConst( iRecord, getXindex()-1 ) ) / 2.0;
+    y = ( dataConst( iRecord, getYFinalIndex()-1 ) + dataConst( iRecord, getYindex()-1 ) ) / 2.0;
+    z = ( dataConst( iRecord, getZFinalIndex()-1 ) + dataConst( iRecord, getZindex()-1 ) ) / 2.0;
+}
+
 
 QIcon SegmentSet::getIcon()
 {

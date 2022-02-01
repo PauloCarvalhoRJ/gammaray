@@ -749,7 +749,8 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX \
                 -lvtkRenderingContext2D$$_VTK_VERSION_SUFFIX \
                 -lvtkChartsCore$$_VTK_VERSION_SUFFIX \
-                -lvtkRenderingContextOpenGL2$$_VTK_VERSION_SUFFIX
+                -lvtkRenderingContextOpenGL2$$_VTK_VERSION_SUFFIX \
+                -lvtkRenderingVolumeOpenGL2$$_VTK_VERSION_SUFFIX
 
 #=============================================================================
 
@@ -823,7 +824,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.12
+VERSION = 6.14
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

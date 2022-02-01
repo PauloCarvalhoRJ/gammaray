@@ -433,9 +433,9 @@ bool SVDFactor::setSlice(SVDFactor * slice)
 		for( int i = 0; i < slice->getNI(); ++i ){
 			double value = slice->dataIJK( i, j, 0 );
 			switch( m_currentPlaneOrientation ){
-				case SVDFactorPlaneOrientation::XY: this->setDataIJK( i, j, m_currentSlice, value );
-				case SVDFactorPlaneOrientation::XZ: this->setDataIJK( i, m_currentSlice, j, value );
-				case SVDFactorPlaneOrientation::YZ: this->setDataIJK( m_currentSlice, i, j, value );
+                case SVDFactorPlaneOrientation::XY: this->setDataIJK( i, j, m_currentSlice, value ); break;
+                case SVDFactorPlaneOrientation::XZ: this->setDataIJK( i, m_currentSlice, j, value ); break;
+                case SVDFactorPlaneOrientation::YZ: this->setDataIJK( m_currentSlice, i, j, value ); break;
 				default: this->dataIJK( i, j, m_currentSlice );
 			}
 		}

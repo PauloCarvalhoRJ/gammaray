@@ -2,6 +2,7 @@
 #define VIEW3DVIEWDATA_H
 
 #include <vtkSmartPointer.h>
+#include <vector>
 
 class vtkProp;
 class vtkStructuredGridClip;
@@ -10,7 +11,7 @@ class vtkDataSetMapper;
 class vtkThreshold;
 class vtkTubeFilter;
 class vtkBillboardTextActor3D;
-
+class vtkAbstractVolumeMapper;
 
 /** This class is just a data structure to hold objects and info related to 3D visualization of a domain object.
  * E.g.: the vtkActor built for it.
@@ -44,6 +45,11 @@ public:
     View3DViewData(vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkDataSetMapper> pMapper);
 
+    View3DViewData(vtkSmartPointer<vtkProp> pActor,
+                   vtkSmartPointer<vtkThreshold> pThreshold,
+                   vtkSmartPointer<vtkAbstractVolumeMapper> pVolumeMapper
+                   );
+
     /** All objects must have a VTKActor to become visible. */
     vtkSmartPointer<vtkProp> actor;
 
@@ -64,6 +70,12 @@ public:
 
     /** An object may provide a VTKActor with its label text. */
     vtkSmartPointer<vtkBillboardTextActor3D> labelActor;
+
+    /** Some objects may have a configurable volume mapper. */
+    vtkSmartPointer<vtkAbstractVolumeMapper> volumeMapper;
+
+    /** An object may have randomly placed captions (e.g. category names, descriptions, notes, etc.). */
+    std::vector< vtkSmartPointer<vtkBillboardTextActor3D> > captionActors;
 
     /** Sampling rate. Default is 1: 1 cell per 1 sample in each topological direction (I, J, K). */
     int samplingRate;

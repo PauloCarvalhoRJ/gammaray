@@ -78,10 +78,26 @@ private:
      */
     static View3DViewData buildFor3DCartesianGrid( CartesianGrid* cartesianGrid, View3DWidget * widget3D );
 
+    /** Specific builder for an Attribute in a generic 3D Cartesian grid.
+     * The visual representation object type is defined by the user.
+     */
+    static View3DViewData buildForAttribute3DCartesianGridUserChoice(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute,
+            View3DWidget * widget3D);
+
     /** Specific builder for an Attribute in a generic 3D Cartesian grid (with clipping planes
      *  along de I, J and K planes)
      */
     static View3DViewData buildForAttribute3DCartesianGridWithIJKClipping(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute,
+            View3DWidget * widget3D);
+
+    /** Specific builder for an Attribute in a generic 3D Cartesian grid with clipping planes
+     *  along de I, J and K planes and represented as a vtkImageData for volumetric rendering.
+     */
+    static View3DViewData buildForAttribute3DCGridIJKClippingVolumetric(
             CartesianGrid* cartesianGrid,
             Attribute* attribute,
             View3DWidget * widget3D);

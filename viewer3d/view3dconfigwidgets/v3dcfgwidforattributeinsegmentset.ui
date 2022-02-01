@@ -32,6 +32,13 @@
      </item>
     </layout>
    </item>
+   <item>
+    <widget class="QCheckBox" name="chkShowCategoryCaptions">
+     <property name="text">
+      <string>Show category names (categorical variables)</string>
+     </property>
+    </widget>
+   </item>
   </layout>
  </widget>
  <resources/>
@@ -49,6 +56,22 @@
     <hint type="destinationlabel">
      <x>395</x>
      <y>172</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkShowCategoryCaptions</sender>
+   <signal>stateChanged(int)</signal>
+   <receiver>V3DCfgWidForAttributeInSegmentSet</receiver>
+   <slot>onUserMadeChanges()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>159</x>
+     <y>285</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>395</x>
+     <y>232</y>
     </hint>
    </hints>
   </connection>

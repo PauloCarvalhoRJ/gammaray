@@ -23,6 +23,20 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getColorTable(ColorTable ct, 
     }
 }
 
+vtkSmartPointer<vtkColorTransferFunction> View3dColorTables::getColorTransferFunction(ColorTable ct,
+                                                                                      double min,
+                                                                                      double max)
+{
+    switch( ct ){
+        case ColorTable::RAINBOW: return getClassicRainbowCTF( min, max );
+        case ColorTable::SEISMIC: return getSeismicCTF( min, max );
+        default:
+            Application::instance()->logError("View3dColorTables::getColorTransferFunction(): "
+                                              "unknown color scheme code.  Returning a default.");
+            return getClassicRainbowCTF( min, max );
+    }
+}
+
 QString View3dColorTables::getColorTableName(ColorTable ct)
 {
     switch( ct ){
@@ -80,6 +94,29 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getCategoricalColorTable( Cat
     return lut;
 }
 
+vtkSmartPointer<vtkColorTransferFunction> View3dColorTables::getCategoricalColorTransferFunction
+                                                    (CategoryDefinition *cd, bool useGSLibColors)
+{
+    cd->loadQuintuplets();
+    int catCount = cd->getCategoryCount();
+
+    //create a color interpolator object adequate for rendering a categorical color table
+    vtkSmartPointer<vtkColorTransferFunction> ctf =
+            vtkSmartPointer<vtkColorTransferFunction>::New();
+    ctf->SetColorSpaceToRGB();
+    for( size_t i_cat = 0; i_cat < catCount; ++i_cat )
+    {
+        QColor color;
+        if( useGSLibColors )
+            color = Util::getGSLibColor( cd->getColorCode( i_cat ) );
+        else
+            color = cd->getCustomColor( i_cat );
+        ctf->AddRGBPoint( cd->getCategoryCode( i_cat ), color.redF(), color.greenF(), color.blueF() );
+    }
+
+    return ctf;
+}
+
 //===============private functions=====================================
 
 vtkSmartPointer<vtkLookupTable> View3dColorTables::getPredefinedColorsExample(double min, double max)
@@ -127,14 +164,7 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getClassicRainbow(double min,
     size_t tableSize = 32;
 
     //create a color interpolator object
-    vtkSmartPointer<vtkColorTransferFunction> ctf =
-            vtkSmartPointer<vtkColorTransferFunction>::New();
-    ctf->SetColorSpaceToRGB();
-    ctf->AddRGBPoint(0.00, 0.000, 0.000, 1.000);
-    ctf->AddRGBPoint(0.25, 0.000, 1.000, 1.000);
-    ctf->AddRGBPoint(0.50, 0.000, 1.000, 0.000);
-    ctf->AddRGBPoint(0.75, 1.000, 1.000, 0.000);
-    ctf->AddRGBPoint(1.00, 1.000, 0.000, 0.000);
+    vtkSmartPointer<vtkColorTransferFunction> ctf = getClassicRainbowCTF();
 
     //create the color table object
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -157,12 +187,7 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getSeismic(double min, double
     size_t tableSize = 32;
 
     //create a color interpolator object
-    vtkSmartPointer<vtkColorTransferFunction> ctf =
-            vtkSmartPointer<vtkColorTransferFunction>::New();
-    ctf->SetColorSpaceToRGB();
-    ctf->AddRGBPoint(0.00, 0.000, 0.000, 1.000);
-    ctf->AddRGBPoint(0.50, 1.000, 1.000, 1.000);
-    ctf->AddRGBPoint(1.00, 1.000, 0.000, 0.000);
+    vtkSmartPointer<vtkColorTransferFunction> ctf = getSeismicCTF();
 
     //create the color table object
     vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -178,4 +203,32 @@ vtkSmartPointer<vtkLookupTable> View3dColorTables::getSeismic(double min, double
     lut->Build();
 
     return lut;
+}
+
+vtkSmartPointer<vtkColorTransferFunction> View3dColorTables::getClassicRainbowCTF(double min, double max)
+{
+    //create a color interpolator object
+    vtkSmartPointer<vtkColorTransferFunction> ctf =
+            vtkSmartPointer<vtkColorTransferFunction>::New();
+    ctf->SetColorSpaceToRGB();
+    double delta = max - min;
+    ctf->AddRGBPoint(min               , 0.000, 0.000, 1.000);
+    ctf->AddRGBPoint(min + delta * 0.25, 0.000, 1.000, 1.000);
+    ctf->AddRGBPoint(min + delta * 0.50, 0.000, 1.000, 0.000);
+    ctf->AddRGBPoint(min + delta * 0.75, 1.000, 1.000, 0.000);
+    ctf->AddRGBPoint(max               , 1.000, 0.000, 0.000);
+    return ctf;
+}
+
+vtkSmartPointer<vtkColorTransferFunction> View3dColorTables::getSeismicCTF(double min, double max)
+{
+    //create a color interpolator object
+    vtkSmartPointer<vtkColorTransferFunction> ctf =
+            vtkSmartPointer<vtkColorTransferFunction>::New();
+    ctf->SetColorSpaceToRGB();
+    double delta = max - min;
+    ctf->AddRGBPoint(min               , 0.000, 0.000, 1.000);
+    ctf->AddRGBPoint(min + delta * 0.50, 1.000, 1.000, 1.000);
+    ctf->AddRGBPoint(max               , 1.000, 0.000, 0.000);
+    return ctf;
 }

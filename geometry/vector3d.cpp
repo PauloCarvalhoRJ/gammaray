@@ -13,8 +13,8 @@ Vector3D Vector3D::operator+(Vector3D p) const
 Vector3D Vector3D::cross(Vector3D p) const {
 	return Vector3D{
 		y * p.z - p.y * z,
-				z * p.x - p.z * x,
-				x * p.y - p.x * y
+        x * p.z - p.x * z,
+        x * p.y - p.x * y
 	};
 }
 

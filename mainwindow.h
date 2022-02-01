@@ -244,6 +244,7 @@ private slots:
     void onMapRidgesOrValleys();
     void onSkeletonize();
     void onExtractSubgrid();
+    void onExportToGRD();
 
 private:
     /**

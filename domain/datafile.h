@@ -416,6 +416,16 @@ public:
      */
     virtual bool getCenter( double& x, double& y, double& z ) const;
 
+    /** Replaces the current contents of the _nsvar_var_trn member varible with those from the passed
+     * container.
+     */
+    void replaceNormalScoredVariablesInformation( const QMap<uint, QPair<uint, QString> >& nsvar_var_trn );
+
+    /** Replaces the current contents of the _categorical_attributes member varible with those from the passed
+     * container.
+     */
+    void replaceCategoricalAttributesInformation( const QList< QPair<uint, QString> >& categorical_attributes );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();
