@@ -556,7 +556,7 @@ QList<uint> SpatialIndex::getNearestFromCartesianGrid(const GridCell &gridCell,
                                                                simulatedData );
 
         //collect the data row indexes of the valued samples found.
-        for( const GridCellPtr& vCell : vCells ){
+        for( GridCellPtr vCell : vCells ){
             assert( vCell->_dataIndex >= 0 && "SpatialIndex::getNearestFromCartesianGrid(): tried to return invalid data index." );
             result.push_back( vCell->_dataIndex );
         }
