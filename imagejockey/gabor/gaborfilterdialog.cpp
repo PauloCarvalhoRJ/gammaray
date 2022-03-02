@@ -19,7 +19,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/paraviewscalarbar/vtkParaViewScalarBar.h"
 #include "util.h"
 #include <QProgressDialog>
-#include <QVTKOpenGLWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 #include <QMessageBox>
 #include <vtkAxesActor.h>
 #include <vtkOrientationMarkerWidget.h>
@@ -64,15 +64,15 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     }
 
     ///-------------------setup the 3D viewer-------------------
-    _vtkwidget = new QVTKOpenGLWidget();
+    _vtkwidget = new QVTKOpenGLNativeWidget();
 
     _renderer = vtkSmartPointer<vtkRenderer>::New();
 
     // enable antialiasing
     _renderer->SetUseFXAA( true );
 
-    _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
-    _vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
+    _vtkwidget->setRenderWindow(vtkGenericOpenGLRenderWindow::New());
+    _vtkwidget->renderWindow()->AddRenderer(_renderer);
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
 
     //----------------------adding the orientation axes-------------------------
@@ -80,7 +80,7 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     _vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
     _vtkAxesWidget->SetOutlineColor(0.9300, 0.5700, 0.1300);
     _vtkAxesWidget->SetOrientationMarker(axes);
-    _vtkAxesWidget->SetInteractor(_vtkwidget->GetRenderWindow()->GetInteractor());
+    _vtkAxesWidget->SetInteractor(_vtkwidget->renderWindow()->GetInteractor());
     _vtkAxesWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
     _vtkAxesWidget->SetEnabled(1);
     _vtkAxesWidget->InteractiveOn();
@@ -249,7 +249,7 @@ void GaborFilterDialog::updateDisplay()
         _scalarBar->SetTitle("amplitude");
         //scalarBar->SetNumberOfLabels( 4 );
         _scalarBar->SetRenderer( _renderer );
-        _scalarBar->SetInteractor( _vtkwidget->GetRenderWindow()->GetInteractor() );
+        _scalarBar->SetInteractor( _vtkwidget->renderWindow()->GetInteractor() );
 
         // Create a text style for the cube axes
         vtkSmartPointer<vtkTextProperty> tprop = vtkSmartPointer<vtkTextProperty>::New();
@@ -330,7 +330,7 @@ void GaborFilterDialog::updateDisplay()
     _renderer->AddActor( gridActor );
     _currentActors.push_back( gridActor );
     _renderer->ResetCamera();
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void GaborFilterDialog::onScan()
@@ -408,7 +408,7 @@ void GaborFilterDialog::onFreqAzSelectionsUpdated(const GaborFrequencyAzimuthSel
 
 void GaborFilterDialog::onUserEditedAFrequency(QString freqValue)
 {
-    Q_UNUSED( freqValue );
+    Q_UNUSED( freqValue )
     //get the user-entered topological frequencies
     // the frequencies are topological (that is, inverse of cell counts)
     // because the Gabor transform involves convolutions, which are cell-centered

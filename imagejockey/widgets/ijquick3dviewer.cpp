@@ -11,7 +11,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "../imagejockeyutils.h"
 #include "../../spectral/spectral.h"
 
-#include <QVTKOpenGLWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 #include <vtkAxesActor.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkRenderer.h>
@@ -36,15 +36,15 @@ IJQuick3DViewer::IJQuick3DViewer( QWidget *parent ) :
 
 	this->setWindowTitle("Quick 3D Viewer");
 
-    _vtkwidget = new QVTKOpenGLWidget();
+    _vtkwidget = new QVTKOpenGLNativeWidget();
 
 	_renderer = vtkSmartPointer<vtkRenderer>::New();
 
 	// enable antialiasing
 	_renderer->SetUseFXAA( true );
 
-	_vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
-	_vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
+    _vtkwidget->setRenderWindow(vtkGenericOpenGLRenderWindow::New());
+    _vtkwidget->renderWindow()->AddRenderer(_renderer);
 	_vtkwidget->setFocusPolicy(Qt::StrongFocus);
 
 	//----------------------adding the orientation axes-------------------------
@@ -52,7 +52,7 @@ IJQuick3DViewer::IJQuick3DViewer( QWidget *parent ) :
 	_vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
 	_vtkAxesWidget->SetOutlineColor(0.9300, 0.5700, 0.1300);
 	_vtkAxesWidget->SetOrientationMarker(axes);
-	_vtkAxesWidget->SetInteractor(_vtkwidget->GetRenderWindow()->GetInteractor());
+    _vtkAxesWidget->SetInteractor(_vtkwidget->renderWindow()->GetInteractor());
 	_vtkAxesWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
 	_vtkAxesWidget->SetEnabled(1);
 	_vtkAxesWidget->InteractiveOn();
@@ -126,7 +126,7 @@ void IJQuick3DViewer::display(vtkPolyData* polyData , int r, int g, int b)
 
 	_renderer->ResetCamera();
 
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void IJQuick3DViewer::display(vtkPolyData *polyData, float pointSize)
@@ -147,7 +147,7 @@ void IJQuick3DViewer::display(vtkPolyData *polyData, float pointSize)
 
     _renderer->ResetCamera();
 
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, double colorScaleMax )
@@ -176,7 +176,7 @@ void IJQuick3DViewer::display(vtkImageData * imageData, double colorScaleMin, do
 
 	_renderer->ResetCamera();
 
-	_vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void IJQuick3DViewer::display( const spectral::array & grid, double colorScaleMin, double colorScaleMax )

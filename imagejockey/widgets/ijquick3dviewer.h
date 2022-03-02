@@ -9,7 +9,7 @@ namespace Ui {
 class IJQuick3DViewer;
 }
 
-class QVTKOpenGLWidget;
+class QVTKOpenGLNativeWidget;
 class vtkRenderer;
 class vtkOrientationMarkerWidget;
 class vtkPolyData;
@@ -61,7 +61,7 @@ public:
 private:
 	Ui::IJQuick3DViewer *ui;
 	// the Qt widget containing a VTK viewport
-	QVTKOpenGLWidget *_vtkwidget;
+    QVTKOpenGLNativeWidget *_vtkwidget;
 
 	// the VTK renderer (add VTK actors to it to build the scene).
 	vtkSmartPointer<vtkRenderer> _renderer;
