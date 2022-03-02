@@ -10,7 +10,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 
 #include "ui_view3dwidget.h"
 #include "view3dwidget.h"
-#include <QVTKOpenGLWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 
 #include <QSettings>
 #include <vtkActor.h>
@@ -70,10 +70,10 @@ View3DWidget::View3DWidget(QWidget *parent)
     // MSAA aliasing (these must be BEFORE creating a QVTKOpenGLWidget.
     if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA") ){
         vtkOpenGLRenderWindow::SetGlobalMaximumNumberOfMultiSamples ( 8 );
-        QSurfaceFormat::setDefaultFormat ( QVTKOpenGLWidget::defaultFormat() );
+        QSurfaceFormat::setDefaultFormat ( QVTKOpenGLNativeWidget::defaultFormat() );
     }
 
-    _vtkwidget = new QVTKOpenGLWidget();
+    _vtkwidget = new QVTKOpenGLNativeWidget();
 
     //===========VTK TEST CODE==========================================
     //    vtkSmartPointer<vtkSphereSource> sphereSource =
@@ -123,14 +123,14 @@ View3DWidget::View3DWidget(QWidget *parent)
     _rendererForeground->SetActiveCamera( _rendererMainScene->GetActiveCamera() );
     _rendererForeground->SetLayer( 1 ); //layers greater than zero have no background and are rendered last.
 
-    _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
-    _vtkwidget->GetRenderWindow()->AddRenderer(_rendererMainScene);
-    _vtkwidget->GetRenderWindow()->AddRenderer(_rendererForeground);
+    _vtkwidget->setRenderWindow(vtkGenericOpenGLRenderWindow::New());
+    _vtkwidget->renderWindow()->AddRenderer(_rendererMainScene);
+    _vtkwidget->renderWindow()->AddRenderer(_rendererForeground);
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
 
     //MSAA aliasing
     if( Util::programWasCalledWithCommandLineArgument("-aa=MSAA")){
-        _vtkwidget->GetRenderWindow()->SetMultiSamples( 4 );
+        _vtkwidget->renderWindow()->SetMultiSamples( 4 );
     }
 
     //----------------------adding the orientation axes-------------------------
@@ -138,7 +138,7 @@ View3DWidget::View3DWidget(QWidget *parent)
     _vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
     _vtkAxesWidget->SetOutlineColor(0.9300, 0.5700, 0.1300);
     _vtkAxesWidget->SetOrientationMarker(axes);
-    _vtkAxesWidget->SetInteractor(_vtkwidget->GetRenderWindow()->GetInteractor());
+    _vtkAxesWidget->SetInteractor(_vtkwidget->renderWindow()->GetInteractor());
     _vtkAxesWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
     _vtkAxesWidget->SetEnabled(1);
     _vtkAxesWidget->InteractiveOn();
@@ -149,7 +149,7 @@ View3DWidget::View3DWidget(QWidget *parent)
     m_myInteractor = vtkSmartPointer<v3dMouseInteractor>::New();
     m_myInteractor->setParentView3DWidget( this );
     m_myInteractor->SetDefaultRenderer(_rendererMainScene);
-    _vtkwidget->GetRenderWindow()->GetInteractor()->SetInteractorStyle( m_myInteractor );
+    _vtkwidget->renderWindow()->GetInteractor()->SetInteractorStyle( m_myInteractor );
 
     // Set callback for any event
     vtkSmartPointer<vtkCallbackCommand> callBackCommand = vtkSmartPointer<vtkCallbackCommand>::New();
@@ -163,8 +163,8 @@ View3DWidget::View3DWidget(QWidget *parent)
     _rendererMainScene->SetUseDepthPeeling(1);
     _rendererMainScene->SetOcclusionRatio(0.1);
     _rendererMainScene->SetMaximumNumberOfPeels(4);
-    _vtkwidget->GetRenderWindow()->SetMultiSamples(0);
-    _vtkwidget->GetRenderWindow()->SetAlphaBitPlanes(1);
+    _vtkwidget->renderWindow()->SetMultiSamples(0);
+    _vtkwidget->renderWindow()->SetAlphaBitPlanes(1);
 
     // adjusts view so everything fits in the screen
     _rendererMainScene->ResetCamera();
@@ -204,7 +204,7 @@ View3DWidget::View3DWidget(QWidget *parent)
 
     // Creates, but doesn't show, the distance measuring widget.
     m_distanceWidget = vtkSmartPointer<vtkDistanceWidget>::New();
-    m_distanceWidget->SetInteractor( _vtkwidget->GetRenderWindow()->GetInteractor() );
+    m_distanceWidget->SetInteractor( _vtkwidget->renderWindow()->GetInteractor() );
     m_distanceWidget->CreateDefaultRepresentation();
     static_cast<vtkDistanceRepresentation *>(m_distanceWidget->GetRepresentation())
                   ->SetLabelFormat("%-#6.3f");
@@ -270,8 +270,8 @@ void View3DWidget::applyCurrentTextStyle(vtkSmartPointer<vtkBillboardTextActor3D
                                                  void *arg,
                                                  void *vtkNotUsed(whatIsThis))
 {
-    QVTKOpenGLWidget *qvtkOGLwidget;  // must point to the same object as View3DWidget's _vtkwidget.
-    qvtkOGLwidget = static_cast<QVTKOpenGLWidget*>(arg);
+    QVTKOpenGLNativeWidget *qvtkOGLwidget;  // must point to the same object as View3DWidget's _vtkwidget.
+    qvtkOGLwidget = static_cast<QVTKOpenGLNativeWidget*>(arg);
     if( ! qvtkOGLwidget ){
         Application::instance()->logWarn("View3DWidget::rendererCallback(): arg is not a QVTKOpenGLWidget.  Check View3DWidget::_vtkwidget's class.");
     } else {
@@ -313,7 +313,7 @@ void View3DWidget::onNewObject(const View3DListRecord object_info)
     }
 
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 
     // keeps a list of locator-actor pairs to allow management
     _currentObjects.insert(object_info, viewData);
@@ -341,7 +341,7 @@ void View3DWidget::onRemoveObject(const View3DListRecord object_info)
     }
 
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 
     removeCurrentConfigWidget();
 
@@ -392,7 +392,7 @@ void View3DWidget::onShowHideObject(const View3DListRecord object_info, bool sho
     actor->SetVisibility( show );
 
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void View3DWidget::onViewAll()
@@ -400,7 +400,7 @@ void View3DWidget::onViewAll()
     // adjusts view so everything fits in the screen
     _rendererMainScene->ResetCamera();
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void View3DWidget::onLookAtXY()
@@ -414,7 +414,7 @@ void View3DWidget::onLookAtXY()
     _rendererMainScene->GetActiveCamera()->SetPosition(fp[0], fp[1], fp[2] + dist);
     _rendererMainScene->GetActiveCamera()->SetViewUp(0.0, 1.0, 0.0);
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void View3DWidget::onLookAtXZ()
@@ -427,7 +427,7 @@ void View3DWidget::onLookAtXZ()
     _rendererMainScene->GetActiveCamera()->SetPosition(fp[0], fp[1] - dist, fp[2]);
     _rendererMainScene->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void View3DWidget::onLookAtYZ()
@@ -440,7 +440,7 @@ void View3DWidget::onLookAtYZ()
     _rendererMainScene->GetActiveCamera()->SetPosition(fp[0] + dist, fp[1], fp[2]);
     _rendererMainScene->GetActiveCamera()->SetViewUp(0.0, 0.0, 1.0);
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void View3DWidget::onObjectsListItemActivated(QListWidgetItem *item)
@@ -494,7 +494,7 @@ void View3DWidget::onConfigWidgetChanged()
 {
     Application::instance()->logInfo("View3DWidget::onConfigWidgetChanged()");
     _rendererMainScene->Render();
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void View3DWidget::onVerticalExaggeration()
@@ -529,14 +529,14 @@ void View3DWidget::onVerticalExaggerationChanged(double value)
 
     // redraw the scene (none of these works :( )
     {
-        _vtkwidget->GetRenderWindow()->GetInteractor()->Render();
-        _vtkwidget->GetRenderWindow()->Render();
+        _vtkwidget->renderWindow()->GetInteractor()->Render();
+        _vtkwidget->renderWindow()->Render();
         _vtkwidget->repaint();
         QApplication::sendPostedEvents();
         //this->parentWidget()->update();
         _rendererMainScene->Modified();
         _rendererMainScene->Render();
-        vtkSmartPointer< vtkRenderWindow > renderWindow = _vtkwidget->GetRenderWindow();
+        vtkSmartPointer< vtkRenderWindow > renderWindow = _vtkwidget->renderWindow();
         renderWindow->Render();
         renderWindow->Modified();
         QApplication::processEvents();
@@ -578,7 +578,7 @@ void View3DWidget::onTextConfigChanged()
     }
 
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void View3DWidget::onRuler()
@@ -603,5 +603,5 @@ void View3DWidget::onProjection()
         ui->btnProjection->setIcon( QIcon(":icons32/v3DprojPer32") );
     }
     // redraw the scene
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
