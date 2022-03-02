@@ -18,6 +18,7 @@
 
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QFile>
 #include <cmath>
 
 KrigingDialog::KrigingDialog(QWidget *parent) :
