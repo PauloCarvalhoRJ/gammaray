@@ -11,6 +11,8 @@
 #include <qwt_plot_renderer.h>
 #include <qwt_plot_canvas.h>
 #include <qwt_plot_curve.h>
+#include <qwt_matrix_raster_data.h>
+#include <QPen>
 #include <cmath>
 
 #include <qapplication.h>
@@ -41,8 +43,8 @@ public:
     }
 };
 
-///////////////////////////////////////////RASTER DATA ADAPTER: QwtRasterData <-> CartesianGrid ///////////////////////
-class SpectrogramData: public QwtRasterData{
+///////////////////////////////////////////RASTER DATA ADAPTER: QwtMatrixRasterData <-> CartesianGrid ///////////////////////
+class SpectrogramData: public QwtMatrixRasterData{
 public:
     SpectrogramData() : m_var( nullptr ), m_cg( nullptr ), m_decibelRefValue(100.0) {
         //set some default values before the user chooses a grid
@@ -105,8 +107,8 @@ private:
     double m_decibelRefValue;
 };
 
-///////////////////////////////////////////RASTER DATA ADAPTER: QwtRasterData <-> SVDFactor ///////////////////////
-class FactorData: public QwtRasterData{
+///////////////////////////////////////////RASTER DATA ADAPTER: QwtMatrixRasterData <-> SVDFactor ///////////////////////
+class FactorData: public QwtMatrixRasterData{
 public:
     FactorData() : m_factor( nullptr ), m_colorScaleForSVDFactor( ColorScaleForSVDFactor::LINEAR ) {
 		//set some default values before the user chooses a factor
