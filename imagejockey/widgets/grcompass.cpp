@@ -4,6 +4,8 @@
 #include <qwt_compass_rose.h>
 #include <qwt_dial_needle.h>
 
+#include <QMap>
+
 GRCompass::GRCompass(int style , QWidget *parent):
     QwtCompass( parent )
 {
