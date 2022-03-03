@@ -32,6 +32,15 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkDistanceWidget.h>
 #include <vtkDistanceRepresentation.h>
 
+//VTK 9: these headers are not directly required here, but necessary to avoid compiler conversion
+//       errors "from vtkSomeClass* to vtkObjectBase*" involving vtkSmartPointers elsewhere that somehow creep here.
+#include <vtkStructuredGridClip.h>
+#include <vtkExtractGrid.h>
+#include <vtkDataSetMapper.h>
+#include <vtkThreshold.h>
+#include <vtkTubeFilter.h>
+#include <vtkAbstractVolumeMapper.h>
+
 #include "domain/application.h"
 #include "domain/project.h"
 #include "domain/projectcomponent.h"
