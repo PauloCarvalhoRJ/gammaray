@@ -32,6 +32,7 @@
 
 #include <limits>
 #include <map>
+#include <cstring> //VTK 9: required for std::* c-string functions (e.g. std::strlen)
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #define SNPRINTF _snprintf
@@ -275,7 +276,19 @@ void vtkContext2DScalarBarActor::UpdateScalarBarTexture(vtkImageData* image)
       value = pow(10.0, value);
     }
 
-    unsigned char* color = ctf->MapValue(value);
+    //original VTK 8 code: illegal const char* to char* assignment
+    //unsigned char* color = ctf->MapValue(value);
+
+    //replacement compatible with VTK 9: color is now a local copy of the const unsigned char*
+    // containing the RGBA values returned by ctf->MapValue(value).
+    unsigned char color[4];
+    {
+        const unsigned char* color_original = ctf->MapValue(value);
+        color[0] = color_original[0]; //R channel
+        color[1] = color_original[1]; //G channel
+        color[2] = color_original[2]; //B channel
+        color[3] = color_original[3]; //alpha channel
+    }
 
     // The opacity function does not take into account the logarithmic
     // mapping, so we use the original value here.
