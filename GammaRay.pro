@@ -689,7 +689,7 @@ isEmpty(_QWT_LIB){
 }
 INCLUDEPATH += $$_QWT_INCLUDE
 LIBPATH     += $$_QWT_LIB
-LIBS        += -lqwt
+LIBS        += -lqwt-qt5
 #==============================================================
 
 #========== The VTK include and lib paths and libraries==================
