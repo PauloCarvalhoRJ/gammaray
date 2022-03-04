@@ -744,7 +744,6 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkImagingGeneral$$_VTK_VERSION_SUFFIX \
 			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
-                           -lvtkalglib$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingStencil$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX \
                 -lvtkRenderingContext2D$$_VTK_VERSION_SUFFIX \
@@ -778,7 +777,8 @@ LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
                -litkvnl$$_ITK_VERSION_SUFFIX \
                -litkvnl_algo$$_ITK_VERSION_SUFFIX \
                -lITKIOPNG$$_ITK_VERSION_SUFFIX \
-               -lITKTransform$$_ITK_VERSION_SUFFIX
+               -lITKTransform$$_ITK_VERSION_SUFFIX \
+               -lITKSmoothing$$_ITK_VERSION_SUFFIX
 
 #=============================================================================
 
