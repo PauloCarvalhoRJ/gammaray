@@ -218,7 +218,8 @@ void GaborFilterDialog::updateDisplay()
         vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
         {
             threshold->SetInputData( spectrogramGridAsCellCentered );
-            threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+            threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+            threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
             threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
             threshold->Update();
         }
