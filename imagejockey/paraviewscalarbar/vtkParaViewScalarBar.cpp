@@ -182,7 +182,11 @@ void vtkParaViewScalarBar::SetTitle(const std::string& title)
 //----------------------------------------------------------------------------
 const std::string& vtkParaViewScalarBar::GetTitle()
 {
-    (this->ScalarBarActor->GetTitle()) ? this->ScalarBarActor->GetTitle() : "";
+    //this is necessary because this function returns a reference to an object
+    //that must live while the program is running (be it static, global, member or dynamically allocated)
+    static std::string local_non_temporary_string_object;
+    local_non_temporary_string_object = (this->ScalarBarActor->GetTitle()) ? this->ScalarBarActor->GetTitle() : "";
+    return local_non_temporary_string_object;
 }
 
 //----------------------------------------------------------------------------
@@ -194,7 +198,11 @@ void vtkParaViewScalarBar::SetComponentTitle(const std::string& title)
 //----------------------------------------------------------------------------
 const std::string& vtkParaViewScalarBar::GetComponentTitle()
 {
-    (this->ScalarBarActor->GetComponentTitle()) ? this->ScalarBarActor->GetComponentTitle() : "";
+    //this is necessary because this function returns a reference to an object
+    //that must live while the program is running (be it static, global, member or dynamically allocated)
+    static std::string local_non_temporary_string_object;
+    local_non_temporary_string_object = (this->ScalarBarActor->GetComponentTitle()) ? this->ScalarBarActor->GetComponentTitle() : "";
+    return local_non_temporary_string_object;
 }
 
 //----------------------------------------------------------------------------
