@@ -324,6 +324,16 @@ void WaveletTransformDialog::updateDisplay()
         vtkSmartPointer<vtkImageData> out = vtkSmartPointer<vtkImageData>::New();
         ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, inputMirrorPaddedAsArray );
 
+        //render the input grid at the correct location in space
+        out->SetOrigin( m_inputGrid->getOriginX(),
+                        m_inputGrid->getOriginY(),
+                        m_inputGrid->getOriginZ() );
+
+        //render the input grid with the correct cell sizes
+        out->SetSpacing ( m_inputGrid->getCellSizeI(),
+                          m_inputGrid->getCellSizeJ(),
+                          m_inputGrid->getCellSizeK() );
+
         //get max and min of input values for the color scale
         double colorScaleMin = m_inputGrid->getMin( m_inputVariableIndex );
         double colorScaleMax = m_inputGrid->getMax( m_inputVariableIndex );
