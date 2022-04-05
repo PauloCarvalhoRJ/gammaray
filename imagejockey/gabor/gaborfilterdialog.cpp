@@ -155,7 +155,8 @@ void GaborFilterDialog::updateDisplay()
     double featureSizeFinal = ( featureSizeXFinal + featureSizeYFinal ) / 2;
     //get the feature size step size (intial size is greater because initial frequency is lower)
     double dFeatureSize = ( featureSizeInitial - featureSizeFinal ) / ( s1 - s0 ) ;
-
+    //get the z coordinate of the origin of the spectrogram
+    double spectrogramOriginZ = featureSizeFinal - 0.5 * dFeatureSize;
 
     /////--------------------code to render the spectrogram cube-----------------------
     vtkSmartPointer<vtkActor> spectrogramActor = vtkSmartPointer<vtkActor>::New();
@@ -182,7 +183,7 @@ void GaborFilterDialog::updateDisplay()
                                                     dFeatureSize);
         spectrogramGridAsCellCentered->SetOrigin ( m_inputGrid->getOriginX() - m_inputGrid->getCellSizeI()/2,
                                                    m_inputGrid->getOriginY() - m_inputGrid->getCellSizeJ()/2,
-                                                   featureSizeFinal - 0.5 * dFeatureSize );
+                                                   spectrogramOriginZ );
         spectrogramGridAsCellCentered->SetExtent( extent[0], extent[1]+1,
                                                   extent[2], extent[3]+1,
                                                   extent[4], extent[5]+1 );
@@ -283,10 +284,17 @@ void GaborFilterDialog::updateDisplay()
         spectral::arrayPtr gridData( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
         ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, *gridData );
 
-        //put the input grid a bit far from the spectrogram cube
+        //put the input grid a bit below from the spectrogram cube
         double* origin = out->GetOrigin();
-        origin[2] -= 10.0;
+        origin[0] = m_inputGrid->getOriginX();
+        origin[1] = m_inputGrid->getOriginY();
+        origin[2] = spectrogramOriginZ - 10.0;
         out->SetOrigin( origin );
+
+        //render the input grid with the correct cell sizes
+        out->SetSpacing ( m_inputGrid->getCellSizeI(),
+                          m_inputGrid->getCellSizeJ(),
+                          m_inputGrid->getCellSizeK());
 
         //Create a color table
         vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
