@@ -18,7 +18,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/ijabstractvariable.h"
 
 #include <QMessageBox>
-#include <QVTKOpenGLWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 #include <vtkRenderer.h>
 #include <vtkGenericOpenGLRenderWindow.h>
 #include <vtkAxesActor.h>
@@ -61,15 +61,15 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
     ui->splitter->setSizes(QList<int>() << 100 << 200);
 
     ///-------------------setup the 3D viewer-------------------
-    _vtkwidget = new QVTKOpenGLWidget();
+    _vtkwidget = new QVTKOpenGLNativeWidget();
 
     _renderer = vtkSmartPointer<vtkRenderer>::New();
 
     // enable antialiasing
     _renderer->SetUseFXAA( true );
 
-    _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
-    _vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
+    _vtkwidget->setRenderWindow(vtkGenericOpenGLRenderWindow::New());
+    _vtkwidget->renderWindow()->AddRenderer(_renderer);
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
 
     //----------------------adding the orientation axes-------------------------
@@ -77,7 +77,7 @@ WaveletTransformDialog::WaveletTransformDialog(IJAbstractCartesianGrid *inputGri
     _vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
     _vtkAxesWidget->SetOutlineColor(0.9300, 0.5700, 0.1300);
     _vtkAxesWidget->SetOrientationMarker(axes);
-    _vtkAxesWidget->SetInteractor(_vtkwidget->GetRenderWindow()->GetInteractor());
+    _vtkAxesWidget->SetInteractor(_vtkwidget->renderWindow()->GetInteractor());
     _vtkAxesWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
     _vtkAxesWidget->SetEnabled(1);
     _vtkAxesWidget->InteractiveOn();
@@ -324,6 +324,16 @@ void WaveletTransformDialog::updateDisplay()
         vtkSmartPointer<vtkImageData> out = vtkSmartPointer<vtkImageData>::New();
         ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, inputMirrorPaddedAsArray );
 
+        //render the input grid at the correct location in space
+        out->SetOrigin( m_inputGrid->getOriginX(),
+                        m_inputGrid->getOriginY(),
+                        m_inputGrid->getOriginZ() );
+
+        //render the input grid with the correct cell sizes
+        out->SetSpacing ( m_inputGrid->getCellSizeI(),
+                          m_inputGrid->getCellSizeJ(),
+                          m_inputGrid->getCellSizeK() );
+
         //get max and min of input values for the color scale
         double colorScaleMin = m_inputGrid->getMin( m_inputVariableIndex );
         double colorScaleMax = m_inputGrid->getMax( m_inputVariableIndex );
@@ -546,7 +556,8 @@ void WaveletTransformDialog::updateDisplay()
         vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
         {
             threshold->SetInputData( unstructuredGrid );
-            threshold->ThresholdByUpper(1); // Criterion is cells whose flags are greater or equal to threshold.
+            threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+            threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
             threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
             threshold->Update();
         }
@@ -605,7 +616,7 @@ void WaveletTransformDialog::updateDisplay()
     _renderer->AddActor( gridActor );
     _currentActors.push_back( gridActor );
     _renderer->ResetCamera();
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void WaveletTransformDialog::onUpdateWaveletDisplays()

@@ -12,6 +12,7 @@
 #include <QScrollBar>
 #include <QClipboard>
 #include <QInputDialog>
+#include <QFile>
 
 DynamicFaciesRelationshipDiagramDialog::DynamicFaciesRelationshipDiagramDialog(
         std::vector<Attribute *> &categoricalAttributes,

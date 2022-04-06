@@ -12,7 +12,7 @@ class GaborFilterDialog;
 
 class IJAbstractCartesianGrid;
 class IJQuick3DViewer;
-class QVTKOpenGLWidget;
+class QVTKOpenGLNativeWidget;
 class vtkRenderer;
 class vtkOrientationMarkerWidget;
 class vtkPolyData;
@@ -50,7 +50,7 @@ private:
 
     ////////-----members used for 3D display-------------------
     // the Qt widget containing a VTK viewport
-    QVTKOpenGLWidget *_vtkwidget;
+    QVTKOpenGLNativeWidget *_vtkwidget;
     // the VTK renderer (add VTK actors to it to build the scene).
     vtkSmartPointer<vtkRenderer> _renderer;
     // this must be class variable, otherwise a crash ensues due to smart pointer going

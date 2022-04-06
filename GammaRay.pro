@@ -689,7 +689,7 @@ isEmpty(_QWT_LIB){
 }
 INCLUDEPATH += $$_QWT_INCLUDE
 LIBPATH     += $$_QWT_LIB
-LIBS        += -lqwt
+LIBS        += -lqwt-qt5
 #==============================================================
 
 #========== The VTK include and lib paths and libraries==================
@@ -744,7 +744,6 @@ LIBS        += -lvtkGUISupportQt$$_VTK_VERSION_SUFFIX \
 			   -lvtkImagingGeneral$$_VTK_VERSION_SUFFIX \
 			   -lvtkRenderingVolume$$_VTK_VERSION_SUFFIX \
 			   -lvtkFiltersStatistics$$_VTK_VERSION_SUFFIX \
-                           -lvtkalglib$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingStencil$$_VTK_VERSION_SUFFIX \
                 -lvtkImagingHybrid$$_VTK_VERSION_SUFFIX \
                 -lvtkRenderingContext2D$$_VTK_VERSION_SUFFIX \
@@ -778,7 +777,8 @@ LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
                -litkvnl$$_ITK_VERSION_SUFFIX \
                -litkvnl_algo$$_ITK_VERSION_SUFFIX \
                -lITKIOPNG$$_ITK_VERSION_SUFFIX \
-               -lITKTransform$$_ITK_VERSION_SUFFIX
+               -lITKTransform$$_ITK_VERSION_SUFFIX \
+               -lITKSmoothing$$_ITK_VERSION_SUFFIX
 
 #=============================================================================
 
@@ -824,7 +824,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.14
+VERSION = 6.16
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

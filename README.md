@@ -15,6 +15,7 @@ If you enjoyed this project, you might also enjoy GeostatsPy: https://github.com
 Python script to convert Eclipse grids to Paraview-compatible VTU format: https://github.com/BinWang0213/PyGRDECL
 
 VERSION HISTORY:<br>
+&nbsp;&nbsp;&nbsp;Version 6.16  - Upgrade of VTK to 9.1 and other years-old dependencies; some fixes.<br>
 &nbsp;&nbsp;&nbsp;Version 6.14  - Several improvements mainly involving the 3D Viewer and dataset processing.<br>
 &nbsp;&nbsp;&nbsp;Version 6.12  - Several new methods to work with grids. Several fixes and enhancements.<br>
 &nbsp;&nbsp;&nbsp;Version 6.9   - Export geologic grids as Eclipse grids, multiple other new features, enhancements and fixes.<br>

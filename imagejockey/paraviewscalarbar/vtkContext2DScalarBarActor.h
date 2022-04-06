@@ -51,7 +51,7 @@ class vtkContext2DScalarBarActor : public vtkScalarBarActor
 {
 public:
   vtkTypeMacro(vtkContext2DScalarBarActor, vtkScalarBarActor);
-  virtual void PrintSelf(ostream& os, vtkIndent indent) VTK_OVERRIDE;
+  virtual void PrintSelf(ostream& os, vtkIndent indent) override;
   static vtkContext2DScalarBarActor* New();
 
   //@{
@@ -173,19 +173,19 @@ public:
   /**
    * We only render in the overlay for the context scene.
    */
-  virtual int RenderOverlay(vtkViewport* viewport) VTK_OVERRIDE;
+  virtual int RenderOverlay(vtkViewport* viewport) override;
 
   /**
    * Draw the scalar bar and annotation text to the screen.
    */
-  int RenderOpaqueGeometry(vtkViewport* viewport) VTK_OVERRIDE;
+  int RenderOpaqueGeometry(vtkViewport* viewport) override;
 
   /**
    * Release any graphics resources that are being consumed by this actor.
    * The parameter window could be used to determine which graphic
    * resources to release.
    */
-  virtual void ReleaseGraphicsResources(vtkWindow* window) VTK_OVERRIDE;
+  virtual void ReleaseGraphicsResources(vtkWindow* window) override;
 
   /**
    * Responsible for actually drawing the scalar bar.
@@ -203,8 +203,8 @@ protected:
   virtual ~vtkContext2DScalarBarActor();
 
 private:
-  vtkContext2DScalarBarActor(const vtkContext2DScalarBarActor&) VTK_DELETE_FUNCTION;
-  void operator=(const vtkContext2DScalarBarActor&) VTK_DELETE_FUNCTION;
+  vtkContext2DScalarBarActor(const vtkContext2DScalarBarActor&) = delete;
+  void operator=(const vtkContext2DScalarBarActor&) = delete;
 
   vtkContextActor* ActorDelegate;
 

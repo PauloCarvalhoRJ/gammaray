@@ -18,7 +18,7 @@ namespace Ui
 class View3DWidget;
 }
 
-class QVTKOpenGLWidget;
+class QVTKOpenGLNativeWidget;
 class QListWidgetItem;
 class View3DConfigWidget;
 class View3DVerticalExaggerationWidget;
@@ -56,7 +56,7 @@ private:
     vtkSmartPointer<vtkRenderer> _rendererForeground;
 
     // the Qt widget containing a VTK viewport
-    QVTKOpenGLWidget *_vtkwidget;
+    QVTKOpenGLNativeWidget *_vtkwidget;
 
     // the list of current VTK actors/visual objects indexed by their associated domain
     // object info.

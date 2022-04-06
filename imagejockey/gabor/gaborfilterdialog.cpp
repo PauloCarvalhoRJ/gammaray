@@ -19,7 +19,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "imagejockey/paraviewscalarbar/vtkParaViewScalarBar.h"
 #include "util.h"
 #include <QProgressDialog>
-#include <QVTKOpenGLWidget.h>
+#include <QVTKOpenGLNativeWidget.h>
 #include <QMessageBox>
 #include <vtkAxesActor.h>
 #include <vtkOrientationMarkerWidget.h>
@@ -64,15 +64,15 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     }
 
     ///-------------------setup the 3D viewer-------------------
-    _vtkwidget = new QVTKOpenGLWidget();
+    _vtkwidget = new QVTKOpenGLNativeWidget();
 
     _renderer = vtkSmartPointer<vtkRenderer>::New();
 
     // enable antialiasing
     _renderer->SetUseFXAA( true );
 
-    _vtkwidget->SetRenderWindow(vtkGenericOpenGLRenderWindow::New());
-    _vtkwidget->GetRenderWindow()->AddRenderer(_renderer);
+    _vtkwidget->setRenderWindow(vtkGenericOpenGLRenderWindow::New());
+    _vtkwidget->renderWindow()->AddRenderer(_renderer);
     _vtkwidget->setFocusPolicy(Qt::StrongFocus);
 
     //----------------------adding the orientation axes-------------------------
@@ -80,7 +80,7 @@ GaborFilterDialog::GaborFilterDialog(IJAbstractCartesianGrid *inputGrid,
     _vtkAxesWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
     _vtkAxesWidget->SetOutlineColor(0.9300, 0.5700, 0.1300);
     _vtkAxesWidget->SetOrientationMarker(axes);
-    _vtkAxesWidget->SetInteractor(_vtkwidget->GetRenderWindow()->GetInteractor());
+    _vtkAxesWidget->SetInteractor(_vtkwidget->renderWindow()->GetInteractor());
     _vtkAxesWidget->SetViewport(0.0, 0.0, 0.2, 0.2);
     _vtkAxesWidget->SetEnabled(1);
     _vtkAxesWidget->InteractiveOn();
@@ -155,7 +155,8 @@ void GaborFilterDialog::updateDisplay()
     double featureSizeFinal = ( featureSizeXFinal + featureSizeYFinal ) / 2;
     //get the feature size step size (intial size is greater because initial frequency is lower)
     double dFeatureSize = ( featureSizeInitial - featureSizeFinal ) / ( s1 - s0 ) ;
-
+    //get the z coordinate of the origin of the spectrogram
+    double spectrogramOriginZ = featureSizeFinal - 0.5 * dFeatureSize;
 
     /////--------------------code to render the spectrogram cube-----------------------
     vtkSmartPointer<vtkActor> spectrogramActor = vtkSmartPointer<vtkActor>::New();
@@ -182,7 +183,7 @@ void GaborFilterDialog::updateDisplay()
                                                     dFeatureSize);
         spectrogramGridAsCellCentered->SetOrigin ( m_inputGrid->getOriginX() - m_inputGrid->getCellSizeI()/2,
                                                    m_inputGrid->getOriginY() - m_inputGrid->getCellSizeJ()/2,
-                                                   featureSizeFinal - 0.5 * dFeatureSize );
+                                                   spectrogramOriginZ );
         spectrogramGridAsCellCentered->SetExtent( extent[0], extent[1]+1,
                                                   extent[2], extent[3]+1,
                                                   extent[4], extent[5]+1 );
@@ -218,7 +219,8 @@ void GaborFilterDialog::updateDisplay()
         vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
         {
             threshold->SetInputData( spectrogramGridAsCellCentered );
-            threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+            threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+            threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
             threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
             threshold->Update();
         }
@@ -249,7 +251,7 @@ void GaborFilterDialog::updateDisplay()
         _scalarBar->SetTitle("amplitude");
         //scalarBar->SetNumberOfLabels( 4 );
         _scalarBar->SetRenderer( _renderer );
-        _scalarBar->SetInteractor( _vtkwidget->GetRenderWindow()->GetInteractor() );
+        _scalarBar->SetInteractor( _vtkwidget->renderWindow()->GetInteractor() );
 
         // Create a text style for the cube axes
         vtkSmartPointer<vtkTextProperty> tprop = vtkSmartPointer<vtkTextProperty>::New();
@@ -282,10 +284,17 @@ void GaborFilterDialog::updateDisplay()
         spectral::arrayPtr gridData( m_inputGrid->createSpectralArray( m_inputVariableIndex ) );
         ImageJockeyUtils::makeVTKImageDataFromSpectralArray( out, *gridData );
 
-        //put the input grid a bit far from the spectrogram cube
+        //put the input grid a bit below from the spectrogram cube
         double* origin = out->GetOrigin();
-        origin[2] -= 10.0;
+        origin[0] = m_inputGrid->getOriginX();
+        origin[1] = m_inputGrid->getOriginY();
+        origin[2] = spectrogramOriginZ - 10.0;
         out->SetOrigin( origin );
+
+        //render the input grid with the correct cell sizes
+        out->SetSpacing ( m_inputGrid->getCellSizeI(),
+                          m_inputGrid->getCellSizeJ(),
+                          m_inputGrid->getCellSizeK());
 
         //Create a color table
         vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
@@ -330,7 +339,7 @@ void GaborFilterDialog::updateDisplay()
     _renderer->AddActor( gridActor );
     _currentActors.push_back( gridActor );
     _renderer->ResetCamera();
-    _vtkwidget->GetRenderWindow()->Render();
+    _vtkwidget->renderWindow()->Render();
 }
 
 void GaborFilterDialog::onScan()
@@ -408,7 +417,7 @@ void GaborFilterDialog::onFreqAzSelectionsUpdated(const GaborFrequencyAzimuthSel
 
 void GaborFilterDialog::onUserEditedAFrequency(QString freqValue)
 {
-    Q_UNUSED( freqValue );
+    Q_UNUSED( freqValue )
     //get the user-entered topological frequencies
     // the frequencies are topological (that is, inverse of cell counts)
     // because the Gabor transform involves convolutions, which are cell-centered

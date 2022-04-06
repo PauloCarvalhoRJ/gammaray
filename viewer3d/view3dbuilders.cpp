@@ -752,7 +752,8 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
     // threshold to make unvalued cells invisible
     vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
     threshold->SetInputData(sg->GetOutput());
-    threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
     threshold->Update();
 
@@ -989,7 +990,8 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
     // threshold to make unvalued cells invisible
     vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
     threshold->SetInputData(subGrid->GetOutput());
-    threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
     threshold->Update();
 
@@ -1142,8 +1144,9 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
     // threshold to make unvalued cells invisible
 	vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
 	threshold->SetInputData( unstructuredGrid );
-	threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
-	threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
+    threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
+    threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
 	threshold->Update();
 
     //create a color table according to variable type (continuous or categorical)
@@ -1189,7 +1192,8 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *car
     // threshold to make vertexes with unvalued Z's invisible
     vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
     threshold->SetInputData( unstructuredGrid );
-    threshold->ThresholdByUpper(1); // Criterion is vertexes whose scalars are greater or equal to threshold.
+    threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "Visibility");
     threshold->Update();
 
@@ -1241,7 +1245,8 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2Dpainted(CartesianGr
     // threshold to make vertexes with unvalued Z's invisible
     vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
     threshold->SetInputData( unstructuredGrid );
-    threshold->ThresholdByUpper(1); // Criterion is vertexes whose scalars are greater or equal to threshold.
+    threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_POINTS, "Visibility");
     threshold->Update();
 
@@ -1368,7 +1373,8 @@ View3DViewData View3DBuilders::buildForAttributeSection(Section *section, Attrib
     // threshold to make unvalued cells invisible
     vtkSmartPointer<vtkThreshold> threshold = vtkSmartPointer<vtkThreshold>::New();
     threshold->SetInputData( structuredGrid );
-    threshold->ThresholdByUpper(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetUpperThreshold(1); // Criterion is cells whose scalars are greater or equal to threshold.
+    threshold->SetThresholdFunction( vtkThreshold::THRESHOLD_UPPER );
     threshold->SetInputArrayToProcess(0, 0, 0, vtkDataObject::FIELD_ASSOCIATION_CELLS, "Visibility");
     threshold->Update();
 
