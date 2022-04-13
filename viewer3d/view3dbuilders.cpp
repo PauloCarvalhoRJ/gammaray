@@ -773,6 +773,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
 
     //create a VTK actor
     vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->ForceOpaqueOn();
     actor->SetMapper( mapper );
 
     // Finally, return the actor along with other visual objects

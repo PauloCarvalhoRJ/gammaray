@@ -33,9 +33,16 @@ void v3dMouseInteractor::OnLeftButtonUp()
 
         //Remove the marker actor anyway.
         if( m_pickMarkerActor ) {
-            this->GetDefaultRenderer()->RemoveActor( m_pickMarkerActor );
+            //this->GetDefaultRenderer()->RemoveActor( m_pickMarkerActor );
             m_pickMarkerActor = nullptr;
         }
+
+        //Remove the cell marker actor anyway.
+        if( m_cellPickMarkerActor ) {
+            //this->GetDefaultRenderer()->RemoveActor( m_cellPickMarkerActor );
+            m_cellPickMarkerActor = nullptr;
+        }
+
 
         // Get pick position in 2D screen coordinates.
         int* clickPos = this->GetInteractor()->GetEventPosition();
@@ -107,8 +114,43 @@ void v3dMouseInteractor::OnLeftButtonUp()
                         else
                             valuesText = valuesText + "; " + QString::number(values[i]);
                     Application::instance()->logInfo( "Picked value(s): " + valuesText);
+
+                    double bounds[6];
+                    dataSet->GetCellBounds( cellPicker->GetCellId(), bounds );
+
+                    // Draw/update the cell pick blue marker (small red sphere).
+                    {
+                        // Create a small sphere to mark the picked location on the scene.
+                        vtkSmartPointer<vtkSphereSource> sphereSource = vtkSmartPointer<vtkSphereSource>::New();
+                        //sphereSource->SetCenter(pos[0], pos[1], pos[2]); //center is set via vtkActor::SetPosition() further below.
+                        sphereSource->SetRadius(100.0);
+
+                        // Create a mapper for the pick marker.
+                        vtkSmartPointer<vtkPolyDataMapper> mapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+                        mapper->SetInputConnection(sphereSource->GetOutputPort());
+
+                        // (Re)create an actor for the pick marker.
+                        m_cellPickMarkerActor = vtkSmartPointer<vtkActor>::New();
+                        m_cellPickMarkerActor->GetProperty()->SetColor(0.0, 0.0, 1.0);
+                        double fooPos[3];
+                        fooPos[0] = (bounds[0]+bounds[1])/2;
+                        fooPos[1] = (bounds[2]+bounds[3])/2;
+                        fooPos[2] = (bounds[4]+bounds[5])/2;
+                        m_cellPickMarkerActor->SetPosition( fooPos );
+                        m_cellPickMarkerActor->SetMapper(mapper);
+
+                        // Adds the pick marker to the scene.
+                        this->GetDefaultRenderer()->AddActor( m_cellPickMarkerActor );
+
+                        // Rescale the actor so it stays with a constant size with respect to the canvas
+                        // independently of zoom.
+                        rescalePickMarkerActor();
+                    }
+
+
                 } else
                     Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): probing not possible if VTK object has no fields or more than 200 fields in it." );
+
             }// if a cell was picked
         } //if a vtkActor was picked
         else{ //something else was picked
@@ -173,6 +215,27 @@ void v3dMouseInteractor::rescalePickMarkerActor()
         newScale = totalSquared / 20000;    // The denominator value is an abitary number that gives the desired size of the objects on screen.
         Application::instance()->logInfo( "Distance to picked location: " + QString::number(totalSquared) );
         m_pickMarkerActor->SetScale( newScale,
+                                     newScale,
+                                     newScale / m_ParentView3DWidget->getVerticalExaggeration() );
+
+        this->GetDefaultRenderer()->Render();
+    }
+
+    // Keeping the cell pick marker actor
+    // the same size relative to the viewport. This is done by
+    // changing the scale of the object to be proportional to
+    // the distance between the current camera and the object.
+    if( m_cellPickMarkerActor ){
+        // Get a pointer to the current camera according to the main renderer.
+        vtkCamera *currentCamera = static_cast<vtkCamera *>( this->GetDefaultRenderer()->GetActiveCamera() );
+        currentCamera->GetPosition( cameraPosition );
+        currentCamera->GetFocalPoint( cameraFocalPoint );
+        m_cellPickMarkerActor->GetPosition( objectPosition );
+
+        totalSquared = std::sqrt(m_vtkMathObj->Distance2BetweenPoints( objectPosition, cameraPosition ));
+        newScale = totalSquared / 20000;    // The denominator value is an abitary number that gives the desired size of the objects on screen.
+        Application::instance()->logInfo( "Distance to picked location: " + QString::number(totalSquared) );
+        m_cellPickMarkerActor->SetScale( newScale,
                                      newScale,
                                      newScale / m_ParentView3DWidget->getVerticalExaggeration() );
 

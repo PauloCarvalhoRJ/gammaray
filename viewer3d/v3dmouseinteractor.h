@@ -41,6 +41,7 @@ protected:
     bool m_isDragging;
     bool m_isLBdown;
     vtkSmartPointer<vtkActor> m_pickMarkerActor;
+    vtkSmartPointer<vtkActor> m_cellPickMarkerActor;
 
     /** WARNING: this pointer can't be initialized in the constructor
      * because it is defined by the vtkStandardNewMacro macro.
