@@ -9,22 +9,11 @@
 #include <vtkSmartVolumeMapper.h>
 
 View3DViewData::View3DViewData() :
-    actor( vtkSmartPointer<vtkActor>::New() ),
-    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
-    subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
-    threshold( vtkSmartPointer<vtkThreshold>::New() ),
-    volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
     samplingRate( 1 )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor) :
     actor( pActor ),
-    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
-    subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
-    threshold( vtkSmartPointer<vtkThreshold>::New() ),
-    volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
     samplingRate( 1 )
 {}
 
@@ -32,20 +21,12 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkStructuredGridClip> pClipper) :
     actor( pActor ),
     clipper( pClipper ),
-    subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
-    threshold( vtkSmartPointer<vtkThreshold>::New() ),
-    volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
     samplingRate( 1 )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor, vtkSmartPointer<vtkExtractGrid> pSubgrider) :
     actor( pActor ),
-    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( pSubgrider ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
-    threshold( vtkSmartPointer<vtkThreshold>::New() ),
-    volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
     samplingRate( 1 )
 {}
 
@@ -55,21 +36,15 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkThreshold> pThreshold,
                                int sRate):
     actor( pActor ),
-    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
     subgrider( pSubgrider ),
     mapper( pMapper ),
     threshold( pThreshold ),
-    volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
     samplingRate( sRate )
 {}
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor, vtkSmartPointer<vtkThreshold> pThreshold) :
     actor( pActor ),
-    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
-    subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
     threshold( pThreshold ),
-    volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
     samplingRate( 1 )
 {
 }
@@ -78,11 +53,8 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkDataSetMapper> pMapper,
                                vtkSmartPointer<vtkThreshold> pThreshold) :
     actor( pActor ),
-    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
-    subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
     mapper( pMapper ),
     threshold( pThreshold ),
-    volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
     samplingRate( 1 )
 {
 
@@ -90,11 +62,7 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
 
 View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor, vtkSmartPointer<vtkDataSetMapper> pMapper) :
 actor( pActor ),
-clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
-subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
 mapper( pMapper ),
-threshold( vtkSmartPointer<vtkThreshold>::New() ),
-volumeMapper( vtkSmartPointer<vtkSmartVolumeMapper>::New() ),
 samplingRate( 1 )
 {
 
@@ -104,9 +72,6 @@ View3DViewData::View3DViewData(vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkThreshold> pThreshold,
                                vtkSmartPointer<vtkAbstractVolumeMapper> pVolumeMapper) :
     actor( pActor ),
-    clipper( vtkSmartPointer<vtkStructuredGridClip>::New() ),
-    subgrider( vtkSmartPointer<vtkExtractGrid>::New() ),
-    mapper( vtkSmartPointer<vtkDataSetMapper>::New() ),
     threshold( pThreshold ),
     volumeMapper( pVolumeMapper ),
     samplingRate( 1 )
