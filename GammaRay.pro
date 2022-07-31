@@ -99,6 +99,7 @@ SOURCES += main.cpp\
     vertpropcurves/verticalproportioncurvescanvaspicker.cpp \
     vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeascontourlines.cpp \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.cpp \
     viewer3d/view3dtextconfigwidget.cpp \
     widgets/linechartwidget.cpp \
@@ -366,6 +367,7 @@ HEADERS  += mainwindow.h \
     vertpropcurves/verticalproportioncurvescanvaspicker.h \
     vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeascontourlines.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.h \
     viewer3d/view3dtextconfigwidget.h \
     widgets/linechartwidget.h \
@@ -586,6 +588,7 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeascontourlines.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.ui \
     viewer3d/view3dtextconfigwidget.ui \
     widgets/linechartwidget.ui \
