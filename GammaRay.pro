@@ -34,6 +34,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/mcrfbayesiansimdialog.cpp \
     dialogs/populatewithproportionsfromvpcdialog.cpp \
     dialogs/sectiondialog.cpp \
     dialogs/subgriddialog.cpp \
@@ -298,6 +299,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/mcrfbayesiansimdialog.h \
     dialogs/populatewithproportionsfromvpcdialog.h \
     dialogs/sectiondialog.h \
     dialogs/subgriddialog.h \
@@ -570,6 +572,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/mcrfbayesiansimdialog.ui \
     dialogs/populatewithproportionsfromvpcdialog.ui \
     dialogs/sectiondialog.ui \
     dialogs/subgriddialog.ui \

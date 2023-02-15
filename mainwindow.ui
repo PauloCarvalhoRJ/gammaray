@@ -289,7 +289,7 @@
    </widget>
    <widget class="QMenu" name="menuSimulation">
     <property name="enabled">
-     <bool>false</bool>
+     <bool>true</bool>
     </property>
     <property name="title">
      <string>Simulation</string>
@@ -298,6 +298,7 @@
     <addaction name="actionSequential_Indicator_Simulation_continuous"/>
     <addaction name="actionSequential_Indicator_Simulation_categorical"/>
     <addaction name="actionMarkov_Chain_Random_Field_Simulation"/>
+    <addaction name="actionMCRF_for_Bayesian_approach"/>
     <addaction name="actionData_Imputation_with_MCMC"/>
    </widget>
    <addaction name="menuFile"/>
@@ -433,6 +434,11 @@
   <action name="actionData_Imputation_with_MCMC">
    <property name="text">
     <string>Data Imputation with MCMC</string>
+   </property>
+  </action>
+  <action name="actionMCRF_for_Bayesian_approach">
+   <property name="text">
+    <string>MCRF for Bayesian approach</string>
    </property>
   </action>
  </widget>
@@ -784,6 +790,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionMCRF_for_Bayesian_approach</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>onMCRFBayesianSim()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -806,5 +828,6 @@
   <slot>openTransiography()</slot>
   <slot>onMCRFSim()</slot>
   <slot>onDataImputationWithMCMC()</slot>
+  <slot>onMCRFBayesianSim()</slot>
  </slots>
 </ui>

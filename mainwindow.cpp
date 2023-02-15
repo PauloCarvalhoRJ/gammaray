@@ -81,6 +81,7 @@
 #include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "dialogs/transiogramdialog.h"
 #include "dialogs/mcrfsimdialog.h"
+#include "dialogs/mcrfbayesiansimdialog.h"
 #include "dialogs/mcmcdataimputationdialog.h"
 #include "dialogs/lvadatasetdialog.h"
 #include "dialogs/transiogramdialog.h"
@@ -1398,6 +1399,12 @@ void MainWindow::onExportToGRD()
 
     }else
         return;
+}
+
+void MainWindow::onMCRFBayesianSim()
+{
+    MCRFBayesianSimDialog* mcrfbayesd = new MCRFBayesianSimDialog( this );
+    mcrfbayesd->show();
 }
 
 void MainWindow::onRemoveFile()

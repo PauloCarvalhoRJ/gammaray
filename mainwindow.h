@@ -245,6 +245,7 @@ private slots:
     void onSkeletonize();
     void onExtractSubgrid();
     void onExportToGRD();
+    void onMCRFBayesianSim();
 
 private:
     /**
