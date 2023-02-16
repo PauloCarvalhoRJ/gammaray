@@ -1404,6 +1404,7 @@ void MainWindow::onExportToGRD()
 void MainWindow::onMCRFBayesianSim()
 {
     MCRFBayesianSimDialog* mcrfbayesd = new MCRFBayesianSimDialog( this );
+    mcrfbayesd->setWindowTitle("Markov Chains Random Fields Simulation for Bayesian approach");
     mcrfbayesd->show();
 }
 

@@ -152,7 +152,7 @@ void MCRFSimDialog::onCommonSimParams()
 void MCRFSimDialog::onRun()
 {
     //------------------------------------------------ Build a MCRFSim object ----------------------------------------------------------------
-    MCRFSim markovSim;
+    MCRFSim markovSim( MCRFMode::NORMAL );
     markovSim.m_atPrimary                      = m_primVarSelector->getSelectedVariable();
     markovSim.m_gradationFieldOfPrimaryData    = m_primGradationValueSelector->getSelectedVariable();
     markovSim.m_cgSim                          = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );

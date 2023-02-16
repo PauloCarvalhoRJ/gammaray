@@ -21,7 +21,7 @@
 #include <QApplication>
 #include <QProgressDialog>
 
-MCRFSim::MCRFSim() :
+MCRFSim::MCRFSim( MCRFMode mode ) :
     //---------simulation parameters----------------
     m_atPrimary( nullptr),
     m_gradationFieldOfPrimaryData( nullptr ),
@@ -31,11 +31,16 @@ MCRFSim::MCRFSim() :
     m_gradationFieldOfSimGrid( nullptr ),
     m_probFields( std::vector< Attribute*>() ),
     m_tauFactorForTransiography( 1.0 ),
+    m_tauFactorForTransiographyBayesianStarting(1.0),
+    m_tauFactorForTransiographyBayesianEnding(5.0),
     m_tauFactorForProbabilityFields( 1.0 ),
+    m_tauFactorForProbabilityFieldsBayesianStarting( 1.0 ),
+    m_tauFactorForProbabilityFieldsBayesianEnding( 5.0 ),
     m_commonSimulationParameters( nullptr ),
     m_invertGradationFieldConvention( false ),
     m_maxNumberOfThreads( 1 ),
     //------other member variables--------------------
+    m_mode( mode ),
     m_progressDialog( nullptr ),
     m_spatialIndexOfPrimaryData( new SpatialIndex() ),
     m_spatialIndexOfSimGrid( new SpatialIndex() ),

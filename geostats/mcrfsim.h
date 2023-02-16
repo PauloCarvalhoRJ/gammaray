@@ -36,6 +36,17 @@ enum class ProbabilitySource : unsigned int {
     FROM_SECONDARY_DATA = 1
 };
 
+/** Enum used to switch execution mode between normal and for Bayesian application.
+ *  Bayesian mode allows certain hyperparameters (e.g. Tau Model factors) to vary
+ *  randomly in a given range or amongst a predefined set from realization to realization.
+ *  Bayesian mode accounts for the hyperparameter uncertainty in the realizations.
+ */
+enum class MCRFMode : unsigned int {
+    NORMAL = 0,
+    BAYESIAN = 1
+};
+
+
 /** A multithreaded implementation of the Markov Chains Random Field Simulations with secondary data and
  * probability integration with the Tau Model.  This algorithm uses the Mersenne Twister pseudo-random generator
  * of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to generate its
@@ -51,7 +62,7 @@ class MCRFSim
 {
 
 public:
-    MCRFSim();
+    MCRFSim( MCRFMode mode );
 
     /**
      * \defgroup MCRFSimParameters The simulation parameters.
@@ -80,8 +91,12 @@ public:
     std::vector< Attribute* > m_probFields;
     /** The Tau factor for the probabilities given by the transiogram model. */
     double m_tauFactorForTransiography;
+    double m_tauFactorForTransiographyBayesianStarting; //lower limit for values to be drawn (Bayesian mode).
+    double m_tauFactorForTransiographyBayesianEnding;   //upper limit for values to be drawn (Bayesian mode).
     /** The Tau factor for the probabilities given by the secondary data. */
     double m_tauFactorForProbabilityFields;
+    double m_tauFactorForProbabilityFieldsBayesianStarting; //lower limit for values to be drawn (Bayesian mode).
+    double m_tauFactorForProbabilityFieldsBayesianEnding;   //upper limit for values to be drawn (Bayesian mode).
     /** The common simulation parameters (e.g. random seed number, number of realizations, search parameters, etc.) */
     CommonSimulationParameters* m_commonSimulationParameters;
     /** Sets whether the algorithm should invert the gradation field convention. */
@@ -129,6 +144,11 @@ public:
     const std::vector< spectral::arrayPtr >& getRealizations() const { return m_realizations; }
 
 private:
+    /** The simulation execution mode.
+     * NORMAL  : hyperparameters (e.g. Tau Model factors) remain the same across realizations.
+     * BAYESIAN: some hyperparameters randomly vary across realizations.
+     */
+    MCRFMode m_mode;
 
     /** The description of the cause of the last failure during simulation. */
     QString m_lastError;

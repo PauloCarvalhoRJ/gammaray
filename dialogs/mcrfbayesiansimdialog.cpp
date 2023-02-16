@@ -152,7 +152,7 @@ void MCRFBayesianSimDialog::onCommonSimParams()
 void MCRFBayesianSimDialog::onRun()
 {
     //------------------------------------------------ Build a MCRFSim object ----------------------------------------------------------------
-    MCRFSim markovSim;
+    MCRFSim markovSim( MCRFMode::BAYESIAN );
     markovSim.m_atPrimary                      = m_primVarSelector->getSelectedVariable();
     markovSim.m_gradationFieldOfPrimaryData    = m_primGradationValueSelector->getSelectedVariable();
     markovSim.m_cgSim                          = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
@@ -161,8 +161,10 @@ void MCRFBayesianSimDialog::onRun()
     markovSim.m_gradationFieldOfSimGrid                 = m_gradationalFieldVarSelector->getSelectedVariable();
     for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
         markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
-    markovSim.m_tauFactorForTransiography      = ui->dblSpinTauTransiography->value();
-    markovSim.m_tauFactorForProbabilityFields  = ui->dblSpinTauSecondary->value();
+    markovSim.m_tauFactorForTransiographyBayesianStarting     = ui->dblSpinTauTransiographyStarting->value();
+    markovSim.m_tauFactorForTransiographyBayesianEnding       = ui->dblSpinTauTransiographyEnding->value();
+    markovSim.m_tauFactorForProbabilityFieldsBayesianStarting = ui->dblSpinTauSecondaryStarting->value();
+    markovSim.m_tauFactorForProbabilityFieldsBayesianEnding   = ui->dblSpinTauSecondaryEnding->value();
     markovSim.m_commonSimulationParameters     = m_commonSimulationParameters;
     markovSim.m_invertGradationFieldConvention = ui->chkInvertGradationFieldConvention->isChecked();
     markovSim.m_maxNumberOfThreads             = ui->spinNumberOfThreads->value();
