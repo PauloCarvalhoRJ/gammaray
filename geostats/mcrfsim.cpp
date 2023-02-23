@@ -190,7 +190,10 @@ bool MCRFSim::useSecondaryData() const
 }
 
 double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
-                                  std::mt19937 &randomNumberGenerator, const spectral::array& simulatedData ) const
+                                  std::mt19937 &randomNumberGenerator,
+                                  double tauFactorForTransiography,
+                                  double tauFactorForSecondaryData,
+                                  const spectral::array& simulatedData ) const
 {
     //compute the vertical cell anisotropy, which is important to normalize the vertical separations.
     //this is important when the sim grid is in depositional domain, which normally has a vertical cell
@@ -213,6 +216,14 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
 
     //make a local copy of the Tau Model (this is potentially a multi-threaded code)
     TauModel tauModelCopy( *m_tauModel );
+
+    //set the Tau factors.
+    //These vary between realizations if this simulation's execution mode is for Bayesian application.
+    //see the simulateSomeRealizationsThread() function.
+    tauModelCopy.setTauFactor( static_cast<uint>(ProbabilitySource::FROM_TRANSIOGRAM),
+                               tauFactorForTransiography );
+    tauModelCopy.setTauFactor( static_cast<uint>(ProbabilitySource::FROM_SECONDARY_DATA),
+                               tauFactorForSecondaryData );
 
     //get relevant information of the simulation cell
     uint simCellLinearIndex           = m_cgSim->IJKtoIndex( i, j, k );
@@ -502,6 +513,32 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
         // shuffles the cell linear indexes to make the random walk.
         std::random_shuffle( linearIndexesRandomWalk.begin(), linearIndexesRandomWalk.end(), lambdaFnShuffler );
 
+        // By default, the Tau factors are fixed (normal mode).
+        double tauFactorForTransiographyInCurrentRealization = mcrfSim->m_tauFactorForTransiography;
+        double tauFactorForSecondaryDataInCurrentRealization = mcrfSim->m_tauFactorForProbabilityFields;
+
+        // If the execution mode is for Bayesian application, some hyperparameters vary
+        // from realization to realization, thus...
+        if( mcrfSim->getMode() == MCRFMode::BAYESIAN ){
+            // ...make uniform distributions for the intervals set by the user.
+            std::uniform_real_distribution<double> distributionTauFactorForTransiography(
+                        mcrfSim->m_tauFactorForTransiographyBayesianStarting,
+                        mcrfSim->m_tauFactorForTransiographyBayesianEnding);
+            std::uniform_real_distribution<double> distributionTauFactorForSecondaryData(
+                        mcrfSim->m_tauFactorForProbabilityFieldsBayesianStarting,
+                        mcrfSim->m_tauFactorForProbabilityFieldsBayesianEnding);
+            // ...draw new Tau factors from the user-given interval.
+            tauFactorForTransiographyInCurrentRealization =
+                    distributionTauFactorForTransiography( randomNumberGenerator );
+            tauFactorForSecondaryDataInCurrentRealization =
+                    distributionTauFactorForSecondaryData( randomNumberGenerator );
+        } else { //normal execution mode
+            // Call the random number generator the same number of times to keep the
+            // same random path of the other execution mode.
+            randomNumberGenerator();
+            randomNumberGenerator();
+        }
+
         //traverse the grid's cells according to the random walk.
         for( uint iRandomWalkIndex = 0; iRandomWalkIndex < nCells; ++iRandomWalkIndex ){
             //get the cell's linear index
@@ -510,7 +547,11 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             uint i, j, k;
             cgSim->indexToIJK( iCellLinearIndex, i, j, k );
             //simulate the cell (attention: may return the simulation grid's no-data value)
-            double catCode = mcrfSim->simulateOneCellMT( i, j, k, randomNumberGenerator, *simulatedData );
+            double catCode = mcrfSim->simulateOneCellMT( i, j, k,
+                                                         randomNumberGenerator,
+                                                         tauFactorForTransiographyInCurrentRealization,
+                                                         tauFactorForSecondaryDataInCurrentRealization,
+                                                         *simulatedData );
             //save the value to the data array of the realization
             (*simulatedData)( i, j, k ) = catCode;
             //keep track of simulation progress
@@ -745,6 +786,16 @@ void MCRFSim::setOrIncreaseProgressMT(ulong ammount, bool increase)
     else
         m_progress = ammount;
     lck.unlock();
+}
+
+MCRFMode MCRFSim::getMode() const
+{
+    return m_mode;
+}
+
+void MCRFSim::setMode(const MCRFMode &mode)
+{
+    m_mode = mode;
 }
 
 void MCRFSim::updateProgessUI()

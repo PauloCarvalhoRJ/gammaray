@@ -42,8 +42,8 @@ enum class ProbabilitySource : unsigned int {
  *  Bayesian mode accounts for the hyperparameter uncertainty in the realizations.
  */
 enum class MCRFMode : unsigned int {
-    NORMAL = 0,
-    BAYESIAN = 1
+    NORMAL = 0,  /** Hyperparameters do not vary. */
+    BAYESIAN = 1 /** Some hyperparameters are drawn from an interval or set for each realization. */
 };
 
 
@@ -125,11 +125,17 @@ public:
      * @param j Topologic coordinate of the cell to simulate.
      * @param k Topologic coordinate of the cell to simulate.
      * @param randomNumberGenerator The random number generator ( one per thread is advisable ).
+     * @param tauFactorForTransiography The Tau model factor to be used for the probabilities given by transiography.
+     * @param tauFactorForSecondaryData The Tau model factor to be used for the probabilities given by secondary
+     *                                  data (probabiliy fields for each category).
      * @param simulatedData Pointer to the realization data so it is possible to retrieve the previously
      *                      simulated values.
      */
     double simulateOneCellMT( uint i, uint j , uint k,
-                              std::mt19937& randomNumberGenerator, const spectral::array& simulatedData ) const;
+                              std::mt19937& randomNumberGenerator,
+                              double tauFactorForTransiography,
+                              double tauFactorForSecondaryData,
+                              const spectral::array& simulatedData ) const;
 
     /** Sets or increases the current simulation progress counter to the given ammount.
      * Mind that this function updates a progress bar, which is a costly operation.
@@ -142,6 +148,16 @@ public:
      * no-data-value are uninformed values.
      */
     const std::vector< spectral::arrayPtr >& getRealizations() const { return m_realizations; }
+
+    /** Returns the execution mode (normal or for Bayesian application) for this simulation.
+     * @see MCRFMode
+     */
+    MCRFMode getMode() const;
+
+    /** Sets the execution mode (normal or for Bayesian application) for this simulation.
+     * @see MCRFMode
+     */
+    void setMode(const MCRFMode &mode);
 
 private:
     /** The simulation execution mode.
