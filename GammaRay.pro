@@ -373,6 +373,7 @@ HEADERS  += mainwindow.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.h \
     viewer3d/view3dtextconfigwidget.h \
     widgets/linechartwidget.h \
+    widgets/listbuilder.h \
     widgets/qlistwidgetdnd.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
