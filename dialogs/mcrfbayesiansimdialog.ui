@@ -111,7 +111,7 @@
      <item>
       <widget class="QLabel" name="label_7">
        <property name="text">
-        <string>lateral gradation value:</string>
+        <string>lateral gradation value(s):</string>
        </property>
       </widget>
      </item>
@@ -290,7 +290,7 @@
      <item>
       <widget class="QLabel" name="label_5">
        <property name="text">
-        <string>Lateral gradation field:</string>
+        <string>Lateral gradation field(s):</string>
        </property>
       </widget>
      </item>

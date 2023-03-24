@@ -11,6 +11,7 @@ class Attribute;
 class FileSelectorWidget;
 class VariableSelector;
 class CartesianGridSelector;
+class ListBuilder;
 class CommonSimulationParameters;
 
 /** The Markov Chains Random Field Simulation Dialog for a Bayesian approach (account for hyperparameter uncertainty). */
@@ -29,11 +30,11 @@ private:
     //------- pointers managed by Qt --------------
     FileSelectorWidget* m_primFileSelector;
     VariableSelector* m_primVarSelector;
-    VariableSelector* m_primGradationValueSelector;
+    ListBuilder* m_primGradationValueList;
     CartesianGridSelector* m_simGridSelector;
     FileSelectorWidget* m_verticalTransiogramSelector;
     FileSelectorWidget* m_globalPDFSelector;
-    VariableSelector* m_gradationalFieldVarSelector;
+    ListBuilder* m_gradationalFieldVarList;
     std::vector< VariableSelector* > m_probFieldsSelectors;
     //----------------------------------------------
 

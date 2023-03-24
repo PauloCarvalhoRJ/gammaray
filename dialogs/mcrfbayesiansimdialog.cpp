@@ -18,6 +18,7 @@
 #include "widgets/fileselectorwidget.h"
 #include "widgets/variableselector.h"
 #include "widgets/cartesiangridselector.h"
+#include "widgets/listbuilder.h"
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslibparameterfiles/commonsimulationparameters.h"
 #include "geostats/mcrfsim.h"
@@ -30,7 +31,7 @@ MCRFBayesianSimDialog::MCRFBayesianSimDialog(QWidget *parent) :
     m_simGridSelector( nullptr ),
     m_verticalTransiogramSelector( nullptr ),
     m_globalPDFSelector( nullptr ),
-    m_gradationalFieldVarSelector( nullptr ),
+    m_gradationalFieldVarList( nullptr ),
     m_commonSimulationParameters( new CommonSimulationParameters() )
 {
     ui->setupUi(this);
@@ -52,10 +53,10 @@ MCRFBayesianSimDialog::MCRFBayesianSimDialog(QWidget *parent) :
     connect( m_primVarSelector,  SIGNAL(currentIndexChanged(int)),
              this,               SLOT(onPrimaryVariableChanged()) );
 
-    m_primGradationValueSelector = new VariableSelector();
-    ui->frmPrimGradationValue->layout()->addWidget( m_primGradationValueSelector );
+    m_primGradationValueList = new ListBuilder();
+    ui->frmPrimGradationValue->layout()->addWidget( m_primGradationValueList );
     connect( m_primFileSelector,           SIGNAL(dataFileSelected(DataFile*)),
-             m_primGradationValueSelector, SLOT(onListVariables(DataFile*))  );
+             m_primGradationValueList,     SLOT(onInitListWithVariables(DataFile*))  );
 
     //calling this slot causes the variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
@@ -72,10 +73,10 @@ MCRFBayesianSimDialog::MCRFBayesianSimDialog(QWidget *parent) :
     m_globalPDFSelector = new FileSelectorWidget( FileSelectorType::PDFs );
     ui->frmCmbGlobalPDFselector->layout()->addWidget( m_globalPDFSelector );
 
-    m_gradationalFieldVarSelector = new VariableSelector( );
-    ui->frmCmbLatGradFieldSelector->layout()->addWidget( m_gradationalFieldVarSelector );
+    m_gradationalFieldVarList = new ListBuilder( );
+    ui->frmCmbLatGradFieldSelector->layout()->addWidget( m_gradationalFieldVarList );
     connect( m_simGridSelector,             SIGNAL(cartesianGridSelected(DataFile*)),
-             m_gradationalFieldVarSelector,   SLOT(onListVariables(DataFile*)) );
+             m_gradationalFieldVarList,     SLOT(onInitListWithVariables(DataFile*)) );
 
     //calling this slot causes the sec. variable comboboxes to update, so they show up populated
     //otherwise the user is required to choose another file and then back to the first file
@@ -153,21 +154,21 @@ void MCRFBayesianSimDialog::onRun()
 {
     //------------------------------------------------ Build a MCRFSim object ----------------------------------------------------------------
     MCRFSim markovSim( MCRFMode::BAYESIAN );
-    markovSim.m_atPrimary                      = m_primVarSelector->getSelectedVariable();
-    markovSim.m_gradationFieldOfPrimaryData    = m_primGradationValueSelector->getSelectedVariable();
-    markovSim.m_cgSim                          = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
-    markovSim.m_pdf                            = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
-    markovSim.m_transiogramModel               = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
-    markovSim.m_gradationFieldOfSimGrid                 = m_gradationalFieldVarSelector->getSelectedVariable();
+    markovSim.m_atPrimary                            = m_primVarSelector->getSelectedVariable();
+    markovSim.m_gradationFieldsOfPrimaryDataBayesian = m_primGradationValueList->getSelectedAttributes();
+    markovSim.m_cgSim                                = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
+    markovSim.m_pdf                                  = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
+    markovSim.m_transiogramModel                     = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
+    markovSim.m_gradationFieldsOfSimGridBayesian     = m_gradationalFieldVarList->getSelectedAttributes();
     for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
         markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
     markovSim.m_tauFactorForTransiographyBayesianStarting     = ui->dblSpinTauTransiographyStarting->value();
     markovSim.m_tauFactorForTransiographyBayesianEnding       = ui->dblSpinTauTransiographyEnding->value();
     markovSim.m_tauFactorForProbabilityFieldsBayesianStarting = ui->dblSpinTauSecondaryStarting->value();
     markovSim.m_tauFactorForProbabilityFieldsBayesianEnding   = ui->dblSpinTauSecondaryEnding->value();
-    markovSim.m_commonSimulationParameters     = m_commonSimulationParameters;
-    markovSim.m_invertGradationFieldConvention = ui->chkInvertGradationFieldConvention->isChecked();
-    markovSim.m_maxNumberOfThreads             = ui->spinNumberOfThreads->value();
+    markovSim.m_commonSimulationParameters                    = m_commonSimulationParameters;
+    markovSim.m_invertGradationFieldConvention                = ui->chkInvertGradationFieldConvention->isChecked();
+    markovSim.m_maxNumberOfThreads                            = ui->spinNumberOfThreads->value();
     //----------------------------------------------------------------------------------------------------------------------------------------
 
     if( ! markovSim.run() ){

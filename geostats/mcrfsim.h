@@ -72,7 +72,8 @@ public:
     Attribute* m_atPrimary;
     /** The attribute of the input data set that contains the gradation field values.  See the program manual for
      *  detailed explanation on the role of the gradation field. */
-    Attribute* m_gradationFieldOfPrimaryData;
+    Attribute*                m_gradationFieldOfPrimaryData;
+    std::vector< Attribute* > m_gradationFieldsOfPrimaryDataBayesian; //for Bayesian mode, there can be multiple gradation fields.
     /** The primary data set. */
     DataFile* m_dfPrimary;
     /** The simulation grid. */
@@ -83,7 +84,8 @@ public:
     VerticalTransiogramModel* m_transiogramModel;
     /** The attribute of the simulation grid that contains the gradation field.  See the program manual for
      *  detailed explanation on the role of the gradation field. */
-    Attribute* m_gradationFieldOfSimGrid;
+    Attribute*                m_gradationFieldOfSimGrid;
+    std::vector< Attribute* > m_gradationFieldsOfSimGridBayesian; //for Bayesian mode, there can be multiple gradation fields.
     /** The optional probability fields (attributes of the simulation grid).
      * An empty vector means no probability field will be used.  Otherwise, the fields must match the number and order
      * of categories as present in the m_atPrimary's CategoryDefinition object.
@@ -128,6 +130,8 @@ public:
      * @param tauFactorForTransiography The Tau model factor to be used for the probabilities given by transiography.
      * @param tauFactorForSecondaryData The Tau model factor to be used for the probabilities given by secondary
      *                                  data (probabiliy fields for each category).
+     * @param gradFieldOfPrimaryDataToUse The gradation field variable of the primary data set to use.
+     * @param gradFieldOfSimGridToUse The gradation field variable of the simulation grid to use.
      * @param simulatedData Pointer to the realization data so it is possible to retrieve the previously
      *                      simulated values.
      */
@@ -135,6 +139,8 @@ public:
                               std::mt19937& randomNumberGenerator,
                               double tauFactorForTransiography,
                               double tauFactorForSecondaryData,
+                              const Attribute* gradFieldOfPrimaryDataToUse,
+                              const Attribute* gradFieldOfSimGridToUse,
                               const spectral::array& simulatedData ) const;
 
     /** Sets or increases the current simulation progress counter to the given ammount.

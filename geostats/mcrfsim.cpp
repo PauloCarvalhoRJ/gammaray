@@ -25,10 +25,12 @@ MCRFSim::MCRFSim( MCRFMode mode ) :
     //---------simulation parameters----------------
     m_atPrimary( nullptr),
     m_gradationFieldOfPrimaryData( nullptr ),
+    m_gradationFieldsOfPrimaryDataBayesian( std::vector< Attribute*>() ),
     m_cgSim( nullptr ),
     m_pdf( nullptr ),
     m_transiogramModel( nullptr ),
     m_gradationFieldOfSimGrid( nullptr ),
+    m_gradationFieldsOfSimGridBayesian( std::vector< Attribute*>() ),
     m_probFields( std::vector< Attribute*>() ),
     m_tauFactorForTransiography( 1.0 ),
     m_tauFactorForTransiographyBayesianStarting(1.0),
@@ -55,7 +57,7 @@ bool MCRFSim::isOKtoRun()
         return false;
     }
 
-    if( ! m_gradationFieldOfPrimaryData ){
+    if( !m_gradationFieldOfPrimaryData || m_gradationFieldsOfSimGridBayesian.empty() ){
         m_lastError = "Gradation field value in input data not provided.";
         return false;
     }
@@ -138,9 +140,15 @@ bool MCRFSim::isOKtoRun()
         }
     }
 
-    if( ! m_gradationFieldOfSimGrid ){
+    if( !m_gradationFieldOfSimGrid || m_gradationFieldsOfSimGridBayesian.empty() ){
         m_lastError = "Use of a gradation field in the simulation grid is required to stablish a correlation"
                       " between vertical (time) and lateral facies succession in 3D Markov Chain.";
+        return false;
+    }
+
+    if( m_gradationFieldsOfPrimaryDataBayesian.size() != m_gradationFieldsOfSimGridBayesian.size() ){
+        m_lastError = "Bayesian mode: the number of gradation field variables must be the same for both the"
+                      " primary data and the simulation grid.";
         return false;
     }
 
@@ -193,6 +201,8 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                                   std::mt19937 &randomNumberGenerator,
                                   double tauFactorForTransiography,
                                   double tauFactorForSecondaryData,
+                                  const Attribute* gradFieldOfPrimaryDataToUse,
+                                  const Attribute* gradFieldOfSimGridToUse,
                                   const spectral::array& simulatedData ) const
 {
     //compute the vertical cell anisotropy, which is important to normalize the vertical separations.
@@ -228,7 +238,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     //get relevant information of the simulation cell
     uint simCellLinearIndex           = m_cgSim->IJKtoIndex( i, j, k );
     double simCellZ                   = m_cgSim->getDataSpatialLocation( simCellLinearIndex, CartesianCoord::Z );
-    double simCellGradationFieldValue = m_cgSim->dataIJKConst( m_gradationFieldOfSimGrid->getAttributeGEOEASgivenIndex()-1,
+    double simCellGradationFieldValue = m_cgSim->dataIJKConst( gradFieldOfSimGridToUse->getAttributeGEOEASgivenIndex()-1,
                                                                i, j, k );
     //get the probabilities from the global PDF, they're the marginal
     //probabilities for the Tau Model
@@ -259,7 +269,8 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         if( ! m_primaryDataHasNDV || ! Util::almostEqual2sComplement( m_primaryDataNDV, sampleFaciesValue, 1 ) ){
 
             // get the sample's gradation field value
-            double sampleGradationValue = sampleDataCell->readValueFromDataSet( m_gradationFieldOfPrimaryData->getAttributeGEOEASgivenIndex()-1 );
+            double sampleGradationValue = sampleDataCell->readValueFromDataSet(
+                        gradFieldOfPrimaryDataToUse->getAttributeGEOEASgivenIndex()-1 );
 
             //To preserve Markovian property, we cannot use data ahead in the facies succession.
             bool isAheadInSuccession = false;
@@ -311,8 +322,8 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         if( ! Util::almostEqual2sComplement( m_simGridNDV, realizationValue, 1 ) ){
 
             // get the neighboring cell's gradation field value
-            double neighborGradationFieldValue = m_cgSim->dataIJKConst( m_gradationFieldOfSimGrid->getAttributeGEOEASgivenIndex()-1,
-                                                                         neighI, neighJ, neighK );
+            double neighborGradationFieldValue = m_cgSim->dataIJKConst( gradFieldOfSimGridToUse->getAttributeGEOEASgivenIndex()-1,
+                                                                        neighI, neighJ, neighK );
 
             //To preserve Markovian property, we cannot use data ahead in the facies succession.
             bool isAheadInSuccession = false;
@@ -513,13 +524,20 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
         // shuffles the cell linear indexes to make the random walk.
         std::random_shuffle( linearIndexesRandomWalk.begin(), linearIndexesRandomWalk.end(), lambdaFnShuffler );
 
-        // By default, the Tau factors are fixed (normal mode).
+        // By default, the Tau factors are fixed (normal execution mode).
         double tauFactorForTransiographyInCurrentRealization = mcrfSim->m_tauFactorForTransiography;
         double tauFactorForSecondaryDataInCurrentRealization = mcrfSim->m_tauFactorForProbabilityFields;
+
+        // By default, the gradation field to use is fixed (normal execution mode).
+        Attribute* gradFieldOfPrimaryDataToUse = mcrfSim->m_gradationFieldOfPrimaryData;
+        Attribute* gradFieldOfSimGridToUse = mcrfSim->m_gradationFieldOfSimGrid;
 
         // If the execution mode is for Bayesian application, some hyperparameters vary
         // from realization to realization, thus...
         if( mcrfSim->getMode() == MCRFMode::BAYESIAN ){
+            // assuming the number of gradation field values of the primary data chosen is the
+            // same of the simulation grid.
+            int nGradationFields = mcrfSim->m_gradationFieldsOfPrimaryDataBayesian.size();
             // ...make uniform distributions for the intervals set by the user.
             std::uniform_real_distribution<double> distributionTauFactorForTransiography(
                         mcrfSim->m_tauFactorForTransiographyBayesianStarting,
@@ -527,14 +545,20 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             std::uniform_real_distribution<double> distributionTauFactorForSecondaryData(
                         mcrfSim->m_tauFactorForProbabilityFieldsBayesianStarting,
                         mcrfSim->m_tauFactorForProbabilityFieldsBayesianEnding);
+            std::uniform_int_distribution<int> distributionGradFieldIndexes( 0, nGradationFields-1 );
             // ...draw new Tau factors from the user-given interval.
             tauFactorForTransiographyInCurrentRealization =
                     distributionTauFactorForTransiography( randomNumberGenerator );
             tauFactorForSecondaryDataInCurrentRealization =
                     distributionTauFactorForSecondaryData( randomNumberGenerator );
+            // ...draw the gradation field to be used.
+            int selectedGradFieldIndex = distributionGradFieldIndexes ( randomNumberGenerator );
+            gradFieldOfPrimaryDataToUse = mcrfSim->m_gradationFieldsOfPrimaryDataBayesian.at( selectedGradFieldIndex );
+            gradFieldOfSimGridToUse = mcrfSim->m_gradationFieldsOfSimGridBayesian.at( selectedGradFieldIndex );
         } else { //normal execution mode
-            // Call the random number generator the same number of times to keep the
+            // Call the random number generator the same number of times of Bayesian mode to keep the
             // same random path of the other execution mode.
+            randomNumberGenerator();
             randomNumberGenerator();
             randomNumberGenerator();
         }
@@ -551,6 +575,8 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
                                                          randomNumberGenerator,
                                                          tauFactorForTransiographyInCurrentRealization,
                                                          tauFactorForSecondaryDataInCurrentRealization,
+                                                         gradFieldOfPrimaryDataToUse,
+                                                         gradFieldOfSimGridToUse,
                                                          *simulatedData );
             //save the value to the data array of the realization
             (*simulatedData)( i, j, k ) = catCode;
