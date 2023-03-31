@@ -32,6 +32,7 @@ MCRFSim::MCRFSim( MCRFMode mode ) :
     m_gradationFieldOfSimGrid( nullptr ),
     m_gradationFieldsOfSimGridBayesian( std::vector< Attribute*>() ),
     m_probFields( std::vector< Attribute*>() ),
+    m_probsFieldsBayesian( std::vector< std::vector< Attribute* > >() ),
     m_tauFactorForTransiography( 1.0 ),
     m_tauFactorForTransiographyBayesianStarting(1.0),
     m_tauFactorForTransiographyBayesianEnding(5.0),
@@ -155,14 +156,36 @@ bool MCRFSim::isOKtoRun()
     if( useSecondaryData() ){
         CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
         cdOfPrimData->loadQuintuplets();
-        int nProbFields = m_probFields.size();
         int nCategories = cdOfPrimData->getCategoryCount();
-        if( nProbFields != nCategories ){
-            m_lastError = " Number of probability fields ( " +
-                    QString::number(nProbFields) + " ) differs from the number of categories ( " +
-                    QString::number(nCategories) + " ).";
-            return false;
+
+        if( m_mode == MCRFMode::NORMAL ){
+            int nProbFields = m_probFields.size();
+            if( nProbFields != nCategories ){
+                m_lastError = " Number of probability fields ( " +
+                        QString::number(nProbFields) + " ) differs from the number of categories ( " +
+                        QString::number(nCategories) + " ).";
+                return false;
+            }
+        } else { //Bayesian execution mode
+            int nProbFields = -1; //must be the same across all categories
+            //for each category, we fetch its probability field set
+            for( const std::vector<Attribute*> &probFieldsForACategory : m_probsFieldsBayesian ){
+                if( nProbFields == -1 )
+                    nProbFields = probFieldsForACategory.size();
+                else if( nProbFields != probFieldsForACategory.size() ){
+                    m_lastError = " Bayesian mode: Number of probability fields must be the same"
+                                  " for all categories.";
+                    return false;
+                }
+            }
+            //all categories must have a set of probability fields
+            if( nCategories != m_probsFieldsBayesian.size() ){
+                m_lastError = " Bayesian mode: Number of probability field sets must match"
+                              " the number of categories.";
+                return false;
+            }
         }
+
     }
 
     if( ! m_commonSimulationParameters ){
@@ -194,7 +217,10 @@ bool MCRFSim::isOKtoRun()
 
 bool MCRFSim::useSecondaryData() const
 {
-    return ! m_probFields.empty();
+    if( m_mode == MCRFMode::NORMAL )
+        return ! m_probFields.empty();
+    else //Bayesian execution mode
+        return ! m_probsFieldsBayesian.empty();
 }
 
 double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
@@ -203,6 +229,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                                   double tauFactorForSecondaryData,
                                   const Attribute* gradFieldOfPrimaryDataToUse,
                                   const Attribute* gradFieldOfSimGridToUse,
+                                  const std::vector<Attribute *> &probFields,
                                   const spectral::array& simulatedData ) const
 {
     //compute the vertical cell anisotropy, which is important to normalize the vertical separations.
@@ -408,7 +435,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     if( useSecondaryData() ){
         //for each category
         for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
-            uint probColumnIndex = m_probFields[ categoryIndex ]->getAttributeGEOEASgivenIndex() - 1;
+            uint probColumnIndex = probFields[ categoryIndex ]->getAttributeGEOEASgivenIndex() - 1;
             double probabilityFromSecondary = simulationCell.readValueFromDataSet( probColumnIndex );
             //if the value in the probability field is null, use the probability from the global PDF as default.
             if( Util::almostEqual2sComplement( m_simGridNDV, probabilityFromSecondary, 1 ) ){
@@ -532,12 +559,18 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
         Attribute* gradFieldOfPrimaryDataToUse = mcrfSim->m_gradationFieldOfPrimaryData;
         Attribute* gradFieldOfSimGridToUse = mcrfSim->m_gradationFieldOfSimGrid;
 
+        // By default, the probability fields for each category are fixed (normal execution mode).
+        std::vector<Attribute*> probFieldsToUse = mcrfSim->m_probFields;
+
         // If the execution mode is for Bayesian application, some hyperparameters vary
         // from realization to realization, thus...
         if( mcrfSim->getMode() == MCRFMode::BAYESIAN ){
             // assuming the number of gradation field values of the primary data chosen is the
             // same of the simulation grid.
             int nGradationFields = mcrfSim->m_gradationFieldsOfPrimaryDataBayesian.size();
+            // assuming the number of probability fields for all categories is the same as
+            // the number of probability fields of the first category.
+            int nProbFieldsPerCategory = mcrfSim->m_probsFieldsBayesian[0].size();
             // ...make uniform distributions for the intervals set by the user.
             std::uniform_real_distribution<double> distributionTauFactorForTransiography(
                         mcrfSim->m_tauFactorForTransiographyBayesianStarting,
@@ -546,6 +579,7 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
                         mcrfSim->m_tauFactorForProbabilityFieldsBayesianStarting,
                         mcrfSim->m_tauFactorForProbabilityFieldsBayesianEnding);
             std::uniform_int_distribution<int> distributionGradFieldIndexes( 0, nGradationFields-1 );
+            std::uniform_int_distribution<int> distributionProbFieldSetIndexes( 0, nProbFieldsPerCategory-1 );
             // ...draw new Tau factors from the user-given interval.
             tauFactorForTransiographyInCurrentRealization =
                     distributionTauFactorForTransiography( randomNumberGenerator );
@@ -555,9 +589,19 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             int selectedGradFieldIndex = distributionGradFieldIndexes ( randomNumberGenerator );
             gradFieldOfPrimaryDataToUse = mcrfSim->m_gradationFieldsOfPrimaryDataBayesian.at( selectedGradFieldIndex );
             gradFieldOfSimGridToUse = mcrfSim->m_gradationFieldsOfSimGridBayesian.at( selectedGradFieldIndex );
+            // ...draw the set of probability fields to be used.
+            int selectedProbFieldSetIndex = distributionProbFieldSetIndexes( randomNumberGenerator );
+            probFieldsToUse = std::vector<Attribute*>();
+            //for each category... (elements in outer vector are for each category)
+            for( const std::vector<Attribute*>& probFieldsOfACategory : mcrfSim->m_probsFieldsBayesian ){
+                //... get the probability field index from the set defined by the user for it.
+                // elements of the inner vector are the probability fields for one category.
+                probFieldsToUse.push_back( probFieldsOfACategory[ selectedProbFieldSetIndex ] );
+            }
         } else { //normal execution mode
             // Call the random number generator the same number of times of Bayesian mode to keep the
             // same random path of the other execution mode.
+            randomNumberGenerator();
             randomNumberGenerator();
             randomNumberGenerator();
             randomNumberGenerator();
@@ -577,6 +621,7 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
                                                          tauFactorForSecondaryDataInCurrentRealization,
                                                          gradFieldOfPrimaryDataToUse,
                                                          gradFieldOfSimGridToUse,
+                                                         probFieldsToUse,
                                                          *simulatedData );
             //save the value to the data array of the realization
             (*simulatedData)( i, j, k ) = catCode;

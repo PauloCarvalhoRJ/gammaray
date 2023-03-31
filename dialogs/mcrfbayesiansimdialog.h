@@ -12,6 +12,7 @@ class FileSelectorWidget;
 class VariableSelector;
 class CartesianGridSelector;
 class ListBuilder;
+class VariableListBuilder;
 class CommonSimulationParameters;
 
 /** The Markov Chains Random Field Simulation Dialog for a Bayesian approach (account for hyperparameter uncertainty). */
@@ -35,14 +36,14 @@ private:
     FileSelectorWidget* m_verticalTransiogramSelector;
     FileSelectorWidget* m_globalPDFSelector;
     ListBuilder* m_gradationalFieldVarList;
-    std::vector< VariableSelector* > m_probFieldsSelectors;
+    std::vector< VariableListBuilder* > m_probFieldsListsBuilders;
     //----------------------------------------------
 
     CommonSimulationParameters* m_commonSimulationParameters;
 
 
 private Q_SLOTS:
-    void onRemakeProbabilityFieldsCombos();
+    void onRemakeProbabilityFieldsListsBuilders();
     void onPrimaryVariableChanged();
     void onCommonSimParams();
     void onRun();

@@ -34,6 +34,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/listbuilderdialog.cpp \
     dialogs/mcrfbayesiansimdialog.cpp \
     dialogs/populatewithproportionsfromvpcdialog.cpp \
     dialogs/sectiondialog.cpp \
@@ -104,7 +105,9 @@ SOURCES += main.cpp\
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.cpp \
     viewer3d/view3dtextconfigwidget.cpp \
     widgets/linechartwidget.cpp \
+    widgets/listbuilder.cpp \
     widgets/qlistwidgetdnd.cpp \
+    widgets/variablelistbuilder.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -299,6 +302,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/listbuilderdialog.h \
     dialogs/mcrfbayesiansimdialog.h \
     dialogs/populatewithproportionsfromvpcdialog.h \
     dialogs/sectiondialog.h \
@@ -375,6 +379,7 @@ HEADERS  += mainwindow.h \
     widgets/linechartwidget.h \
     widgets/listbuilder.h \
     widgets/qlistwidgetdnd.h \
+    widgets/variablelistbuilder.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
@@ -573,6 +578,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/listbuilderdialog.ui \
     dialogs/mcrfbayesiansimdialog.ui \
     dialogs/populatewithproportionsfromvpcdialog.ui \
     dialogs/sectiondialog.ui \
@@ -597,6 +603,7 @@ FORMS    += mainwindow.ui \
     viewer3d/view3dtextconfigwidget.ui \
     widgets/linechartwidget.ui \
     vertpropcurves/verticalproportioncurvedialog.ui \
+    widgets/variablelistbuilder.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \

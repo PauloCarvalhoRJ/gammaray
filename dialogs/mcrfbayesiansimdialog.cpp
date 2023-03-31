@@ -19,6 +19,7 @@
 #include "widgets/variableselector.h"
 #include "widgets/cartesiangridselector.h"
 #include "widgets/listbuilder.h"
+#include "widgets/variablelistbuilder.h"
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslibparameterfiles/commonsimulationparameters.h"
 #include "geostats/mcrfsim.h"
@@ -41,7 +42,7 @@ MCRFBayesianSimDialog::MCRFBayesianSimDialog(QWidget *parent) :
 
     setWindowTitle( "Markov Chains Random Field Simulation" );
 
-    connect( ui->chkUseProbabilityFields, SIGNAL(clicked()), this, SLOT(onRemakeProbabilityFieldsCombos()));
+    connect( ui->chkUseProbabilityFields, SIGNAL(clicked()), this, SLOT(onRemakeProbabilityFieldsListsBuilders()));
 
     m_primFileSelector = new FileSelectorWidget( FileSelectorType::PointAndSegmentSets );
     ui->frmCmbPrimFile->layout()->addWidget( m_primFileSelector );
@@ -86,7 +87,7 @@ MCRFBayesianSimDialog::MCRFBayesianSimDialog(QWidget *parent) :
     //init the spin box for the number of threads with the number of logical processors
     ui->spinNumberOfThreads->setValue( std::thread::hardware_concurrency() );
 
-    onRemakeProbabilityFieldsCombos();
+    onRemakeProbabilityFieldsListsBuilders();
 }
 
 MCRFBayesianSimDialog::~MCRFBayesianSimDialog()
@@ -95,15 +96,15 @@ MCRFBayesianSimDialog::~MCRFBayesianSimDialog()
     delete m_commonSimulationParameters;
 }
 
-void MCRFBayesianSimDialog::onRemakeProbabilityFieldsCombos()
+void MCRFBayesianSimDialog::onRemakeProbabilityFieldsListsBuilders()
 {
-    //removes the current comboboxes
-    for( VariableSelector* vs : m_probFieldsSelectors )
-       delete vs; //this pointer is managed by Qt, so this causes its detachement from the dialog's UI.
-    m_probFieldsSelectors.clear();
+    //removes the current list builders
+    for( VariableListBuilder* vld : m_probFieldsListsBuilders )
+       delete vld; //this pointer is managed by Qt, so this causes its detachement from the dialog's UI.
+    m_probFieldsListsBuilders.clear();
 
     if( ! m_simGridSelector ){
-        Application::instance()->logWarn("MCRFBayesianSimDialog::onRemakeProbabilityFieldsCombos(): pointer to simulation grid selector is null. Ignoring.");
+        Application::instance()->logWarn("MCRFBayesianSimDialog::onRemakeProbabilityFieldsListsBuilders(): pointer to simulation grid selector is null. Ignoring.");
         return;
     }
 
@@ -119,27 +120,29 @@ void MCRFBayesianSimDialog::onRemakeProbabilityFieldsCombos()
             if( cd ){
                 cd->loadQuintuplets(); //loads the C.D. data from the filesystem.
                 for( uint iCatIndex = 0; iCatIndex < cd->getCategoryCount(); ++iCatIndex ){
-                    VariableSelector* probFieldSelector = new VariableSelector( );
-                    probFieldSelector->setCaption( "   " + cd->getCategoryName( iCatIndex ) + "   " );
-                    probFieldSelector->setCaptionBGColor( cd->getCustomColor( iCatIndex ) );
-                    ui->grpBoxSecondaryData->layout()->addWidget( probFieldSelector );
+                    VariableListBuilder* probFieldListBuilder = new VariableListBuilder( );
+                    probFieldListBuilder->setCaption( "   " + cd->getCategoryName( iCatIndex ) + "   " );
+                    probFieldListBuilder->setCaptionBGColor( cd->getCustomColor( iCatIndex ) );
+                    ui->grpBoxSecondaryData->layout()->addWidget( probFieldListBuilder );
                     connect( m_simGridSelector, SIGNAL(cartesianGridSelected(DataFile*)),
-                             probFieldSelector, SLOT(onListVariables(DataFile*)) );
-                    m_probFieldsSelectors.push_back( probFieldSelector );
+                             probFieldListBuilder, SLOT(onListVariables(DataFile*)) );
+                    m_probFieldsListsBuilders.push_back( probFieldListBuilder );
                 }
                 m_simGridSelector->onSelection( m_simGridSelector->getCurrentIndex() );
             } else {
-                Application::instance()->logWarn("MCRFBayesianSimDialog::onRemakeProbabilityFieldsCombos(): failure to retrive the categorical definition for the selected primary variable.");
+                Application::instance()->logWarn("MCRFBayesianSimDialog::onRemakeProbabilityFieldsListsBuilders(): "
+                                                 "failure to retrive the categorical definition for the selected primary variable.");
             }
         } else {
-            Application::instance()->logWarn("MCRFBayesianSimDialog::onRemakeProbabilityFieldsCombos(): selected attribute is nullptr.");
+            Application::instance()->logWarn("MCRFBayesianSimDialog::onRemakeProbabilityFieldsListsBuilders(): "
+                                             "selected attribute is nullptr.");
         }
     }
 }
 
 void MCRFBayesianSimDialog::onPrimaryVariableChanged()
 {
-    onRemakeProbabilityFieldsCombos();
+    onRemakeProbabilityFieldsListsBuilders();
     m_commonSimulationParameters->setBaseNameForRealizationVariables( m_primVarSelector->getSelectedVariableName() + "_real" );
 }
 
@@ -160,8 +163,9 @@ void MCRFBayesianSimDialog::onRun()
     markovSim.m_pdf                                  = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
     markovSim.m_transiogramModel                     = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
     markovSim.m_gradationFieldsOfSimGridBayesian     = m_gradationalFieldVarList->getSelectedAttributes();
-    for( VariableSelector* probFieldSelector : m_probFieldsSelectors )
-        markovSim.m_probFields.push_back( probFieldSelector->getSelectedVariable() );
+    //there is one probFieldListBuilder per category.
+    for( VariableListBuilder* probFieldListBuilder : m_probFieldsListsBuilders )
+        markovSim.m_probsFieldsBayesian.push_back( probFieldListBuilder->getSelectedAttributes() );
     markovSim.m_tauFactorForTransiographyBayesianStarting     = ui->dblSpinTauTransiographyStarting->value();
     markovSim.m_tauFactorForTransiographyBayesianEnding       = ui->dblSpinTauTransiographyEnding->value();
     markovSim.m_tauFactorForProbabilityFieldsBayesianStarting = ui->dblSpinTauSecondaryStarting->value();

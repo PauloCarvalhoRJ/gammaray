@@ -91,6 +91,15 @@ public:
      * of categories as present in the m_atPrimary's CategoryDefinition object.
      */
     std::vector< Attribute* > m_probFields;
+    /** For Bayesian mode: The optional probability fields (attributes of the simulation grid).
+     * Inner vector: probability fields from which one is drawn in a realization for one given category.
+     * Outer vector: one inner vector for each category.
+     * An empty inner vector means no probability field will be used.  The number of fields must be the same
+     * accross the inner vectors (all categories must be given the same number or probability fields).
+     * The number of elements in the outer vector must match the number and order
+     * of categories as present in the m_atPrimary's CategoryDefinition object.
+     */
+    std::vector< std::vector< Attribute* > > m_probsFieldsBayesian;
     /** The Tau factor for the probabilities given by the transiogram model. */
     double m_tauFactorForTransiography;
     double m_tauFactorForTransiographyBayesianStarting; //lower limit for values to be drawn (Bayesian mode).
@@ -107,7 +116,9 @@ public:
     uint m_maxNumberOfThreads;
     /*@}*/
 
-    /** Runs the algorithm.  If false is returned, the simulation failed.  Call getLastError() to obtain the reasons. */
+    /** Runs the algorithm.  If false is returned, the simulation failed.  Call getLastError()
+     * to obtain the reasons.
+     */
     bool run();
 
     /** Returns a text explaining the cause of the last failure during the simulation. */
@@ -132,15 +143,18 @@ public:
      *                                  data (probabiliy fields for each category).
      * @param gradFieldOfPrimaryDataToUse The gradation field variable of the primary data set to use.
      * @param gradFieldOfSimGridToUse The gradation field variable of the simulation grid to use.
+     * @param probFields The set of probability fields to use.  Must be one for each category and must match
+     *                   the order of the categories as present in the m_atPrimary's CategoryDefinition object.
      * @param simulatedData Pointer to the realization data so it is possible to retrieve the previously
      *                      simulated values.
      */
-    double simulateOneCellMT( uint i, uint j , uint k,
+    double simulateOneCellMT(uint i, uint j , uint k,
                               std::mt19937& randomNumberGenerator,
                               double tauFactorForTransiography,
                               double tauFactorForSecondaryData,
                               const Attribute* gradFieldOfPrimaryDataToUse,
                               const Attribute* gradFieldOfSimGridToUse,
+                              const std::vector<Attribute *> &probFields,
                               const spectral::array& simulatedData ) const;
 
     /** Sets or increases the current simulation progress counter to the given ammount.
