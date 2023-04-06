@@ -31,6 +31,7 @@ MCRFBayesianSimDialog::MCRFBayesianSimDialog(QWidget *parent) :
     m_primVarSelector( nullptr ),
     m_simGridSelector( nullptr ),
     m_verticalTransiogramSelector( nullptr ),
+    m_verticalTransiogramSelector2( nullptr ),
     m_globalPDFSelector( nullptr ),
     m_gradationalFieldVarList( nullptr ),
     m_commonSimulationParameters( new CommonSimulationParameters() )
@@ -68,8 +69,11 @@ MCRFBayesianSimDialog::MCRFBayesianSimDialog(QWidget *parent) :
     m_simGridSelector = new CartesianGridSelector( );
     ui->frmSimGrid->layout()->addWidget( m_simGridSelector );
 
-    m_verticalTransiogramSelector = new FileSelectorWidget( FileSelectorType::VerticalTransiogramModels );
-    ui->frmTransiogramSelector->layout()->addWidget( m_verticalTransiogramSelector );
+    //The two transiogram models to make out the band transiogram.
+    m_verticalTransiogramSelector  = new FileSelectorWidget( FileSelectorType::VerticalTransiogramModels );
+    m_verticalTransiogramSelector2 = new FileSelectorWidget( FileSelectorType::VerticalTransiogramModels );
+    ui->frmTransiogramBandSelectors->layout()->addWidget( m_verticalTransiogramSelector );
+    ui->frmTransiogramBandSelectors->layout()->addWidget( m_verticalTransiogramSelector2 );
 
     m_globalPDFSelector = new FileSelectorWidget( FileSelectorType::PDFs );
     ui->frmCmbGlobalPDFselector->layout()->addWidget( m_globalPDFSelector );
@@ -162,6 +166,7 @@ void MCRFBayesianSimDialog::onRun()
     markovSim.m_cgSim                                = dynamic_cast<CartesianGrid*>( m_simGridSelector->getSelectedDataFile() );
     markovSim.m_pdf                                  = dynamic_cast<CategoryPDF*>( m_globalPDFSelector->getSelectedFile() );
     markovSim.m_transiogramModel                     = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector->getSelectedFile() );
+    markovSim.m_transiogramModel2Bayesian            = dynamic_cast<VerticalTransiogramModel*>( m_verticalTransiogramSelector2->getSelectedFile() );
     markovSim.m_gradationFieldsOfSimGridBayesian     = m_gradationalFieldVarList->getSelectedAttributes();
     //there is one probFieldListBuilder per category.
     for( VariableListBuilder* probFieldListBuilder : m_probFieldsListsBuilders )

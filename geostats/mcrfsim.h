@@ -82,6 +82,8 @@ public:
     CategoryPDF* m_pdf;
     /** The vertical transiogram model. */
     VerticalTransiogramModel* m_transiogramModel;
+    /** A 2nd vertical transiogram model to make out a transiogram band of uncertainity for Bayesian mode. */
+    VerticalTransiogramModel* m_transiogramModel2Bayesian;
     /** The attribute of the simulation grid that contains the gradation field.  See the program manual for
      *  detailed explanation on the role of the gradation field. */
     Attribute*                m_gradationFieldOfSimGrid;

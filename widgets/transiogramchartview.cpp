@@ -39,13 +39,7 @@ TransiogramChartView::TransiogramChartView(QtCharts::QChart *chart,
 
 void TransiogramChartView::mouseMoveEvent(QMouseEvent *event)
 {
-    //update the crosshairs position constrained to the plot area in the widget
-    int x = std::max<int>( event->pos().x(), static_cast<int>( m_chart->plotArea().x() ) );
-    x = std::min<int>( x, static_cast<int>( m_chart->plotArea().x() + m_chart->plotArea().width() ) );
-    int y = std::max<int>( event->pos().y(), static_cast<int>( m_chart->plotArea().y() ) );
-    y = std::min<int>( y, static_cast<int>( m_chart->plotArea().y() + m_chart->plotArea().height() ) );
-    m_rubberBandH->setGeometry( m_chart->plotArea().x(), y,   m_chart->plotArea().width(),  1 );
-    m_rubberBandV->setGeometry( x, m_chart->plotArea().y(),   1, m_chart->plotArea().height() );
+    updateCrossHairsPosition(event);
 
     //update model parameters and redraw model curve while user drags the mouse
     if( m_mouseDown ){
@@ -126,6 +120,17 @@ void TransiogramChartView::updateModelSeries()
 
     //notify possibly monitoring clients of changes to the theoretical transiogram parameters
     emit modelWasUpdated();
+}
+
+void TransiogramChartView::updateCrossHairsPosition(QMouseEvent *event)
+{
+    //update the crosshairs position constrained to the plot area in the widget
+    int x = std::max<int>( event->pos().x(), static_cast<int>( m_chart->plotArea().x() ) );
+    x = std::min<int>( x, static_cast<int>( m_chart->plotArea().x() + m_chart->plotArea().width() ) );
+    int y = std::max<int>( event->pos().y(), static_cast<int>( m_chart->plotArea().y() ) );
+    y = std::min<int>( y, static_cast<int>( m_chart->plotArea().y() + m_chart->plotArea().height() ) );
+    m_rubberBandH->setGeometry( m_chart->plotArea().x(), y,   m_chart->plotArea().width(),  1 );
+    m_rubberBandV->setGeometry( x, m_chart->plotArea().y(),   1, m_chart->plotArea().height() );
 }
 
 void TransiogramChartView::mousePressEvent(QMouseEvent *event)

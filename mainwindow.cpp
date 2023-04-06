@@ -80,6 +80,7 @@
 #include "dialogs/entropycyclicityanalysisdialog.h"
 #include "dialogs/faciesrelationshipdiagramdialog.h"
 #include "dialogs/transiogramdialog.h"
+#include "dialogs/transiogrambanddialog.h"
 #include "dialogs/mcrfsimdialog.h"
 #include "dialogs/mcrfbayesiansimdialog.h"
 #include "dialogs/mcmcdataimputationdialog.h"
@@ -868,6 +869,38 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction(menu_caption, this, SLOT(onPopulateGridWithProportions()));
             }
         }
+        //if both objects are VerticalTransiogramModels, then the user can review them as a transiogram band,
+        //that is, edit both at the sime time in one dialog.
+        if( index1.isValid() && index2.isValid() ){
+            //Get the files pointers
+            File* file1 = nullptr;
+            File* file2 = nullptr;
+            if( (static_cast<ProjectComponent*>( index1.internalPointer() ))->isFile() ){
+                file1 = static_cast<File*>( index1.internalPointer() );
+            }
+            if( (static_cast<ProjectComponent*>( index2.internalPointer() ))->isFile() ){
+                file2 = static_cast<File*>( index2.internalPointer() );
+            }
+            //determine the target Cartesian grid file and VPC with the source of proportions
+            VerticalTransiogramModel* vtm1 = nullptr;
+            VerticalTransiogramModel* vtm2 = nullptr;
+            if( file1 ){
+                if( file1->getFileType() == "VERTICALTRANSIOGRAMMODEL" )
+                    vtm1 = dynamic_cast<VerticalTransiogramModel*>( file1 );
+            }
+            if( file2 ){
+                if( file2->getFileType() == "VERTICALTRANSIOGRAMMODEL" )
+                    vtm2 = dynamic_cast<VerticalTransiogramModel*>( file2 );
+            }
+
+            //if user actually selected two vertical transiogam models...
+            if( vtm1 && vtm2 ) {
+                _right_clicked_file = file1;
+                _right_clicked_file2 = file2;
+                QString menu_caption = "Review both as a transiogram band";
+                _projectContextMenu->addAction(menu_caption, this, SLOT(onReviewTransiogramBand()));
+            }
+        }
     //three items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 3 ) {
         QModelIndex index1 = selected_indexes.first();
@@ -1406,6 +1439,28 @@ void MainWindow::onMCRFBayesianSim()
     MCRFBayesianSimDialog* mcrfbayesd = new MCRFBayesianSimDialog( this );
     mcrfbayesd->setWindowTitle("Markov Chains Random Fields Simulation for Bayesian approach");
     mcrfbayesd->show();
+}
+
+void MainWindow::onReviewTransiogramBand()
+{
+    //Assuming the calling code made sure both right-clicked files are VerticalTransiogramModels.
+    VerticalTransiogramModel* vtm1 = dynamic_cast<VerticalTransiogramModel*>( _right_clicked_file  );
+    VerticalTransiogramModel* vtm2 = dynamic_cast<VerticalTransiogramModel*>( _right_clicked_file2 );
+
+    //sanity check
+    if( !vtm1 || !vtm2 ){
+        Application::instance()->logError("MainWindow::onReviewTransiogramBand(): somehow one or both right-clicked VTMs "
+                                          " resulted in null pointer(s).");
+        return;
+    }
+
+    createOrReviewVerticalTransiogramModelBand( vtm1, vtm2 );
+}
+
+void MainWindow::openTransiographyBayesian()
+{
+    TransiogramBandDialog* tbd = new TransiogramBandDialog( nullptr, nullptr, this );
+    tbd->show();
 }
 
 void MainWindow::onRemoveFile()
@@ -4123,6 +4178,18 @@ void MainWindow::createOrReviewVerticalTransiogramModel(VerticalTransiogramModel
 {
     TransiogramDialog* td = new TransiogramDialog( vtm, this );
     td->show();
+}
+
+void MainWindow::createOrReviewVerticalTransiogramModelBand(VerticalTransiogramModel *vtm1,
+                                                            VerticalTransiogramModel *vtm2)
+{
+    if( vtm1 && vtm2 && !vtm1->isCompatibleWith( vtm2 ) ){
+        Application::instance()->logError("MainWindow::createOrReviewVerticalTransiogramModelBand(): "
+                                          "the selected VTMs are not compatible.");
+        return;
+    }
+    TransiogramBandDialog* tbd = new TransiogramBandDialog( vtm1, vtm2, this );
+    tbd->show();
 }
 
 void MainWindow::createOrReviewVerticalProportionCurve(VerticalProportionCurve *vpc)

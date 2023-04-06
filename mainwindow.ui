@@ -240,7 +240,7 @@
      <x>0</x>
      <y>0</y>
      <width>463</width>
-     <height>21</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -286,10 +286,11 @@
     <addaction name="actionMachine_Learning"/>
     <addaction name="actionVariographic_Decomposition"/>
     <addaction name="actionTransiography"/>
+    <addaction name="actionTransiography_for_Bayesian_approach"/>
    </widget>
    <widget class="QMenu" name="menuSimulation">
     <property name="enabled">
-     <bool>true</bool>
+     <bool>false</bool>
     </property>
     <property name="title">
      <string>Simulation</string>
@@ -439,6 +440,11 @@
   <action name="actionMCRF_for_Bayesian_approach">
    <property name="text">
     <string>MCRF for Bayesian approach</string>
+   </property>
+  </action>
+  <action name="actionTransiography_for_Bayesian_approach">
+   <property name="text">
+    <string>Transiography for Bayesian approach</string>
    </property>
   </action>
  </widget>
@@ -806,6 +812,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>actionTransiography_for_Bayesian_approach</sender>
+   <signal>triggered()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>openTransiographyBayesian()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>231</x>
+     <y>177</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <slot>showAbout()</slot>
@@ -829,5 +851,6 @@
   <slot>onMCRFSim()</slot>
   <slot>onDataImputationWithMCMC()</slot>
   <slot>onMCRFBayesianSim()</slot>
+  <slot>openTransiographyBayesian()</slot>
  </slots>
 </ui>

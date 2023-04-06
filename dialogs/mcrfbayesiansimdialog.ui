@@ -246,12 +246,12 @@
      <item>
       <widget class="QLabel" name="label_4">
        <property name="text">
-        <string>Vertical transiogram model:</string>
+        <string>Vertical transiogram model band:</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QFrame" name="frmTransiogramSelector">
+      <widget class="QFrame" name="frmTransiogramBandSelectors">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -634,8 +634,8 @@
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>780</x>
-     <y>408</y>
+     <x>985</x>
+     <y>471</y>
     </hint>
     <hint type="destinationlabel">
      <x>553</x>
@@ -650,8 +650,8 @@
    <slot>onCommonSimParams()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>240</x>
-     <y>236</y>
+     <x>205</x>
+     <y>211</y>
     </hint>
     <hint type="destinationlabel">
      <x>272</x>
@@ -666,8 +666,8 @@
    <slot>onRun()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>35</x>
-     <y>403</y>
+     <x>31</x>
+     <y>472</y>
     </hint>
     <hint type="destinationlabel">
      <x>57</x>

@@ -39,6 +39,7 @@ SOURCES += main.cpp\
     dialogs/populatewithproportionsfromvpcdialog.cpp \
     dialogs/sectiondialog.cpp \
     dialogs/subgriddialog.cpp \
+    dialogs/transiogrambanddialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
@@ -107,6 +108,7 @@ SOURCES += main.cpp\
     widgets/linechartwidget.cpp \
     widgets/listbuilder.cpp \
     widgets/qlistwidgetdnd.cpp \
+    widgets/transiogrambandchartview.cpp \
     widgets/variablelistbuilder.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
@@ -307,6 +309,7 @@ HEADERS  += mainwindow.h \
     dialogs/populatewithproportionsfromvpcdialog.h \
     dialogs/sectiondialog.h \
     dialogs/subgriddialog.h \
+    dialogs/transiogrambanddialog.h \
     domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
@@ -379,6 +382,7 @@ HEADERS  += mainwindow.h \
     widgets/linechartwidget.h \
     widgets/listbuilder.h \
     widgets/qlistwidgetdnd.h \
+    widgets/transiogrambandchartview.h \
     widgets/variablelistbuilder.h \
     widgets/variogrammodellist.h \
     domain/weight.h \

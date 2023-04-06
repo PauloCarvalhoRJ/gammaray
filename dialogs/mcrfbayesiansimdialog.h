@@ -34,6 +34,7 @@ private:
     ListBuilder* m_primGradationValueList;
     CartesianGridSelector* m_simGridSelector;
     FileSelectorWidget* m_verticalTransiogramSelector;
+    FileSelectorWidget* m_verticalTransiogramSelector2;
     FileSelectorWidget* m_globalPDFSelector;
     ListBuilder* m_gradationalFieldVarList;
     std::vector< VariableListBuilder* > m_probFieldsListsBuilders;

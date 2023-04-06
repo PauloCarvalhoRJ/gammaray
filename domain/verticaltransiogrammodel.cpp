@@ -98,6 +98,11 @@ int VerticalTransiogramModel::getFaciesIndex(const QString faciesName) const
     return -1;
 }
 
+int VerticalTransiogramModel::getFaciesCount() const
+{
+    return m_faciesNames.size();
+}
+
 double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesCode, uint toFaciesCode, double h) const
 {
     //it is possible that not all facies have transiograms modeled.  In this case, there is zero probability
@@ -198,6 +203,30 @@ double VerticalTransiogramModel::getSill(uint iRow, uint iCol)
     return std::get<INDEX_OF_SILL_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] );
 }
 
+bool VerticalTransiogramModel::isCompatibleWith(const VerticalTransiogramModel *otherVTM) const
+{
+    CategoryDefinition* thisCD = getCategoryDefinition();
+    CategoryDefinition* otherCD = otherVTM->getCategoryDefinition();
+    if( ! otherCD || ( thisCD != otherCD ) ){
+        return false;
+    }
+    int nFacies = m_faciesNames.size();
+    int nFaciesOther = otherVTM->getFaciesCount();
+    if( nFacies != nFaciesOther ){
+        return false;
+    }
+    for( int iFacies = 0; iFacies < nFacies; ++iFacies ){
+        if( m_faciesNames[iFacies] != otherVTM->m_faciesNames[iFacies] )
+            return false;
+    }
+    return true;
+}
+
+int VerticalTransiogramModel::getCategoryMatrixIndex(const QString categoryName) const
+{
+    return getFaciesIndex( categoryName );
+}
+
 QIcon VerticalTransiogramModel::getIcon()
 {
     return QIcon(":icons32/transiogram32");
@@ -247,13 +276,13 @@ void VerticalTransiogramModel::writeToFS()
 
     //write the column headers
     for( const QString& headerFacies : m_faciesNames )
-        out << '\t' << headerFacies ;
+        out << '\t' << Util::putDoubleQuotesIfThereIsWhiteSpace( headerFacies ) ;
     out << '\n';
 
     //write the lines ( headers and transiogram parameters)
     std::vector< std::vector< VTransiogramParameters > >::const_iterator itTransiogramsLines = m_verticalTransiogramsMatrix.cbegin();
     for( const QString& headerFacies : m_faciesNames ){
-        out << headerFacies ;
+        out << Util::putDoubleQuotesIfThereIsWhiteSpace( headerFacies ) ;
         std::vector< VTransiogramParameters >::const_iterator itTransiograms = (*itTransiogramsLines).cbegin();
         for( ; itTransiograms != (*itTransiogramsLines).end() ; ++itTransiograms)
             out << '\t' << static_cast<int>   (std::get<0>(*itTransiograms)) << ','  //structure type: spheric, exponential, gaussian, etc...
