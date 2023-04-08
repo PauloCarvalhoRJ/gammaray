@@ -145,17 +145,19 @@ public:
      *                                  data (probabiliy fields for each category).
      * @param gradFieldOfPrimaryDataToUse The gradation field variable of the primary data set to use.
      * @param gradFieldOfSimGridToUse The gradation field variable of the simulation grid to use.
+     * @param transiogramToUse The vertical transiogram model to use.
      * @param probFields The set of probability fields to use.  Must be one for each category and must match
      *                   the order of the categories as present in the m_atPrimary's CategoryDefinition object.
      * @param simulatedData Pointer to the realization data so it is possible to retrieve the previously
      *                      simulated values.
      */
-    double simulateOneCellMT(uint i, uint j , uint k,
+    double simulateOneCellMT( uint i, uint j , uint k,
                               std::mt19937& randomNumberGenerator,
                               double tauFactorForTransiography,
                               double tauFactorForSecondaryData,
                               const Attribute* gradFieldOfPrimaryDataToUse,
                               const Attribute* gradFieldOfSimGridToUse,
+                              const VerticalTransiogramModel &transiogramToUse,
                               const std::vector<Attribute *> &probFields,
                               const spectral::array& simulatedData ) const;
 

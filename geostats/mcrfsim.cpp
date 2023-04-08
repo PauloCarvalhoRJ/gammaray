@@ -29,6 +29,7 @@ MCRFSim::MCRFSim( MCRFMode mode ) :
     m_cgSim( nullptr ),
     m_pdf( nullptr ),
     m_transiogramModel( nullptr ),
+    m_transiogramModel2Bayesian( nullptr ),
     m_gradationFieldOfSimGrid( nullptr ),
     m_gradationFieldsOfSimGridBayesian( std::vector< Attribute*>() ),
     m_probFields( std::vector< Attribute*>() ),
@@ -134,10 +135,43 @@ bool MCRFSim::isOKtoRun()
 
     {
         CategoryDefinition* cdOfPDF = m_pdf->getCategoryDefinition();
-        CategoryDefinition* cdOfTransiogramModel = m_transiogramModel->getCategoryDefinition();
+        CategoryDefinition* cdOfTransiogramModel  = m_transiogramModel->getCategoryDefinition();
         if( cdOfPDF != cdOfTransiogramModel ){
-            m_lastError = "Category definition of transiogram model must be the same object as that the PDF is based on.";
+            m_lastError = "Category definition of transiogram model must be the same object as that "
+                          "the PDF is based on.";
             return false;
+        }
+    }
+
+    if( m_mode == MCRFMode::BAYESIAN ){
+        if( ! m_transiogramModel2Bayesian ){
+            m_lastError = "2nd vertical transiogram model not provided.";
+            return false;
+        } else {
+            CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
+            CategoryDefinition* cdOfTransiogramModel = m_transiogramModel2Bayesian->getCategoryDefinition();
+            if( ! cdOfTransiogramModel ){
+                m_lastError = "Category definition of 2nd vertical transiogram model not found (nullptr).";
+                return false;
+            }
+            if( cdOfTransiogramModel != cdOfPrimData ){
+                m_lastError = "Category definition of input variable must be the same object as that the 2nd "
+                              "vertical transiogram model is based on.";
+                return false;
+            }
+        }
+        if( ! m_transiogramModel->isCompatibleWith( m_transiogramModel2Bayesian )){
+            m_lastError = "Bayesian mode: the transiogram models that define the band are not compatible.";
+            return false;
+        }
+        {
+            CategoryDefinition* cdOfPDF = m_pdf->getCategoryDefinition();
+            CategoryDefinition* cdOfTransiogramModel2 = m_transiogramModel2Bayesian->getCategoryDefinition();
+            if( cdOfPDF != cdOfTransiogramModel2 ){
+                m_lastError = "Bayesian mode: category definition of 2nd transiogram model must be the same object as "
+                              "that the PDF is based on.";
+                return false;
+            }
         }
     }
 
@@ -229,6 +263,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                                   double tauFactorForSecondaryData,
                                   const Attribute* gradFieldOfPrimaryDataToUse,
                                   const Attribute* gradFieldOfSimGridToUse,
+                                  const VerticalTransiogramModel& transiogramToUse,
                                   const std::vector<Attribute *> &probFields,
                                   const spectral::array& simulatedData ) const
 {
@@ -385,8 +420,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
 
     // A lambda function to reuse the multiplaction operator over all the facies found in
     // samples and previously simulated cells.
-    const VerticalTransiogramModel& transiogramModel = *m_transiogramModel;
-    auto lambdaMultiplicationProbs = [ faciesFromCodesAndSuccessionSeparations, transiogramModel ] ( uint faciesCodeTo ) {
+    auto lambdaMultiplicationProbs = [ faciesFromCodesAndSuccessionSeparations, transiogramToUse ] ( uint faciesCodeTo ) {
         double result = 0.0; //assumes zero probability
         std::vector< std::pair< FaciesCodeFrom, SuccessionSeparation > >::const_iterator it =
                 faciesFromCodesAndSuccessionSeparations.cbegin();
@@ -395,7 +429,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         for( ; it != faciesFromCodesAndSuccessionSeparations.cend(); ++it ){
             uint faciesCodeFrom = (*it).first;
             double h = (*it).second;
-            double probability = transiogramModel.getTransitionProbability( faciesCodeFrom, faciesCodeTo, h );
+            double probability = transiogramToUse.getTransitionProbability( faciesCodeFrom, faciesCodeTo, h );
             if( it == faciesFromCodesAndSuccessionSeparations.cbegin() )
                 result = probability; //initialize the resulting probability with the first probability
             else
@@ -598,13 +632,36 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
                 // elements of the inner vector are the probability fields for one category.
                 probFieldsToUse.push_back( probFieldsOfACategory[ selectedProbFieldSetIndex ] );
             }
-        } else { //normal execution mode
+        } else { //normal execution mode (fixed hyperparameters)
             // Call the random number generator the same number of times of Bayesian mode to keep the
             // same random path of the other execution mode.
             randomNumberGenerator();
             randomNumberGenerator();
             randomNumberGenerator();
             randomNumberGenerator();
+        }
+
+        // By default, the transiogram model is fixed (normal exection mode).
+        VerticalTransiogramModel transiogramToUse("", "");
+        transiogramToUse.makeAsSameModel( *(mcrfSim->m_transiogramModel) );
+
+        // If the execution mode is for Bayesian application, the transiogram model must vary
+        // randomly from realization to realization within the band of uncertainty given by the user.
+        if( mcrfSim->getMode() == MCRFMode::BAYESIAN ){
+            TODO;
+            int transiogramMatrixDimension = transiogramToUse.getRowOrColCount();
+
+            for( int iRow = 0; iRow < transiogramMatrixDimension; ++iRow )
+                for( int iCol = 0; iCol < transiogramMatrixDimension; ++iCol ){
+                    double sill1 = mcrfSim->m_transiogramModel         ->getSill( iRow, iCol );
+                    double sill2 = mcrfSim->m_transiogramModel2Bayesian->getSill( iRow, iCol );
+                    double range1 = mcrfSim->m_transiogramModel         ->getRange( iRow, iCol );
+                    double range2 = mcrfSim->m_transiogramModel2Bayesian->getRange( iRow, iCol );
+                    std::uniform_real_distribution<double> distributionForSill(   sill1,  sill2 );
+                    std::uniform_real_distribution<double> distributionForRange( range1, range2 );
+                }
+
+        } else { //normal execution mode (fixed transiography)
         }
 
         //traverse the grid's cells according to the random walk.
@@ -621,6 +678,7 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
                                                          tauFactorForSecondaryDataInCurrentRealization,
                                                          gradFieldOfPrimaryDataToUse,
                                                          gradFieldOfSimGridToUse,
+                                                         transiogramToUse,
                                                          probFieldsToUse,
                                                          *simulatedData );
             //save the value to the data array of the realization
@@ -678,6 +736,8 @@ bool MCRFSim::run()
 
     //loads the transiogram model data.
     m_transiogramModel->readFromFS();
+    if( m_mode == MCRFMode::BAYESIAN )
+        m_transiogramModel2Bayesian->readFromFS();
 
     //loads category information from filesystem
     CategoryDefinition* cd = m_pdf->getCategoryDefinition();
