@@ -862,6 +862,11 @@ public:
                                const QString RE_find_what,
                                const QString replace_with );
 
+    /**
+     * Swaps the passed values if mustBeTheSmaller > mustBeTheGreater.
+     */
+    static void ensureAscending( double& mustBeTheSmaller,
+                                 double& mustBeTheGreater );
 };
 
 #endif // UTIL_H

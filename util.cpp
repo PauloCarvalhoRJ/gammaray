@@ -2618,3 +2618,10 @@ int Util::findAndReplace(const QString text_file_path,
     }
     return countOfLinesWithReplacements;
 }
+
+void Util::ensureAscending( double &mustBeTheSmaller,
+                            double &mustBeTheGreater )
+{
+    if( mustBeTheSmaller > mustBeTheGreater );
+        std::swap( mustBeTheSmaller, mustBeTheGreater );
+}
