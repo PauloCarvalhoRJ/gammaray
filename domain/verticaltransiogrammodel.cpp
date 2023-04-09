@@ -198,9 +198,21 @@ double VerticalTransiogramModel::getRange( uint iRow, uint iCol )
     return std::get<INDEX_OF_RANGE_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] );
 }
 
+void VerticalTransiogramModel::setRange(uint iRow, uint iCol, double range)
+{
+    //the non-const std::get<> returns a reference to the element.
+    std::get<INDEX_OF_RANGE_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] ) = range;
+}
+
 double VerticalTransiogramModel::getSill(uint iRow, uint iCol)
 {
     return std::get<INDEX_OF_SILL_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] );
+}
+
+void VerticalTransiogramModel::setSill(uint iRow, uint iCol, double sill)
+{
+    //the non-const std::get<> returns a reference to the element.
+    std::get<INDEX_OF_SILL_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] ) = sill;
 }
 
 bool VerticalTransiogramModel::isCompatibleWith(const VerticalTransiogramModel *otherVTM) const
@@ -225,6 +237,27 @@ bool VerticalTransiogramModel::isCompatibleWith(const VerticalTransiogramModel *
 int VerticalTransiogramModel::getCategoryMatrixIndex(const QString categoryName) const
 {
     return getFaciesIndex( categoryName );
+}
+
+void VerticalTransiogramModel::makeAsSameModel(const VerticalTransiogramModel &otherVTM)
+{
+    m_associatedCategoryDefinitionName = otherVTM.m_associatedCategoryDefinitionName;
+    m_faciesNames = otherVTM.m_faciesNames;
+    m_verticalTransiogramsMatrix = otherVTM.m_verticalTransiogramsMatrix;
+    m_faciesCodeToIndex = otherVTM.m_faciesCodeToIndex;
+}
+
+void VerticalTransiogramModel::unitizeRowwiseSills()
+{
+    uint transiogramMatrixDimension = getRowOrColCount();
+    for( uint iRow = 0; iRow < transiogramMatrixDimension; ++iRow ){
+        double sumSill = 0.0;
+        for( uint iCol = 0; iCol < transiogramMatrixDimension; ++iCol )
+            sumSill += getSill( iRow, iCol );
+        double ratio = 1.0 / sumSill;
+        for( uint iCol = 0; iCol < transiogramMatrixDimension; ++iCol )
+            setSill( iRow, iCol, getSill( iRow, iCol) * ratio );
+    }
 }
 
 QIcon VerticalTransiogramModel::getIcon()
