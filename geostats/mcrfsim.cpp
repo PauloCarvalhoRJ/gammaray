@@ -227,10 +227,15 @@ bool MCRFSim::isOKtoRun()
                       " as neighborhood parameters, random number generator seed, number of realization, etc.";
         return false;
     } else {
-        if( m_commonSimulationParameters->getNumberOfRealizations() > 99 || m_commonSimulationParameters->getNumberOfRealizations() < 1 ){
-            m_lastError = "Number of realizations must be between 1 and 99.";
+        if( m_commonSimulationParameters->getSeed() > 20000000 ){
+            m_lastError = "The seed for the random number generator must not exceed 20 millions.";
             return false;
         }
+    }
+
+    if( m_maxNumberOfThreads > 99 || m_maxNumberOfThreads < 1 ){
+        m_lastError = "Max number of threads must be between 1 and 99.";
+        return false;
     }
 
     //if the user opts to use the Cartesian grid-tuned algorithm, then the neighborhood
@@ -647,21 +652,38 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
 
         // If the execution mode is for Bayesian application, the transiogram model must vary
         // randomly from realization to realization within the band of uncertainty given by the user.
+        int transiogramMatrixDimension = transiogramToUse.getRowOrColCount();
         if( mcrfSim->getMode() == MCRFMode::BAYESIAN ){
-            TODO;
-            int transiogramMatrixDimension = transiogramToUse.getRowOrColCount();
-
-            for( int iRow = 0; iRow < transiogramMatrixDimension; ++iRow )
-                for( int iCol = 0; iCol < transiogramMatrixDimension; ++iCol ){
+            for( uint iRow = 0; iRow < transiogramMatrixDimension; ++iRow )
+                for( uint iCol = 0; iCol < transiogramMatrixDimension; ++iCol ){
+                    //Get the ranges of variable transiogram parameters.
                     double sill1 = mcrfSim->m_transiogramModel         ->getSill( iRow, iCol );
                     double sill2 = mcrfSim->m_transiogramModel2Bayesian->getSill( iRow, iCol );
                     double range1 = mcrfSim->m_transiogramModel         ->getRange( iRow, iCol );
                     double range2 = mcrfSim->m_transiogramModel2Bayesian->getRange( iRow, iCol );
-                    std::uniform_real_distribution<double> distributionForSill(   sill1,  sill2 );
+                    //Make sure they are in ascending order.
+                    Util::ensureAscending( sill1,  sill2  );
+                    Util::ensureAscending( range1, range2 );
+                    //Make uniform distribution for the transiogram parameters.
+                    std::uniform_real_distribution<double> distributionForSill (  sill1,  sill2 );
                     std::uniform_real_distribution<double> distributionForRange( range1, range2 );
+                    //Draw transiogram parameters values.
+                    double drawnSill  = distributionForSill ( randomNumberGenerator );
+                    double drawnRange = distributionForRange( randomNumberGenerator );
+                    //Assign them to the transiogram model to be used for simulation.
+                    transiogramToUse.setSill ( iRow, iCol, drawnSill  );
+                    transiogramToUse.setRange( iRow, iCol, drawnRange );
                 }
-
+            //Making sure all sills sum 1.0 rowwise (important for Markovian transiography).
+            transiogramToUse.unitizeRowwiseSills();
         } else { //normal execution mode (fixed transiography)
+            for( int iRow = 0; iRow < transiogramMatrixDimension; ++iRow )
+                for( int iCol = 0; iCol < transiogramMatrixDimension; ++iCol ){
+                    // Call the random number generator the same number of times of Bayesian mode to keep the
+                    // same random path of the other execution mode.
+                    randomNumberGenerator();
+                    randomNumberGenerator();
+                }
         }
 
         //traverse the grid's cells according to the random walk.
@@ -853,8 +875,7 @@ bool MCRFSim::run()
         std::vector< spectral::arrayPtr >& realizationDepot = realizationDepots[iThread];
         //Give a different seed to each thread by multiplying the user-given seed by 100 and adding the thread number
         //NOTE on the seed number * 100:
-        //number of realizations is capped at 99, so even if there are more than 99
-        //logical processors, number of threads will be limited to 99
+        //number of threads is capped at 99
         threads[iThread] = std::thread( simulateSomeRealizationsThread,
                                         numberOfRealizationsForAThread[ iThread ],
                                         m_cgSim,
