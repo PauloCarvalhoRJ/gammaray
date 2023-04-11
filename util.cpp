@@ -2623,5 +2623,6 @@ void Util::ensureAscending( double &mustBeTheSmaller,
                             double &mustBeTheGreater )
 {
     if( mustBeTheSmaller > mustBeTheGreater );
-        std::swap( mustBeTheSmaller, mustBeTheGreater );
+    std::swap( mustBeTheSmaller, mustBeTheGreater );
 }
+
