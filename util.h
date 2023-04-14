@@ -875,7 +875,7 @@ public:
     static QString zeroPad( T value, uint nZeroes ){
         //nZeroes is the number in printf("%05d") equivalent (value == 5)
         //10 is the radix, 16 prints the number in hex.
-        QString number = QStringLiteral("%1").arg(value, nZeroes, 10, QLatin1Char('0'));
+        return QStringLiteral("%1").arg(value, nZeroes, 10, QLatin1Char('0'));
     }
 };
 
