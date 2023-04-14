@@ -2626,3 +2626,81 @@ void Util::ensureAscending( double &mustBeTheSmaller,
     std::swap( mustBeTheSmaller, mustBeTheGreater );
 }
 
+void Util::appendPhysicalGEOEASColumn( const spectral::arrayPtr data,
+                                       const QString variable_name,
+                                       const QString file_path,
+                                       const QString NDV )
+{
+
+    // get the number of data lines in the source file
+    long long data_line_count = data->size();
+
+    // create a new file for output
+    QFile outputFile(QString(file_path).append(".new"));
+    outputFile.open(QFile::WriteOnly | QFile::Text);
+    QTextStream out(&outputFile);
+
+    // open the destination file for reading
+    QFile inputFile(file_path);
+    if (inputFile.open(QIODevice::ReadOnly | QFile::Text)) {
+        QTextStream in(&inputFile);
+        uint line_index = 0;
+        uint data_line_index = 0;
+        uint n_vars = 0;
+        uint var_count = 0;
+        uint indexGEOEAS_new_variable = 0;
+        // for each line in the destination file...
+        while (!in.atEnd()) {
+            //...read its line
+            QString line = in.readLine();
+            // simply copy the first line (title)
+            if (line_index == 0) {
+                out << line << '\n';
+                // first number of second line holds the variable count
+                // writes an increased number of variables.
+                // TODO: try to keep the rest of the second line (not critical, but
+                // desirable)
+            } else if (line_index == 1) {
+                n_vars = Util::getFirstNumber(line);
+                out << (n_vars + 1) << '\n';
+                indexGEOEAS_new_variable = n_vars + 1; // the GEO-EAS index of the added
+                                                       // column equals the new number of
+                                                       // columns
+                // simply copy the current variable names
+            } else if (var_count < n_vars) {
+                out << line << '\n';
+                // if we're at the last existing variable, adds an extra line for the new
+                // variable
+                if ((var_count + 1) == n_vars) {
+                    out << variable_name << '\n';
+                }
+                ++var_count;
+                // treat the data lines until EOF
+            } else {
+                // if we didn't overshoot the source file...
+                if (data_line_index < data_line_count) {
+                    double value = (*data)[ data_line_index ];
+                    out << line << '\t' << QString::number(value) << '\n';
+                } else {
+                    //...otherwise append the no-data value of the destination file (this
+                    // object).
+                    out << line << '\t' << NDV << '\n';
+                }
+                // keep count of the source file data lines
+                ++data_line_index;
+            } // if's and else's for each file line case (header, var. count, var. name
+              // and data line)
+            // keep count of the source file lines
+            ++line_index;
+        } // for each line in destination file (this)
+        // close the destination file
+        inputFile.close();
+        // close the newly created file
+        outputFile.close();
+        // deletes the destination file
+        inputFile.remove();
+        // renames the new file, effectively replacing the destination file.
+        outputFile.rename(QFile(file_path).fileName());
+    }
+}
+

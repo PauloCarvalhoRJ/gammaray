@@ -877,6 +877,19 @@ public:
         //10 is the radix, 16 prints the number in hex.
         return QStringLiteral("%1").arg(value, nZeroes, 10, QLatin1Char('0'));
     }
+
+    /**
+     * Adds the values stored in the array of doubles as a new column in a GEO-EAS data file.
+     * The new column is appended to the end of each of this file's lines.
+     * No check is done whether the array has the same value count as data line count in the file.
+     * If the array has more values than data lines, the excess values will be ignored.  If there are less values,
+     * the remaining data file lines will be filled with the given no-data value.
+     */
+    static void appendPhysicalGEOEASColumn( const spectral::arrayPtr data,
+                                            const QString variable_name,
+                                            const QString file_path,
+                                            const QString NDV = "-999999" );
+
 };
 
 #endif // UTIL_H
