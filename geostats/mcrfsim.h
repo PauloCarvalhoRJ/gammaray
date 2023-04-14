@@ -163,15 +163,20 @@ public:
 
     /** Sets or increases the current simulation progress counter to the given ammount.
      * Mind that this function updates a progress bar, which is a costly operation.
+     * @note Despite being non-const, this method contains a critical section, so it is safe to
+     *       call from multiple threads.
      */
     void setOrIncreaseProgressMT( ulong ammount, bool increase = true );
 
-    /** Returns the realizations simulated in the last sucessful call to run().
-     * Each spectral::array object is a series of double values that match
-     * the scan order of the simulation grid.  Values matching the simulation grid's
-     * no-data-value are uninformed values.
+    /** Saves a realization's simulated data.  Depending on user's settings, the realizations
+     * are saved as:
+     * 1) New attributes in the simulation grid.
+     * 2) New cartesian grids with one attribute in the project.
+     * 3) New cartesian grid files with one attribute saved in some directory outside the project.
+     * @note Despite being non-const, this method contains a critical section, so it is safe to
+     *       call from multiple threads.
      */
-    const std::vector< spectral::arrayPtr >& getRealizations() const { return m_realizations; }
+    void saveRealizationMT(const spectral::arrayPtr simulatedData);
 
     /** Returns the execution mode (normal or for Bayesian application) for this simulation.
      * @see MCRFMode
@@ -200,17 +205,18 @@ private:
     ulong m_progress;
     //!@}
 
+    //!@{
+    //! Objects used in realization saving during multithreaded execution to prevent
+    //! crashes and inconsistent project object state.
+    std::mutex m_mutexSaveRealizations;
+    //!@}
+
     /** The simulation grid's no-data-value as a double value to avoid unnecessary iterative calls to DataFile::getNoDataValue*(). */
     double m_simGridNDV;
 
     /** The sprimary data's no-data-value as a double value to avoid unnecessary iterative calls to DataFile::getNoDataValue*(). */
     double m_primaryDataNDV;
     bool m_primaryDataHasNDV;
-
-    /** The set of simulated data.  Each spectral::array object is a string of doubles that matches the
-     * scan order of the simulation grid.
-     */
-    std::vector< spectral::arrayPtr > m_realizations;
 
     //!@{
     //! The search strategies for the primary data and the simulation grid.
@@ -232,6 +238,12 @@ private:
 
     /** The Tau Model used to integrate different sources of facies probabilities. */
     TauModelPtr m_tauModel;
+
+    /**
+     * The realization number.  This value starts with 1 in the constructor and is incremented
+     * when a realization is saved.
+     */
+    uint m_realNumberForSaving;
 
     /** Returns whether the simulation parameters are valid and consistent. */
     bool isOKtoRun();

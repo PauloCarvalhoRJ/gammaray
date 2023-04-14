@@ -49,7 +49,9 @@ MCRFSim::MCRFSim( MCRFMode mode ) :
     m_spatialIndexOfPrimaryData( new SpatialIndex() ),
     m_spatialIndexOfSimGrid( new SpatialIndex() ),
     m_primaryDataType( PrimaryDataType::UNDEFINED ),
-    m_primaryDataFile( nullptr )
+    m_primaryDataFile( nullptr ),
+    m_tauModel( nullptr ),
+    m_realNumberForSaving( 1 )
 { }
 
 bool MCRFSim::isOKtoRun()
@@ -59,7 +61,7 @@ bool MCRFSim::isOKtoRun()
         return false;
     }
 
-    if( !m_gradationFieldOfPrimaryData || m_gradationFieldsOfSimGridBayesian.empty() ){
+    if( !m_gradationFieldOfPrimaryData && m_gradationFieldsOfSimGridBayesian.empty() ){
         m_lastError = "Gradation field value in input data not provided.";
         return false;
     }
@@ -175,7 +177,7 @@ bool MCRFSim::isOKtoRun()
         }
     }
 
-    if( !m_gradationFieldOfSimGrid || m_gradationFieldsOfSimGridBayesian.empty() ){
+    if( !m_gradationFieldOfSimGrid && m_gradationFieldsOfSimGridBayesian.empty() ){
         m_lastError = "Use of a gradation field in the simulation grid is required to stablish a correlation"
                       " between vertical (time) and lateral facies succession in 3D Markov Chain.";
         return false;
@@ -272,6 +274,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
                                   const std::vector<Attribute *> &probFields,
                                   const spectral::array& simulatedData ) const
 {
+
     //compute the vertical cell anisotropy, which is important to normalize the vertical separations.
     //this is important when the sim grid is in depositional domain, which normally has a vertical cell
     //size much greater than the lateral cell sizes.
@@ -299,8 +302,9 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     //see the simulateSomeRealizationsThread() function.
     tauModelCopy.setTauFactor( static_cast<uint>(ProbabilitySource::FROM_TRANSIOGRAM),
                                tauFactorForTransiography );
-    tauModelCopy.setTauFactor( static_cast<uint>(ProbabilitySource::FROM_SECONDARY_DATA),
-                               tauFactorForSecondaryData );
+    if( useSecondaryData() )
+        tauModelCopy.setTauFactor( static_cast<uint>(ProbabilitySource::FROM_SECONDARY_DATA),
+                                   tauFactorForSecondaryData );
 
     //get relevant information of the simulation cell
     uint simCellLinearIndex           = m_cgSim->IJKtoIndex( i, j, k );
@@ -322,6 +326,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     std::vector< std::pair< FaciesCodeFrom, SuccessionSeparation > > faciesFromCodesAndSuccessionSeparations;
     faciesFromCodesAndSuccessionSeparations.reserve( m_commonSimulationParameters->getNumberOfSamples() +
                                                      m_commonSimulationParameters->getNumberOfSimulatedNodesForConditioning() );
+
 
     ///======================================== PROCESSING OF EACH PRIMARY DATUM  FOUND IN THE SEARCH NEIGHBORHOOD=============================================
     DataCellPtrMultiset::iterator itSampleCells = vSamplesPrimary.begin();
@@ -543,15 +548,12 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
  * @param mcrfSim The pointer to the MCRFSim object coordinating the simulation.
  * @param completedFlag The pointer to an output boolean variable.
  *                      It'll receive the "true" value upon completion of all simulations.
- * @param realizations A pointer to a vector of spectral::array objects where the thread will deposit simulated data.
- *                     Each spectral::array contains the simulated data of one realization.
  *//////////////////////////////////////////////////////////////////////////////////////////
 void simulateSomeRealizationsThread( uint nRealsForOneThread,
                                      const CartesianGrid* cgSim,
                                      uint seed,
                                      MCRFSim* mcrfSim,
-                                     bool* completedFlag,
-                                     std::vector< spectral::arrayPtr >* realizationsOutput ){
+                                     bool* completedFlag ){
 
     //initialize the thread-local random number generator with the seed reserved for this thread
     std::mt19937 randomNumberGenerator;
@@ -711,8 +713,8 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
                 mcrfSim->setOrIncreaseProgressMT( reportProgressEveryNumberOfSimulations );
         } //grid traversal (random walk)
 
-        //return the realization data
-        realizationsOutput->push_back( simulatedData );
+        //save the realization data (where depends on the user settings).
+        mcrfSim->saveRealizationMT( simulatedData );
 
     } // for each reazation of this thread
 
@@ -728,11 +730,12 @@ bool MCRFSim::run()
     if( !isOKtoRun() )
         return false;
 
+
     //sets progress count to zero
     m_progress = 0;
 
-    //clears any previous realization data
-    m_realizations.clear();
+    //inits realization number for saving name.
+    m_realNumberForSaving = 1;
 
     //get simulation grid dimensions
     uint nI = m_cgSim->getNI();
@@ -774,9 +777,6 @@ bool MCRFSim::run()
         numberOfRealizationsForAThread[ iThread ] = 0; //initialize the numbers of realizations with zeros
     for( uint iReal = 0; iReal < nRealizations; ++iReal )
         ++numberOfRealizationsForAThread[ iReal % nThreads ];
-
-    //create vectors of data arrays for each thread, so they deposit their realizations in them.
-    std::vector< spectral::arrayPtr > realizationDepots[nThreads];
 
     //create an array of flags that tells whether a thread is completed.
     // intialize all with false
@@ -872,7 +872,6 @@ bool MCRFSim::run()
     //create and run the simulation threads
     std::thread threads[nThreads];
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
-        std::vector< spectral::arrayPtr >& realizationDepot = realizationDepots[iThread];
         //Give a different seed to each thread by multiplying the user-given seed by 100 and adding the thread number
         //NOTE on the seed number * 100:
         //number of threads is capped at 99
@@ -881,8 +880,7 @@ bool MCRFSim::run()
                                         m_cgSim,
                                         m_commonSimulationParameters->getSeed() * 100 + iThread,
                                         this,
-                                        &(completed[ iThread ]),
-                                        &realizationDepot
+                                        &(completed[ iThread ])
                                         );
     }
 
@@ -914,15 +912,42 @@ bool MCRFSim::run()
     Application::instance()->logWarningOn();
     Application::instance()->logInfoOn();
 
-    //collect the realizations created by the threads:
-    for( unsigned int iThread = 0; iThread < nThreads; ++iThread ){
-        std::vector< spectral::arrayPtr >::iterator it = realizationDepots[ iThread ].begin();
-        for(; it != realizationDepots[ iThread ].end(); ++it)
-            m_realizations.push_back( *it );
-    }
-
     //hide the progress dialog
     delete m_progressDialog;
+
+    switch ( m_commonSimulationParameters->getSaveRealizationsOption() ) {
+    case 0: //save realizations as new variables in the simulation grid
+        {
+            //The simulation threads do a bulk writing of simulation results
+            //to the grid's physical file, so we need to update its object
+            //representation (CartesianGrid)
+            m_cgSim->updateChildObjectsCollection();
+            //Get the number of variables of the simulation grid after the simulation.
+            uint nVariablesAfter = m_cgSim->getDataColumnCount();
+            //set the new variables as categorical
+            //iStop is used to stop iterating from back towards first variable.
+            for( uint iVar = nVariablesAfter-1, iStop = 0; iStop < nRealizations; --iVar, ++iStop ){
+                m_cgSim->setCategorical( iVar, cd );
+                // update the metadata file
+                m_cgSim->updateMetaDataFile();
+                // updates properties list so any changes appear in the project tree.
+                m_cgSim->updateChildObjectsCollection();
+                // update the project tree in the main window.
+                Application::instance()->refreshProjectTree();
+            }
+        }
+        break;
+    case 1: //save realizations as separante grid files in the project
+        assert( false && "MCRFSim::run(): save realizations mode not implemented: 1.");
+        break;
+    case 2: //save realizations as grid files somewhere
+        /* Do nothing. */;
+    }
+
+
+    //make sure newly added objects during simulation
+    //show up in the interface after it has completed
+    Application::instance()->refreshProjectTree();
 
     //announce the simulation has completed with success
     Application::instance()->logInfo("MCRF completed.");
@@ -933,10 +958,45 @@ void MCRFSim::setOrIncreaseProgressMT(ulong ammount, bool increase)
 {
     std::unique_lock<std::mutex> lck ( m_mutexMCRF, std::defer_lock );
     lck.lock(); //this code is expected to be called concurrently from multiple simulation threads
+                //so we define a critical section.
     if( increase )
         m_progress += ammount;
     else
         m_progress = ammount;
+    lck.unlock();
+}
+
+void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData )
+{
+    std::unique_lock<std::mutex> lck ( m_mutexSaveRealizations, std::defer_lock );
+    lck.lock(); //this code is expected to be called concurrently from multiple simulation threads
+                //so we define a critical section.
+
+    /*BEGIN CRITICAL SECTION*/
+    {
+        switch ( m_commonSimulationParameters->getSaveRealizationsOption() ) {
+        case 0: //save to the simulation grid
+            {
+                QString s1 = m_commonSimulationParameters->getBaseNameForRealizationVariables();
+                QString s2 = Util::zeroPad( m_realNumberForSaving, 4 );
+                QString NDV = "-999999";
+                if( m_cgSim->hasNoDataValue() )
+                    NDV = m_cgSim->getNoDataValue();
+                Util::appendPhysicalGEOEASColumn( simulatedData, s1 + s2, m_cgSim->getPath(), NDV );
+            }
+            break;
+        case 1: //save realization as separante grid in the project
+            assert( false && "MCRFSim::simulateSomeRealizationsThread(): save realizations mode not implemented: 1.");
+            break;
+        case 2: //save realization as grid files somewhere
+            assert( false && "MCRFSim::simulateSomeRealizationsThread(): save realizations mode not implemented: 2.");
+        }
+
+        //increases the realization number for the next realization to be saved
+        m_realNumberForSaving++;
+    }
+    /* END CRITICAL SECTION */
+
     lck.unlock();
 }
 
