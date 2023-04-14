@@ -93,10 +93,14 @@ public:
 
     /** Adds de contents of the given data array as new column to this regular grid.
      * If a CategoryDefinition is passed, the new variable will be treated as a categorical attribute.
+     * @param updateProjectTree Defaults to true.  Disable this if the method is being called from
+     *        threads other than the main (with Qt's even loop) thread of the program.  Updating the
+     *        project tree from other threads result in a crash.
      */
-    long append( const QString columnName,
+    long append(const QString columnName,
                  const spectral::array& array,
-                 CategoryDefinition* cd = nullptr );
+                 CategoryDefinition* cd = nullptr ,
+                 bool updateProjectTree = true );
 
 	/** Converts a data row index into topological coordinates (output parameters). */
     void indexToIJK(uint index, uint & i, uint & j, uint & k ) const;
