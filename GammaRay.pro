@@ -47,6 +47,8 @@ SOURCES += main.cpp\
     geometry/quadrilateral.cpp \
     geometry/triangle.cpp \
     geostats/mcmcdataimputation.cpp \
+    gslib/gslibparams/gslibpardir.cpp \
+    gslib/gslibparams/widgets/widgetgslibpardir.cpp \
         mainwindow.cpp \
     domain/project.cpp \
     domain/application.cpp \
@@ -322,6 +324,8 @@ HEADERS  += mainwindow.h \
     geometry/quadrilateral.h \
     geometry/triangle.h \
     geostats/mcmcdataimputation.h \
+    gslib/gslibparams/gslibpardir.h \
+    gslib/gslibparams/widgets/widgetgslibpardir.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
@@ -587,6 +591,7 @@ FORMS    += mainwindow.ui \
     dialogs/populatewithproportionsfromvpcdialog.ui \
     dialogs/sectiondialog.ui \
     dialogs/subgriddialog.ui \
+    gslib/gslibparams/widgets/widgetgslibpardir.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
