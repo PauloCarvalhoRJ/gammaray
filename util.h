@@ -286,10 +286,14 @@ public:
     /**
      * Creates a GEO-EAS regular grid file using the given values
      * passed as a spectra::array object.
+     * @param silent If true, no user feedback (e.g. progress bar) is given.  This is normally set to false,
+     *        but calling this from multiple threads may cause Qt to crash.  Hence, for such application it is
+     *        necessary to enable this flag.
      */
     static void createGEOEASGrid(const QString columnName,
                                  const spectral::array &values,
-                                 QString path);
+                                 QString path,
+                                 bool silent = false );
 
     /**
      * Creates a GEO-EAS regular grid file using the given values

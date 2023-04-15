@@ -531,7 +531,7 @@ void Util::createGEOEASGrid(const QString columnName, std::vector<double> &value
     file.close();
 }
 
-void Util::createGEOEASGrid(const QString columnName, const spectral::array &values, QString path)
+void Util::createGEOEASGrid(const QString columnName, const spectral::array &values, QString path, bool silent)
 {
     //open file for writing
     QFile file( path );
@@ -543,10 +543,14 @@ void Util::createGEOEASGrid(const QString columnName, const spectral::array &val
     out << "1\n";
     out << columnName << '\n';
 
-    QProgressDialog progressDialog;
-    progressDialog.setRange(0,0);
-    progressDialog.show();
-    progressDialog.setLabelText("Creating grid...");
+    //show a progress bar if client code opted for non-silent execution
+    QProgressDialog* progressDialog = nullptr;
+    if( ! silent ){
+        progressDialog = new QProgressDialog;
+        progressDialog->setRange(0,0);
+        progressDialog->show();
+        progressDialog->setLabelText("Creating grid...");
+    }
 
     //loop to output the values
     int nI = values.M();
@@ -558,9 +562,14 @@ void Util::createGEOEASGrid(const QString columnName, const spectral::array &val
         for( int j = 0; j < nJ; ++j )
             for( int i = 0; i < nI; ++i, ++counter ){
                 out << values( i, j, k ) << '\n';
-                if( ! ( counter % 1000) )
-                    QCoreApplication::processEvents(); //let Qt repaint widgets
+                if( !silent && !( counter % 1000) )
+                    QCoreApplication::processEvents(); //let Qt repaint widgets if client code opted
+                                                       //for non-silent execution
             }
+
+    //hide the progress bar if client code opted for non-silent execution
+    if( ! silent )
+        delete progressDialog;
 
     //close file
     file.close();
@@ -2635,6 +2644,15 @@ void Util::appendPhysicalGEOEASColumn( const spectral::arrayPtr data,
     // get the number of data lines in the source file
     long long data_line_count = data->size();
 
+    // data may be of a regular GEO-EAS Caresian grid, so we need to follow the correct
+    // scan order, because the scan order of spectral::array differs from GEO-EAS convention.
+    uint nI = data->M();
+    uint nJ = data->N();
+    uint nK = data->K();
+    uint index_i = 0;
+    uint index_j = 0;
+    uint index_k = 0;
+
     // create a new file for output
     QFile outputFile(QString(file_path).append(".new"));
     outputFile.open(QFile::WriteOnly | QFile::Text);
@@ -2679,8 +2697,19 @@ void Util::appendPhysicalGEOEASColumn( const spectral::arrayPtr data,
             } else {
                 // if we didn't overshoot the source file...
                 if (data_line_index < data_line_count) {
-                    double value = (*data)[ data_line_index ];
+                    // output data value
+                    double value = (*data)( index_i, index_j, index_k );
                     out << line << '\t' << QString::number(value) << '\n';
+                    //ensure correct scan order if the file is supposed to be a Cartesian grid.
+                    ++index_i;
+                    if( index_i == nI ) {
+                        index_i = 0;
+                        ++index_j;
+                    }
+                    if( index_j == nJ ) {
+                        index_j = 0;
+                        ++index_k;
+                    }
                 } else {
                     //...otherwise append the no-data value of the destination file (this
                     // object).
