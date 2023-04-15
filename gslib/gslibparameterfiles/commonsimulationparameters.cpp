@@ -15,7 +15,7 @@ CommonSimulationParameters::CommonSimulationParameters() :
                           "<double><double><double>                              -Search ellipsoid: angles (az, dip, roll)",                    // 9
                           "<option [0:generic rtree based] [1:tuned for large data sets] [2:tuned for Cartesian grids]>   -Search algorithm option for the simulation grid",  // 10
                           "<option [0:simulation grid] [1:separate grid files in project] [2:separate grid files elsewhere (specify path)]>   -Save realizations option",   // 11
-                          "<file>                                                -Path if option above is the third",                          // 12
+                          "<dir>                                                 -Path if option above is the third",                          // 12
                           //"<option [0:no] [1:yes]>                             -Assign data to nodes",                                        // --
                           //"<option [0:no] [1:yes]><uint>                       -Use multigrid search (0=no, 1=yes), number",                  // --
                       })
@@ -48,7 +48,7 @@ CommonSimulationParameters::CommonSimulationParameters() :
     par10->_selected_value = 2;
     GSLibParOption* par11 = getParameter<GSLibParOption*>(11);
     par11->_selected_value = 0;
-    getParameter<GSLibParFile*>(12)->_path = "";
+    getParameter<GSLibParDir*>(12)->_path = "";
 }
 
 void CommonSimulationParameters::setBaseNameForRealizationVariables(const QString baseName)
@@ -158,5 +158,5 @@ uint CommonSimulationParameters::getSaveRealizationsOption()
 
 QString CommonSimulationParameters::getSaveRealizationsPath()
 {
-    return getParameter<GSLibParString*>(12)->_value;
+    return getParameter<GSLibParDir*>(12)->_path;
 }

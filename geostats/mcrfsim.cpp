@@ -9,6 +9,7 @@
 #include "domain/application.h"
 #include "domain/pointset.h"
 #include "domain/segmentset.h"
+#include "domain/project.h"
 #include "geostats/searchneighborhood.h"
 #include "geostats/searchellipsoid.h"
 #include "geostats/pointsetcell.h"
@@ -20,6 +21,7 @@
 #include <thread>
 #include <QApplication>
 #include <QProgressDialog>
+#include <QDir>
 
 MCRFSim::MCRFSim( MCRFMode mode ) :
     //---------simulation parameters----------------
@@ -915,6 +917,8 @@ bool MCRFSim::run()
     //hide the progress dialog
     delete m_progressDialog;
 
+    //define the realization variables as categorical (depending on how user opted for
+    //saving them).
     switch ( m_commonSimulationParameters->getSaveRealizationsOption() ) {
     case 0: //save realizations as new variables in the simulation grid
         {
@@ -932,18 +936,50 @@ bool MCRFSim::run()
                 m_cgSim->updateMetaDataFile();
                 // updates properties list so any changes appear in the project tree.
                 m_cgSim->updateChildObjectsCollection();
-                // update the project tree in the main window.
-                Application::instance()->refreshProjectTree();
             }
         }
         break;
     case 1: //save realizations as separante grid files in the project
-        assert( false && "MCRFSim::run(): save realizations mode not implemented: 1.");
+        //assert( false && "MCRFSim::run(): save realizations mode not implemented: 1.");
+        {
+            //in saveRealizationMT(), several GEO-EAS grids with the ".TOCOPY" each with one realization
+            //were generated in the project's temp directory.  So we need to...
+
+            //For each *.TOCOPY files in the project's temp directory
+            QDir dir( Application::instance()->getProject()->getTmpPath() );
+            dir.setNameFilters(QStringList() << "*.TOCOPY");
+            dir.setFilter(QDir::Files);
+            foreach(QString dirFile, dir.entryList()) //foreach is a Qt macro
+            {
+                //create a local grid object corresponding to the file created in the tmp directory
+                //with a simulated realization.
+                CartesianGrid local_cg( Application::instance()->getProject()->getTmpPath() +
+                                        QDir::separator() + dirFile );
+                //set the geometry info so they match that of the simulation grid
+                local_cg.setInfoFromOtherCGonlyGridSpecs( m_cgSim );
+                //remove the .TOCOPY extension from the file name
+                dirFile = dirFile.replace( ".TOCOPY", "" );
+                //import the newly created grid file as a global project item
+                CartesianGrid* new_cg = Application::instance()->getProject()->
+                        importCartesianGrid( &local_cg, dirFile );
+                //update the path information in the global Cartesian grid object. Now we can set
+                //metadata info for the project.
+                new_cg->setPath(
+                            Application::instance()->getProject()->getPath() + QDir::separator() + dirFile );
+                //set the sole variable as categorical
+                new_cg->setCategorical( 0, cd );
+                // update the metadata file
+                new_cg->updateMetaDataFile();
+                // updates properties list so any changes appear in the project tree.
+                new_cg->updateChildObjectsCollection();
+                // delete the file from project's temp dir (recall it still has the .TOCOPY file exitension there)
+                dir.remove(dirFile + ".TOCOPY");
+            }
+        }
         break;
     case 2: //save realizations as grid files somewhere
-        /* Do nothing. */;
+        /* No post processing of realizations is necessary. */;
     }
-
 
     //make sure newly added objects during simulation
     //show up in the interface after it has completed
@@ -970,26 +1006,39 @@ void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData )
 {
     std::unique_lock<std::mutex> lck ( m_mutexSaveRealizations, std::defer_lock );
     lck.lock(); //this code is expected to be called concurrently from multiple simulation threads
-                //so we define a critical section.
+                //so we define a critical section to avoid file corruption due to race condition.
 
     /*BEGIN CRITICAL SECTION*/
     {
+        QString s1 = m_commonSimulationParameters->getBaseNameForRealizationVariables();
+        QString s2 = Util::zeroPad( m_realNumberForSaving, 4 );
+        QString realizationName = s1 + s2;
+
         switch ( m_commonSimulationParameters->getSaveRealizationsOption() ) {
         case 0: //save to the simulation grid
             {
-                QString s1 = m_commonSimulationParameters->getBaseNameForRealizationVariables();
-                QString s2 = Util::zeroPad( m_realNumberForSaving, 4 );
                 QString NDV = "-999999";
                 if( m_cgSim->hasNoDataValue() )
                     NDV = m_cgSim->getNoDataValue();
-                Util::appendPhysicalGEOEASColumn( simulatedData, s1 + s2, m_cgSim->getPath(), NDV );
+                Util::appendPhysicalGEOEASColumn( simulatedData, realizationName, m_cgSim->getPath(), NDV );
             }
             break;
-        case 1: //save realization as separante grid in the project
-            assert( false && "MCRFSim::simulateSomeRealizationsThread(): save realizations mode not implemented: 1.");
+        case 1: //save realization as separate grid in the project
+            {
+                //write it to the project's temp directory
+                //in MCRFSim::run() they will be copied to the project's directory, added to the project and
+                //the variabled set as categorical. We can't do these tasks here because some of the used Qt
+                //funcionalities are not thread safe.
+                QString tmp_file_path = Application::instance()->getProject()->getTmpPath() + QDir::separator()
+                                       + realizationName + ".TOCOPY";
+                Util::createGEOEASGrid( realizationName, *simulatedData, tmp_file_path, true );
+            }
             break;
         case 2: //save realization as grid files somewhere
-            assert( false && "MCRFSim::simulateSomeRealizationsThread(): save realizations mode not implemented: 2.");
+            //write it to the directory defined by the user
+            QString file_path = m_commonSimulationParameters->getSaveRealizationsPath() + QDir::separator()
+                              + realizationName + ".dat";
+            Util::createGEOEASGrid( realizationName, *simulatedData, file_path, true );
         }
 
         //increases the realization number for the next realization to be saved
