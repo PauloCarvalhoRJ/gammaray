@@ -289,11 +289,14 @@ public:
      * @param silent If true, no user feedback (e.g. progress bar) is given.  This is normally set to false,
      *        but calling this from multiple threads may cause Qt to crash.  Hence, for such application it is
      *        necessary to enable this flag.
+     * @param cg_to_print_definitions_from If this pointer is provided, the grid definitions are printed in
+     *        the first line of the GEO-EAS file (comment).
      */
     static void createGEOEASGrid(const QString columnName,
                                  const spectral::array &values,
                                  QString path,
-                                 bool silent = false );
+                                 bool silent = false,
+                                 const CartesianGrid* cg_to_print_definitions_from = nullptr );
 
     /**
      * Creates a GEO-EAS regular grid file using the given values

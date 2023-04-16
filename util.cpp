@@ -531,7 +531,11 @@ void Util::createGEOEASGrid(const QString columnName, std::vector<double> &value
     file.close();
 }
 
-void Util::createGEOEASGrid(const QString columnName, const spectral::array &values, QString path, bool silent)
+void Util::createGEOEASGrid(const QString columnName,
+                            const spectral::array &values,
+                            QString path,
+                            bool silent,
+                            const CartesianGrid *cg_to_print_definitions_from )
 {
     //open file for writing
     QFile file( path );
@@ -539,7 +543,14 @@ void Util::createGEOEASGrid(const QString columnName, const spectral::array &val
     QTextStream out(&file);
 
     //write out the GEO-EAS grid header
-    out << "Grid file\n";
+    out << "Grid file";
+    if( cg_to_print_definitions_from ){
+        const CartesianGrid* cg = cg_to_print_definitions_from;
+        out << " X0,Y0,Z0=" << cg->getX0() << "," << cg->getY0() << "," << cg->getZ0();
+        out << " NI,NJ,NK=" << cg->getNI() << "," << cg->getNJ() << "," << cg->getNK();
+        out << " dX,dY,dZ=" << cg->getDX() << "," << cg->getDY() << "," << cg->getDZ();
+    }
+    out << '\n';
     out << "1\n";
     out << columnName << '\n';
 
