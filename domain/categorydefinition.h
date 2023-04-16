@@ -23,11 +23,11 @@ public:
 
     int getCategoryCount() const;
 
-    int getCategoryCode( int category_index ){ return get1stValue(category_index); }
-    int getColorCode( int category_index ){ return get2ndValue(category_index); }
-    QString getCategoryName( int category_index ){ return get3rdValue(category_index); }
-    QColor getCustomColor( int category_index ){ return get4thValue(category_index); }
-    QString getExtendedCategoryName( int category_index ){ return get5thValue(category_index); }
+    int getCategoryCode( int category_index ) const { return get1stValue(category_index); }
+    int getColorCode( int category_index ) const { return get2ndValue(category_index); }
+    QString getCategoryName( int category_index ) const { return get3rdValue(category_index); }
+    QColor getCustomColor( int category_index ) const { return get4thValue(category_index); }
+    QString getExtendedCategoryName( int category_index ) const { return get5thValue(category_index); }
 
     /** Returns the category name given its code. */
     QString getCategoryNameByCode( int category_code );
