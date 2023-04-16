@@ -64,7 +64,7 @@ bool MCRFSim::isOKtoRun()
         return false;
     }
 
-    if( !m_gradationFieldOfPrimaryData && m_gradationFieldsOfSimGridBayesian.empty() ){
+    if( !m_gradationFieldOfPrimaryData && m_gradationFieldsOfPrimaryDataBayesian.empty() ){
         m_lastError = "Gradation field value in input data not provided.";
         return false;
     }
@@ -614,7 +614,9 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             int nGradationFields = mcrfSim->m_gradationFieldsOfPrimaryDataBayesian.size();
             // assuming the number of probability fields for all categories is the same as
             // the number of probability fields of the first category.
-            int nProbFieldsPerCategory = mcrfSim->m_probsFieldsBayesian[0].size();
+            int nProbFieldsPerCategory = 0; //assumes user won't use secondary data
+            if( ! mcrfSim->m_probsFieldsBayesian.empty() ) //if user set probability fields (secondary data)
+                nProbFieldsPerCategory = mcrfSim->m_probsFieldsBayesian[0].size();
             // ...make uniform distributions for the intervals set by the user.
             std::uniform_real_distribution<double> distributionTauFactorForTransiography(
                         mcrfSim->m_tauFactorForTransiographyBayesianStarting,
@@ -1063,7 +1065,7 @@ void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData,
             //write it to the directory defined by the user
             QString file_path = m_commonSimulationParameters->getSaveRealizationsPath() + QDir::separator()
                               + realizationName + ".dat";
-            Util::createGEOEASGrid( realizationName, *simulatedData, file_path, true );
+            Util::createGEOEASGrid( realizationName, *simulatedData, file_path, true, m_cgSim );
         }
 
         //If execution mode is for Bayesian application, then transiogram and hyperparameters vary.
