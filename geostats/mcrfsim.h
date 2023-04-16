@@ -173,10 +173,18 @@ public:
      * 1) New attributes in the simulation grid.
      * 2) New cartesian grids with one attribute in the project.
      * 3) New cartesian grid files with one attribute saved in some directory outside the project.
+     * The parameters with names ending in *Used are the paramaters and hyperparameters used.  These
+     * vary when execution mode is Bayesian and are saved to a report file useful for data anaysis.
      * @note Despite being non-const, this method contains a critical section, so it is safe to
      *       call from multiple threads.
      */
-    void saveRealizationMT(const spectral::arrayPtr simulatedData);
+    void saveRealizationMT(const spectral::arrayPtr simulatedData,
+                            VerticalTransiogramModel &transiogramUsed,
+                            const std::vector<Attribute *> &probFieldsUsed,
+                            const Attribute *gradFieldOfSimGridUsed,
+                            const Attribute *gradFieldOfPrimaryDataUsed,
+                            double tauFactorForTransiographyUsed,
+                            double tauFactorForSecondaryDataUsed );
 
     /** Returns the execution mode (normal or for Bayesian application) for this simulation.
      * @see MCRFMode
@@ -269,6 +277,11 @@ private:
      */
     DataCellPtrMultiset getNeighboringSimGridCellsMT(const GridCell& simulationCell ,
                                                      const spectral::array &simulatedData) const;
+
+    /** Returns the path to the report file containing the transiogram paramaters and hyperparameters
+     * used in each realization.  These vary when the simulation executes in Bayesian mode.
+     */
+    QString getReportFilePathForBayesianModeMT() const;
 
 };
 

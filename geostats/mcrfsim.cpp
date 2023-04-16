@@ -22,6 +22,7 @@
 #include <QApplication>
 #include <QProgressDialog>
 #include <QDir>
+#include<fstream>
 
 MCRFSim::MCRFSim( MCRFMode mode ) :
     //---------simulation parameters----------------
@@ -716,7 +717,13 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
         } //grid traversal (random walk)
 
         //save the realization data (where depends on the user settings).
-        mcrfSim->saveRealizationMT( simulatedData );
+        mcrfSim->saveRealizationMT( simulatedData,
+                                    transiogramToUse,
+                                    probFieldsToUse,
+                                    gradFieldOfSimGridToUse,
+                                    gradFieldOfPrimaryDataToUse,
+                                    tauFactorForTransiographyInCurrentRealization,
+                                    tauFactorForSecondaryDataInCurrentRealization );
 
     } // for each reazation of this thread
 
@@ -732,12 +739,18 @@ bool MCRFSim::run()
     if( !isOKtoRun() )
         return false;
 
-
     //sets progress count to zero
     m_progress = 0;
 
     //inits realization number for saving name.
     m_realNumberForSaving = 1;
+
+    //deletes the previous simulation report file (used for Bayesian mode) if it exists.
+    if( m_mode == MCRFMode::BAYESIAN ){
+        QFile file( getReportFilePathForBayesianModeMT() );
+        if( file.exists() )
+            file.remove();
+    }
 
     //get simulation grid dimensions
     uint nI = m_cgSim->getNI();
@@ -1002,7 +1015,13 @@ void MCRFSim::setOrIncreaseProgressMT(ulong ammount, bool increase)
     lck.unlock();
 }
 
-void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData )
+void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData,
+                                 VerticalTransiogramModel &transiogramUsed,
+                                 const std::vector<Attribute*> &probFieldsUsed,
+                                 const Attribute* gradFieldOfSimGridUsed,
+                                 const Attribute* gradFieldOfPrimaryDataUsed,
+                                 double tauFactorForTransiographyUsed,
+                                 double tauFactorForSecondaryDataUsed )
 {
     std::unique_lock<std::mutex> lck ( m_mutexSaveRealizations, std::defer_lock );
     lck.lock(); //this code is expected to be called concurrently from multiple simulation threads
@@ -1010,10 +1029,16 @@ void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData )
 
     /*BEGIN CRITICAL SECTION*/
     {
-        QString s1 = m_commonSimulationParameters->getBaseNameForRealizationVariables();
-        QString s2 = Util::zeroPad( m_realNumberForSaving, 4 );
-        QString realizationName = s1 + s2;
 
+        //Make the realization name.
+        QString realizationName;
+        {
+            QString s1 = m_commonSimulationParameters->getBaseNameForRealizationVariables();
+            QString s2 = Util::zeroPad( m_realNumberForSaving, 4 );
+            realizationName = s1 + s2;
+        }
+
+        //How to save the realization depends on user's choices.
         switch ( m_commonSimulationParameters->getSaveRealizationsOption() ) {
         case 0: //save to the simulation grid
             {
@@ -1040,6 +1065,58 @@ void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData )
                               + realizationName + ".dat";
             Util::createGEOEASGrid( realizationName, *simulatedData, file_path, true );
         }
+
+        //If execution mode is for Bayesian application, then transiogram and hyperparameters vary.
+        //Hence, we have to report each transiogram used as well as the hyperparameters used in each realization.
+        if( m_mode == MCRFMode::BAYESIAN ){
+            //apend the model parameters and algorithm hyperparameters to the report file.
+            //the file mode creates it if it does not exist.
+            std::ofstream reportFile;
+            reportFile.open( getReportFilePathForBayesianModeMT().toStdString(), fstream::app );
+            reportFile << "<REALIZATION>" << std::endl;
+            reportFile << "\t<name>" << realizationName.toStdString() << "</name>" << std::endl;
+            reportFile << "\t<transiogram>" << std::endl;
+            //Saves the used transiogram to a temporary file, loads it into a string, appends it to the report
+            {
+                QString tmpPath = Application::instance()->getProject()->generateUniqueTmpFilePath("transiogram");
+                transiogramUsed.setPath( tmpPath );
+                transiogramUsed.writeToFS();
+                std::ifstream t( tmpPath.toStdString() );
+                std::stringstream buffer;
+                buffer << t.rdbuf();
+                reportFile << buffer.str();
+            }
+            reportFile << "\t</transiogram>" << std::endl;
+            reportFile << "\t<prob_fields>" << std::endl;
+            if( useSecondaryData() ){
+                const CategoryDefinition* cd = transiogramUsed.getCategoryDefinition();
+                if( cd ){
+                    for( uint iCatIndex = 0; iCatIndex < cd->getCategoryCount(); ++iCatIndex ){
+                        reportFile << "\t\t<prob_field>";
+                        reportFile << "<facies>" << cd->getCategoryName( iCatIndex ).toStdString() << "</facies><field>" <<
+                                      probFieldsUsed[ iCatIndex ]->getName().toStdString() << "</field>";
+                        reportFile << "</prob_field>" << std::endl;
+                    }
+                } else {
+                    reportFile << "\t\t<error>Category definition returned a null pointer.</error>" << std::endl;
+                }
+            }
+            reportFile << "\t</prob_fields>" << std::endl;
+            reportFile << "\t<grad_field_sim_grid>";
+            reportFile << gradFieldOfSimGridUsed->getName().toStdString();
+            reportFile << "</grad_field_sim_grid>" << std::endl;
+            reportFile << "\t<grad_field_prim_data>";
+            reportFile << gradFieldOfPrimaryDataUsed->getName().toStdString();
+            reportFile << "</grad_field_prim_data>" << std::endl;
+            reportFile << "\t<tau_factor_transiogram>";
+            reportFile << tauFactorForTransiographyUsed;
+            reportFile << "</tau_factor_transiogram>" << std::endl;
+            reportFile << "\t<tau_factor_prob_fields>";
+            reportFile << tauFactorForSecondaryDataUsed;
+            reportFile << "</tau_factor_prob_fields>" << std::endl;
+            reportFile << "</REALIZATION>" << std::endl;
+            reportFile.close();
+        } // if( m_mode == MCRFMode::BAYESIAN )
 
         //increases the realization number for the next realization to be saved
         m_realNumberForSaving++;
@@ -1170,4 +1247,14 @@ DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simula
         Application::instance()->logError( "MCRFSim::getNeighboringSimGridCellsMT(): simulation grid search failed.  Search strategy and/or simulation grid not set." );
     }
     return result;
+}
+
+QString MCRFSim::getReportFilePathForBayesianModeMT() const
+{
+    QString directory;
+    if( m_commonSimulationParameters->getSaveRealizationsOption() == 2 /* save realization outside project directory */ )
+        directory = m_commonSimulationParameters->getSaveRealizationsPath();
+    else /* user opted to save realizations inside the project (either as separate files or variables in the simulation grid*/
+        directory = Application::instance()->getProject()->getTmpPath();
+    return directory + QDir::separator() + "latestMCRFSimBayesianReport.xml";
 }
