@@ -4183,7 +4183,14 @@ void MainWindow::createOrReviewVerticalTransiogramModel(VerticalTransiogramModel
 void MainWindow::createOrReviewVerticalTransiogramModelBand(VerticalTransiogramModel *vtm1,
                                                             VerticalTransiogramModel *vtm2)
 {
-    if( vtm1 && vtm2 && !vtm1->isCompatibleWith( vtm2 ) ){
+    if( !vtm1 || !vtm2 ){
+        Application::instance()->logError("MainWindow::createOrReviewVerticalTransiogramModelBand(): "
+                                          "either or both transiograms returned null pointer(s).");
+        return;
+    }
+    vtm1->readFromFS();
+    vtm2->readFromFS();
+    if( !vtm1->isCompatibleWith( vtm2 ) ){
         Application::instance()->logError("MainWindow::createOrReviewVerticalTransiogramModelBand(): "
                                           "the selected VTMs are not compatible.");
         return;
