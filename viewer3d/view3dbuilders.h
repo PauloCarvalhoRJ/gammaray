@@ -132,6 +132,13 @@ private:
     /** Specific builder for an Attribute in a Section. */
     static View3DViewData buildForAttributeSection( Section* section, Attribute* attribute, View3DWidget* widget3D );
 
+    /** Specific builder for an Attribute in a 2D (nZ < 2) Cartesian grid.
+     *  The grid is displayed as contour lines.
+     */
+    static View3DViewData buildForAttribute2DContourLines( CartesianGrid* cartesianGrid,
+                                                           Attribute* attribute,
+                                                           View3DWidget* widget3D );
+
     /** Makes a VTK "fence" surface representing the geometry of a geologic section.
      * Returns null ponter in case of error or failure (sent to the application's error log).
      */

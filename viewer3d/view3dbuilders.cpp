@@ -67,6 +67,7 @@ VTK_MODULE_INIT(vtkRenderingVolumeOpenGL2); // Assuming VTK was built with OpenG
 #include <vtkVolumeProperty.h>
 #include <vtkColorTransferFunction.h>
 #include <vtkPiecewiseFunction.h>
+#include <vtkContourFilter.h>
 
 #include <QMessageBox>
 #include <QPushButton>
@@ -207,18 +208,21 @@ View3DViewData View3DBuilders::build(Attribute *object, View3DWidget *widget3D)
                 QAbstractButton* pButtonUseFlat = msgBox.addButton("z = 0.0", QMessageBox::YesRole);
                 QAbstractButton* pButtonUseZOwn = msgBox.addButton("z = " +
                                                                    attribute->getName(), QMessageBox::NoRole);
-                msgBox.addButton("painted w/ another variable", QMessageBox::NoRole);
+                QAbstractButton* pButtonUseZPainted = msgBox.addButton("painted w/ another variable", QMessageBox::NoRole);
+                QAbstractButton* pButtonUseContours = msgBox.addButton("as contour lines", QMessageBox::NoRole);
                 msgBox.exec();
                 if ( msgBox.clickedButton() == pButtonUseFlat )
                     return buildForAttributeInMapCartesianGridWithVtkStructuredGrid( cg, attribute, widget3D );
                 else if( msgBox.clickedButton() == pButtonUseZOwn )
                     return buildForSurfaceCartesianGrid2D( cg, attribute, widget3D );
-                else {
+                else if( msgBox.clickedButton() == pButtonUseZPainted ){
                     //The user must choose another variable of the same dataset to paint the surface with.
                     ChooseVariableDialog cvd( cg, "Select variable.", "Paint surface with:", false );
                     cvd.exec();
                     Attribute* attributePaintWith = cg->getAttributeFromGEOEASIndex( cvd.getSelectedVariableIndex()+1 );
                     return buildForSurfaceCartesianGrid2Dpainted( cg, attribute, attributePaintWith, widget3D );
+                }else if( msgBox.clickedButton() == pButtonUseContours ){
+                    return buildForAttribute2DContourLines( cg, attribute, widget3D );
                 }
             } else {
                 return buildForAttribute3DCartesianGridUserChoice( cg, attribute, widget3D );
@@ -1399,6 +1403,79 @@ View3DViewData View3DBuilders::buildForAttributeSection(Section *section, Attrib
     actor->GetProperty()->EdgeVisibilityOff();
 
     return View3DViewData( actor );
+}
+
+View3DViewData View3DBuilders::buildForAttribute2DContourLines(CartesianGrid *cartesianGrid,
+                                                               Attribute *attribute,
+                                                               View3DWidget *widget3D)
+{
+    Q_UNUSED( widget3D )
+
+    //load grid data
+    cartesianGrid->loadData();
+
+    //get the variable index in parent data file
+    uint var_index = cartesianGrid->getFieldGEOEASIndex( attribute->getName() );
+
+    //get the max and min of the selected variable
+    double min = cartesianGrid->min( var_index-1 );
+    double max = cartesianGrid->max( var_index-1 );
+
+    //get grid geometric parameters
+    int nX = cartesianGrid->getNX();
+    int nY = cartesianGrid->getNY();
+    int nZ = 1;
+    double X0 = cartesianGrid->getX0();
+    double Y0 = cartesianGrid->getY0();
+    double Z0 = cartesianGrid->getZ0();
+    double dX = cartesianGrid->getDX() + cartesianGrid->getDX() / nX;
+    double dY = cartesianGrid->getDY() + cartesianGrid->getDY() / nY;
+    double dZ = cartesianGrid->getDZ() + cartesianGrid->getDZ() / nZ;
+    double X0frame = X0 - dX/2.0;
+    double Y0frame = Y0 - dY/2.0;
+    double Z0frame = Z0 - dZ/2.0;
+
+    //create a volumetric object with the shape of a regular 2D grid
+    vtkSmartPointer<vtkImageData> imageData = vtkSmartPointer<vtkImageData>::New();
+    imageData->SetExtent(0, nX-1, 0, nY-1, 0, 0); //extent (indexes) of GammaRay grids start at i=0,j=0,k=0
+    imageData->SetSpacing( dX, dY, dZ );
+    imageData->SetOrigin( X0frame, Y0frame, Z0frame );
+    imageData->AllocateScalars(VTK_DOUBLE, 1); //each cell will contain one double value.
+    int* extent = imageData->GetExtent();
+
+    //populate the volumetric object with the grid values for contour computation
+    for (int j = extent[2]; j <= extent[3]; ++j){
+        for (int i = extent[0]; i <= extent[1]; ++i){
+            double* pixel = static_cast<double*>(imageData->GetScalarPointer( i, j, 0 ));
+            pixel[0] = cartesianGrid->dataIJK( var_index - 1, i, j, 0 );
+        }
+    }
+
+    //Create a filter (algorithm) to convert the 2D grid into the contour polylines.
+    vtkSmartPointer<vtkContourFilter> contourFilter = vtkSmartPointer<vtkContourFilter>::New();
+    contourFilter->SetInputData( imageData );
+    contourFilter->GenerateValues( 20, min, max); // (numContours, rangeStart, rangeEnd)
+    contourFilter->Update();
+
+    // Create a VTK mapper and actor to enable visualization
+    vtkSmartPointer<vtkPolyDataMapper> mapper =
+      vtkSmartPointer<vtkPolyDataMapper>::New();
+    mapper->SetInputConnection(contourFilter->GetOutputPort());
+    //tubeMapper->SetLookupTable(lut);
+    //tubeMapper->SetScalarModeToUseCellData();
+    //tubeMapper->SetColorModeToMapScalars();
+    //tubeMapper->SelectColorArray("values");
+    //tubeMapper->SetScalarRange(min, max);
+    mapper->SetScalarVisibility(false); //turns off scalar visibility (will use the actor's global color instead)
+
+    vtkSmartPointer<vtkActor> actor = vtkSmartPointer<vtkActor>::New();
+    actor->SetMapper(mapper);
+    actor->GetProperty()->SetColor(1.0, 1.0, 1.0);
+    actor->GetProperty()->SetLineWidth(2.0);
+
+    View3DViewData v3dd( actor );
+    v3dd.contourFilter = contourFilter;
+    return v3dd;
 }
 
 View3DViewData View3DBuilders::buildForAttribute3DCGridIJKClippingVolumetric(CartesianGrid *cartesianGrid,

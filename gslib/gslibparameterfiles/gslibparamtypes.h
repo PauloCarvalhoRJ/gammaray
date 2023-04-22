@@ -22,5 +22,6 @@
 #include "../gslibparams/gslibparvmodel.h"
 #include "../gslibparams/gslibparvarweight.h"
 #include "../gslibparams/gslibparcustomcolor.h"
+#include "../gslibparams/gslibpardir.h"
 
 #endif // GSLIBPARAMTYPES_H

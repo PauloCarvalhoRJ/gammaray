@@ -471,6 +471,7 @@ bool GSLibParameterFile::parseType( uint line_indentation, QString tag, QList<GS
     QList<GSLibParType*> param_types;
     param_types.append( new GSLibParDouble(var_name,"",tag_description) );
     param_types.append( new GSLibParFile(var_name,"",tag_description) );
+    param_types.append( new GSLibParDir(var_name,"",tag_description) );
     param_types.append( new GSLibParInputData() );
     param_types.append( new GSLibParInt(var_name,"",tag_description) );
     param_types.append( new GSLibParLimitsDouble(var_name,"",tag_description) );
@@ -553,6 +554,11 @@ void GSLibParameterFile::parseParFileLine(const QString line, GSLibParType *par)
     if( par->getTypeName() == "file" )
     {
         GSLibParFile* gpar = (GSLibParFile*)par;
+        gpar->_path = Util::getValuesFromParFileLine( line );
+    }
+    else if( par->getTypeName() == "dir" )
+    {
+        GSLibParDir* gpar = (GSLibParDir*)par;
         gpar->_path = Util::getValuesFromParFileLine( line );
     }
     else if( par->getTypeName() == "uint" )

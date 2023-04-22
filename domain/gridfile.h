@@ -94,7 +94,7 @@ public:
     /** Adds de contents of the given data array as new column to this regular grid.
      * If a CategoryDefinition is passed, the new variable will be treated as a categorical attribute.
      */
-    long append( const QString columnName,
+    long append(const QString columnName,
                  const spectral::array& array,
                  CategoryDefinition* cd = nullptr );
 

@@ -37,8 +37,18 @@ private:
             Attribute* attribute ,
             View3DViewData viewObjects);
 
-    /** Specific builder for an Attribute in 2D map (nK < 2) Cartesian grid.*/
+    /** Specific builder for an Attribute in a 2D map (nK < 2) Cartesian grid.
+     * rendered as a flat surface.
+     */
     static View3DConfigWidget* buildForAttributeMapCartesianGrid(
+            CartesianGrid* cartesianGrid,
+            Attribute* attribute ,
+            View3DViewData viewObjects);
+
+    /** Specific builder for an Attribute in a 2D map (nK < 2) Cartesian grid
+     * rendered as contour lines.
+     */
+    static View3DConfigWidget* buildForAttributeContourLines(
             CartesianGrid* cartesianGrid,
             Attribute* attribute ,
             View3DViewData viewObjects);

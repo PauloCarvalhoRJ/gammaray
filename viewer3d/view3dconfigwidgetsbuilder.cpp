@@ -10,6 +10,13 @@
 #include "view3dconfigwidgets/v3dcfgwidforattributeinmapcartesiangrid.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributeinsegmentset.h"
 #include "view3dconfigwidgets/v3dcfgwidforattributeinpointset.h"
+#include "view3dconfigwidgets/v3dcfgwidforattributeascontourlines.h"
+
+//VTK 9: these classes are not used here (only their pointers), but somehow
+//       errors like "invalid 'static_cast' from type 'vtkObjectBase* const' to type 'some vtk class'"
+//       now creep up here...
+#include <vtkThreshold.h>
+#include <vtkContourFilter.h>
 
 View3DConfigWidgetsBuilder::View3DConfigWidgetsBuilder()
 {
@@ -35,7 +42,16 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::build(Attribute *attribute, View
         CartesianGrid* cg = (CartesianGrid*)file;
         if( ! cg->isUVWOfAGeoGrid() ) {
             if( cg->getNZ() < 2 ){
-                return buildForAttributeMapCartesianGrid( cg, attribute, viewObjects );
+                if( viewObjects.threshold ) { //2D grid variable displayed as a flat surface.
+                    return buildForAttributeMapCartesianGrid( cg, attribute, viewObjects );
+                } else if( viewObjects.contourFilter ) { //2D grid variable displayed as contour lines.
+                    return buildForAttributeContourLines( cg, attribute, viewObjects );
+                } else {
+                    Application::instance()->logError("View3DConfigWidgetsBuilder::build(Attribute *): "
+                                                      "Config widget unavailable for Attributes in 2D Cartesian grids "
+                                                      "displayed this way.");
+                    return nullptr;
+                }
             } else {
                 return buildForAttribute3DCartesianGrid( cg, attribute, viewObjects );
             }
@@ -65,6 +81,13 @@ View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeMapCartesianGri
         CartesianGrid *cartesianGrid, Attribute *attribute, View3DViewData viewObjects)
 {
     return new V3DCfgWidForAttributeInMapCartesianGrid( cartesianGrid, attribute, viewObjects );
+}
+
+View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeContourLines(CartesianGrid *cartesianGrid,
+                                                                              Attribute *attribute,
+                                                                              View3DViewData viewObjects)
+{
+    return new V3DCfgWidForAttributeAsContourLines( cartesianGrid, attribute, viewObjects );
 }
 
 View3DConfigWidget *View3DConfigWidgetsBuilder::buildForAttributeGeoGrid(GeoGrid *geoGrid,

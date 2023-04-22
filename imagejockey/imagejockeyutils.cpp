@@ -23,6 +23,7 @@
 #include <vtkShepardMethod.h>
 #include <vtkCellData.h>
 #include "imagejockey/widgets/ijquick3dviewer.h"
+#include "imagejockey/gabor/gaborutils.h"
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
 #include <itkBinaryThinningImageFilter.hxx>
@@ -997,7 +998,7 @@ spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
     // with values and unvalued.  The image pixels corresponding
     // to cells with valid values are marked with 255 values.
     // The ones corresponding to unvalued cells are marked with zeroes.
-    typedef itk::Image<unsigned char, 2>  ImageType;
+    typedef itk::Image<unsigned char, GaborUtils::gridDim>  ImageType;
     ImageType::Pointer itkImage = ImageType::New();
     {
         ImageType::IndexType start;
@@ -1015,7 +1016,7 @@ spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
             for(unsigned int j = 0; j < nJ; ++j)
                 for(unsigned int i = 0; i < nI; ++i){
                     if( std::isfinite( inputData(i, j, k) ) ){
-                        itk::Index<2> index;
+                        itk::Index<GaborUtils::gridDim> index;
                         index[0] = i;
                         index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                         index[2] = nK - 1 - k;
@@ -1073,7 +1074,7 @@ spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
     for(unsigned int k = 0; k < nK; ++k)
         for(unsigned int j = 0; j < nJ; ++j)
             for(unsigned int i = 0; i < nI; ++i){
-                itk::Index<2> index;
+                itk::Index<GaborUtils::gridDim> index;
                 index[0] = i;
                 index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                 index[2] = nK - 1 - k;
@@ -1091,7 +1092,7 @@ spectral::array ImageJockeyUtils::skeletonize(const spectral::array &inputData){
 
 
 // Local function to create an ITK image object from an spectral::array object.
-typedef itk::Image<float, 2>  Image3DType;
+typedef itk::Image<float, GaborUtils::gridDim>  Image3DType;
 Image3DType::Pointer spectralArrayToitkImage3D( const spectral::array &inputData ) {
     //get data array dimensions
     int nI = inputData.M();
@@ -1113,7 +1114,7 @@ Image3DType::Pointer spectralArrayToitkImage3D( const spectral::array &inputData
         for(unsigned int k = 0; k < nK; ++k)
             for(unsigned int j = 0; j < nJ; ++j)
                 for(unsigned int i = 0; i < nI; ++i){
-                    itk::Index<2> index;
+                    itk::Index<GaborUtils::gridDim> index;
                     index[0] = i;
                     index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                     index[2] = nK - 1 - k;
@@ -1127,12 +1128,13 @@ Image3DType::Pointer spectralArrayToitkImage3D( const spectral::array &inputData
     return itkImage;
 }
 
+// Local function to create an spectral::array object from an ITK image object.
 spectral::array itkImage3DToSpectralArray( const Image3DType::Pointer inputImage ){
 //    //debug input ITK image
 //    {
 //        // Rescale the values and convert the image
 //        // so that it can be seen as a PNG file
-//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::Image<unsigned char, itkImageDimension>  PngImageType;
 //        typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
 //        RescaleType::Pointer rescaler = RescaleType::New();
 //        rescaler->SetInput( inputImage );
@@ -1153,7 +1155,7 @@ spectral::array itkImage3DToSpectralArray( const Image3DType::Pointer inputImage
     //otherwise (0, 0, 0) is always returned.  Apparently the correct size is returned
     //when ITK's algorithms "touch" the image.
     {
-        typedef itk::Image<unsigned char, 3>  PngImageType;
+        typedef itk::Image<unsigned char, GaborUtils::gridDim>  PngImageType;
         typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
         RescaleType::Pointer rescaler = RescaleType::New();
         rescaler->SetInput( inputImage );
@@ -1168,7 +1170,7 @@ spectral::array itkImage3DToSpectralArray( const Image3DType::Pointer inputImage
     int nI = size[0];
     int nJ = size[1];
     int nK = size[2];
-    if( nK == 0 ) //2D images are 1 pixel tall, not zero!
+    if( nK <= 0 ) //2D images are 1 pixel tall
         nK = 1;
 
     //prepare to return the result
@@ -1178,7 +1180,7 @@ spectral::array itkImage3DToSpectralArray( const Image3DType::Pointer inputImage
     for(unsigned int k = 0; k < nK; ++k)
         for(unsigned int j = 0; j < nJ; ++j)
             for(unsigned int i = 0; i < nI; ++i){
-                itk::Index<2> index;
+                itk::Index<GaborUtils::gridDim> index;
                 index[0] = i;
                 index[1] = nJ - 1 - j; // itkImage grid convention is different from GSLib's
                 index[2] = nK - 1 - k;
@@ -1198,7 +1200,7 @@ spectral::array ImageJockeyUtils::meanFilter(const spectral::array &inputData, i
 //    {
 //        // Rescale the values and convert the image
 //        // so that it can be seen as a PNG file
-//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::Image<unsigned char, itkImageDimension>  PngImageType;
 //        typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
 //        RescaleType::Pointer rescaler = RescaleType::New();
 //        rescaler->SetInput( inputImage );
@@ -1230,7 +1232,7 @@ spectral::array ImageJockeyUtils::meanFilter(const spectral::array &inputData, i
 //    {
 //        // Rescale the values and convert the image
 //        // so that it can be seen as a PNG file
-//        typedef itk::Image<unsigned char, 3>  PngImageType;
+//        typedef itk::Image<unsigned char, itkImageDimension>  PngImageType;
 //        typedef itk::RescaleIntensityImageFilter< Image3DType, PngImageType > RescaleType;
 //        RescaleType::Pointer rescaler = RescaleType::New();
 //        rescaler->SetInput( meanFilter->GetOutput() );
@@ -1247,7 +1249,8 @@ spectral::array ImageJockeyUtils::meanFilter(const spectral::array &inputData, i
 //    }
 
     //return the filter's output as an spectral::array object
-    return itkImage3DToSpectralArray( meanFilter->GetOutput() );
+    spectral::array a = itkImage3DToSpectralArray( meanFilter->GetOutput() );
+    return a;
 }
 
 spectral::array ImageJockeyUtils::medianFilter(const spectral::array &inputData, int windowSize)
@@ -1284,6 +1287,7 @@ spectral::array ImageJockeyUtils::gaussianFilter(const spectral::array &inputDat
     meanFilter->SetSigma( sigma );
     meanFilter->SetInput( inputImage );
 
-    //return the filter's output as an spectral::array object
-    return itkImage3DToSpectralArray( meanFilter->GetOutput() );
+//    //return the filter's output as an spectral::array object
+    spectral::array a = itkImage3DToSpectralArray( meanFilter->GetOutput() );
+    return a;
 }

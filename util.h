@@ -286,10 +286,17 @@ public:
     /**
      * Creates a GEO-EAS regular grid file using the given values
      * passed as a spectra::array object.
+     * @param silent If true, no user feedback (e.g. progress bar) is given.  This is normally set to false,
+     *        but calling this from multiple threads may cause Qt to crash.  Hence, for such application it is
+     *        necessary to enable this flag.
+     * @param cg_to_print_definitions_from If this pointer is provided, the grid definitions are printed in
+     *        the first line of the GEO-EAS file (comment).
      */
     static void createGEOEASGrid(const QString columnName,
                                  const spectral::array &values,
-                                 QString path);
+                                 QString path,
+                                 bool silent = false,
+                                 const CartesianGrid* cg_to_print_definitions_from = nullptr );
 
     /**
      * Creates a GEO-EAS regular grid file using the given values
@@ -861,6 +868,34 @@ public:
     static int findAndReplace( const QString text_file_path,
                                const QString RE_find_what,
                                const QString replace_with );
+
+    /**
+     * Swaps the passed values if mustBeTheSmaller > mustBeTheGreater.
+     */
+    static void ensureAscending( double& mustBeTheSmaller,
+                                 double& mustBeTheGreater );
+
+    /**
+     * Prints the given number with the given number of leading zeroes.
+     */
+    template <typename T>
+    static QString zeroPad( T value, uint nZeroes ){
+        //nZeroes is the number in printf("%05d") equivalent (value == 5)
+        //10 is the radix, 16 prints the number in hex.
+        return QStringLiteral("%1").arg(value, nZeroes, 10, QLatin1Char('0'));
+    }
+
+    /**
+     * Adds the values stored in the array of doubles as a new column in a GEO-EAS data file.
+     * The new column is appended to the end of each of this file's lines.
+     * No check is done whether the array has the same value count as data line count in the file.
+     * If the array has more values than data lines, the excess values will be ignored.  If there are less values,
+     * the remaining data file lines will be filled with the given no-data value.
+     */
+    static void appendPhysicalGEOEASColumn( const spectral::arrayPtr data,
+                                            const QString variable_name,
+                                            const QString file_path,
+                                            const QString NDV = "-999999" );
 
 };
 

@@ -13,7 +13,9 @@ CommonSimulationParameters::CommonSimulationParameters() :
                           "<uint><uint>                                          -Data per sector: min. and max. (0=not used)",                 // 7
                           "<double><double><double>                              -Search ellipsoid: radii (hmax,hmin,vert)",                    // 8
                           "<double><double><double>                              -Search ellipsoid: angles (az, dip, roll)",                    // 9
-                          "<option [0:generic rtree based] [1:tuned for large data sets] [2:tuned for Cartesian grids]>   -Search algorithm option for the simulation grid"   // 10
+                          "<option [0:generic rtree based] [1:tuned for large data sets] [2:tuned for Cartesian grids]>   -Search algorithm option for the simulation grid",  // 10
+                          "<option [0:simulation grid] [1:separate grid files in project] [2:separate grid files elsewhere (specify path)]>   -Save realizations option",   // 11
+                          "<dir>                                                 -Path if option above is the third",                          // 12
                           //"<option [0:no] [1:yes]>                             -Assign data to nodes",                                        // --
                           //"<option [0:no] [1:yes]><uint>                       -Use multigrid search (0=no, 1=yes), number",                  // --
                       })
@@ -44,6 +46,9 @@ CommonSimulationParameters::CommonSimulationParameters() :
     }
     GSLibParOption* par10 = getParameter<GSLibParOption*>(10);
     par10->_selected_value = 2;
+    GSLibParOption* par11 = getParameter<GSLibParOption*>(11);
+    par11->_selected_value = 0;
+    getParameter<GSLibParDir*>(12)->_path = "";
 }
 
 void CommonSimulationParameters::setBaseNameForRealizationVariables(const QString baseName)
@@ -144,4 +149,14 @@ uint CommonSimulationParameters::getNumberOfSimulatedNodesForConditioning()
 uint CommonSimulationParameters::getSearchAlgorithmOptionForSimGrid()
 {
     return getParameter<GSLibParOption*>(10)->_selected_value;
+}
+
+uint CommonSimulationParameters::getSaveRealizationsOption()
+{
+    return getParameter<GSLibParOption*>(11)->_selected_value;
+}
+
+QString CommonSimulationParameters::getSaveRealizationsPath()
+{
+    return getParameter<GSLibParDir*>(12)->_path;
 }

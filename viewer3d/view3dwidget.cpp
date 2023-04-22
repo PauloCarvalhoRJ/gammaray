@@ -39,6 +39,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include <vtkDataSetMapper.h>
 #include <vtkThreshold.h>
 #include <vtkTubeFilter.h>
+#include <vtkContourFilter.h>
 #include <vtkAbstractVolumeMapper.h>
 
 #include "domain/application.h"

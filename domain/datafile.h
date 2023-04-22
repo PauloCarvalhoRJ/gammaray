@@ -426,6 +426,13 @@ public:
      */
     void replaceCategoricalAttributesInformation( const QList< QPair<uint, QString> >& categorical_attributes );
 
+    /** Sets the given attribute as categorical accoring to the given categorical definition.
+     * This only addes a new entry in the _categorical_attributes member varible, so no check is performed whether
+     * the values in the variable correspond to a valid category code.
+     * @attention index is zero-based and not GEO-EAS, that is, first variable is 0.
+     */
+    void setCategorical( uint variableIndex, const CategoryDefinition* cd );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();

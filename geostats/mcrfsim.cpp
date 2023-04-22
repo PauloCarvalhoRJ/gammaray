@@ -9,6 +9,7 @@
 #include "domain/application.h"
 #include "domain/pointset.h"
 #include "domain/segmentset.h"
+#include "domain/project.h"
 #include "geostats/searchneighborhood.h"
 #include "geostats/searchellipsoid.h"
 #include "geostats/pointsetcell.h"
@@ -20,27 +21,40 @@
 #include <thread>
 #include <QApplication>
 #include <QProgressDialog>
+#include <QDir>
+#include<fstream>
 
-MCRFSim::MCRFSim() :
+MCRFSim::MCRFSim( MCRFMode mode ) :
     //---------simulation parameters----------------
     m_atPrimary( nullptr),
     m_gradationFieldOfPrimaryData( nullptr ),
+    m_gradationFieldsOfPrimaryDataBayesian( std::vector< Attribute*>() ),
     m_cgSim( nullptr ),
     m_pdf( nullptr ),
     m_transiogramModel( nullptr ),
+    m_transiogramModel2Bayesian( nullptr ),
     m_gradationFieldOfSimGrid( nullptr ),
+    m_gradationFieldsOfSimGridBayesian( std::vector< Attribute*>() ),
     m_probFields( std::vector< Attribute*>() ),
+    m_probsFieldsBayesian( std::vector< std::vector< Attribute* > >() ),
     m_tauFactorForTransiography( 1.0 ),
+    m_tauFactorForTransiographyBayesianStarting(1.0),
+    m_tauFactorForTransiographyBayesianEnding(5.0),
     m_tauFactorForProbabilityFields( 1.0 ),
+    m_tauFactorForProbabilityFieldsBayesianStarting( 1.0 ),
+    m_tauFactorForProbabilityFieldsBayesianEnding( 5.0 ),
     m_commonSimulationParameters( nullptr ),
     m_invertGradationFieldConvention( false ),
     m_maxNumberOfThreads( 1 ),
     //------other member variables--------------------
+    m_mode( mode ),
     m_progressDialog( nullptr ),
     m_spatialIndexOfPrimaryData( new SpatialIndex() ),
     m_spatialIndexOfSimGrid( new SpatialIndex() ),
     m_primaryDataType( PrimaryDataType::UNDEFINED ),
-    m_primaryDataFile( nullptr )
+    m_primaryDataFile( nullptr ),
+    m_tauModel( nullptr ),
+    m_realNumberForSaving( 1 )
 { }
 
 bool MCRFSim::isOKtoRun()
@@ -50,7 +64,7 @@ bool MCRFSim::isOKtoRun()
         return false;
     }
 
-    if( ! m_gradationFieldOfPrimaryData ){
+    if( !m_gradationFieldOfPrimaryData && m_gradationFieldsOfPrimaryDataBayesian.empty() ){
         m_lastError = "Gradation field value in input data not provided.";
         return false;
     }
@@ -126,30 +140,91 @@ bool MCRFSim::isOKtoRun()
 
     {
         CategoryDefinition* cdOfPDF = m_pdf->getCategoryDefinition();
-        CategoryDefinition* cdOfTransiogramModel = m_transiogramModel->getCategoryDefinition();
+        CategoryDefinition* cdOfTransiogramModel  = m_transiogramModel->getCategoryDefinition();
         if( cdOfPDF != cdOfTransiogramModel ){
-            m_lastError = "Category definition of transiogram model must be the same object as that the PDF is based on.";
+            m_lastError = "Category definition of transiogram model must be the same object as that "
+                          "the PDF is based on.";
             return false;
         }
     }
 
-    if( ! m_gradationFieldOfSimGrid ){
+    if( m_mode == MCRFMode::BAYESIAN ){
+        if( ! m_transiogramModel2Bayesian ){
+            m_lastError = "2nd vertical transiogram model not provided.";
+            return false;
+        } else {
+            CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
+            CategoryDefinition* cdOfTransiogramModel = m_transiogramModel2Bayesian->getCategoryDefinition();
+            if( ! cdOfTransiogramModel ){
+                m_lastError = "Category definition of 2nd vertical transiogram model not found (nullptr).";
+                return false;
+            }
+            if( cdOfTransiogramModel != cdOfPrimData ){
+                m_lastError = "Category definition of input variable must be the same object as that the 2nd "
+                              "vertical transiogram model is based on.";
+                return false;
+            }
+        }
+        if( ! m_transiogramModel->isCompatibleWith( m_transiogramModel2Bayesian )){
+            m_lastError = "Bayesian mode: the transiogram models that define the band are not compatible.";
+            return false;
+        }
+        {
+            CategoryDefinition* cdOfPDF = m_pdf->getCategoryDefinition();
+            CategoryDefinition* cdOfTransiogramModel2 = m_transiogramModel2Bayesian->getCategoryDefinition();
+            if( cdOfPDF != cdOfTransiogramModel2 ){
+                m_lastError = "Bayesian mode: category definition of 2nd transiogram model must be the same object as "
+                              "that the PDF is based on.";
+                return false;
+            }
+        }
+    }
+
+    if( !m_gradationFieldOfSimGrid && m_gradationFieldsOfSimGridBayesian.empty() ){
         m_lastError = "Use of a gradation field in the simulation grid is required to stablish a correlation"
                       " between vertical (time) and lateral facies succession in 3D Markov Chain.";
+        return false;
+    }
+
+    if( m_gradationFieldsOfPrimaryDataBayesian.size() != m_gradationFieldsOfSimGridBayesian.size() ){
+        m_lastError = "Bayesian mode: the number of gradation field variables must be the same for both the"
+                      " primary data and the simulation grid.";
         return false;
     }
 
     if( useSecondaryData() ){
         CategoryDefinition* cdOfPrimData = m_dfPrimary->getCategoryDefinition( m_atPrimary );
         cdOfPrimData->loadQuintuplets();
-        int nProbFields = m_probFields.size();
         int nCategories = cdOfPrimData->getCategoryCount();
-        if( nProbFields != nCategories ){
-            m_lastError = " Number of probability fields ( " +
-                    QString::number(nProbFields) + " ) differs from the number of categories ( " +
-                    QString::number(nCategories) + " ).";
-            return false;
+
+        if( m_mode == MCRFMode::NORMAL ){
+            int nProbFields = m_probFields.size();
+            if( nProbFields != nCategories ){
+                m_lastError = " Number of probability fields ( " +
+                        QString::number(nProbFields) + " ) differs from the number of categories ( " +
+                        QString::number(nCategories) + " ).";
+                return false;
+            }
+        } else { //Bayesian execution mode
+            int nProbFields = -1; //must be the same across all categories
+            //for each category, we fetch its probability field set
+            for( const std::vector<Attribute*> &probFieldsForACategory : m_probsFieldsBayesian ){
+                if( nProbFields == -1 )
+                    nProbFields = probFieldsForACategory.size();
+                else if( nProbFields != probFieldsForACategory.size() ){
+                    m_lastError = " Bayesian mode: Number of probability fields must be the same"
+                                  " for all categories.";
+                    return false;
+                }
+            }
+            //all categories must have a set of probability fields
+            if( nCategories != m_probsFieldsBayesian.size() ){
+                m_lastError = " Bayesian mode: Number of probability field sets must match"
+                              " the number of categories.";
+                return false;
+            }
         }
+
     }
 
     if( ! m_commonSimulationParameters ){
@@ -157,10 +232,15 @@ bool MCRFSim::isOKtoRun()
                       " as neighborhood parameters, random number generator seed, number of realization, etc.";
         return false;
     } else {
-        if( m_commonSimulationParameters->getNumberOfRealizations() > 99 || m_commonSimulationParameters->getNumberOfRealizations() < 1 ){
-            m_lastError = "Number of realizations must be between 1 and 99.";
+        if( m_commonSimulationParameters->getSeed() > 20000000 ){
+            m_lastError = "The seed for the random number generator must not exceed 20 millions.";
             return false;
         }
+    }
+
+    if( m_maxNumberOfThreads > 99 || m_maxNumberOfThreads < 1 ){
+        m_lastError = "Max number of threads must be between 1 and 99.";
+        return false;
     }
 
     //if the user opts to use the Cartesian grid-tuned algorithm, then the neighborhood
@@ -181,12 +261,23 @@ bool MCRFSim::isOKtoRun()
 
 bool MCRFSim::useSecondaryData() const
 {
-    return ! m_probFields.empty();
+    if( m_mode == MCRFMode::NORMAL )
+        return ! m_probFields.empty();
+    else //Bayesian execution mode
+        return ! m_probsFieldsBayesian.empty();
 }
 
 double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
-                                  std::mt19937 &randomNumberGenerator, const spectral::array& simulatedData ) const
+                                  std::mt19937 &randomNumberGenerator,
+                                  double tauFactorForTransiography,
+                                  double tauFactorForSecondaryData,
+                                  const Attribute* gradFieldOfPrimaryDataToUse,
+                                  const Attribute* gradFieldOfSimGridToUse,
+                                  const VerticalTransiogramModel& transiogramToUse,
+                                  const std::vector<Attribute *> &probFields,
+                                  const spectral::array& simulatedData ) const
 {
+
     //compute the vertical cell anisotropy, which is important to normalize the vertical separations.
     //this is important when the sim grid is in depositional domain, which normally has a vertical cell
     //size much greater than the lateral cell sizes.
@@ -209,10 +300,19 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     //make a local copy of the Tau Model (this is potentially a multi-threaded code)
     TauModel tauModelCopy( *m_tauModel );
 
+    //set the Tau factors.
+    //These vary between realizations if this simulation's execution mode is for Bayesian application.
+    //see the simulateSomeRealizationsThread() function.
+    tauModelCopy.setTauFactor( static_cast<uint>(ProbabilitySource::FROM_TRANSIOGRAM),
+                               tauFactorForTransiography );
+    if( useSecondaryData() )
+        tauModelCopy.setTauFactor( static_cast<uint>(ProbabilitySource::FROM_SECONDARY_DATA),
+                                   tauFactorForSecondaryData );
+
     //get relevant information of the simulation cell
     uint simCellLinearIndex           = m_cgSim->IJKtoIndex( i, j, k );
     double simCellZ                   = m_cgSim->getDataSpatialLocation( simCellLinearIndex, CartesianCoord::Z );
-    double simCellGradationFieldValue = m_cgSim->dataIJKConst( m_gradationFieldOfSimGrid->getAttributeGEOEASgivenIndex()-1,
+    double simCellGradationFieldValue = m_cgSim->dataIJKConst( gradFieldOfSimGridToUse->getAttributeGEOEASgivenIndex()-1,
                                                                i, j, k );
     //get the probabilities from the global PDF, they're the marginal
     //probabilities for the Tau Model
@@ -230,6 +330,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     faciesFromCodesAndSuccessionSeparations.reserve( m_commonSimulationParameters->getNumberOfSamples() +
                                                      m_commonSimulationParameters->getNumberOfSimulatedNodesForConditioning() );
 
+
     ///======================================== PROCESSING OF EACH PRIMARY DATUM  FOUND IN THE SEARCH NEIGHBORHOOD=============================================
     DataCellPtrMultiset::iterator itSampleCells = vSamplesPrimary.begin();
     for( uint i = 0; i < vSamplesPrimary.size(); ++i, ++itSampleCells){
@@ -243,7 +344,8 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         if( ! m_primaryDataHasNDV || ! Util::almostEqual2sComplement( m_primaryDataNDV, sampleFaciesValue, 1 ) ){
 
             // get the sample's gradation field value
-            double sampleGradationValue = sampleDataCell->readValueFromDataSet( m_gradationFieldOfPrimaryData->getAttributeGEOEASgivenIndex()-1 );
+            double sampleGradationValue = sampleDataCell->readValueFromDataSet(
+                        gradFieldOfPrimaryDataToUse->getAttributeGEOEASgivenIndex()-1 );
 
             //To preserve Markovian property, we cannot use data ahead in the facies succession.
             bool isAheadInSuccession = false;
@@ -295,8 +397,8 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         if( ! Util::almostEqual2sComplement( m_simGridNDV, realizationValue, 1 ) ){
 
             // get the neighboring cell's gradation field value
-            double neighborGradationFieldValue = m_cgSim->dataIJKConst( m_gradationFieldOfSimGrid->getAttributeGEOEASgivenIndex()-1,
-                                                                         neighI, neighJ, neighK );
+            double neighborGradationFieldValue = m_cgSim->dataIJKConst( gradFieldOfSimGridToUse->getAttributeGEOEASgivenIndex()-1,
+                                                                        neighI, neighJ, neighK );
 
             //To preserve Markovian property, we cannot use data ahead in the facies succession.
             bool isAheadInSuccession = false;
@@ -331,8 +433,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
 
     // A lambda function to reuse the multiplaction operator over all the facies found in
     // samples and previously simulated cells.
-    const VerticalTransiogramModel& transiogramModel = *m_transiogramModel;
-    auto lambdaMultiplicationProbs = [ faciesFromCodesAndSuccessionSeparations, transiogramModel ] ( uint faciesCodeTo ) {
+    auto lambdaMultiplicationProbs = [ faciesFromCodesAndSuccessionSeparations, transiogramToUse ] ( uint faciesCodeTo ) {
         double result = 0.0; //assumes zero probability
         std::vector< std::pair< FaciesCodeFrom, SuccessionSeparation > >::const_iterator it =
                 faciesFromCodesAndSuccessionSeparations.cbegin();
@@ -341,7 +442,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
         for( ; it != faciesFromCodesAndSuccessionSeparations.cend(); ++it ){
             uint faciesCodeFrom = (*it).first;
             double h = (*it).second;
-            double probability = transiogramModel.getTransitionProbability( faciesCodeFrom, faciesCodeTo, h );
+            double probability = transiogramToUse.getTransitionProbability( faciesCodeFrom, faciesCodeTo, h );
             if( it == faciesFromCodesAndSuccessionSeparations.cbegin() )
                 result = probability; //initialize the resulting probability with the first probability
             else
@@ -381,7 +482,7 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
     if( useSecondaryData() ){
         //for each category
         for( unsigned int categoryIndex = 0; categoryIndex < cd->getCategoryCount(); ++categoryIndex ){
-            uint probColumnIndex = m_probFields[ categoryIndex ]->getAttributeGEOEASgivenIndex() - 1;
+            uint probColumnIndex = probFields[ categoryIndex ]->getAttributeGEOEASgivenIndex() - 1;
             double probabilityFromSecondary = simulationCell.readValueFromDataSet( probColumnIndex );
             //if the value in the probability field is null, use the probability from the global PDF as default.
             if( Util::almostEqual2sComplement( m_simGridNDV, probabilityFromSecondary, 1 ) ){
@@ -450,15 +551,12 @@ double MCRFSim::simulateOneCellMT(uint i, uint j, uint k,
  * @param mcrfSim The pointer to the MCRFSim object coordinating the simulation.
  * @param completedFlag The pointer to an output boolean variable.
  *                      It'll receive the "true" value upon completion of all simulations.
- * @param realizations A pointer to a vector of spectral::array objects where the thread will deposit simulated data.
- *                     Each spectral::array contains the simulated data of one realization.
  *//////////////////////////////////////////////////////////////////////////////////////////
 void simulateSomeRealizationsThread( uint nRealsForOneThread,
                                      const CartesianGrid* cgSim,
                                      uint seed,
                                      MCRFSim* mcrfSim,
-                                     bool* completedFlag,
-                                     std::vector< spectral::arrayPtr >* realizationsOutput ){
+                                     bool* completedFlag ){
 
     //initialize the thread-local random number generator with the seed reserved for this thread
     std::mt19937 randomNumberGenerator;
@@ -497,6 +595,104 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
         // shuffles the cell linear indexes to make the random walk.
         std::random_shuffle( linearIndexesRandomWalk.begin(), linearIndexesRandomWalk.end(), lambdaFnShuffler );
 
+        // By default, the Tau factors are fixed (normal execution mode).
+        double tauFactorForTransiographyInCurrentRealization = mcrfSim->m_tauFactorForTransiography;
+        double tauFactorForSecondaryDataInCurrentRealization = mcrfSim->m_tauFactorForProbabilityFields;
+
+        // By default, the gradation field to use is fixed (normal execution mode).
+        Attribute* gradFieldOfPrimaryDataToUse = mcrfSim->m_gradationFieldOfPrimaryData;
+        Attribute* gradFieldOfSimGridToUse = mcrfSim->m_gradationFieldOfSimGrid;
+
+        // By default, the probability fields for each category are fixed (normal execution mode).
+        std::vector<Attribute*> probFieldsToUse = mcrfSim->m_probFields;
+
+        // If the execution mode is for Bayesian application, some hyperparameters vary
+        // from realization to realization, thus...
+        if( mcrfSim->getMode() == MCRFMode::BAYESIAN ){
+            // assuming the number of gradation field values of the primary data chosen is the
+            // same of the simulation grid.
+            int nGradationFields = mcrfSim->m_gradationFieldsOfPrimaryDataBayesian.size();
+            // assuming the number of probability fields for all categories is the same as
+            // the number of probability fields of the first category.
+            int nProbFieldsPerCategory = 0; //assumes user won't use secondary data
+            if( ! mcrfSim->m_probsFieldsBayesian.empty() ) //if user set probability fields (secondary data)
+                nProbFieldsPerCategory = mcrfSim->m_probsFieldsBayesian[0].size();
+            // ...make uniform distributions for the intervals set by the user.
+            std::uniform_real_distribution<double> distributionTauFactorForTransiography(
+                        mcrfSim->m_tauFactorForTransiographyBayesianStarting,
+                        mcrfSim->m_tauFactorForTransiographyBayesianEnding);
+            std::uniform_real_distribution<double> distributionTauFactorForSecondaryData(
+                        mcrfSim->m_tauFactorForProbabilityFieldsBayesianStarting,
+                        mcrfSim->m_tauFactorForProbabilityFieldsBayesianEnding);
+            std::uniform_int_distribution<int> distributionGradFieldIndexes( 0, nGradationFields-1 );
+            std::uniform_int_distribution<int> distributionProbFieldSetIndexes( 0, nProbFieldsPerCategory-1 );
+            // ...draw new Tau factors from the user-given interval.
+            tauFactorForTransiographyInCurrentRealization =
+                    distributionTauFactorForTransiography( randomNumberGenerator );
+            tauFactorForSecondaryDataInCurrentRealization =
+                    distributionTauFactorForSecondaryData( randomNumberGenerator );
+            // ...draw the gradation field to be used.
+            int selectedGradFieldIndex = distributionGradFieldIndexes ( randomNumberGenerator );
+            gradFieldOfPrimaryDataToUse = mcrfSim->m_gradationFieldsOfPrimaryDataBayesian.at( selectedGradFieldIndex );
+            gradFieldOfSimGridToUse = mcrfSim->m_gradationFieldsOfSimGridBayesian.at( selectedGradFieldIndex );
+            // ...draw the set of probability fields to be used.
+            int selectedProbFieldSetIndex = distributionProbFieldSetIndexes( randomNumberGenerator );
+            probFieldsToUse = std::vector<Attribute*>();
+            //for each category... (elements in outer vector are for each category)
+            for( const std::vector<Attribute*>& probFieldsOfACategory : mcrfSim->m_probsFieldsBayesian ){
+                //... get the probability field index from the set defined by the user for it.
+                // elements of the inner vector are the probability fields for one category.
+                probFieldsToUse.push_back( probFieldsOfACategory[ selectedProbFieldSetIndex ] );
+            }
+        } else { //normal execution mode (fixed hyperparameters)
+            // Call the random number generator the same number of times of Bayesian mode to keep the
+            // same random path of the other execution mode.
+            randomNumberGenerator();
+            randomNumberGenerator();
+            randomNumberGenerator();
+            randomNumberGenerator();
+        }
+
+        // By default, the transiogram model is fixed (normal exection mode).
+        VerticalTransiogramModel transiogramToUse("", "");
+        transiogramToUse.makeAsSameModel( *(mcrfSim->m_transiogramModel) );
+
+        // If the execution mode is for Bayesian application, the transiogram model must vary
+        // randomly from realization to realization within the band of uncertainty given by the user.
+        int transiogramMatrixDimension = transiogramToUse.getRowOrColCount();
+        if( mcrfSim->getMode() == MCRFMode::BAYESIAN ){
+            for( uint iRow = 0; iRow < transiogramMatrixDimension; ++iRow )
+                for( uint iCol = 0; iCol < transiogramMatrixDimension; ++iCol ){
+                    //Get the ranges of variable transiogram parameters.
+                    double sill1 = mcrfSim->m_transiogramModel         ->getSill( iRow, iCol );
+                    double sill2 = mcrfSim->m_transiogramModel2Bayesian->getSill( iRow, iCol );
+                    double range1 = mcrfSim->m_transiogramModel         ->getRange( iRow, iCol );
+                    double range2 = mcrfSim->m_transiogramModel2Bayesian->getRange( iRow, iCol );
+                    //Make sure they are in ascending order.
+                    Util::ensureAscending( sill1,  sill2  );
+                    Util::ensureAscending( range1, range2 );
+                    //Make uniform distribution for the transiogram parameters.
+                    std::uniform_real_distribution<double> distributionForSill (  sill1,  sill2 );
+                    std::uniform_real_distribution<double> distributionForRange( range1, range2 );
+                    //Draw transiogram parameters values.
+                    double drawnSill  = distributionForSill ( randomNumberGenerator );
+                    double drawnRange = distributionForRange( randomNumberGenerator );
+                    //Assign them to the transiogram model to be used for simulation.
+                    transiogramToUse.setSill ( iRow, iCol, drawnSill  );
+                    transiogramToUse.setRange( iRow, iCol, drawnRange );
+                }
+            //Making sure all sills sum 1.0 rowwise (important for Markovian transiography).
+            transiogramToUse.unitizeRowwiseSills();
+        } else { //normal execution mode (fixed transiography)
+            for( int iRow = 0; iRow < transiogramMatrixDimension; ++iRow )
+                for( int iCol = 0; iCol < transiogramMatrixDimension; ++iCol ){
+                    // Call the random number generator the same number of times of Bayesian mode to keep the
+                    // same random path of the other execution mode.
+                    randomNumberGenerator();
+                    randomNumberGenerator();
+                }
+        }
+
         //traverse the grid's cells according to the random walk.
         for( uint iRandomWalkIndex = 0; iRandomWalkIndex < nCells; ++iRandomWalkIndex ){
             //get the cell's linear index
@@ -505,7 +701,15 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
             uint i, j, k;
             cgSim->indexToIJK( iCellLinearIndex, i, j, k );
             //simulate the cell (attention: may return the simulation grid's no-data value)
-            double catCode = mcrfSim->simulateOneCellMT( i, j, k, randomNumberGenerator, *simulatedData );
+            double catCode = mcrfSim->simulateOneCellMT( i, j, k,
+                                                         randomNumberGenerator,
+                                                         tauFactorForTransiographyInCurrentRealization,
+                                                         tauFactorForSecondaryDataInCurrentRealization,
+                                                         gradFieldOfPrimaryDataToUse,
+                                                         gradFieldOfSimGridToUse,
+                                                         transiogramToUse,
+                                                         probFieldsToUse,
+                                                         *simulatedData );
             //save the value to the data array of the realization
             (*simulatedData)( i, j, k ) = catCode;
             //keep track of simulation progress
@@ -514,8 +718,14 @@ void simulateSomeRealizationsThread( uint nRealsForOneThread,
                 mcrfSim->setOrIncreaseProgressMT( reportProgressEveryNumberOfSimulations );
         } //grid traversal (random walk)
 
-        //return the realization data
-        realizationsOutput->push_back( simulatedData );
+        //save the realization data (where depends on the user settings).
+        mcrfSim->saveRealizationMT( simulatedData,
+                                    transiogramToUse,
+                                    probFieldsToUse,
+                                    gradFieldOfSimGridToUse,
+                                    gradFieldOfPrimaryDataToUse,
+                                    tauFactorForTransiographyInCurrentRealization,
+                                    tauFactorForSecondaryDataInCurrentRealization );
 
     } // for each reazation of this thread
 
@@ -534,8 +744,15 @@ bool MCRFSim::run()
     //sets progress count to zero
     m_progress = 0;
 
-    //clears any previous realization data
-    m_realizations.clear();
+    //inits realization number for saving name.
+    m_realNumberForSaving = 1;
+
+    //deletes the previous simulation report file (used for Bayesian mode) if it exists.
+    if( m_mode == MCRFMode::BAYESIAN ){
+        QFile file( getReportFilePathForBayesianModeMT() );
+        if( file.exists() )
+            file.remove();
+    }
 
     //get simulation grid dimensions
     uint nI = m_cgSim->getNI();
@@ -561,6 +778,8 @@ bool MCRFSim::run()
 
     //loads the transiogram model data.
     m_transiogramModel->readFromFS();
+    if( m_mode == MCRFMode::BAYESIAN )
+        m_transiogramModel2Bayesian->readFromFS();
 
     //loads category information from filesystem
     CategoryDefinition* cd = m_pdf->getCategoryDefinition();
@@ -575,9 +794,6 @@ bool MCRFSim::run()
         numberOfRealizationsForAThread[ iThread ] = 0; //initialize the numbers of realizations with zeros
     for( uint iReal = 0; iReal < nRealizations; ++iReal )
         ++numberOfRealizationsForAThread[ iReal % nThreads ];
-
-    //create vectors of data arrays for each thread, so they deposit their realizations in them.
-    std::vector< spectral::arrayPtr > realizationDepots[nThreads];
 
     //create an array of flags that tells whether a thread is completed.
     // intialize all with false
@@ -673,18 +889,15 @@ bool MCRFSim::run()
     //create and run the simulation threads
     std::thread threads[nThreads];
     for( unsigned int iThread = 0; iThread < nThreads; ++iThread){
-        std::vector< spectral::arrayPtr >& realizationDepot = realizationDepots[iThread];
         //Give a different seed to each thread by multiplying the user-given seed by 100 and adding the thread number
         //NOTE on the seed number * 100:
-        //number of realizations is capped at 99, so even if there are more than 99
-        //logical processors, number of threads will be limited to 99
+        //number of threads is capped at 99
         threads[iThread] = std::thread( simulateSomeRealizationsThread,
                                         numberOfRealizationsForAThread[ iThread ],
                                         m_cgSim,
                                         m_commonSimulationParameters->getSeed() * 100 + iThread,
                                         this,
-                                        &(completed[ iThread ]),
-                                        &realizationDepot
+                                        &(completed[ iThread ])
                                         );
     }
 
@@ -716,15 +929,76 @@ bool MCRFSim::run()
     Application::instance()->logWarningOn();
     Application::instance()->logInfoOn();
 
-    //collect the realizations created by the threads:
-    for( unsigned int iThread = 0; iThread < nThreads; ++iThread ){
-        std::vector< spectral::arrayPtr >::iterator it = realizationDepots[ iThread ].begin();
-        for(; it != realizationDepots[ iThread ].end(); ++it)
-            m_realizations.push_back( *it );
-    }
-
     //hide the progress dialog
     delete m_progressDialog;
+
+    //define the realization variables as categorical (depending on how user opted for
+    //saving them).
+    switch ( m_commonSimulationParameters->getSaveRealizationsOption() ) {
+    case 0: //save realizations as new variables in the simulation grid
+        {
+            //The simulation threads do a bulk writing of simulation results
+            //to the grid's physical file, so we need to update its object
+            //representation (CartesianGrid)
+            m_cgSim->updateChildObjectsCollection();
+            //Get the number of variables of the simulation grid after the simulation.
+            uint nVariablesAfter = m_cgSim->getDataColumnCount();
+            //set the new variables as categorical
+            //iStop is used to stop iterating from back towards first variable.
+            for( uint iVar = nVariablesAfter-1, iStop = 0; iStop < nRealizations; --iVar, ++iStop ){
+                m_cgSim->setCategorical( iVar, cd );
+                // update the metadata file
+                m_cgSim->updateMetaDataFile();
+                // updates properties list so any changes appear in the project tree.
+                m_cgSim->updateChildObjectsCollection();
+            }
+        }
+        break;
+    case 1: //save realizations as separante grid files in the project
+        //assert( false && "MCRFSim::run(): save realizations mode not implemented: 1.");
+        {
+            //in saveRealizationMT(), several GEO-EAS grids with the ".TOCOPY" each with one realization
+            //were generated in the project's temp directory.  So we need to...
+
+            //For each *.TOCOPY files in the project's temp directory
+            QDir dir( Application::instance()->getProject()->getTmpPath() );
+            dir.setNameFilters(QStringList() << "*.TOCOPY");
+            dir.setFilter(QDir::Files);
+            foreach(QString dirFile, dir.entryList()) //foreach is a Qt macro
+            {
+                //create a local grid object corresponding to the file created in the tmp directory
+                //with a simulated realization.
+                CartesianGrid local_cg( Application::instance()->getProject()->getTmpPath() +
+                                        QDir::separator() + dirFile );
+                //set the geometry info so they match that of the simulation grid
+                local_cg.setInfoFromOtherCGonlyGridSpecs( m_cgSim );
+                //remove the .TOCOPY extension from the file name
+                dirFile = dirFile.replace( ".TOCOPY", "" );
+                //import the newly created grid file as a global project item
+                CartesianGrid* new_cg = Application::instance()->getProject()->
+                        importCartesianGrid( &local_cg, dirFile );
+                //update the path information in the global Cartesian grid object. Now we can set
+                //metadata info for the project.
+                new_cg->setPath(
+                            Application::instance()->getProject()->getPath() + QDir::separator() + dirFile );
+                //set the sole variable as categorical
+                new_cg->setCategorical( 0, cd );
+                // update the metadata file
+                new_cg->updateMetaDataFile();
+                // updates properties list so any changes appear in the project tree.
+                new_cg->updateChildObjectsCollection();
+                // delete the file from project's temp dir (recall it still has the .TOCOPY file exitension there)
+                dir.remove(dirFile + ".TOCOPY");
+            }
+        }
+        break;
+    case 2: //save realizations as grid files somewhere
+        /* No post processing of realizations is necessary. */;
+    }
+
+    //make sure newly added objects during simulation
+    //show up in the interface after it has completed
+    Application::instance()->refreshProjectTree();
 
     //announce the simulation has completed with success
     Application::instance()->logInfo("MCRF completed.");
@@ -735,11 +1009,133 @@ void MCRFSim::setOrIncreaseProgressMT(ulong ammount, bool increase)
 {
     std::unique_lock<std::mutex> lck ( m_mutexMCRF, std::defer_lock );
     lck.lock(); //this code is expected to be called concurrently from multiple simulation threads
+                //so we define a critical section.
     if( increase )
         m_progress += ammount;
     else
         m_progress = ammount;
     lck.unlock();
+}
+
+void MCRFSim::saveRealizationMT( const spectral::arrayPtr simulatedData,
+                                 VerticalTransiogramModel &transiogramUsed,
+                                 const std::vector<Attribute*> &probFieldsUsed,
+                                 const Attribute* gradFieldOfSimGridUsed,
+                                 const Attribute* gradFieldOfPrimaryDataUsed,
+                                 double tauFactorForTransiographyUsed,
+                                 double tauFactorForSecondaryDataUsed )
+{
+    std::unique_lock<std::mutex> lck ( m_mutexSaveRealizations, std::defer_lock );
+    lck.lock(); //this code is expected to be called concurrently from multiple simulation threads
+                //so we define a critical section to avoid file corruption due to race condition.
+
+    /*BEGIN CRITICAL SECTION*/
+    {
+
+        //Make the realization name.
+        QString realizationName;
+        {
+            QString s1 = m_commonSimulationParameters->getBaseNameForRealizationVariables();
+            QString s2 = Util::zeroPad( m_realNumberForSaving, 4 );
+            realizationName = s1 + s2;
+        }
+
+        //How to save the realization depends on user's choices.
+        switch ( m_commonSimulationParameters->getSaveRealizationsOption() ) {
+        case 0: //save to the simulation grid
+            {
+                QString NDV = "-999999";
+                if( m_cgSim->hasNoDataValue() )
+                    NDV = m_cgSim->getNoDataValue();
+                Util::appendPhysicalGEOEASColumn( simulatedData, realizationName, m_cgSim->getPath(), NDV );
+            }
+            break;
+        case 1: //save realization as separate grid in the project
+            {
+                //write it to the project's temp directory
+                //in MCRFSim::run() they will be copied to the project's directory, added to the project and
+                //the variabled set as categorical. We can't do these tasks here because some of the used Qt
+                //funcionalities are not thread safe.
+                QString tmp_file_path = Application::instance()->getProject()->getTmpPath() + QDir::separator()
+                                       + realizationName + ".TOCOPY";
+                Util::createGEOEASGrid( realizationName, *simulatedData, tmp_file_path, true );
+            }
+            break;
+        case 2: //save realization as grid files somewhere
+            //write it to the directory defined by the user
+            QString file_path = m_commonSimulationParameters->getSaveRealizationsPath() + QDir::separator()
+                              + realizationName + ".dat";
+            Util::createGEOEASGrid( realizationName, *simulatedData, file_path, true, m_cgSim );
+        }
+
+        //If execution mode is for Bayesian application, then transiogram and hyperparameters vary.
+        //Hence, we have to report each transiogram used as well as the hyperparameters used in each realization.
+        if( m_mode == MCRFMode::BAYESIAN ){
+            //apend the model parameters and algorithm hyperparameters to the report file.
+            //the file mode creates it if it does not exist.
+            std::ofstream reportFile;
+            reportFile.open( getReportFilePathForBayesianModeMT().toStdString(), fstream::app );
+            reportFile << "<REALIZATION>" << std::endl;
+            reportFile << "\t<name>" << realizationName.toStdString() << "</name>" << std::endl;
+            reportFile << "\t<transiogram>" << std::endl;
+            //Saves the used transiogram to a temporary file, loads it into a string, appends it to the report
+            {
+                QString tmpPath = Application::instance()->getProject()->generateUniqueTmpFilePath("transiogram");
+                transiogramUsed.setPath( tmpPath );
+                transiogramUsed.writeToFS();
+                std::ifstream t( tmpPath.toStdString() );
+                std::stringstream buffer;
+                buffer << t.rdbuf();
+                reportFile << buffer.str();
+            }
+            reportFile << "\t</transiogram>" << std::endl;
+            reportFile << "\t<prob_fields>" << std::endl;
+            if( useSecondaryData() ){
+                const CategoryDefinition* cd = transiogramUsed.getCategoryDefinition();
+                if( cd ){
+                    for( uint iCatIndex = 0; iCatIndex < cd->getCategoryCount(); ++iCatIndex ){
+                        reportFile << "\t\t<prob_field>";
+                        reportFile << "<facies>" << cd->getCategoryName( iCatIndex ).toStdString() << "</facies><field>" <<
+                                      probFieldsUsed[ iCatIndex ]->getName().toStdString() << "</field>";
+                        reportFile << "</prob_field>" << std::endl;
+                    }
+                } else {
+                    reportFile << "\t\t<error>Category definition returned a null pointer.</error>" << std::endl;
+                }
+            }
+            reportFile << "\t</prob_fields>" << std::endl;
+            reportFile << "\t<grad_field_sim_grid>";
+            reportFile << gradFieldOfSimGridUsed->getName().toStdString();
+            reportFile << "</grad_field_sim_grid>" << std::endl;
+            reportFile << "\t<grad_field_prim_data>";
+            reportFile << gradFieldOfPrimaryDataUsed->getName().toStdString();
+            reportFile << "</grad_field_prim_data>" << std::endl;
+            reportFile << "\t<tau_factor_transiogram>";
+            reportFile << tauFactorForTransiographyUsed;
+            reportFile << "</tau_factor_transiogram>" << std::endl;
+            reportFile << "\t<tau_factor_prob_fields>";
+            reportFile << tauFactorForSecondaryDataUsed;
+            reportFile << "</tau_factor_prob_fields>" << std::endl;
+            reportFile << "</REALIZATION>" << std::endl;
+            reportFile.close();
+        } // if( m_mode == MCRFMode::BAYESIAN )
+
+        //increases the realization number for the next realization to be saved
+        m_realNumberForSaving++;
+    }
+    /* END CRITICAL SECTION */
+
+    lck.unlock();
+}
+
+MCRFMode MCRFSim::getMode() const
+{
+    return m_mode;
+}
+
+void MCRFSim::setMode(const MCRFMode &mode)
+{
+    m_mode = mode;
 }
 
 void MCRFSim::updateProgessUI()
@@ -853,4 +1249,14 @@ DataCellPtrMultiset MCRFSim::getNeighboringSimGridCellsMT(const GridCell &simula
         Application::instance()->logError( "MCRFSim::getNeighboringSimGridCellsMT(): simulation grid search failed.  Search strategy and/or simulation grid not set." );
     }
     return result;
+}
+
+QString MCRFSim::getReportFilePathForBayesianModeMT() const
+{
+    QString directory;
+    if( m_commonSimulationParameters->getSaveRealizationsOption() == 2 /* save realization outside project directory */ )
+        directory = m_commonSimulationParameters->getSaveRealizationsPath();
+    else /* user opted to save realizations inside the project (either as separate files or variables in the simulation grid*/
+        directory = Application::instance()->getProject()->getTmpPath();
+    return directory + QDir::separator() + "latestMCRFSimBayesianReport.xml";
 }

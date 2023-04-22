@@ -12,6 +12,7 @@ class vtkThreshold;
 class vtkTubeFilter;
 class vtkBillboardTextActor3D;
 class vtkAbstractVolumeMapper;
+class vtkContourFilter;
 
 /** This class is just a data structure to hold objects and info related to 3D visualization of a domain object.
  * E.g.: the vtkActor built for it.
@@ -67,6 +68,9 @@ public:
 
     /** The tube filter is used to render segment sets with adjustable diameter. */
     vtkSmartPointer<vtkTubeFilter> tubeFilter;
+
+    /** The contour filter is used to render 2D or 3D grids as contours or isosurfaces. */
+    vtkSmartPointer<vtkContourFilter> contourFilter;
 
     /** An object may provide a VTKActor with its label text. */
     vtkSmartPointer<vtkBillboardTextActor3D> labelActor;

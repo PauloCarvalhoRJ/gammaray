@@ -30,6 +30,8 @@ public:
     double  getMinDistanceBetweenSecondaryDataSamples();
     uint    getNumberOfSimulatedNodesForConditioning();
     uint    getSearchAlgorithmOptionForSimGrid();
+    uint    getSaveRealizationsOption();
+    QString getSaveRealizationsPath();
 };
 
 #endif // COMMONSIMULATIONPARAMETERS_H

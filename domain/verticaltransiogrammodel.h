@@ -92,8 +92,48 @@ public:
     /** Returns the range for the transiogram curve in the given row and column of the model. */
     double getRange( uint iRow, uint iCol );
 
+    /** Sets the range for the transiogram curve in the given row and column of the model. */
+    void setRange( uint iRow, uint iCol, double range );
+
     /** Returns the sill for the transiogram curve in the given row and column of the model. */
     double getSill( uint iRow, uint iCol );
+
+    /** Sets the sill for the transiogram curve in the given row and column of the model. */
+    void setSill( uint iRow, uint iCol, double sill );
+
+    /** Returns whether this VTM is compatible with some other VTM.  Two VTMs are said compatible if:
+     * a) Both refer the same CategoryDefinion object.
+     * b) The number of categories in their matrices are the same.
+     * c) The categories in their matrices are the same.
+     * d) The order of the categories in their matrices are the same.
+     * This means that both VTMs can be used to model the same stratigraphic sequence.
+     */
+    bool isCompatibleWith( const VerticalTransiogramModel* otherVTM ) const;
+
+    /** Returns the row/col index of a category given its name.
+     * The index is the same for both the rows (head category) and the columns (tail category).
+     * If the category name does not exist, it returns -1.
+     * This method calls the getFaciesIndex() method of private API.
+     * NOTE: this is not necessarily the same index of the category in the refered CategoryDefinition object.
+     */
+    int getCategoryMatrixIndex( const QString categoryName ) const;
+
+    /**
+     * Copy member data from otherVTM such that this VTM represents the same
+     * transiogram model.
+     * @attention No other data (e.g. members inherited from base classes) are copied, so this
+     * method shouldn't be regarded as an equivalent of a copy constructor or deep copy.
+     */
+    void makeAsSameModel( const VerticalTransiogramModel& otherVTM );
+
+    /**
+     * Re-scale the sill values of the transiograms along each row so they sum up 1.0.
+     * Ensuring this for transiograms modeling Markovian sequences is important.
+     * @note This does not ensure a total probability of 1.0 at all separations (h).
+     *       Depending on the combination of range values, sums greater or lesser than 1.0 may
+     *       occur for h's shorter than the greatest transiogram range.
+     */
+    void unitizeRowwiseSills();
 
     // ProjectComponent interface
 public:
@@ -128,6 +168,12 @@ private:
      * NOTE: this is not necessarily the same index of the category in the refered CategoryDefinition object.
      */
     int getFaciesIndex( const QString faciesName ) const;
+
+    /**
+     * Returns the number of facies in this VTM.
+     * NOTE: this is not necessarily the same number of categories in the refered CategoryDefinition object.
+     */
+    int getFaciesCount( ) const;
 
     /** Makes room for a new facies with default transiogram parameters in the matrix.
      * The client code must fill them accordingly.

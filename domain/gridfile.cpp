@@ -66,7 +66,7 @@ void GridFile::setNReal(uint n)
 
 long GridFile::append(const QString columnName,
                       const spectral::array &array,
-                      CategoryDefinition *cd)
+                      CategoryDefinition *cd )
 {
 	long index = addEmptyDataColumn( columnName, m_nI * m_nJ * m_nK );
 
@@ -133,7 +133,7 @@ long GridFile::append(const QString columnName,
 	writeToFS();
 
 	//update the project tree in the main window.
-	Application::instance()->refreshProjectTree();
+    Application::instance()->refreshProjectTree();
 
 	return index;
 }

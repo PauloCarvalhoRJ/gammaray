@@ -72,6 +72,7 @@ public slots:
     void openSGSIM();
     void openCokrigingNewcokb3d();
     void openTransiography();
+    void openTransiographyBayesian();
 
 private:
     Ui::MainWindow *ui;
@@ -106,6 +107,8 @@ private:
     QMenu *_projectHeaderContextMenu;
     //pointer to right clicked file (set in onProjectContextMenu() slot)
     File *_right_clicked_file;
+    //pointer to a right clicked 2nd file (set in onProjectContextMenu() slot)
+    File *_right_clicked_file2;
     //pointer to right clicked attribute (set in onProjectContextMenu() slot)
     Attribute *_right_clicked_attribute;
     //pointer to the second right clicked attribute (set in onProjectContextMenu() slot)
@@ -245,6 +248,8 @@ private slots:
     void onSkeletonize();
     void onExtractSubgrid();
     void onExportToGRD();
+    void onMCRFBayesianSim();
+    void onReviewTransiogramBand();
 
 private:
     /**
@@ -355,6 +360,13 @@ private:
      * an existing vertical transiogram model.
      */
     void createOrReviewVerticalTransiogramModel( VerticalTransiogramModel* vtm );
+
+    /**
+     * This method is used to create (vtm1/2 == nullptr) or review (vtm1/2 != nullptr)
+     * two existing vertical transiogram models as a band of uncertainty.
+     */
+    void createOrReviewVerticalTransiogramModelBand( VerticalTransiogramModel* vtm1,
+                                                     VerticalTransiogramModel* vtm2 );
 
     /**
      * This method is used to create (vtm == nullptr) or review (vtm != nullptr)

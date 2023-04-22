@@ -266,7 +266,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 		weightsSK = MatrixNXM<double>( weightsSKSpectral );
 	} else { // if the cov matrix is well conditioned, the kriging weights are computed the traditional way.
 		//invert the covariance matrix.
-		covMat.invertWithGaussJordan();
+        covMat.invertWithEigen();
 		//get the kriging weights vector: [w] = [Cov]^-1 * [gamma]
 		weightsSK = covMat * gammaMat;  //covMat is inverted
 	}
@@ -316,7 +316,7 @@ double NDVEstimationRunner::krige(GridCell cell, double meanSK, bool hasNDV, dou
 		//make the OK kriging weights matrix (solve the ordinary kriging system).
 		MatrixNXM<double> weightsOK( vCells.size()+1 ); //+1 is due to the extra lagrangean element in the cov matrix.
 		//invert the covariance matrix.
-		covMatOK.invertWithGaussJordan();
+        covMatOK.invertWithEigen();
 		//compute the OK weights the normal way (follows the same rationale of SK)
 		weightsOK = covMatOK * gammaMatOK;  //covMatOK is inverted
 

@@ -725,6 +725,12 @@ void DataFile::replaceCategoricalAttributesInformation(const QList<QPair<uint, Q
     _categorical_attributes << categorical_attributes;
 }
 
+void DataFile::setCategorical(uint variableIndex, const CategoryDefinition *cd)
+{
+    _categorical_attributes.append( QPair<uint, QString>(variableIndex+1, cd->getName()));
+    this->updateMetaDataFile();
+}
+
 void DataFile::replacePhysicalFile(const QString from_file_path)
 {
     // copies the source file over the current physical file in project.
@@ -745,7 +751,8 @@ void DataFile::addVariableNScoreVariableRelationship(uint variableGEOEASindex,
     this->updateMetaDataFile();
 }
 
-void DataFile::addGEOEASColumn(Attribute *at, const QString new_name, bool categorical,
+void DataFile::addGEOEASColumn(Attribute *at, const QString new_name,
+                               bool categorical,
                                CategoryDefinition *cd)
 {
     // set the variable name in the destination file
@@ -879,6 +886,7 @@ void DataFile::addGEOEASColumn(Attribute *at, const QString new_name, bool categ
         Application::instance()->refreshProjectTree();
     }
 }
+
 
 uint DataFile::getDataLineCount() const { return _data.size(); }
 

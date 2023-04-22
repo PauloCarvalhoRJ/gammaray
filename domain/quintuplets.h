@@ -25,11 +25,11 @@ public:
 
     int getQuintupletCount() const { return m_quintuplets.count(); }
 
-    T1 get1stValue( int quintuplet_index ){ return std::get<0>( m_quintuplets.at(quintuplet_index) ); }
-    T2 get2ndValue( int quintuplet_index ){ return std::get<1>( m_quintuplets.at(quintuplet_index) ); }
-    T3 get3rdValue( int quintuplet_index ){ return std::get<2>( m_quintuplets.at(quintuplet_index) ); }
-    T4 get4thValue( int quintuplet_index ){ return std::get<3>( m_quintuplets.at(quintuplet_index) ); }
-    T5 get5thValue( int quintuplet_index ){ return std::get<4>( m_quintuplets.at(quintuplet_index) ); }
+    T1 get1stValue( int quintuplet_index ) const { return std::get<0>( m_quintuplets.at(quintuplet_index) ); }
+    T2 get2ndValue( int quintuplet_index ) const { return std::get<1>( m_quintuplets.at(quintuplet_index) ); }
+    T3 get3rdValue( int quintuplet_index ) const { return std::get<2>( m_quintuplets.at(quintuplet_index) ); }
+    T4 get4thValue( int quintuplet_index ) const { return std::get<3>( m_quintuplets.at(quintuplet_index) ); }
+    T5 get5thValue( int quintuplet_index ) const { return std::get<4>( m_quintuplets.at(quintuplet_index) ); }
 
     void addQuintuplet( T1 first, T2 second, T3 third, T4 fourth, T5 fifth ){
         m_quintuplets.append( std::tuple<T1,T2,T3,T4,T5>( first, second, third, fourth, fifth ) );

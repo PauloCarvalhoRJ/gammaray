@@ -24,7 +24,6 @@
 #include "domain/verticaltransiogrammodel.h"
 #include "widgets/fileselectorwidget.h"
 #include "widgets/transiogramchartview.h"
-#include "geostats/geostatsutils.h"
 #include "dialogs/dynamicfaciesrelationshipdiagramdialog.h"
 
 TransiogramDialog::TransiogramDialog(VerticalTransiogramModel *vtm,
@@ -66,7 +65,7 @@ void TransiogramDialog::dragEnterEvent(QDragEnterEvent *e)
 
 void TransiogramDialog::dragMoveEvent(QDragMoveEvent *e)
 {
-    Q_UNUSED( e );
+    Q_UNUSED( e )
 }
 
 void TransiogramDialog::dropEvent(QDropEvent *e)
@@ -242,22 +241,16 @@ void TransiogramDialog::makeChartsForModelReview()
             TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
             if( iHeadFacies == jTailFacies )
                 transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
-            TransiogramChartView *transiogramChartView = new TransiogramChartView( chart,
-                                                                                   transiogramType,
-                                                                                   hFinal,
-                                                                                   axisX,
-                                                                                   axisY,
-                                                                                   m_vtm->getNameOfCategory( iHeadFacies ),
-                                                                                   m_vtm->getNameOfCategory( jTailFacies )
-                                                                                 );
-            {
-                transiogramChartView->setRenderHint(QPainter::Antialiasing);
-                transiogramChartView->setMinimumHeight( 100 );
-                transiogramChartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
-                transiogramChartView->setModelParameters( m_vtm->getRange( iHeadFacies, jTailFacies ), m_vtm->getSill( iHeadFacies, jTailFacies ) );
-                //to be notified if transiogram model updates.
-                connect( transiogramChartView, SIGNAL(modelWasUpdated()), this, SLOT(onTransiogramModelUpdated()) );
-            }
+            TransiogramChartView *transiogramChartView = makeNewTransiogramChartView( chart,
+                                                                                      transiogramType,
+                                                                                      hFinal,
+                                                                                      axisX,
+                                                                                      axisY,
+                                                                                      m_vtm->getNameOfCategory( iHeadFacies ),
+                                                                                      m_vtm->getNameOfCategory( jTailFacies ),
+                                                                                      m_vtm->getRange( iHeadFacies, jTailFacies ),
+                                                                                      m_vtm->getSill( iHeadFacies, jTailFacies )
+                                                                                    );
 
             //lay out chart widget in the grid layout so it is in accordance to the pair of facies
             //as set in the FTM.
@@ -291,6 +284,36 @@ void TransiogramDialog::makeChartsForModelReview()
     ui->scrollAreaWidgetContents->setFixedSize( m_hSizePerTransiogram * m_vtm->getRowOrColCount() ,
                                                 m_vSizePerTransiogram * m_vtm->getRowOrColCount() );
 
+}
+
+TransiogramChartView *TransiogramDialog::makeNewTransiogramChartView( QtCharts::QChart *chart,
+                                                                      TransiogramType type,
+                                                                      double hMax,
+                                                                      QtCharts::QValueAxis *axisX,
+                                                                      QtCharts::QValueAxis *axisY,
+                                                                      QString headFaciesName,
+                                                                      QString tailFaciesName,
+                                                                      double initialRange,
+                                                                      double initialSill )
+{
+    TransiogramChartView* transiogramChartView = new TransiogramChartView( chart,
+                                     type,
+                                     hMax,
+                                     axisX,
+                                     axisY,
+                                     headFaciesName,
+                                     tailFaciesName
+                                     );
+
+    transiogramChartView->setRenderHint(QPainter::Antialiasing);
+    transiogramChartView->setMinimumHeight( 100 );
+    transiogramChartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
+    transiogramChartView->setModelParameters( initialRange, initialSill );
+
+    //to be notified if transiogram model updates.
+    connect( transiogramChartView, SIGNAL(modelWasUpdated()), this, SLOT(onTransiogramModelUpdated()) );
+
+    return transiogramChartView;
 }
 
 void TransiogramDialog::performCalculation()
@@ -514,22 +537,16 @@ void TransiogramDialog::performCalculation()
             TransiogramType transiogramType = TransiogramType::CROSS_TRANSIOGRAM;
             if( iHeadFacies == jTailFacies )
                 transiogramType = TransiogramType::AUTO_TRANSIOGRAM;
-            TransiogramChartView *transiogramChartView = new TransiogramChartView( chart,
-                                                                                   transiogramType,
-                                                                                   hFinal,
-                                                                                   axisX,
-                                                                                   axisY,
-                                                                                   firstFTM.getRowHeader( iHeadFacies ),
-                                                                                   firstFTM.getColumnHeader( jTailFacies )
-                                                                                 );
-            {
-                transiogramChartView->setRenderHint(QPainter::Antialiasing);
-                transiogramChartView->setMinimumHeight( 100 );
-                transiogramChartView->setSizePolicy( QSizePolicy::Policy::Preferred, QSizePolicy::Policy::Preferred );
-                transiogramChartView->setModelParameters( (hFinal-hInitial) * 0.33, globalProportionOfTailFacies ); //init model range with 1/3rd of the total experimental range
-                //to be notified if transiogram model updates.
-                connect( transiogramChartView, SIGNAL(modelWasUpdated()), this, SLOT(onTransiogramModelUpdated()) );
-            }
+            TransiogramChartView *transiogramChartView = makeNewTransiogramChartView( chart,
+                                                                                      transiogramType,
+                                                                                      hFinal,
+                                                                                      axisX,
+                                                                                      axisY,
+                                                                                      firstFTM.getRowHeader( iHeadFacies ),
+                                                                                      firstFTM.getColumnHeader( jTailFacies ),
+                                                                                      (hFinal-hInitial) * 0.33,
+                                                                                      globalProportionOfTailFacies
+                                                                                    );
 
             //lay out chart widget in the grid layout so it is in accordance to the pair of facies
             //as set in the FTM.

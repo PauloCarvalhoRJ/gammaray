@@ -98,6 +98,11 @@ int VerticalTransiogramModel::getFaciesIndex(const QString faciesName) const
     return -1;
 }
 
+int VerticalTransiogramModel::getFaciesCount() const
+{
+    return m_faciesNames.size();
+}
+
 double VerticalTransiogramModel::getTransitionProbability(uint fromFaciesCode, uint toFaciesCode, double h) const
 {
     //it is possible that not all facies have transiograms modeled.  In this case, there is zero probability
@@ -193,9 +198,66 @@ double VerticalTransiogramModel::getRange( uint iRow, uint iCol )
     return std::get<INDEX_OF_RANGE_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] );
 }
 
+void VerticalTransiogramModel::setRange(uint iRow, uint iCol, double range)
+{
+    //the non-const std::get<> returns a reference to the element.
+    std::get<INDEX_OF_RANGE_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] ) = range;
+}
+
 double VerticalTransiogramModel::getSill(uint iRow, uint iCol)
 {
     return std::get<INDEX_OF_SILL_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] );
+}
+
+void VerticalTransiogramModel::setSill(uint iRow, uint iCol, double sill)
+{
+    //the non-const std::get<> returns a reference to the element.
+    std::get<INDEX_OF_SILL_IN_TRANSIOGRAM_PARAMETERS_TUPLE>( m_verticalTransiogramsMatrix[iRow][iCol] ) = sill;
+}
+
+bool VerticalTransiogramModel::isCompatibleWith(const VerticalTransiogramModel *otherVTM) const
+{
+    CategoryDefinition* thisCD = getCategoryDefinition();
+    CategoryDefinition* otherCD = otherVTM->getCategoryDefinition();
+    if( ! otherCD || ( thisCD != otherCD ) ){
+        return false;
+    }
+    int nFacies = m_faciesNames.size();
+    int nFaciesOther = otherVTM->getFaciesCount();
+    if( nFacies != nFaciesOther ){
+        return false;
+    }
+    for( int iFacies = 0; iFacies < nFacies; ++iFacies ){
+        if( m_faciesNames[iFacies] != otherVTM->m_faciesNames[iFacies] )
+            return false;
+    }
+    return true;
+}
+
+int VerticalTransiogramModel::getCategoryMatrixIndex(const QString categoryName) const
+{
+    return getFaciesIndex( categoryName );
+}
+
+void VerticalTransiogramModel::makeAsSameModel(const VerticalTransiogramModel &otherVTM)
+{
+    m_associatedCategoryDefinitionName = otherVTM.m_associatedCategoryDefinitionName;
+    m_faciesNames = otherVTM.m_faciesNames;
+    m_verticalTransiogramsMatrix = otherVTM.m_verticalTransiogramsMatrix;
+    m_faciesCodeToIndex = otherVTM.m_faciesCodeToIndex;
+}
+
+void VerticalTransiogramModel::unitizeRowwiseSills()
+{
+    uint transiogramMatrixDimension = getRowOrColCount();
+    for( uint iRow = 0; iRow < transiogramMatrixDimension; ++iRow ){
+        double sumSill = 0.0;
+        for( uint iCol = 0; iCol < transiogramMatrixDimension; ++iCol )
+            sumSill += getSill( iRow, iCol );
+        double ratio = 1.0 / sumSill;
+        for( uint iCol = 0; iCol < transiogramMatrixDimension; ++iCol )
+            setSill( iRow, iCol, getSill( iRow, iCol) * ratio );
+    }
 }
 
 QIcon VerticalTransiogramModel::getIcon()
@@ -247,13 +309,13 @@ void VerticalTransiogramModel::writeToFS()
 
     //write the column headers
     for( const QString& headerFacies : m_faciesNames )
-        out << '\t' << headerFacies ;
+        out << '\t' << Util::putDoubleQuotesIfThereIsWhiteSpace( headerFacies ) ;
     out << '\n';
 
     //write the lines ( headers and transiogram parameters)
     std::vector< std::vector< VTransiogramParameters > >::const_iterator itTransiogramsLines = m_verticalTransiogramsMatrix.cbegin();
     for( const QString& headerFacies : m_faciesNames ){
-        out << headerFacies ;
+        out << Util::putDoubleQuotesIfThereIsWhiteSpace( headerFacies ) ;
         std::vector< VTransiogramParameters >::const_iterator itTransiograms = (*itTransiogramsLines).cbegin();
         for( ; itTransiograms != (*itTransiogramsLines).end() ; ++itTransiograms)
             out << '\t' << static_cast<int>   (std::get<0>(*itTransiograms)) << ','  //structure type: spheric, exponential, gaussian, etc...

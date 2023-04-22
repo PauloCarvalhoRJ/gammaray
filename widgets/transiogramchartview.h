@@ -12,11 +12,26 @@ namespace QtCharts {
     class QLineSeries;
 }
 
+/**
+ * This is a Qt ChartView specialized in showing and editing a
+ * transiogram (experimental and model curve).
+ */
 class TransiogramChartView : public QtCharts::QChartView
 {
     Q_OBJECT
 
 public:
+    /**
+     * The constructor.
+     * @param chart QChart object required to build any QChartView (see QCharts documentation).
+     * @param type The type of transiogram this view (auto- or cross-transiogram - see "Transiograms for Characterizing Spatial Variability of Soil Classes", - Li, W. (2007)).
+     * @param hMax The end-of-scale X axis value.
+     * @param axisX Axis object for the X axis.  This usually allows for styling (e.g. ticks, labels, etc.).
+     * @param axisY Axis object for the Y axis.  This usually allows for styling (e.g. ticks, labels, etc.).
+     * @param headFaciesName The name of the Attribute that is the head variable (refer to geostatistics literarture).
+     * @param tailFaciesName The name of the Attribute that is the tail variable (refer to geostatistics literarture).
+     * @param parent Qt widget that serves as parent widget (see Qt documentation).
+     */
     TransiogramChartView(QtCharts::QChart* chart,
                          TransiogramType type,
                          double hMax,
@@ -45,7 +60,7 @@ Q_SIGNALS:
     /** Listening clients must use the get*() methods to retrieve the updated model parameters. */
     void modelWasUpdated();
 
-private:
+protected:
     QtCharts::QChart* m_chart;
 
     // QWidget interface
@@ -54,7 +69,7 @@ protected:
     virtual void mouseReleaseEvent(QMouseEvent *event);
     virtual void mouseMoveEvent(QMouseEvent *event);
 
-private:
+protected:
     QRubberBand* m_rubberBandH;
     QRubberBand* m_rubberBandV;
     ////---------------- the transiogram model parameters-----------
@@ -73,6 +88,7 @@ private:
     bool m_modelVisible;
     void showOrHideCrossHairs();
     void updateModelSeries();
+    void updateCrossHairsPosition(QMouseEvent *event);
 };
 
 #endif // TRANSIOGRAMCHARTVIEW_H

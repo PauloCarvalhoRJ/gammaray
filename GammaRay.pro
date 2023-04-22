@@ -34,9 +34,12 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/listbuilderdialog.cpp \
+    dialogs/mcrfbayesiansimdialog.cpp \
     dialogs/populatewithproportionsfromvpcdialog.cpp \
     dialogs/sectiondialog.cpp \
     dialogs/subgriddialog.cpp \
+    dialogs/transiogrambanddialog.cpp \
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
@@ -44,6 +47,8 @@ SOURCES += main.cpp\
     geometry/quadrilateral.cpp \
     geometry/triangle.cpp \
     geostats/mcmcdataimputation.cpp \
+    gslib/gslibparams/gslibpardir.cpp \
+    gslib/gslibparams/widgets/widgetgslibpardir.cpp \
         mainwindow.cpp \
     domain/project.cpp \
     domain/application.cpp \
@@ -99,10 +104,14 @@ SOURCES += main.cpp\
     vertpropcurves/verticalproportioncurvescanvaspicker.cpp \
     vertpropcurves/verticalproportioncurvesplot.cpp \
     viewer3d/v3dmouseinteractor.cpp \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeascontourlines.cpp \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.cpp \
     viewer3d/view3dtextconfigwidget.cpp \
     widgets/linechartwidget.cpp \
+    widgets/listbuilder.cpp \
     widgets/qlistwidgetdnd.cpp \
+    widgets/transiogrambandchartview.cpp \
+    widgets/variablelistbuilder.cpp \
     widgets/variogrammodellist.cpp \
     domain/weight.cpp \
     domain/normalvariable.cpp \
@@ -297,9 +306,12 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/listbuilderdialog.h \
+    dialogs/mcrfbayesiansimdialog.h \
     dialogs/populatewithproportionsfromvpcdialog.h \
     dialogs/sectiondialog.h \
     dialogs/subgriddialog.h \
+    dialogs/transiogrambanddialog.h \
     domain/auxiliary/verticalproportioncurvemaker.h \
     domain/project.h \
     domain/application.h \
@@ -312,6 +324,8 @@ HEADERS  += mainwindow.h \
     geometry/quadrilateral.h \
     geometry/triangle.h \
     geostats/mcmcdataimputation.h \
+    gslib/gslibparams/gslibpardir.h \
+    gslib/gslibparams/widgets/widgetgslibpardir.h \
     util.h \
     exceptions/invalidgslibdatafileexception.h \
     domain/pointset.h \
@@ -366,10 +380,14 @@ HEADERS  += mainwindow.h \
     vertpropcurves/verticalproportioncurvescanvaspicker.h \
     vertpropcurves/verticalproportioncurvesplot.h \
     viewer3d/v3dmouseinteractor.h \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeascontourlines.h \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.h \
     viewer3d/view3dtextconfigwidget.h \
     widgets/linechartwidget.h \
+    widgets/listbuilder.h \
     widgets/qlistwidgetdnd.h \
+    widgets/transiogrambandchartview.h \
+    widgets/variablelistbuilder.h \
     widgets/variogrammodellist.h \
     domain/weight.h \
     domain/normalvariable.h \
@@ -568,9 +586,12 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/listbuilderdialog.ui \
+    dialogs/mcrfbayesiansimdialog.ui \
     dialogs/populatewithproportionsfromvpcdialog.ui \
     dialogs/sectiondialog.ui \
     dialogs/subgriddialog.ui \
+    gslib/gslibparams/widgets/widgetgslibpardir.ui \
     gslib/gslibparams/widgets/widgetgslibpardouble.ui \
     gslib/gslibparams/widgets/widgetgslibparfile.ui \
     gslib/gslibparams/widgets/widgetgslibparinputdata.ui \
@@ -586,10 +607,12 @@ FORMS    += mainwindow.ui \
     gslib/gslibparams/widgets/widgetgslibpargrid.ui \
     gslib/gslibparams/widgets/widgetgslibparrepeat.ui \
     gslib/gslibparams/widgets/widgetgslibparcolor.ui \
+    viewer3d/view3dconfigwidgets/v3dcfgwidforattributeascontourlines.ui \
     viewer3d/view3dconfigwidgets/v3dcfgwidforattributeinpointset.ui \
     viewer3d/view3dtextconfigwidget.ui \
     widgets/linechartwidget.ui \
     vertpropcurves/verticalproportioncurvedialog.ui \
+    widgets/variablelistbuilder.ui \
     widgets/variogrammodellist.ui \
     widgets/univariatedistributionselector.ui \
     widgets/distributioncolumnroleselector.ui \
@@ -824,7 +847,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.16
+VERSION = 6.17
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

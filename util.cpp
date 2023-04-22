@@ -531,7 +531,11 @@ void Util::createGEOEASGrid(const QString columnName, std::vector<double> &value
     file.close();
 }
 
-void Util::createGEOEASGrid(const QString columnName, const spectral::array &values, QString path)
+void Util::createGEOEASGrid(const QString columnName,
+                            const spectral::array &values,
+                            QString path,
+                            bool silent,
+                            const CartesianGrid *cg_to_print_definitions_from )
 {
     //open file for writing
     QFile file( path );
@@ -539,14 +543,25 @@ void Util::createGEOEASGrid(const QString columnName, const spectral::array &val
     QTextStream out(&file);
 
     //write out the GEO-EAS grid header
-    out << "Grid file\n";
+    out << "Grid file";
+    if( cg_to_print_definitions_from ){
+        const CartesianGrid* cg = cg_to_print_definitions_from;
+        out << " X0,Y0,Z0=" << cg->getX0() << "," << cg->getY0() << "," << cg->getZ0();
+        out << " NI,NJ,NK=" << cg->getNI() << "," << cg->getNJ() << "," << cg->getNK();
+        out << " dX,dY,dZ=" << cg->getDX() << "," << cg->getDY() << "," << cg->getDZ();
+    }
+    out << '\n';
     out << "1\n";
     out << columnName << '\n';
 
-    QProgressDialog progressDialog;
-    progressDialog.setRange(0,0);
-    progressDialog.show();
-    progressDialog.setLabelText("Creating grid...");
+    //show a progress bar if client code opted for non-silent execution
+    QProgressDialog* progressDialog = nullptr;
+    if( ! silent ){
+        progressDialog = new QProgressDialog;
+        progressDialog->setRange(0,0);
+        progressDialog->show();
+        progressDialog->setLabelText("Creating grid...");
+    }
 
     //loop to output the values
     int nI = values.M();
@@ -558,9 +573,14 @@ void Util::createGEOEASGrid(const QString columnName, const spectral::array &val
         for( int j = 0; j < nJ; ++j )
             for( int i = 0; i < nI; ++i, ++counter ){
                 out << values( i, j, k ) << '\n';
-                if( ! ( counter % 1000) )
-                    QCoreApplication::processEvents(); //let Qt repaint widgets
+                if( !silent && !( counter % 1000) )
+                    QCoreApplication::processEvents(); //let Qt repaint widgets if client code opted
+                                                       //for non-silent execution
             }
+
+    //hide the progress bar if client code opted for non-silent execution
+    if( ! silent )
+        delete progressDialog;
 
     //close file
     file.close();
@@ -1068,8 +1088,8 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "6.14" << "6.12" << "6.9" << "6.7" << "6.6" << "6.5" << "6.3" << "6.2" << "6.1"
-                      << "6.0" << "5.7.1"
+    previousVersions  << "6.16" << "6.14" << "6.12" << "6.9" << "6.7" << "6.6" << "6.5" << "6.3" << "6.2"
+                      << "6.1" << "6.0" << "5.7.1"
                       << "5.7" << "5.5" << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5"
                       << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0"
                       << "2.7.2" << "2.7.1" << "2.7" << "2.5.1" << "2.5" << "2.4" << "2.3" << "2.2" << "2.1"
@@ -2618,3 +2638,109 @@ int Util::findAndReplace(const QString text_file_path,
     }
     return countOfLinesWithReplacements;
 }
+
+void Util::ensureAscending( double &mustBeTheSmaller,
+                            double &mustBeTheGreater )
+{
+    if( mustBeTheSmaller > mustBeTheGreater );
+    std::swap( mustBeTheSmaller, mustBeTheGreater );
+}
+
+void Util::appendPhysicalGEOEASColumn( const spectral::arrayPtr data,
+                                       const QString variable_name,
+                                       const QString file_path,
+                                       const QString NDV )
+{
+
+    // get the number of data lines in the source file
+    long long data_line_count = data->size();
+
+    // data may be of a regular GEO-EAS Caresian grid, so we need to follow the correct
+    // scan order, because the scan order of spectral::array differs from GEO-EAS convention.
+    uint nI = data->M();
+    uint nJ = data->N();
+    uint nK = data->K();
+    uint index_i = 0;
+    uint index_j = 0;
+    uint index_k = 0;
+
+    // create a new file for output
+    QFile outputFile(QString(file_path).append(".new"));
+    outputFile.open(QFile::WriteOnly | QFile::Text);
+    QTextStream out(&outputFile);
+
+    // open the destination file for reading
+    QFile inputFile(file_path);
+    if (inputFile.open(QIODevice::ReadOnly | QFile::Text)) {
+        QTextStream in(&inputFile);
+        uint line_index = 0;
+        uint data_line_index = 0;
+        uint n_vars = 0;
+        uint var_count = 0;
+        uint indexGEOEAS_new_variable = 0;
+        // for each line in the destination file...
+        while (!in.atEnd()) {
+            //...read its line
+            QString line = in.readLine();
+            // simply copy the first line (title)
+            if (line_index == 0) {
+                out << line << '\n';
+                // first number of second line holds the variable count
+                // writes an increased number of variables.
+                // TODO: try to keep the rest of the second line (not critical, but
+                // desirable)
+            } else if (line_index == 1) {
+                n_vars = Util::getFirstNumber(line);
+                out << (n_vars + 1) << '\n';
+                indexGEOEAS_new_variable = n_vars + 1; // the GEO-EAS index of the added
+                                                       // column equals the new number of
+                                                       // columns
+                // simply copy the current variable names
+            } else if (var_count < n_vars) {
+                out << line << '\n';
+                // if we're at the last existing variable, adds an extra line for the new
+                // variable
+                if ((var_count + 1) == n_vars) {
+                    out << variable_name << '\n';
+                }
+                ++var_count;
+                // treat the data lines until EOF
+            } else {
+                // if we didn't overshoot the source file...
+                if (data_line_index < data_line_count) {
+                    // output data value
+                    double value = (*data)( index_i, index_j, index_k );
+                    out << line << '\t' << QString::number(value) << '\n';
+                    //ensure correct scan order if the file is supposed to be a Cartesian grid.
+                    ++index_i;
+                    if( index_i == nI ) {
+                        index_i = 0;
+                        ++index_j;
+                    }
+                    if( index_j == nJ ) {
+                        index_j = 0;
+                        ++index_k;
+                    }
+                } else {
+                    //...otherwise append the no-data value of the destination file (this
+                    // object).
+                    out << line << '\t' << NDV << '\n';
+                }
+                // keep count of the source file data lines
+                ++data_line_index;
+            } // if's and else's for each file line case (header, var. count, var. name
+              // and data line)
+            // keep count of the source file lines
+            ++line_index;
+        } // for each line in destination file (this)
+        // close the destination file
+        inputFile.close();
+        // close the newly created file
+        outputFile.close();
+        // deletes the destination file
+        inputFile.remove();
+        // renames the new file, effectively replacing the destination file.
+        outputFile.rename(QFile(file_path).fileName());
+    }
+}
+
