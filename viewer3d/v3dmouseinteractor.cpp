@@ -106,6 +106,7 @@ void v3dMouseInteractor::OnLeftButtonUp()
                             valuesText = QString::number(values[0]);
                         else
                             valuesText = valuesText + "; " + QString::number(values[i]);
+                    Application::instance()->logInfo( "Picked cell id: " + QString::number( cellPicker->GetCellId() ) );
                     Application::instance()->logInfo( "Picked value(s): " + valuesText);
                 } else
                     Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): probing not possible if VTK object has no fields or more than 200 fields in it." );
