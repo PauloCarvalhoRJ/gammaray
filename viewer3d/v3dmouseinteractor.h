@@ -6,6 +6,7 @@
 #include <vtkSmartPointer.h>
 #include <vtkActor.h>
 #include <vtkMath.h>
+#include <memory>
 
 class View3DWidget;
 
@@ -25,8 +26,8 @@ public:
 
     virtual void OnMouseWheelBackward() override;
 
-    void setParentView3DWidget( View3DWidget* parentView3DWidget ){ m_ParentView3DWidget = parentView3DWidget; }
-    View3DWidget* getParentView3DWidget( ){ return m_ParentView3DWidget; }
+    void setParentView3DWidget( View3DWidget* parentView3DWidget );
+    View3DWidget* getParentView3DWidget( ){ return m_ParentView3DWidget.get(); }
 
     void rescalePickMarkerActor();
 
@@ -44,8 +45,11 @@ protected:
 
     /** WARNING: this pointer can't be initialized in the constructor
      * because it is defined by the vtkStandardNewMacro macro.
+     *  TODO: this pointer is managed by Qt.  Check whether the use of a smart pointer
+     *        to initialize it empty results in a possible double free (the smart pointer's and
+     *        Qt's).
      */
-    View3DWidget* m_ParentView3DWidget;
+    std::unique_ptr< View3DWidget > m_ParentView3DWidget;
 
     vtkSmartPointer<vtkMath> m_vtkMathObj;
 };

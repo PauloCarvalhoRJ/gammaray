@@ -433,6 +433,11 @@ public:
      */
     void setCategorical( uint variableIndex, const CategoryDefinition* cd );
 
+    /** This is called by the framework to performs an action upon user picking on the passed world
+      * coordinates *(e.g. display data values.).
+      */
+    virtual void probe( double pickedX, double pickedY, double pickedZ );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();

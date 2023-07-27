@@ -107,7 +107,12 @@ void v3dMouseInteractor::OnLeftButtonUp()
                         else
                             valuesText = valuesText + "; " + QString::number(values[i]);
                     Application::instance()->logInfo( "Picked cell id: " + QString::number( cellPicker->GetCellId() ) );
+                    Application::instance()->logInfo( "Picked vtkDataSet pointer: " + QString::number( (long long)dataSet ) );
                     Application::instance()->logInfo( "Picked value(s): " + valuesText);
+                    if( m_ParentView3DWidget )
+                        m_ParentView3DWidget->probeFurther( pos[0], pos[1], pos[2], dataSet, cellPicker->GetCellId() );
+                    else
+                        Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): a parent View3DWidget was not passed to this v3dMouseInteractor.  Probing info is limited." );
                 } else
                     Application::instance()->logWarn( "v3dMouseInteractor::OnLeftButtonUp(): probing not possible if VTK object has no fields or more than 200 fields in it." );
             }// if a cell was picked
@@ -147,6 +152,11 @@ void v3dMouseInteractor::OnMouseWheelBackward()
     vtkInteractorStyleTrackballCamera::OnMouseWheelBackward();
 
     rescalePickMarkerActor();
+}
+
+void v3dMouseInteractor::setParentView3DWidget(View3DWidget *parentView3DWidget)
+{
+    m_ParentView3DWidget = std::unique_ptr<View3DWidget>( parentView3DWidget );
 }
 
 void v3dMouseInteractor::rescalePickMarkerActor()
