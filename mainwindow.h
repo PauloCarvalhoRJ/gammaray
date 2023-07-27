@@ -250,6 +250,7 @@ private slots:
     void onExportToGRD();
     void onMCRFBayesianSim();
     void onReviewTransiogramBand();
+    void onRepositionGrid();
 
 private:
     /**

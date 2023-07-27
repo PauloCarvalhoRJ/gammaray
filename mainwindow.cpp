@@ -91,6 +91,7 @@
 #include "dialogs/sectiondialog.h"
 #include "dialogs/populatewithproportionsfromvpcdialog.h"
 #include "dialogs/subgriddialog.h"
+#include "dialogs/gridrepositiondialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -515,6 +516,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Extract subgrid", this, SLOT(onExtractSubgrid()));
                 _projectContextMenu->addAction("Add random phase for FFT", this, SLOT(onAddRandomPhaseForFFT()));
                 _projectContextMenu->addAction("Create grid with same specs", this, SLOT(onCreateGridSameGridSpecs()));
+                _projectContextMenu->addAction("Align/reposition", this, SLOT(onRepositionGrid()));
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
@@ -1455,6 +1457,17 @@ void MainWindow::onReviewTransiogramBand()
     }
 
     createOrReviewVerticalTransiogramModelBand( vtm1, vtm2 );
+}
+
+void MainWindow::onRepositionGrid()
+{
+    //Get the Cartesian grid object.
+    CartesianGrid* cg = dynamic_cast<CartesianGrid*>( _right_clicked_file );
+
+    //Get sampling rates from user
+    GridRepositionDialog* grd = new GridRepositionDialog( cg, this );
+
+    grd->show();
 }
 
 void MainWindow::openTransiographyBayesian()
