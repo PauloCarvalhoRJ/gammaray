@@ -125,6 +125,7 @@ public:
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
     virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
+    virtual void probe( double pickedX, double pickedY, double pickedZ );
 
 // File interface
 public:

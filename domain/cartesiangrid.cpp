@@ -878,5 +878,14 @@ void CartesianGrid::getDataSpatialLocation(uint line, double &x, double &y, doub
 
 bool CartesianGrid::isTridimensional()
 {
-	return m_nK > 1;
+    return m_nK > 1;
+}
+
+void CartesianGrid::probe(double pickedX, double pickedY, double pickedZ)
+{
+    uint i, j, k;
+    XYZtoIJK( pickedX, pickedY, pickedZ, i, j, k );
+    Application::instance()->logInfo("CartesianGrid::probe(): picked cell IJK = " + QString::number(i) +
+                                     ", " +  QString::number(j) +
+                                     ", " +  QString::number(k) );
 }
