@@ -881,11 +881,15 @@ bool CartesianGrid::isTridimensional()
     return m_nK > 1;
 }
 
-void CartesianGrid::probe(double pickedX, double pickedY, double pickedZ)
+void CartesianGrid::probe(double pickedX, double pickedY, double pickedZ, Attribute *targetAttribute)
 {
     uint i, j, k;
     XYZtoIJK( pickedX, pickedY, pickedZ, i, j, k );
     Application::instance()->logInfo("CartesianGrid::probe(): picked cell IJK = " + QString::number(i) +
                                      ", " +  QString::number(j) +
                                      ", " +  QString::number(k) );
+    if( targetAttribute )
+        Application::instance()->logInfo("CartesianGrid::probe(): picked attribute is " + targetAttribute->getName() );
+    else
+        Application::instance()->logWarn("CartesianGrid::probe(): picked attribute not passed (check probe() caller code) or not displayed." );
 }

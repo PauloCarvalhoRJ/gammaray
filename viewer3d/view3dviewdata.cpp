@@ -12,23 +12,27 @@
 
 View3DViewData::View3DViewData() :
     originalDataFile(nullptr),
+    originalAttribute(nullptr),
     samplingRate( 1 )
 {
     Application::instance()->logInfo("Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor) :
     actor( pActor ),
     actualDataSet(actualDataSet),
     originalDataFile(originalDataFile),
+    originalAttribute(originalAttribute),
     samplingRate( 1 )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkStructuredGridClip> pClipper) :
@@ -36,12 +40,14 @@ View3DViewData::View3DViewData(DataFile *originalDataFile,
     clipper( pClipper ),
     actualDataSet(actualDataSet),
     originalDataFile(originalDataFile),
+    originalAttribute(originalAttribute),
     samplingRate( 1 )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkExtractGrid> pSubgrider) :
@@ -49,12 +55,14 @@ View3DViewData::View3DViewData(DataFile *originalDataFile,
     subgrider( pSubgrider ),
     actualDataSet(actualDataSet),
     originalDataFile(originalDataFile),
+    originalAttribute(originalAttribute),
     samplingRate( 1 )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkExtractGrid> pSubgrider,
@@ -67,12 +75,14 @@ View3DViewData::View3DViewData(DataFile *originalDataFile,
     threshold( pThreshold ),
     actualDataSet(actualDataSet),
     originalDataFile(originalDataFile),
+    originalAttribute(originalAttribute),
     samplingRate( sRate )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkThreshold> pThreshold) :
@@ -80,12 +90,14 @@ View3DViewData::View3DViewData(DataFile *originalDataFile,
     threshold( pThreshold ),
     actualDataSet(actualDataSet),
     originalDataFile(originalDataFile),
+    originalAttribute(originalAttribute),
     samplingRate( 1 )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkDataSetMapper> pMapper,
@@ -95,12 +107,14 @@ View3DViewData::View3DViewData(DataFile *originalDataFile,
     threshold( pThreshold ),
     actualDataSet(actualDataSet),
     originalDataFile(originalDataFile),
+    originalAttribute(originalAttribute),
     samplingRate( 1 )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkDataSetMapper> pMapper) :
@@ -108,12 +122,14 @@ View3DViewData::View3DViewData(DataFile *originalDataFile,
    mapper( pMapper ),
    actualDataSet(actualDataSet),
    originalDataFile(originalDataFile),
+   originalAttribute(originalAttribute),
    samplingRate( 1 )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));
 }
 
 View3DViewData::View3DViewData(DataFile *originalDataFile,
+                               Attribute* originalAttribute,
                                vtkSmartPointer<vtkDataSet> actualDataSet,
                                vtkSmartPointer<vtkProp> pActor,
                                vtkSmartPointer<vtkThreshold> pThreshold,
@@ -123,6 +139,7 @@ View3DViewData::View3DViewData(DataFile *originalDataFile,
     volumeMapper( pVolumeMapper ),
     actualDataSet(actualDataSet),
     originalDataFile(originalDataFile),
+    originalAttribute(originalAttribute),
     samplingRate( 1 )
 {
     Application::instance()->logInfo("View3DViewData::View3DViewData(): Informed source vtkDataSet pointer: " + QString::number( (long long)(actualDataSet.Get()) ));

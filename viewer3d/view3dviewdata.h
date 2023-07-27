@@ -16,6 +16,7 @@ class vtkContourFilter;
 class vtkDataSet;
 
 class DataFile; //from /domain source subdirectory
+class Attribute; //from /domain source subdirectory
 
 /** This class is just a data structure to hold objects and info related to 3D visualization of a domain object.
  * E.g.: the vtkActor built for it.
@@ -26,20 +27,24 @@ public:
     View3DViewData();
 
     View3DViewData(DataFile* originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor);
 
     View3DViewData(DataFile *originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkStructuredGridClip> pClipper);
 
     View3DViewData(DataFile *originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkExtractGrid> pSubgrider);
 
     View3DViewData(DataFile *originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkExtractGrid> pSubgrider,
@@ -48,22 +53,26 @@ public:
                    int sRate = 1);
 
     View3DViewData(DataFile *originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkThreshold> pThreshold);
 
     View3DViewData(DataFile *originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkDataSetMapper> pMapper,
                    vtkSmartPointer<vtkThreshold> pThreshold);
 
     View3DViewData(DataFile *originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkDataSetMapper> pMapper);
 
     View3DViewData(DataFile *originalDataFile,
+                   Attribute* originalAttribute,
                    vtkSmartPointer<vtkDataSet> actualDataSet,
                    vtkSmartPointer<vtkProp> pActor,
                    vtkSmartPointer<vtkThreshold> pThreshold,
@@ -109,6 +118,10 @@ public:
 
     /** The pointer to the original domain data file used to build the visual objects refered in this object. */
     DataFile* originalDataFile;
+
+    /** The pointer to the original domain attribute in the data file whose values were used to build the visual
+     * objects refered in this object.  It may be null pointer if only geometry is displayed. */
+    Attribute* originalAttribute;
 
     /** Sampling rate. Default is 1: 1 cell per 1 sample in each topological direction (I, J, K). */
     int samplingRate;

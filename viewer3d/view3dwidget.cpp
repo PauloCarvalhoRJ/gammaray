@@ -262,7 +262,7 @@ void View3DWidget::probeFurther(double pickedX,
         if( viewData.actualDataSet.Get() == pickedDataSet ){
             found = true;
             if( viewData.originalDataFile ){
-                viewData.originalDataFile->probe( pickedX, pickedY, pickedZ );
+                viewData.originalDataFile->probe( pickedX, pickedY, pickedZ, viewData.originalAttribute );
             } else {
                 Application::instance()->logError("View3DWidget::probeFurther(): null DataFile pointer passed to the View3DViewData.  Probe information limited.");
             }
@@ -270,11 +270,10 @@ void View3DWidget::probeFurther(double pickedX,
         }
     }
 
-    if( found ){
-    } else {
+    if( ! found ){
         Application::instance()->logError("View3DWidget::probeFurther(): vtkDataSet not found.  Check whether the visual object "
                                          "builders in view3dbuilders.cpp are providing the pointer to the correct vtkDataSet object"
-                                         "when calling a View3DViewData constructor.");
+                                         " when calling a View3DViewData constructor.");
     }
 }
 
