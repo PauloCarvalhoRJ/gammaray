@@ -7,7 +7,6 @@
 #include "vtkObjectFactory.h"
 #include "vtkPen.h"
 #include "vtkStdString.h"
-#include "vtkUnicodeString.h"
 
 //-----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkBoundingRectContextDevice2D)
@@ -74,23 +73,7 @@ vtkRectf vtkBoundingRectContextDevice2D::GetBoundingRect()
 //-----------------------------------------------------------------------------
 void vtkBoundingRectContextDevice2D::DrawString(float* point, const vtkStdString& string)
 {
-  this->DrawString(point, vtkUnicodeString::from_utf8(string));
-}
-
-//-----------------------------------------------------------------------------
-void vtkBoundingRectContextDevice2D::DrawString(float* point, const vtkUnicodeString& string)
-{
-  if (!this->DelegateDevice)
-  {
-    vtkWarningMacro(<< "No DelegateDevice defined");
-    return;
-  }
-
-  float bounds[4];
-  this->DelegateDevice->ComputeJustifiedStringBounds(string.utf8_str(), bounds);
-
-  this->AddPoint(point[0] + bounds[0], point[1] + bounds[1]);
-  this->AddPoint(point[0] + bounds[0] + bounds[2], point[1] + bounds[1] + bounds[3]);
+  this->DrawString(point, string);
 }
 
 //-----------------------------------------------------------------------------
@@ -400,16 +383,6 @@ void vtkBoundingRectContextDevice2D::DrawEllipticArc(
 //-----------------------------------------------------------------------------
 void vtkBoundingRectContextDevice2D::ComputeStringBounds(
   const vtkStdString& string, float bounds[4])
-{
-  if (this->DelegateDevice)
-  {
-    this->DelegateDevice->ComputeStringBounds(string, bounds);
-  }
-}
-
-//-----------------------------------------------------------------------------
-void vtkBoundingRectContextDevice2D::ComputeStringBounds(
-  const vtkUnicodeString& string, float bounds[4])
 {
   if (this->DelegateDevice)
   {
