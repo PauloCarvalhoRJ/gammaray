@@ -7,7 +7,7 @@
 #include <itkGaussianInterpolateImageFunction.h>
 #include <itkEuler2DTransform.h>
 #include <itkResampleImageFilter.h>
-#include <itkImageFileWriter.hxx>
+#include <itkImageFileWriter.h>
 #include <itkPNGImageIOFactory.h>
 #include <itkCastImageFilter.h>
 #include <itkRescaleIntensityImageFilter.h>
