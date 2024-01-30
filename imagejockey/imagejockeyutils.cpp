@@ -26,10 +26,10 @@
 #include "imagejockey/gabor/gaborutils.h"
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/io.hpp>
-#include <itkBinaryThinningImageFilter.hxx>
-#include <itkImageFileWriter.hxx>
+#include <itkBinaryThinningImageFilter.h>
+#include <itkImageFileWriter.h>
 #include <itkPNGImageIOFactory.h>
-#include <itkRescaleIntensityImageFilter.hxx>
+#include <itkRescaleIntensityImageFilter.h>
 #include <itkMeanImageFilter.h>
 #include <itkMedianImageFilter.h>
 #include <itkSmoothingRecursiveGaussianImageFilter.h>
