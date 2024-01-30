@@ -4,6 +4,8 @@
 #
 #-------------------------------------------------
 
+CONFIG += c++14 #required by Boost > 1.72
+
 QT       += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
