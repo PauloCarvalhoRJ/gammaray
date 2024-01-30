@@ -803,7 +803,8 @@ LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
                -litkvnl_algo$$_ITK_VERSION_SUFFIX \
                -lITKIOPNG$$_ITK_VERSION_SUFFIX \
                -lITKTransform$$_ITK_VERSION_SUFFIX \
-               -lITKSmoothing$$_ITK_VERSION_SUFFIX
+               -lITKSmoothing$$_ITK_VERSION_SUFFIX \
+               -lITKConvolution$$_ITK_VERSION_SUFFIX
 
 #=============================================================================
 
