@@ -73,7 +73,7 @@ vtkRectf vtkBoundingRectContextDevice2D::GetBoundingRect()
 //-----------------------------------------------------------------------------
 void vtkBoundingRectContextDevice2D::DrawString(float* point, const vtkStdString& string)
 {
-  this->DrawString(point, string);
+  this->DrawMathTextString(point, string);
 }
 
 //-----------------------------------------------------------------------------
