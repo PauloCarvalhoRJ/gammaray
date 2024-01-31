@@ -38,6 +38,9 @@ public:
     /** Returns the VTK renderer used to paint the scene on this widget's canvas. */
     vtkSmartPointer<vtkRenderer> getRenderer() { return _rendererMainScene; }
 
+    /** Returns the VTK renderer used to paint the always-on-top labels. */
+    vtkSmartPointer<vtkRenderer> getForegroundRenderer() { return _rendererForeground; }
+
     /** Returns the current vertical exaggeration setting, */
     double getVerticalExaggeration() const;
 

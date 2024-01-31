@@ -40,6 +40,9 @@ void v3dMouseInteractor::OnLeftButtonUp()
         // Get pick position in 2D screen coordinates.
         int* clickPos = this->GetInteractor()->GetEventPosition();
 
+        m_ParentView3DWidget->getForegroundRenderer()->SetPreserveDepthBuffer( true );
+        m_ParentView3DWidget->getRenderer()->Render();
+
         // Get the 3D object under the 2D screen coordinates (ray casting).
         vtkSmartPointer<vtkPropPicker>  picker = vtkSmartPointer<vtkPropPicker>::New();
         picker->Pick(clickPos[0], clickPos[1], 0, this->GetDefaultRenderer());
@@ -118,6 +121,8 @@ void v3dMouseInteractor::OnLeftButtonUp()
 
     m_isLBdown = false;
     m_isDragging = false;
+
+    m_ParentView3DWidget->getForegroundRenderer()->SetPreserveDepthBuffer( false );
 
     // Forward the event to the superclass.
     vtkInteractorStyleTrackballCamera::OnLeftButtonUp();
