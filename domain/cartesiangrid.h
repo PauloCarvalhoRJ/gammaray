@@ -107,6 +107,17 @@ public:
                                 uint minJ, uint maxJ,
                                 uint minK, uint maxK );
 
+    /**
+     * Changes the grid's origin and cell sizes such that the given cells' centers are located
+     * at the given coordinates.  The lower left bottomost (llb) and upper right topmost (urt)
+     * cells are identified by their IJK coordinates.  The respective target coordinates are
+     * passed as parameters.
+     */
+    void reposition( uint llb_I, uint llb_J, uint llb_K,
+                     double llb_newX, double llb_newY, double llb_newZ,
+                     uint urt_I, uint urt_J, uint urt_K,
+                     double urt_newX, double urt_newY, double urt_newZ);
+
 //GridFile interface
 	virtual bool XYZtoIJK( double x, double y, double z,
 						   uint& i,   uint& j,   uint& k );
@@ -125,6 +136,7 @@ public:
 	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
     virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
+    virtual void probe( double pickedX, double pickedY, double pickedZ, Attribute* targetAttribute );
 
 // File interface
 public:

@@ -45,6 +45,7 @@ VTK_MODULE_INIT(vtkRenderingFreeType)
 #include "domain/application.h"
 #include "domain/project.h"
 #include "domain/projectcomponent.h"
+#include "domain/datafile.h"
 #include "view3dbuilders.h"
 #include "view3dconfigwidget.h"
 #include "view3dverticalexaggerationwidget.h"
@@ -247,6 +248,33 @@ View3DWidget::~View3DWidget()
 double View3DWidget::getVerticalExaggeration() const
 {
     return _verticalExaggWiget->getVerticalExaggeration();
+}
+
+void View3DWidget::probeFurther(double pickedX,
+                                double pickedY,
+                                double pickedZ,
+                                vtkDataSet *pickedDataSet,
+                                vtkIdType pickedCellId)
+{
+    //Iterate over the current displayed objects to find which corresponds to the picked vtkDataSet.
+    bool found = false;
+    for( View3DViewData& viewData : _currentObjects ){
+        if( viewData.actualDataSet.Get() == pickedDataSet ){
+            found = true;
+            if( viewData.originalDataFile ){
+                viewData.originalDataFile->probe( pickedX, pickedY, pickedZ, viewData.originalAttribute );
+            } else {
+                Application::instance()->logError("View3DWidget::probeFurther(): null DataFile pointer passed to the View3DViewData.  Probe information limited.");
+            }
+            break;
+        }
+    }
+
+    if( ! found ){
+        Application::instance()->logError("View3DWidget::probeFurther(): vtkDataSet not found.  Check whether the visual object "
+                                         "builders in view3dbuilders.cpp are providing the pointer to the correct vtkDataSet object"
+                                         " when calling a View3DViewData constructor.");
+    }
 }
 
 void View3DWidget::removeCurrentConfigWidget()

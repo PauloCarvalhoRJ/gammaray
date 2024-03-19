@@ -156,7 +156,7 @@ View3DViewData View3DBuilders::build(PointSet *object, View3DWidget */*widget3D*
         //controlled via user settings in the View3DWidget class.
     }
 
-    View3DViewData v3dd( actor );
+    View3DViewData v3dd( pointSet, nullptr, pointCloud, actor );
     v3dd.labelActor = textActor;
     return v3dd;
 }
@@ -462,7 +462,7 @@ View3DViewData View3DBuilders::buildForAttributeFromPointSet(PointSet* pointSet,
         //controlled via user settings in the View3DWidget class.
     }
 
-    View3DViewData v3dd( actor );
+    View3DViewData v3dd( pointSet, attribute, pointCloud, actor );
     v3dd.labelActor = textActor;
     return v3dd;
 }
@@ -588,7 +588,7 @@ View3DViewData View3DBuilders::buildForAttributeFromSegmentSet(SegmentSet *segme
         //controlled via user settings in the View3DWidget class.
     }
 
-    View3DViewData v3dd( tubeActor );
+    View3DViewData v3dd( segmentSet, attribute, tubeFilter->GetOutput(), tubeActor );
     v3dd.tubeFilter = tubeFilter;
     v3dd.labelActor = textActor;
     v3dd.captionActors = captionActors;
@@ -645,7 +645,7 @@ View3DViewData View3DBuilders::buildForMapCartesianGrid(CartesianGrid *cartesian
     actor->GetProperty()->BackfaceCullingOn();
     actor->GetProperty()->FrontfaceCullingOn();
 
-    return View3DViewData(actor);
+    return View3DViewData(cartesianGrid, nullptr, transformFilter->GetOutput(), actor);
 }
 
 
@@ -781,7 +781,7 @@ View3DViewData View3DBuilders::buildForAttributeInMapCartesianGridWithVtkStructu
 
     // Finally, return the actor along with other visual objects
     // so the user can make adjustments to rendering.
-    return View3DViewData(actor, sg, mapper, threshold);
+    return View3DViewData(cartesianGrid, attribute, threshold->GetOutput(), actor, sg, mapper, threshold);
 }
 
 View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianGrid, View3DWidget */*widget3D*/)
@@ -845,7 +845,7 @@ View3DViewData View3DBuilders::buildFor3DCartesianGrid(CartesianGrid *cartesianG
     actor->GetProperty()->EdgeVisibilityOn();
     actor->GetProperty()->SetRepresentationToWireframe();
 
-    return View3DViewData(actor);
+    return View3DViewData(cartesianGrid, nullptr, transformFilter->GetOutput(), actor);
 }
 
 View3DViewData View3DBuilders::buildForAttribute3DCartesianGridUserChoice(CartesianGrid *cartesianGrid,
@@ -1019,7 +1019,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCartesianGridWithIJKClipping(C
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
     //actor->GetProperty()->EdgeVisibilityOn();
-	return View3DViewData(actor, subGrid, mapper, threshold, srate);
+    return View3DViewData(cartesianGrid, attribute, threshold->GetOutput(), actor, subGrid, mapper, threshold, srate);
 }
 
 View3DViewData View3DBuilders::buildForGeoGridMesh( GeoGrid * geoGrid, View3DWidget * widget3D )
@@ -1064,7 +1064,7 @@ View3DViewData View3DBuilders::buildForGeoGridMesh( GeoGrid * geoGrid, View3DWid
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
 
-	return View3DViewData( actor );
+    return View3DViewData( geoGrid, nullptr, unstructuredGrid, actor );
 }
 
 View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attribute * attribute, View3DWidget* widget3D )
@@ -1174,7 +1174,7 @@ View3DViewData View3DBuilders::buildForAttributeGeoGrid( GeoGrid * geoGrid, Attr
 	actor->SetMapper(mapper);
 	//actor->GetProperty()->EdgeVisibilityOn();
 
-    return View3DViewData( actor, mapper, threshold );
+    return View3DViewData( geoGrid, attribute, threshold->GetOutput(), actor, mapper, threshold );
 }
 
 View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *cartesianGrid,
@@ -1213,7 +1213,7 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2D(CartesianGrid *car
     actor->SetMapper(mapper);
     //actor->GetProperty()->EdgeVisibilityOn();
 
-    return View3DViewData( actor );
+    return View3DViewData( cartesianGrid, attribute, threshold->GetOutput(), actor );
 }
 
 View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2Dpainted(CartesianGrid *cartesianGrid,
@@ -1268,7 +1268,7 @@ View3DViewData View3DBuilders::buildForSurfaceCartesianGrid2Dpainted(CartesianGr
             vtkSmartPointer<vtkActor>::New();
     actor->SetMapper(mapper);
 
-    return View3DViewData( actor, mapper );
+    return View3DViewData( cartesianGrid, attributePaintWith, threshold->GetOutput(), actor, mapper );
 }
 
 View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *widget3D)
@@ -1296,7 +1296,8 @@ View3DViewData View3DBuilders::buildForSection(Section *section, View3DWidget *w
     actor->GetProperty()->SetRepresentationToWireframe();
     actor->GetProperty()->SetEdgeColor(0, 0, 1);
 
-    return View3DViewData( actor );
+    /** Section is not actually a data file.  It is a composition of two data files (see docs). */
+    return View3DViewData( section->getCartesianGrid(), nullptr, structuredGrid, actor );
 }
 
 View3DViewData View3DBuilders::buildForAttributeSection(Section *section, Attribute *attribute, View3DWidget *widget3D)
@@ -1402,7 +1403,8 @@ View3DViewData View3DBuilders::buildForAttributeSection(Section *section, Attrib
     actor->SetMapper( mapper );
     actor->GetProperty()->EdgeVisibilityOff();
 
-    return View3DViewData( actor );
+    /** Section is not actually a data file.  It is a composition of two data files (see docs). */
+    return View3DViewData( section->getCartesianGrid(), attribute, threshold->GetOutput(), actor );
 }
 
 View3DViewData View3DBuilders::buildForAttribute2DContourLines(CartesianGrid *cartesianGrid,
@@ -1473,7 +1475,7 @@ View3DViewData View3DBuilders::buildForAttribute2DContourLines(CartesianGrid *ca
     actor->GetProperty()->SetColor(1.0, 1.0, 1.0);
     actor->GetProperty()->SetLineWidth(2.0);
 
-    View3DViewData v3dd( actor );
+    View3DViewData v3dd( cartesianGrid, attribute, contourFilter->GetOutput(), actor );
     v3dd.contourFilter = contourFilter;
     return v3dd;
 }
@@ -1583,7 +1585,7 @@ View3DViewData View3DBuilders::buildForAttribute3DCGridIJKClippingVolumetric(Car
     volume->SetMapper( volumeMapper );
     volume->SetProperty( volumeProperty );
 
-    return View3DViewData( volume, vtkSmartPointer<vtkThreshold>::New(), volumeMapper );
+    return View3DViewData( cartesianGrid, attribute, imageData, volume, vtkSmartPointer<vtkThreshold>::New(), volumeMapper );
 }
 
 vtkSmartPointer<vtkStructuredGrid> View3DBuilders::makeSurfaceFromSection(Section *section)

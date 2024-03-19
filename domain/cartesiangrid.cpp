@@ -855,6 +855,53 @@ CartesianGrid *CartesianGrid::makeSubGrid( uint minI, uint maxI,
     return subgrid;
 }
 
+void CartesianGrid::reposition(uint llb_I, uint llb_J, uint llb_K,
+                               double llb_newX, double llb_newY, double llb_newZ,
+                               uint urt_I, uint urt_J, uint urt_K,
+                               double urt_newX, double urt_newY, double urt_newZ)
+{
+    double newDX, newDY, newDZ;
+    double newX0, newY0, newZ0;
+
+    //compute the deltas in cell indexes of reference cells
+    uint deltaI = urt_I - llb_I;
+    uint deltaJ = urt_J - llb_J;
+    uint deltaK = urt_K - llb_K;
+
+    //compute how far the reference cells are supposed to be appart
+    double delta_newX = urt_newX - llb_newX;
+    double delta_newY = urt_newY - llb_newY;
+    double delta_newZ = urt_newZ - llb_newZ;
+
+    //compute the new cell sizes
+    if( deltaI > 0 )
+        newDX = delta_newX / deltaI;
+    else
+        newDX = 1.0;
+    if( deltaJ > 0 )
+        newDY = delta_newY / deltaJ;
+    else
+        newDY = 1.0;
+    if( deltaK > 0 )
+        newDZ = delta_newZ / deltaK;
+    else
+        newDZ = 1.0;
+
+    //compute the new origin for the grid
+    newX0 = llb_newX - newDX * llb_I - newDX/2;
+    newY0 = llb_newY - newDY * llb_J - newDY/2;
+    newZ0 = llb_newZ - newDZ * llb_K - newDZ/2;
+
+    //update metadata
+    setInfo( newX0, newY0, newZ0,
+             newDX, newDY, newDZ,
+             m_nI, m_nJ, m_nK,
+             _rot, m_nreal, _no_data_value, _nsvar_var_trn, _categorical_attributes );
+
+    //commit the metadata to the file system
+    updateMetaDataFile();
+}
+
 double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
 {
 	uint i, j, k;
@@ -878,5 +925,18 @@ void CartesianGrid::getDataSpatialLocation(uint line, double &x, double &y, doub
 
 bool CartesianGrid::isTridimensional()
 {
-	return m_nK > 1;
+    return m_nK > 1;
+}
+
+void CartesianGrid::probe(double pickedX, double pickedY, double pickedZ, Attribute *targetAttribute)
+{
+    uint i, j, k;
+    XYZtoIJK( pickedX, pickedY, pickedZ, i, j, k );
+    Application::instance()->logInfo("CartesianGrid::probe(): picked cell IJK = " + QString::number(i) +
+                                     ", " +  QString::number(j) +
+                                     ", " +  QString::number(k) );
+    if( targetAttribute )
+        Application::instance()->logInfo("CartesianGrid::probe(): picked attribute is " + targetAttribute->getName() );
+    else
+        Application::instance()->logWarn("CartesianGrid::probe(): picked attribute not passed (check probe() caller code) or not displayed." );
 }

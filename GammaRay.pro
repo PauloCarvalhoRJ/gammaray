@@ -36,6 +36,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/gridrepositiondialog.cpp \
     dialogs/listbuilderdialog.cpp \
     dialogs/mcrfbayesiansimdialog.cpp \
     dialogs/populatewithproportionsfromvpcdialog.cpp \
@@ -308,6 +309,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/gridrepositiondialog.h \
     dialogs/listbuilderdialog.h \
     dialogs/mcrfbayesiansimdialog.h \
     dialogs/populatewithproportionsfromvpcdialog.h \
@@ -588,6 +590,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/gridrepositiondialog.ui \
     dialogs/listbuilderdialog.ui \
     dialogs/mcrfbayesiansimdialog.ui \
     dialogs/populatewithproportionsfromvpcdialog.ui \
