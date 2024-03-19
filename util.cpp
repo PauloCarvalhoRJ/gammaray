@@ -2749,7 +2749,7 @@ std::vector< std::pair<QString, QString> > Util::parseConfigurationFile(const QS
 {
     QStringList tags;
     QString description;
-    QRegularExpression re_pair("^([a-zA-Z_$][\\w$]*)=(.*)$");
+    QRegularExpression re_pair("^([a-zA-Z_$][\\w$]*)[\\s]*=[\\s]*(.*)$");
     std::vector< std::pair<QString, QString> > result;
 
     QFile file( path );
