@@ -32,6 +32,11 @@ public:
     uint    getSearchAlgorithmOptionForSimGrid();
     uint    getSaveRealizationsOption();
     QString getSaveRealizationsPath();
+
+    /** Returns a multi-line text listing the values of the parameters.
+     * This is useful so the user can check the parameters.
+     */
+    QString print();
 };
 
 #endif // COMMONSIMULATIONPARAMETERS_H
