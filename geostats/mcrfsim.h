@@ -46,7 +46,6 @@ enum class MCRFMode : unsigned int {
     BAYESIAN = 1 /** Some hyperparameters are drawn from an interval or set for each realization. */
 };
 
-
 /** A multithreaded implementation of the Markov Chains Random Field Simulations with secondary data and
  * probability integration with the Tau Model.  This algorithm uses the Mersenne Twister pseudo-random generator
  * of 32-bit numbers with a state size of 19937 bits implemented as C++ STL's std::mt19937 class to generate its
@@ -195,6 +194,14 @@ public:
      * @see MCRFMode
      */
     void setMode(const MCRFMode &mode);
+
+    /** This method is normally called in the program's main() when the user wants to run MCRF
+     * without interacting with dialogs. In this case, the user provides a path to a
+     * complete configuration file.
+     * @return The status code to be returned in main(). Normally it should be zero for a
+     *         successful run and non-zero for error in execution.
+     */
+    static int runUnattended();
 
 private:
     /** The simulation execution mode.
