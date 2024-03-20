@@ -897,6 +897,31 @@ public:
                                             const QString file_path,
                                             const QString NDV = "-999999" );
 
+    /**
+     * Parses a text file consisting of lines with VARIABLE=VALUE pairs.
+     * Lines not following this format are ignored.
+     * @return A vector whose elements are pairs of strings: 1st element is the variable name
+     *         and 2nd element is the value.
+     * @see getConfigurationValue()
+     */
+    static std::vector< std::pair<QString, QString> > parseConfigurationFile( const QString path );
+
+    /**
+     * Returns the value set for a given variable in a vector of pairs of VARIABLE-VALUE.
+     * @param configs The vector containing the configurations.  The 1st in the pairs are the variable names.
+     *                The 2nd in the pairs are the variable values.
+     * @param variable The configuration variable to search for.
+     * @return The configuration value.  It is empty whether the variable is undefined or is blank.
+     * @see parseConfigurationFile()
+     * @note The search is case-sensitive.
+     * @note The search is O(n) and involves string comparisons, so the computational cost of this method is high.
+     *       Hence, do not use this with large vectors.  This is intended for configurations sets with 1000s
+     *       configurations at most.
+     * @note If there is more than one variable with the same name, the value of the first one is returned.
+     */
+    static QString getConfigurationValue( const std::vector< std::pair<QString, QString> >& configs,
+                                          const QString variable );
+
 };
 
 #endif // UTIL_H

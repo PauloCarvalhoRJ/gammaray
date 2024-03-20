@@ -731,6 +731,12 @@ void DataFile::setCategorical(uint variableIndex, const CategoryDefinition *cd)
     this->updateMetaDataFile();
 }
 
+void DataFile::probe(double pickedX, double pickedY, double pickedZ, Attribute *targetAttribute)
+{
+    Application::instance()->logWarn( "DataFile::probe(): Default implementation called.  Objects of type "
+                                       + getTypeName() + " must implement one according to their particular characteristics.  Probe information is limited." );
+}
+
 void DataFile::replacePhysicalFile(const QString from_file_path)
 {
     // copies the source file over the current physical file in project.

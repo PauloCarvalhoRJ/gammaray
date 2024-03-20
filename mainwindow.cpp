@@ -91,6 +91,7 @@
 #include "dialogs/sectiondialog.h"
 #include "dialogs/populatewithproportionsfromvpcdialog.h"
 #include "dialogs/subgriddialog.h"
+#include "dialogs/gridrepositiondialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -110,6 +111,7 @@
 #include "imagejockey/imagejockeyutils.h"
 #include "domain/auxiliary/valuestransferer.h"
 #include "domain/verticaltransiogrammodel.h"
+#include "geostats/mcrfsim.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -130,9 +132,18 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     //puts application name and version in window title bar.
     this->setWindowTitle(APP_NAME_VER);
-    //maximizes the window
-    this->resize(800, 600); //WEIRD! this is needed so showMaximized() works properly in UHD displays under Windows.
-    this->showMaximized();
+
+
+    //Passing -MCRF as argument makes GammaRay run in unattended mode (runs the Markov Chains Random Field algorithm).
+    //In this case, the main window is minimized and the user must provide a configuration file.
+    if( Util::programWasCalledWithCommandLineArgument("-MCRF") ){
+        this->setWindowState( Qt::WindowMinimized );
+    } else {
+        //maximizes the window
+        this->resize(800, 600); //WEIRD! this is needed so showMaximized() works properly in UHD displays under Windows.
+        this->showMaximized();
+    }
+
     //retore main window splitter position
     ui->splitter->restoreState( Application::instance()->getMainWindowSplitterSetting() );
     //retore contents/message splitter position
@@ -224,6 +235,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //setup a timer to update the status bar message every 2 seconds.
     QTimer *timer = new QTimer(this);
     connect(timer, SIGNAL(timeout()), this, SLOT(onUpdateStatusBar()));
+    connect(timer, SIGNAL(timeout()), this, SLOT(onRunStuffInUnattendedMode()));
     timer->start(2000); //time specified in ms
 }
 
@@ -515,6 +527,7 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 _projectContextMenu->addAction("Extract subgrid", this, SLOT(onExtractSubgrid()));
                 _projectContextMenu->addAction("Add random phase for FFT", this, SLOT(onAddRandomPhaseForFFT()));
                 _projectContextMenu->addAction("Create grid with same specs", this, SLOT(onCreateGridSameGridSpecs()));
+                _projectContextMenu->addAction("Align/reposition", this, SLOT(onRepositionGrid()));
             }
             if( _right_clicked_file->getFileType() == "CATEGORYDEFINITION" ){
                 _projectContextMenu->addAction("Create category p.d.f. ...", this, SLOT(onCreateCategoryPDF()));
@@ -1455,6 +1468,17 @@ void MainWindow::onReviewTransiogramBand()
     }
 
     createOrReviewVerticalTransiogramModelBand( vtm1, vtm2 );
+}
+
+void MainWindow::onRepositionGrid()
+{
+    //Get the Cartesian grid object.
+    CartesianGrid* cg = dynamic_cast<CartesianGrid*>( _right_clicked_file );
+
+    //Get sampling rates from user
+    GridRepositionDialog* grd = new GridRepositionDialog( cg, this );
+
+    grd->show();
 }
 
 void MainWindow::openTransiographyBayesian()
@@ -2610,6 +2634,18 @@ void MainWindow::onRFFT()
 void MainWindow::onUpdateStatusBar()
 {
     statusBar()->showMessage( "memory usage = " + Util::humanReadable( Util::getPhysicalRAMusage() ) + "B" );
+}
+
+void MainWindow::onRunStuffInUnattendedMode()
+{
+    //Makes sure the MCRF algorithm runs just once
+    //as it likely takes way more than the timer update time to complete.
+    static bool MCRFwasRun = false;
+    if( ! MCRFwasRun ){
+        if( Util::programWasCalledWithCommandLineArgument("-MCRF") )
+            QApplication::exit( MCRFSim::runUnattended() ); //terminates application once the algorithm finishes.
+        MCRFwasRun = true;
+    }
 }
 
 void MainWindow::onMachineLearning()

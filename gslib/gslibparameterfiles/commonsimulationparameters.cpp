@@ -1,6 +1,8 @@
 #include "commonsimulationparameters.h"
 #include "gslib/gslibparameterfiles/gslibparamtypes.h"
 
+#include <QStringBuilder> //for the += and % operators on QString in the print() method.
+
 CommonSimulationParameters::CommonSimulationParameters() :
     GSLibParameterFile({
                           "<string>                                              -Basename for realization variables",                          // 0
@@ -159,4 +161,30 @@ uint CommonSimulationParameters::getSaveRealizationsOption()
 QString CommonSimulationParameters::getSaveRealizationsPath()
 {
     return getParameter<GSLibParDir*>(12)->_path;
+}
+
+QString CommonSimulationParameters::print()
+{
+    QString result;
+    result += "   Base name for realizations = " % getBaseNameForRealizationVariables() % '\n';
+    result += "   Seed for random number generator = " % QString::number(getSeed()) % '\n';
+    result += "   Number of realizations = " % QString::number(getNumberOfRealizations()) % '\n';
+    result += "   Search ellipsoid:\n";
+    result += "      range max.  = " % QString::number(getSearchEllipHMax()) % '\n';
+    result += "      range min.  = " % QString::number(getSearchEllipHMin()) % '\n';
+    result += "      range vert. = " % QString::number(getSearchEllipHVert()) % '\n';
+    result += "      azimuth     = " % QString::number(getSearchEllipAzimuth()) % '\n';
+    result += "      dip         = " % QString::number(getSearchEllipDip()) % '\n';
+    result += "      roll        = " % QString::number(getSearchEllipRoll()) % '\n';
+    result += "   Max. number of prim. data = " % QString::number(getNumberOfSamples()) % '\n';
+    result += "   Min. number of prim. data = " % QString::number(getMinNumberOfSamples()) % '\n';
+    result += "   Number of sectors = " % QString::number(getNumberOfSectors()) % '\n';
+    result += "   Min. number of prim. data per sector = " % QString::number(getMinNumberOfSamplesPerSector()) % '\n';
+    result += "   Max. number of prim. data per sector = " % QString::number(getMaxNumberOfSamplesPerSector()) % '\n';
+    result += "   Min. distance between sec. data = " % QString::number(getMinDistanceBetweenSecondaryDataSamples()) % '\n';
+    result += "   Max. number of previously simulated nodes to use = " % QString::number(getNumberOfSimulatedNodesForConditioning()) % '\n';
+    result += "   Search algorithm option = " % QString::number(getSearchAlgorithmOptionForSimGrid()) % " (0=generic rtree based 1=tuned for large data sets 2=tuned for Cartesian grids)\n";
+    result += "   Save realizations as = " % QString::number(getSaveRealizationsOption()) % " (0=variables in simulation grid 1=separate grid files in project 2=separate grid files elsewhere (specify path below))\n";
+    result += "   Save realizations path (needed if option above is 2) = " % getSaveRealizationsPath() % '\n';
+    return result;
 }

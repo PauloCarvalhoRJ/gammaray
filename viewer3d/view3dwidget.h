@@ -26,6 +26,7 @@ class vtkRenderer;
 class vtkDistanceWidget;
 class View3DTextConfigWidget;
 class v3dMouseInteractor;
+class vtkDataSet;
 
 class View3DWidget : public QWidget
 {
@@ -38,8 +39,26 @@ public:
     /** Returns the VTK renderer used to paint the scene on this widget's canvas. */
     vtkSmartPointer<vtkRenderer> getRenderer() { return _rendererMainScene; }
 
+    /** Returns the VTK renderer used to paint the always-on-top labels. */
+    vtkSmartPointer<vtkRenderer> getForegroundRenderer() { return _rendererForeground; }
+
     /** Returns the current vertical exaggeration setting, */
     double getVerticalExaggeration() const;
+
+    /** This method is typically called from v3dMouseInteractor after a probing event
+     * to get information not available at VTK mouse interactor context.
+     * @param pickedX picked world coordinate.
+     * @param pickedY picked world coordinate.
+     * @param pickedZ picked world coordinate.
+     * @param pickedDataSet VTK representation of the picked data object (e.g. Cartesian grid).
+     * @param pickedCellId Picked cell of the VTK representation of the picked data object.  This value corresponds,
+     *               for example, to the run-lenght index of the corresponding cell of a Cartesian grid (not resampled).
+     */
+    void probeFurther( double pickedX,
+                       double pickedY,
+                       double pickedZ,
+                       vtkDataSet* pickedDataSet,
+                       vtkIdType pickedCellId );
 
 private:
     Ui::View3DWidget *ui;

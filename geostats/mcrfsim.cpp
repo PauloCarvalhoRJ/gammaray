@@ -10,6 +10,7 @@
 #include "domain/pointset.h"
 #include "domain/segmentset.h"
 #include "domain/project.h"
+#include "domain/objectgroup.h"
 #include "geostats/searchneighborhood.h"
 #include "geostats/searchellipsoid.h"
 #include "geostats/pointsetcell.h"
@@ -22,7 +23,8 @@
 #include <QApplication>
 #include <QProgressDialog>
 #include <QDir>
-#include<fstream>
+#include <QRegularExpression>
+#include <fstream>
 
 MCRFSim::MCRFSim( MCRFMode mode ) :
     //---------simulation parameters----------------
@@ -1259,4 +1261,239 @@ QString MCRFSim::getReportFilePathForBayesianModeMT() const
     else /* user opted to save realizations inside the project (either as separate files or variables in the simulation grid*/
         directory = Application::instance()->getProject()->getTmpPath();
     return directory + QDir::separator() + "latestMCRFSimBayesianReport.xml";
+}
+
+/*static*/ int MCRFSim::runUnattended()
+{
+    QString annoucement("Welcome to " + QString(APP_NAME) + " v" + QString(APP_VERSION) + " unattended mode." );
+    std::cout << annoucement.toStdString() << std::endl;
+    std::cout << "running the Markov Chains Random Field algorithm..." << std::endl;
+    QStringList arguments = QCoreApplication::arguments();
+    if( arguments.size() == 3 ){ //correct command line argument count.
+
+        QString configFile(arguments[2]);
+        std::cout << "CONFIGURATION FILE: " << configFile.toStdString() << std::endl;
+
+        //check whether configuration file is available.
+        {
+            QFile file( configFile );
+            if( ! file.exists() ){
+                std::cerr << "ERROR: configuration file not found, not accessible or unreachable." << std::endl;
+                std::cerr << "       please, check network connection, user privileges, path spelling, etc." << std::endl;
+                return 1; //sign execution completed with error.
+            }
+        } //sanity check
+
+        //parse configuration file
+        std::vector< std::pair<QString, QString> > configs = Util::parseConfigurationFile( configFile );
+        std::cout << "CONFIGURATIONS: " << std::endl;
+        for( const std::pair<QString, QString>& config : configs )
+            std::cout << "   " << config.first.toStdString() << " = " << config.second.toStdString() << std::endl;
+        std::cout << "END OF CONFIGURATIONS." << std::endl;
+
+        //get the project directory
+        QString projectDir = Util::getConfigurationValue( configs, "PROJECT_DIR_PATH" );
+        { //check whether project directory is available.
+            QDir dir( projectDir );
+            if( ! dir.exists() ){
+                std::cerr << "ERROR: project directory not found, not accessible or unreachable." << std::endl;
+                std::cerr << "       please, check network connection, user privileges, path spelling, etc." << std::endl;
+                return 1; //sign execution completed with error.
+            }
+        } //sanity check
+
+        //open the project directory containing the data set
+        Application::instance()->openProject( projectDir );
+        //Application::instance()->getMainWindow()->displayApplicationInfo(); //this
+        std::cout << "Project opened: " << Application::instance()->getProject()->getName().toStdString() << std::endl;
+
+        //get the common simulation parameteres GSLIB-like file
+        QString commonSimParFile = Util::getConfigurationValue( configs, "COMMON_SIMULATION_PARAMETERS_PAR_FILE" );
+        { //check whether project directory is available.
+            QFile file( commonSimParFile );
+            if( ! file.exists() ){
+                std::cerr << "ERROR: common simulation parameter file not found, not accessible or unreachable." << std::endl;
+                std::cerr << "       please, check network connection, user privileges, path spelling, etc." << std::endl;
+                return 1; //sign execution completed with error.
+            }
+        } //sanity check
+
+        //create a new MCRF simulation parametrized with the common simulation parameter file
+        MCRFSim mcrfSim( MCRFMode::NORMAL );
+        mcrfSim.m_commonSimulationParameters = new CommonSimulationParameters();
+        mcrfSim.m_commonSimulationParameters->setValuesFromParFile( commonSimParFile );
+        std::cout << "Simulation parameters loaded: " << commonSimParFile.toStdString() << std::endl;
+        std::cout << "SIMULATION PARAMETERS: " << std::endl;
+        std::cout << mcrfSim.m_commonSimulationParameters->print().toStdString();
+        std::cout << "END OF SIMULATION PARAMETERS." << std::endl;
+
+        //-----------------------configure and check the simulation object---------------------------
+        std::cout << "PREPARING THE SIMULATION... " << std::endl;
+        Project* project = Application::instance()->getProject();
+
+        QString primDataFileName = Util::getConfigurationValue( configs, "PRIMARY_DATA_FILE" );
+        ProjectComponent* pc = project->getDataFilesGroup()->getChildByName( primDataFileName );
+        DataFile* primDataFile = dynamic_cast<DataFile*>( pc );
+        if( ! primDataFile ){
+            std::cerr << "ERROR: " << primDataFileName.toStdString() << " is not a data file." << std::endl;
+            std::cerr << "       please, check the PRIMARY_DATA_FILE value in "
+                      << configFile.toStdString() << " file." << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Primary data file located." << std::endl;
+
+        QString primDataVarName = Util::getConfigurationValue( configs, "PRIMARY_DATA_VARIABLE" );
+        Attribute* primaryVariable = primDataFile->getAttributeFromGEOEASIndex( primDataFile->getFieldGEOEASIndex( primDataVarName ) );
+        if( ! primaryVariable ){
+            std::cerr << "ERROR: primary variable " << primDataVarName.toStdString() << " not found in "
+                                   << primDataFileName.toStdString() << "." << std::endl;
+            std::cerr << "       please, check the PRIMARY_DATA_VARIABLE value in "
+                      << configFile.toStdString() << " file." << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Primary variable located." << std::endl;
+        mcrfSim.m_atPrimary = primaryVariable;
+
+        QString primDataGradFieldName = Util::getConfigurationValue( configs, "PRIMARY_DATA_GRADATION_FIELD" );
+        Attribute* primDataGradField  = primDataFile->getAttributeFromGEOEASIndex( primDataFile->getFieldGEOEASIndex( primDataGradFieldName ) );
+        if( ! primDataGradField ){
+            std::cerr << "ERROR: gradation field " << primDataGradFieldName.toStdString() << " not found in "
+                                   << primDataFileName.toStdString() << "." << std::endl;
+            std::cerr << "       please, check the PRIMARY_DATA_GRADATION_FIELD value in "
+                      << configFile.toStdString() << " file." << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Gradation field in primary data located." << std::endl;
+        mcrfSim.m_gradationFieldOfPrimaryData = primDataGradField;
+
+        QString simGridFileName = Util::getConfigurationValue( configs, "SIMULATION_GRID_FILE" );
+        pc = project->getDataFilesGroup()->getChildByName( simGridFileName );
+        CartesianGrid* simGridFile = dynamic_cast<CartesianGrid*>( pc );
+        if( ! simGridFile ){
+            std::cerr << "ERROR: " << simGridFileName.toStdString() << " is not a Cartesian grid." << std::endl;
+            std::cerr << "       please, check the SIMULATION_GRID_FILE value in "
+                      << configFile.toStdString() << " file." << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Simulation grid file located." << std::endl;
+        mcrfSim.m_cgSim = simGridFile;
+
+        QString secDataGradFieldName = Util::getConfigurationValue( configs, "SIMULATION_GRID_GRADATION_FIELD" );
+        Attribute* secDataGradField  = simGridFile->getAttributeFromGEOEASIndex( simGridFile->getFieldGEOEASIndex( secDataGradFieldName ) );
+        if( ! secDataGradField ){
+            std::cerr << "ERROR: gradation field " << primDataGradFieldName.toStdString() << " not found in "
+                                   << simGridFileName.toStdString() << "." << std::endl;
+            std::cerr << "       please, check the SIMULATION_GRID_GRADATION_FIELD value in "
+                      << configFile.toStdString() << " file." << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Gradation field in simulation grid located." << std::endl;
+        mcrfSim.m_gradationFieldOfSimGrid = secDataGradField;
+
+        QString probFieldNames = Util::getConfigurationValue( configs, "SIMULATION_GRID_PROB_FIELDS" );
+        QStringList probFieldNameList = probFieldNames.split(",");
+        for( QString probFieldName : probFieldNameList ){
+            Attribute* probField  = simGridFile->getAttributeFromGEOEASIndex( simGridFile->getFieldGEOEASIndex( probFieldName ) );
+            if( ! probField ){
+                std::cerr << "ERROR: probability field " << probFieldName.toStdString() << " not found in "
+                                       << simGridFileName.toStdString() << "." << std::endl;
+                std::cerr << "       please, check the SIMULATION_GRID_PROB_FIELDS values list in "
+                          << configFile.toStdString() << " file." << std::endl;
+                return 1; //sign execution completed with error.
+            }
+            mcrfSim.m_probFields.push_back( probField );
+        }
+        if( ! mcrfSim.m_probFields.empty() )
+            std::cout << "Probability fields in simulation grid located." << std::endl;
+        else
+            std::cout << "No probability fields in simulation grid will be used." << std::endl;
+
+        QString globalPDFFileName = Util::getConfigurationValue( configs, "GLOBAL_PDF_FILE" );
+        pc = project->getResourcesGroup()->getChildByName( globalPDFFileName );
+        CategoryPDF* globalPDFFile = dynamic_cast<CategoryPDF*>( pc );
+        if( ! globalPDFFile ){
+            std::cerr << "ERROR: " << globalPDFFileName.toStdString() << " is not a category PDF file." << std::endl;
+            std::cerr << "       please, check the GLOBAL_PDF_FILE value in "
+                      << configFile.toStdString() << " file." << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Global PDF file located." << std::endl;
+        mcrfSim.m_pdf = globalPDFFile;
+
+        QString transiogramFileName = Util::getConfigurationValue( configs, "TRANSIOGRAM_FILE" );
+        pc = project->getVariogramsGroup()->getChildByName( transiogramFileName );
+        VerticalTransiogramModel* transiogramFile = dynamic_cast<VerticalTransiogramModel*>( pc );
+        if( ! transiogramFile ){
+            std::cerr << "ERROR: " << transiogramFileName.toStdString() << " is not a transiogram model file." << std::endl;
+            std::cerr << "       please, check the TRANSIOGRAM_FILE value in "
+                      << configFile.toStdString() << " file." << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Transiogram model file located." << std::endl;
+        mcrfSim.m_transiogramModel = transiogramFile;
+
+        QString tauFactorForTransiography = Util::getConfigurationValue( configs, "TAU_FACTOR_FOR_TRANSIOGRAPHY" );
+        if( ! tauFactorForTransiography.isEmpty() )
+            mcrfSim.m_tauFactorForTransiography = tauFactorForTransiography.toDouble();
+        else
+            std::cout << "Unspecified tau factor for transiography.  A default value will be used." << std::endl;
+        std::cout << "Tau factor for transiography = " << QString::number(mcrfSim.m_tauFactorForTransiography).toStdString()  << std::endl;
+
+        QString tauFactorForSecData = Util::getConfigurationValue( configs, "TAU_FACTOR_FOR_PROB_FIELDS" );
+        if( ! tauFactorForSecData.isEmpty() )
+            mcrfSim.m_tauFactorForProbabilityFields = tauFactorForSecData.toDouble();
+        else
+            std::cout << "Unspecified tau factor for probability fields.  A default value will be used." << std::endl;
+        std::cout << "Tau factor for probability fields = " << QString::number(mcrfSim.m_tauFactorForProbabilityFields).toStdString()  << std::endl;
+
+        QString invertGradFieldConvetionFlag = Util::getConfigurationValue( configs, "INVERT_GRADATION_FIELD_CONVENTION" );
+        if( ! invertGradFieldConvetionFlag.isEmpty() ){
+            bool boolValue = QVariant(invertGradFieldConvetionFlag).toBool();
+            mcrfSim.m_invertGradationFieldConvention = boolValue;
+        } else
+            std::cout << "Flag to invert gradation field convention omitted.  A default value will be used." << std::endl;
+        std::cout << "Invert gradation field convention = " << ( mcrfSim.m_invertGradationFieldConvention ? "yes" : "no" ) << std::endl;
+
+        QString maxNumberOfThreads = Util::getConfigurationValue( configs, "MAX_NUMBER_OF_THREADS" );
+        if( ! maxNumberOfThreads.isEmpty() )
+            mcrfSim.m_maxNumberOfThreads = maxNumberOfThreads.toInt();
+        else
+            std::cout << "Unspecified maximum number of threads.  A default value will be used." << std::endl;
+        if( mcrfSim.m_maxNumberOfThreads == 0 )
+            mcrfSim.m_maxNumberOfThreads = std::thread::hardware_concurrency();
+        if( mcrfSim.m_maxNumberOfThreads < 1 ){
+            std::cerr << "ERROR: MAX_NUMBER_OF_THREADS is 0, however the program was unable to detect the number of logical processors." << std::endl;
+            std::cerr << "       please, set a value for MAX_NUMBER_OF_THREADS greater than 0. " << std::endl;
+            return 1; //sign execution completed with error.
+        }
+        std::cout << "Max. number of threads = " << QString::number(mcrfSim.m_maxNumberOfThreads).toStdString()  << std::endl;
+        //-----------------------end of configure the simulation object---------------------------
+
+        //check whether the simulation can start
+        if( ! mcrfSim.isOKtoRun() ){
+            std::cerr << "ERROR: simulation cannot start." << std::endl;
+            std::cerr << "REASON: " << mcrfSim.getLastError().toStdString() << std::endl;
+            std::cerr << "Solve the issue described above and try again." << std::endl;
+            return 1; //sign execution completed with error.
+        } else {
+            std::cout << "SIMULATION IS OK TO PROCEED. " << std::endl;
+        }
+
+        //run the simulation
+        std::cout << "Simulation running... " << std::endl;
+        if( ! mcrfSim.run() ){
+            std::cerr << "ERROR: simulation failed to complete." << std::endl;
+            std::cerr << "REASON: " << mcrfSim.getLastError().toStdString() << std::endl;
+            return 1; //sign execution completed with error.
+        }
+
+        std::cout << "SIMULATION COMPLETED SUCCESSFULLY. " << std::endl;
+        return 0; //sign execution completed normally.
+
+    } else { //incorrect command line argument count.
+        std::cerr << "ERROR: must inform the path to the configuration file." << std::endl;
+        std::cerr << "       Example of a well-formed command: GammaRay[.exe] -MCRF C:/Foo/MCRF.config" << std::endl;
+        return 1; //sign execution completed with error.
+    }
+    printf("\n");
 }

@@ -433,6 +433,12 @@ public:
      */
     void setCategorical( uint variableIndex, const CategoryDefinition* cd );
 
+    /** This is called by the framework to performs an action upon user picking on the passed world
+      * coordinates *(e.g. display data values.).
+      * @param targetAttribute The attribute whose values are being probed.  May be null if only data geometry is being displayed.
+      */
+    virtual void probe( double pickedX, double pickedY, double pickedZ, Attribute* targetAttribute );
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();

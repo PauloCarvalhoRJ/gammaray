@@ -4,6 +4,8 @@
 #
 #-------------------------------------------------
 
+CONFIG += c++14 #required by Boost > 1.72
+
 QT       += core gui charts
 
 greaterThan(QT_MAJOR_VERSION, 5): QT += widgets
@@ -34,6 +36,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
+    dialogs/gridrepositiondialog.cpp \
     dialogs/listbuilderdialog.cpp \
     dialogs/mcrfbayesiansimdialog.cpp \
     dialogs/populatewithproportionsfromvpcdialog.cpp \
@@ -306,6 +309,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
+    dialogs/gridrepositiondialog.h \
     dialogs/listbuilderdialog.h \
     dialogs/mcrfbayesiansimdialog.h \
     dialogs/populatewithproportionsfromvpcdialog.h \
@@ -586,6 +590,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
+    dialogs/gridrepositiondialog.ui \
     dialogs/listbuilderdialog.ui \
     dialogs/mcrfbayesiansimdialog.ui \
     dialogs/populatewithproportionsfromvpcdialog.ui \
@@ -801,7 +806,8 @@ LIBS        += -lITKCommon$$_ITK_VERSION_SUFFIX \
                -litkvnl_algo$$_ITK_VERSION_SUFFIX \
                -lITKIOPNG$$_ITK_VERSION_SUFFIX \
                -lITKTransform$$_ITK_VERSION_SUFFIX \
-               -lITKSmoothing$$_ITK_VERSION_SUFFIX
+               -lITKSmoothing$$_ITK_VERSION_SUFFIX \
+               -lITKConvolution$$_ITK_VERSION_SUFFIX
 
 #=============================================================================
 
@@ -847,7 +853,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.17
+VERSION = 6.18
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

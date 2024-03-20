@@ -45,6 +45,7 @@
 #include "spectral/spectral.h"
 #include <QStringBuilder>
 #include <QMessageBox>
+#include <algorithm>
 
 //includes for getPhysicalRAMusage()
 #ifdef Q_OS_WIN
@@ -1088,7 +1089,7 @@ void Util::importSettingsFromPreviousVersion()
     QSettings currentSettings;
     //The list of previous versions (order from latest to oldest version is advised)
     QStringList previousVersions;
-    previousVersions  << "6.16" << "6.14" << "6.12" << "6.9" << "6.7" << "6.6" << "6.5" << "6.3" << "6.2"
+    previousVersions  << "6.17" << "6.16" << "6.14" << "6.12" << "6.9" << "6.7" << "6.6" << "6.5" << "6.3" << "6.2"
                       << "6.1" << "6.0" << "5.7.1"
                       << "5.7" << "5.5" << "5.3" << "5.1" << "5.0" << "4.9" << "4.7" << "4.5.1" << "4.5"
                       << "4.3.3" << "4.3" << "4.0" << "3.8" << "3.6.1" << "3.6" << "3.5" << "3.2" << "3.0"
@@ -2742,5 +2743,53 @@ void Util::appendPhysicalGEOEASColumn( const spectral::arrayPtr data,
         // renames the new file, effectively replacing the destination file.
         outputFile.rename(QFile(file_path).fileName());
     }
+}
+
+std::vector< std::pair<QString, QString> > Util::parseConfigurationFile(const QString path)
+{
+    QStringList tags;
+    QString description;
+    QRegularExpression re_pair("^([a-zA-Z_$][\\w$]*)[\\s]*=[\\s]*(.*)$");
+    std::vector< std::pair<QString, QString> > result;
+
+    QFile file( path );
+    file.open( QFile::ReadOnly | QFile::Text );
+    QTextStream in(&file);
+    for (int i = 0; !in.atEnd(); ++i) {
+       //read file line by line
+       QString config_file_line = in.readLine();
+
+       //parsing the cofiguration file line.
+       QRegularExpressionMatchIterator re_i = re_pair.globalMatch(config_file_line);
+       while (re_i.hasNext()) {
+           QRegularExpressionMatch match = re_i.next();
+           if (match.hasMatch()) {
+               std::pair<QString, QString> pair_var_value;
+               pair_var_value.first  = match.captured(1);
+               pair_var_value.second = match.captured(2);
+               result.push_back( pair_var_value );
+           }
+       }
+    }
+    file.close();
+
+    return result;
+}
+
+QString Util::getConfigurationValue(const std::vector< std::pair<QString, QString> > &configs,
+                                    const QString variable)
+{
+    //the search criterion
+    auto finder = [variable]( const std::pair<QString, QString>& config )
+                            { return config.first == variable; };
+
+    // Iterator to store the position of configuration found
+    std::vector< std::pair<QString, QString> >::const_iterator it =
+            std::find_if(configs.begin(), configs.end(), finder);
+
+    if( it != configs.end() )
+        return it->second;
+    else //configuration not found
+        return "";
 }
 

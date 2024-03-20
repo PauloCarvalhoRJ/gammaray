@@ -178,6 +178,7 @@ private slots:
     void onHistpltsim();
     void onRFFT();
     void onUpdateStatusBar();
+    void onRunStuffInUnattendedMode();
     void onMachineLearning();
     void onDeleteVariable();
     void onPreviewRFFTImageJockey(CartesianGrid *cgWithFFT,
@@ -250,6 +251,7 @@ private slots:
     void onExportToGRD();
     void onMCRFBayesianSim();
     void onReviewTransiogramBand();
+    void onRepositionGrid();
 
 private:
     /**

@@ -1,5 +1,6 @@
 #include "ialgorithmdatasource.h"
 #include <cassert>
+#include <cstdint>
 
 bool almostEqual2sComplement(double A, double B, int maxUlps) {
         // Make sure maxUlps is non-negative and small enough that the
