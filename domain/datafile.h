@@ -439,6 +439,13 @@ public:
       */
     virtual void probe( double pickedX, double pickedY, double pickedZ, Attribute* targetAttribute );
 
+    /**
+     * Returns whether this data file represents an object with topology, that is, with IJK-addressable samples in addition
+     * to their spatial locations.  For example, point and segment sets are not gridded because they lack topology.
+     * Conversely, Cartesian grids, GeoGrids and geological sections have topology, that is, they are grid objects.
+     */
+    virtual bool isGridded() const = 0;
+
 //File interface
 	virtual void deleteFromFS();
 	virtual void writeToFS();

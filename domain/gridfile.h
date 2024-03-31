@@ -132,6 +132,9 @@ public:
                               uint baseK,
                               uint topK );
 
+// DataFile interface
+    virtual bool isGridded() const override { return true; }
+
 // ICalcPropertyCollection interface
 	virtual double getNeighborValue( int iRecord, int iVar, int dI, int dJ, int dK );
 
