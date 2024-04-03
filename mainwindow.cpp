@@ -92,6 +92,7 @@
 #include "dialogs/populatewithproportionsfromvpcdialog.h"
 #include "dialogs/subgriddialog.h"
 #include "dialogs/gridrepositiondialog.h"
+#include "dialogs/contactanalysisdialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -670,6 +671,19 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
 				menu_caption_geobase += "; base = " + _right_clicked_attribute2->getName();
 				_projectContextMenu->addAction(menu_caption_geobase, this, SLOT(onCreateGeoGridFromBaseAndTop()));
 			}
+            //if one variable is continuous and the other is categorical
+            if( _right_clicked_attribute->isCategorical() != _right_clicked_attribute2->isCategorical() ){
+                Attribute* categoricalAttribute = _right_clicked_attribute->isCategorical() ?
+                                                  _right_clicked_attribute :
+                                                  _right_clicked_attribute2;
+                Attribute* continuousAttribute  = _right_clicked_attribute->isCategorical() ?
+                                                  _right_clicked_attribute2 :
+                                                  _right_clicked_attribute;
+                QString menu_caption = "Contact analysis: ";
+                menu_caption += "domains=" + categoricalAttribute->getName();
+                menu_caption += "; grade=" + continuousAttribute->getName();
+                _projectContextMenu->addAction(menu_caption, this, SLOT(onPerformContactAnaysis()));
+            }
         }
         //if both objects are variables and have different parent files,
         if( index1.isValid() && index2.isValid() &&
@@ -1479,6 +1493,20 @@ void MainWindow::onRepositionGrid()
     GridRepositionDialog* grd = new GridRepositionDialog( cg, this );
 
     grd->show();
+}
+
+void MainWindow::onPerformContactAnaysis()
+{
+    if( _right_clicked_attribute->isCategorical() != _right_clicked_attribute2->isCategorical() ){
+        Attribute* attributeDomains = _right_clicked_attribute->isCategorical() ?
+                                      _right_clicked_attribute :
+                                      _right_clicked_attribute2;
+        Attribute* attributeGrade   = _right_clicked_attribute->isCategorical() ?
+                                      _right_clicked_attribute2 :
+                                      _right_clicked_attribute;
+        ContactAnalysisDialog* cad = new ContactAnalysisDialog( attributeGrade, attributeDomains, this );
+        cad->show();
+    }
 }
 
 void MainWindow::openTransiographyBayesian()

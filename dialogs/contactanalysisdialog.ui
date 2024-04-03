@@ -1,0 +1,300 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ContactAnalysisDialog</class>
+ <widget class="QDialog" name="ContactAnalysisDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>593</width>
+    <height>225</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0" columnstretch="0,0,0,0,0,0,1,0" rowminimumheight="0,0,0,0,0,0,0,0,0,0,0,0" columnminimumwidth="0,0,0,0,0,0,0,0">
+   <item row="11" column="0" colspan="5">
+    <widget class="QPushButton" name="btnProceed">
+     <property name="text">
+      <string>Proceed</string>
+     </property>
+     <property name="default">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="2" colspan="3">
+    <widget class="QSpinBox" name="spinMinNumberOfSamples">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="5">
+    <widget class="QLabel" name="label_9">
+     <property name="text">
+      <string>number of lags:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="2" colspan="3">
+    <widget class="QDoubleSpinBox" name="dblSpinLagSize">
+     <property name="maximum">
+      <double>99999999.000000000000000</double>
+     </property>
+     <property name="singleStep">
+      <double>10.000000000000000</double>
+     </property>
+     <property name="stepType">
+      <enum>QAbstractSpinBox::AdaptiveDecimalStepType</enum>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="6" colspan="2">
+    <widget class="QFrame" name="frmDomain2">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+     </layout>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="8">
+    <widget class="QLabel" name="lblDataFile">
+     <property name="text">
+      <string>Data file: </string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="8">
+    <widget class="QLabel" name="lblDomainsAttribute">
+     <property name="text">
+      <string>categorical variable with the domains: </string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="2" colspan="3">
+    <widget class="QFrame" name="frmDomain1">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+     </layout>
+    </widget>
+   </item>
+   <item row="1" column="0" colspan="8">
+    <widget class="QLabel" name="lblGradeAttribute">
+     <property name="text">
+      <string>continuous variable with the grade values: </string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_11">
+     <property name="text">
+      <string>mode:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="6" colspan="2">
+    <widget class="QSpinBox" name="spinNumberOfLags">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>5</number>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="0" colspan="2">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>number of samples:    min:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="5">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>max:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="0" colspan="4">
+    <widget class="QLabel" name="label_10">
+     <property name="text">
+      <string>length unit symbol for output chart:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="6" colspan="2">
+    <widget class="QPushButton" name="btnDismiss">
+     <property name="text">
+      <string>Dismiss</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="5">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>domain 2:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLabel" name="label_8">
+     <property name="text">
+      <string>lag size:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="10" column="4">
+    <widget class="QLineEdit" name="txtLengthUnitSymbol">
+     <property name="text">
+      <string>m</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="6" colspan="2">
+    <widget class="QSpinBox" name="spinMaxNumberOfSamples">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>8</number>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>domain 1:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QRadioButton" name="radioLateral">
+     <property name="text">
+      <string>lateral</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2">
+    <widget class="QLabel" name="lblZTolerance">
+     <property name="text">
+      <string>z tolerance:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="3">
+    <widget class="QDoubleSpinBox" name="dblSpinZTolerance">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This value is used with 3D non-gridded data files (e.g. point sets) to consider whether two neighboring samples are in the same Z level.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="5">
+    <widget class="QRadioButton" name="radioVertical">
+     <property name="text">
+      <string>vertical</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>txtLengthUnitSymbol</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>ContactAnalysisDialog</receiver>
+   <slot>onLengthUnitSymbolChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>318</x>
+     <y>186</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>322</x>
+     <y>223</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnDismiss</sender>
+   <signal>clicked()</signal>
+   <receiver>ContactAnalysisDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>435</x>
+     <y>205</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>548</x>
+     <y>179</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnProceed</sender>
+   <signal>clicked()</signal>
+   <receiver>ContactAnalysisDialog</receiver>
+   <slot>onProceed()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>240</x>
+     <y>204</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>342</x>
+     <y>200</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onLengthUnitSymbolChanged(QString)</slot>
+  <slot>onProceed()</slot>
+ </slots>
+</ui>
