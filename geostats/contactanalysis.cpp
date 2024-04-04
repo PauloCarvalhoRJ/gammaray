@@ -8,13 +8,19 @@
 #include "domain/pointset.h"
 #include "domain/segmentset.h"
 #include "domain/cartesiangrid.h"
+#include "domain/segmentset.h"
 #include "spatialindex/spatialindex.h"
 #include "geostats/searchneighborhood.h"
 #include "geostats/searchannulus.h"
 #include "geostats/searchstrategy.h"
+#include "geostats/pointsetcell.h"
+#include "geostats/gridcell.h"
+#include "geostats/segmentsetcell.h"
 
 #include <QProgressDialog>
 #include <QApplication>
+
+#include <unordered_set>
 
 ContactAnalysis::ContactAnalysis() :
     m_inputDataFile(nullptr),
@@ -28,9 +34,9 @@ ContactAnalysis::ContactAnalysis() :
     m_maxNumberOfSamples(8),
     m_lagSize(0.0),
     m_numberOfLags(5),
-    m_lastError("")
+    m_lastError(""),
+    m_inputDataType( InputDataSetType::UNDEFINED )
 {
-
 }
 
 //-----------------------------------------GETTERS AND SETTERS--------------------------------------------------------------
@@ -138,9 +144,64 @@ bool ContactAnalysis::isOKtoRun()
     return true;
 }
 
-DataCellPtrMultiset ContactAnalysis::getSamplesFromPrimaryMT(const DataCell &sample) const
+DataCellPtrMultiset ContactAnalysis::getSamplesFromInputDataSet(const DataCell &sample,
+                                                                const SearchStrategy& searchStrategyPrimary,
+                                                                const SpatialIndex& spatialIndexOfPrimaryData ) const
 {
+    DataCellPtrMultiset result;
+    if( m_attributeGrade ){
 
+        //if the user set the max number of primary data samples to search to zero, returns the empty result.
+        if( ! searchStrategyPrimary.m_nb_samples )
+            return result;
+
+        //Fetch the indexes of the samples to be used in the simulation.
+        QList<uint> samplesIndexes = spatialIndexOfPrimaryData.getNearestWithinGenericRTreeBased( sample, searchStrategyPrimary );
+        QList<uint>::iterator it = samplesIndexes.begin();
+
+        //Create and collect the searched sample objects, which depend on the type of the input file.
+        for( ; it != samplesIndexes.end(); ++it ){
+            switch ( m_inputDataType ) {
+            case InputDataSetType::POINTSET:
+            {
+                DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_attributeGrade->getAttributeGEOEASgivenIndex()-1, *it ));
+                p->computeCartesianDistance( sample );
+                result.insert( p );
+            }
+                break;
+            case InputDataSetType::CARTESIANGRID:
+            {
+                CartesianGrid* cg = static_cast<CartesianGrid*>( m_inputDataFile );
+                uint i, j, k;
+                cg->indexToIJK( *it, i, j, k );
+                DataCellPtr p(new GridCell( cg, m_attributeGrade->getAttributeGEOEASgivenIndex()-1, i, j, k ));
+                p->computeCartesianDistance( sample );
+                result.insert( p );
+            }
+                break;
+            case InputDataSetType::GEOGRID:
+            {
+                Application::instance()->logError( "ContactAnalysis::getSamplesFromInputDataSet(): GeoGrids cannot be used as input data yet."
+                                                   "  It is necessary to create a class like GeoGridCell inheriting from DataCell." );
+                return result;
+            }
+                break;
+            case InputDataSetType::SEGMENTSET:
+            {
+                DataCellPtr p(new SegmentSetCell( static_cast<SegmentSet*>( m_inputDataFile ), m_attributeGrade->getAttributeGEOEASgivenIndex()-1, *it ));
+                p->computeCartesianDistance( sample );
+                result.insert( p );
+            }
+                break;
+            default:
+                Application::instance()->logError( "ContactAnalysis::getSamplesFromInputDataSet(): Input data file type not recognized or undefined." );
+                return result;
+            }
+        }
+    } else {
+        Application::instance()->logError( "ContactAnalysis::getSamplesFromInputDataSet(): sample search failed.  Search strategy and/or input data not set." );
+    }
+    return result;
 }
 
 bool ContactAnalysis::run()
@@ -154,6 +215,18 @@ bool ContactAnalysis::run()
 
     //load the input data file
     m_inputDataFile->loadData();
+
+    //determine the type of the input data set once (avoid repetitive calls to the slow File::getFileType())
+    //define a cell object that represents the current simulation cell.  Also construct a data cell concrete object
+    //depending on the input data set type.
+    if( m_inputDataFile->getFileType() == "POINTSET" )
+        m_inputDataType = InputDataSetType::POINTSET;
+    else if( m_inputDataFile->getFileType() == "CARTESIANGRID" )
+        m_inputDataType = InputDataSetType::CARTESIANGRID;
+    else if( m_inputDataFile->getFileType() == "GEOGRID" )
+        m_inputDataType = InputDataSetType::GEOGRID;
+    else if( m_inputDataFile->getFileType() == "SEGMENTSET" )
+        m_inputDataType = InputDataSetType::SEGMENTSET;
 
     //build the spatial index
     SpatialIndex spatialIndex;
@@ -202,10 +275,15 @@ bool ContactAnalysis::run()
     //this is to keep track of processing progress to update the progress bar
     uint64_t total_done_so_far = 0;
 
+    //initialize a hash table containing the indexes of samples already visited (to be ignored).
+    std::unordered_set<uint64_t> visitedSamplesIndexes( m_inputDataFile->getDataLineCount() );
+
     //for each lag
     for( uint16_t iLag = 0; iLag < m_numberOfLags; iLag++, current_lag += m_lagSize ){
 
         //build the search strategy for current lag
+        //TODO: the search strategy may vary according to input data set type, whether it is 2D/3D or
+        //      whether the mode is lateral or vertical.
         SearchStrategyPtr searchStrategy;
         {
             uint nb_samples          =         m_maxNumberOfSamples;
@@ -218,13 +296,68 @@ bool ContactAnalysis::run()
         //for each data sample
         for( uint64_t iSample = 0; iSample < m_inputDataFile->getDataLineCount(); iSample++, total_done_so_far++ ){
 
-
             //update the progress bar 1% of the time to not impact performance
             if( ! ( total_done_so_far % ( (total_steps>1000?total_steps:100) / 100 ) ) ){ //if total steps is less than 1000,
                                                                                           //then update the progress bar for every step
                 progressDialog.setValue( total_done_so_far );
                 QApplication::processEvents();
             }
+
+            //if the data sample has already been visited, skip to the next sample
+            if( visitedSamplesIndexes.find( iSample ) != visitedSamplesIndexes.end() )
+                continue;
+
+            //construct a data cell representing the current sample according to the input data set type
+            //this object is used in spatial queries
+            DataCellPtr currentSampleCell;
+            switch ( m_inputDataType ) {
+                case InputDataSetType::POINTSET:
+                    currentSampleCell.reset( new PointSetCell( dynamic_cast<PointSet*>(m_inputDataFile),
+                                                               m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
+                                                               iSample ) );
+                    break;
+                case InputDataSetType::CARTESIANGRID:
+                    {
+                    CartesianGrid* cgAspect = dynamic_cast<CartesianGrid*>(m_inputDataFile);
+                    uint i, j, k;
+                    cgAspect->indexToIJK( iSample, i, j, k );
+                    currentSampleCell.reset( new GridCell( cgAspect,
+                                                           m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
+                                                           i, j, k ) );
+                    }
+                    break;
+                case InputDataSetType::GEOGRID:
+                    m_lastError = "Geogrids are not currently supported.";
+                    return false;
+                case InputDataSetType::SEGMENTSET:
+                    currentSampleCell.reset( new SegmentSetCell( dynamic_cast<SegmentSet*>(m_inputDataFile),
+                                                                 m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
+                                                                 iSample ) );
+                    break;
+                default:
+                    m_lastError = "Unspecified input data type.  This is an internal error.  "
+                                  "Please report a bug in the program's project website.";
+                    return false;
+            }
+
+            //collect neighboring samples from the input data set ordered by their distance with respect
+            //to the current sample.
+            DataCellPtrMultiset vNeighboringSamples = getSamplesFromInputDataSet( *currentSampleCell, *searchStrategy, spatialIndex );
+
+            //process each samples found in the search neighborhood around the current sample.
+            //NOTE: the SpatialIndex::getNearestWithinGenericRTreeBased() method used in this->getSamplesFromInputDataSet()
+            //      *does not* remove the cell corresponding to the current sample, so, the returned container contains
+            //      the neighboring samples as well as the current sample.
+            DataCellPtrMultiset::iterator itNeighborCells = vNeighboringSamples.begin();
+            for( uint i = 0; i < vNeighboringSamples.size(); ++i, ++itNeighborCells){
+                DataCellPtr neighborSampleCell = *itNeighborCells;
+
+                //TODO:
+
+                //add the processed cell to the visited list
+                visitedSamplesIndexes.insert( neighborSampleCell->getDataRowIndex() );
+            }
+
         }
     } //for each lag
 

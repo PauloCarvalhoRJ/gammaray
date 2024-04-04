@@ -2,18 +2,23 @@
 #define CONTACTANALYSIS_H
 
 #include "geostats/datacell.h"
+#include "util.h"
 
 #include <stdint.h>
 #include <QString>
 
 class Attribute;
 class DataFile;
+class SearchStrategy;
+class SpatialIndex;
 
 enum class ContactAnalysisMode : uint8_t {
     LATERAL,
     VERTICAL
 };
 
+/** Enum used to avoid the slow File::getFileType() in performance-critical code. */
+typedef DataSetType InputDataSetType; //DataSetType is defined in util.h
 
 /** This class encapsulates the Contact Analysis algorithm. */
 class ContactAnalysis
@@ -143,13 +148,16 @@ private:
     //---------------------------------------------
 
     QString m_lastError;
+    InputDataSetType m_inputDataType;
 
     /** Returns a container with the input data samples around a data location to be used in the contact analysis.
      * The resulting collection depends on the SearchStrategy object set for the primary data.  Returns an empty object if any
      * required parameter for the search to work (e.g. input data) is missing.  The data cells are ordered
      * by their distance to the passed data sample.
      */
-    DataCellPtrMultiset getSamplesFromPrimaryMT( const DataCell& sample ) const;
+    DataCellPtrMultiset getSamplesFromInputDataSet(const DataCell& sample ,
+                                                   const SearchStrategy &searchStrategyPrimary ,
+                                                   const SpatialIndex &spatialIndexOfPrimaryData ) const;
 };
 
 #endif // CONTACTANALYSIS_H
