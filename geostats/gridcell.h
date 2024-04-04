@@ -68,6 +68,9 @@ public:
     virtual double readValueFromDataSet( unsigned int dataColumnIndex ) const{
         return readValueFromGrid( dataColumnIndex );
     }
+    virtual uint64_t getDataRowIndex() const {
+        return _grid->IJKtoIndex( _indexIJK._i, _indexIJK._j, _indexIJK._k );
+    }
 };
 
 typedef std::shared_ptr<GridCell> GridCellPtr;

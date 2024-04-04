@@ -30,6 +30,7 @@ public:
     // DataCell	interface
     virtual double readValueFromDataSet() const;
     virtual double readValueFromDataSet( uint dataColumnIndex ) const;
+    virtual uint64_t getDataRowIndex() const { return m_sampleIndex; }
 
     SegmentSet* m_segmentSet;
     uint m_sampleIndex;
