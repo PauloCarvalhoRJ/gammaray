@@ -6,8 +6,11 @@
 #include "domain/application.h"
 #include "geostats/contactanalysis.h"
 #include "widgets/categoryselector.h"
+#include "widgets/linechartwidget.h"
+#include "dialogs/emptydialog.h"
 
 #include <QMessageBox>
+#include <algorithm>
 
 ContactAnalysisDialog::ContactAnalysisDialog(Attribute *attributeGrade,
                                              Attribute *attributeDomains,
@@ -91,9 +94,47 @@ void ContactAnalysisDialog::onProceed()
     contactAnalysis.setAttributeDomains( m_attributeDomains );
     contactAnalysis.setMaxNumberOfSamples( static_cast<uint16_t>(ui->spinMaxNumberOfSamples->value()) );
     contactAnalysis.setMinNumberOfSamples( static_cast<uint16_t>(ui->spinMinNumberOfSamples->value()) );
+
     if( ! contactAnalysis.run() ) {
+
         Application::instance()->logError("ContactAnalysisDialog::onProceed(): failed execution:");
         Application::instance()->logError("    " + contactAnalysis.getLastError());
         QMessageBox::critical( this, "Error", "Contact analysis failed.  Further details in the message panel." );
+
+    } else {
+
+        //shortcut for the STL's not-a-number value.
+        const double NaN = std::numeric_limits<double>::quiet_NaN();
+
+        //get the contact analysis results
+        std::vector<
+           std::pair<
+              ContactAnalysis::Lag,
+              ContactAnalysis::MeanGradesBothDomains
+           >
+        > results = contactAnalysis.getResults();
+
+        //prepare data points for chart plotting
+        std::vector<std::vector<double> > chartData;
+
+        //traverse the results to fill the chart data
+        for( const std::pair< ContactAnalysis::Lag, ContactAnalysis::MeanGradesBothDomains >& result : results ){
+            //                      lag values     grades of domain 1   grades of domain 2
+            chartData.push_back( { -result.first,  result.second.first,         0.0          } );
+        }
+        std::reverse( chartData.begin(), chartData.end() );
+        for( const std::pair< ContactAnalysis::Lag, ContactAnalysis::MeanGradesBothDomains >& result : results ){
+            //                      lag values     grades of domain 1   grades of domain 2
+            chartData.push_back( {  result.first,        0.0,          result.second.second } );
+        }
+
+        //display the results
+        LineChartWidget* lcw = new LineChartWidget(this);
+        lcw->setData( chartData, 0 );
+        EmptyDialog* ed = new EmptyDialog( this );
+        ed->addWidget( lcw );
+        ed->setWindowTitle( "Contact analysis results" );
+        ed->show();
+
     }
 }

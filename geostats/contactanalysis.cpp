@@ -323,7 +323,7 @@ bool ContactAnalysis::run()
                     searchNeighborhood.reset( new SearchAnnulus( current_lag - m_lagSize, current_lag,
                                                                  min_nb_samples,          nb_samples ) );
                 } else {
-                    m_lastError = "Internal error: no search neighborhood is still not defined for vertical contact analysis.";
+                    m_lastError = "Internal error: no search neighborhood is available for vertical contact analysis.";
                     return false;
                 }
             }
