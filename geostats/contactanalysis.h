@@ -24,6 +24,15 @@ typedef DataSetType InputDataSetType; //DataSetType is defined in util.h
 class ContactAnalysis
 {
 public:
+
+    typedef double Lag;
+    typedef double MeanGradeDomain1;
+    typedef double MeanGradeDomain2;
+    typedef std::pair
+                 < ContactAnalysis::MeanGradeDomain1,
+                   ContactAnalysis::MeanGradeDomain2 >
+            MeanGradesBothDomains;
+
     ContactAnalysis();
 
     //@{
@@ -118,6 +127,20 @@ public:
      */
     bool run();
 
+    /**
+     * Returns the contact analysis results, that is, pairs of lag value and mean grades of both domains.
+     * These values can be used, for example, to make plots.
+     * @note Both means may be std::numeric_limits<double>::quiet_NaN if the respective search failed to find
+     *       non-visited neighboring samples with non-dummy grade values within the given lag
+     *       belonging to the given domain.
+     */
+    std::vector<
+          std::pair<
+              ContactAnalysis::Lag,
+              ContactAnalysis::MeanGradesBothDomains
+          >
+    > getResults() const;
+
     /** Informs the last error during execution of the algorithm.  This must be checked if run()
      * returns false.
      */
@@ -149,6 +172,9 @@ private:
 
     QString m_lastError;
     InputDataSetType m_inputDataType;
+
+    //stores the contact analysis results, that is, pairs of lag value and mean grades of both domains.
+    std::vector<std::pair< ContactAnalysis::Lag, ContactAnalysis::MeanGradesBothDomains> > m_results;
 
     /** Returns a container with the input data samples around a data location to be used in the contact analysis.
      * The resulting collection depends on the SearchStrategy object set for the primary data.  Returns an empty object if any

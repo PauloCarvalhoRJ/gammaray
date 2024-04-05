@@ -144,6 +144,11 @@ bool ContactAnalysis::isOKtoRun()
     return true;
 }
 
+std::vector<std::pair<ContactAnalysis::Lag, ContactAnalysis::MeanGradesBothDomains> > ContactAnalysis::getResults() const
+{
+    return m_results;
+}
+
 DataCellPtrMultiset ContactAnalysis::getSamplesFromInputDataSet(const DataCell &sample,
                                                                 const SearchStrategy& searchStrategyPrimary,
                                                                 const SpatialIndex& spatialIndexOfPrimaryData ) const
@@ -213,8 +218,25 @@ bool ContactAnalysis::run()
     if( ! isOKtoRun() )
         return false;
 
+    //make sure the results vector is empty
+    m_results.clear();
+
     //load the input data file
     m_inputDataFile->loadData();
+
+    //get the data file column index corresponding to the categorcial attribute with the domains
+    uint indexOfDomainsVariable = m_inputDataFile->getFieldGEOEASIndex( m_attributeDomains->getName() ) - 1;
+    if( indexOfDomainsVariable > m_inputDataFile->getDataColumnCount() ){
+        m_lastError = "Error getting the data file column index of the categorical attribute with the domains.";
+        return false;
+    }
+
+    //get the data file column index corresponding to the continuous attribute with the grade
+    uint indexOfGradeVariable = m_inputDataFile->getFieldGEOEASIndex( m_attributeGrade->getName() ) - 1;
+    if( indexOfGradeVariable > m_inputDataFile->getDataColumnCount() ){
+        m_lastError = "Error getting the data file column index of the continuos attribute with the grade values.";
+        return false;
+    }
 
     //determine the type of the input data set once (avoid repetitive calls to the slow File::getFileType())
     //define a cell object that represents the current simulation cell.  Also construct a data cell concrete object
@@ -251,7 +273,7 @@ bool ContactAnalysis::run()
             CartesianGrid* cgAspect = dynamic_cast<CartesianGrid*>( m_inputDataFile );
             spatialIndex.fill( cgAspect );
         } else {
-            m_lastError = "Error building spatial index: input data of type " + m_inputDataFile->getFileType() + " are not currently supported.";
+            m_lastError = "Internal error building spatial index: input data of type " + m_inputDataFile->getFileType() + " are not currently supported.";
             return false;
         }
     }
@@ -278,6 +300,13 @@ bool ContactAnalysis::run()
     //initialize a hash table containing the indexes of samples already visited (to be ignored).
     std::unordered_set<uint64_t> visitedSamplesIndexes( m_inputDataFile->getDataLineCount() );
 
+    //prepare the containers to store the grade values for each domain.
+    //the values within them will be used to compute the mean grade values for each category.
+    //the inner vectors are in the same order of the lags (e.g. 1st inner vector -> 100m;
+    //2nd inner vector -> 200m and so on until the largest lag.
+    std::vector< std::vector<double> > gradesOfDomain1( m_numberOfLags );
+    std::vector< std::vector<double> > gradesOfDomain2( m_numberOfLags );
+
     //for each lag
     for( uint16_t iLag = 0; iLag < m_numberOfLags; iLag++, current_lag += m_lagSize ){
 
@@ -286,15 +315,23 @@ bool ContactAnalysis::run()
         //      whether the mode is lateral or vertical.
         SearchStrategyPtr searchStrategy;
         {
-            uint nb_samples          =         m_maxNumberOfSamples;
-            uint min_nb_samples      =         m_minNumberOfSamples;
-            SearchNeighborhoodPtr searchNeighborhood( new SearchAnnulus( current_lag - m_lagSize, current_lag,
-                                                                         min_nb_samples,          nb_samples ) );
+            uint nb_samples     = m_maxNumberOfSamples;
+            uint min_nb_samples = m_minNumberOfSamples;
+            SearchNeighborhoodPtr searchNeighborhood;
+            {
+                if( m_mode == ContactAnalysisMode::LATERAL ){
+                    searchNeighborhood.reset( new SearchAnnulus( current_lag - m_lagSize, current_lag,
+                                                                 min_nb_samples,          nb_samples ) );
+                } else {
+                    m_lastError = "Internal error: no search neighborhood is still not defined for vertical contact analysis.";
+                    return false;
+                }
+            }
             searchStrategy.reset( new SearchStrategy( searchNeighborhood, nb_samples, 0.0, min_nb_samples ) );
         }
 
         //for each data sample
-        for( uint64_t iSample = 0; iSample < m_inputDataFile->getDataLineCount(); iSample++, total_done_so_far++ ){
+        for( uint64_t iCurrentSample = 0; iCurrentSample < m_inputDataFile->getDataLineCount(); iCurrentSample++, total_done_so_far++ ){
 
             //update the progress bar 1% of the time to not impact performance
             if( ! ( total_done_so_far % ( (total_steps>1000?total_steps:100) / 100 ) ) ){ //if total steps is less than 1000,
@@ -304,8 +341,11 @@ bool ContactAnalysis::run()
             }
 
             //if the data sample has already been visited, skip to the next sample
-            if( visitedSamplesIndexes.find( iSample ) != visitedSamplesIndexes.end() )
+            if( visitedSamplesIndexes.find( iCurrentSample ) != visitedSamplesIndexes.end() )
                 continue;
+
+            //get the domain category code of the current sample
+            uint currentSampleDomainCategoryCode = m_inputDataFile->data( iCurrentSample, indexOfDomainsVariable );
 
             //construct a data cell representing the current sample according to the input data set type
             //this object is used in spatial queries
@@ -314,25 +354,25 @@ bool ContactAnalysis::run()
                 case InputDataSetType::POINTSET:
                     currentSampleCell.reset( new PointSetCell( dynamic_cast<PointSet*>(m_inputDataFile),
                                                                m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
-                                                               iSample ) );
+                                                               iCurrentSample ) );
                     break;
                 case InputDataSetType::CARTESIANGRID:
                     {
                     CartesianGrid* cgAspect = dynamic_cast<CartesianGrid*>(m_inputDataFile);
                     uint i, j, k;
-                    cgAspect->indexToIJK( iSample, i, j, k );
+                    cgAspect->indexToIJK( iCurrentSample, i, j, k );
                     currentSampleCell.reset( new GridCell( cgAspect,
                                                            m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
                                                            i, j, k ) );
                     }
                     break;
                 case InputDataSetType::GEOGRID:
-                    m_lastError = "Geogrids are not currently supported.";
+                    m_lastError = "Internal error: geogrids are not currently supported in contact analysis.";
                     return false;
                 case InputDataSetType::SEGMENTSET:
                     currentSampleCell.reset( new SegmentSetCell( dynamic_cast<SegmentSet*>(m_inputDataFile),
                                                                  m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
-                                                                 iSample ) );
+                                                                 iCurrentSample ) );
                     break;
                 default:
                     m_lastError = "Unspecified input data type.  This is an internal error.  "
@@ -352,14 +392,77 @@ bool ContactAnalysis::run()
             for( uint i = 0; i < vNeighboringSamples.size(); ++i, ++itNeighborCells){
                 DataCellPtr neighborSampleCell = *itNeighborCells;
 
-                //TODO:
+                //get the data file row corresponding to the neighbor cell
+                uint64_t neighborSampleCellRowIndex = neighborSampleCell->getDataRowIndex();
 
-                //add the processed cell to the visited list
-                visitedSamplesIndexes.insert( neighborSampleCell->getDataRowIndex() );
+                //get the domain category code of the neighbor sample
+                uint neighborSampleDomainCategoryCode = static_cast<uint>( m_inputDataFile->data( iCurrentSample, indexOfDomainsVariable ) );
+
+                //if the neighbor is domain 1 and current sample is domain 2
+                if( neighborSampleDomainCategoryCode == m_domain1_code &&
+                    currentSampleDomainCategoryCode  == m_domain2_code ){
+                    //store the grade value of the neighboring sample for computing the mean grade afterwards
+                    gradesOfDomain1[iLag].push_back( neighborSampleCell->readValueFromDataSet() );
+                    //add the processed cell to the visited list
+                    visitedSamplesIndexes.insert( neighborSampleCellRowIndex );
+
+                //if the neighbor is domain 2 and current sample is domain 1
+                } else if( neighborSampleDomainCategoryCode == m_domain2_code &&
+                           currentSampleDomainCategoryCode  == m_domain1_code ){
+                   //store the grade value of the neighboring sample for computing the mean grade afterwards
+                   gradesOfDomain2[iLag].push_back( neighborSampleCell->readValueFromDataSet() );
+                   //add the processed cell to the visited list
+                   visitedSamplesIndexes.insert( neighborSampleCellRowIndex );
+               }
+
+            } // for each neighboring sample
+        } // for each sample
+    } //for each lag (searching neighboring samples and fetching grade values)
+
+    //get the input data file's NDV as floating point number
+    double dummyValue = m_inputDataFile->getNoDataValueAsDouble();
+
+    //process the results
+    //for each lag
+    current_lag = m_lagSize;
+    for( uint16_t iLag = 0; iLag < m_numberOfLags; iLag++, current_lag += m_lagSize ){
+
+        //compute the mean grade for domain 1
+        double meanGradeDomain1 = std::numeric_limits<double>::quiet_NaN();
+        {
+            double sum = 0.0;
+            uint64_t count = 0;
+            for( double gradeValue : gradesOfDomain1[iLag] ){
+                //if the grade value is not dummy (not informed)
+                if( ! Util::almostEqual2sComplement( gradeValue, dummyValue, 1 ) ){
+                    sum += gradeValue;
+                    count++;
+                }
             }
-
+            if( count > 0 )
+                meanGradeDomain1 = sum / count;
         }
-    } //for each lag
+
+        //compute the mean grade for domain 2
+        double meanGradeDomain2 = std::numeric_limits<double>::quiet_NaN();
+        {
+            double sum = 0.0;
+            double count = 0;
+            for( double gradeValue : gradesOfDomain2[iLag] ){
+                //if the grade value is not dummy (not informed)
+                if( ! Util::almostEqual2sComplement( gradeValue, dummyValue, 1 ) ){
+                    sum += gradeValue;
+                    count++;
+                }
+            }
+            if( count > 0 )
+                meanGradeDomain2 = sum / count;
+        }
+
+        //store the result
+        m_results.push_back( { current_lag, { meanGradeDomain1, meanGradeDomain2 } } );
+
+    } //for each lag (computing the mean grades)
 
     return true;
 }
