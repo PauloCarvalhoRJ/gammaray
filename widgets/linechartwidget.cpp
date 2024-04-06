@@ -9,7 +9,8 @@
 
 LineChartWidget::LineChartWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::LineChartWidget)
+    ui(new Ui::LineChartWidget),
+    m_sharedYaxis(false)
 {
     ui->setupUi(this);
 
@@ -22,15 +23,11 @@ LineChartWidget::LineChartWidget(QWidget *parent) :
     m_chart->legend()->setVisible(true);
     m_chart->legend()->setAlignment(Qt::AlignBottom);
 
-    //define the horizontal axis
+    //add the horizontal axis
     m_axisX = new QtCharts::QValueAxis();
     m_chart->addAxis(m_axisX, Qt::AlignBottom);
     m_series->attachAxis(m_axisX);
-
-    //define the vertical axis
-    QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
-    m_chart->addAxis(axisY, Qt::AlignLeft);
-    m_series->attachAxis(axisY);
+    m_axisX->setTickCount(11);
 
     //create and adds the chart view widget
     m_chartView = new QtCharts::QChartView( m_chart );
@@ -43,7 +40,11 @@ LineChartWidget::~LineChartWidget()
     delete ui;
 }
 
-void LineChartWidget::setData(const std::vector<std::vector<double> > &data, int indexForXAxis)
+void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
+                              int indexForXAxis,
+                              const std::map<uint8_t, QString>& yVariablesCaptions,
+                              const std::map<uint8_t, QString>& yVariablesYaxisTitles,
+                              const std::map<uint8_t, QColor>&  yVariablesColors)
 {
     // Does nothing if the input data table is empty.
     if( data.empty() )
@@ -56,19 +57,36 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data, int
     // Clears all current data series.
     m_chart->removeAllSeries();
 
+    // Initialize the limits for the Y axes (one per dependent variable or a global Y axis).
+    double minY =  std::numeric_limits<double>::max();
+    double maxY = -std::numeric_limits<double>::max();
+
+    // There may be one Y axis for all Y variables or one axis per Y variables
+    QtCharts::QValueAxis *axisY = nullptr;
+
     // Create a number of data series and axes. One series per dependent variable.
     for( int iSeries = 0; iSeries < data[0].size(); ++iSeries ){
         if( iSeries != indexForXAxis ){
 
-            // Define limits for the Y axis (one per dependent variable).
-            double minY = std::numeric_limits<double>::max();
-            double maxY = -std::numeric_limits<double>::max();
+            //if one Y axis per Y variable is enabled...
+            if( ! m_sharedYaxis ) {
+                // ...reset the limits for the Y axis (one per dependent variable).
+                minY =  std::numeric_limits<double>::max();
+                maxY = -std::numeric_limits<double>::max();
+            }
 
-            // Create a Y-axis
-            QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
-
-            // Create a series
+            // Create a data series
             QtCharts::QLineSeries* series = new QtCharts::QLineSeries();
+
+            // tries to set a caption for the current series (user may not have set one)
+            try {
+                series->setName( yVariablesCaptions.at( iSeries ) );
+            } catch (...){}
+
+            // tries to set a color for the current series (user may not have set one)
+            try {
+                series->setColor( yVariablesColors.at( iSeries ) );
+            } catch (...){}
 
             // For each sample...
             for( const std::vector< double > sample : data ){
@@ -86,13 +104,22 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data, int
                 series->append( valueX, valueY );
             } //for each sample
 
-            //Update the Y axis (one per dependent variable).
-            axisY->setRange( minY, maxY );
-
             m_chart->addSeries( series );
-            m_chart->addAxis(axisY, Qt::AlignLeft);
             series->attachAxis( m_axisX );
+
+            //create the single Y axis or a new Y axis per dependent variable.
+            if( ! m_sharedYaxis || ! axisY ){
+                axisY = new QtCharts::QValueAxis();
+                axisY->setTickCount(11);
+                m_chart->addAxis(axisY, Qt::AlignLeft);
+            }
+            axisY->setRange( minY, maxY );
             series->attachAxis( axisY );
+
+            // tries to set a Y-axis title for the current series (user may not have set one)
+            try {
+                axisY->setTitleText( yVariablesYaxisTitles.at( iSeries ) );
+            } catch (...){}
 
         } //if to skip the independent variable, which is assigned to X-axis
     } //
@@ -100,4 +127,14 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data, int
     //Update the X axis.
     m_axisX->setRange( minX, maxX );
 
+}
+
+void LineChartWidget::setChartTitle(const QString chartTitle)
+{
+    m_chart->setTitle( chartTitle );
+}
+
+void LineChartWidget::setXaxisCaption(const QString caption)
+{
+    m_axisX->setTitleText( caption );
 }
