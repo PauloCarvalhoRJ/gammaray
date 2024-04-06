@@ -17,9 +17,9 @@ void SearchAnnulus::getBBox(double centerX, double centerY, double centerZ,
     maxX = centerX + m_outerRadius;
     minX = centerX - m_outerRadius;
     maxY = centerY + m_outerRadius;
-    minY = centerY - m_innerRadius;
-    maxZ = centerZ + std::numeric_limits<double>::max();
-    minZ = centerZ - std::numeric_limits<double>::max();
+    minY = centerY - m_outerRadius;
+    maxZ =  std::numeric_limits<double>::max();
+    minZ = -std::numeric_limits<double>::max();
 }
 
 bool SearchAnnulus::isInside(double centerX, double centerY, double centerZ,
