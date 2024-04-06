@@ -341,8 +341,8 @@ bool ContactAnalysis::run()
             }
 
             //if the data sample has already been visited, skip to the next sample
-            if( visitedSamplesIndexes.find( iCurrentSample ) != visitedSamplesIndexes.end() )
-                continue;
+            //if( visitedSamplesIndexes.find( iCurrentSample ) != visitedSamplesIndexes.end() )
+            //    continue;
 
             //get the domain category code of the current sample
             uint currentSampleDomainCategoryCode = m_inputDataFile->data( iCurrentSample, indexOfDomainsVariable );
@@ -395,8 +395,12 @@ bool ContactAnalysis::run()
                 //get the data file row corresponding to the neighbor cell
                 uint64_t neighborSampleCellRowIndex = neighborSampleCell->getDataRowIndex();
 
+                //if the neighbor sample has already been visited, skip to the next neighbor
+                if( visitedSamplesIndexes.find( neighborSampleCellRowIndex ) != visitedSamplesIndexes.end() )
+                    continue;
+
                 //get the domain category code of the neighbor sample
-                uint neighborSampleDomainCategoryCode = static_cast<uint>( m_inputDataFile->data( iCurrentSample, indexOfDomainsVariable ) );
+                uint neighborSampleDomainCategoryCode = static_cast<uint>( m_inputDataFile->data( neighborSampleCellRowIndex, indexOfDomainsVariable ) );
 
                 //if the neighbor is domain 1 and current sample is domain 2
                 if( neighborSampleDomainCategoryCode == m_domain1_code &&

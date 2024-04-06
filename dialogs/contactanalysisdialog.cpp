@@ -4,6 +4,7 @@
 #include "domain/attribute.h"
 #include "domain/datafile.h"
 #include "domain/application.h"
+#include "domain/categorydefinition.h"
 #include "geostats/contactanalysis.h"
 #include "widgets/categoryselector.h"
 #include "widgets/linechartwidget.h"
@@ -101,7 +102,7 @@ void ContactAnalysisDialog::onProceed()
         Application::instance()->logError("    " + contactAnalysis.getLastError());
         QMessageBox::critical( this, "Error", "Contact analysis failed.  Further details in the message panel." );
 
-    } else {
+    } else { //if the contact analysis completed successfully
 
         //shortcut for the STL's not-a-number value.
         const double NaN = std::numeric_limits<double>::quiet_NaN();
@@ -115,22 +116,46 @@ void ContactAnalysisDialog::onProceed()
         > results = contactAnalysis.getResults();
 
         //prepare data points for chart plotting
-        std::vector<std::vector<double> > chartData;
+        //outer vector: the series of multivariate data
+        //inner vectors: each multivariate datum (each element is a X, Y1, Y2,... value).
+        std::vector< std::vector<double> > chartData;
 
         //traverse the results to fill the chart data
+        //the desired effect is to have two different curves sharing a mirrored X-axis befitting a
+        //contact analysis chart (NaN causes the line chart widget to not render the curve at the given point).
         for( const std::pair< ContactAnalysis::Lag, ContactAnalysis::MeanGradesBothDomains >& result : results ){
-            //                      lag values     grades of domain 1   grades of domain 2
-            chartData.push_back( { -result.first,  result.second.first,         0.0          } );
+            //                                   lag values     grades of domain 1   grades of domain 2
+            //indexes in the inner vectors:           0                 1                    2
+            chartData.push_back(             { -result.first,  result.second.first,         NaN          } );
         }
         std::reverse( chartData.begin(), chartData.end() );
         for( const std::pair< ContactAnalysis::Lag, ContactAnalysis::MeanGradesBothDomains >& result : results ){
-            //                      lag values     grades of domain 1   grades of domain 2
-            chartData.push_back( {  result.first,        0.0,          result.second.second } );
+            //                                   lag values     grades of domain 1   grades of domain 2
+            //indexes in the inner vectors:           0                 1                    2
+            chartData.push_back(             {  result.first,          NaN,         result.second.second } );
+        }
+
+        //get some properties of the domain categories relevant to make
+        //the chart informative
+        QColor colorDomain1, colorDomain2;
+        QString nameDomain1,  nameDomain2;
+        {
+            CategoryDefinition* cd = m_dataFile->getCategoryDefinition( m_attributeDomains );
+            colorDomain1 = cd->getCustomColor( cd->getCategoryIndex( contactAnalysis.getDomain1_code() ));
+            colorDomain2 = cd->getCustomColor( cd->getCategoryIndex( contactAnalysis.getDomain2_code() ));
+            nameDomain1 = cd->getCategoryNameByCode( contactAnalysis.getDomain1_code() );
+            nameDomain2 = cd->getCategoryNameByCode( contactAnalysis.getDomain2_code() );
         }
 
         //display the results
         LineChartWidget* lcw = new LineChartWidget(this);
-        lcw->setData( chartData, 0 );
+        lcw->setSharedYaxis( true );
+        lcw->setChartTitle( "Contact analysis of " + m_dataFile->getName() );
+        lcw->setData( chartData, 0,
+                      {{1, nameDomain1 + " (Domain 1)"}, {2, nameDomain2 + " (Domain 2)"}},
+                      {{2, "Grade"}}, // shared y-axis is enabled, set only the last one
+                      {{1, colorDomain1}              , {2, colorDomain2}} );
+        lcw->setXaxisCaption( "lag (" + ui->txtLengthUnitSymbol->text() + ")" );
         EmptyDialog* ed = new EmptyDialog( this );
         ed->addWidget( lcw );
         ed->setWindowTitle( "Contact analysis results" );
