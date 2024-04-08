@@ -53,6 +53,8 @@ SOURCES += main.cpp\
     geostats/contactanalysis.cpp \
     geostats/mcmcdataimputation.cpp \
     geostats/searchannulus.cpp \
+    geostats/searchverticaldumbbell.cpp \
+    geostats/searchwasher.cpp \
     gslib/gslibparams/gslibpardir.cpp \
     gslib/gslibparams/widgets/widgetgslibpardir.cpp \
         mainwindow.cpp \
@@ -334,6 +336,8 @@ HEADERS  += mainwindow.h \
     geostats/contactanalysis.h \
     geostats/mcmcdataimputation.h \
     geostats/searchannulus.h \
+    geostats/searchverticaldumbbell.h \
+    geostats/searchwasher.h \
     gslib/gslibparams/gslibpardir.h \
     gslib/gslibparams/widgets/widgetgslibpardir.h \
     util.h \

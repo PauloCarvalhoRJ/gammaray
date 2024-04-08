@@ -10,8 +10,9 @@
 #include "domain/cartesiangrid.h"
 #include "domain/segmentset.h"
 #include "spatialindex/spatialindex.h"
-#include "geostats/searchneighborhood.h"
 #include "geostats/searchannulus.h"
+#include "geostats/searchwasher.h"
+#include "geostats/searchverticaldumbbell.h"
 #include "geostats/searchstrategy.h"
 #include "geostats/pointsetcell.h"
 #include "geostats/gridcell.h"
@@ -249,6 +250,11 @@ bool ContactAnalysis::run()
         m_inputDataType = InputDataSetType::GEOGRID;
     else if( m_inputDataFile->getFileType() == "SEGMENTSET" )
         m_inputDataType = InputDataSetType::SEGMENTSET;
+    else {
+        m_inputDataType = InputDataSetType::UNDEFINED;
+        m_lastError = "Input data type not currently supported:" + m_inputDataFile->getFileType();
+        return false;
+    }
 
     //build the spatial index
     SpatialIndex spatialIndex;
@@ -310,9 +316,7 @@ bool ContactAnalysis::run()
     //for each lag
     for( uint16_t iLag = 0; iLag < m_numberOfLags; iLag++, current_lag += m_lagSize ){
 
-        //build the search strategy for current lag
-        //TODO: the search strategy may vary according to input data set type, whether it is 2D/3D or
-        //      whether the mode is lateral or vertical.
+        //build a search strategy for current lag appropriate for the input data set
         SearchStrategyPtr searchStrategy;
         {
             uint nb_samples     = m_maxNumberOfSamples;
@@ -320,11 +324,33 @@ bool ContactAnalysis::run()
             SearchNeighborhoodPtr searchNeighborhood;
             {
                 if( m_mode == ContactAnalysisMode::LATERAL ){
-                    searchNeighborhood.reset( new SearchAnnulus( current_lag - m_lagSize, current_lag,
-                                                                 min_nb_samples,          nb_samples ) );
-                } else {
-                    m_lastError = "Internal error: no search neighborhood is available for vertical contact analysis.";
-                    return false;
+                    if( ! m_inputDataFile->isTridimensional() ){ //if data set is 2D
+                        searchNeighborhood.reset( new SearchAnnulus( current_lag - m_lagSize, current_lag,
+                                                                     min_nb_samples,          nb_samples ) );
+                    } else { //if data set is 3D
+                        if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
+                            searchNeighborhood.reset( new SearchWasher( current_lag - m_lagSize, current_lag, m_ztolerance*2,
+                                                                         min_nb_samples,          nb_samples ) );
+                        } else {
+                            m_lastError = "Internal error: no search neighborhood is available "
+                                          "for lateral contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
+                            return false;
+                        }
+                    }
+                } else { //if mode == ContactAnalysisMode::VERTICAL
+                    if( ! m_inputDataFile->isTridimensional() ){ //if data set is 2D
+                        m_lastError = "Cannot perform vertical contact analysis on a 2D dataset.";
+                        return false;
+                    } else { //if data set is 3D
+                        if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
+                            searchNeighborhood.reset( new SearchVerticalDumbbell( m_lagSize, 2*current_lag, m_lagSize,
+                                                                                 min_nb_samples,          nb_samples ) );
+                        } else {
+                            m_lastError = "Internal error: no search neighborhood is available "
+                                          "for vertical contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
+                            return false;
+                        }
+                    }
                 }
             }
             searchStrategy.reset( new SearchStrategy( searchNeighborhood, nb_samples, 0.0, min_nb_samples ) );
@@ -375,7 +401,7 @@ bool ContactAnalysis::run()
                                                                  iCurrentSample ) );
                     break;
                 default:
-                    m_lastError = "Unspecified input data type.  This is an internal error.  "
+                    m_lastError = "Unspecified or unsupported input data type.  This is an internal error.  "
                                   "Please report a bug in the program's project website.";
                     return false;
             }
