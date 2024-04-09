@@ -325,12 +325,10 @@ bool ContactAnalysis::run()
             {
                 if( m_mode == ContactAnalysisMode::LATERAL ){
                     if( ! m_inputDataFile->isTridimensional() ){ //if data set is 2D
-                        searchNeighborhood.reset( new SearchAnnulus( current_lag - m_lagSize, current_lag,
-                                                                     min_nb_samples,          nb_samples ) );
+                        searchNeighborhood.reset( new SearchAnnulus( current_lag - m_lagSize, current_lag ) );
                     } else { //if data set is 3D
                         if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
-                            searchNeighborhood.reset( new SearchWasher( current_lag - m_lagSize, current_lag, m_ztolerance*2,
-                                                                         min_nb_samples,          nb_samples ) );
+                            searchNeighborhood.reset( new SearchWasher( current_lag - m_lagSize, current_lag, m_ztolerance*2 ) );
                         } else {
                             m_lastError = "Internal error: no search neighborhood is available "
                                           "for lateral contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
@@ -343,8 +341,7 @@ bool ContactAnalysis::run()
                         return false;
                     } else { //if data set is 3D
                         if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
-                            searchNeighborhood.reset( new SearchVerticalDumbbell( m_lagSize, 2*current_lag, m_lagSize,
-                                                                                 min_nb_samples,          nb_samples ) );
+                            searchNeighborhood.reset( new SearchVerticalDumbbell( m_lagSize, 2*current_lag, m_lagSize ) );
                         } else {
                             m_lastError = "Internal error: no search neighborhood is available "
                                           "for vertical contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
