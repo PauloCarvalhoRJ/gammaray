@@ -151,18 +151,18 @@ std::vector<std::pair<ContactAnalysis::Lag, ContactAnalysis::MeanGradesBothDomai
 }
 
 DataCellPtrMultiset ContactAnalysis::getSamplesFromInputDataSet(const DataCell &sample,
-                                                                const SearchStrategy& searchStrategyPrimary,
-                                                                const SpatialIndex& spatialIndexOfPrimaryData ) const
+                                                                const SearchStrategy& searchStrategy,
+                                                                const SpatialIndex& spatialIndex ) const
 {
     DataCellPtrMultiset result;
     if( m_attributeGrade ){
 
         //if the user set the max number of primary data samples to search to zero, returns the empty result.
-        if( ! searchStrategyPrimary.m_nb_samples )
+        if( ! searchStrategy.m_nb_samples )
             return result;
 
         //Fetch the indexes of the samples to be used in the simulation.
-        QList<uint> samplesIndexes = spatialIndexOfPrimaryData.getNearestWithinGenericRTreeBased( sample, searchStrategyPrimary );
+        QList<uint> samplesIndexes = spatialIndex.getNearestWithinGenericRTreeBased( sample, searchStrategy );
         QList<uint>::iterator it = samplesIndexes.begin();
 
         //Create and collect the searched sample objects, which depend on the type of the input file.

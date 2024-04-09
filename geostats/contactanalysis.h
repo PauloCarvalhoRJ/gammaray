@@ -182,8 +182,8 @@ private:
      * by their distance to the passed data sample.
      */
     DataCellPtrMultiset getSamplesFromInputDataSet(const DataCell& sample ,
-                                                   const SearchStrategy &searchStrategyPrimary ,
-                                                   const SpatialIndex &spatialIndexOfPrimaryData ) const;
+                                                   const SearchStrategy &searchStrategy ,
+                                                   const SpatialIndex &spatialIndex ) const;
 };
 
 #endif // CONTACTANALYSIS_H
