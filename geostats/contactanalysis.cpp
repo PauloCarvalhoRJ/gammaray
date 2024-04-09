@@ -327,8 +327,11 @@ bool ContactAnalysis::run()
                     if( ! m_inputDataFile->isTridimensional() ){ //if data set is 2D
                         searchNeighborhood.reset( new SearchAnnulus( current_lag - m_lagSize, current_lag ) );
                     } else { //if data set is 3D
-                        if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
+                        if( ! m_inputDataFile->isGridded() ) {
                             searchNeighborhood.reset( new SearchWasher( current_lag - m_lagSize, current_lag, m_ztolerance*2 ) );
+                        } else if ( m_inputDataType == InputDataSetType::CARTESIANGRID ){
+                            CartesianGrid* cg = dynamic_cast< CartesianGrid* >( m_inputDataFile );
+                            searchNeighborhood.reset( new SearchWasher( current_lag - m_lagSize, current_lag, cg->getDZ() ) );
                         } else {
                             m_lastError = "Internal error: no search neighborhood is available "
                                           "for lateral contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
