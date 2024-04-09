@@ -13,8 +13,7 @@ class SearchVerticalDumbbell : public SearchNeighborhood
 public:
     SearchVerticalDumbbell(double height_of_each_cylinder,
                            double separation_between_the_cylinders,
-                           double radius,
-                           uint minNumberOfSamples, uint maxNumberOfSamples);
+                           double radius);
 
 
     /** Move constructor. */
@@ -39,7 +38,6 @@ public:
     double m_height_of_each_cylinder;
     double m_separation_between_the_cylinders;
     double m_radius;
-    uint m_maxNumberOfSamples, m_minNumberOfSamples;
 };
 
 #endif // SEARCHVERTICALDUMBBELL_H

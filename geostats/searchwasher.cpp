@@ -1,8 +1,7 @@
 #include "searchwasher.h"
 
-SearchWasher::SearchWasher(double innerRadius, double outerRadius, double zThickness,
-                           uint minNumberOfSamples, uint maxNumberOfSamples) :
-    SearchAnnulus( innerRadius, outerRadius, minNumberOfSamples, maxNumberOfSamples ),
+SearchWasher::SearchWasher(double innerRadius, double outerRadius, double zThickness) :
+    SearchAnnulus( innerRadius, outerRadius ),
     m_zThickness( zThickness )
 {}
 

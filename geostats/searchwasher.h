@@ -11,8 +11,7 @@
 class SearchWasher : public SearchAnnulus
 {
 public:
-    SearchWasher(double innerRadius, double outerRadius, double zThickness,
-                 uint minNumberOfSamples, uint maxNumberOfSamples);
+    SearchWasher(double innerRadius, double outerRadius, double zThickness);
 
     /** Move constructor. */
     SearchWasher( SearchWasher&& right_hand_side );

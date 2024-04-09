@@ -2,13 +2,10 @@
 
 SearchVerticalDumbbell::SearchVerticalDumbbell(double height_of_each_cylinder,
                                                double separation_between_the_cylinders,
-                                               double radius,
-                                               uint minNumberOfSamples, uint maxNumberOfSamples) :
+                                               double radius) :
     m_height_of_each_cylinder( height_of_each_cylinder ),
     m_separation_between_the_cylinders(separation_between_the_cylinders),
-    m_radius( radius ),
-    m_maxNumberOfSamples(maxNumberOfSamples),
-    m_minNumberOfSamples(minNumberOfSamples)
+    m_radius( radius )
 {}
 
 void SearchVerticalDumbbell::getBBox(double centerX, double centerY, double centerZ,

@@ -11,8 +11,7 @@ class SearchAnnulus : public SearchNeighborhood
 {
 public:
 
-    SearchAnnulus(double innerRadius, double outerRadius,
-                  uint minNumberOfSamples, uint maxNumberOfSamples );
+    SearchAnnulus(double innerRadius, double outerRadius );
 
     /** Move constructor. */
     SearchAnnulus( SearchAnnulus&& right_hand_side );
@@ -40,7 +39,6 @@ public:
 
 
     double m_innerRadius, m_outerRadius;
-    uint m_maxNumberOfSamples, m_minNumberOfSamples;
 };
 
 #endif // SEARCHANNULUS_H

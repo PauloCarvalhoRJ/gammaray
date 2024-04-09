@@ -2,12 +2,9 @@
 
 #include <limits>
 
-SearchAnnulus::SearchAnnulus(double innerRadius, double outerRadius,
-                             uint minNumberOfSamples, uint maxNumberOfSamples) :
+SearchAnnulus::SearchAnnulus(double innerRadius, double outerRadius) :
     m_innerRadius(innerRadius),
-    m_outerRadius(outerRadius),
-    m_maxNumberOfSamples(maxNumberOfSamples),
-    m_minNumberOfSamples(minNumberOfSamples)
+    m_outerRadius(outerRadius)
 {}
 
 void SearchAnnulus::getBBox(double centerX, double centerY, double centerZ,
