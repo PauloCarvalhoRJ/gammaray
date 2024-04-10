@@ -23,12 +23,6 @@ public:
 
     virtual bool isInside(double centerX, double centerY, double centerZ,
                           double x, double y, double z ) const;
-
-    virtual bool hasSpatialFiltering() const { return false; }
-
-    virtual void performSpatialFilter( double centerX, double centerY, double centerZ,
-                                       std::vector< IndexedSpatialLocationPtr >& samplesLocations,
-                                       const SearchStrategy& parentSearchStrategy ) const {}
     ////-------------------------------------------------------------------------------------
 
     double m_zThickness;
