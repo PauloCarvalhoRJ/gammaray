@@ -46,8 +46,10 @@ ContactAnalysisDialog::ContactAnalysisDialog(Attribute *attributeGrade,
             ui->lblZTolerance->setEnabled( false );
             ui->dblSpinZTolerance->setEnabled( false );
         }
-        if( ! m_dataFile->isTridimensional() )
+        if( ! m_dataFile->isTridimensional() ) {
             ui->radioVertical->setEnabled( false );
+            ui->radioOmni3D->setEnabled( false );
+        }
     }
 
     //display the variables' names

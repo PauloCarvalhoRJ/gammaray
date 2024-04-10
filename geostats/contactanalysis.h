@@ -14,7 +14,8 @@ class SpatialIndex;
 
 enum class ContactAnalysisMode : uint8_t {
     LATERAL,
-    VERTICAL
+    VERTICAL,
+    OMNI3D
 };
 
 /** Enum used to avoid the slow File::getFileType() in performance-critical code. */

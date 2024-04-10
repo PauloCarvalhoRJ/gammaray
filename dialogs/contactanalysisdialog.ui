@@ -6,21 +6,32 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>593</width>
+    <width>563</width>
     <height>225</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0" columnstretch="0,0,0,0,0,0,1,0" rowminimumheight="0,0,0,0,0,0,0,0,0,0,0,0" columnminimumwidth="0,0,0,0,0,0,0,0">
-   <item row="11" column="0" colspan="5">
-    <widget class="QPushButton" name="btnProceed">
+  <layout class="QGridLayout" name="gridLayout" rowstretch="0,0,0,0,0,0,0,0,0,0,0,0" columnstretch="0,0,0,0,0,0,1,0,0" rowminimumheight="0,0,0,0,0,0,0,0,0,0,0,0" columnminimumwidth="0,0,0,0,0,0,0,0,0">
+   <item row="6" column="0">
+    <widget class="QLabel" name="label_4">
      <property name="text">
-      <string>Proceed</string>
+      <string>domain 1:</string>
      </property>
-     <property name="default">
-      <bool>true</bool>
+    </widget>
+   </item>
+   <item row="0" column="0" colspan="8">
+    <widget class="QLabel" name="lblDataFile">
+     <property name="text">
+      <string>Data file: </string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLabel" name="label_8">
+     <property name="text">
+      <string>lag size:</string>
      </property>
     </widget>
    </item>
@@ -31,10 +42,20 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="5">
-    <widget class="QLabel" name="label_9">
+   <item row="10" column="0" colspan="4">
+    <widget class="QLabel" name="label_10">
      <property name="text">
-      <string>number of lags:</string>
+      <string>length unit symbol for output chart:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QRadioButton" name="radioLateral">
+     <property name="text">
+      <string>lateral</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -51,44 +72,17 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="6" colspan="2">
-    <widget class="QFrame" name="frmDomain2">
-     <property name="frameShape">
-      <enum>QFrame::StyledPanel</enum>
-     </property>
-     <property name="frameShadow">
-      <enum>QFrame::Raised</enum>
-     </property>
-     <layout class="QVBoxLayout" name="verticalLayout_2">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-     </layout>
-    </widget>
-   </item>
-   <item row="0" column="0" colspan="8">
-    <widget class="QLabel" name="lblDataFile">
+   <item row="3" column="2">
+    <widget class="QLabel" name="lblZTolerance">
      <property name="text">
-      <string>Data file: </string>
+      <string>z tolerance:</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="0" colspan="8">
-    <widget class="QLabel" name="lblDomainsAttribute">
+   <item row="8" column="0" colspan="2">
+    <widget class="QLabel" name="label_6">
      <property name="text">
-      <string>categorical variable with the domains: </string>
+      <string>number of samples:    min:</string>
      </property>
     </widget>
    </item>
@@ -119,6 +113,92 @@
      </layout>
     </widget>
    </item>
+   <item row="6" column="6" colspan="2">
+    <widget class="QFrame" name="frmDomain2">
+     <property name="frameShape">
+      <enum>QFrame::StyledPanel</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Raised</enum>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+     </layout>
+    </widget>
+   </item>
+   <item row="10" column="4">
+    <widget class="QLineEdit" name="txtLengthUnitSymbol">
+     <property name="text">
+      <string>m</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="3">
+    <widget class="QDoubleSpinBox" name="dblSpinZTolerance">
+     <property name="toolTip">
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This value is used with 3D non-gridded data files (e.g. point sets) to consider whether two neighboring samples are in the same Z level.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    </widget>
+   </item>
+   <item row="8" column="5">
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>max:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="6" column="5">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>domain 2:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="9" column="5">
+    <widget class="QLabel" name="label_9">
+     <property name="text">
+      <string>number of lags:</string>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0" colspan="5">
+    <widget class="QPushButton" name="btnProceed">
+     <property name="text">
+      <string>Proceed</string>
+     </property>
+     <property name="default">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="5">
+    <widget class="QRadioButton" name="radioVertical">
+     <property name="text">
+      <string>vertical</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0" colspan="8">
+    <widget class="QLabel" name="lblDomainsAttribute">
+     <property name="text">
+      <string>categorical variable with the domains: </string>
+     </property>
+    </widget>
+   </item>
    <item row="1" column="0" colspan="8">
     <widget class="QLabel" name="lblGradeAttribute">
      <property name="text">
@@ -133,66 +213,7 @@
      </property>
     </widget>
    </item>
-   <item row="9" column="6" colspan="2">
-    <widget class="QSpinBox" name="spinNumberOfLags">
-     <property name="minimum">
-      <number>1</number>
-     </property>
-     <property name="value">
-      <number>5</number>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="0" colspan="2">
-    <widget class="QLabel" name="label_6">
-     <property name="text">
-      <string>number of samples:    min:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="5">
-    <widget class="QLabel" name="label_7">
-     <property name="text">
-      <string>max:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="0" colspan="4">
-    <widget class="QLabel" name="label_10">
-     <property name="text">
-      <string>length unit symbol for output chart:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="11" column="6" colspan="2">
-    <widget class="QPushButton" name="btnDismiss">
-     <property name="text">
-      <string>Dismiss</string>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="5">
-    <widget class="QLabel" name="label_5">
-     <property name="text">
-      <string>domain 2:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="9" column="0">
-    <widget class="QLabel" name="label_8">
-     <property name="text">
-      <string>lag size:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="10" column="4">
-    <widget class="QLineEdit" name="txtLengthUnitSymbol">
-     <property name="text">
-      <string>m</string>
-     </property>
-    </widget>
-   </item>
-   <item row="8" column="6" colspan="2">
+   <item row="8" column="6" colspan="3">
     <widget class="QSpinBox" name="spinMaxNumberOfSamples">
      <property name="minimum">
       <number>1</number>
@@ -202,41 +223,27 @@
      </property>
     </widget>
    </item>
-   <item row="6" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>domain 1:</string>
+   <item row="9" column="6" colspan="3">
+    <widget class="QSpinBox" name="spinNumberOfLags">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="value">
+      <number>5</number>
      </property>
     </widget>
    </item>
-   <item row="3" column="1">
-    <widget class="QRadioButton" name="radioLateral">
+   <item row="11" column="8">
+    <widget class="QPushButton" name="btnDismiss">
      <property name="text">
-      <string>lateral</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
+      <string>Dismiss</string>
      </property>
     </widget>
    </item>
-   <item row="3" column="2">
-    <widget class="QLabel" name="lblZTolerance">
+   <item row="3" column="7">
+    <widget class="QRadioButton" name="radioOmni3D">
      <property name="text">
-      <string>z tolerance:</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="3">
-    <widget class="QDoubleSpinBox" name="dblSpinZTolerance">
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;This value is used with 3D non-gridded data files (e.g. point sets) to consider whether two neighboring samples are in the same Z level.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="5">
-    <widget class="QRadioButton" name="radioVertical">
-     <property name="text">
-      <string>vertical</string>
+      <string>omni 3D</string>
      </property>
     </widget>
    </item>

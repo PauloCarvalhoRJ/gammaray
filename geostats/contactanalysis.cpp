@@ -14,6 +14,7 @@
 #include "geostats/searchwasher.h"
 #include "geostats/searchverticaldumbbell.h"
 #include "geostats/searchstrategy.h"
+#include "geostats/searchhollowsphere.h"
 #include "geostats/pointsetcell.h"
 #include "geostats/gridcell.h"
 #include "geostats/segmentsetcell.h"
@@ -102,6 +103,11 @@ bool ContactAnalysis::isOKtoRun()
 
     if( m_mode == ContactAnalysisMode::VERTICAL && ! m_inputDataFile->isTridimensional() ){
         m_lastError = "Mode vertical is unavailable for non-3D datasets.";
+        return false;
+    }
+
+    if( m_mode == ContactAnalysisMode::OMNI3D && ! m_inputDataFile->isTridimensional() ){
+        m_lastError = "Mode omnidirectional is unavailable for non-3D datasets.";
         return false;
     }
 
@@ -338,7 +344,7 @@ bool ContactAnalysis::run()
                             return false;
                         }
                     }
-                } else { //if mode == ContactAnalysisMode::VERTICAL
+                } else if( m_mode == ContactAnalysisMode::VERTICAL ) {
                     if( ! m_inputDataFile->isTridimensional() ){ //if data set is 2D
                         m_lastError = "Cannot perform vertical contact analysis on a 2D dataset.";
                         return false;
@@ -348,6 +354,19 @@ bool ContactAnalysis::run()
                         } else {
                             m_lastError = "Internal error: no search neighborhood is available "
                                           "for vertical contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
+                            return false;
+                        }
+                    }
+                } else { //if m_mode == ContactAnalysisMode::OMNI3D
+                    if( ! m_inputDataFile->isTridimensional() ){ //if data set is 2D
+                        m_lastError = "Cannot perform omnidirectional contact analysis on a 2D dataset.";
+                        return false;
+                    } else { //if data set is 3D
+                        if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
+                            searchNeighborhood.reset( new SearchHollowSphere( current_lag - m_lagSize, current_lag ) );
+                        } else {
+                            m_lastError = "Internal error: no search neighborhood is available "
+                                          "for omnidirectional contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
                             return false;
                         }
                     }
