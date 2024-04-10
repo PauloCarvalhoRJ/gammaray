@@ -155,7 +155,7 @@ void ContactAnalysisDialog::onProceed()
         lcw->setChartTitle( "Contact analysis of " + m_dataFile->getName() );
         lcw->setData( chartData, 0,
                       {{1, nameDomain1 + " (Domain 1)"}, {2, nameDomain2 + " (Domain 2)"}},
-                      {{2, m_attributeGrade->getName() }}, // shared y-axis is enabled, set only the last one
+                      {{2, "mean " + m_attributeGrade->getName() }}, // shared y-axis is enabled, set only the last one
                       {{1, colorDomain1}              , {2, colorDomain2}} );
         lcw->setXaxisCaption( "lag (" + ui->txtLengthUnitSymbol->text() + ")" );
         EmptyDialog* ed = new EmptyDialog( this );
