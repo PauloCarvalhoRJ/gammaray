@@ -1,10 +1,10 @@
-#include "searchhollowsphere.h"
+#include "searchsphericalshell.h"
 
-SearchHollowSphere::SearchHollowSphere(double innerRadius, double outerRadius) :
+SearchSphericalShell::SearchSphericalShell(double innerRadius, double outerRadius) :
     SearchAnnulus( innerRadius, outerRadius )
 {}
 
-void SearchHollowSphere::getBBox(double centerX, double centerY, double centerZ,
+void SearchSphericalShell::getBBox(double centerX, double centerY, double centerZ,
                                  double &minX, double &minY, double &minZ,
                                  double &maxX, double &maxY, double &maxZ) const
 {
@@ -16,7 +16,7 @@ void SearchHollowSphere::getBBox(double centerX, double centerY, double centerZ,
     minZ = centerZ - m_outerRadius;
 }
 
-bool SearchHollowSphere::isInside(double centerX, double centerY, double centerZ,
+bool SearchSphericalShell::isInside(double centerX, double centerY, double centerZ,
                                   double x, double y, double z) const
 {
     double localX = x - centerX;

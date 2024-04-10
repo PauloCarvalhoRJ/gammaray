@@ -1,19 +1,19 @@
-#ifndef SEARCHHOLLOWSPHERE_H
-#define SEARCHHOLLOWSPHERE_H
+#ifndef SEARCHSPHERICALSHELL_H
+#define SEARCHSPHERICALSHELL_H
 
 #include "geostats/searchannulus.h"
 
 /**
- * The SearchHollowSphere class represents a search neighborhood with the shape of a hollow sphere.
+ * The SearchSphericalShell class represents a search neighborhood with the shape of a hollow sphere.
  * It works like the SearchAnnulus for 3D datasets.
  */
-class SearchHollowSphere : public SearchAnnulus
+class SearchSphericalShell : public SearchAnnulus
 {
 public:
-    SearchHollowSphere( double innerRadius, double outerRadius );
+    SearchSphericalShell( double innerRadius, double outerRadius );
 
     /** Move constructor. */
-    SearchHollowSphere( SearchHollowSphere&& right_hand_side );
+    SearchSphericalShell( SearchSphericalShell&& right_hand_side );
 
 
     ////-------------SearchNeighborhood interface------------------------------------------
@@ -26,4 +26,4 @@ public:
     ////-------------------------------------------------------------------------------------
 };
 
-#endif // SEARCHHOLLOWSPHERE_H
+#endif // SEARCHSPHERICALSHELL_H
