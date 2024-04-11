@@ -53,6 +53,7 @@ SOURCES += main.cpp\
     geostats/contactanalysis.cpp \
     geostats/mcmcdataimputation.cpp \
     geostats/searchannulus.cpp \
+    geostats/searchannulusstratigraphic.cpp \
     geostats/searchsphericalshell.cpp \
     geostats/searchverticaldumbbell.cpp \
     geostats/searchwasher.cpp \
@@ -337,6 +338,7 @@ HEADERS  += mainwindow.h \
     geostats/contactanalysis.h \
     geostats/mcmcdataimputation.h \
     geostats/searchannulus.h \
+    geostats/searchannulusstratigraphic.h \
     geostats/searchsphericalshell.h \
     geostats/searchverticaldumbbell.h \
     geostats/searchwasher.h \
