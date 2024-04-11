@@ -93,13 +93,24 @@ double FKEstimationRunner::fk(GridCell & estimationCell, double& estimatedMean, 
 {
 	double factor;
 
+    CartesianGrid* cg = dynamic_cast< CartesianGrid* >( estimationCell._grid );
+    if( ! cg ){
+        ++nFailed;
+        double failValue = m_fkEstimation->ndvOfEstimationGrid();
+        estimatedMean = failValue;
+        nSamples = 0;
+        Application::instance()->logWarn( "FKEstimationRunner::fk(): cannot perform factorial kriging on non-Cartesian grids.  Returning " +
+                                          QString::number(failValue) + " to protect the output data file." );
+        return failValue;
+    }
+
 	//Compute an adequate epsilon for the nugget factor estimation: about 10% of the grid cell size.
 	//TODO: performance.  This doesn't need to be here because the cell dimensions are not supposed to vary.
 	double epsilonNugget = 0.1;
 	if( m_fkEstimation->getFactorNumber() == 0 ){
-		epsilonNugget = std::min<double>( estimationCell._grid->getDX(), estimationCell._grid->getDY() );
+        epsilonNugget = std::min<double>( cg->getDX(), cg->getDY() );
 		if( estimationCell._grid->isTridimensional() )
-			epsilonNugget = std::min<double>( epsilonNugget, estimationCell._grid->getDZ() );
+            epsilonNugget = std::min<double>( epsilonNugget, cg->getDZ() );
 		epsilonNugget /= 10;
 	}
 

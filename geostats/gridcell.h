@@ -3,7 +3,7 @@
 
 #include "datacell.h"
 #include "ijkindex.h"
-#include "domain/cartesiangrid.h"
+#include "domain/gridfile.h"
 
 /** Data structure containing information of a grid cell. */
 class GridCell : public DataCell
@@ -23,12 +23,11 @@ public:
      * @param j Topological coordinate (crossline/row)
      * @param k Topological coordinate (horizontal slice)
      */
-	inline GridCell( CartesianGrid* grid, int dataIndex, int i, int j, int k ) : DataCell( dataIndex, grid ),
+    inline GridCell( GridFile* grid, int dataIndex, int i, int j, int k ) : DataCell( dataIndex, grid ),
 		_grid(grid), _indexIJK(i,j,k)
     {
-        _center._x = grid->getX0() + _indexIJK._i * grid->getDX() + grid->getDX() / 2.0;
-        _center._y = grid->getY0() + _indexIJK._j * grid->getDY() + grid->getDY() / 2.0;
-        _center._z = grid->getZ0() + _indexIJK._k * grid->getDZ() + grid->getDZ() / 2.0;
+        grid->IJKtoXYZ( i, j, k, _center._x, _center._y, _center._z);
+
     }
 
     /** Computes the topological distance from the given cell.
@@ -42,7 +41,7 @@ public:
     }
 
     /** The grid object this cell refers to. */
-    CartesianGrid* _grid;
+    GridFile* _grid;
 
     /** Topological coordinates (i,j,k). */
     IJKIndex _indexIJK;

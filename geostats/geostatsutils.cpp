@@ -319,8 +319,8 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                                                         GridCellPtrMultiset &list,
                                                         const std::vector<double> *simulatedData)
 {
-    CartesianGrid* cg = cell._grid;
-    if( ! cg ){
+    GridFile* gf = cell._grid;
+    if( ! gf ){
         Application::instance()->logError("GeostatsUtils::getValuedNeighborsTopoOrdered(): null grid.  Returning empty list.");
     }
 
@@ -329,9 +329,9 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                                                              "separate computed data was provided (simulatedData == nullptr).");
 
     //get the grid limits
-    int row_limit = cg->getNY();
-    int column_limit = cg->getNX();
-    int slice_limit = cg->getNZ();
+    int row_limit = gf->getNJ();
+    int column_limit = gf->getNI();
+    int slice_limit = gf->getNK();
 
     //generate all possible ijk deltas up to the neighborhood limits
     //the list of deltas is ordered by resulting distance with respect to a target cell
@@ -395,15 +395,15 @@ void GeostatsUtils::getValuedNeighborsTopoOrdered(const GridCell &cell,
                 int dataIndex;
                 if ( cell._dataIndex >= 0 ) {  // data column is provided: fetch value from the grid
                     dataIndex = cell._dataIndex;
-                    value = cg->dataIJK( dataIndex, ii, jj, kk );
+                    value = gf->dataIJK( dataIndex, ii, jj, kk );
                 } else { // data column is NOT provided: fetch value from a client-given data container
-                    dataIndex = cg->IJKtoIndex( ii, jj, kk );
+                    dataIndex = gf->IJKtoIndex( ii, jj, kk );
                     value = (*simulatedData)[ dataIndex ];
                 }
                 //if the cell is valued... DataFile::hasNDV() is slow.
                 if( !hasNDV || !Util::almostEqual2sComplement( NDV, value, 1 ) ){
                     //...it is a valid neighbor.
-                    GridCellPtr currentCell( new GridCell( cg, dataIndex, ii, jj, kk ) );
+                    GridCellPtr currentCell( new GridCell( gf, dataIndex, ii, jj, kk ) );
                     currentCell->computeTopoDistance( cell );
                     list.insert( currentCell );
                     //if the number of neighbors is reached...
