@@ -549,10 +549,10 @@ bool CartesianGrid::XYZtoIJK(double x, double y, double z, uint &i, uint &j, uin
 
 void CartesianGrid::IJKtoXYZ(uint i, uint j, uint k, double &x, double &y, double &z) const
 {
-    x = _x0 + _dx * i;
-    y = _y0 + _dy * j;
+    x = _x0 + _dx * i + _dx/2;
+    y = _y0 + _dy * j + _dy/2;
 	if( m_nK > 1 )
-        z = _z0 + _dz * k;
+        z = _z0 + _dz * k + _dx/2;
 	else
 		z = 0.0; //2D grids are positioned at Z=0.0 by convention
 }
