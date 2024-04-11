@@ -49,6 +49,13 @@ public:
      */
     virtual double readValueFromDataSet( unsigned int dataColumnIndex ) const = 0;
 
+    /**
+     * Returns the index of the data line in the underlying data file.
+     * The method to determine the data line index corresponding to this cell depends
+     * on the underlying data set type, so the concrete derived classes must implement it.
+     */
+    virtual uint64_t getDataRowIndex() const = 0;
+
 protected:
 	inline DataCell( int dataIndex ) :
 		_dataIndex( dataIndex ),

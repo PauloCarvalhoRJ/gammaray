@@ -150,6 +150,7 @@ public:
     virtual bool isTridimensional();
     virtual void writeToFS();
     virtual void readFromFS();
+    virtual bool isGridded() const override {  return false; }
 
     // ICalcPropertyCollection interface
 public:

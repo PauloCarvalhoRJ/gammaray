@@ -252,6 +252,7 @@ private slots:
     void onMCRFBayesianSim();
     void onReviewTransiogramBand();
     void onRepositionGrid();
+    void onPerformContactAnaysis();
 
 private:
     /**

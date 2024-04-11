@@ -35,6 +35,7 @@ win32 {
 
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
+    dialogs/contactanalysisdialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
     dialogs/gridrepositiondialog.cpp \
     dialogs/listbuilderdialog.cpp \
@@ -49,7 +50,13 @@ SOURCES += main.cpp\
     geometry/intersectionfinder.cpp \
     geometry/quadrilateral.cpp \
     geometry/triangle.cpp \
+    geostats/contactanalysis.cpp \
     geostats/mcmcdataimputation.cpp \
+    geostats/searchannulus.cpp \
+    geostats/searchannulusstratigraphic.cpp \
+    geostats/searchsphericalshell.cpp \
+    geostats/searchverticaldumbbell.cpp \
+    geostats/searchwasher.cpp \
     gslib/gslibparams/gslibpardir.cpp \
     gslib/gslibparams/widgets/widgetgslibpardir.cpp \
         mainwindow.cpp \
@@ -308,6 +315,7 @@ SOURCES += main.cpp\
 
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
+    dialogs/contactanalysisdialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
     dialogs/gridrepositiondialog.h \
     dialogs/listbuilderdialog.h \
@@ -327,7 +335,13 @@ HEADERS  += mainwindow.h \
     geometry/intersectionfinder.h \
     geometry/quadrilateral.h \
     geometry/triangle.h \
+    geostats/contactanalysis.h \
     geostats/mcmcdataimputation.h \
+    geostats/searchannulus.h \
+    geostats/searchannulusstratigraphic.h \
+    geostats/searchsphericalshell.h \
+    geostats/searchverticaldumbbell.h \
+    geostats/searchwasher.h \
     gslib/gslibparams/gslibpardir.h \
     gslib/gslibparams/widgets/widgetgslibpardir.h \
     util.h \
@@ -589,6 +603,7 @@ HEADERS  += mainwindow.h \
 
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
+    dialogs/contactanalysisdialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
     dialogs/gridrepositiondialog.ui \
     dialogs/listbuilderdialog.ui \
@@ -853,7 +868,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.18
+VERSION = 6.20
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"

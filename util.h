@@ -73,6 +73,16 @@ enum class SortingOrder : int {
     DESCENDING
 };
 
+/** Enum that can be used to avoid the slow File::getFileType() in performance-critical code. */
+enum class DataSetType : int {
+    UNDEFINED,
+    POINTSET,
+    CARTESIANGRID,
+    GEOGRID,
+    SEGMENTSET
+};
+
+
 //one Facies Transition Matrix per h.
 typedef double Separation;
 typedef std::pair<Separation, FaciesTransitionMatrix> hFTM;

@@ -28,6 +28,7 @@ public:
 	// DataCell	interface
 	virtual double readValueFromDataSet() const;
     virtual double readValueFromDataSet( uint dataColumnIndex ) const;
+    virtual uint64_t getDataRowIndex() const { return m_sampleIndex; }
 
 	PointSet* m_pointSet;
 	uint m_sampleIndex;

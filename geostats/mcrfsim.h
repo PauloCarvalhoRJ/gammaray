@@ -20,13 +20,7 @@ class QProgressDialog;
 class SpatialIndex;
 
 /** Enum used to avoid the slow File::getFileType() in performance-critical code. */
-enum class PrimaryDataType : int {
-    UNDEFINED,
-    POINTSET,
-    CARTESIANGRID,
-    GEOGRID,
-    SEGMENTSET
-};
+typedef DataSetType PrimaryDataType; //DataSetType is defined in util.h
 
 /** Enum used for clarity when addressing the source index in Tau Model.
  * The values are used as array indexes, so they must start at 0 and increase by 1.

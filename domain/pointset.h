@@ -97,6 +97,7 @@ public:
     virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
     virtual bool getCenter( double& x, double& y, double& z ) const;
+    virtual bool isGridded() const override {  return false; }
 
     // File interface
 public:
