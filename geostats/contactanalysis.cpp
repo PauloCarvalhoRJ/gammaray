@@ -9,12 +9,13 @@
 #include "domain/segmentset.h"
 #include "domain/cartesiangrid.h"
 #include "domain/segmentset.h"
+#include "domain/geogrid.h"
 #include "spatialindex/spatialindex.h"
 #include "geostats/searchannulus.h"
 #include "geostats/searchwasher.h"
 #include "geostats/searchverticaldumbbell.h"
 #include "geostats/searchstrategy.h"
-#include "geostats/searchhollowsphere.h"
+#include "geostats/searchsphericalshell.h"
 #include "geostats/pointsetcell.h"
 #include "geostats/gridcell.h"
 #include "geostats/segmentsetcell.h"
@@ -175,35 +176,40 @@ DataCellPtrMultiset ContactAnalysis::getSamplesFromInputDataSet(const DataCell &
         for( ; it != samplesIndexes.end(); ++it ){
             switch ( m_inputDataType ) {
             case InputDataSetType::POINTSET:
-            {
+                {
                 DataCellPtr p(new PointSetCell( static_cast<PointSet*>( m_inputDataFile ), m_attributeGrade->getAttributeGEOEASgivenIndex()-1, *it ));
                 p->computeCartesianDistance( sample );
                 result.insert( p );
-            }
+                }
                 break;
             case InputDataSetType::CARTESIANGRID:
-            {
+                {
                 CartesianGrid* cg = static_cast<CartesianGrid*>( m_inputDataFile );
                 uint i, j, k;
                 cg->indexToIJK( *it, i, j, k );
                 DataCellPtr p(new GridCell( cg, m_attributeGrade->getAttributeGEOEASgivenIndex()-1, i, j, k ));
                 p->computeCartesianDistance( sample );
                 result.insert( p );
-            }
+                }
                 break;
             case InputDataSetType::GEOGRID:
-            {
-                Application::instance()->logError( "ContactAnalysis::getSamplesFromInputDataSet(): GeoGrids cannot be used as input data yet."
-                                                   "  It is necessary to create a class like GeoGridCell inheriting from DataCell." );
-                return result;
-            }
+                {
+                GeoGrid* ggAspect = dynamic_cast<GeoGrid*>(m_inputDataFile);
+                uint i, j, k;
+                ggAspect->indexToIJK( *it, i, j, k );
+                DataCellPtr p( new GridCell( ggAspect,
+                               m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
+                               i, j, k ) );
+                p->computeCartesianDistance( sample );
+                result.insert( p );
+                }
                 break;
             case InputDataSetType::SEGMENTSET:
-            {
+                {
                 DataCellPtr p(new SegmentSetCell( static_cast<SegmentSet*>( m_inputDataFile ), m_attributeGrade->getAttributeGEOEASgivenIndex()-1, *it ));
                 p->computeCartesianDistance( sample );
                 result.insert( p );
-            }
+                }
                 break;
             default:
                 Application::instance()->logError( "ContactAnalysis::getSamplesFromInputDataSet(): Input data file type not recognized or undefined." );
@@ -284,6 +290,9 @@ bool ContactAnalysis::run()
         } else if ( m_inputDataFile->getFileType() == "CARTESIANGRID") {
             CartesianGrid* cgAspect = dynamic_cast<CartesianGrid*>( m_inputDataFile );
             spatialIndex.fill( cgAspect );
+        } else if ( m_inputDataFile->getFileType() == "GEOGRID") {
+            GeoGrid* ggAspect = dynamic_cast<GeoGrid*>( m_inputDataFile );
+            spatialIndex.fillWithCenters( ggAspect, 0.0001 );
         } else {
             m_lastError = "Internal error building spatial index: input data of type " + m_inputDataFile->getFileType() + " are not currently supported.";
             return false;
@@ -349,8 +358,30 @@ bool ContactAnalysis::run()
                         m_lastError = "Cannot perform vertical contact analysis on a 2D dataset.";
                         return false;
                     } else { //if data set is 3D
-                        if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
-                            searchNeighborhood.reset( new SearchVerticalDumbbell( m_lagSize, 2*current_lag, m_lagSize ) );
+                        if( ! m_inputDataFile->isGridded() ) {
+                            searchNeighborhood.reset( new SearchVerticalDumbbell( m_lagSize, 2*(current_lag-m_lagSize), m_lagSize ) );
+                        } else if ( m_inputDataType == InputDataSetType::CARTESIANGRID ) {
+                            CartesianGrid* cg = dynamic_cast< CartesianGrid* >( m_inputDataFile );
+                            const double dx = cg->getDX();
+                            const double dy = cg->getDY();
+                            double radius = std::sqrt( dx*dx + dy*dy ) / 2;
+                            searchNeighborhood.reset( new SearchVerticalDumbbell( m_lagSize, 2*(current_lag-m_lagSize), radius ) );
+                        } else if ( m_inputDataType == InputDataSetType::GEOGRID ) {
+                            GeoGrid* gg = dynamic_cast< GeoGrid* >( m_inputDataFile );
+                            double bbMinX, bbMinY, bbMinZ; //BB == Bounding Box
+                            double bbMaxX, bbMaxY, bbMaxZ;
+                            double maxBBdX = -std::numeric_limits<double>::max();
+                            double maxBBdY = -std::numeric_limits<double>::max();
+                            uint maxIndex = gg->getDataLineCount();
+                            for( uint i = 0; i < maxIndex; i++ ){
+                                gg->getBoundingBox( i, bbMinX, bbMinY, bbMinZ, bbMaxX, bbMaxY, bbMaxZ );
+                                double bbDx = bbMaxX - bbMinX;
+                                double bbDy = bbMaxY - bbMinY;
+                                if( bbDx > maxBBdX ) maxBBdX = bbDx;
+                                if( bbDy > maxBBdY ) maxBBdY = bbDy;
+                            }
+                            double radius = std::sqrt( maxBBdX*maxBBdX + maxBBdY*maxBBdY ) / 2;
+                            searchNeighborhood.reset( new SearchVerticalDumbbell( m_lagSize, 2*(current_lag-m_lagSize), radius ) );
                         } else {
                             m_lastError = "Internal error: no search neighborhood is available "
                                           "for vertical contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
@@ -362,13 +393,7 @@ bool ContactAnalysis::run()
                         m_lastError = "Cannot perform omnidirectional contact analysis on a 2D dataset.";
                         return false;
                     } else { //if data set is 3D
-                        if( ! m_inputDataFile->isGridded() || m_inputDataType == InputDataSetType::CARTESIANGRID ) {
-                            searchNeighborhood.reset( new SearchHollowSphere( current_lag - m_lagSize, current_lag ) );
-                        } else {
-                            m_lastError = "Internal error: no search neighborhood is available "
-                                          "for omnidirectional contact analysis with datasets of type " + m_inputDataFile->getFileType() + ".";
-                            return false;
-                        }
+                        searchNeighborhood.reset( new SearchSphericalShell( current_lag - m_lagSize, current_lag ) );
                     }
                 }
             }
@@ -412,8 +437,15 @@ bool ContactAnalysis::run()
                     }
                     break;
                 case InputDataSetType::GEOGRID:
-                    m_lastError = "Internal error: geogrids are not currently supported in contact analysis.";
-                    return false;
+                    {
+                    GeoGrid* ggAspect = dynamic_cast<GeoGrid*>(m_inputDataFile);
+                    uint i, j, k;
+                    ggAspect->indexToIJK( iCurrentSample, i, j, k );
+                    currentSampleCell.reset( new GridCell( ggAspect,
+                                                           m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
+                                                           i, j, k ) );
+                    }
+                break;
                 case InputDataSetType::SEGMENTSET:
                     currentSampleCell.reset( new SegmentSetCell( dynamic_cast<SegmentSet*>(m_inputDataFile),
                                                                  m_attributeGrade->getAttributeGEOEASgivenIndex()-1,
