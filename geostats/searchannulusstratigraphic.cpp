@@ -13,11 +13,12 @@ bool SearchAnnulusStratigraphic::isInside(double centerX, double centerY, double
     //determine the stratigraphic intervals corresponding to the
     //reference location and to the query location
     uint I, J, refK, queryK;
-    m_geoGrid->XYZtoIJK(centerX, centerY, centerZ, I, J, refK);
-    m_geoGrid->XYZtoIJK(x, y, z, I, J, queryK);
+    bool isRefOK   = m_geoGrid->XYZtoIJK(centerX, centerY, centerZ, I, J, refK);
+    bool isQueryOK = m_geoGrid->XYZtoIJK(x, y, z, I, J, queryK);
 
-    //if both locations don't lie in the same stratigraphic interval, return a miss.
-    if( refK != queryK )
+    //if both locations don't lie in the same stratigraphic interval or there was a problem
+    //in finding grid cells, return a miss.
+    if( refK != queryK || ! isRefOK || ! isQueryOK )
         return false;
 
     //if the locations belong to the same stratigraphic interval, do the same geometric in/out
