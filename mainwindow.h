@@ -253,6 +253,7 @@ private slots:
     void onReviewTransiogramBand();
     void onRepositionGrid();
     void onPerformContactAnaysis();
+    void onPerformDriftAnalysis();
 
 private:
     /**

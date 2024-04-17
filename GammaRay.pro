@@ -36,6 +36,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/contactanalysisdialog.cpp \
+    dialogs/driftanalysisdialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
     dialogs/gridrepositiondialog.cpp \
     dialogs/listbuilderdialog.cpp \
@@ -47,13 +48,16 @@ SOURCES += main.cpp\
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
+    geometry/boundingbox.cpp \
     geometry/intersectionfinder.cpp \
     geometry/quadrilateral.cpp \
     geometry/triangle.cpp \
     geostats/contactanalysis.cpp \
+    geostats/driftanalysis.cpp \
     geostats/mcmcdataimputation.cpp \
     geostats/searchannulus.cpp \
     geostats/searchannulusstratigraphic.cpp \
+    geostats/searchbox.cpp \
     geostats/searchsphericalshell.cpp \
     geostats/searchverticaldumbbell.cpp \
     geostats/searchwasher.cpp \
@@ -316,6 +320,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/contactanalysisdialog.h \
+    dialogs/driftanalysisdialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
     dialogs/gridrepositiondialog.h \
     dialogs/listbuilderdialog.h \
@@ -332,13 +337,16 @@ HEADERS  += mainwindow.h \
     domain/projectroot.h \
     domain/section.h \
     domain/verticalproportioncurve.h \
+    geometry/boundingbox.h \
     geometry/intersectionfinder.h \
     geometry/quadrilateral.h \
     geometry/triangle.h \
     geostats/contactanalysis.h \
+    geostats/driftanalysis.h \
     geostats/mcmcdataimputation.h \
     geostats/searchannulus.h \
     geostats/searchannulusstratigraphic.h \
+    geostats/searchbox.h \
     geostats/searchsphericalshell.h \
     geostats/searchverticaldumbbell.h \
     geostats/searchwasher.h \
@@ -604,6 +612,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/contactanalysisdialog.ui \
+    dialogs/driftanalysisdialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
     dialogs/gridrepositiondialog.ui \
     dialogs/listbuilderdialog.ui \
