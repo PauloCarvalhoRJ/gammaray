@@ -69,6 +69,11 @@ public:
      */
     void setXaxisCaption( const QString caption );
 
+    /**
+     * Shows or hides the chart legend (default is true).  Takes effect upon calling.
+     */
+    void setLegendVisible( const bool value );
+
 private:
     Ui::LineChartWidget *ui;
 

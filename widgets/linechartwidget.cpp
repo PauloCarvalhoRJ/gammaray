@@ -138,3 +138,11 @@ void LineChartWidget::setXaxisCaption(const QString caption)
 {
     m_axisX->setTitleText( caption );
 }
+
+void LineChartWidget::setLegendVisible(const bool value)
+{
+    if( value )
+        m_chart->legend()->show();
+    else
+        m_chart->legend()->hide();
+}
