@@ -633,10 +633,10 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 makeMenuFlipData();
                 _projectContextMenu->addMenu( m_subMenuFlipData );
             }
-            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
-                _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
             if( _right_clicked_attribute->isCategorical() )
                 _projectContextMenu->addAction("Make facies transition matrix", this, SLOT(onMakeFaciesTransitionMatrix()));
+            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
+                _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
         }
     //two items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 2 ) {
