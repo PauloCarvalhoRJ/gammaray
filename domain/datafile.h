@@ -14,6 +14,7 @@ class Attribute;
 class UnivariateCategoryClassification;
 class CategoryDefinition;
 class IAlgorithmDataSource;
+class BoundingBox;
 
 enum class CartesianCoord : int {
 	X,
@@ -445,6 +446,10 @@ public:
      * Conversely, Cartesian grids, GeoGrids and geological sections have topology, that is, they are grid objects.
      */
     virtual bool isGridded() const = 0;
+
+    /** Returns the spatial extent of the object represented by this data file.
+     */
+    virtual BoundingBox getBoundingBox( ) const;
 
 //File interface
 	virtual void deleteFromFS();

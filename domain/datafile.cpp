@@ -29,6 +29,7 @@
 #include "algorithms/ialgorithmdatasource.h"
 #include "calculator/icalcproperty.h"
 #include "geogrid.h"
+#include "geometry/boundingbox.h"
 
 /****************************** THE DATASOURCE INTERFACE TO THE ALGORITHM CLASSES
  * ****************************/
@@ -734,7 +735,14 @@ void DataFile::setCategorical(uint variableIndex, const CategoryDefinition *cd)
 void DataFile::probe(double pickedX, double pickedY, double pickedZ, Attribute *targetAttribute)
 {
     Application::instance()->logWarn( "DataFile::probe(): Default implementation called.  Objects of type "
-                                       + getTypeName() + " must implement one according to their particular characteristics.  Probe information is limited." );
+                                      + getTypeName() + " must implement one according to their particular characteristics.  Probe information is limited." );
+}
+
+BoundingBox DataFile::getBoundingBox() const
+{
+    Application::instance()->logError( "DataFile::getBoundingBox(): Default implementation called.  Objects of type "
+                                       + getTypeName() + " must implement one according to their particular geometry.", true );
+    return BoundingBox();
 }
 
 void DataFile::replacePhysicalFile(const QString from_file_path)
