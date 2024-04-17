@@ -60,7 +60,7 @@ public:
     void setSharedYaxis( bool value ){ m_sharedYaxis = value; }
 
     /**
-     * Sets the chart's title.  The new title becomes effective after the next call to setData().
+     * Sets the chart's title.  Takes effect upon calling.
      */
     void setChartTitle( const QString chartTitle );
 
