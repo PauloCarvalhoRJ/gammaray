@@ -23,9 +23,10 @@ public:
     /**
      * Displays a multivariate line chart with a shared X-axis.
      * The Y-axis can be shared or one per Y variable
+     * @param swapXY Sets whether to display X values to the left and Y values to the bottom.
      * @see setSharedYaxis()
      */
-    explicit LineChartWidget(QWidget *parent = nullptr);
+    explicit LineChartWidget( QWidget *parent = nullptr, bool swapXY = false );
     ~LineChartWidget();
 
     /**
@@ -83,6 +84,7 @@ private:
     QtCharts::QValueAxis *m_axisX;
 
     bool m_sharedYaxis;
+    bool m_swapXY;
 
 };
 
