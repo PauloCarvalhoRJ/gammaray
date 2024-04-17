@@ -1,0 +1,20 @@
+#ifndef BOUNDINGBOX_H
+#define BOUNDINGBOX_H
+
+
+/**
+ * The BoundingBox class represents the spatial extent of some geometric object.
+ */
+class BoundingBox
+{
+public:
+    BoundingBox();
+
+    double getXsize() const { return m_maxX - m_minX; }
+    double getYsize() const { return m_maxY - m_minY; }
+    double getZsize() const { return m_maxZ - m_minZ; }
+
+    double m_minX, m_minY, m_minZ, m_maxX, m_maxY, m_maxZ;
+};
+
+#endif // BOUNDINGBOX_H
