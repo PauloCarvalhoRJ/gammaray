@@ -119,7 +119,7 @@ void SpatialIndex::fillWithBBoxes(GeoGrid *gg)
     for( uint iLine = 0; iLine < totlines; ++iLine){
         //get the cell's bounding box (each line corresponds to a cell)
         double minX, minY, minZ, maxX, maxY, maxZ;
-        gg->getBoundingBox( iLine, minX, minY, minZ, maxX, maxY, maxZ );
+        gg->getCellBoundingBox( iLine, minX, minY, minZ, maxX, maxY, maxZ );
 
         //make the bounding box object
         Box box( Point3D(minX, minY, minZ),
