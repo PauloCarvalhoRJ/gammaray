@@ -2,6 +2,7 @@
 
 #include "domain/pointset.h"
 #include "domain/application.h"
+#include "geometry/boundingbox.h"
 #include "geostats/searchellipsoid.h"
 #include "geostats/datacell.h"
 #include "geostats/searchstrategy.h"
@@ -400,6 +401,33 @@ QList<uint> SpatialIndex::getNearestWithinGenericRTreeBased(const DataCell& data
                 result.push_back( (*it).second );
         }
     }
+
+    return result;
+}
+
+QList<uint> SpatialIndex::getWithinBoundingBox(const BoundingBox &bbox) const
+{
+    assert( m_dataFile && "SpatialIndexPoints::getWithinBoundingBox(): No data file.  Make sure there's a call to DataSet::fill() prior to making queries.");
+
+    QList<uint> result;
+
+    double maxX = bbox.m_maxX;
+    double maxY = bbox.m_maxY;
+    double maxZ = bbox.m_maxZ;
+    double minX = bbox.m_minX;
+    double minY = bbox.m_minY;
+    double minZ = bbox.m_minZ;
+    Box searchBB( Point3D( minX, minY, minZ ),
+                  Point3D( maxX, maxY, maxZ ));
+
+    //Get all the points within the bounding box of the search neighborhood.
+    std::vector<BoxAndDataIndex> pointsInSearchBB;
+    m_rtree.query( bgi::intersects( searchBB ), std::back_inserter( pointsInSearchBB ) );
+
+    //Get all the row indexes of the samples that fall inside the passed bounding box.
+    std::vector<BoxAndDataIndex>::iterator it = pointsInSearchBB.begin();
+    for(; it != pointsInSearchBB.end(); ++it)
+        result.push_back( (*it).second );
 
     return result;
 }
