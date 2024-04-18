@@ -149,6 +149,7 @@ public:
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
     virtual bool getCenter( double& x, double& y, double& z ) const;
+    virtual BoundingBox getBoundingBox( ) const;
 
     // PointSet interface
 public:

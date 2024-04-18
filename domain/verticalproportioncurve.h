@@ -151,6 +151,7 @@ public:
     virtual void writeToFS();
     virtual void readFromFS();
     virtual bool isGridded() const override {  return false; }
+    virtual BoundingBox getBoundingBox( ) const override;
 
     // ICalcPropertyCollection interface
 public:

@@ -8,6 +8,7 @@
 #include "domain/project.h"
 #include "domain/objectgroup.h"
 #include "domain/attribute.h"
+#include "geometry/boundingbox.h"
 
 VerticalProportionCurve::VerticalProportionCurve(QString path, QString associatedCategoryDefinitionName) :
     DataFile( path ),
@@ -455,6 +456,11 @@ void VerticalProportionCurve::readFromFS()
 
     //The data table is no longer needed.
     _data.clear();
+}
+
+BoundingBox VerticalProportionCurve::getBoundingBox() const
+{
+    assert( false && "VerticalProportionCurve::getBoundingBox(): a VerticalProportionCurve is not a spatial object." );
 }
 
 void VerticalProportionCurve::getSpatialAndTopologicalCoordinates(int iRecord, double &x, double &y, double &z, int &i, int &j, int &k)

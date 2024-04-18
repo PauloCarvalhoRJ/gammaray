@@ -12,6 +12,7 @@
 #include <limits>
 #include "viewer3d/view3dviewdata.h"
 #include "viewer3d/view3dbuilders.h"
+#include "geometry/boundingbox.h"
 
 
 PointSet::PointSet( QString path ) : DataFile( path )
@@ -204,6 +205,37 @@ bool PointSet::getCenter(double &x, double &y, double &z) const
         y = meanY / getDataLineCount();
         z = meanZ / getDataLineCount();
         return true;
+    }
+}
+
+BoundingBox PointSet::getBoundingBox() const
+{
+    if( getDataLineCount() == 0){
+        Application::instance()->logError("PointSet::getBoundingBox(): data not loaded."
+                                          " Maybe a prior call to readFromFS() is missing. ");
+        return BoundingBox();
+    } else {
+        double minX =  std::numeric_limits<double>::max();
+        double minY =  std::numeric_limits<double>::max();
+        double minZ =  std::numeric_limits<double>::max();
+        double maxX = -std::numeric_limits<double>::max();
+        double maxY = -std::numeric_limits<double>::max();
+        double maxZ = -std::numeric_limits<double>::max();
+        //loop to update the limits of the bounding box
+        for( int iDataLine = 0; iDataLine < getDataLineCount(); ++iDataLine ){
+            double xCoord = dataConst( iDataLine, _x_field_index - 1 ) ;
+            double yCoord = dataConst( iDataLine, _y_field_index - 1 ) ;
+            double zCoord = 0.0;
+            if (is3D())
+                zCoord    = dataConst( iDataLine, _z_field_index - 1 ) ;
+            if( xCoord > maxX ) maxX = xCoord;
+            if( yCoord > maxY ) maxY = yCoord;
+            if( zCoord > maxZ ) maxZ = zCoord;
+            if( xCoord < minX ) minX = xCoord;
+            if( yCoord < minY ) minY = yCoord;
+            if( zCoord < minZ ) minZ = zCoord;
+        }
+        return BoundingBox( minX, minY, minZ, maxX, maxY, maxZ );
     }
 }
 

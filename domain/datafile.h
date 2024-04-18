@@ -447,9 +447,8 @@ public:
      */
     virtual bool isGridded() const = 0;
 
-    /** Returns the spatial extent of the object represented by this data file.
-     */
-    virtual BoundingBox getBoundingBox( ) const;
+    /** Returns the spatial extent of the object represented by this data file. */
+    virtual BoundingBox getBoundingBox( ) const = 0;
 
 //File interface
 	virtual void deleteFromFS();

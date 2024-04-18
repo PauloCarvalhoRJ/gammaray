@@ -13,6 +13,7 @@
 #include "geogrid.h"
 #include "domain/section.h"
 #include "domain/pointset.h"
+#include "geometry/boundingbox.h"
 
 #include "spectral/spectral.h" //eigen third party library
 
@@ -939,4 +940,15 @@ void CartesianGrid::probe(double pickedX, double pickedY, double pickedZ, Attrib
         Application::instance()->logInfo("CartesianGrid::probe(): picked attribute is " + targetAttribute->getName() );
     else
         Application::instance()->logWarn("CartesianGrid::probe(): picked attribute not passed (check probe() caller code) or not displayed." );
+}
+
+BoundingBox CartesianGrid::getBoundingBox() const
+{
+    double minX = _x0 - _dx / 2;
+    double minY = _y0 - _dy / 2;
+    double minZ = _y0 - _dy / 2;
+    double maxX = minX + _dx * m_nI;
+    double maxY = minY + _dy * m_nJ;
+    double maxZ = minZ + _dz * m_nK;
+    return BoundingBox(minX,minY,minZ,maxX,maxY,maxZ);
 }

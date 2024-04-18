@@ -4,6 +4,7 @@
 #include "domain/attribute.h"
 #include "domain/application.h"
 #include "domain/project.h"
+#include "geometry/boundingbox.h"
 #include "util.h"
 #include <QFile>
 #include <QTextStream>
@@ -578,6 +579,44 @@ bool SegmentSet::getCenter(double &x, double &y, double &z) const
         y = meanY / getDataLineCount();
         z = meanZ / getDataLineCount();
         return true;
+    }
+}
+
+BoundingBox SegmentSet::getBoundingBox() const
+{
+    if( getDataLineCount() == 0){
+        Application::instance()->logError("SegmentSet::getBoundingBox(): data not loaded."
+                                          " Maybe a prior call to readFromFS() is missing. ");
+        return BoundingBox();
+    } else {
+        double minX =  std::numeric_limits<double>::max();
+        double minY =  std::numeric_limits<double>::max();
+        double minZ =  std::numeric_limits<double>::max();
+        double maxX = -std::numeric_limits<double>::max();
+        double maxY = -std::numeric_limits<double>::max();
+        double maxZ = -std::numeric_limits<double>::max();
+        //loop to update the limits of the bounding box
+        for( int iDataLine = 0; iDataLine < getDataLineCount(); ++iDataLine ){
+            double xCoord = dataConst( iDataLine, _x_field_index - 1 ) ;
+            double yCoord = dataConst( iDataLine, _y_field_index - 1 ) ;
+            double zCoord = dataConst( iDataLine, _z_field_index - 1 ) ;
+            if( xCoord > maxX ) maxX = xCoord;
+            if( yCoord > maxY ) maxY = yCoord;
+            if( zCoord > maxZ ) maxZ = zCoord;
+            if( xCoord < minX ) minX = xCoord;
+            if( yCoord < minY ) minY = yCoord;
+            if( zCoord < minZ ) minZ = zCoord;
+            double xCoord2 = dataConst( iDataLine, _x_final_field_index - 1 ) ;
+            double yCoord2 = dataConst( iDataLine, _y_final_field_index - 1 ) ;
+            double zCoord2 = dataConst( iDataLine, _z_final_field_index - 1 ) ;
+            if( xCoord2 > maxX ) maxX = xCoord2;
+            if( yCoord2 > maxY ) maxY = yCoord2;
+            if( zCoord2 > maxZ ) maxZ = zCoord2;
+            if( xCoord2 < minX ) minX = xCoord2;
+            if( yCoord2 < minY ) minY = yCoord2;
+            if( zCoord2 < minZ ) minZ = zCoord2;
+        }
+        return BoundingBox( minX, minY, minZ, maxX, maxY, maxZ );
     }
 }
 

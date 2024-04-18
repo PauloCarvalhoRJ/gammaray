@@ -12,6 +12,7 @@
 #include "domain/project.h"
 #include "geometry/vector3d.h"
 #include "geometry/face3d.h"
+#include "geometry/boundingbox.h"
 #include "exceptions/invalidmethodexception.h"
 
 #include <QCoreApplication>
@@ -228,13 +229,13 @@ GeoGrid::GeoGrid(QString path, std::vector<GeoGridZone> zones) :
 
 }
 
-void GeoGrid::getBoundingBox(uint cellIndex,
-							 double & minX, double & minY, double & minZ,
-							 double & maxX, double & maxY, double & maxZ )
+void GeoGrid::getCellBoundingBox(uint cellIndex,
+                                 double & minX, double & minY, double & minZ,
+                                 double & maxX, double & maxY, double & maxZ ) const
 {
 	//initialize the results to ensure the returned extrema are those of the cell.
-	minX = minY = minZ = std::numeric_limits<double>::max();
-	maxX = maxY = maxZ = std::numeric_limits<double>::min();
+    minX = minY = minZ =  std::numeric_limits<double>::max();
+    maxX = maxY = maxZ = -std::numeric_limits<double>::max();
 	//Get the cell
 	CellDefRecordPtr cellDef = m_cellDefsPart.at( cellIndex );
 	//for each of the eight vertexes of the cell
@@ -442,7 +443,7 @@ uint GeoGrid::getMeshNumberOfVertexes()
 	return m_vertexesPart.size();
 }
 
-void GeoGrid::getMeshVertexLocation(uint index, double & x, double & y, double & z)
+void GeoGrid::getMeshVertexLocation(uint index, double & x, double & y, double & z) const
 {
 	x = m_vertexesPart[index]->X;
 	y = m_vertexesPart[index]->Y;
@@ -455,7 +456,7 @@ uint GeoGrid::getMeshNumberOfCells()
 	return m_cellDefsPart.size();
 }
 
-void GeoGrid::getMeshCellDefinition(uint index, uint (&vIds)[8])
+void GeoGrid::getMeshCellDefinition(uint index, uint (&vIds)[8]) const
 {
 	vIds[0] = m_cellDefsPart[index]->vId[0];
 	vIds[1] = m_cellDefsPart[index]->vId[1];
@@ -862,7 +863,7 @@ CartesianGrid *GeoGrid::getUnderlyingCartesianGrid()
 	return nullptr;
 }
 
-Hexahedron GeoGrid::makeHexahedron( uint cellIndex )
+Hexahedron GeoGrid::makeHexahedron( uint cellIndex ) const
 {
 	Hexahedron hexa;
 	uint vertexIndexes[8];
@@ -1231,6 +1232,38 @@ void GeoGrid::freeLoadedData()
 
     // call superclass's free data method.
     DataFile::freeLoadedData();
+}
+
+BoundingBox GeoGrid::getBoundingBox() const
+{
+    if( m_vertexesPart.empty() || m_cellDefsPart.empty() ){
+        Application::instance()->logError("GeoGrid::getBoundingBox(): mesh data not loaded."
+                                          " Maybe a prior call to loadMesh() is missing. ");
+        return BoundingBox();
+    } else {
+        double minX =  std::numeric_limits<double>::max();
+        double minY =  std::numeric_limits<double>::max();
+        double minZ =  std::numeric_limits<double>::max();
+        double maxX = -std::numeric_limits<double>::max();
+        double maxY = -std::numeric_limits<double>::max();
+        double maxZ = -std::numeric_limits<double>::max();
+        //loop to update the limits of the bounding box
+        for( int iDataLine = 0; iDataLine < getDataLineCount(); ++iDataLine ){
+
+            double cellMinX, cellMinY, cellMinZ;
+            double cellMaxX, cellMaxY, cellMaxZ;
+
+            getCellBoundingBox( iDataLine, cellMinX, cellMinY, cellMinZ, cellMaxX, cellMaxY, cellMaxZ );
+
+            if( cellMaxX > maxX ) maxX = cellMaxX;
+            if( cellMaxY > maxY ) maxY = cellMaxY;
+            if( cellMaxZ > maxZ ) maxZ = cellMaxZ;
+            if( cellMinX < minX ) minX = cellMinX;
+            if( cellMinY < minY ) minY = cellMinY;
+            if( cellMinZ < minZ ) minZ = cellMinZ;
+        }
+        return BoundingBox( minX, minY, minZ, maxX, maxY, maxZ );
+    }
 }
 
 bool GeoGrid::canHaveMetaData()

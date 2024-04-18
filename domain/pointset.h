@@ -98,6 +98,7 @@ public:
     virtual bool isTridimensional();
     virtual bool getCenter( double& x, double& y, double& z ) const;
     virtual bool isGridded() const override {  return false; }
+    virtual BoundingBox getBoundingBox( ) const override;
 
     // File interface
 public:

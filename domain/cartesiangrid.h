@@ -137,6 +137,7 @@ public:
     virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
     virtual bool isTridimensional();
     virtual void probe( double pickedX, double pickedY, double pickedZ, Attribute* targetAttribute );
+    virtual BoundingBox getBoundingBox( ) const;
 
 // File interface
 public:
