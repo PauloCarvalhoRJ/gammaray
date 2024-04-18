@@ -7,11 +7,10 @@
 
 #include <QLayout>
 
-LineChartWidget::LineChartWidget(QWidget *parent, bool swapXY) :
+LineChartWidget::LineChartWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::LineChartWidget),
-    m_sharedYaxis(false),
-    m_swapXY(swapXY)
+    m_sharedYaxis(false)
 {
     ui->setupUi(this);
 
@@ -26,10 +25,7 @@ LineChartWidget::LineChartWidget(QWidget *parent, bool swapXY) :
 
     //add the horizontal axis
     m_axisX = new QtCharts::QValueAxis();
-    if( ! m_swapXY )
-        m_chart->addAxis(m_axisX, Qt::AlignBottom);
-    else
-        m_chart->addAxis(m_axisX, Qt::AlignLeft);
+    m_chart->addAxis(m_axisX, Qt::AlignBottom);
     m_series->attachAxis(m_axisX);
     m_axisX->setTickCount(11);
 
@@ -115,10 +111,7 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
             if( ! m_sharedYaxis || ! axisY ){
                 axisY = new QtCharts::QValueAxis();
                 axisY->setTickCount(11);
-                if( ! m_swapXY )
-                    m_chart->addAxis(axisY, Qt::AlignLeft);
-                else
-                    m_chart->addAxis(axisY, Qt::AlignBottom);
+                m_chart->addAxis(axisY, Qt::AlignLeft);
             }
             axisY->setRange( minY, maxY );
             series->attachAxis( axisY );
