@@ -326,8 +326,8 @@ void CokrigingDialog::onParametersCokb3d()
     //load the data
     psInputData->loadData();
     //init max with min and min with max ;-)
-    double minAll = std::numeric_limits<double>::max();
-    double maxAll = std::numeric_limits<double>::min();
+    double minAll =  std::numeric_limits<double>::max();
+    double maxAll = -std::numeric_limits<double>::max();
     //gather the indexes of the selected variables
     QVector<int> selectedColumns;
     selectedColumns.append( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex() - 1 );
@@ -531,8 +531,8 @@ void CokrigingDialog::onParametersNewcokb3d()
     //load the data
     psInputData->loadData();
     //init max with min and min with max ;-)
-    double minAll = std::numeric_limits<double>::max();
-    double maxAll = std::numeric_limits<double>::min();
+    double minAll =  std::numeric_limits<double>::max();
+    double maxAll = -std::numeric_limits<double>::max();
     //gather the indexes of the selected variables
     QVector<int> selectedColumns;
     selectedColumns.append( m_inputPrimVarSelector->getSelectedVariableGEOEASIndex() - 1 );

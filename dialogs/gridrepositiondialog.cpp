@@ -22,9 +22,9 @@ GridRepositionDialog::GridRepositionDialog(CartesianGrid *cg, QWidget *parent) :
         ui->spinLLB_J->setValue( 0 );
         ui->spinLLB_K->setValue( 0 );
 
-        ui->dblSpinLLB_X->setRange( std::numeric_limits<double>::min(),  std::numeric_limits<double>::max() );
-        ui->dblSpinLLB_Y->setRange( std::numeric_limits<double>::min(),  std::numeric_limits<double>::max() );
-        ui->dblSpinLLB_Z->setRange( std::numeric_limits<double>::min(),  std::numeric_limits<double>::max() );
+        ui->dblSpinLLB_X->setRange( -std::numeric_limits<double>::max(),  std::numeric_limits<double>::max() );
+        ui->dblSpinLLB_Y->setRange( -std::numeric_limits<double>::max(),  std::numeric_limits<double>::max() );
+        ui->dblSpinLLB_Z->setRange( -std::numeric_limits<double>::max(),  std::numeric_limits<double>::max() );
         cg->getCellLocation( 0, 0, 0, x, y, z );
         ui->dblSpinLLB_X->setValue( x );
         ui->dblSpinLLB_Y->setValue( y );
@@ -37,9 +37,9 @@ GridRepositionDialog::GridRepositionDialog(CartesianGrid *cg, QWidget *parent) :
         ui->spinURT_J->setValue( cg->getNJ()-1 );
         ui->spinURT_K->setValue( cg->getNK()-1 );
 
-        ui->dblSpinURT_X->setRange( std::numeric_limits<double>::min(),  std::numeric_limits<double>::max() );
-        ui->dblSpinURT_Y->setRange( std::numeric_limits<double>::min(),  std::numeric_limits<double>::max() );
-        ui->dblSpinURT_Z->setRange( std::numeric_limits<double>::min(),  std::numeric_limits<double>::max() );
+        ui->dblSpinURT_X->setRange( -std::numeric_limits<double>::max(),  std::numeric_limits<double>::max() );
+        ui->dblSpinURT_Y->setRange( -std::numeric_limits<double>::max(),  std::numeric_limits<double>::max() );
+        ui->dblSpinURT_Z->setRange( -std::numeric_limits<double>::max(),  std::numeric_limits<double>::max() );
         cg->getCellLocation( cg->getNI()-1 , cg->getNJ()-1 , cg->getNK()-1 , x, y, z );
         ui->dblSpinURT_X->setValue( x );
         ui->dblSpinURT_Y->setValue( y );

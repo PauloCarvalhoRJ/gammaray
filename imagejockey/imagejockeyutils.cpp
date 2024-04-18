@@ -769,8 +769,8 @@ spectral::array ImageJockeyUtils::interpolateNullValuesShepard(const spectral::a
 
     //populate the VTK collections above
     double x, y, z;
-    double minValue = std::numeric_limits<double>::max();
-    double maxValue = std::numeric_limits<double>::min();
+    double minValue =  std::numeric_limits<double>::max();
+    double maxValue = -std::numeric_limits<double>::max();
     for( int k = 0; k < nK; ++k )
         for( int j = 0; j < nJ; ++j )
             for( int i = 0; i < nI; ++i ){
