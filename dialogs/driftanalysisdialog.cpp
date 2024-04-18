@@ -26,7 +26,7 @@ DriftAnalysisDialog::DriftAnalysisDialog(DataFile *dataFile, Attribute *attribut
     m_chartWestEast  ->setLegendVisible( false );
     m_chartSouthNorth = new LineChartWidget();
     m_chartSouthNorth->setLegendVisible( false );
-    m_chartVertical = new LineChartWidget(nullptr, true);
+    m_chartVertical = new LineChartWidget( /*nullptr, true*/ );
     m_chartVertical  ->setLegendVisible( false );
 
     ui->grpWEdrift->layout()->addWidget( m_chartWestEast );
@@ -77,12 +77,12 @@ void DriftAnalysisDialog::onRun()
         std::vector< std::vector<double> > chartDataVertical;
 
         //traverse the results to fill the three chart data vectors
-        for( const std::pair< DriftAnalysis::coordX, DriftAnalysis::Mean >& result : resultsWestEast )
-            chartDataWestEast.push_back( { result.first,  result.second } );
+        for( const std::pair< DriftAnalysis::coordX, DriftAnalysis::Mean >& result : resultsWestEast   )
+            chartDataWestEast  .push_back( { result.first,  result.second } );
         for( const std::pair< DriftAnalysis::coordY, DriftAnalysis::Mean >& result : resultsSouthNorth )
-            chartDataWestEast.push_back( { result.first,  result.second } );
-        for( const std::pair< DriftAnalysis::coordZ, DriftAnalysis::Mean >& result : resultsVertical )
-            chartDataWestEast.push_back( { result.first,  result.second } );
+            chartDataSouthNorth.push_back( { result.first,  result.second } );
+        for( const std::pair< DriftAnalysis::coordZ, DriftAnalysis::Mean >& result : resultsVertical   )
+            chartDataVertical  .push_back( { result.second,  result.first } );
 
         //get some properties of the domain categories relevant to make
         //the chart informative
@@ -103,9 +103,9 @@ void DriftAnalysisDialog::onRun()
         m_chartSouthNorth->setXaxisCaption( "Northing" );
         m_chartVertical->setData( chartDataVertical, 0,
                                  {{}},
-                                 {{1, "mean " + m_attribute->getName() }},
+                                 {{1, "Z" }},
                                  {{1, colorVertical}} );
-        m_chartVertical->setXaxisCaption( "Z" );
+        m_chartVertical->setXaxisCaption( "mean " + m_attribute->getName() );
 
     }
 }

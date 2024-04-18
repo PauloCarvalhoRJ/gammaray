@@ -44,14 +44,14 @@ bool DriftAnalysis::run()
         return false;
 
     //make sure the results vectors are empty
-    m_resultsVertical.clear();
     m_resultsWestEast.clear();
     m_resultsSouthNorth.clear();
+    m_resultsVertical.clear();
 
     //load the input data file
     m_inputDataFile->loadData();
 
-    //get the data file column index corresponding to the categorcial attribute with the domains
+    //get the data file column index corresponding to the attribute whose drift is to be analysed
     uint indexOfVariable = m_inputDataFile->getFieldGEOEASIndex( m_attribute->getName() ) - 1;
     if( indexOfVariable > m_inputDataFile->getDataColumnCount() ){
         m_lastError = "Error getting the data file column index of the categorical attribute with the domains.";
@@ -125,29 +125,127 @@ bool DriftAnalysis::run()
     //get the spatial extent of the data file
     BoundingBox bbox = m_inputDataFile->getBoundingBox();
 
-    //get the spatial sizes of the data along the three axes
-    double sizeWE = bbox.getXsize();
-    double sizeSN = bbox.getYsize();
-    double sizeVertical = bbox.getZsize();
+    //get the sizes of the slices the three axes
+    double sliceSizeWE = bbox.getXsize() / m_NumberOfSteps;
+    double sliceSizeSN = bbox.getYsize() / m_NumberOfSteps;
+    double sliceSizeVertical = bbox.getZsize() / m_NumberOfSteps;
+
+    //get the input data file's NDV as floating point number
+    double dummyValue = m_inputDataFile->getNoDataValueAsDouble();
 
     //compute drift along West->East diretcion (x axis).
     for( int iSlice = 0; iSlice < m_NumberOfSteps; iSlice++, total_done_so_far++ ){
-        double sliceMin = bbox.m_minX + iSlice * sizeWE;
-        double sliceMax = sliceMin + sizeWE;
 
-        //build a search strategy for current slice
-        SearchStrategyPtr searchStrategy;
-        {
-            SearchNeighborhoodPtr searchNeighborhood(
-                                            new SearchBox( { sliceMin, sliceMax,
-                                                             -std::numeric_limits<double>::max(), std::numeric_limits<double>::max(),
-                                                             -std::numeric_limits<double>::max(), std::numeric_limits<double>::max() } ) );
-            searchStrategy.reset( new SearchStrategy( searchNeighborhood, std::numeric_limits<uint>::max(), 0.0, 1 ) );
+        //define the X interval of the current X slice
+        double sliceMin = bbox.m_minX + iSlice * sliceSizeWE;
+        double sliceMax = sliceMin + sliceSizeWE;
+
+        //build a bounding box representing the current X slice
+        BoundingBox bbox( sliceMin, -std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(),
+                          sliceMax,  std::numeric_limits<double>::max(),  std::numeric_limits<double>::max() );
+
+        //do a spatial search, fetching the indexes of the samples lying within the current X slice
+        QList<uint> samplesIndexes = spatialIndex.getWithinBoundingBox( bbox );
+
+        //for each sample found inside the current X slice
+        double sum = 0.0;
+        uint64_t count = 0;
+        for( uint sampleIndex : samplesIndexes ){
+            double sampleValue = m_inputDataFile->dataConst( sampleIndex, indexOfVariable );
+            if( ! Util::almostEqual2sComplement( sampleValue, dummyValue, 1 ) ){
+                sum += sampleValue;
+                count++;
+            }
         }
+
+        //compute the mean of the attribute within the current X slice
+        double mean = std::numeric_limits<double>::quiet_NaN();
+        if( count > 0 )
+            mean = sum / count;
+
+        //store the result for the current X slice
+        m_resultsWestEast.push_back( { bbox.getCenterX(), mean } );
 
         progressDialog.setValue( total_done_so_far ); //update the progress bar
         QApplication::processEvents(); //let Qt repaint its widgets
-    }
+    } // for each X slice
+
+    //compute drift along South->North diretcion (y axis).
+    for( int iSlice = 0; iSlice < m_NumberOfSteps; iSlice++, total_done_so_far++ ){
+
+        //define the Y interval of the current Y slice
+        double sliceMin = bbox.m_minY + iSlice * sliceSizeSN;
+        double sliceMax = sliceMin + sliceSizeSN;
+
+        //build a bounding box representing the current Y slice
+        BoundingBox bbox( -std::numeric_limits<double>::max(), sliceMin, -std::numeric_limits<double>::max(),
+                           std::numeric_limits<double>::max(), sliceMax,  std::numeric_limits<double>::max() );
+
+        //do a spatial search, fetching the indexes of the samples lying within the current Y slice
+        QList<uint> samplesIndexes = spatialIndex.getWithinBoundingBox( bbox );
+
+        //for each sample found inside the current Y slice
+        double sum = 0.0;
+        uint64_t count = 0;
+        for( uint sampleIndex : samplesIndexes ){
+            double sampleValue = m_inputDataFile->dataConst( sampleIndex, indexOfVariable );
+            if( ! Util::almostEqual2sComplement( sampleValue, dummyValue, 1 ) ){
+                sum += sampleValue;
+                count++;
+            }
+        }
+
+        //compute the mean of the attribute within the current Y slice
+        double mean = std::numeric_limits<double>::quiet_NaN();
+        if( count > 0 )
+            mean = sum / count;
+
+        //store the result for the current Y slice
+        m_resultsSouthNorth.push_back( { bbox.getCenterY(), mean } );
+
+        progressDialog.setValue( total_done_so_far ); //update the progress bar
+        QApplication::processEvents(); //let Qt repaint its widgets
+    } // for each Y slice
+
+    //compute drift along vertical diretcion (z axis).
+    if( m_inputDataFile->isTridimensional() ) {
+        for( int iSlice = 0; iSlice < m_NumberOfSteps; iSlice++, total_done_so_far++ ){
+
+            //define the Z interval of the current Z slice
+            double sliceMin = bbox.m_minZ + iSlice * sliceSizeVertical;
+            double sliceMax = sliceMin + sliceSizeVertical;
+
+            //build a bounding box representing the current Z slice
+            BoundingBox bbox( -std::numeric_limits<double>::max(), -std::numeric_limits<double>::max(), sliceMin,
+                               std::numeric_limits<double>::max(),  std::numeric_limits<double>::max(), sliceMax );
+
+            //do a spatial search, fetching the indexes of the samples lying within the current Z slice
+            QList<uint> samplesIndexes = spatialIndex.getWithinBoundingBox( bbox );
+
+            //for each sample found inside the current Z slice
+            double sum = 0.0;
+            uint64_t count = 0;
+            for( uint sampleIndex : samplesIndexes ){
+                double sampleValue = m_inputDataFile->dataConst( sampleIndex, indexOfVariable );
+                if( ! Util::almostEqual2sComplement( sampleValue, dummyValue, 1 ) ){
+                    sum += sampleValue;
+                    count++;
+                }
+            }
+
+            //compute the mean of the attribute within the current Z slice
+            double mean = std::numeric_limits<double>::quiet_NaN();
+            if( count > 0 )
+                mean = sum / count;
+
+            //store the result for the current Z slice
+            m_resultsVertical.push_back( { bbox.getCenterZ(), mean } );
+
+            progressDialog.setValue( total_done_so_far ); //update the progress bar
+            QApplication::processEvents(); //let Qt repaint its widgets
+        } // for each Z slice
+    } // if data file is 3D
+
 
     return true;
 }
