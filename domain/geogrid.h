@@ -220,10 +220,10 @@ public:
 	/** GeoGrids never have declustering weights.  At least they are not supposed to have. */
 	virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 	virtual bool isRegular() { return false; }
-	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
+    virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) const;
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z ) const;
     /** GeoGrids are assumed to be always 3D. */
-	virtual bool isTridimensional(){ return true; }
+    virtual bool isTridimensional() const { return true; }
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
     virtual void freeLoadedData();

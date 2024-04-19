@@ -157,30 +157,30 @@ void PointSet::deleteVariable(uint columnToDelete)
 	DataFile::deleteVariable( columnToDelete );
 }
 
-double PointSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
+double PointSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord) const
 {
 	switch ( whichCoord ) {
-	case CartesianCoord::X: return data( line, _x_field_index - 1 ); //x,y,z is in data file directly
-	case CartesianCoord::Y: return data( line, _y_field_index - 1 ); //x,y,z is in data file directly
+    case CartesianCoord::X: return dataConst( line, _x_field_index - 1 ); //x,y,z is in data file directly
+    case CartesianCoord::Y: return dataConst( line, _y_field_index - 1 ); //x,y,z is in data file directly
 	case CartesianCoord::Z:
 		if( isTridimensional() )
-			return data( line, _z_field_index - 1 ); //x,y,z is in data file directly
+            return dataConst( line, _z_field_index - 1 ); //x,y,z is in data file directly
 		else
 			return 0.0; //returns z=0.0 for datasets in 2D.
     }
 }
 
-void PointSet::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+void PointSet::getDataSpatialLocation(uint line, double &x, double &y, double &z) const
 {
-    x = data( line, _x_field_index - 1 ); //x,y,z is in data file directly
-    y = data( line, _y_field_index - 1 ); //x,y,z is in data file directly
+    x = dataConst( line, _x_field_index - 1 ); //x,y,z is in data file directly
+    y = dataConst( line, _y_field_index - 1 ); //x,y,z is in data file directly
     if( isTridimensional() )
-        z = data( line, _z_field_index - 1 ); //x,y,z is in data file directly
+        z = dataConst( line, _z_field_index - 1 ); //x,y,z is in data file directly
     else
         z = 0.0; //returns z=0.0 for datasets in 2D.
 }
 
-bool PointSet::isTridimensional()
+bool PointSet::isTridimensional() const
 {
     return is3D();
 }

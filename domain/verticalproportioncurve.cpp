@@ -386,14 +386,14 @@ bool VerticalProportionCurve::isRegular() {
                      " a spatial object." );
 }
 
-double VerticalProportionCurve::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
+double VerticalProportionCurve::getDataSpatialLocation(uint line, CartesianCoord whichCoord) const
 {
     Q_UNUSED( line )
     Q_UNUSED( whichCoord )
     assert( false && "VerticalProportionCurve::getDataSpatialLocation(): a VerticalProportionCurve is not a spatial object." );
 }
 
-void VerticalProportionCurve::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+void VerticalProportionCurve::getDataSpatialLocation(uint line, double &x, double &y, double &z) const
 {
     Q_UNUSED( line )
     Q_UNUSED( x )
@@ -402,7 +402,7 @@ void VerticalProportionCurve::getDataSpatialLocation(uint line, double &x, doubl
     assert( false && "VerticalProportionCurve::getDataSpatialLocation(): a VerticalProportionCurve is not a spatial object." );
 }
 
-bool VerticalProportionCurve::isTridimensional()
+bool VerticalProportionCurve::isTridimensional() const
 {
     assert( false && "VerticalProportionCurve::isTridimensional(): a VerticalProportionCurve is not a spatial object." );
 }

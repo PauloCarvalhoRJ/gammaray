@@ -903,7 +903,7 @@ void CartesianGrid::reposition(uint llb_I, uint llb_J, uint llb_K,
     updateMetaDataFile();
 }
 
-double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
+double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord) const
 {
 	uint i, j, k;
 	double x, y, z;
@@ -917,14 +917,14 @@ double CartesianGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoor
     }
 }
 
-void CartesianGrid::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+void CartesianGrid::getDataSpatialLocation(uint line, double &x, double &y, double &z) const
 {
     uint i, j, k;
     indexToIJK( line, i, j, k );
     IJKtoXYZ( i, j, k, x, y, z);
 }
 
-bool CartesianGrid::isTridimensional()
+bool CartesianGrid::isTridimensional() const
 {
     return m_nK > 1;
 }

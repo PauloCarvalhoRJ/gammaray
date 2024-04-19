@@ -133,9 +133,9 @@ public:
     /** Cartesian grids never have declustering weights.  At least they are not supposed to be. */
     virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 	virtual bool isRegular() { return true; }
-	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
-    virtual bool isTridimensional();
+    virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) const;
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z ) const;
+    virtual bool isTridimensional() const;
     virtual void probe( double pickedX, double pickedY, double pickedZ, Attribute* targetAttribute );
     virtual BoundingBox getBoundingBox( ) const;
 

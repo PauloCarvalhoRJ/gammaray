@@ -513,25 +513,25 @@ File *SegmentSet::duplicatePhysicalFiles(const QString new_file_name)
     return newSS;
 }
 
-double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
+double SegmentSet::getDataSpatialLocation(uint line, CartesianCoord whichCoord) const
 {
     switch ( whichCoord ) {
-    case CartesianCoord::X: return ( data( line, _x_field_index - 1 ) + data( line, _x_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
-    case CartesianCoord::Y: return ( data( line, _y_field_index - 1 ) + data( line, _y_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    case CartesianCoord::X: return ( dataConst( line, _x_field_index - 1 ) + dataConst( line, _x_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    case CartesianCoord::Y: return ( dataConst( line, _y_field_index - 1 ) + dataConst( line, _y_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
     case CartesianCoord::Z:
         if( isTridimensional() )
-            return  ( data( line, _z_field_index - 1 ) + data( line, _z_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+            return  ( dataConst( line, _z_field_index - 1 ) + dataConst( line, _z_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
         else
             return 0.0; //returns z=0.0 for datasets in 2D.
     }
 }
 
-void SegmentSet::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+void SegmentSet::getDataSpatialLocation(uint line, double &x, double &y, double &z) const
 {
-    x = ( data( line, _x_field_index - 1 ) + data( line, _x_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
-    y = ( data( line, _y_field_index - 1 ) + data( line, _y_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    x = ( dataConst( line, _x_field_index - 1 ) + dataConst( line, _x_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+    y = ( dataConst( line, _y_field_index - 1 ) + dataConst( line, _y_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
     if( isTridimensional() )
-        z = ( data( line, _z_field_index - 1 ) + data( line, _z_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
+        z = ( dataConst( line, _z_field_index - 1 ) + dataConst( line, _z_final_field_index - 1 ) ) / 2.0; //x,y,z is in data file directly
     else
         z = 0.0; //returns z=0.0 for datasets in 2D.
 }

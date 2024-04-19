@@ -1187,7 +1187,7 @@ bool GeoGrid::XYZtoIJK( double x, double y, double z, uint& i, uint& j, uint& k 
 	return false;
 }
 
-double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
+double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord) const
 {
 	uint i, j, k;
 	double x, y, z;
@@ -1201,7 +1201,7 @@ double GeoGrid::getDataSpatialLocation(uint line, CartesianCoord whichCoord)
     }
 }
 
-void GeoGrid::getDataSpatialLocation(uint line, double &x, double &y, double &z)
+void GeoGrid::getDataSpatialLocation(uint line, double &x, double &y, double &z) const
 {
     uint i, j, k;
     indexToIJK( line, i, j, k );
