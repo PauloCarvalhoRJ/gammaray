@@ -55,6 +55,7 @@ SOURCES += main.cpp\
     geostats/contactanalysis.cpp \
     geostats/driftanalysis.cpp \
     geostats/mcmcdataimputation.cpp \
+    geostats/quadratic3dtrendmodelfitting.cpp \
     geostats/searchannulus.cpp \
     geostats/searchannulusstratigraphic.cpp \
     geostats/searchbox.cpp \
@@ -344,6 +345,7 @@ HEADERS  += mainwindow.h \
     geostats/contactanalysis.h \
     geostats/driftanalysis.h \
     geostats/mcmcdataimputation.h \
+    geostats/quadratic3dtrendmodelfitting.h \
     geostats/searchannulus.h \
     geostats/searchannulusstratigraphic.h \
     geostats/searchbox.h \
