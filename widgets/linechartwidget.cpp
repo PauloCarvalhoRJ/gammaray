@@ -5,6 +5,7 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
+#include <QAbstractAxis>
 #include <QLayout>
 
 LineChartWidget::LineChartWidget(QWidget *parent) :
@@ -109,6 +110,9 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
 
             //create the single Y axis or a new Y axis per dependent variable.
             if( ! m_sharedYaxis || ! axisY ){
+                //remove any previously added Y axes
+                for( QtCharts::QAbstractAxis* axis : m_chart->axes( Qt::Vertical ) )
+                    m_chart->removeAxis( axis );
                 axisY = new QtCharts::QValueAxis();
                 axisY->setTickCount(11);
                 m_chart->addAxis(axisY, Qt::AlignLeft);
