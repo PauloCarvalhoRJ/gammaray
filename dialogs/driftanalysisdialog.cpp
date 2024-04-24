@@ -5,9 +5,11 @@
 #include "domain/application.h"
 #include "domain/datafile.h"
 #include "geostats/driftanalysis.h"
+#include "geostats/quadratic3dtrendmodelfitting.h"
 #include "widgets/linechartwidget.h"
 
 #include <QMessageBox>
+#include <thread>
 
 DriftAnalysisDialog::DriftAnalysisDialog(DataFile *dataFile, Attribute *attribute, QWidget *parent) :
     QDialog(parent),
@@ -36,6 +38,11 @@ DriftAnalysisDialog::DriftAnalysisDialog(DataFile *dataFile, Attribute *attribut
     //if data set is not 3D, hide the vertical drift chart
     if( ! m_dataFile->isTridimensional() )
         ui->grpVerticalDrift->hide();
+
+    ui->grpGeneticAlgorithmParams->hide();
+
+    //defult is the number of logical processing cores made visible by the OS
+    ui->spinNumberOfThreads->setValue( std::thread::hardware_concurrency() );
 }
 
 DriftAnalysisDialog::~DriftAnalysisDialog()
@@ -84,7 +91,7 @@ void DriftAnalysisDialog::onRun()
         for( const std::pair< DriftAnalysis::coordZ, DriftAnalysis::Mean >& result : resultsVertical   )
             chartDataVertical  .push_back( { result.second,  result.first } );
 
-        //get some properties of the domain categories relevant to make
+        //set some properties of the domain categories relevant to make
         //the chart informative
         QColor colorWestEast   = QColorConstants::Red;
         QColor colorSouthNorth = QColorConstants::DarkGreen;
@@ -108,4 +115,46 @@ void DriftAnalysisDialog::onRun()
         m_chartVertical->setXaxisCaption( "mean " + m_attribute->getName() );
 
     }
+
+}
+
+void DriftAnalysisDialog::onFitTrendModel()
+{
+    ui->grpGeneticAlgorithmParams->setVisible( ! ui->grpGeneticAlgorithmParams->isVisible() );
+}
+
+void DriftAnalysisDialog::onRunFitTrendModel()
+{
+    //fit a trend model to the data
+    Quadratic3DTrendModelFitting q3dtmf( m_dataFile, m_attribute );
+    Quad3DTrendModelFittingAuxDefs::Parameters modelParameters =
+            q3dtmf.processWithGenetic(
+                ui->spinNumberOfThreads->value(),
+                ui->spinSeed->value(),
+                ui->spinNumberOfGenerations->value(),
+                ui->spinPopulationSize->value(),
+                ui->spinSelectionSize->value(),
+                ui->dblSpinProbabilityOfCrossover->value(),
+                ui->spinPointOfCrossover->value(),
+                ui->dblSpinMutationRate->value(),
+                ui->dblCoeffSearchWindowSize->value(),
+                ui->dblSearchWindowShiftThreshold->value() );
+
+    ui->lblTrendModel->setText("<html><head/><body><p>Trend model: " +
+                               QString::number(modelParameters.a) + "x<sup>2</sup> + " +
+                               QString::number(modelParameters.b) + "xy + " +
+                               QString::number(modelParameters.c) + "xz + " +
+                               QString::number(modelParameters.d) + "y<sup>2</sup> + " +
+                               QString::number(modelParameters.e) + "yz + " +
+                               QString::number(modelParameters.f) + "z<sup>2</sup> + " +
+                               QString::number(modelParameters.g) + "x + " +
+                               QString::number(modelParameters.h) + "y + " +
+                               QString::number(modelParameters.i) + "z</p></body></html>");
+
+    m_lastFitDriftModelParameters.reset( new Quad3DTrendModelFittingAuxDefs::Parameters( modelParameters ) );
+}
+
+void DriftAnalysisDialog::onSaveNewVariableWithDriftModel()
+{
+
 }

@@ -7,6 +7,10 @@ class DataFile;
 class Attribute;
 class LineChartWidget;
 
+namespace Quad3DTrendModelFittingAuxDefs{
+    class Parameters;
+}
+
 namespace Ui {
 class DriftAnalysisDialog;
 }
@@ -26,9 +30,13 @@ private:
     LineChartWidget* m_chartWestEast;
     LineChartWidget* m_chartSouthNorth;
     LineChartWidget* m_chartVertical;
+    std::unique_ptr<Quad3DTrendModelFittingAuxDefs::Parameters> m_lastFitDriftModelParameters;
 
 private Q_SLOTS:
     void onRun();
+    void onFitTrendModel();
+    void onRunFitTrendModel();
+    void onSaveNewVariableWithDriftModel();
 };
 
 #endif // DRIFTANALYSISDIALOG_H

@@ -2,13 +2,19 @@
 
 #include "util.h"
 #include "mainwindow.h"
+#include "dialogs/emptydialog.h"
 #include "domain/application.h"
 #include "domain/attribute.h"
 #include "domain/datafile.h"
+#include "geometry/boundingbox.h"
 
 #include <QApplication>
+#include <QChart>
+#include <QChartView>
+#include <QLineSeries>
 #include <QMessageBox>
 #include <QProgressDialog>
+#include <QValueAxis>
 #include <thread>
 
 std::vector< double > Quadratic3DTrendModelFitting::s_objectiveFunctionValues;
@@ -22,7 +28,7 @@ public:
         m_parameters(),
         m_fValue( std::numeric_limits<double>::max() )
     {}
-    Individual( const Quadratic3DTrendModelFitting::Parameters& pparameters ) :
+    Individual( const Quad3DTrendModelFittingAuxDefs::Parameters& pparameters ) :
         m_parameters( pparameters ),
         m_fValue( std::numeric_limits<double>::max() )
     {}
@@ -35,7 +41,7 @@ public:
     std::pair<Individual, Individual> crossOver( const Individual& otherIndividual,
                                                  int pointOfCrossOver ) const {
         Individual child1, child2;
-        for( int iParameter = 0; iParameter < Quadratic3DTrendModelFitting::N_PARAMS; ++iParameter ){
+        for( int iParameter = 0; iParameter < Quad3DTrendModelFittingAuxDefs::N_PARAMS; ++iParameter ){
             if( iParameter < pointOfCrossOver ){
                 child1.m_parameters[iParameter] = m_parameters[iParameter];
                 child2.m_parameters[iParameter] = otherIndividual.m_parameters[iParameter];
@@ -47,12 +53,12 @@ public:
         return { child1, child2 };
     }
     void mutate( double mutationRate,
-                 const Quadratic3DTrendModelFitting::Parameters& lowBoundaries,
-                 const Quadratic3DTrendModelFitting::Parameters& highBoundaries ){
+                 const Quad3DTrendModelFittingAuxDefs::Parameters& lowBoundaries,
+                 const Quad3DTrendModelFittingAuxDefs::Parameters& highBoundaries ){
         //compute the mutation probability for a single gene (parameter)
-        double probOfMutation = 1.0 / Quadratic3DTrendModelFitting::N_PARAMS * mutationRate;
+        double probOfMutation = 1.0 / Quad3DTrendModelFittingAuxDefs::N_PARAMS * mutationRate;
         //traverse all genes (parameters)
-        for( int iPar = 0; iPar < Quadratic3DTrendModelFitting::N_PARAMS; ++iPar ){
+        for( int iPar = 0; iPar < Quad3DTrendModelFittingAuxDefs::N_PARAMS; ++iPar ){
             //draw a value between 0.0 and 1.0 from an uniform distribution
             double p = std::rand() / (double)RAND_MAX;
             //if a mutation is due...
@@ -78,7 +84,7 @@ public:
     }
 
     //member variables
-    Quadratic3DTrendModelFitting::Parameters m_parameters; //the genes (model parameters) of this individual
+    Quad3DTrendModelFittingAuxDefs::Parameters m_parameters; //the genes (model parameters) of this individual
     double m_fValue; //objective function value corresponding to this individual
 };
 typedef Individual Solution; //make a synonym just for code readbility
@@ -110,15 +116,24 @@ Quadratic3DTrendModelFitting::Quadratic3DTrendModelFitting( DataFile* dataFile, 
     m_attribute(attribute), m_dataFile(dataFile)
 {}
 
-double Quadratic3DTrendModelFitting::objectiveFunction( const Quadratic3DTrendModelFitting::Parameters& parameters ) const
+double Quadratic3DTrendModelFitting::objectiveFunction( const Quad3DTrendModelFittingAuxDefs::Parameters& parameters ) const
 {
+    //the sum to compute the error mean to be returned
     double sum = 0.0;
+
+    //get the origin x,y,z so we can use a local coordinate system to fit a trend model to
+//    BoundingBox bbox = m_dataFile->getBoundingBox();
+//    double x0 = bbox.m_minX;
+//    double y0 = bbox.m_minY;
+//    double z0 = bbox.m_minZ;
+
     //get the no-data value in numeric form to improve performance
     double NDV = m_dataFile->getNoDataValueAsDouble();
 
     uint16_t indexOfDependentVariable = m_attribute->getAttributeGEOEASgivenIndex()-1;
 
     //for each observation
+    uint64_t count = 0;
     for( int iRow = 0; iRow < m_dataFile->getDataLineCount(); iRow++ ){
         //get the observed value
         double observedValue = m_dataFile->dataConst( iRow, indexOfDependentVariable );
@@ -127,6 +142,7 @@ double Quadratic3DTrendModelFitting::objectiveFunction( const Quadratic3DTrendMo
             // get the xyz location of the current sample.
             double x, y, z;
             m_dataFile->getDataSpatialLocation( iRow, x, y, z );
+//            x -= x0; y -= y0; z -= z0; //make the sample location relative to the local coordinate system
             // use the current trend model (defined by its parameters)
             // to predict the value at the data location
             double predictedValue =
@@ -139,31 +155,31 @@ double Quadratic3DTrendModelFitting::objectiveFunction( const Quadratic3DTrendMo
                     parameters.g * x +
                     parameters.h * y +
                     parameters.i * z ;
-            //accumulate the squares of the observed - predicted differences (prediction errors)
+            //accumulate the observed - predicted differences (prediction errors)
             double error = observedValue - predictedValue;
-            sum += error*error;
+            sum += std::abs(error);
+            count++;
         }
     }
-    return sum;
+    return sum / count;
 }
 
-void Quadratic3DTrendModelFitting::initDomainAndParameters( Quadratic3DTrendModelFitting::ParametersDomain& domain,
-                                                            Quadratic3DTrendModelFitting::Parameters& parameters ) const
+void Quadratic3DTrendModelFitting::initDomain( Quad3DTrendModelFittingAuxDefs::ParametersDomain& domain,
+                                               double searchWindowSize ) const
 {
-    for( int i = 0; i < Quadratic3DTrendModelFitting::N_PARAMS; ++i){
+    for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; ++i){
         //define the domain boundaries
-        domain.min[i] = -1000.0;
-        domain.max[i] =  1000.0;
-        //and init the parameters near the center of the domain
-        parameters[i] = ( domain.max[i] + domain.min[i] ) / 2;
+        domain.min[i] = -searchWindowSize;
+        domain.max[i] =  searchWindowSize;
     }
 }
 
-Quadratic3DTrendModelFitting::Parameters Quadratic3DTrendModelFitting::processWithGenetic(
+Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::processWithGenetic(
         uint16_t nThreads, uint32_t seed, uint16_t maxNumberOfGenerations,
         uint16_t nPopulationSize, uint16_t nSelectionSize, double probabilityOfCrossOver,
-        uint8_t pointOfCrossover, double mutationRate) const
+        uint8_t pointOfCrossover, double mutationRate, double searchWindowSize, double windowWindowShiftThreshold) const
 {
+
     //clear the collected objective function values.
     s_objectiveFunctionValues.clear();
 
@@ -175,186 +191,243 @@ Quadratic3DTrendModelFitting::Parameters Quadratic3DTrendModelFitting::processWi
         QMessageBox::critical( Application::instance()->getMainWindow(),
                                "Error",
                                "Quadratic3DTrendModelFitting::processWithGenetic(): Selection pool size must be less than population size.");
-        return Quadratic3DTrendModelFitting::Parameters();
+        return Quad3DTrendModelFittingAuxDefs::Parameters();
     }
     if( nPopulationSize % 2 + nSelectionSize % 2 ){
         QMessageBox::critical( Application::instance()->getMainWindow(),
                                "Error",
                                "Quadratic3DTrendModelFitting::processWithGenetic(): Sizes must be even numbers.");
-        return Quadratic3DTrendModelFitting::Parameters();
+        return Quad3DTrendModelFittingAuxDefs::Parameters();
     }
-    if( pointOfCrossover >= N_PARAMS ){
+    if( pointOfCrossover >= Quad3DTrendModelFittingAuxDefs::N_PARAMS ){
         QMessageBox::critical( Application::instance()->getMainWindow(),
                                "Error",
                                "Quadratic3DTrendModelFitting::processWithGenetic(): Point of crossover must be less than the number of parameters.");
-        return Quadratic3DTrendModelFitting::Parameters();
+        return Quad3DTrendModelFittingAuxDefs::Parameters();
     }
 
     // Fetch data from the data source.
     m_dataFile->loadData();
 
-    //Initialize the optimization domain (boundary conditions) and
-    //the sets of variogram paramaters (both linear and structured)
-    ParametersDomain domain;
-    Parameters parameters;
-    initDomainAndParameters( domain,
-                             parameters );
+    //Initialize the optimization domain (boundary conditions)
+    Quad3DTrendModelFittingAuxDefs::ParametersDomain domain;
+    Quad3DTrendModelFittingAuxDefs::Parameters domainCenter = {0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0}; //init domain center at origin of the 9-D space
+    initDomain( domain, searchWindowSize );
 
-    //=========================================THE GENETIC ALGORITHM==================================================
+    //initialize the best fit paramaters in the domain center
+    Quad3DTrendModelFittingAuxDefs::Parameters gbest_pw = domainCenter;
 
-    //distribute as evenly as possible (load balance) the starting
-    //points (by their indexes) amongst the threads.
-    std::vector< std::pair< int, int > > individualsIndexesRanges =
-            Util::generateSubRanges( 0, nPopulationSize-1, nThreads );
+    //loop for the domain window shift if a solution is near the current domain boundaries
+    //executes at least once
+    while(true){
 
-    //sanity check
-    assert( individualsIndexesRanges.size() == nThreads && "Quadratic3DTrendModelFitting::processWithGenetic(): "
-                                                           "number of threads different from individual index ranges. "
-                                                           " This is likely a bug in Util::generateSubRanges() function." );
+        //=========================================THE GENETIC ALGORITHM==================================================
 
-    QProgressDialog progressDialog;
-    progressDialog.setRange(0, maxNumberOfGenerations);
-    progressDialog.setValue( 0 );
-    progressDialog.show();
-    progressDialog.setLabelText("Genetic Algorithm in progress...");
+        //distribute as evenly as possible (load balance) the starting
+        //points (by their indexes) amongst the threads.
+        std::vector< std::pair< int, int > > individualsIndexesRanges =
+                Util::generateSubRanges( 0, nPopulationSize-1, nThreads );
 
-    //the main algorithm loop
-    std::vector< Individual > population;
-    for( int iGen = 0; iGen < maxNumberOfGenerations; ++iGen ){
+        //sanity check
+        assert( individualsIndexesRanges.size() == nThreads && "Quadratic3DTrendModelFitting::processWithGenetic(): "
+                                                               "number of threads different from individual index ranges. "
+                                                               " This is likely a bug in Util::generateSubRanges() function." );
 
-        //Init or refill the population with randomly generated individuals.
-        while( population.size() < nPopulationSize ){
-            //create a set of genes (parameters)
-            Parameters pw;
-            //randomize the individual's position in the domain.
-            for( int i = 0; i < N_PARAMS; ++i ){
-                double LO = domain.min[i];
-                double HI = domain.max[i];
-                pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0, maxNumberOfGenerations);
+        progressDialog.setValue( 0 );
+        progressDialog.show();
+        progressDialog.setLabelText("Genetic Algorithm in progress...");
+
+        //the main genetic algorithm algorithm loop
+        std::vector< Individual > population;
+        for( int iGen = 0; iGen < maxNumberOfGenerations; ++iGen ){
+
+            //the current best solution found so far is kept as part of the population
+            if( ! gbest_pw.isTrivial() ) {
+                Individual currentBest( gbest_pw );
+                population.push_back( currentBest );
             }
-            //create and individual with the random genes
-            Individual ind( pw );
-            //add the new individual to the population
-            population.push_back( ind );
+
+            //complete the population with randomly generated individuals.
+            while( population.size() < nPopulationSize ){
+                //create a set of genes (parameters)
+                Quad3DTrendModelFittingAuxDefs::Parameters pw;
+                //randomize the individual's position in the domain.
+                for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; ++i ){
+                    double LO = domain.min[i];
+                    double HI = domain.max[i];
+                    pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
+                }
+                //create and individual with the random genes
+                Individual ind( pw );
+                //add the new individual to the population
+                population.push_back( ind );
+            }
+
+            //create and start the threads.  Each thread evaluates the objective function for a series of individuals.
+            std::thread threads[nThreads];
+            unsigned int iThread = 0;
+            for( const std::pair< int, int >& individualsIndexesRange : individualsIndexesRanges ) {
+                threads[iThread] = std::thread( taskEvaluateObjetiveInRangeOfIndividualsForGenetic,
+                                                std::cref(*this),
+                                                individualsIndexesRange.first,
+                                                individualsIndexesRange.second,
+                                                std::ref( population ) //--> OUTPUT PARAMETER
+                                                );
+                ++iThread;
+            } //for each thread (ranges of starting points)
+
+            //wait for the threads to finish.
+            for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
+                threads[iThread].join();
+
+            //sort the population in ascending order (lower value == better fitness)
+            std::sort( population.begin(), population.end() );
+
+            //collect the iteration's best objective function value
+            s_objectiveFunctionValues.push_back( population[0].m_fValue );
+
+            //clip the population (the excessive worst fit individuals die)
+            while( population.size() > nPopulationSize )
+                population.pop_back();
+
+            //perform selection by binary tournament
+            std::vector< Individual > selection;
+            for( uint iSel = 0; iSel < nSelectionSize; ++iSel ){
+                //perform binary tournament
+                std::vector< Individual > tournament;
+                {
+                    //draw two different individuals at random from the population for the tournament.
+                    int tournCandidate1 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
+                    int tournCandidate2 = tournCandidate1;
+                    while( tournCandidate2 == tournCandidate1 )
+                        tournCandidate2 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
+                    //add the participants in the tournament
+                    tournament.push_back( population[tournCandidate1] );
+                    tournament.push_back( population[tournCandidate2] );
+                    //sort the binary tournament
+                    std::sort( tournament.begin(), tournament.end());
+                }
+                //add the best of tournament to the selection pool
+                selection.push_back( tournament.front() );
+            }
+
+            //perform crossover and mutation on the selected individuals
+            std::vector< Individual > nextGen;
+            while( ! selection.empty() ){
+                //draw two different selected individuals at random for crossover.
+                int parentIndex1 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
+                int parentIndex2 = parentIndex1;
+                while( parentIndex2 == parentIndex1 )
+                    parentIndex2 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
+                Individual parent1 = selection[ parentIndex1 ];
+                Individual parent2 = selection[ parentIndex2 ];
+                selection.erase( selection.begin() + parentIndex1 );
+                selection.erase( selection.begin() + parentIndex2 );
+                //draw a value between 0.0 and 1.0 from an uniform distribution
+                double p = std::rand() / (double)RAND_MAX;
+                //if crossover is due...
+                if( p < probabilityOfCrossOver ){
+                    //crossover
+                    std::pair< Individual, Individual> offspring = parent1.crossOver( parent2, pointOfCrossover );
+                    Individual child1 = offspring.first;
+                    Individual child2 = offspring.second;
+                    //mutate all
+                    child1.mutate( mutationRate, domain.min, domain.max );
+                    child2.mutate( mutationRate, domain.min, domain.max );
+                    parent1.mutate( mutationRate, domain.min, domain.max );
+                    parent2.mutate( mutationRate, domain.min, domain.max );
+                    //add them to the next generation pool
+                    nextGen.push_back( child1 );
+                    nextGen.push_back( child2 );
+                    nextGen.push_back( parent1 );
+                    nextGen.push_back( parent2 );
+                } else { //no crossover took place
+                    //simply mutate and insert the parents into the next generation pool
+                    parent1.mutate( mutationRate, domain.min, domain.max );
+                    parent2.mutate( mutationRate, domain.min, domain.max );
+                    nextGen.push_back( parent1 );
+                    nextGen.push_back( parent2 );
+                }
+            }
+
+            //make the next generation
+            population = nextGen;
+
+            //update progress bar
+            progressDialog.setValue( iGen );
+            QApplication::processEvents(); // let Qt update the UI
+
+        } //main algorithm loop
+
+        //=====================================GET RESULTS========================================
+        progressDialog.hide();
+
+        //evaluate the individuals of final population
+        for( uint iInd = 0; iInd < population.size(); ++iInd ){
+            Individual& ind = population[iInd];
+            ind.m_fValue = objectiveFunction( ind.m_parameters );
         }
-
-        //create and start the threads.  Each thread evaluates the objective function for a series of individuals.
-        std::thread threads[nThreads];
-        unsigned int iThread = 0;
-        for( const std::pair< int, int >& individualsIndexesRange : individualsIndexesRanges ) {
-            threads[iThread] = std::thread( taskEvaluateObjetiveInRangeOfIndividualsForGenetic,
-                                            std::cref(*this),
-                                            individualsIndexesRange.first,
-                                            individualsIndexesRange.second,
-                                            std::ref( population ) //--> OUTPUT PARAMETER
-                                            );
-            ++iThread;
-        } //for each thread (ranges of starting points)
-
-        //wait for the threads to finish.
-        for( unsigned int iThread = 0; iThread < nThreads; ++iThread)
-            threads[iThread].join();
 
         //sort the population in ascending order (lower value == better fitness)
         std::sort( population.begin(), population.end() );
 
-        //collect the iteration's best objective function value
-        s_objectiveFunctionValues.push_back( population[0].m_fValue );
+        //get the parameters of the best individual (set of parameters)
+        gbest_pw = population[0].m_parameters;
 
-        //clip the population (the excessive worst fit individuals die)
-        while( population.size() > nPopulationSize )
-            population.pop_back();
+        //if the solution is too close to the current domain boundaries, then
+        //it is possible that the actual solution lies outside, then the program
+        //shifts the domain so the current solution lies in its center and rerun
+        //the genetic algorithm within the new search domain
+        if( domain.isNearBoundary( gbest_pw, windowWindowShiftThreshold ) )
+            domain.centerAt( gbest_pw, searchWindowSize );
+        else
+            break; //terminates the search if the solution is not near the domain boundaries
 
-        //perform selection by binary tournament
-        std::vector< Individual > selection;
-        for( uint iSel = 0; iSel < nSelectionSize; ++iSel ){
-            //perform binary tournament
-            std::vector< Individual > tournament;
-            {
-                //draw two different individuals at random from the population for the tournament.
-                int tournCandidate1 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
-                int tournCandidate2 = tournCandidate1;
-                while( tournCandidate2 == tournCandidate1 )
-                    tournCandidate2 = std::rand() / (double)RAND_MAX * ( population.size() - 1 );
-                //add the participants in the tournament
-                tournament.push_back( population[tournCandidate1] );
-                tournament.push_back( population[tournCandidate2] );
-                //sort the binary tournament
-                std::sort( tournament.begin(), tournament.end());
-            }
-            //add the best of tournament to the selection pool
-            selection.push_back( tournament.front() );
-        }
-
-        //perform crossover and mutation on the selected individuals
-        std::vector< Individual > nextGen;
-        while( ! selection.empty() ){
-            //draw two different selected individuals at random for crossover.
-            int parentIndex1 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
-            int parentIndex2 = parentIndex1;
-            while( parentIndex2 == parentIndex1 )
-                parentIndex2 = std::rand() / (double)RAND_MAX * ( selection.size() - 1 );
-            Individual parent1 = selection[ parentIndex1 ];
-            Individual parent2 = selection[ parentIndex2 ];
-            selection.erase( selection.begin() + parentIndex1 );
-            selection.erase( selection.begin() + parentIndex2 );
-            //draw a value between 0.0 and 1.0 from an uniform distribution
-            double p = std::rand() / (double)RAND_MAX;
-            //if crossover is due...
-            if( p < probabilityOfCrossOver ){
-                //crossover
-                std::pair< Individual, Individual> offspring = parent1.crossOver( parent2, pointOfCrossover );
-                Individual child1 = offspring.first;
-                Individual child2 = offspring.second;
-                //mutate all
-                child1.mutate( mutationRate, domain.min, domain.max );
-                child2.mutate( mutationRate, domain.min, domain.max );
-                parent1.mutate( mutationRate, domain.min, domain.max );
-                parent2.mutate( mutationRate, domain.min, domain.max );
-                //add them to the next generation pool
-                nextGen.push_back( child1 );
-                nextGen.push_back( child2 );
-                nextGen.push_back( parent1 );
-                nextGen.push_back( parent2 );
-            } else { //no crossover took place
-                //simply mutate and insert the parents into the next generation pool
-                parent1.mutate( mutationRate, domain.min, domain.max );
-                parent2.mutate( mutationRate, domain.min, domain.max );
-                nextGen.push_back( parent1 );
-                nextGen.push_back( parent2 );
-            }
-        }
-
-        //make the next generation
-        population = nextGen;
-
-        //update progress bar
-        progressDialog.setValue( iGen );
-        QApplication::processEvents(); // let Qt update the UI
-
-    } //main algorithm loop
-
-    //=====================================GET RESULTS========================================
-    progressDialog.hide();
-
-    //evaluate the individuals of final population
-    for( uint iInd = 0; iInd < population.size(); ++iInd ){
-        Individual& ind = population[iInd];
-        ind.m_fValue = objectiveFunction( ind.m_parameters );
-    }
-
-    //sort the population in ascending order (lower value == better fitness)
-    std::sort( population.begin(), population.end() );
-
-    //get the parameters of the best individual (set of parameters)
-    Parameters gbest_pw = population[0].m_parameters;
+    } //loop for domain window shift if a solution is near the current domain boundaries
 
     // Display the results in a window.
-//    if( openResultsDialog ){
-//        displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
-//        showObjectiveFunctionEvolution();
-//    }
+    //displayResults( variogramStructures, inputFFTimagPhase, inputVarmap, false );
+    showObjectiveFunctionEvolution();
 
     //return the fitted model
     return gbest_pw;
+}
+
+void Quadratic3DTrendModelFitting::showObjectiveFunctionEvolution() const
+{
+    //load the x,y data for the chart
+    QtCharts::QLineSeries *chartSeries = new QtCharts::QLineSeries();
+    double max = std::numeric_limits<double>::lowest();
+    for(uint i = 0; i < s_objectiveFunctionValues.size(); ++i){
+        chartSeries->append( i+1, s_objectiveFunctionValues[i] );
+        if( s_objectiveFunctionValues[i] > max )
+            max = s_objectiveFunctionValues[i];
+    }
+
+    //create a new chart object
+    QtCharts::QChart *objFuncValuesChart = new QtCharts::QChart();
+    {
+        objFuncValuesChart->addSeries( chartSeries );
+        objFuncValuesChart->axisX( chartSeries );
+
+        QtCharts::QValueAxis* axisX = new QtCharts::QValueAxis();
+        axisX->setLabelFormat("%i");
+        objFuncValuesChart->setAxisX(axisX, chartSeries);
+
+        QtCharts::QValueAxis *axisY = new QtCharts::QValueAxis();
+        axisY->setLabelFormat("%3.2f");
+        axisY->setRange( 0.0, max );
+        objFuncValuesChart->setAxisY(axisY, chartSeries);
+
+        objFuncValuesChart->legend()->hide();
+    }
+
+    //create the chart dialog
+    EmptyDialog* ed = new EmptyDialog( Application::instance()->getMainWindow() );
+    QtCharts::QChartView* chartView = new QtCharts::QChartView( objFuncValuesChart );
+    ed->addWidget( chartView );
+    ed->setWindowTitle( "Objective function with iterations." );
+    ed->show();
 }
