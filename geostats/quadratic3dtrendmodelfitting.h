@@ -23,6 +23,7 @@ namespace Quad3DTrendModelFittingAuxDefs {
         Parameters(double a, double b, double c, double d, double e, double f, double g, double h, double i):
             a(a),b(b),c(c),d(d),e(e),f(f),g(g),h(h),i(i){} //valid values intialization
         double a, b, c, d, e, f, g, h, i; //the individual parameters
+            //xx,xy,xz,yy,yz,zz, x, y, z  //the model terms corresponding to the parameters
         double& operator [](int index){ //this allows the set to be used as an array (l-value).
             switch(index){
             case 0: return a;  case 1: return b; case 2: return c;
@@ -42,6 +43,7 @@ namespace Quad3DTrendModelFittingAuxDefs {
         bool isTrivial() const {
             return a==0.0 && b==0.0 && c==0.0 && d==0.0 && e==0.0 && f==0.0 && g==0.0 && h==0.0 && i==0.0;
         }
+        void zeroOutZBearingTerms(){ c = e = f = i = 0.0; } //this is mostly used with 2D datasets (z-less data)
     };
 
     /** Data structure: the parameters domain for the optimization methods (boundary conditions). */

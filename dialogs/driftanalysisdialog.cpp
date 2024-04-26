@@ -7,8 +7,11 @@
 #include "geostats/driftanalysis.h"
 #include "geostats/quadratic3dtrendmodelfitting.h"
 #include "widgets/linechartwidget.h"
+#include "viewer3d/view3dcolortables.h"
 
+#include <QInputDialog>
 #include <QMessageBox>
+#include <QProgressDialog>
 #include <thread>
 
 DriftAnalysisDialog::DriftAnalysisDialog(DataFile *dataFile, Attribute *attribute, QWidget *parent) :
@@ -120,6 +123,64 @@ void DriftAnalysisDialog::onRun()
 
 void DriftAnalysisDialog::onFitTrendModel()
 {
+    m_dataFile->loadData();
+
+    //determine whether the dataset is 3D
+    bool is3D = m_dataFile->isTridimensional();
+
+    //get the data column index of the input attribute in the data file
+    uint indexOfVariable = m_attribute->getAttributeGEOEASgivenIndex() - 1;
+
+    //get no-data value info
+    double NDV = m_dataFile->getNoDataValueAsDouble();
+    bool hasNDV = m_dataFile->hasNoDataValue();
+
+    //compute the orders of magnitude of a possible trend model and that of the data values
+    //this is useful to present the user with initial parameter search domain in the proper scale
+    double magnitude_of_trend_model = 0.0;
+    double magnitude_of_data_values = 0.0;
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0, m_dataFile->getDataLineCount());
+        progressDialog.setValue( 0 );
+        progressDialog.show();
+        progressDialog.setLabelText("Computing orders of magnitude of data values and of trend model parameters...");
+
+        double x, y, z;
+        for(uint iRow=0; iRow < m_dataFile->getDataLineCount(); iRow++ ){
+
+            m_dataFile->getDataSpatialLocation( iRow, x, y, z );
+            magnitude_of_trend_model  = x * x;
+            magnitude_of_trend_model += x * y;
+            magnitude_of_trend_model += is3D ? std::abs( x * z ) : 0.0;
+            magnitude_of_trend_model += y * y;
+            magnitude_of_trend_model += is3D ? std::abs( y * z ) : 0.0;
+            magnitude_of_trend_model += is3D ? std::abs( z * z ) : 0.0;
+            magnitude_of_trend_model +=     x;
+            magnitude_of_trend_model +=     y;
+            magnitude_of_trend_model += is3D ?  std::abs( z )    : 0.0;
+
+            double data_value = m_dataFile->data( iRow, indexOfVariable );
+            if( ! hasNDV || ! Util::almostEqual2sComplement( data_value, NDV, 1 ) )
+                magnitude_of_data_values += std::abs( data_value );
+
+            //update progress bar from time to time
+            if( ! iRow % ( m_dataFile->getDataLineCount() / 100 ) ){
+                progressDialog.setValue( iRow );
+                QApplication::processEvents(); // let Qt update the UI
+            }
+        }
+    }
+
+    //compute the approx. powers of 10 (orders of magnitude (approx. power of 1000) for each case
+    int exp_trend_model = static_cast<int>( std::log10<double>(magnitude_of_trend_model).real() );
+    int exp_data_values = static_cast<int>( std::log10<double>(magnitude_of_data_values).real() );
+
+    //initialize the value of the magnitude of the parameter search domain with an adequate value
+    ui->spinCoeffSearchWindowSizeMagnitude->setValue     ( exp_data_values - exp_trend_model     );
+    ui->spinSearchWindowShiftThresholdMagnitude->setValue( exp_data_values - exp_trend_model - 2 );
+
+    //show the frame with the trend model fitting controls
     ui->grpGeneticAlgorithmParams->setVisible( ! ui->grpGeneticAlgorithmParams->isVisible() );
 }
 
@@ -137,24 +198,95 @@ void DriftAnalysisDialog::onRunFitTrendModel()
                 ui->dblSpinProbabilityOfCrossover->value(),
                 ui->spinPointOfCrossover->value(),
                 ui->dblSpinMutationRate->value(),
-                ui->dblCoeffSearchWindowSize->value(),
-                ui->dblSearchWindowShiftThreshold->value() );
+                ui->dblCoeffSearchWindowSize->value() * std::pow( 10, ui->spinCoeffSearchWindowSizeMagnitude->value() ),
+                ui->dblSearchWindowShiftThreshold->value() * std::pow( 10, ui->spinSearchWindowShiftThresholdMagnitude->value()) );
 
-    ui->lblTrendModel->setText("<html><head/><body><p>Trend model: " +
-                               QString::number(modelParameters.a) + "x<sup>2</sup> + " +
-                               QString::number(modelParameters.b) + "xy + " +
-                               QString::number(modelParameters.c) + "xz + " +
-                               QString::number(modelParameters.d) + "y<sup>2</sup> + " +
-                               QString::number(modelParameters.e) + "yz + " +
-                               QString::number(modelParameters.f) + "z<sup>2</sup> + " +
-                               QString::number(modelParameters.g) + "x + " +
-                               QString::number(modelParameters.h) + "y + " +
-                               QString::number(modelParameters.i) + "z</p></body></html>");
+
+    //find the highest and lowest parameters values for color table
+    double absmax = -std::numeric_limits<double>::max();
+    for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++)
+        if( std::abs(modelParameters[i]) > absmax ) absmax = std::abs(modelParameters[i]);
+
+    //a lambda to automatize the generation of HTML to display a background color proportional to the parameter value
+    auto lambdaMakeBGColor = [absmax](double value){
+        return " bgcolor='" + Util::getHTMLColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) + "'";
+    };
+
+    //a lambda to automatize the generation of HTML to render text in a contrasting color with respect to the background color
+    auto lambdaMakeFontColor = [absmax](double value){
+        return Util::fontColorTag( QString::number(value), Util::getColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) );
+    };
+
+    const QString btdSansColor = "<td style='border: 0px; padding 0px;'>";
+    const QString btdAvecColor = "<td style='border: 0px; padding 0px;' ";
+    const QString etd = "</td>";
+    QString output = "<html><head/><body><table><tr>";
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.a ) + ">" + lambdaMakeFontColor(modelParameters.a) + etd
+            + btdSansColor + "x<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.b ) + ">" + lambdaMakeFontColor(modelParameters.b) + etd
+            + btdSansColor + "xy + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.c ) + ">" + lambdaMakeFontColor(modelParameters.c) + etd
+            + btdSansColor + "xz + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.d ) + ">" + lambdaMakeFontColor(modelParameters.d) + etd
+            + btdSansColor + "y<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.e ) + ">" + lambdaMakeFontColor(modelParameters.e) + etd
+            + btdSansColor + "yz + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.f ) + ">" + lambdaMakeFontColor(modelParameters.f) + etd
+            + btdSansColor + "z<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.g ) + ">" + lambdaMakeFontColor(modelParameters.g) + etd
+            + btdSansColor + "x + "             + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.h ) + ">" + lambdaMakeFontColor(modelParameters.h) + etd
+            + btdSansColor + "y + "             + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.i ) + ">" + lambdaMakeFontColor(modelParameters.i) + etd
+            + btdSansColor + "z"                + etd;
+    output += "</tr></table></body></html>";
+
+    ui->lblTrendModel->setText( output );
 
     m_lastFitDriftModelParameters.reset( new Quad3DTrendModelFittingAuxDefs::Parameters( modelParameters ) );
 }
 
 void DriftAnalysisDialog::onSaveNewVariableWithDriftModel()
 {
+
+    //present a variable naming dialog to the user
+    QString new_variable_name = "drift_model";
+    {
+        bool ok;
+        QString ps_file_name = QInputDialog::getText(this, "Name the new variable",
+                                                     "New variable with the trend model evaluated in data locations: ",
+                                                     QLineEdit::Normal, new_variable_name, &ok);
+        if( ! ok )
+            return;
+    }
+
+    //allocate container for the drift values
+    std::vector<double> drift_values( m_dataFile->getDataLineCount() );
+
+    //for each data sample
+    for( uint64_t iRow = 0; iRow < m_dataFile->getDataLineCount(); iRow++){
+
+        //get the spatial location of the current sample
+        double x, y, z;
+        m_dataFile->getDataSpatialLocation( iRow, x, y, z );
+
+        //evaluate the trend model at the current sample location
+        double drift_value =
+                m_lastFitDriftModelParameters->a * x * x +
+                m_lastFitDriftModelParameters->b * x * y +
+                m_lastFitDriftModelParameters->c * x * z +
+                m_lastFitDriftModelParameters->d * y * y +
+                m_lastFitDriftModelParameters->e * y * z +
+                m_lastFitDriftModelParameters->f * z * z +
+                m_lastFitDriftModelParameters->g * x +
+                m_lastFitDriftModelParameters->h * y +
+                m_lastFitDriftModelParameters->i * z ;
+
+        //store the trend model value at the current sample location
+        drift_values[iRow] = drift_value;
+    }
+
+    //adds the drift values as a new attribute to the data set file
+    m_dataFile->addNewDataColumn( new_variable_name, drift_values );
 
 }

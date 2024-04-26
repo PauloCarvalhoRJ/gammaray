@@ -132,6 +132,7 @@ bool DriftAnalysis::run()
 
     //get the input data file's NDV as floating point number
     double dummyValue = m_inputDataFile->getNoDataValueAsDouble();
+    bool hasNDV = m_inputDataFile->hasNoDataValue();
 
     //compute drift along West->East diretcion (x axis).
     for( int iSlice = 0; iSlice < m_NumberOfSteps; iSlice++, total_done_so_far++ ){
@@ -152,7 +153,7 @@ bool DriftAnalysis::run()
         uint64_t count = 0;
         for( uint sampleIndex : samplesIndexes ){
             double sampleValue = m_inputDataFile->dataConst( sampleIndex, indexOfVariable );
-            if( ! Util::almostEqual2sComplement( sampleValue, dummyValue, 1 ) ){
+            if( ! hasNDV || ! Util::almostEqual2sComplement( sampleValue, dummyValue, 1 ) ){
                 sum += sampleValue;
                 count++;
             }

@@ -121,14 +121,14 @@ double Quadratic3DTrendModelFitting::objectiveFunction( const Quad3DTrendModelFi
     //the sum to compute the error mean to be returned
     double sum = 0.0;
 
-    //get the origin x,y,z so we can use a local coordinate system to fit a trend model to
-//    BoundingBox bbox = m_dataFile->getBoundingBox();
-//    double x0 = bbox.m_minX;
-//    double y0 = bbox.m_minY;
-//    double z0 = bbox.m_minZ;
-
     //get the no-data value in numeric form to improve performance
     double NDV = m_dataFile->getNoDataValueAsDouble();
+    bool hasNDV = m_dataFile->hasNoDataValue();
+
+    //if data is 2D, then the z-bearing terms are invariant.
+    constexpr int IS_3D = 1;
+    constexpr int IS_2D = 0;
+    int is3D = m_dataFile->isTridimensional() ? IS_3D : IS_2D;
 
     uint16_t indexOfDependentVariable = m_attribute->getAttributeGEOEASgivenIndex()-1;
 
@@ -138,15 +138,16 @@ double Quadratic3DTrendModelFitting::objectiveFunction( const Quad3DTrendModelFi
         //get the observed value
         double observedValue = m_dataFile->dataConst( iRow, indexOfDependentVariable );
         //if observed value is valid (not no-data-value)
-        if( ! Util::almostEqual2sComplement( observedValue, NDV, 1 ) ){
+        if( ! hasNDV || ! Util::almostEqual2sComplement( observedValue, NDV, 1 ) ){
             // get the xyz location of the current sample.
             double x, y, z;
             m_dataFile->getDataSpatialLocation( iRow, x, y, z );
-//            x -= x0; y -= y0; z -= z0; //make the sample location relative to the local coordinate system
             // use the current trend model (defined by its parameters)
             // to predict the value at the data location
-            double predictedValue =
-                    parameters.a * x * x +
+            double predictedValue;
+            switch (is3D) { //if is slower than a switch
+                case IS_3D:
+                    predictedValue = parameters.a * x * x +
                     parameters.b * x * y +
                     parameters.c * x * z +
                     parameters.d * y * y +
@@ -155,6 +156,14 @@ double Quadratic3DTrendModelFitting::objectiveFunction( const Quad3DTrendModelFi
                     parameters.g * x +
                     parameters.h * y +
                     parameters.i * z ;
+                    break;
+                case IS_2D: //z-bearing terms are invariant in 2D datasets
+                    predictedValue = parameters.a * x * x +
+                    parameters.b * x * y +
+                    parameters.d * y * y +
+                    parameters.g * x +
+                    parameters.h * y;
+            }
             //accumulate the observed - predicted differences (prediction errors)
             double error = observedValue - predictedValue;
             sum += std::abs(error);
@@ -217,6 +226,11 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
     //initialize the best fit paramaters in the domain center
     Quad3DTrendModelFittingAuxDefs::Parameters gbest_pw = domainCenter;
 
+    //if data is 2D, then the z-bearing terms are invariant.
+    constexpr int IS_3D = 1;
+    constexpr int IS_2D = 0;
+    int dimensionality = m_dataFile->isTridimensional() ? IS_3D : IS_2D;
+
     //loop for the domain window shift if a solution is near the current domain boundaries
     //executes at least once
     while(true){
@@ -259,7 +273,10 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
                     double HI = domain.max[i];
                     pw[i] = LO + std::rand() / (RAND_MAX/(HI-LO));
                 }
-                //create and individual with the random genes
+                //zero-out z-bearing parameters if data set is 2D
+                if( dimensionality == IS_2D )
+                    pw.zeroOutZBearingTerms();
+                //create an individual with the random genes
                 Individual ind( pw );
                 //add the new individual to the population
                 population.push_back( ind );
@@ -338,6 +355,12 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
                     child2.mutate( mutationRate, domain.min, domain.max );
                     parent1.mutate( mutationRate, domain.min, domain.max );
                     parent2.mutate( mutationRate, domain.min, domain.max );
+                    if( dimensionality == IS_2D ){ //zero-out z-bearing parameters (genes)
+                        child1.m_parameters.zeroOutZBearingTerms();
+                        child2.m_parameters.zeroOutZBearingTerms();
+                        parent1.m_parameters.zeroOutZBearingTerms();
+                        parent2.m_parameters.zeroOutZBearingTerms();
+                    }
                     //add them to the next generation pool
                     nextGen.push_back( child1 );
                     nextGen.push_back( child2 );
@@ -347,6 +370,10 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
                     //simply mutate and insert the parents into the next generation pool
                     parent1.mutate( mutationRate, domain.min, domain.max );
                     parent2.mutate( mutationRate, domain.min, domain.max );
+                    if( dimensionality == IS_2D ){  //zero-out z-bearing parameters (genes)
+                        parent1.m_parameters.zeroOutZBearingTerms();
+                        parent2.m_parameters.zeroOutZBearingTerms();
+                    }
                     nextGen.push_back( parent1 );
                     nextGen.push_back( parent2 );
                 }
