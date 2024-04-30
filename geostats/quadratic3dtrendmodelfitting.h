@@ -142,6 +142,9 @@ public:
                             double windowWindowShiftThreshold
             ) const;
 
+    Quad3DTrendModelFittingAuxDefs::Parameters processWithNonLinearLeastSquares() const;
+
+
 private:
     Attribute* m_attribute;
     DataFile* m_dataFile;

@@ -189,6 +189,15 @@ void DriftAnalysisDialog::onRunFitTrendModel()
     //fit a trend model to the data
     Quadratic3DTrendModelFitting q3dtmf( m_dataFile, m_attribute );
     Quad3DTrendModelFittingAuxDefs::Parameters modelParameters =
+            q3dtmf.processWithNonLinearLeastSquares();
+}
+
+/*
+void DriftAnalysisDialog::onRunFitTrendModel()
+{
+    //fit a trend model to the data
+    Quadratic3DTrendModelFitting q3dtmf( m_dataFile, m_attribute );
+    Quad3DTrendModelFittingAuxDefs::Parameters modelParameters =
             q3dtmf.processWithGenetic(
                 ui->spinNumberOfThreads->value(),
                 ui->spinSeed->value(),
@@ -245,6 +254,7 @@ void DriftAnalysisDialog::onRunFitTrendModel()
 
     m_lastFitDriftModelParameters.reset( new Quad3DTrendModelFittingAuxDefs::Parameters( modelParameters ) );
 }
+*/
 
 void DriftAnalysisDialog::onSaveNewVariableWithDriftModel()
 {
