@@ -190,6 +190,49 @@ void DriftAnalysisDialog::onRunFitTrendModel()
     Quadratic3DTrendModelFitting q3dtmf( m_dataFile, m_attribute );
     Quad3DTrendModelFittingAuxDefs::Parameters modelParameters =
             q3dtmf.processWithNonLinearLeastSquares();
+
+    //find the highest and lowest parameters values for color table
+    double absmax = -std::numeric_limits<double>::max();
+    for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++)
+        if( std::abs(modelParameters[i]) > absmax ) absmax = std::abs(modelParameters[i]);
+
+    //a lambda to automatize the generation of HTML to display a background color proportional to the parameter value
+    auto lambdaMakeBGColor = [absmax](double value){
+        return " bgcolor='" + Util::getHTMLColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) + "'";
+    };
+
+    //a lambda to automatize the generation of HTML to render text in a contrasting color with respect to the background color
+    auto lambdaMakeFontColor = [absmax](double value){
+        return Util::fontColorTag( QString::number(value), Util::getColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) );
+    };
+
+    const QString btdSansColor = "<td style='border: 0px; padding 0px;'>";
+    const QString btdAvecColor = "<td style='border: 0px; padding 0px;' ";
+    const QString etd = "</td>";
+    QString output = "<html><head/><body><table><tr>";
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.a ) + ">" + lambdaMakeFontColor(modelParameters.a) + etd
+            + btdSansColor + "x<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.b ) + ">" + lambdaMakeFontColor(modelParameters.b) + etd
+            + btdSansColor + "xy + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.c ) + ">" + lambdaMakeFontColor(modelParameters.c) + etd
+            + btdSansColor + "xz + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.d ) + ">" + lambdaMakeFontColor(modelParameters.d) + etd
+            + btdSansColor + "y<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.e ) + ">" + lambdaMakeFontColor(modelParameters.e) + etd
+            + btdSansColor + "yz + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.f ) + ">" + lambdaMakeFontColor(modelParameters.f) + etd
+            + btdSansColor + "z<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.g ) + ">" + lambdaMakeFontColor(modelParameters.g) + etd
+            + btdSansColor + "x + "             + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.h ) + ">" + lambdaMakeFontColor(modelParameters.h) + etd
+            + btdSansColor + "y + "             + etd;
+    output += btdAvecColor + lambdaMakeBGColor( modelParameters.i ) + ">" + lambdaMakeFontColor(modelParameters.i) + etd
+            + btdSansColor + "z"                + etd;
+    output += "</tr></table></body></html>";
+
+    ui->lblTrendModel->setText( output );
+
+    m_lastFitDriftModelParameters.reset( new Quad3DTrendModelFittingAuxDefs::Parameters( modelParameters ) );
 }
 
 /*
@@ -258,6 +301,9 @@ void DriftAnalysisDialog::onRunFitTrendModel()
 
 void DriftAnalysisDialog::onSaveNewVariableWithDriftModel()
 {
+
+    // make sure the data is loaded from filesystem
+    m_dataFile->loadData();
 
     //present a variable naming dialog to the user
     QString new_variable_name = "drift_model";

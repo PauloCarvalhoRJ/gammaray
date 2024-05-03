@@ -18,21 +18,14 @@
 
 #include <thread>
 
-#include <gsl/gsl_vector.h>
+#include <gsl/gsl_rng.h>
+#include <gsl/gsl_randist.h>
 #include <gsl/gsl_matrix.h>
+#include <gsl/gsl_vector.h>
 #include <gsl/gsl_blas.h>
-#include <gsl/gsl_multilarge_nlinear.h>
-#include <gsl/gsl_spblas.h>
-#include <gsl/gsl_spmatrix.h>
+#include <gsl/gsl_multifit_nlinear.h>
 
 std::vector< double > Quadratic3DTrendModelFitting::s_objectiveFunctionValues;
-
-/* data structure for GSL functions */
-struct model_params
-{
-  double alpha;
-  gsl_spmatrix *J;
-};
 
 ////////////////////////////////////////CLASS FOR THE GENETIC ALGORITHM//////////////////////////////////////////
 
@@ -437,96 +430,130 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
     return gbest_pw;
 }
 
-/**
- * local C-style Penalty/Cost function for non-linear least squares with GSL.
- * This is not defined in header file.
- *
- * This function should store the n (number of samples) components of the vector f(x) (model being fit)
- * in the f vector for each passed argument x (model parameters) and arbitrary algorithm hyperparameters params,
- * returning an appropriate error code if the function cannot be computed (e.g. division by zero).
- */
-int penalty_f (const gsl_vector* x, void* params, gsl_vector* f) {
-  struct model_params* hyperparameters = (struct model_params*) params;
-  const double sqrt_alpha = sqrt(hyperparameters->alpha);
-  const size_t p = x->size;
-  double sum = 0.0;
+//locally defined data structure to store observation data in a form compatible with GSL's
+//non-linear least squares solver.
+struct data {
+    size_t count;
+    double* x;
+    double* y;
+    double* z;
+    double* value;
+};
 
-  for (size_t i = 0; i < p; ++i){
-      double xi = gsl_vector_get(x, i);
-      gsl_vector_set(f, i, sqrt_alpha*(xi - 1.0));
-      sum += xi * xi;
-  }
+//locally defined C-style function for use with GSL's non-linear least squares solver.
+//this function returns the resuiduals (predicted - observed) in residuals_at_data_locations.
+int cost_f (const gsl_vector* model_parameters_x,
+            void* data,
+            gsl_vector* residuals_at_data_locations) {
 
-  gsl_vector_set(f, p, sum - 0.25);
+    // get data information
+    size_t data_count =  static_cast<struct data *>(data)->count;
+    double *x =          static_cast<struct data *>(data)->x;
+    double *y =          static_cast<struct data *>(data)->y;
+    double *z =          static_cast<struct data *>(data)->z;
+    double *data_value = static_cast<struct data *>(data)->value;
 
-  return GSL_SUCCESS;
+    // get trend model parameters
+    double p0 = gsl_vector_get (model_parameters_x, 0);
+    double p1 = gsl_vector_get (model_parameters_x, 1);
+    double p2 = gsl_vector_get (model_parameters_x, 2);
+    double p3 = gsl_vector_get (model_parameters_x, 3);
+    double p4 = gsl_vector_get (model_parameters_x, 4);
+    double p5 = gsl_vector_get (model_parameters_x, 5);
+    double p6 = gsl_vector_get (model_parameters_x, 6);
+    double p7 = gsl_vector_get (model_parameters_x, 7);
+    double p8 = gsl_vector_get (model_parameters_x, 8);
+
+    // for each observation
+    for (size_t i = 0; i < data_count; i++)
+    {
+
+        // evaluate the trend model at the data location
+        double predicted_value_i =
+                p0 * x[i]*x[i] +
+                p1 * x[i]*y[i] +
+                p2 * x[i]*z[i] +
+                p3 * y[i]*y[i] +
+                p4 * y[i]*z[i] +
+                p5 * z[i]*z[i] +
+                p6 * x[i] +
+                p7 * y[i] +
+                p8 * z[i];
+
+        // compute and return the error between measurement and predicted.
+        gsl_vector_set (residuals_at_data_locations, i, predicted_value_i - data_value[i]);
+    }
+
+    return GSL_SUCCESS;
 }
 
-/**
- * local C-style 1st-order derivative of the cost function for non-linear least squares with GSL.
- * This works by updating the J member (Jacobian matrix) in the params data structure.
- * This is not defined in header file.
- */
-int penalty_df (CBLAS_TRANSPOSE_t TransJ, const gsl_vector* x,
-            const gsl_vector* u, void* params, gsl_vector* v,
-            gsl_matrix* JTJ)
+
+//locally defined C-style function to compute the 1st derivative of
+//the cost function in the form of a Jacobian matrix compatible with GSL's
+//non-linear least-squares solver
+int cost_df ( const gsl_vector * model_parameters_x,
+              void *data,
+              gsl_matrix * J ) {
+
+    // get data information
+    size_t data_count = static_cast<struct data *>(data)->count;
+    double *x =         static_cast<struct data *>(data)->x;
+    double *y =         static_cast<struct data *>(data)->y;
+    double *z =         static_cast<struct data *>(data)->z;
+
+    for (size_t i = 0; i < data_count; i++) {
+        // An element of the Jacobian matrix: J(i,j) = ∂fi / ∂xj,
+        // where fi = (Yi - yi)/sigma[i],
+        //       Yi = predicted value at x,y,z ,
+        //       yi = data value at x,y,z,
+        //       xj = the nine trend model parameters p0...p8
+        // f(x,y,z) = p0*x² + p1*x*y + p2*x*z + p3*y² + p4*y*z + p5*z² + p6*x + p7*y + p8*z
+        gsl_matrix_set (J, i, 0, x[i]*x[i]); // ∂f/∂p0
+        gsl_matrix_set (J, i, 1, x[i]*y[i]); // ∂f/∂p1
+        gsl_matrix_set (J, i, 2, x[i]*z[i]); // ∂f/∂p2
+        gsl_matrix_set (J, i, 3, y[i]*y[i]); // ∂f/∂p3
+        gsl_matrix_set (J, i, 4, y[i]*z[i]); // ∂f/∂p4
+        gsl_matrix_set (J, i, 5, z[i]*z[i]); // ∂f/∂p5
+        gsl_matrix_set (J, i, 6, x[i]);      // ∂f/∂p6
+        gsl_matrix_set (J, i, 7, y[i]);      // ∂f/∂p7
+        gsl_matrix_set (J, i, 8, z[i]);      // ∂f/∂p8
+    }
+
+    return GSL_SUCCESS;
+}
+
+// locally defined C-style function that is called for each step of the non-linear
+// least squares algorithm of GSL.
+// this is usally useful to keep track of progress or to record an execution log
+void iteration_callback( const size_t iter,
+                         void *params,
+                         const gsl_multifit_nlinear_workspace *w )
 {
-  struct model_params* par = (struct model_params*) params;
-  const size_t p = x->size;
-  size_t j;
+//  gsl_vector *f = gsl_multifit_nlinear_residual(w);
+//  gsl_vector *x = gsl_multifit_nlinear_position(w);
+//  double rcond;
 
-  /* store 2*x in last row of J */
-  for (j = 0; j < p; ++j) {
-      double xj = gsl_vector_get(x, j);
-      gsl_spmatrix_set(par->J, p, j, 2.0 * xj);
-  }
+//  /* compute reciprocal condition number of J(x) */
+//  gsl_multifit_nlinear_rcond(&rcond, w);
 
-  /* compute v = op(J) u */
-  if (v)
-    gsl_spblas_dgemv(TransJ, 1.0, par->J, u, 0.0, v);
-
-  /* compute normal equation if a  J-transpose * J matrix is provided. */
-  if (JTJ) {
-      gsl_vector_view diag = gsl_matrix_diagonal(JTJ);
-
-      /* compute J^T J = [ alpha*I_p + 4 x x^T ] */
-      gsl_matrix_set_zero(JTJ);
-
-      /* store 4 x x^T in lower half of JTJ */
-      gsl_blas_dsyr(CblasLower, 4.0, x, JTJ);
-
-      /* add alpha to diag(JTJ) */
-      gsl_vector_add_constant(&diag.vector, par->alpha);
-  }
-
-  return GSL_SUCCESS;
-}
-
-/**
- * local C-style 2nd-order derivative to enable the geodesic acceleration method
- * with the non-linear least squares with GSL.
- * This is not defined in header file.
- */
-int penalty_fvv (const gsl_vector* x, const gsl_vector* v,
-                 void* params, gsl_vector* fvv) {
-
-  const size_t p = x->size;
-  double normv = gsl_blas_dnrm2(v);
-
-  gsl_vector_set_zero(fvv);
-  gsl_vector_set(fvv, p, 2.0 * normv * normv);
-
-  (void)params; /* avoid unused parameter warning */
-
-  return GSL_SUCCESS;
+//  fprintf(stderr, "iter %2zu: A = %.4f, lambda = %.4f, b = %.4f, cond(J) = %8.4f, |f(x)| = %.4f\n",
+//          iter,
+//          gsl_vector_get(x, 0),
+//          gsl_vector_get(x, 1),
+//          gsl_vector_get(x, 2),
+//          1.0 / rcond,
+//          gsl_blas_dnrm2(f));
 }
 
 Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::processWithNonLinearLeastSquares() const
 {
-    //load dataset
+    // load dataset
     m_dataFile->loadData();
 
-    //determine the number of valid samples (no NDV)
+    // set whether the data is 2D or 3D in Cartesian space
+    bool is3D = m_dataFile->isTridimensional();
+
+    // determine the number of valid samples (no NDV)
     size_t number_of_valid_samples = 0;
     {
         if( ! m_dataFile->hasNoDataValue() ){
@@ -542,161 +569,154 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
         }
     }
 
-    //define solver hyperparameters
-    gsl_multilarge_nlinear_parameters fdf_params = gsl_multilarge_nlinear_default_parameters();
-    size_t number_of_samples = number_of_valid_samples;
-    size_t number_of_parameters = Quad3DTrendModelFittingAuxDefs::N_PARAMS;
+    // select non-linear least squares method (so far GSL only supports TRS).
+    // TRS = Trust Region Subproblem.  This means that in a small 9-D cube around a given
+    //       x,y,z location, the trend model is assumed near-constant value.
+    const gsl_multifit_nlinear_type* T = gsl_multifit_nlinear_trust;
 
-    //alocate arrays for ????
-    gsl_vector* samples_f    = gsl_vector_alloc( number_of_samples    ); //this is not being used...
-    gsl_vector* parameters_x = gsl_vector_alloc( number_of_parameters );
+    // set the sizes of the problem
+    const size_t number_of_samples        = number_of_valid_samples;
+    constexpr size_t number_of_parameters = Quad3DTrendModelFittingAuxDefs::N_PARAMS;
 
-    // allocate sparse Jacobian matrix with 2*nb_par non-zero elements in triplet format
-    gsl_spmatrix *J = gsl_spmatrix_alloc_nzmax(
-                number_of_samples,
-                number_of_parameters,
-                2 * number_of_parameters,
-                GSL_SPMATRIX_TRIPLET);
+    // allocate data structures for algorithm operation
+    double* x           = new double[number_of_samples];
+    double* y           = new double[number_of_samples];
+    double* z           = new double[number_of_samples];
+    double* data_values = new double[number_of_samples];
+    double* weights     = new double[number_of_samples];
+    struct data dataSet = { number_of_samples, x, y, z, data_values };
 
-    // some solver hiperparameters
-    struct model_params params;
-    params.alpha = 1.0e-5; //"learning rate" (greater: faster, less accurate convergence; smaller: slower, more accurate convergence).
-    params.J = J; //Jacobian matrix (a form of gradient or 1st derivative in the form of matrix of 1st partial derivatives)
+    gsl_rng_env_setup();
+    gsl_rng* trusted_region = gsl_rng_alloc( gsl_rng_default ); //apparently not being used
 
     // define the function to be minimized
-    gsl_multilarge_nlinear_fdf fdf;
-    fdf.f = penalty_f; //the cost function itself
-    fdf.df = penalty_df; //its 1st derivative
-    fdf.fvv = penalty_fvv; //its 2nd derivative (optional, necessary for geodesic acceleration)
+    gsl_multifit_nlinear_fdf fdf;
+    fdf.f = cost_f;
+    fdf.df = cost_df;   // set to NULL for finite-difference Jacobian
+    fdf.fvv = NULL;     // not using geodesic acceleration
     fdf.n = number_of_samples;
     fdf.p = number_of_parameters;
-    fdf.params = &params; //Jacobian matrix and "learning rate" alpha.
+    fdf.params = &dataSet;
 
-    // do some initializations
-    for (size_t i = 0; i < number_of_parameters; ++i) {
-
-        /* init the model parameters somewhere in the 9-D parameter space */
-        gsl_vector_set( parameters_x, i, i + 1.0);
-
-        /* init the main diagonal of the Jacobian's upper p x p part with sqrt(alpha).
-         * alpha is the "learning rate"
-         */
-        gsl_spmatrix_set(J, i, i, sqrt(params.alpha));
-
-    }
-
-    // controls the model parameters scaling matrix D
-    // options:
-    //   gsl_multilarge_nlinear_scale_more -> indicated for when parameters wildly vary in scale (e.g. micrometers vs tonnes)
-    //   gsl_multilarge_nlinear_scale_levenberg -> unlike gsl_multilarge_nlinear_scale_more, this is not scale-ivariant but works
-    //                                             better for problems susceptiple to "parameter evaporation" (some parameters tend to
-    //                                             go to infinity).
-    //   gsl_multilarge_nlinear_scale_marquardt -> scale-invariant, but considered inferior to the above two.  Use if the previous one
-    //                                             does not work well for the problem.
-    fdf_params.scale = gsl_multilarge_nlinear_scale_levenberg;
-
-
-    // controls the method used to solve the Trust Region Subproblem ( a certain 9-D volume around
-    // a given 9-D parameter space point can be approximately valued by the same model parameters ).
-    // TRS may not work well if the sought trend model varies rapidly in parameter space.
-    // options:
-    //   gsl_multilarge_nlinear_trs_lm -> The Levenberg-Marquardt algorithm provides an exact solution of
-    //                                    the trust region subproblem, but typically has a higher computational cost
-    //                                    per iteration than the approximate methods below.
-    //   gsl_multilarge_nlinear_trs_lmaccel -> The Levenberg-Marquardt algorithm with geodesic acceleration (requires
-    //                                         definition of the 2nd derivative of the cost function).
-    //   gsl_multilarge_nlinear_trs_dogleg -> The classic Powell’s dogleg method;
-    //   gsl_multilarge_nlinear_trs_ddogleg -> Double dogleg (improved dogleg method).
-    //   gsl_multilarge_nlinear_trs_subspace2D -> The dogleg methods restricts minimum search to lines.  This improves over
-    //                                            such methods by using a 2D space, potentially speeding up convergence on some problems.
-    //   gsl_multilarge_nlinear_trs_cgst -> slower than dogleg methods, but avoids numeric problems (e.g. if the Jacobian
-    //                                      matrix becomes singular) making this option more robust for some of the larger problems.
-    fdf_params.trs = gsl_multilarge_nlinear_trs_lm;
-
-    // Block of code directly involved with solution search.
-    //solve_system(x0, &fdf, &fdf_params)
+    // read the data to be fitted into the arrays
     {
-        // selects the type of the non-linear least squared method.
-        // so far, GSL only supports Trust Region Subproblem methods,
-        // the other being linear search methods.
-        const gsl_multilarge_nlinear_type* type_of_method = gsl_multilarge_nlinear_trust;
-
-        // the maximum number of tries (how many times the main optimization loop will execute)
-        const size_t max_iter = 200;
-
-        // sets the epsilon (two values closer than epsilon are considered equal) for model parameters
-        const double xtol = 1.0e-8;
-
-        // sets the epsilon for gradient values
-        const double gtol = 1.0e-8;
-
-        // sets the epsilon for model values (y-values)
-        const double ftol = 1.0e-8;
-
-        // number of observation data
-        const size_t n = fdf.n;
-
-        // number of model parameters
-        const size_t p = fdf.p;
-
-        // allocate and configure the non-linear solver
-        gsl_multilarge_nlinear_workspace* solver_workspace =
-                gsl_multilarge_nlinear_alloc( type_of_method, &fdf_params, n, p );
-
-        //allocate array for the solver to store the current residual vector f(x).
-        gsl_vector* f = gsl_multilarge_nlinear_residual( solver_workspace );
-
-        //allocate array for the solver to store the current best-fit model parameters.
-        gsl_vector* x = gsl_multilarge_nlinear_position( solver_workspace );
-
-        // initialize solver
-        gsl_multilarge_nlinear_init( parameters_x, &fdf, solver_workspace );
-
-        //declare some output variables to get execution information after completion
-        int info;
-        double chisq0, chisq, rcond, xsq;
-
-        // get initial cost
-        gsl_blas_ddot(f, f, &chisq0);
-
-        // iterate until convergence
-        gsl_multilarge_nlinear_driver(max_iter, xtol, gtol, ftol,
-                                      NULL, NULL, &info, solver_workspace);
-
-//        std::cout << f->size << ' ' << x->size << std::endl;
-//        return Quad3DTrendModelFittingAuxDefs::Parameters();
-
-        // get final cost
-        gsl_blas_ddot(f, f, &chisq);
-
-        // get final ||x||^2 (parameter vector norm squared)
-        gsl_blas_ddot(x, x, &xsq);
-
-        // get reciprocal condition number of final J (Jacobian matrix).
-        // closer to 0.0 means ill-conditioned.  Closer to 1.0 means well-conditioned.
-        gsl_multilarge_nlinear_rcond(&rcond, solver_workspace);
-
-        // print execution summary
-        printf("%-25s %-5zu %-4zu %-5zu %-6zu %-4zu %-10.4e %-10.4e %-7.2f %-11.4e \n",
-                gsl_multilarge_nlinear_trs_name(solver_workspace),
-                gsl_multilarge_nlinear_niter(solver_workspace),
-                fdf.nevalf,
-                fdf.nevaldfu,
-                fdf.nevaldf2,
-                fdf.nevalfvv,
-                chisq0,
-                chisq,
-                1.0 / rcond,
-                xsq );
-
-        // deallocate the non-linear solver
-        gsl_multilarge_nlinear_free( solver_workspace );
+        bool hasNDV = m_dataFile->hasNoDataValue();
+        double NDV = m_dataFile->getNoDataValueAsDouble();
+        int iColumn = m_attribute->getAttributeGEOEASgivenIndex() - 1;
+        size_t iDataArray = 0;
+        for( int iDataFileRow = 0; iDataFileRow < m_dataFile->getDataLineCount(); iDataFileRow++){
+            double sample_value = m_dataFile->data( iDataFileRow, iColumn );
+            if( ! hasNDV || ! Util::almostEqual2sComplement( NDV, sample_value, 1 )) {
+                data_values[iDataArray] = sample_value;
+                m_dataFile->getDataSpatialLocation( iDataFileRow, x[iDataArray], y[iDataArray], z[iDataArray] );
+                weights[iDataArray] = 1.0;
+                iDataArray++;
+            }
+        }
     }
 
-    //deallocate data structures
-    gsl_vector_free(samples_f);
-    gsl_vector_free(parameters_x);
-    gsl_spmatrix_free(J);
+    // from this point on, the data file's contents are no longer needed, so deallocate them
+    // to free up memory space
+    m_dataFile->freeLoadedData();
+
+    // allocate workspace with default parameters
+    gsl_multifit_nlinear_parameters fdf_params = gsl_multifit_nlinear_default_parameters();
+    gsl_multifit_nlinear_workspace* workspace  = gsl_multifit_nlinear_alloc (T, &fdf_params, number_of_samples, number_of_parameters);
+
+    // initialize solver with starting point and weights
+    //                         0    1    2     3    4   5     6    7    8
+    //                         x² + xy + xz +  y²+ yz + z² +  x +  y +  z
+    double params_init[9] = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 }; /* starting parameter values */
+    if( ! is3D ) //zero-out z-bearing terms
+        params_init[2] = params_init[4] = params_init[5] = params_init[8] = 0.0;
+    gsl_vector_view parameters = gsl_vector_view_array (params_init, number_of_parameters);
+    gsl_vector_view wts =        gsl_vector_view_array (weights,     number_of_samples);
+    gsl_multifit_nlinear_winit (&parameters.vector, &wts.vector, &fdf, workspace);
+
+    // compute initial cost function
+    gsl_vector* f = gsl_multifit_nlinear_residual(workspace);
+    double chisq0;
+    gsl_blas_ddot(f, f, &chisq0);
+
+    // perform the non-linear least squares of 100 iterations
+    int info;
+    constexpr int max_iterations = 100;
+    constexpr double xtol = 1e-8; //parameter epsilon (e.g. 1.0 + epsilon == 1.0)
+    constexpr double gtol = 1e-8; //1st derivative epsilon
+    constexpr double ftol = 0.0;  //2nd derivative epsilon (not using geodesic acceleration)
+    int status = gsl_multifit_nlinear_driver(max_iterations, xtol, gtol, ftol, iteration_callback, NULL, &info, workspace);
+
+    // get the final Jacobian matrix
+    gsl_matrix* J = gsl_multifit_nlinear_jac(workspace);
+
+    // compute the final covariance matrix of best fit parameters to get fit errors
+    gsl_matrix* covar = gsl_matrix_alloc (number_of_parameters, number_of_parameters);
+    gsl_multifit_nlinear_covar (J, 0.0, covar);
+
+    // compute final cost value
+    double chisq;
+    gsl_blas_ddot(f, f, &chisq);
+
+    // output execution summary
+    fprintf(stderr, "summary from method '%s/%s'\n",
+            gsl_multifit_nlinear_name(workspace),
+            gsl_multifit_nlinear_trs_name(workspace));
+    fprintf(stderr, "number of iterations: %zu\n",
+            gsl_multifit_nlinear_niter(workspace));
+    fprintf(stderr, "function evaluations: %zu\n", fdf.nevalf);
+    fprintf(stderr, "Jacobian evaluations: %zu\n", fdf.nevaldf);
+    fprintf(stderr, "reason for stopping: %s\n",
+            (info == 1) ? "small step size" : "small gradient");
+    fprintf(stderr, "initial |f(x)| = %f\n", sqrt(chisq0));
+    fprintf(stderr, "final   |f(x)| = %f\n", sqrt(chisq));
+
+    // output the best fit trend model parameters with their fit errors
+    {
+        double dof = number_of_samples - number_of_parameters;
+        double c = GSL_MAX_DBL(1, sqrt(chisq / dof));
+
+        fprintf(stderr, "chisq/dof = %g\n", chisq / dof);
+
+        // some lambda functions to serve as "macros"
+        auto FIT = [workspace](size_t i){ return gsl_vector_get(workspace->x, i); };
+        auto ERR = [covar](size_t i){ return std::sqrt(gsl_matrix_get(covar,i,i)); };
+
+        printf ("p0 = %.5f +/- %.5f\n", FIT(0), c*ERR(0));
+        printf ("p1 = %.5f +/- %.5f\n", FIT(1), c*ERR(1));
+        printf ("p2 = %.5f +/- %.5f\n", FIT(2), c*ERR(2));
+        printf ("p3 = %.5f +/- %.5f\n", FIT(3), c*ERR(3));
+        printf ("p4 = %.5f +/- %.5f\n", FIT(4), c*ERR(4));
+        printf ("p5 = %.5f +/- %.5f\n", FIT(5), c*ERR(5));
+        printf ("p6 = %.5f +/- %.5f\n", FIT(6), c*ERR(6));
+        printf ("p7 = %.5f +/- %.5f\n", FIT(7), c*ERR(7));
+        printf ("p8 = %.5f +/- %.5f\n", FIT(8), c*ERR(8));
+    }
+
+    // output final execution status (e.g. whether it completed by convergence or
+    // maximum number of iterations has been reached)
+    fprintf (stderr, "status = %s\n", gsl_strerror (status));
+
+    // free up memeory
+    gsl_multifit_nlinear_free (workspace);
+    gsl_matrix_free (covar);
+    gsl_rng_free (trusted_region);
+    delete[] x;
+    delete[] y;
+    delete[] z;
+    delete[] data_values;
+    delete[] weights;
+
+    // return best-fit trend model
+    auto get_par = [workspace](size_t i){ return gsl_vector_get(workspace->x, i); };
+    return Quad3DTrendModelFittingAuxDefs::Parameters( get_par(0),
+                                                       get_par(1),
+                                                       get_par(2),
+                                                       get_par(3),
+                                                       get_par(4),
+                                                       get_par(5),
+                                                       get_par(6),
+                                                       get_par(7),
+                                                       get_par(8) );
 }
 
 void Quadratic3DTrendModelFitting::showObjectiveFunctionEvolution() const
