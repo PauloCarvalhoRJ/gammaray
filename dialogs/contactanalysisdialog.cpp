@@ -153,7 +153,7 @@ void ContactAnalysisDialog::onProceed()
         LineChartWidget* lcw = new LineChartWidget(this);
         lcw->setSharedYaxis( true );
         lcw->setChartTitle( "Contact analysis of " + m_dataFile->getName() );
-        lcw->setData( chartData, 0,
+        lcw->setData( chartData, 0, true,
                       {{1, nameDomain1 + " (Domain 1)"}, {2, nameDomain2 + " (Domain 2)"}},
                       {{2, "mean " + m_attributeGrade->getName() }}, // shared y-axis is enabled, set only the last one
                       {{1, colorDomain1}              , {2, colorDomain2}} );

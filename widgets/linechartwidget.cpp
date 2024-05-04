@@ -43,9 +43,11 @@ LineChartWidget::~LineChartWidget()
 
 void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
                               int indexForXAxis,
+                              bool clearCurrentCurves,
                               const std::map<uint8_t, QString>& yVariablesCaptions,
                               const std::map<uint8_t, QString>& yVariablesYaxisTitles,
-                              const std::map<uint8_t, QColor>&  yVariablesColors)
+                              const std::map<uint8_t, QColor>&  yVariablesColors,
+                              const std::map<uint8_t, QPen>&    yVariablesStyles )
 {
     // Does nothing if the input data table is empty.
     if( data.empty() )
@@ -56,7 +58,8 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
     double maxX = -std::numeric_limits<double>::max();
 
     // Clears all current data series.
-    m_chart->removeAllSeries();
+    if( clearCurrentCurves )
+        m_chart->removeAllSeries();
 
     // Initialize the limits for the Y axes (one per dependent variable or a global Y axis).
     double minY =  std::numeric_limits<double>::max();
@@ -82,6 +85,11 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
             // tries to set a caption for the current series (user may not have set one)
             try {
                 series->setName( yVariablesCaptions.at( iSeries ) );
+            } catch (...){}
+
+            // tries to set a line style for the current series (user may not have set one)
+            try {
+                series->setPen( yVariablesStyles.at( iSeries ) );
             } catch (...){}
 
             // tries to set a color for the current series (user may not have set one)
