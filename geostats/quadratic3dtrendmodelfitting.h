@@ -8,6 +8,13 @@
 
 class DataFile;
 class Attribute;
+class QProgressDialog;
+
+/**
+ * A pointer to a progress dialog so a GSL's C-style callback function can access it
+ * to display algorithm progress.
+ */
+static QProgressDialog* s_progressDiag_for_iteration_callback = nullptr;
 
 namespace Quad3DTrendModelFittingAuxDefs {
 
@@ -159,7 +166,6 @@ private:
      * value versus iterations of the optimization method.
      */
     void showObjectiveFunctionEvolution( ) const;
-
 };
 
 #endif // QUADRATIC3DTRENDMODELFITTING_H

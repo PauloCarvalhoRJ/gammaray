@@ -8,7 +8,10 @@
 #include "geostats/quadratic3dtrendmodelfitting.h"
 #include "widgets/linechartwidget.h"
 #include "viewer3d/view3dcolortables.h"
+#include "gslib/gslibparametersdialog.h"
+#include "gslib/gslibparameterfiles/kt3dtrendmodelparameters.h"
 
+#include <QClipboard>
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QProgressDialog>
@@ -18,7 +21,8 @@ DriftAnalysisDialog::DriftAnalysisDialog(DataFile *dataFile, Attribute *attribut
     QDialog(parent),
     ui(new Ui::DriftAnalysisDialog),
     m_dataFile(dataFile),
-    m_attribute(attribute)
+    m_attribute(attribute),
+    m_lastNameForDriftVariable("drift_model")
 {
     ui->setupUi(this);
 
@@ -42,10 +46,7 @@ DriftAnalysisDialog::DriftAnalysisDialog(DataFile *dataFile, Attribute *attribut
     if( ! m_dataFile->isTridimensional() )
         ui->grpVerticalDrift->hide();
 
-    ui->grpGeneticAlgorithmParams->hide();
-
-    //defult is the number of logical processing cores made visible by the OS
-    ui->spinNumberOfThreads->setValue( std::thread::hardware_concurrency() );
+    ui->grpFitTrendModel->hide();
 }
 
 DriftAnalysisDialog::~DriftAnalysisDialog()
@@ -53,16 +54,11 @@ DriftAnalysisDialog::~DriftAnalysisDialog()
     delete ui;
 }
 
-void DriftAnalysisDialog::onRun()
+void DriftAnalysisDialog::performDriftAnalysis( DriftAnalysis& driftAnalysis, bool clear_curves )
 {
-    DriftAnalysis driftAnalysis;
-    driftAnalysis.setAttribute( m_attribute );
-    driftAnalysis.setInputDataFile( m_dataFile );
-    driftAnalysis.setNumberOfSteps( ui->spinNumberOfSteps->value() );
-
     if( ! driftAnalysis.run() ) {
 
-        Application::instance()->logError("DriftAnalysisDialog::onRun(): failed execution:");
+        Application::instance()->logError("DriftAnalysisDialog::performDriftAnalysis(): failed execution:");
         Application::instance()->logError("    " + driftAnalysis.getLastError());
         QMessageBox::critical( this, "Error", "Drift analysis failed.  Further details in the message panel." );
 
@@ -100,88 +96,93 @@ void DriftAnalysisDialog::onRun()
         QColor colorSouthNorth = QColorConstants::DarkGreen;
         QColor colorVertical   = QColorConstants::DarkBlue;
 
-        //display the results
-        m_chartWestEast->setData( chartDataWestEast, 0,
+        QPen style;
+        if( ! clear_curves ) //user wants to display drift model along observed drift
+            style.setStyle( Qt::DashLine );
+
+        //display the results index 0: X values; 1: Y values
+        m_chartWestEast->setData( chartDataWestEast, 0, clear_curves,
                                  {{}},
                                  {{1, "mean " + m_attribute->getName() }},
-                                 {{1, colorWestEast}} );
+                                 {{1, colorWestEast}},
+                                 {{1, style}} );
         m_chartWestEast->setXaxisCaption( "Easting" );
-        m_chartSouthNorth->setData( chartDataSouthNorth, 0,
+        m_chartSouthNorth->setData( chartDataSouthNorth, 0, clear_curves,
                                  {{}},
                                  {{1, "mean " + m_attribute->getName() }},
-                                 {{1, colorSouthNorth}} );
+                                 {{1, colorSouthNorth}},
+                                 {{1, style}} );
         m_chartSouthNorth->setXaxisCaption( "Northing" );
-        m_chartVertical->setData( chartDataVertical, 0,
+        m_chartVertical->setData( chartDataVertical, 0, clear_curves,
                                  {{}},
                                  {{1, "Z" }},
-                                 {{1, colorVertical}} );
+                                 {{1, colorVertical}},
+                                 {{1, style}} );
         m_chartVertical->setXaxisCaption( "mean " + m_attribute->getName() );
 
     }
 
 }
 
+void DriftAnalysisDialog::displayParamaters(const Quad3DTrendModelFittingAuxDefs::Parameters &model_parameters)
+{
+    //find the highest and lowest parameters values for color table
+    double absmax = -std::numeric_limits<double>::max();
+    for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++)
+        if( std::abs(model_parameters[i]) > absmax ) absmax = std::abs(model_parameters[i]);
+
+    //a lambda to automatize the generation of HTML to display a background color proportional to the parameter value
+    auto lambdaMakeBGColor = [absmax](double value){
+        return " bgcolor='" + Util::getHTMLColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) + "'";
+    };
+
+    //a lambda to automatize the generation of HTML to render text in a contrasting color with respect to the background color
+    auto lambdaMakeFontColor = [absmax](double value){
+        return Util::fontColorTag( QString::number(value), Util::getColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) );
+    };
+
+    const QString btdSansColor = "<td style='border: 0px; padding 0px;'>";
+    const QString btdAvecColor = "<td style='border: 0px; padding 0px;' ";
+    const QString etd = "</td>";
+    QString output = "<html><head/><body><table><tr>";
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.a ) + ">" + lambdaMakeFontColor(model_parameters.a) + etd
+            + btdSansColor + "x<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.b ) + ">" + lambdaMakeFontColor(model_parameters.b) + etd
+            + btdSansColor + "xy + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.c ) + ">" + lambdaMakeFontColor(model_parameters.c) + etd
+            + btdSansColor + "xz + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.d ) + ">" + lambdaMakeFontColor(model_parameters.d) + etd
+            + btdSansColor + "y<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.e ) + ">" + lambdaMakeFontColor(model_parameters.e) + etd
+            + btdSansColor + "yz + "            + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.f ) + ">" + lambdaMakeFontColor(model_parameters.f) + etd
+            + btdSansColor + "z<sup>2</sup> + " + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.g ) + ">" + lambdaMakeFontColor(model_parameters.g) + etd
+            + btdSansColor + "x + "             + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.h ) + ">" + lambdaMakeFontColor(model_parameters.h) + etd
+            + btdSansColor + "y + "             + etd;
+    output += btdAvecColor + lambdaMakeBGColor( model_parameters.i ) + ">" + lambdaMakeFontColor(model_parameters.i) + etd
+            + btdSansColor + "z"                + etd;
+    output += "</tr></table></body></html>";
+
+    ui->lblTrendModel->setText( output );
+
+}
+
+void DriftAnalysisDialog::onRun()
+{
+    DriftAnalysis driftAnalysis;
+    driftAnalysis.setAttribute( m_attribute );
+    driftAnalysis.setInputDataFile( m_dataFile );
+    driftAnalysis.setNumberOfSteps( ui->spinNumberOfSteps->value() );
+
+    performDriftAnalysis( driftAnalysis );
+}
+
 void DriftAnalysisDialog::onFitTrendModel()
 {
-    m_dataFile->loadData();
-
-    //determine whether the dataset is 3D
-    bool is3D = m_dataFile->isTridimensional();
-
-    //get the data column index of the input attribute in the data file
-    uint indexOfVariable = m_attribute->getAttributeGEOEASgivenIndex() - 1;
-
-    //get no-data value info
-    double NDV = m_dataFile->getNoDataValueAsDouble();
-    bool hasNDV = m_dataFile->hasNoDataValue();
-
-    //compute the orders of magnitude of a possible trend model and that of the data values
-    //this is useful to present the user with initial parameter search domain in the proper scale
-    double magnitude_of_trend_model = 0.0;
-    double magnitude_of_data_values = 0.0;
-    {
-        QProgressDialog progressDialog;
-        progressDialog.setRange(0, m_dataFile->getDataLineCount());
-        progressDialog.setValue( 0 );
-        progressDialog.show();
-        progressDialog.setLabelText("Computing orders of magnitude of data values and of trend model parameters...");
-
-        double x, y, z;
-        for(uint iRow=0; iRow < m_dataFile->getDataLineCount(); iRow++ ){
-
-            m_dataFile->getDataSpatialLocation( iRow, x, y, z );
-            magnitude_of_trend_model  = x * x;
-            magnitude_of_trend_model += x * y;
-            magnitude_of_trend_model += is3D ? std::abs( x * z ) : 0.0;
-            magnitude_of_trend_model += y * y;
-            magnitude_of_trend_model += is3D ? std::abs( y * z ) : 0.0;
-            magnitude_of_trend_model += is3D ? std::abs( z * z ) : 0.0;
-            magnitude_of_trend_model +=     x;
-            magnitude_of_trend_model +=     y;
-            magnitude_of_trend_model += is3D ?  std::abs( z )    : 0.0;
-
-            double data_value = m_dataFile->data( iRow, indexOfVariable );
-            if( ! hasNDV || ! Util::almostEqual2sComplement( data_value, NDV, 1 ) )
-                magnitude_of_data_values += std::abs( data_value );
-
-            //update progress bar from time to time
-            if( ! iRow % ( m_dataFile->getDataLineCount() / 100 ) ){
-                progressDialog.setValue( iRow );
-                QApplication::processEvents(); // let Qt update the UI
-            }
-        }
-    }
-
-    //compute the approx. powers of 10 (orders of magnitude (approx. power of 1000) for each case
-    int exp_trend_model = static_cast<int>( std::log10<double>(magnitude_of_trend_model).real() );
-    int exp_data_values = static_cast<int>( std::log10<double>(magnitude_of_data_values).real() );
-
-    //initialize the value of the magnitude of the parameter search domain with an adequate value
-    ui->spinCoeffSearchWindowSizeMagnitude->setValue     ( exp_data_values - exp_trend_model     );
-    ui->spinSearchWindowShiftThresholdMagnitude->setValue( exp_data_values - exp_trend_model - 2 );
-
-    //show the frame with the trend model fitting controls
-    ui->grpGeneticAlgorithmParams->setVisible( ! ui->grpGeneticAlgorithmParams->isVisible() );
+    //toggle the frame with the trend model fitting controls
+    ui->grpFitTrendModel->setVisible( ! ui->grpFitTrendModel->isVisible() );
 }
 
 void DriftAnalysisDialog::onRunFitTrendModel()
@@ -191,129 +192,33 @@ void DriftAnalysisDialog::onRunFitTrendModel()
     Quad3DTrendModelFittingAuxDefs::Parameters modelParameters =
             q3dtmf.processWithNonLinearLeastSquares();
 
-    //find the highest and lowest parameters values for color table
-    double absmax = -std::numeric_limits<double>::max();
-    for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++)
-        if( std::abs(modelParameters[i]) > absmax ) absmax = std::abs(modelParameters[i]);
+    //update the trend model disaply in this dialog
+    displayParamaters( modelParameters );
 
-    //a lambda to automatize the generation of HTML to display a background color proportional to the parameter value
-    auto lambdaMakeBGColor = [absmax](double value){
-        return " bgcolor='" + Util::getHTMLColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) + "'";
-    };
-
-    //a lambda to automatize the generation of HTML to render text in a contrasting color with respect to the background color
-    auto lambdaMakeFontColor = [absmax](double value){
-        return Util::fontColorTag( QString::number(value), Util::getColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) );
-    };
-
-    const QString btdSansColor = "<td style='border: 0px; padding 0px;'>";
-    const QString btdAvecColor = "<td style='border: 0px; padding 0px;' ";
-    const QString etd = "</td>";
-    QString output = "<html><head/><body><table><tr>";
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.a ) + ">" + lambdaMakeFontColor(modelParameters.a) + etd
-            + btdSansColor + "x<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.b ) + ">" + lambdaMakeFontColor(modelParameters.b) + etd
-            + btdSansColor + "xy + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.c ) + ">" + lambdaMakeFontColor(modelParameters.c) + etd
-            + btdSansColor + "xz + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.d ) + ">" + lambdaMakeFontColor(modelParameters.d) + etd
-            + btdSansColor + "y<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.e ) + ">" + lambdaMakeFontColor(modelParameters.e) + etd
-            + btdSansColor + "yz + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.f ) + ">" + lambdaMakeFontColor(modelParameters.f) + etd
-            + btdSansColor + "z<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.g ) + ">" + lambdaMakeFontColor(modelParameters.g) + etd
-            + btdSansColor + "x + "             + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.h ) + ">" + lambdaMakeFontColor(modelParameters.h) + etd
-            + btdSansColor + "y + "             + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.i ) + ">" + lambdaMakeFontColor(modelParameters.i) + etd
-            + btdSansColor + "z"                + etd;
-    output += "</tr></table></body></html>";
-
-    ui->lblTrendModel->setText( output );
-
+    //keeps the last trend model fit for further use while another one is not fit
     m_lastFitDriftModelParameters.reset( new Quad3DTrendModelFittingAuxDefs::Parameters( modelParameters ) );
 }
-
-/*
-void DriftAnalysisDialog::onRunFitTrendModel()
-{
-    //fit a trend model to the data
-    Quadratic3DTrendModelFitting q3dtmf( m_dataFile, m_attribute );
-    Quad3DTrendModelFittingAuxDefs::Parameters modelParameters =
-            q3dtmf.processWithGenetic(
-                ui->spinNumberOfThreads->value(),
-                ui->spinSeed->value(),
-                ui->spinNumberOfGenerations->value(),
-                ui->spinPopulationSize->value(),
-                ui->spinSelectionSize->value(),
-                ui->dblSpinProbabilityOfCrossover->value(),
-                ui->spinPointOfCrossover->value(),
-                ui->dblSpinMutationRate->value(),
-                ui->dblCoeffSearchWindowSize->value() * std::pow( 10, ui->spinCoeffSearchWindowSizeMagnitude->value() ),
-                ui->dblSearchWindowShiftThreshold->value() * std::pow( 10, ui->spinSearchWindowShiftThresholdMagnitude->value()) );
-
-
-    //find the highest and lowest parameters values for color table
-    double absmax = -std::numeric_limits<double>::max();
-    for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++)
-        if( std::abs(modelParameters[i]) > absmax ) absmax = std::abs(modelParameters[i]);
-
-    //a lambda to automatize the generation of HTML to display a background color proportional to the parameter value
-    auto lambdaMakeBGColor = [absmax](double value){
-        return " bgcolor='" + Util::getHTMLColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) + "'";
-    };
-
-    //a lambda to automatize the generation of HTML to render text in a contrasting color with respect to the background color
-    auto lambdaMakeFontColor = [absmax](double value){
-        return Util::fontColorTag( QString::number(value), Util::getColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) );
-    };
-
-    const QString btdSansColor = "<td style='border: 0px; padding 0px;'>";
-    const QString btdAvecColor = "<td style='border: 0px; padding 0px;' ";
-    const QString etd = "</td>";
-    QString output = "<html><head/><body><table><tr>";
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.a ) + ">" + lambdaMakeFontColor(modelParameters.a) + etd
-            + btdSansColor + "x<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.b ) + ">" + lambdaMakeFontColor(modelParameters.b) + etd
-            + btdSansColor + "xy + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.c ) + ">" + lambdaMakeFontColor(modelParameters.c) + etd
-            + btdSansColor + "xz + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.d ) + ">" + lambdaMakeFontColor(modelParameters.d) + etd
-            + btdSansColor + "y<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.e ) + ">" + lambdaMakeFontColor(modelParameters.e) + etd
-            + btdSansColor + "yz + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.f ) + ">" + lambdaMakeFontColor(modelParameters.f) + etd
-            + btdSansColor + "z<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.g ) + ">" + lambdaMakeFontColor(modelParameters.g) + etd
-            + btdSansColor + "x + "             + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.h ) + ">" + lambdaMakeFontColor(modelParameters.h) + etd
-            + btdSansColor + "y + "             + etd;
-    output += btdAvecColor + lambdaMakeBGColor( modelParameters.i ) + ">" + lambdaMakeFontColor(modelParameters.i) + etd
-            + btdSansColor + "z"                + etd;
-    output += "</tr></table></body></html>";
-
-    ui->lblTrendModel->setText( output );
-
-    m_lastFitDriftModelParameters.reset( new Quad3DTrendModelFittingAuxDefs::Parameters( modelParameters ) );
-}
-*/
 
 void DriftAnalysisDialog::onSaveNewVariableWithDriftModel()
 {
+    if( ! m_lastFitDriftModelParameters ) {
+        Application::instance()->logError("DriftAnalysisDialog::onSaveNewVariableWithDriftModel(): null drift model.  Run model fitting at least once.", true);
+        return;
+    }
 
     // make sure the data is loaded from filesystem
     m_dataFile->loadData();
 
     //present a variable naming dialog to the user
-    QString new_variable_name = "drift_model";
     {
         bool ok;
-        QString ps_file_name = QInputDialog::getText(this, "Name the new variable",
+        QString var_name = QInputDialog::getText(this, "Name the new variable",
                                                      "New variable with the trend model evaluated in data locations: ",
-                                                     QLineEdit::Normal, new_variable_name, &ok);
+                                                     QLineEdit::Normal, m_lastNameForDriftVariable, &ok);
         if( ! ok )
             return;
+        else
+            m_lastNameForDriftVariable = var_name;
     }
 
     //allocate container for the drift values
@@ -342,7 +247,106 @@ void DriftAnalysisDialog::onSaveNewVariableWithDriftModel()
         drift_values[iRow] = drift_value;
     }
 
-    //adds the drift values as a new attribute to the data set file
-    m_dataFile->addNewDataColumn( new_variable_name, drift_values );
+    //add or update the trend model values in the data files
+    uint driftVatGEOEASindex = m_dataFile->getFieldGEOEASIndex( m_lastNameForDriftVariable );
+    uint drift_col_index = 9999;
+    if( driftVatGEOEASindex == 0 ) { //the variable does not exist
+        //adds the drift values as a new attribute to the data set file
+        drift_col_index = m_dataFile->addNewDataColumn( m_lastNameForDriftVariable, drift_values );
+    } else { //drift variable already exists in the file
+        drift_col_index = driftVatGEOEASindex - 1;
+        //update the data file with the recomputed drift model values
+        for( uint iRow = 0;  iRow < m_dataFile->getDataLineCount(); iRow++ )
+            m_dataFile->setData( iRow, drift_col_index, drift_values[iRow] );
+        m_dataFile->writeToFS();
+    }
 
+    //gets the new Attribute object associated with the newly added variable with the trend model values
+    Attribute* driftVariable = m_dataFile->getAttributeFromGEOEASIndex( drift_col_index + 1 );
+
+    //sanity check
+    if( ! driftVariable ){
+        Application::instance()->logError( "DriftAnalysisDialog::onSaveNewVariableWithDriftModel(): failed to retrieve the Attribute object"
+                                           " associated with the newly computed trend model values." );
+        return;
+    }
+
+    //run drift analysis on the drift itself so the use can assess the quality of the fit
+    Attribute* tmp = m_attribute;
+    {
+        m_attribute = driftVariable;
+        DriftAnalysis driftAnalysis;
+        driftAnalysis.setAttribute( driftVariable );
+        driftAnalysis.setInputDataFile( m_dataFile );
+        driftAnalysis.setNumberOfSteps( ui->spinNumberOfSteps->value() );
+        performDriftAnalysis( driftAnalysis, false );
+    }
+    m_attribute = tmp;
+}
+
+void DriftAnalysisDialog::onCopyTrendModelAsCalcScript(){
+
+    if( ! m_lastFitDriftModelParameters ) {
+        Application::instance()->logError("DriftAnalysisDialog::onCopyTrendModelAsCalcScript(): null drift model.  Run model fitting at least once.", true);
+        return;
+    }
+
+    // assemble calculator script
+    QString script;
+    script += " [output variable] := (" + QString::number(m_lastFitDriftModelParameters->a) + ") * X_ * X_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->b) + ") * X_ * Y_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->c) + ") * X_ * Z_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->d) + ") * Y_ * Y_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->e) + ") * Y_ * Z_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->f) + ") * Z_ * Z_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->g) + ") * X_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->h) + ") * Y_ + \n";
+    script += "                      (" + QString::number(m_lastFitDriftModelParameters->i) + ") * Z_ ; \n";
+
+    // copy script to clipboard (CTRL+C)
+    QClipboard *clipboard = QGuiApplication::clipboard();
+    QString originalText = clipboard->text();
+    clipboard->setText(script);
+    QMessageBox::information(this, "Information", "Calculator script copied to the clipboard.");
+}
+
+void DriftAnalysisDialog::onEditTrendModelParameters()
+{
+    if( ! m_lastFitDriftModelParameters ) {
+        Application::instance()->logError("DriftAnalysisDialog::onEditTrendModelParameters(): null drift model.  Run model fitting at least once.", true);
+        return;
+    }
+
+    // open a parameter editor dialog
+    Kt3dTrendModelParameters kt3dTrendModelParameters;
+    kt3dTrendModelParameters.setA( m_lastFitDriftModelParameters->a );
+    kt3dTrendModelParameters.setB( m_lastFitDriftModelParameters->b );
+    kt3dTrendModelParameters.setC( m_lastFitDriftModelParameters->c );
+    kt3dTrendModelParameters.setD( m_lastFitDriftModelParameters->d );
+    kt3dTrendModelParameters.setE( m_lastFitDriftModelParameters->e );
+    kt3dTrendModelParameters.setF( m_lastFitDriftModelParameters->f );
+    kt3dTrendModelParameters.setG( m_lastFitDriftModelParameters->g );
+    kt3dTrendModelParameters.setH( m_lastFitDriftModelParameters->h );
+    kt3dTrendModelParameters.setI( m_lastFitDriftModelParameters->i );
+    GSLibParametersDialog gpd( &kt3dTrendModelParameters, this );
+    gpd.setWindowTitle( "Edit kt3d's trend model parameters" );
+
+    //show the dialog modally an treat the user response
+    int ret = gpd.exec();
+    if( ret != QDialog::Accepted )
+        return;
+
+    //if user didn't dismiss the dialog, assign the entered values to the model
+    m_lastFitDriftModelParameters->a = kt3dTrendModelParameters.getA();
+    m_lastFitDriftModelParameters->b = kt3dTrendModelParameters.getB();
+    m_lastFitDriftModelParameters->c = kt3dTrendModelParameters.getC();
+    m_lastFitDriftModelParameters->d = kt3dTrendModelParameters.getD();
+    m_lastFitDriftModelParameters->e = kt3dTrendModelParameters.getE();
+    m_lastFitDriftModelParameters->f = kt3dTrendModelParameters.getF();
+    m_lastFitDriftModelParameters->g = kt3dTrendModelParameters.getG();
+    m_lastFitDriftModelParameters->h = kt3dTrendModelParameters.getH();
+    m_lastFitDriftModelParameters->i = kt3dTrendModelParameters.getI();
+
+    //update the model display in this dialog
+    displayParamaters( *m_lastFitDriftModelParameters );
 }

@@ -522,7 +522,8 @@ int cost_df ( const gsl_vector * model_parameters_x,
     return GSL_SUCCESS;
 }
 
-// locally defined C-style function that is called for each step of the non-linear
+
+// locally defined C-style function that is called for each outer loop iteration of the non-linear
 // least squares algorithm of GSL.
 // this is usally useful to keep track of progress or to record an execution log
 void iteration_callback( const size_t iter,
@@ -543,6 +544,12 @@ void iteration_callback( const size_t iter,
 //          gsl_vector_get(x, 2),
 //          1.0 / rcond,
 //          gsl_blas_dnrm2(f));
+
+    //update the progress bar (if set).
+    if( s_progressDiag_for_iteration_callback ) {
+        s_progressDiag_for_iteration_callback->setValue( iter );
+        QApplication::processEvents(); //let Qt repaint widgets
+    }
 }
 
 Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::processWithNonLinearLeastSquares() const
@@ -586,8 +593,9 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
     double* weights     = new double[number_of_samples];
     struct data dataSet = { number_of_samples, x, y, z, data_values };
 
+    // GSL documentation is not very clear as to whatever this actually does but it is necessary.
     gsl_rng_env_setup();
-    gsl_rng* trusted_region = gsl_rng_alloc( gsl_rng_default ); //apparently not being used
+    gsl_rng* trusted_region = gsl_rng_alloc( gsl_rng_default ); //the returned pointer is not being used by this client code
 
     // define the function to be minimized
     gsl_multifit_nlinear_fdf fdf;
@@ -644,7 +652,17 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
     constexpr double xtol = 1e-8; //parameter epsilon (e.g. 1.0 + epsilon == 1.0)
     constexpr double gtol = 1e-8; //1st derivative epsilon
     constexpr double ftol = 0.0;  //2nd derivative epsilon (not using geodesic acceleration)
-    int status = gsl_multifit_nlinear_driver(max_iterations, xtol, gtol, ftol, iteration_callback, NULL, &info, workspace);
+    int status;
+    {
+        QProgressDialog progressDialog;
+        progressDialog.setRange(0, max_iterations);
+        progressDialog.setValue( 0 );
+        progressDialog.show();
+        progressDialog.setLabelText("Non-linear least squares in progress (max. " + QString::number(max_iterations) + " iterations) ...");
+        s_progressDiag_for_iteration_callback = &progressDialog;
+        status = gsl_multifit_nlinear_driver(max_iterations, xtol, gtol, ftol, iteration_callback, NULL, &info, workspace);
+        s_progressDiag_for_iteration_callback = nullptr; //avoid dangling pointer after progressDialog goes out of scope
+    }
 
     // get the final Jacobian matrix
     gsl_matrix* J = gsl_multifit_nlinear_jac(workspace);
@@ -658,45 +676,47 @@ Quad3DTrendModelFittingAuxDefs::Parameters Quadratic3DTrendModelFitting::process
     gsl_blas_ddot(f, f, &chisq);
 
     // output execution summary
-    fprintf(stderr, "summary from method '%s/%s'\n",
-            gsl_multifit_nlinear_name(workspace),
-            gsl_multifit_nlinear_trs_name(workspace));
-    fprintf(stderr, "number of iterations: %zu\n",
-            gsl_multifit_nlinear_niter(workspace));
-    fprintf(stderr, "function evaluations: %zu\n", fdf.nevalf);
-    fprintf(stderr, "Jacobian evaluations: %zu\n", fdf.nevaldf);
-    fprintf(stderr, "reason for stopping: %s\n",
-            (info == 1) ? "small step size" : "small gradient");
-    fprintf(stderr, "initial |f(x)| = %f\n", sqrt(chisq0));
-    fprintf(stderr, "final   |f(x)| = %f\n", sqrt(chisq));
+    Application::instance()->logInfo( "summary from method '" +
+                                      QString(gsl_multifit_nlinear_name(workspace)) + "/" +
+                                      QString(gsl_multifit_nlinear_trs_name(workspace)) + "'" );
+    Application::instance()->logInfo( "number of iterations: " +
+                                      QString::number(gsl_multifit_nlinear_niter(workspace)) );
+    Application::instance()->logInfo( "function evaluations: " +
+                                      QString::number(fdf.nevalf) );
+    Application::instance()->logInfo( "Jacobian evaluations: " +
+                                      QString::number(fdf.nevaldf) );
+    Application::instance()->logInfo( "reason for stopping:: " +
+                                      (info == 1 ? QString("small step size") : QString("small gradient")) );
+    Application::instance()->logInfo( "initial |f(x)| = " +
+                                      QString::number(sqrt(chisq0)) );
+    Application::instance()->logInfo( "final   |f(x)| = " +
+                                      QString::number(sqrt(chisq)) );
 
     // output the best fit trend model parameters with their fit errors
     {
         double dof = number_of_samples - number_of_parameters;
         double c = GSL_MAX_DBL(1, sqrt(chisq / dof));
 
-        fprintf(stderr, "chisq/dof = %g\n", chisq / dof);
+        Application::instance()->logInfo( "chisq/dof = " +
+                                          QString::number(chisq / dof) );
 
         // some lambda functions to serve as "macros"
         auto FIT = [workspace](size_t i){ return gsl_vector_get(workspace->x, i); };
         auto ERR = [covar](size_t i){ return std::sqrt(gsl_matrix_get(covar,i,i)); };
 
-        printf ("p0 = %.5f +/- %.5f\n", FIT(0), c*ERR(0));
-        printf ("p1 = %.5f +/- %.5f\n", FIT(1), c*ERR(1));
-        printf ("p2 = %.5f +/- %.5f\n", FIT(2), c*ERR(2));
-        printf ("p3 = %.5f +/- %.5f\n", FIT(3), c*ERR(3));
-        printf ("p4 = %.5f +/- %.5f\n", FIT(4), c*ERR(4));
-        printf ("p5 = %.5f +/- %.5f\n", FIT(5), c*ERR(5));
-        printf ("p6 = %.5f +/- %.5f\n", FIT(6), c*ERR(6));
-        printf ("p7 = %.5f +/- %.5f\n", FIT(7), c*ERR(7));
-        printf ("p8 = %.5f +/- %.5f\n", FIT(8), c*ERR(8));
+        //output the parameter values of the best fit trend model.
+        for(size_t i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++ )
+            Application::instance()->logInfo( "p" + QString::number(i) + " = " +
+                                              QString::number(FIT(i)) + " +/- " +
+                                              QString::number(c*ERR(i)) );
     }
 
     // output final execution status (e.g. whether it completed by convergence or
     // maximum number of iterations has been reached)
-    fprintf (stderr, "status = %s\n", gsl_strerror (status));
+    Application::instance()->logInfo( "status = " +
+                                      QString( gsl_strerror(status) ) );
 
-    // free up memeory
+    // free up memory
     gsl_multifit_nlinear_free (workspace);
     gsl_matrix_free (covar);
     gsl_rng_free (trusted_region);
