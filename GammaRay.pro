@@ -62,6 +62,7 @@ SOURCES += main.cpp\
     geostats/searchsphericalshell.cpp \
     geostats/searchverticaldumbbell.cpp \
     geostats/searchwasher.cpp \
+    gslib/gslibparameterfiles/kt3dtrendmodelparameters.cpp \
     gslib/gslibparams/gslibpardir.cpp \
     gslib/gslibparams/widgets/widgetgslibpardir.cpp \
         mainwindow.cpp \
@@ -352,6 +353,7 @@ HEADERS  += mainwindow.h \
     geostats/searchsphericalshell.h \
     geostats/searchverticaldumbbell.h \
     geostats/searchwasher.h \
+    gslib/gslibparameterfiles/kt3dtrendmodelparameters.h \
     gslib/gslibparams/gslibpardir.h \
     gslib/gslibparams/widgets/widgetgslibpardir.h \
     util.h \
