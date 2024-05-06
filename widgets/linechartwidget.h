@@ -20,12 +20,17 @@ class LineChartWidget : public QWidget
 
 public:
 
+    enum class ZoomDirection : unsigned int{
+        VERTICAL,
+        HORIZONTAL
+    };
+
     /**
      * Displays a multivariate line chart with a shared X-axis.
      * The Y-axis can be shared or one per Y variable
      * @see setSharedYaxis()
      */
-    explicit LineChartWidget( QWidget *parent = nullptr );
+    explicit LineChartWidget( QWidget *parent = nullptr, ZoomDirection zoomDirection = ZoomDirection::VERTICAL );
     ~LineChartWidget();
 
     /**
@@ -90,6 +95,8 @@ private:
     QtCharts::QValueAxis *m_axisX;
 
     bool m_sharedYaxis;
+
+    ZoomDirection m_ZoomDirection;
 };
 
 #endif // LINECHARTWIDGET_H

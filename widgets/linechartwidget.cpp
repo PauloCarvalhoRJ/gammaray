@@ -8,10 +8,46 @@
 #include <QAbstractAxis>
 #include <QLayout>
 
-LineChartWidget::LineChartWidget(QWidget *parent) :
+
+/**  Deriving QChartView to support a custom mouse wheel zoom mechanics.
+ *   changed from the original from https://stackoverflow.com/users/6622587/eyllanesc (https://stackoverflow.com/a/48626725/2153955)
+ */
+class MyChartView : public QtCharts::QChartView {
+
+public:
+    MyChartView( QtCharts::QChart* chart,
+                 LineChartWidget::ZoomDirection zoomDirection = LineChartWidget::ZoomDirection::VERTICAL )
+        : QtCharts::QChartView( chart ),
+          mZoomDirection( zoomDirection ) { }
+
+private:
+    qreal mFactor=1.0;
+    LineChartWidget::ZoomDirection mZoomDirection;
+
+protected:
+    void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE {
+        chart()->zoomReset();
+
+        mFactor *= event->angleDelta().y() > 0 ? 0.5 : 2;
+
+        QRectF rect = chart()->plotArea();
+        QPointF c = chart()->plotArea().center();
+        if( mZoomDirection == LineChartWidget::ZoomDirection::VERTICAL )
+            rect.setHeight(mFactor*rect.height());
+        else
+            rect.setWidth(mFactor*rect.width());
+        rect.moveCenter(c);
+        chart()->zoomIn(rect);
+
+        QChartView::wheelEvent(event);
+    }
+};
+
+LineChartWidget::LineChartWidget(QWidget *parent, ZoomDirection zoomDirection) :
     QWidget(parent),
     ui(new Ui::LineChartWidget),
-    m_sharedYaxis(false)
+    m_sharedYaxis(false),
+    m_ZoomDirection( zoomDirection )
 {
     ui->setupUi(this);
 
@@ -31,7 +67,7 @@ LineChartWidget::LineChartWidget(QWidget *parent) :
     m_axisX->setTickCount(11);
 
     //create and adds the chart view widget
-    m_chartView = new QtCharts::QChartView( m_chart );
+    m_chartView = new MyChartView( m_chart, zoomDirection );
     m_chartView->setRenderHint(QPainter::Antialiasing);
     this->layout()->addWidget( m_chartView );
 }
@@ -127,6 +163,10 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
             }
             axisY->setRange( minY, maxY );
             series->attachAxis( axisY );
+
+            //make sure the curves get rescaled accordingly
+            for( QtCharts::QAbstractSeries* a_series : m_chart->series() )
+                a_series->attachAxis( axisY );
 
             // tries to set a Y-axis title for the current series (user may not have set one)
             try {
