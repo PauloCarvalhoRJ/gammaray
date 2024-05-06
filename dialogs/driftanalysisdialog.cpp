@@ -10,6 +10,7 @@
 #include "viewer3d/view3dcolortables.h"
 #include "gslib/gslibparametersdialog.h"
 #include "gslib/gslibparameterfiles/kt3dtrendmodelparameters.h"
+#include "geometry/boundingbox.h"
 
 #include <QClipboard>
 #include <QInputDialog>
@@ -35,7 +36,7 @@ DriftAnalysisDialog::DriftAnalysisDialog(DataFile *dataFile, Attribute *attribut
     m_chartWestEast  ->setLegendVisible( false );
     m_chartSouthNorth = new LineChartWidget();
     m_chartSouthNorth->setLegendVisible( false );
-    m_chartVertical = new LineChartWidget( /*nullptr, true*/ );
+    m_chartVertical = new LineChartWidget( nullptr, LineChartWidget::ZoomDirection::HORIZONTAL );
     m_chartVertical  ->setLegendVisible( false );
 
     ui->grpWEdrift->layout()->addWidget( m_chartWestEast );
@@ -126,42 +127,84 @@ void DriftAnalysisDialog::performDriftAnalysis( DriftAnalysis& driftAnalysis, bo
 
 void DriftAnalysisDialog::displayParamaters(const Quad3DTrendModelFittingAuxDefs::Parameters &model_parameters)
 {
-    //find the highest and lowest parameters values for color table
+    //a lambda to compute the decimal logarithm of the number that returns 0.0 if value is 0.0 and inverts the sign
+    //of negative numbers, that is, does not return a NaN nor throws an exception.
+    auto lambdaQuietLog10 = [](double value){
+        if( Util::almostEqual2sComplement( value, 0.0, 1 ) )
+            return 0.0;
+        else
+            return std::log10( std::abs( value ) );
+    };
+
+    //find the magnitudes of x, y and z of the dataset
+    BoundingBox bbox = m_dataFile->getBoundingBox();
+    double magX = lambdaQuietLog10( std::max( std::abs( bbox.m_minX), std::abs( bbox.m_maxX ) ) );
+    double magY = lambdaQuietLog10( std::max( std::abs( bbox.m_minY), std::abs( bbox.m_maxY ) ) );
+    double magZ = lambdaQuietLog10( std::max( std::abs( bbox.m_minZ), std::abs( bbox.m_maxZ ) ) );
+
+    //find the magnitudes of each of the nine terms of the trend model
+    std::vector<double> mag_term(9);
+    mag_term[0] = magX * 2    + lambdaQuietLog10( model_parameters[0] );
+    mag_term[1] = magX + magY + lambdaQuietLog10( model_parameters[1] );
+    mag_term[2] = magX + magZ + lambdaQuietLog10( model_parameters[2] );
+    mag_term[3] = magY * 2    + lambdaQuietLog10( model_parameters[3] );
+    mag_term[4] = magY + magZ + lambdaQuietLog10( model_parameters[4] );
+    mag_term[5] = magZ * 2    + lambdaQuietLog10( model_parameters[5] );
+    mag_term[6] = magX        + lambdaQuietLog10( model_parameters[6] );
+    mag_term[7] = magY        + lambdaQuietLog10( model_parameters[7] );
+    mag_term[8] = magZ        + lambdaQuietLog10( model_parameters[8] );
+
+    //zero-out magnitudes whose parameters are zero so they are rendered
+    //with neutral color to convey its low impact on the trend model
+    for( uint i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++ )
+        if( Util::almostEqual2sComplement( model_parameters[i], 0.0, 1) )
+            mag_term[i] = 0.0;
+
+    //find the highest and lowest magnitude values for color table
     double absmax = -std::numeric_limits<double>::max();
     for( int i = 0; i < Quad3DTrendModelFittingAuxDefs::N_PARAMS; i++)
-        if( std::abs(model_parameters[i]) > absmax ) absmax = std::abs(model_parameters[i]);
+        if( std::abs(mag_term[i]) > absmax ) absmax = std::abs(mag_term[i]);
 
-    //a lambda to automatize the generation of HTML to display a background color proportional to the parameter value
-    auto lambdaMakeBGColor = [absmax](double value){
-        return " bgcolor='" + Util::getHTMLColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) + "'";
+    //a lambda to automatize the generation of HTML to display a background color proportional to the magnitude of each model term
+    //if sign_value is negative, then value is converted to -value before retrieving the color form the color table.
+    auto lambdaMakeBGColor = [absmax](double value, double sign_value){
+        if( sign_value >= 0 )
+            return " bgcolor='" + Util::getHTMLColorFromValue( std::abs(value), ColorTable::SEISMIC, -absmax, absmax ) + "'";
+        else
+            return " bgcolor='" + Util::getHTMLColorFromValue( -std::abs(value), ColorTable::SEISMIC, -absmax, absmax ) + "'";
     };
 
     //a lambda to automatize the generation of HTML to render text in a contrasting color with respect to the background color
-    auto lambdaMakeFontColor = [absmax](double value){
-        return Util::fontColorTag( QString::number(value), Util::getColorFromValue( value, ColorTable::SEISMIC, -absmax, absmax ) );
+    // scale_value: value to be used do determine color with respect to the color scale
+    // face_vale:   value to be printed to screen
+    auto lambdaMakeFontColor = [absmax](double scale_value, double face_value){
+        if( face_value >= 0 )
+            return Util::fontColorTag( QString::number(face_value), Util::getColorFromValue( std::abs(scale_value), ColorTable::SEISMIC, -absmax, absmax ) );
+        else
+            return Util::fontColorTag( QString::number(face_value), Util::getColorFromValue( -std::abs(scale_value), ColorTable::SEISMIC, -absmax, absmax ) );
     };
 
     const QString btdSansColor = "<td style='border: 0px; padding 0px;'>";
     const QString btdAvecColor = "<td style='border: 0px; padding 0px;' ";
     const QString etd = "</td>";
     QString output = "<html><head/><body><table><tr>";
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.a ) + ">" + lambdaMakeFontColor(model_parameters.a) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[0], model_parameters.a) + ">" + lambdaMakeFontColor(mag_term[0], model_parameters.a) + etd
             + btdSansColor + "x<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.b ) + ">" + lambdaMakeFontColor(model_parameters.b) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[1], model_parameters.b) + ">" + lambdaMakeFontColor(mag_term[1], model_parameters.b) + etd
             + btdSansColor + "xy + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.c ) + ">" + lambdaMakeFontColor(model_parameters.c) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[2], model_parameters.c) + ">" + lambdaMakeFontColor(mag_term[2], model_parameters.c) + etd
             + btdSansColor + "xz + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.d ) + ">" + lambdaMakeFontColor(model_parameters.d) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[3], model_parameters.d) + ">" + lambdaMakeFontColor(mag_term[3], model_parameters.d) + etd
             + btdSansColor + "y<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.e ) + ">" + lambdaMakeFontColor(model_parameters.e) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[4], model_parameters.e) + ">" + lambdaMakeFontColor(mag_term[4], model_parameters.e) + etd
             + btdSansColor + "yz + "            + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.f ) + ">" + lambdaMakeFontColor(model_parameters.f) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[5], model_parameters.f) + ">" + lambdaMakeFontColor(mag_term[5], model_parameters.f) + etd
             + btdSansColor + "z<sup>2</sup> + " + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.g ) + ">" + lambdaMakeFontColor(model_parameters.g) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[6], model_parameters.g) + ">" + lambdaMakeFontColor(mag_term[6], model_parameters.g) + etd
             + btdSansColor + "x + "             + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.h ) + ">" + lambdaMakeFontColor(model_parameters.h) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[7], model_parameters.h) + ">" + lambdaMakeFontColor(mag_term[7], model_parameters.h) + etd
             + btdSansColor + "y + "             + etd;
-    output += btdAvecColor + lambdaMakeBGColor( model_parameters.i ) + ">" + lambdaMakeFontColor(model_parameters.i) + etd
+    output += btdAvecColor + lambdaMakeBGColor( mag_term[8], model_parameters.i) + ">" + lambdaMakeFontColor(mag_term[8], model_parameters.i) + etd
             + btdSansColor + "z"                + etd;
     output += "</tr></table></body></html>";
 
