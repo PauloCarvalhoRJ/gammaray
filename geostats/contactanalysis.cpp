@@ -374,7 +374,7 @@ bool ContactAnalysis::run()
                             double maxBBdY = -std::numeric_limits<double>::max();
                             uint maxIndex = gg->getDataLineCount();
                             for( uint i = 0; i < maxIndex; i++ ){
-                                gg->getBoundingBox( i, bbMinX, bbMinY, bbMinZ, bbMaxX, bbMaxY, bbMaxZ );
+                                gg->getCellBoundingBox( i, bbMinX, bbMinY, bbMinZ, bbMaxX, bbMaxY, bbMaxZ );
                                 double bbDx = bbMaxX - bbMinX;
                                 double bbDy = bbMaxY - bbMinY;
                                 if( bbDx > maxBBdX ) maxBBdX = bbDx;

@@ -14,6 +14,7 @@ class Attribute;
 class UnivariateCategoryClassification;
 class CategoryDefinition;
 class IAlgorithmDataSource;
+class BoundingBox;
 
 enum class CartesianCoord : int {
 	X,
@@ -334,15 +335,15 @@ public:
 	/**
 	 * Returns one of the spatial coordinates (x, y or z) of the data value given its line number.
 	 */
-	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) = 0;
+    virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) const = 0;
 
     /**
      * Returns all the spatial coordinates (x, y and z as output parameters) of the data value given its line number.
      */
-    virtual void getDataSpatialLocation( uint line, double& x, double& y, double& z ) = 0;
+    virtual void getDataSpatialLocation( uint line, double& x, double& y, double& z ) const = 0;
 
 	/** Returns whether this data set is tridimensional. */
-	virtual bool isTridimensional() = 0;
+    virtual bool isTridimensional() const = 0;
 
 	/** Removes one data line from the internal data array.
 	 * It is necessary to call writeToFS() to commit the change to filesystem.
@@ -445,6 +446,9 @@ public:
      * Conversely, Cartesian grids, GeoGrids and geological sections have topology, that is, they are grid objects.
      */
     virtual bool isGridded() const = 0;
+
+    /** Returns the spatial extent of the object represented by this data file. */
+    virtual BoundingBox getBoundingBox( ) const = 0;
 
 //File interface
 	virtual void deleteFromFS();

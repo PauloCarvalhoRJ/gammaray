@@ -442,8 +442,8 @@ void SisimDialog::onConfigureAndRun()
     data_max += fabs( data_max/100.0 );
 
 	//get min and max of secondary variable (for sisim_gs)
-	double secData_min = std::numeric_limits<double>::max();
-	double secData_max = std::numeric_limits<double>::min();
+    double secData_min =  std::numeric_limits<double>::max();
+    double secData_max = -std::numeric_limits<double>::max();
 	if( sisimProgram == "sisim_gs" ){
 		DataFile* secondaryDataFile = static_cast<DataFile*>( m_SoftDataSetSelector->getSelectedFile() );
 		if( secondaryDataFile ){

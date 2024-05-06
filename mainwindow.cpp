@@ -93,6 +93,7 @@
 #include "dialogs/subgriddialog.h"
 #include "dialogs/gridrepositiondialog.h"
 #include "dialogs/contactanalysisdialog.h"
+#include "dialogs/driftanalysisdialog.h"
 #include "vertpropcurves/verticalproportioncurvedialog.h"
 #include "viewer3d/view3dwidget.h"
 #include "imagejockey/imagejockeydialog.h"
@@ -633,10 +634,11 @@ void MainWindow::onProjectContextMenu(const QPoint &mouse_location)
                 makeMenuFlipData();
                 _projectContextMenu->addMenu( m_subMenuFlipData );
             }
-            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
-                _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
             if( _right_clicked_attribute->isCategorical() )
                 _projectContextMenu->addAction("Make facies transition matrix", this, SLOT(onMakeFaciesTransitionMatrix()));
+            _projectContextMenu->addAction("Drift analysis", this, SLOT(onPerformDriftAnalysis()));
+            if( Util::isIn( parent_file->getFileType(), {"POINTSET","CARTESIANGRID","SEGMENTSET"} ) )
+                _projectContextMenu->addAction("Delete variable", this, SLOT(onDeleteVariable()));
         }
     //two items were selected.  The context menu depends on the combination of items.
     } else if ( selected_indexes.size() == 2 ) {
@@ -1507,6 +1509,17 @@ void MainWindow::onPerformContactAnaysis()
         ContactAnalysisDialog* cad = new ContactAnalysisDialog( attributeGrade, attributeDomains, this );
         cad->show();
     }
+}
+
+void MainWindow::onPerformDriftAnalysis()
+{
+    DataFile* df = dynamic_cast<DataFile*>( _right_clicked_attribute->getContainingFile() );
+    if( ! df ){
+        QMessageBox::critical(this, "Error", "File is not a data file.");
+        return;
+    }
+    DriftAnalysisDialog* dag = new DriftAnalysisDialog(df, _right_clicked_attribute, this);
+    dag->show();
 }
 
 void MainWindow::openTransiographyBayesian()

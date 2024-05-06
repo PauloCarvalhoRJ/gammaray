@@ -14,6 +14,7 @@ class DataFile;
 class GeoGrid;
 class SegmentSet;
 class GridCell;
+class BoundingBox;
 
 namespace bg = boost::geometry;
 namespace bgi = boost::geometry::index;
@@ -91,6 +92,13 @@ public:
 	 */
     QList<uint> getNearestWithinGenericRTreeBased(const DataCell& dataCell,
                                         const SearchStrategy & searchStrategy ) const;
+
+    /**
+     * Returns the indexes of all the data lines within the given bounding box.
+     * The indexes are the data line indexes (file data lines) of the DataFile
+     * used fill the index.  May return an empty list.
+     */
+    QList<uint> getWithinBoundingBox( const BoundingBox& bbox ) const;
 
     /**
      * Does the same as getNearestWithinGenericRTreeBased() but is tuned for large, high-density data sets.

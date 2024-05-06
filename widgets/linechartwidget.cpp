@@ -5,12 +5,49 @@
 #include <QtCharts/QLineSeries>
 #include <QtCharts/QValueAxis>
 
+#include <QAbstractAxis>
 #include <QLayout>
 
-LineChartWidget::LineChartWidget(QWidget *parent) :
+
+/**  Deriving QChartView to support a custom mouse wheel zoom mechanics.
+ *   changed from the original from https://stackoverflow.com/users/6622587/eyllanesc (https://stackoverflow.com/a/48626725/2153955)
+ */
+class MyChartView : public QtCharts::QChartView {
+
+public:
+    MyChartView( QtCharts::QChart* chart,
+                 LineChartWidget::ZoomDirection zoomDirection = LineChartWidget::ZoomDirection::VERTICAL )
+        : QtCharts::QChartView( chart ),
+          mZoomDirection( zoomDirection ) { }
+
+private:
+    qreal mFactor=1.0;
+    LineChartWidget::ZoomDirection mZoomDirection;
+
+protected:
+    void wheelEvent(QWheelEvent *event) Q_DECL_OVERRIDE {
+        chart()->zoomReset();
+
+        mFactor *= event->angleDelta().y() > 0 ? 0.5 : 2;
+
+        QRectF rect = chart()->plotArea();
+        QPointF c = chart()->plotArea().center();
+        if( mZoomDirection == LineChartWidget::ZoomDirection::VERTICAL )
+            rect.setHeight(mFactor*rect.height());
+        else
+            rect.setWidth(mFactor*rect.width());
+        rect.moveCenter(c);
+        chart()->zoomIn(rect);
+
+        QChartView::wheelEvent(event);
+    }
+};
+
+LineChartWidget::LineChartWidget(QWidget *parent, ZoomDirection zoomDirection) :
     QWidget(parent),
     ui(new Ui::LineChartWidget),
-    m_sharedYaxis(false)
+    m_sharedYaxis(false),
+    m_ZoomDirection( zoomDirection )
 {
     ui->setupUi(this);
 
@@ -30,7 +67,7 @@ LineChartWidget::LineChartWidget(QWidget *parent) :
     m_axisX->setTickCount(11);
 
     //create and adds the chart view widget
-    m_chartView = new QtCharts::QChartView( m_chart );
+    m_chartView = new MyChartView( m_chart, zoomDirection );
     m_chartView->setRenderHint(QPainter::Antialiasing);
     this->layout()->addWidget( m_chartView );
 }
@@ -42,9 +79,11 @@ LineChartWidget::~LineChartWidget()
 
 void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
                               int indexForXAxis,
+                              bool clearCurrentCurves,
                               const std::map<uint8_t, QString>& yVariablesCaptions,
                               const std::map<uint8_t, QString>& yVariablesYaxisTitles,
-                              const std::map<uint8_t, QColor>&  yVariablesColors)
+                              const std::map<uint8_t, QColor>&  yVariablesColors,
+                              const std::map<uint8_t, QPen>&    yVariablesStyles )
 {
     // Does nothing if the input data table is empty.
     if( data.empty() )
@@ -55,7 +94,8 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
     double maxX = -std::numeric_limits<double>::max();
 
     // Clears all current data series.
-    m_chart->removeAllSeries();
+    if( clearCurrentCurves )
+        m_chart->removeAllSeries();
 
     // Initialize the limits for the Y axes (one per dependent variable or a global Y axis).
     double minY =  std::numeric_limits<double>::max();
@@ -81,6 +121,11 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
             // tries to set a caption for the current series (user may not have set one)
             try {
                 series->setName( yVariablesCaptions.at( iSeries ) );
+            } catch (...){}
+
+            // tries to set a line style for the current series (user may not have set one)
+            try {
+                series->setPen( yVariablesStyles.at( iSeries ) );
             } catch (...){}
 
             // tries to set a color for the current series (user may not have set one)
@@ -109,12 +154,19 @@ void LineChartWidget::setData(const std::vector<std::vector<double> > &data,
 
             //create the single Y axis or a new Y axis per dependent variable.
             if( ! m_sharedYaxis || ! axisY ){
+                //remove any previously added Y axes
+                for( QtCharts::QAbstractAxis* axis : m_chart->axes( Qt::Vertical ) )
+                    m_chart->removeAxis( axis );
                 axisY = new QtCharts::QValueAxis();
                 axisY->setTickCount(11);
                 m_chart->addAxis(axisY, Qt::AlignLeft);
             }
             axisY->setRange( minY, maxY );
             series->attachAxis( axisY );
+
+            //make sure the curves get rescaled accordingly
+            for( QtCharts::QAbstractSeries* a_series : m_chart->series() )
+                a_series->attachAxis( axisY );
 
             // tries to set a Y-axis title for the current series (user may not have set one)
             try {
@@ -137,4 +189,12 @@ void LineChartWidget::setChartTitle(const QString chartTitle)
 void LineChartWidget::setXaxisCaption(const QString caption)
 {
     m_axisX->setTitleText( caption );
+}
+
+void LineChartWidget::setLegendVisible(const bool value)
+{
+    if( value )
+        m_chart->legend()->show();
+    else
+        m_chart->legend()->hide();
 }

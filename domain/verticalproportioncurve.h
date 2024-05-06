@@ -145,12 +145,13 @@ public:
     Attribute* getVariableOfWeight( Attribute* weight );
     virtual void deleteVariable( uint columnToDelete );
     virtual bool isRegular();
-    virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-    virtual void getDataSpatialLocation( uint line, double& x, double& y, double& z );
-    virtual bool isTridimensional();
+    virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) const;
+    virtual void getDataSpatialLocation( uint line, double& x, double& y, double& z ) const;
+    virtual bool isTridimensional() const;
     virtual void writeToFS();
     virtual void readFromFS();
     virtual bool isGridded() const override {  return false; }
+    virtual BoundingBox getBoundingBox( ) const override;
 
     // ICalcPropertyCollection interface
 public:

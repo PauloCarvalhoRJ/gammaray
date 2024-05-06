@@ -98,9 +98,9 @@ public:
 	/**
 	 * Returns (via output parameters) the bounding box of a cell given its cell index.
 	 */
-    void getBoundingBox(uint cellIndex,
-						 double& minX, double& minY, double& minZ,
-						 double& maxX, double& maxY, double& maxZ );
+    void getCellBoundingBox(uint cellIndex,
+                            double& minX, double& minY, double& minZ,
+                            double& maxX, double& maxY, double& maxZ ) const;
 
 	/** Returns the path to the file that stores the geometry data, that is,
 	 * the contents of the m_vertexesPart and m_cellDefsPart members.
@@ -132,13 +132,13 @@ public:
 	uint getMeshNumberOfVertexes();
 
 	/** Returns, via output parameters, the coordinates of a mesh vertex given its id (index). */
-	void getMeshVertexLocation( uint index, double& x, double& y, double& z );
+    void getMeshVertexLocation( uint index, double& x, double& y, double& z ) const;
 
 	/** Returns the number of cells in the GeoGrid's mesh. */
 	uint getMeshNumberOfCells();
 
     /** Returns, via output parameter, the indexes of mesh vertexes of a cell given its id (index). */
-	void getMeshCellDefinition( uint index, uint (&vIds)[8] );
+    void getMeshCellDefinition( uint index, uint (&vIds)[8] ) const;
 
     /** Returns a new point set by transforming the input point set from XYZ space to UVW space.
      * Returns null pointer if unfold fails for any reason.
@@ -192,7 +192,7 @@ public:
 	/**
 	 * Creates a Hexahedron object from a cell's geometry data given the cell's index.
 	 */
-	Hexahedron makeHexahedron( uint cellIndex );
+    Hexahedron makeHexahedron( uint cellIndex ) const;
 
     /**
      * Exports this GeoGrid as ASCII Eclipse Grid (.grdecl format).
@@ -220,13 +220,14 @@ public:
 	/** GeoGrids never have declustering weights.  At least they are not supposed to have. */
 	virtual Attribute* getVariableOfWeight( Attribute* /*at*/ ) { return nullptr; }
 	virtual bool isRegular() { return false; }
-	virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord );
-    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z );
+    virtual double getDataSpatialLocation( uint line, CartesianCoord whichCoord ) const;
+    virtual void   getDataSpatialLocation( uint line, double& x, double& y, double& z ) const;
     /** GeoGrids are assumed to be always 3D. */
-	virtual bool isTridimensional(){ return true; }
+    virtual bool isTridimensional() const { return true; }
     /** NOTE: override the default counting-only behavior of DataFile::getProportion(). */
     virtual double getProportion(int variableIndex, double value0, double value1 );
     virtual void freeLoadedData();
+    virtual BoundingBox getBoundingBox( ) const;
 
 // File interface
 public:

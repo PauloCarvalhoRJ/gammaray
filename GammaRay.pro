@@ -36,6 +36,7 @@ win32 {
 SOURCES += main.cpp\
     dialogs/choosevariabledialog.cpp \
     dialogs/contactanalysisdialog.cpp \
+    dialogs/driftanalysisdialog.cpp \
     dialogs/faciestransitionmatrixoptionsdialog.cpp \
     dialogs/gridrepositiondialog.cpp \
     dialogs/listbuilderdialog.cpp \
@@ -47,16 +48,21 @@ SOURCES += main.cpp\
     domain/auxiliary/verticalproportioncurvemaker.cpp \
     domain/section.cpp \
     domain/verticalproportioncurve.cpp \
+    geometry/boundingbox.cpp \
     geometry/intersectionfinder.cpp \
     geometry/quadrilateral.cpp \
     geometry/triangle.cpp \
     geostats/contactanalysis.cpp \
+    geostats/driftanalysis.cpp \
     geostats/mcmcdataimputation.cpp \
+    geostats/quadratic3dtrendmodelfitting.cpp \
     geostats/searchannulus.cpp \
     geostats/searchannulusstratigraphic.cpp \
+    geostats/searchbox.cpp \
     geostats/searchsphericalshell.cpp \
     geostats/searchverticaldumbbell.cpp \
     geostats/searchwasher.cpp \
+    gslib/gslibparameterfiles/kt3dtrendmodelparameters.cpp \
     gslib/gslibparams/gslibpardir.cpp \
     gslib/gslibparams/widgets/widgetgslibpardir.cpp \
         mainwindow.cpp \
@@ -316,6 +322,7 @@ SOURCES += main.cpp\
 HEADERS  += mainwindow.h \
     dialogs/choosevariabledialog.h \
     dialogs/contactanalysisdialog.h \
+    dialogs/driftanalysisdialog.h \
     dialogs/faciestransitionmatrixoptionsdialog.h \
     dialogs/gridrepositiondialog.h \
     dialogs/listbuilderdialog.h \
@@ -332,16 +339,21 @@ HEADERS  += mainwindow.h \
     domain/projectroot.h \
     domain/section.h \
     domain/verticalproportioncurve.h \
+    geometry/boundingbox.h \
     geometry/intersectionfinder.h \
     geometry/quadrilateral.h \
     geometry/triangle.h \
     geostats/contactanalysis.h \
+    geostats/driftanalysis.h \
     geostats/mcmcdataimputation.h \
+    geostats/quadratic3dtrendmodelfitting.h \
     geostats/searchannulus.h \
     geostats/searchannulusstratigraphic.h \
+    geostats/searchbox.h \
     geostats/searchsphericalshell.h \
     geostats/searchverticaldumbbell.h \
     geostats/searchwasher.h \
+    gslib/gslibparameterfiles/kt3dtrendmodelparameters.h \
     gslib/gslibparams/gslibpardir.h \
     gslib/gslibparams/widgets/widgetgslibpardir.h \
     util.h \
@@ -604,6 +616,7 @@ HEADERS  += mainwindow.h \
 FORMS    += mainwindow.ui \
     dialogs/choosevariabledialog.ui \
     dialogs/contactanalysisdialog.ui \
+    dialogs/driftanalysisdialog.ui \
     dialogs/faciestransitionmatrixoptionsdialog.ui \
     dialogs/gridrepositiondialog.ui \
     dialogs/listbuilderdialog.ui \
@@ -868,7 +881,7 @@ win32 {
 # The application version
 # Don't forget to update the Util::importSettingsFromPreviousVersion() method to
 # enable the import of registry/user settings of previous versions.
-VERSION = 6.20
+VERSION = 6.22
 
 # Define a preprocessor macro so we can get the application version in application code.
 DEFINES += APP_VERSION=\\\"$$VERSION\\\"
