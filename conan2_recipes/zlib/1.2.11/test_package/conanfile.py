@@ -21,6 +21,13 @@ class TestZlibConan(ConanFile):
         if self.settings.compiler != "msvc":
             del self.settings.compiler.libcxx
 
+    # This is necessary in addition to 
+    #
+    # [conf]
+    # tools.cmake.cmake_layout:test_folder=C:\conan_tmp (or $TMP)
+    #
+    # in the Conan profile file to not clutter the test package's source repository
+    # directory with build artifacts.
     def layout(self):
         cmake_layout(self, src_folder=".")
 
