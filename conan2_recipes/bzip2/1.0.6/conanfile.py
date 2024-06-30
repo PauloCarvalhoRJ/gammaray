@@ -8,27 +8,45 @@ import shutil
 
 # All recipes are classes derived from the abstract class ConanFile that implement its "virtual" methods.
 class Bzip2Conan(ConanFile):
+    # This is the name that will be used to locate the package/dependency in Conan repository.
     name = "bzip2"
+    # Sets the version of this package/dependency and is used by Conan to manage packages accurately.
     version = "1.0.6"
+    # Declare where the content was obtained from.
     url = "https://github.com/conan-io/conan-center-index"
+    # Declare the home page of the dependency's project.
     homepage = "http://www.bzip.org"
+    # Declare the license of the dependency.
     license = "bzip2-1.0.6"
+    # A brief description of what this recipe does.
     description = "bzip2 is a free and open-source file compression program that uses the Burrows Wheeler algorithm."
+    # State some keywords describing what the dependency does.
     topics = ("conan", "bzip2", "data-compressor", "file-compression")
+    # Declare what information are needed to build and uniquely identify this package in addition to name and version.
     settings = "os", "compiler", "arch", "build_type"
+    # A set of additional custom options that are necessary to build the dependency.
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
         "build_executable": [True, False],
         "os_version": ["linux", "windows", "other"]
     }
+    # Declare which are the default values to the options in the options attribute.
     default_options = {"shared": False, "fPIC": True, "build_executable": True}
+    # Do not copy the source files to the build directory in order to build. This speeds up build time by 
+    # avoiding unnecessary copies but the you HAVE to make sure no configure or build script/process change any 
+    # of the source files (e.g. apply a patch).
     no_copy_source = True
+    # Declare where the tarball with the dependency's source code was downloaded from.
     source_url = "https://sourceware.org/pub/bzip2/bzip2-1.0.6.tar.gz"
+    # A list of files that should be exported (copied) from here (the Git repository) to the source directory in
+    # Conan's workspace.
     exports_sources = ["bzip2-1.0.6.tar.gz",
                        "CMakeLists.txt"]
     generators = "CMakeDeps"
     zip_file = ""
+    # Declares this dependeny's dependencies needed for building.
+    # In this case, the CMake binaries that must exist in CMake package (named "cmake_installer" in its recipe).
     build_requires = "cmake_installer/3.29.3"
 
     #---------------------------------------------Class/non-Conan API------------------------------------------------
