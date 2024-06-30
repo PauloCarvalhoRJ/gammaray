@@ -10,3 +10,6 @@ docs/~*.docx
 
 # recent versions of Qt creator sometimes leave tmp files in the sources directory.
 *~*.TMP
+
+# Only Conan 2+ is supported.
+conan_recipes
