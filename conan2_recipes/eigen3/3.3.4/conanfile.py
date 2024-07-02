@@ -41,12 +41,12 @@ class EigenConan(ConanFile):
 
     #---------------------------------------------Class/non-Conan API------------------------------------------------
 
-    # Returns the name of the bzip source sub-folder varying with the bzip2 version.
+    # Returns the name of the eigen3 source sub-folder varying with the eigen3 version.
     @property
     def _source_subfolder(self):
         return "eigen-{}".format(self.version)
 
-    # Returns the path to the tarball containing the source code of bzip2.
+    # Returns the path to the tarball containing the source code of eigen3.
     @property
     def _source_zip_filename(self):
         return "{}.tar.xz".format(self._source_subfolder)
