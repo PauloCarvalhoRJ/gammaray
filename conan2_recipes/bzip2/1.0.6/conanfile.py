@@ -46,8 +46,9 @@ class Bzip2Conan(ConanFile):
     generators = "CMakeDeps"
     zip_file = ""
     # Declares this dependeny's dependencies needed for building.
-    # In this case, the CMake binaries that must exist in CMake package (named "cmake_installer" in its recipe).
-    build_requires = "cmake_installer/3.29.3"
+    # In this case, the Ninja and CMake binaries that must exist in CMake package (named "cmake_installer" in its recipe).
+    # NOTE: this attribute used to be build_requires in Conan 1 and was kept in Conan 2 for backwards compatibility.
+    tool_requires = "ninja/1.12.1", "cmake_installer/3.29.3"
 
     #---------------------------------------------Class/non-Conan API------------------------------------------------
 

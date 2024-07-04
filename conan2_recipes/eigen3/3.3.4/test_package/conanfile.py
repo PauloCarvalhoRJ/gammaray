@@ -12,7 +12,10 @@ class Eigen3TestConan(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     #generators = "CMakeToolchain"  --> a CMakeToolchain object is already instantiated in generate()
     generators = "CMakeDeps"
-    build_requires = "cmake_installer/3.29.3" # we need cmake's binaries during build.
+    # Declares this dependeny's dependencies needed for building.
+    # In this case, the Ninja and CMake binaries that must exist in CMake package (named "cmake_installer" in its recipe).
+    # NOTE: this attribute used to be build_requires in Conan 1 and was kept in Conan 2 for backwards compatibility.
+    tool_requires = "ninja/1.12.1", "cmake_installer/3.29.3"
     requires = "eigen3/3.3.4" # so we can query eigen3's (the parent package of this test package) 
                               # config options during generate() and configure()
 
@@ -40,7 +43,6 @@ class Eigen3TestConan(ConanFile):
     # Contains the package build instructions.
     # Generates build artifacts in the build directory from the source files in the source directory.
     def build(self):
-        #cmake = CMake(self, generator='Ninja')
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
@@ -49,5 +51,5 @@ class Eigen3TestConan(ConanFile):
     # Notice that this is not a test in the sense of software tests (e.g. unit test).
     # This only tests whether the package under test is usable.
     def test(self):
-        bin_path = os.path.join(str(self.settings.build_type), "example")
+        bin_path = os.path.join(self.cpp.build.bindir, "example")
         self.run(bin_path)

@@ -5,7 +5,8 @@ import os
 # This recipe prepares Eigen for being used as a Conan package by other packages.  Eigen is a header template library,
 # so it is not built like a library or executable.  Notice that this recipe doesn't declare a ConanFile.settings attribute,
 # meaning there's no need to manage this dependency by operating system, compiler, architecture and build type (Debug, 
-# Release, etc.).  Header-only libraries are, however, still managed by their names and versions, of course.
+# Release, etc.).  Header-only libraries are, however, still managed by their names and versions, of course.  Also notice
+# that this recipe doesn't declare a tool_requires attribute, since a header-only library is not compiled.
 
 # All recipes are classes derived from the abstract class ConanFile that implement its "virtual" methods.
 class EigenConan(ConanFile):
@@ -35,9 +36,6 @@ class EigenConan(ConanFile):
     # A list of files that should be exported (copied) from here (the Git repository) to the source directory in
     # Conan's workspace.
     exports_sources = ["eigen-{}.tar.xz".format(version)]
-    # Declares this dependeny's dependencies needed for building.
-    # In this case, the CMake binaries that must exist in CMake package (named "cmake_installer" in its recipe).
-    build_requires = "cmake_installer/3.29.3"
 
     #---------------------------------------------Class/non-Conan API------------------------------------------------
 

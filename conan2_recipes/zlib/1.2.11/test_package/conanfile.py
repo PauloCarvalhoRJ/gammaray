@@ -11,7 +11,10 @@ class TestZlibConan(ConanFile):
     settings = "os", "compiler", "arch", "build_type"
     #generators = "CMakeToolchain"  --> a CMakeToolchain object is already instantiated in generate()
     generators = "CMakeDeps"
-    build_requires = "cmake_installer/3.29.3" # we need CMake only during build.
+    # Declares this dependeny's dependencies needed for building.
+    # In this case, the Ninja and CMake binaries that must exist in CMake package (named "cmake_installer" in its recipe).
+    # NOTE: this attribute used to be build_requires in Conan 1 and was kept in Conan 2 for backwards compatibility.
+    tool_requires = "ninja/1.12.1", "cmake_installer/3.29.3"
     requires = "zlib/1.2.11" # so we can query ZLib's (the parent package of this test package) 
                              # config options during generate() and configure()
 
@@ -63,7 +66,7 @@ class TestZlibConan(ConanFile):
             #           on how to set the environment so the tests can run (e.g. find the dynamic libraries of the package under test):
             #               "By instantiating the VirtualRunEnv/VirtualBuildEnv generators as needed, that information is already propagated
             #                to your scripts, no need to do it manually for most cases"
-            self.run(os.path.join(str(self.settings.build_type), "test"))
+            #self.run(os.path.join(str(self.settings.build_type), "test")) --> works sans Ninja
+            self.run("test")
             if self._with_minizip:
-                #self.run(os.path.join("bin", "test_minizip"), run_environment=True)
-                self.run(os.path.join(str(self.settings.build_type), "test_minizip"))
+                self.run( os.path.join(self.cpp.build.bindir, "test_minizip") )

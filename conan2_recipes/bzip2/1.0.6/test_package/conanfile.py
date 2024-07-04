@@ -11,7 +11,10 @@ class TestBzip2Conan(ConanFile):
     settings = "os", "compiler", "arch", "build_type"
     #generators = "CMakeToolchain"  --> a CMakeToolchain object is already instantiated in generate()
     generators = "CMakeDeps"
-    build_requires = "cmake_installer/3.29.3" # we need cmake's binaries during build.
+    # Declares this dependeny's dependencies needed for building.
+    # In this case, the Ninja and CMake binaries that must exist in CMake package (named "cmake_installer" in its recipe).
+    # NOTE: this attribute used to be build_requires in Conan 1 and was kept in Conan 2 for backwards compatibility.
+    tool_requires = "ninja/1.12.1", "cmake_installer/3.29.3"
     requires = "bzip2/1.0.6" # so we can query bzip2's (the parent package of this test package) 
                              # config options during generate() and configure()
 
@@ -50,5 +53,5 @@ class TestBzip2Conan(ConanFile):
         if cross_building(self):
             self.output.warn("Skipping run cross built package")
             return
-        bin_path = os.path.join(str(self.settings.build_type), "test_bzip2")
+        bin_path = os.path.join(self.cpp.build.bindir, "test_bzip2")
         self.run("%s --help" % bin_path)
