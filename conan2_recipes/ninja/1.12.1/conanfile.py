@@ -61,4 +61,4 @@ class NinjaConan(ConanFile):
         # Dependant packages of this package will have the ninja executable in the PATH environment
         # variable during their build time so their own build process can find and use Ninja.  
         # No need to clutter the env nor have difficult-to-manage/maintain bash/batch scripts.
-        self.buildenv_info.append("PATH", os.path.join(self.package_folder, "bin"))
+        self.buildenv_info.prepend_path("PATH", os.path.join(self.package_folder, "bin"))

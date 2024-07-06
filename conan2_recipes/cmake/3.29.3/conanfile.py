@@ -89,10 +89,10 @@ class CMakeInstallerConan(ConanFile):
             # Add all CMake binaries to the PATH environmnet variable in the first position.
             self.buildenv_info.prepend_path("PATH", os.path.join(self.package_folder, "bin"))
             # Sets the CMAKE_ROOT environment variable.
-            self.buildenv_info.define("CMAKE_ROOT", self.package_folder)
+            self.buildenv_info.define_path("CMAKE_ROOT", self.package_folder)
             # Sets the CMAKE_MODULE_PATH environment variable.
             mod_path = os.path.join(self.package_folder, "share", "cmake-{}".format(self.version[0:4]), "Modules")
-            self.buildenv_info.define("CMAKE_MODULE_PATH", mod_path)
+            self.buildenv_info.define_path("CMAKE_MODULE_PATH", mod_path)
             # Sanity check.
             if not os.path.exists(mod_path):
                 raise ConanException("CMake module path not found: %s" % mod_path)
