@@ -1,0 +1,5 @@
+patches:
+  "9e":
+    - patch_file: "patches/0001-9e-libjpeg-add-msvc-dll-support.patch"
+      patch_description: "Add support to generate DLL on Windows"
+      patch_type: "portability"
