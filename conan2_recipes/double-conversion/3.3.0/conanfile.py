@@ -6,7 +6,7 @@ import os
 
 required_conan_version = ">=1.54.0"
 
-# This recipe builds, installs and tests libJPEG 9e.
+# This recipe builds, installs and tests the double-conversion library.
 # The double-conversion dependency is needed by some packages (e.g. Qt) building in Windows/Visual Studio, when libc++ is not available.
 
 # All recipes are classes derived from the abstract class ConanFile that implement its "virtual" methods.
