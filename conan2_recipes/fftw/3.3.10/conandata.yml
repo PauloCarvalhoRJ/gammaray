@@ -1,0 +1,5 @@
+patches:
+  "3.3.9":
+    - patch_file: "patches/fix-simd.patch"
+  "3.3.8":
+    - patch_file: "patches/fix-simd.patch"
