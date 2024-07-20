@@ -1583,6 +1583,12 @@ Prefix = ..""")
 
         self.cpp_info.set_property("cmake_build_modules", build_modules_list)
 
+        # Put Qt's shared libraries in PATH environment variable so they are available
+        # at runtime for dependant packages (e.g. QtIFW's test package).
+        if self.options.shared:
+            env = Environment()
+            env.prepend_path("PATH", os.path.join(self.package_folder, "bin"))
+
     @staticmethod
     def _remove_duplicate(l):
         seen = set()
