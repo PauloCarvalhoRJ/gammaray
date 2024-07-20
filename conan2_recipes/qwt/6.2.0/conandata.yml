@@ -1,0 +1,5 @@
+patches:
+  "6.2.0":
+    - patch_file: "patches/cmake-support.patch"
+      patch_source: "https://github.com/MehdiChinoune/qwt/blob/cmake/CMakeLists.txt"
+    - patch_file: "patches/cmake-support-patch.patch"
