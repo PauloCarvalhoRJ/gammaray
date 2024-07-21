@@ -73,8 +73,7 @@ class AutoconfConan(ConanFile):
 
     # This is used to define which settings and options parcticipate in the hash calculation
     # for the package in Conan's cache.
-    # In this case, we only want package name, version, OS, architecture, compiler and build type to
-    # take part in the package's hash calculation.
+    # In this case, we only want package name and version to take part in the package's hash calculation.
     def package_id(self):
         self.info.clear()
 
