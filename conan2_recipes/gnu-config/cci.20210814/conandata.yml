@@ -1,0 +1,5 @@
+patches:
+  "cci.20210814":
+    - patch_file: "patches/cci.20210814-0001-tvos-support.patch"
+      patch_description: "add support to tvOS"
+      patch_type: "portability"
