@@ -11,11 +11,6 @@ class TestPackageConan(ConanFile):
     settings = "os", "arch", "build_type" # build_type is required by cmake_layout() to work, not actually required by MSYS2 which is obviously in release mode.
     generators = "VirtualBuildEnv"
 
-    # Sets the requirements in method form (like the tool_requires attribute).
-    # For test packages, of course it requires the parent package (the library under test).
-    def build_requirements(self):
-        self.tool_requires(self.tested_reference_str)
-
     #---------------------------------------------Class/non-Conan API------------------------------------------------
 
     @property
@@ -34,6 +29,11 @@ class TestPackageConan(ConanFile):
     def layout(self):
         cmake_layout(self)
 
+    # Sets the requirements in method form (like the tool_requires attribute).
+    # For test packages, of course it requires the parent package (the library under test).
+    def build_requirements(self):
+        self.tool_requires(self.tested_reference_str)
+        
     # Contains the generation steps for the package.
     # E.g. runs CMake to generate a runnable Makefile or VS Solution.
     def generate(self):
