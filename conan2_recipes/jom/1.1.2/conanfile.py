@@ -46,7 +46,7 @@ class JomInstallerConan(ConanFile):
     def source_subfolder(self):
         return "jom-{}".format(self.version)
 
-    # Returns the path to the tarball containing the source code of eigen3.
+    # Returns the path to the tarball containing the source code of JOM.
     @property
     def source_zip_filename(self):
         return "{}.tar.xz".format(self.source_subfolder)
