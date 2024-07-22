@@ -1,0 +1,10 @@
+patches:
+  "2.7.1":
+    - patch_file: "patches/0001-windows-support.patch"
+    - patch_file: "patches/0002-export-all-gsl_-symbols.patch"
+  "2.7":
+    - patch_file: "patches/0001-windows-support.patch"
+    - patch_file: "patches/0002-export-all-gsl_-symbols.patch"
+  "2.6":
+    - patch_file: "patches/0001-windows-support.patch"
+    - patch_file: "patches/0002-export-all-gsl_-symbols.patch"
