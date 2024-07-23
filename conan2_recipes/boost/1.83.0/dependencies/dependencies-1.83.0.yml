@@ -1,0 +1,10 @@
+configure_options:
+- geometry
+- numeric
+dependencies:
+  geometry: []
+  numeric: []
+libs:
+requirements:
+static_only:
+version: 1.83.0
