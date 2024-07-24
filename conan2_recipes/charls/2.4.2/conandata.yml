@@ -1,0 +1,6 @@
+patches:
+  "2.1.0":
+    - patch_file: "patches/def-and-rc-for-msvc-only.patch"
+    - patch_file: "patches/fix-missing-includes-for-clang5-stdc++.patch"
+    - patch_file: "patches/enum-name-lookup-for-gcc5.patch"
+    - patch_file: "patches/constexpr-msvc2015.patch"
