@@ -18,4 +18,4 @@ conan_recipes
 #              |---------package name
 #              | |-------version
 #              V V
-conan2_recipes/*/*/test_package/CMakeUserPresets.json
+conan2_recipes/*/*/test_package*/CMakeUserPresets.json
