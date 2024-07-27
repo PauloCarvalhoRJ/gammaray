@@ -1,0 +1,31 @@
+--- a/Source/Common/CMakeLists.txt
++++ b/Source/Common/CMakeLists.txt
+@@ -188,6 +188,12 @@ target_compile_features(gdcmCommon PUBLIC cxx_nullptr)
+ # Prefer -std=c++11 over -std=gnu++11
+ set_target_properties(gdcmCommon PROPERTIES CXX_EXTENSIONS OFF)
+ 
++#======= PATCH: Without this, zlib.h is not found when configuring and building with Conan ============
++if(GDCM_USE_SYSTEM_ZLIB)
++  target_link_libraries(gdcmCommon PRIVATE zlib::zlib)
++endif()
++#======================================================================================================
++
+ #target_link_libraries(gdcmCommon ${GDCM_ZLIB_LIBRARIES}) # ${GDCM_POLARSSL_LIBRARIES})
+ if(GDCM_BUILD_TESTING)
+   target_link_libraries(gdcmCommon LINK_PRIVATE gdcmmd5)
+--- a/Source/DataStructureAndEncodingDefinition/CMakeLists.txt
++++ b/Source/DataStructureAndEncodingDefinition/CMakeLists.txt
+@@ -85,6 +85,13 @@ if(NOT GDCM_USE_SYSTEM_ZLIB)
+ endif()
+ 
+ add_library(gdcmDSED ${DSED_SRCS} ${DSED3_SRCS})
++
++#======= PATCH: Without this, zlib.h is not found when configuring and building with Conan ============
++if(GDCM_USE_SYSTEM_ZLIB)
++  target_link_libraries(gdcmDSED PRIVATE zlib::zlib)
++endif()
++#======================================================================================================
++
+ #target_compile_features(gdcmDSED PUBLIC cxx_strong_enums)
+ target_link_libraries(gdcmDSED LINK_PUBLIC gdcmCommon)
+ # zlib stuff are actually included (template) so we need to link them here.
