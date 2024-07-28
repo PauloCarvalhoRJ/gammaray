@@ -1,0 +1,8 @@
+--- a/libtiff/CMakeLists.txt
++++ b/libtiff/CMakeLists.txt
+@@ -123,4 +123,4 @@
+ if(ZIP_SUPPORT)
+-  target_link_libraries(tiff PRIVATE ZLIB::ZLIB)
++  target_link_libraries(tiff PRIVATE zlib::zlib)
+   string(APPEND tiff_requires_private " zlib")
+ endif()
