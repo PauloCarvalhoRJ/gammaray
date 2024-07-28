@@ -1,0 +1,27 @@
+patches:
+  "1.5.6":
+    - patch_file: "patches/1.5.6-public-scope-windows-shared.patch"
+      patch_description: "Include zstd.h folder when building shared library on Windows"
+      patch_type: "bugfix"
+      patch_source: "https://github.com/facebook/zstd/pull/4009"
+  "1.5.5":
+    - patch_file: "patches/1.5.2-cmake-remove-asm-except-x86_64.patch"
+      patch_description: "use assembler codes only on x86_64"
+      patch_type: "portability"
+    - patch_file: "patches/1.5.5-qnx_support.patch"
+      patch_description: "Add qnx to platform"
+      patch_type: "portability"
+      patch_source: "https://github.com/facebook/zstd/pull/3745"
+  "1.5.2":
+    - patch_file: "patches/1.5.2-cmake-remove-asm-except-x86_64.patch"
+      patch_description: "use assembler codes only on x86_64"
+      patch_type: "portability"
+    - patch_file: "patches/1.5.0-remove-explicit-standard-setting.patch"
+      patch_description: "fix strange performance and scalability issues"
+      patch_type: "bugfix"
+      patch_source: "https://github.com/facebook/zstd/pull/3167"
+  "1.5.0":
+    - patch_file: "patches/1.5.0-remove-explicit-standard-setting.patch"
+      patch_description: "fix strange performance and scalability issues"
+      patch_type: "bugfix"
+      patch_source: "https://github.com/facebook/zstd/pull/3167"
