@@ -12,7 +12,7 @@ from conan.tools.scm import Version
 
 required_conan_version = ">=1.57.0"
 
-# This recipe builds, installs and tests the PkgConf utils (a compler and linker flags configurer for building packages).
+# This recipe builds, installs and tests the PkgConf utils (a compiler and linker flags configurer for building packages).
 
 # All recipes are classes derived from the abstract class ConanFile that implement its "virtual" methods.
 class PkgConfConan(ConanFile):
