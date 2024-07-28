@@ -1,0 +1,4 @@
+patches:
+  "20160605":
+    - patch_file: patches/0001-add-missing-export.patch
+    - patch_file: patches/0002-fix-msvc-export.patch
