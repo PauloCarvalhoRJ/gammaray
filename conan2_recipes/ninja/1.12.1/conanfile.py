@@ -49,12 +49,12 @@ class NinjaConan(ConanFile):
     # Copies the wanted build artifacts (e.g. shared libraries) from the build directory into the 
     # package directory so they can be used by other packages that are dependant of this one.
     def package(self):
+        # Sets the adequate permissions for the Ninja executable in Linux
+        if self.settings.os == "Linux": 
+            subprocess.call(['chmod', 'a+rx', os.path.join(self.build_folder, "ninja")])
         # Copy the adequate Ninja executable from the build directory into the 
         # package directory, that is, will be made available for use.
         copy(self, pattern=self.ninja_executable, src=self.build_folder, dst=os.path.join(self.package_folder, "bin"))
-        # Sets the adequate permissions for executables in Linux
-        if self.settings.os == "Linux": 
-            subprocess.call(['chmod', 'a+rwx', os.path.join(self.package_folder, "bin", "ninja")])
 
     # This is called when running recipes for packages which are dependant of this one.
     def package_info(self):
