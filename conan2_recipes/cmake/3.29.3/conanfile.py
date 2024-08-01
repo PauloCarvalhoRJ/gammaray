@@ -3,6 +3,7 @@ import os
 from conan import ConanFile
 from conan.tools.files import unzip, copy
 from conan.errors import ConanException
+import subprocess
 
 # This recipe doesn't actually build CMake.  Instead, it only extracts either the Linux or Windows
 # executables from the accompaining archives (one for Windows and the other for Linux) file 
@@ -38,7 +39,7 @@ class CMakeInstallerConan(ConanFile):
     no_copy_source = True
     # A list of files that should be exported (copied) from here (the Git repository) to the source directory in
     # Conan's workspace.
-    exports_sources = ["cmake-3.29.3-Linux-x86_64.tar.gz",
+    exports_sources = ["cmake-3.29.3-linux-x86_64.tar.gz",
                        "cmake-3.29.3-win64-x64.zip"]
     # Declares this dependeny's dependencies.
     # This does not actually require Ninja, but this serves as a reminder that building other packages will be done
@@ -50,7 +51,7 @@ class CMakeInstallerConan(ConanFile):
     @property
     def source_archive_subfolder(self):
         if self.settings.os == "Linux":
-            return "cmake-3.29.3-Linux-x86_64"
+            return "cmake-3.29.3-linux-x86_64"
         elif self.settings.os == "Windows":
             return "cmake-3.29.3-win64-x64"
         else:
@@ -61,7 +62,7 @@ class CMakeInstallerConan(ConanFile):
     @property
     def source_archive_filename(self):
         if self.settings.os == "Linux":
-            return "cmake-3.29.3-Linux-x86_64.tar.gz"
+            return "cmake-3.29.3-linux-x86_64.tar.gz"
         elif self.settings.os == "Windows":
             return "cmake-3.29.3-win64-x64.zip"
         else:
@@ -81,7 +82,7 @@ class CMakeInstallerConan(ConanFile):
         copy(self, pattern="*", src=self.source_archive_subfolder, dst=self.package_folder)
         # Sets the adequate permissions for executables in Linux
         if self.settings.os == "Linux": 
-            subprocess.call(['chmod', 'a+rwx', os.path.join(self.package_folder, "bin", "*")])
+            subprocess.call(['chmod', 'a+rx', os.path.join(self.package_folder, "bin", "*")])
 
     # This is called when running recipes for packages which are dependant of this one.
     def package_info(self):
