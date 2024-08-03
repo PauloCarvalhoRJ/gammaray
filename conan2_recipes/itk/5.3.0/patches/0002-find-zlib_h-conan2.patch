@@ -1,0 +1,73 @@
+--- Modules/ThirdParty/NIFTI/src/nifti/znzlib/CMakeLists.txt
++++ Modules/ThirdParty/NIFTI/src/nifti/znzlib/CMakeLists.txt
+@@ -3,2 +3,3 @@
+ add_nifti_library(${NIFTI_ZNZLIB_NAME} znzlib.c )
++target_link_libraries( ${NIFTI_ZNZLIB_NAME} PRIVATE zlib::zlib ) #PATCH ADDED
+ target_link_libraries( ${NIFTI_ZNZLIB_NAME} PUBLIC ${NIFTI_ZLIB_LIBRARIES} )
+--- Modules/ThirdParty/NIFTI/src/nifti/niftilib/CMakeLists.txt
++++ Modules/ThirdParty/NIFTI/src/nifti/niftilib/CMakeLists.txt
+@@ -3,2 +3,3 @@
+ add_nifti_library(${NIFTI_NIFTILIB_NAME} nifti1_io.c )
++target_link_libraries( ${NIFTI_NIFTILIB_NAME} PRIVATE zlib::zlib ) #PATCH ADDED
+ target_link_libraries( ${NIFTI_NIFTILIB_NAME} PUBLIC ${NIFTI_PACKAGE_PREFIX}znz ${NIFTI_SYSTEM_MATH_LIB})
+--- Modules/ThirdParty/MetaIO/src/MetaIO/src/CMakeLists.txt
++++ Modules/ThirdParty/MetaIO/src/MetaIO/src/CMakeLists.txt
+@@ -134,2 +134,3 @@
+ 
++target_link_libraries( ${METAIO_TARGET} PRIVATE zlib::zlib ) #PATCH ADDED
+ target_link_libraries(${METAIO_TARGET} PUBLIC
+--- Modules/Core/SpatialObjects/src/CMakeLists.txt
++++ Modules/Core/SpatialObjects/src/CMakeLists.txt
+@@ -7,3 +7,4 @@
+  )
+
+-itk_module_add_library(ITKSpatialObjects ${ITKSpatialObjects_SRCS})
++itk_module_add_library(ITKSpatialObjects ${ITKSpatialObjects_SRCS})
++target_link_libraries( ITKSpatialObjects PRIVATE zlib::zlib ) #PATCH ADDED
+--- Modules/ThirdParty/GIFTI/src/gifticlib/CMakeLists.txt
++++ Modules/ThirdParty/GIFTI/src/gifticlib/CMakeLists.txt
+@@ -71,2 +71,3 @@
+ target_link_libraries(${GIFTICLIB_NAME} ${EXPAT_LIBRARIES} ${ZLIB_LIBRARIES} ${NIFTI_LIBRARIES})
++target_link_libraries( ${GIFTICLIB_NAME} zlib::zlib ) #PATCH ADDED
+ if(BUILD_SHARED_LIBS AND GIFTI_LIBRARY_PROPERTIES)
+--- Modules/ThirdParty/NrrdIO/src/NrrdIO/CMakeLists.txt
++++ Modules/ThirdParty/NrrdIO/src/NrrdIO/CMakeLists.txt
+@@ -66,2 +66,3 @@
+ ADD_LIBRARY(ITKNrrdIO ${nrrdio_SRCS} )
++target_link_libraries( ITKNrrdIO zlib::zlib ) #PATCH ADDED
+ 
+ IF(UNIX)
+--- Modules/IO/GIPL/src/CMakeLists.txt
++++ Modules/IO/GIPL/src/CMakeLists.txt
+@@ -4,3 +4,4 @@
+   )
+ 
+-itk_module_add_library(ITKIOGIPL ${ITKIOGIPL_SRCS})
++itk_module_add_library(ITKIOGIPL ${ITKIOGIPL_SRCS})
++target_link_libraries( ITKIOGIPL PRIVATE zlib::zlib ) #PATCH ADDED
+--- Modules/IO/Meta/src/CMakeLists.txt
++++ Modules/IO/Meta/src/CMakeLists.txt
+@@ -6,3 +6,4 @@
+   )
+
+-itk_module_add_library(ITKIOMeta ${ITKIOMeta_SRCS})
++itk_module_add_library(ITKIOMeta ${ITKIOMeta_SRCS})
++target_link_libraries( ITKIOMeta PRIVATE zlib::zlib ) #PATCH ADDED
+--- Modules/Numerics/FEM/src/CMakeLists.txt
++++ Modules/Numerics/FEM/src/CMakeLists.txt
+@@ -51,2 +51,3 @@
+ itk_module_add_library(ITKFEM ${ITKFEM_SRCS})
++target_link_libraries( ITKFEM PRIVATE zlib::zlib ) #PATCH ADDED
+ target_link_libraries(ITKFEM LINK_PUBLIC ${ITKMetaIO_LIBRARIES})
+--- Modules/IO/PhilipsREC/src/CMakeLists.txt
++++ Modules/IO/PhilipsREC/src/CMakeLists.txt
+@@ -7,2 +7,3 @@
+ add_library(ITKIOPhilipsREC ${ITK_LIBRARY_BUILD_TYPE} ${ITKIOPhilipsREC_SRC})
++target_link_libraries( ITKIOPhilipsREC PRIVATE zlib::zlib ) #PATCH ADDED
+ itk_module_link_dependencies()
+--- Modules/Nonunit/Review/src/CMakeLists.txt
++++ Modules/Nonunit/Review/src/CMakeLists.txt
+@@ -6,2 +6,3 @@
+ add_library(ITKReview ${ITKReview_SRC})
++target_link_libraries( ITKReview PRIVATE zlib::zlib ) #PATCH ADDED
+ itk_module_link_dependencies()

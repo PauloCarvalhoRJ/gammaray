@@ -1,0 +1,19 @@
+patches:
+  "5.3.0":
+    - patch_file: "patches/0001-find-conan-packages.patch"
+      patch_description: "inject thirdparties from conan"
+      patch_type: "conan"
+    - patch_file: "patches/0002-find-zlib_h-conan2.patch"
+      patch_description: "Inject zlib::zlib from conan2 to solve zlib.h not being found in several targets."
+      patch_type: "conan"
+    - patch_file: "patches/0003-add-missing-include-UseITK.cmake.patch"
+      patch_description: "Add missing include to UseITK.cmake."
+      patch_type: "fix"
+  "5.1.2":
+    - patch_file: "patches/0001-find-conan-packages.patch"
+      patch_description: "inject thirdparties from conan"
+      patch_type: "conan"
+  "5.1.0":
+    - patch_file: "patches/0001-find-conan-packages.patch"
+      patch_description: "inject thirdparties from conan"
+      patch_type: "conan"

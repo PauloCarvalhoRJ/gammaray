@@ -1,0 +1,8 @@
+--- CMake/UseITK.cmake
++++ CMake/UseITK.cmake
+@@ -40,4 +40,5 @@
+ # Add link directories needed to use ITK.
+ link_directories(${ITK_LIBRARY_DIRS})
+ 
++include(${ITK_CMAKE_DIR}/ITKFactoryRegistration.cmake) #PATCH ADDED
+ itk_generate_factory_registration()
