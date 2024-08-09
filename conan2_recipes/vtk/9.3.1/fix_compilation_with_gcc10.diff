@@ -1,0 +1,27 @@
+diff -Nru --show-c-function a/CMake/VTKGenerateExportHeader.cmake b/CMake/VTKGenerateExportHeader.cmake
+--- a/CMake/VTKGenerateExportHeader.cmake	2019-01-30 14:32:55.000000000 -0200
++++ b/CMake/VTKGenerateExportHeader.cmake	2021-06-04 18:16:32.396954910 -0300
+@@ -174,8 +174,12 @@ macro(_vtk_test_compiler_hidden_visibili
+     execute_process(COMMAND ${CMAKE_C_COMPILER} --version
+       OUTPUT_VARIABLE _gcc_version_info
+       ERROR_VARIABLE _gcc_version_info)
+-    string(REGEX MATCH "[3-9]\\.[0-9]\\.[0-9]*"
++    string(REGEX MATCH "[1-9][0-9]\\.[0-9]\\.[0-9]*"
+       _gcc_version "${_gcc_version_info}")
++    if(NOT _gcc_version)
++      string(REGEX MATCH "[3-9]\\.[0-9]\\.[0-9]*"
++        _gcc_version "${_gcc_version_info}")
++    endif()
+     # gcc on mac just reports: "gcc (GCC) 3.3 20030304 ..." without the
+     # patch level, handle this here:
+     if(NOT _gcc_version)
+diff -Nru --show-c-function a/ThirdParty/exodusII/vtkexodusII/src/ex_open_par.c b/ThirdParty/exodusII/vtkexodusII/src/ex_open_par.c
+--- a/ThirdParty/exodusII/vtkexodusII/src/ex_open_par.c	2019-01-30 14:32:55.000000000 -0200
++++ b/ThirdParty/exodusII/vtkexodusII/src/ex_open_par.c	2021-06-04 18:16:32.396954910 -0300
+@@ -474,5 +474,5 @@ int ex_open_par_int(const char *path, in
+  * Prevent warning in some versions of ranlib(1) because the object
+  * file has no symbols.
+  */
+-const char exodus_unused_symbol_dummy_1;
++const char exodus_unused_symbol_dummy_2;
+ #endif
