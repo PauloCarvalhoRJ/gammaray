@@ -67,6 +67,7 @@ class TestZlibConan(ConanFile):
             #               "By instantiating the VirtualRunEnv/VirtualBuildEnv generators as needed, that information is already propagated
             #                to your scripts, no need to do it manually for most cases"
             #self.run(os.path.join(str(self.settings.build_type), "test")) --> works sans Ninja
-            self.run("test")
+            self.run( os.path.join(self.cpp.build.bindir, "test") )
             if self._with_minizip:
                 self.run( os.path.join(self.cpp.build.bindir, "test_minizip") )
+
