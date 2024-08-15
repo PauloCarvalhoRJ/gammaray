@@ -3,6 +3,7 @@ from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain
 from conan.tools.files import unzip, patch, chdir, replace_in_file, mkdir, load, save, copy
 import shutil
+import subprocess
 
 # This recipe builds, installs (packages) and tests zlib and, optionally, an accompaining library called minizip.
 
@@ -128,7 +129,6 @@ class ZlibConan(ConanFile):
                     current_lib = os.path.join(lib_path, "zlibstatic.lib")
                     os.rename(current_lib, os.path.join(lib_path, "zlib.lib"))
 
-
     #---------------------------------------Methods of ConanFile's interface----------------------------------------
 
     # Configure or constrain the available options in a package before assigning them a value. A typical use case is
@@ -204,9 +204,13 @@ class ZlibConan(ConanFile):
     # This is called when running recipes for packages which are dependant of this one.
     # E.g. In their `requires = ...` or `build_requires = ...` attributes.
     def package_info(self):
-        self.cpp_info.libs.append("zlib" if self.settings.os == "Windows" and not self.settings.os.subsystem else "z")
+        # Attention: minizip *must* come *before* zlib in the libs list with GCC.
+        #            order is important when linking against the static libraries.
+        #            this behavior was observed with GCC 9.3.1
         if self.options.minizip:
             self.cpp_info.libs.append('minizip')
             if self.options.shared:
                 self.cpp_info.defines.append('MINIZIP_DLL')
+        self.cpp_info.libs.append("zlib" if self.settings.os == "Windows" and not self.settings.os.subsystem else "z")
         self.cpp_info.name = "zlib"
+
