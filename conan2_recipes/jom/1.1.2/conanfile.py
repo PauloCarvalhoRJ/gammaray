@@ -3,6 +3,7 @@
 
 from conan import ConanFile
 from conan.tools.files import unzip, copy
+from conan.errors import ConanException
 import os
 
 # This recipe doesn't actually build JOM.  Instead, it only extracts and installs (packages) the Windows
