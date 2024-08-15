@@ -1,5 +1,6 @@
 from conan import ConanFile
 from conan.tools.files import unzip, replace_in_file, copy
+from conan.tools.build import build_jobs
 import os
 import subprocess
 import sys
@@ -115,10 +116,10 @@ class Python3Conan(ConanFile):
             if not os.path.isfile('/usr/include/ffi.h'):
                 raise Exception('The libffi-devel package needs to be installed.')
 
-            replace_in_file('{}/configure'.format(self.source_subfolder), '$PKG_CONFIG openssl', '$PKG_CONFIG openssl11')
+            replace_in_file(self, file_path='{}/configure'.format(self.source_subfolder), search='$PKG_CONFIG openssl', replace='$PKG_CONFIG openssl11')
 
             self.run("{}/configure {}".format(os.path.join(self.build_folder, self.source_subfolder), " ".join(args)))
-            self.run("make -j %d" % tools.cpu_count())
+            self.run("make -j %d" % build_jobs(self))
             self.run("strip %s/libpython%s.so.1.0" % (self.build_folder, self.major_minor))
         elif self.options.os_version == "windows":
             self.output.info("Decompressing archive with the binaries.")
@@ -214,7 +215,7 @@ class Python3Conan(ConanFile):
                 for f in files_with_hardcoded_paths:
                     try:
                         file_to_replace = os.path.join(self.package_folder, f)
-                        replace_in_file(file_to_replace, build_package_folder, install_package_folder, False)
+                        replace_in_file(self, file_path=file_to_replace, search=build_package_folder, replace=install_package_folder, strict=False)
                     except:
                         print("WARNING: error updating hardcoded paths.")
 
