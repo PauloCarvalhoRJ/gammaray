@@ -373,9 +373,11 @@ class QtConan(ConanFile):
         if self.options.get_safe("with_fontconfig", False) and not self.options.get_safe("with_freetype", False):
             raise ConanInvalidConfiguration("with_fontconfig cannot be enabled if with_freetype is disabled.")
 
-        if not self.options.with_doubleconversion and str(self.settings.compiler.libcxx) != "libc++":
-            raise ConanInvalidConfiguration("Qt without libc++ needs qt:with_doubleconversion. "
-                                            "Either enable qt:with_doubleconversion or switch to libc++")
+        if not self.options.with_doubleconversion                   and \
+                   str(self.settings.compiler.libcxx) != "libc++"   and \
+                   str(self.settings.compiler.libcxx) != "libstdc++" :
+            raise ConanInvalidConfiguration("Qt without libc++ or libstdc++ needs qt:with_doubleconversion. "
+                                            "Either enable qt:with_doubleconversion or switch to libc++ or libstdc++")
 
         if is_msvc_static_runtime(self) and self.options.shared:
             raise ConanInvalidConfiguration("Qt cannot be built as shared library with static runtime")
