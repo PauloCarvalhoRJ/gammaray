@@ -184,6 +184,20 @@ class LibpngConan(ConanFile):
         elif Version(self.version) >= "1.6.38":
             tc.variables["PNG_EXECUTABLES"] = False
 
+        # Make sure we are not using a system-installed zlib (e.g. common in Linux), which can 
+        # be of a version different from the desired one installed in Conan cache.
+        # The -I of GCC takes precedence over system-wide include directories.
+        include_path_prefix = "/I" if is_msvc(self) else "-I"
+        cmake_cxx_flags = ""
+        cmake_c_flags = ""
+        for zlib_include_dir in self.dependencies["zlib"].cpp_info.includedirs:
+            #CMake compiler flags are cumulative (no need to do something like a = a + new_stuff),
+            #but Conan does not do like that.
+            cmake_cxx_flags = cmake_cxx_flags + include_path_prefix + zlib_include_dir + " "
+            cmake_c_flags = cmake_c_flags + include_path_prefix + zlib_include_dir + " "
+        tc.cache_variables["CMAKE_CXX_FLAGS"] = cmake_cxx_flags
+        tc.cache_variables["CMAKE_C_FLAGS"] = cmake_c_flags
+
         tc.cache_variables["CMAKE_MACOSX_BUNDLE"] = False
         tc.generate()
         tc = CMakeDeps(self)
