@@ -55,5 +55,5 @@ class TestPackageConan(ConanFile):
         if can_run(self):
             #os.chdir("bin")
             #self.run(".%sVTKTest" % os.sep)
-            bin_path = os.path.join(self.cpp.build.bindir, "VTKtest")
+            bin_path = os.path.join(self.cpp.build.bindir, "VTKTest")
             self.run(bin_path, env="conanrun")
