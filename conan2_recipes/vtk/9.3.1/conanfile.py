@@ -153,7 +153,7 @@ class VTKConan(ConanFile):
         if self.options.mpi == True:
             tc.cache_variables["VTK_Group_MPI"] = True
         if self.settings.compiler != "msvc":
-            if self.options.fPIC:
+            if self.options.get_safe("fPIC", False): #fPIC is removed if options.shared==True (see the configure() callback).
                 tc.cache_variables["CMAKE_POSITION_INDEPENDENT_CODE"] = True
         tc.generate()
 
