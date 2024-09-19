@@ -6,13 +6,13 @@ import re
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
-from conan.tools import os_info
-from conan import tools
 from datetime import datetime
 import os
 import pkg_resources
 import shutil
-
+import platform
+import distro
+import json
 
 '''
 Build - helper
@@ -21,6 +21,9 @@ This script is intended to build GammaRay and its dependencies in a single shot
 by end users and CI/CD tools.  Developers can use this script to build the 
 dependencies both in release and debug modes.  However, they must setup a development
 environment (e.g. Qt Creator) to develop and compile GammaRay code.
+
+This script currently works in Windows/Visual Studio and Linux/GCC.
+For other OS/compiler combinations, please contact the project maintainers.
 
 Use:
  --help to get help on script usage.
@@ -45,20 +48,47 @@ def quiet_build_log(config, msg):
 def dec(output):
     return output.stdout.decode('utf-8')
 
+# Returns the Visual Studio commercial version in YYYY format.
+def getVSversionYYYY(config):
+   if config.compiler_version == '14':
+      return '2015'
+   elif config.compiler_version == '15':
+      return '2017'
+   elif config.compiler_version == '16':
+      return '2019'
+   elif config.compiler_version == '17':
+      return '2022'
+   else:
+      raise Exception("Unknown Visual Studio version.") 
+
+# Returns whether the OS is Windows.
+def is_windows():
+    return platform.system() == 'Windows'
+
+# Returns whether the OS is Windows.
+def is_linux():
+    return platform.system() == 'Linux'
 
 # Check OS version.
 def check_platform(token, config):
     supported = []
-    if os_info.is_windows:
+    if is_windows():
         supported = ['win32']
-        if config.compiler == "Visual Studio":
-            supported.append('vs{}'.format('2015' if config.compiler_version == '14' else '2019'))
-    elif os_info.is_linux:
+        if config.compiler == "msvc":
+            supported.append('VS{}'.format(getVSversionYYYY(config)))
+        elif config.compiler == "gcc":
+            supported.append('MinGW_{}'.format(config.compiler_version))
+        else :
+            supported.append('Unknown_compiler_{}'.format(config.compiler_version))
+    elif is_linux():
         supported = ['linux']
-        supported.append('{}{}'.format(os_info.linux_distro,
-                                       os_info.os_version.split(".", 1)[0]))
+        supported.append('{}{}'.format(distro.id(), #returns, for example, 'centos' for CentOS
+                                       distro.version())) #version() returns only major version number.
+                                                          #version(best=True) returns the full version number.
         supported.append('linux_{}{}'.format(config.compiler,
                                              config.compiler_version))
+    else:
+      raise Exception("This script does not currently support your operating system.  Please, contact the project maintainers.") 
     return token in supported
 
 def get_console_mode(output=False):
@@ -120,7 +150,7 @@ def adjust_windows_console_mode():
     of the active console.
     '''
 
-    if os_info.is_windows:
+    if is_windows():
         # Flags associated with the input buffer mode.
         ENABLE_PROCESSED_INPUT = 0x0001
         ENABLE_LINE_INPUT = 0x0002
@@ -151,10 +181,10 @@ def adjust_env_vars():
     '''
     Adjusts the values ​​of some environment variables.
     '''
-    if not os_info.is_windows:
+    if not is_windows():
         if "LD_LIBRARY_PATH" in os.environ:
             del os.environ["LD_LIBRARY_PATH"]
-    if os_info.is_windows:
+    if is_windows():
         if "UNIX" in os.environ:
             # This variable causes the Boost build to fail on Windows.
             del os.environ["UNIX"]
@@ -185,7 +215,10 @@ class ConanPackage:
     # Static method to return package reference.
     @classmethod
     def make_ref(self, name, version, userchannel):
-        return '%s/%s@%s' % (name, version, userchannel)
+        if userchannel == '':
+           return '%s/%s' % (name, version)
+        else:
+           return '%s/%s@%s' % (name, version, userchannel)
 
     # Returns Conan package reference.
     def ref(self):
@@ -256,15 +289,27 @@ class Util:
     def get_program_args(self):
         parser = argparse.ArgumentParser(prog='build',
                                          description='CI build helper')
+#        parser.add_argument(
+#            '-r', '--remote', metavar='STR', default='conancenter',
+#            required=False,  action='store',
+#            help='Registered Conan remote repository name. '
+#                 'Ex: -r conancenter')
+
         parser.add_argument(
-            '-r', '--remote', metavar='STR', default='conancenter',
+            '-r', '--remote', metavar='STR', default='',
             required=False,  action='store',
             help='Registered Conan remote repository name. '
                  'Ex: -r conancenter')
 
+#        parser.add_argument(
+#            '--user_channel', metavar='STR',
+#            default='conancenter/stable', required=False,
+#            action='store',
+#            help='user/channel: Default: conancenter/stable')
+
         parser.add_argument(
             '--user_channel', metavar='STR',
-            default='conancenter/stable', required=False,
+            default='', required=False,
             action='store',
             help='user/channel: Default: conancenter/stable')
 
@@ -272,7 +317,7 @@ class Util:
             '-ccf', '--check-changes-from', metavar='STR',
             default=None, required=False,
             action='store',
-            help='Performs rebuild only on paths modified from infomed '
+            help='Performs rebuild only on paths modified from informed '
                  'refname base (git). Enter the branch name for comparison: '
                  'Ex: remotes/origin/develop, etc')
 
@@ -311,17 +356,17 @@ class Util:
 
         parser.add_argument(
             '--ignored-file', metavar='PATH',
-            default='ignored_file.txt', required=False,
+            default='ignored_package_paths.txt', required=False,
             action='store',
             help='Inform a file with the list of paths to be ignored from '
                  'package generation. The following format is accepted: '
-                 '<path>/<version>, <platformA>, <platformB>, <platformN>.'
+                 '<path>/<version>, <platformA>, <platformB>, <platformN>. '
                  'Where each line must have the package folder and version to be '
                  'removed from compilation, optionally filtered by a '
-                 'list of platforms where the rule will apply, for example,'
+                 'list of platforms where the rule will apply, for example, '
                  'win32, linux, etc. If no platform is informed, '
                  'the rule will apply to any platform. '
-                 'By default, try to find the file ignored_file.txt in the '
+                 'By default, it uses a file named ignored_package_paths.txt in the '
                  'repository root. To enter another file, use this '
                  'option with the desired file name. '
                  'Ex: --ignored-file myfile.txt.'
@@ -330,8 +375,8 @@ class Util:
         parser.add_argument(
             '-i', '--ignored-paths', action='append',
             default=[],
-            help='Defines the paths of packages to be removed from the compilation.'
-            'There can be more than one in sequence:'
+            help='Defines the paths of packages to be removed from the compilation. '
+            'There can be more than one in sequence: '
             'Ex: --ignored-path gmock/1.8.0 --ignored-path gtest/1.8.0 ',
             required=False)
 
@@ -339,7 +384,7 @@ class Util:
             '-p', '--path', action='append',
             default=[],
             help='Defines the paths of the packages that will be used in the compilation. '
-            'When using this option the script stops finding candidate packages'
+            'When using this option the script stops finding candidate packages '
             'in the file system, starting to compile only the indicated paths. '
             'There can be more than one in sequence:'
             'Ex: --path gmock/1.8.0 --path gtest/1.8.0 ',
@@ -402,9 +447,9 @@ class Util:
     # Gets the requested attribute of a Conan recipe.
     @classmethod
     def get_package_attr(self, conanfile: str, attr: str):
-        return dec(subprocess.run('conan inspect --raw %s %s' % (attr,
-                                                                 conanfile),
-                                  shell=True, stdout=subprocess.PIPE))
+        json_result = json.loads(dec(subprocess.run('conan inspect %s --format=json' % (conanfile),
+                                  shell=True, stdout=subprocess.PIPE)))
+        return json_result[attr]
 
     # Checks if the package exists locally.
     @classmethod
@@ -503,7 +548,8 @@ class Util:
         txt = '[requires]\n'
         for package in config.packages:
             txt += package.ref() + '\n'
-        tools.save(os.path.join(config.generate_bundle_conanfile, 'conanfile-%s.txt' % ('windows' if os_info.is_windows else 'linux')), txt)
+        with open(os.path.join(config.generate_bundle_conanfile, 'conanfile-%s.txt' % ('windows' if is_windows() else 'linux')), "w") as text_file:
+            text_file.write(txt)
 
     # Remove locks from local cache.
     @classmethod
@@ -531,7 +577,7 @@ class Util:
 
         config.quiet_build = args.quiet_build
         if config.quiet_build:
-            config.quiet_build_file = open("quiet_build_log-%s.txt" % ('windows' if os_info.is_windows else 'linux'), "w", encoding='utf-8');
+            config.quiet_build_file = open("quiet_build_log-%s.txt" % ('windows' if is_windows() else 'linux'), "w", encoding='utf-8');
 
         config.remove_locks = args.remove_locks
         config.paths = []
@@ -545,29 +591,32 @@ class Util:
         if not config.skip_build and config.remove_all:
             config.build_all = True
 
-        # Detect compiler name and version to compare with ignored_file.txt.
+        # Makes sure we have at least a default profile
         profile = dec(subprocess.run('conan profile list',
                                      shell=True, stdout=subprocess.PIPE)).strip()
-
         if profile == 'No profiles defined':
             profile = 'default'
             subprocess.run("conan profile new {} --detect".format(profile),
                            shell=True, stdout=subprocess.PIPE)
         else:
-            profile = dec(subprocess.run('conan config get general.default_profile',
+            profile = dec(subprocess.run('conan config show core:default_profile',
                                          shell=True, stdout=subprocess.PIPE)).strip()
+            if profile == '':
+               profile = 'default'
 
-        config.compiler = dec(subprocess.run('conan profile get settings.compiler %s' % profile,
-                                             shell=True, stdout=subprocess.PIPE)).strip()
-        config.compiler_version = dec(subprocess.run('conan profile get settings.compiler.version %s' % profile,
-                                                     shell=True, stdout=subprocess.PIPE)).strip()
+        # Detect compiler name and version to compare with ignored_package_paths.txt.
+        # -pr:a == apply same profile to both host (:h==current machine) and build (:b==target machine) contexts.
+        profiles_json = json.loads(dec(subprocess.run('conan profile show -pr:a=%s --format=json' % profile,
+                                             shell=True, stdout=subprocess.PIPE)).strip())
+        config.compiler =         profiles_json['build']['settings']['compiler']
+        config.compiler_version = profiles_json['build']['settings']['compiler.version']
 
         return config
 
     # Build environment information.
     @classmethod
     def envinfo(self):
-        log("Getting build environment information"...")
+        log("Getting build environment information...")
         s = "\n[ENVIRONMENT INFO]:\n"
 
         # Python
@@ -580,30 +629,8 @@ class Util:
         s += "\tConan location: {}\n".format(pkg_resources.get_distribution('conan').location)
         s += "\tConan version: {}\n".format(pkg_resources.get_distribution('conan').version)
 
-        # CMake
-        s += "\n[CMake]\n"
-        cmake_binary = shutil.which('cmake')
-        if not cmake_binary:
-            cmake_binary = shutil.which('cmake3')
-        s += "\tCMake location: {}\n".format(cmake_binary)
-        if cmake_binary:
-            cmake_version = subprocess.run([cmake_binary, '--version'], stdout=subprocess.PIPE)
-            cmake_version = str(cmake_version.stdout).split("\\n")[0].split(" ")[-1]
-            s += "\tCMake version: {}\n".format(cmake_version)
-
-        # Ninja
-        s += "\n[Ninja]\n"
-        ninja_binary = shutil.which("ninja")
-        if not ninja_binary:
-            ninja_binary = shutil.which("ninja-build")
-        s += "\tNinja location: {}\n".format(ninja_binary)
-        if ninja_binary:
-            ninja_version = subprocess.run([ninja_binary, '--version'], stdout=subprocess.PIPE)
-            ninja_version = str(ninja_version.stdout).split("\\r" if os_info.is_windows else "\\n")[0].split("'")[-1]
-            s += "\tNinja version: {}\n".format(ninja_version)
-
         # Compiler
-        if os_info.is_windows:
+        if is_windows():
             try:
             # cl
                 s += "\n[Cl]\n"
@@ -611,7 +638,8 @@ class Util:
                 s += "\tCl location: {}\n".format(cl_binary)
             except OSError as e:
                 s += ("\tERROR: CL not found. Run this script from a suitable 'x64 Native Tools Command Prompt' cmd.\n")
-        elif os_info.is_linux:
+                s += ("\t       Other Windows compilers such as MinGW's gcc or clang are not currently supported by this script.  Please, contact the project maintainers.\n")
+        elif is_linux():
             # g++
             s += "\n[g++]\n"
             gpp_binary = shutil.which('g++')
@@ -655,7 +683,7 @@ class Job(ABC):
 class Export(Job):
     def run(self, package: ConanPackage, config: Config):
         if package.changed and not config.skip_export:
-            log("Exportando pacote %s " % package.ref())
+            log("Exporting package %s " % package.ref())
             subprocess.run('conan export %s %s' % (package.conanfile,
                                                    config.userchannel),
                            shell=True, check=True)
@@ -664,7 +692,7 @@ class Export(Job):
 # Remove builds and, eventually, temporary sources from the local package.
 class CleanUp(Job):
     def run(self, package: ConanPackage, config: Config):
-        log("Removendo temporários do pacote %s " % package.ref())
+        log("Removing intermediary artifacts for package %s " % package.ref())
         subprocess.run('conan remove %s -b -s -f' % (package.ref()),
                        shell=True, check=True)
 
