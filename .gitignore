@@ -14,6 +14,12 @@ docs/~*.docx
 # Only Conan 2+ is supported.
 conan_recipes
 
+# Conan 2 now creates these JSON files in the source repository.
+#              |---------source root directory of a package
+#              | |-------version
+#              V V
+conan2_recipes/*/*/CMakeUserPresets.json
+
 # Conan 2 now creates these JSON files in the test package subdirectories.
 #              |---------source root directory of a package
 #              | |-------version
@@ -25,4 +31,4 @@ conan2_recipes/*/*/test_package*/CMakeUserPresets.json
 #              |---------source root directory of a package
 #              | |-------version
 #              V V
-conan2_recipes/*/*/build
+conan2_recipes/*/*/build*
