@@ -15,7 +15,14 @@ docs/~*.docx
 conan_recipes
 
 # Conan 2 now creates these JSON files in the test package subdirectories.
-#              |---------package name
+#              |---------source root directory of a package
 #              | |-------version
 #              V V
 conan2_recipes/*/*/test_package*/CMakeUserPresets.json
+
+# Building with the 'conan2_recipes/build.py' script results in a 'build' directory
+# being created in the source repository.
+#              |---------source root directory of a package
+#              | |-------version
+#              V V
+conan2_recipes/*/*/build
