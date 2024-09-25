@@ -693,8 +693,14 @@ class Export(Job):
 class CleanUp(Job):
     def run(self, package: ConanPackage, config: Config):
         log("Removing intermediary artifacts for package %s " % package.ref())
-        subprocess.run('conan remove %s -b -s -f' % (package.ref()),
-                       shell=True, check=True)
+        #subprocess.run('conan remove %s -b -s -f' % (package.ref()), --> Conan 1 version
+        #               shell=True, check=True)
+        # New in Conan 2
+        # : -> removes all the binaries of the given package
+        # -c -> do not request confirmation
+        # subprocess.run('conan remove %s:* -c --dry-run' % (package.ref()),
+        #               shell=True, check=True)
+        raise Exception("--cleanup not fully tested yet for Conan 2.  Please, contact the developer.") 
 
 
 # Install the package locally, forcing the build if necessary.
@@ -717,9 +723,14 @@ class Install(Job):
             bb = '--build=%s' % package.name if package.changed else ''
             up = '-u' if not package.changed else ''
 
-            cmd = 'conan install %s %s %s %s %s %s' % (package.ref(),
+#            cmd = 'conan install %s %s %s %s %s %s' % (package.ref(),  --> Used to work in Conan 1
+#                                                       bt, bm, bo,
+#                                                       bb, up)
+            cmd = 'conan install %s %s %s %s %s %s' % (package.path,
                                                        bt, bm, bo,
                                                        bb, up)
+            print(cmd)
+
             if config.quiet_build:
                 subprocess.run(cmd, shell=True, check=True,
                                stdout=subprocess.DEVNULL)
@@ -756,9 +767,10 @@ class Deploy(Job):
 def main():
 
     # On Windows, performs adjustments to the input mode of a console input buffer and/or
-    # in output mode of a console screen buffer.    adjust_windows_console_mode()
+    # in output mode of a console screen buffer.
+    adjust_windows_console_mode()
 
-    # Gets program parameters.
+    # Get arguments passed to this script.
     args = Util.get_program_args()
 
     global VERBOSE_MODE
@@ -830,7 +842,7 @@ def main():
         temp = 2**30
         quiet_build_log(config, "Disk usage after installation:\nTotal: %d GiB\nUsed: %d GiB\nFree: %d GiB" % (total // temp, used // temp, free // temp))
 
-    # Sends the generated packets to the specified remote server.
+    # Sends the generated packages to the specified remote server.
     if (config.skip_build or len(failures['Build/Installed']) == 0) and config.deploy and config.remote is not None:
         failures['Deploy'] = Deploy().run_all(config)
 
