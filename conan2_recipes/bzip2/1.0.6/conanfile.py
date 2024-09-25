@@ -2,6 +2,7 @@ import os
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain
 from conan.tools.files import unzip, replace_in_file, copy, rmdir
+from conan.tools.layout import basic_layout
 import shutil
 
 # This recipe builds, installs (packages) and tests the bzip2 library.
@@ -97,6 +98,12 @@ class Bzip2Conan(ConanFile):
         else:
             del self.settings.compiler.libcxx
             self.options.os_version = "other"
+
+    # Allows to customize some standard attributes (e.g. self.folders).
+    # In this case, we inform Conan that the source directory is the "src" subdirectory in 
+    # the root source directory in Conan workspace.
+    def layout(self):
+        basic_layout(self)
 
     # Contains the generation steps for the package.
     # E.g. runs CMake to generate a runnable Makefile or VS Solution.

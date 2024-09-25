@@ -2,6 +2,7 @@
 import os
 from conan import ConanFile
 from conan.tools.files import unzip, copy
+from conan.tools.layout import basic_layout
 from conan.errors import ConanException
 import subprocess
 
@@ -67,6 +68,12 @@ class CMakeInstallerConan(ConanFile):
             return "cmake-3.29.3-win64-x64.zip"
         else:
             raise NameError("Unsupported operating system: " + self.settings.os + ".  Check the Conan profile file you are using." )
+
+    # Allows to customize some standard attributes (e.g. self.folders).
+    # In this case, we inform Conan that the source directory is the "src" subdirectory in 
+    # the root source directory in Conan workspace.
+    def layout(self):
+        basic_layout(self)
 
     # Contains the package build instructions.
     # Generates build artifacts in the build directory from the source files in the source directory.

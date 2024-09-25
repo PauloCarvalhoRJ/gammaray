@@ -1,6 +1,7 @@
 from conan import ConanFile
 from conan.tools.files import unzip, replace_in_file, copy
 from conan.tools.build import build_jobs
+from conan.tools.layout import basic_layout
 import os
 import subprocess
 import sys
@@ -98,6 +99,11 @@ class Python3Conan(ConanFile):
         else:
             self.options.os_version = "other"
 
+    # Allows to customize some standard attributes (e.g. self.folders).
+    # In this case, we inform Conan that the source directory is the "src" subdirectory in 
+    # the root source directory in Conan workspace.
+    def layout(self):
+        basic_layout(self)
 
     # Contains the package build instructions.
     # Generates build artifacts in the build directory from the source files in the source directory.
