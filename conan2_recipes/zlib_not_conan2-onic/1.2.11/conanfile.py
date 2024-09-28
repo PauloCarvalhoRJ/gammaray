@@ -2,7 +2,6 @@ import os
 from conan import ConanFile
 from conan.tools.cmake import CMake, CMakeToolchain
 from conan.tools.files import unzip, patch, chdir, replace_in_file, mkdir, load, save, copy
-from conan.tools.layout import basic_layout
 import shutil
 import subprocess
 
@@ -152,12 +151,6 @@ class ZlibConan(ConanFile):
         else:
             del self.settings.compiler.libcxx
             self.options.os_version = "other"
-
-    # Allows to customize some standard attributes (e.g. self.folders).
-    # In this case, we inform Conan that the source directory is the "src" subdirectory in 
-    # the root source directory in Conan workspace.
-    def layout(self):
-        basic_layout(self)
 
     # Runs after the computation and installation of the dependency graph. This means that it will run after a conan
     # install command, or when a package is being built in the cache, it will be run before calling the build() method.
