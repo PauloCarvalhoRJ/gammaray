@@ -207,10 +207,14 @@ class LibpngConan(ConanFile):
     # Generates build artifacts in the build directory from the source files in the source directory.
     def build(self):
         # self._patch_sources() --> conandata.yml was removed (no patches actually)
-        with chdir(self, self.source_folder):
-            replace_in_file(self, 'CMakeLists.txt',
-                                  'ZLIB::ZLIB', # --> How zlib's CMake target is expected in libpng's original source.
-                                  'zlib::zlib') # --> GammaRay's zlib's .cmake file declares itself in lower case.
+        #with chdir(self, self.source_folder):
+        #    replace_in_file(self, 'CMakeLists.txt',
+        #                          'ZLIB::ZLIB', # --> How zlib's CMake target is expected in libpng's original source.
+        #                          'zlib::zlib') # --> GammaRay's zlib's .cmake file declares itself in lower case.
+        #                             ^ ^ ^
+        #                             | | |
+        #                             | | |
+        #            since the adoption of Conan Center's zlib recipe, this is no longer needed
 
         cmake = CMake(self)
         cmake.configure()
