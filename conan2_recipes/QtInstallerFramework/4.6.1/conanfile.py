@@ -2,6 +2,7 @@ from conan import ConanFile
 #from conan.tools.cmake import CMake
 from conan.tools.files import unzip, copy
 import os
+from conan.tools.layout import basic_layout
 
 # This recipe doesn't actually build QtIFW.  Instead, it only extracts either the Linux or Windows
 # executables from one of the accompaining tar.xz archives files according to the operating system.
@@ -54,6 +55,10 @@ class QtIFWConan(ConanFile):
             self.options.os_version = "linux"
         else:
             self.options.os_version = "other"
+
+    # Customize the default Conan workspace before building (e.g. define the name for the source directory).
+    def layout(self):
+        basic_layout(self)
 
     # Contains the package build instructions.
     # Generates build artifacts in the build directory from the source files in the source directory.

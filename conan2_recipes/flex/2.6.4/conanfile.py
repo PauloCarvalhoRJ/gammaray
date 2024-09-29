@@ -6,6 +6,7 @@ from conan.tools.apple import fix_apple_shared_install_name
 from conan.tools.build import cross_building
 from conan.tools.files import get, rmdir, copy, rm, export_conandata_patches, apply_conandata_patches, unzip
 from conan.tools.gnu import AutotoolsToolchain, Autotools
+from conan.tools.layout import basic_layout
 
 required_conan_version = ">=1.53.0"
 
@@ -43,6 +44,10 @@ class FlexConan(ConanFile):
     # A list of files that should be exported (copied) from here (the Git repository) to the source directory in
     # Conan's workspace.
     exports_sources = "flex-{}.tar.gz".format(version)
+
+    # Customize the default Conan workspace before building (e.g. define the name for the source directory).
+    def layout(self):
+        basic_layout(self)
 
     # Runs the configuration of settings and options in the recipe for later use in the different methods like 
     # generate(), build() or package(). This method executes while building the dependency graph and expanding the

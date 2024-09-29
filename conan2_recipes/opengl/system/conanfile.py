@@ -1,6 +1,7 @@
 from conan import ConanFile
 from conan.tools.system import package_manager
 from conan.tools.gnu import PkgConfig
+from conan.tools.layout import basic_layout
 
 required_conan_version = ">=1.50.0"
 
@@ -29,10 +30,10 @@ class SysConfigOpenGLConan(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
 
     # Allows to customize some standard attributes (e.g. self.folders).
-    # In this case, we inform Conan that the source directory is the "src" subdirectory in 
-    # the root source directory in Conan workspace.
+    # We could, for example, inform Conan that the source directory is 
+    # the "src" subdirectory in the root source directory in Conan workspace.
     def layout(self):
-        pass
+        basic_layout(self)
 
     # Allows to customize the package's default binary identification (ConanFile.package_id).
     # This is often used to relax some settings related to binary compatibility. For example, 

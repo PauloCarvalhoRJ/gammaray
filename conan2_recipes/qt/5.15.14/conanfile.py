@@ -8,6 +8,7 @@ from conan.tools.files import chdir, copy, get, load, replace_in_file, rm, rmdir
 from conan.tools.gnu import PkgConfigDeps
 from conan.tools.microsoft import is_msvc, msvc_runtime_flag, is_msvc_static_runtime, VCVars
 from conan.tools.scm import Version
+from conan.tools.layout import basic_layout
 import configparser
 import glob
 import itertools
@@ -340,6 +341,10 @@ class QtConan(ConanFile):
         if self.settings.os in ("FreeBSD", "Linux"):
             if self.options.qtwebengine:
                 self.options.with_fontconfig = True
+
+    # Customize the default Conan workspace before building (e.g. define the name for the source directory).
+    def layout(self):
+        basic_layout(self)
 
     def validate(self):
         if self.settings.compiler.get_safe("cppstd"):

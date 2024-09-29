@@ -2,6 +2,7 @@ from conan import ConanFile
 from conan.tools.gnu import PkgConfig
 from conan.tools.system import package_manager
 from conan.errors import ConanInvalidConfiguration
+from conan.tools.layout import basic_layout
 
 required_conan_version = ">=1.50.0"
 
@@ -43,6 +44,10 @@ class XkeyboardConfigConan(ConanFile):
     # the build in Conan cache.
     def package_id(self):
         self.info.clear() #no info other than name and version takes part in package hash (no actual build).
+
+    # Customize the default Conan workspace before building (e.g. define the name for the source directory).
+    def layout(self):
+        basic_layout(self, src_folder="src")
 
     # Determines/sets OS requirements for the build.
     def system_requirements(self):
