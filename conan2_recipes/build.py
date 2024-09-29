@@ -742,7 +742,10 @@ class Remove(Job):
     def run(self, package: ConanPackage, config: Config):
         log("Removing package %s " % package.ref())
         try:
-            subprocess.run('conan remove %s -f' % package.ref(),
+            #subprocess.run('conan remove %s -f' % package.ref(),       --> Conan 1 syntax
+            #           shell=True, check=True, stdout=subprocess.PIPE,
+            #           stderr=subprocess.STDOUT)
+            subprocess.run('conan remove %s -c' % package.ref(),
                        shell=True, check=True, stdout=subprocess.PIPE,
                        stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as e:
