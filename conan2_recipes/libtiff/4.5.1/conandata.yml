@@ -7,9 +7,9 @@ patches:
     - patch_file: "patches/4.5.1-0001-cmake-dependencies.patch"
       patch_description: "CMake: robust handling of dependencies"
       patch_type: "conan"
-    - patch_file: "patches/4.5.1-0002-cmake-lowercase-zlib-target.patch"
-      patch_description: "CMake: ZLIB::ZLIB --> zlib::zlib target as declared in the zlib/1.2.11 package."
-      patch_type: "conan"
+#    - patch_file: "patches/4.5.1-0002-cmake-lowercase-zlib-target.patch"
+#      patch_description: "CMake: ZLIB::ZLIB --> zlib::zlib target as declared in the zlib/1.2.11 package."
+#      patch_type: "conan"
   "4.5.0":
     - patch_file: "patches/4.5.0-0001-cmake-dependencies.patch"
       patch_description: "CMake: robust handling of dependencies"

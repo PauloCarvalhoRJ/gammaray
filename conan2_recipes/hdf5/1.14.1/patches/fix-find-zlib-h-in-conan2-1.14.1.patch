@@ -6,7 +6,7 @@
 + 
 +#======= PATCH: Without this, zlib.h is not found when configuring and building with Conan ============
 +
-+  target_link_libraries(${HDF5_LIB_TARGET} PRIVATE zlib::zlib)
++  target_link_libraries(${HDF5_LIB_TARGET} PRIVATE ZLIB::ZLIB)
 +
 +#======================================================================================================
 +
@@ -21,7 +21,7 @@
 + 
 +#======= PATCH: Without this, zlib.h is not found when configuring and building with Conan ============
 +
-+  target_link_libraries(${HDF5_LIBSH_TARGET} PRIVATE zlib::zlib)
++  target_link_libraries(${HDF5_LIBSH_TARGET} PRIVATE ZLIB::ZLIB)
 +
 +#======================================================================================================
 +

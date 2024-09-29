@@ -6,7 +6,7 @@
  
 +#======= PATCH: Without this, zlib.h is not found when configuring and building with Conan ============
 +if(GDCM_USE_SYSTEM_ZLIB)
-+  target_link_libraries(gdcmCommon PRIVATE zlib::zlib)
++  target_link_libraries(gdcmCommon PRIVATE ZLIB::ZLIB)
 +endif()
 +#======================================================================================================
 +
@@ -22,7 +22,7 @@
 +
 +#======= PATCH: Without this, zlib.h is not found when configuring and building with Conan ============
 +if(GDCM_USE_SYSTEM_ZLIB)
-+  target_link_libraries(gdcmDSED PRIVATE zlib::zlib)
++  target_link_libraries(gdcmDSED PRIVATE ZLIB::ZLIB)
 +endif()
 +#======================================================================================================
 +
