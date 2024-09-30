@@ -1,7 +1,7 @@
 zlib_not_conan2-onic/1.2.11, win32, linux
 ninja/1.12.1, none
 cmake/3.29.3, none
-zlib/1.2.11, none
+zlib/1.3.1, none
 bzip2/1.0.6, none
 python3/3.10.11, none
 jom/1.1.2, linux
