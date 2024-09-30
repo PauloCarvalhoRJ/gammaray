@@ -502,7 +502,7 @@ class Util:
     # Retrieves the packages to be generated and their information..
     @classmethod
     def get_packages(self, config: Config):
-        log('Retrieving packets to be processed...')
+        log('Retrieving packages to be processed...')
         packages = []
         unusedPaths = config.paths.copy()
         for f in glob.glob('**/conanfile.py', recursive=True):
@@ -517,6 +517,7 @@ class Util:
                         changed = True;
                     else:
                         continue
+                print(f)
                 name = Util.get_package_attr(f, 'name')
                 version = Util.get_package_attr(f, 'version')
                 ref = ConanPackage.make_ref(name, version, config.userchannel)
@@ -540,6 +541,54 @@ class Util:
             log('Error: Unable to find valid packages in the following paths: {}'.format(unusedPaths))
             sys.exit(1)
 
+        return packages
+
+    # Retrieves the packages to be generated and their information
+    # following the order specified in the package_paths_order.txt.
+    # If the file is not found in the same directory of this script,
+    # this method calls get_packages(...) whose order is defined by
+    # the file system, which likely results in missing dependency errors.
+    @classmethod
+    def get_packages_order(self, config: Config):
+        log('Retrieving packages to be processed...')
+        packages = []
+        unusedPaths = config.paths.copy()
+        file = Path("package_paths_order.txt")
+        if file.exists():
+            lines = []
+            with open("package_paths_order.txt") as f:
+               lines = f.readlines()
+               for f in lines:
+                   f = f.strip()
+                   path = f.replace('/', os.sep)
+                   if path not in config.ignored_paths:
+                       changed = False
+                       if len(config.paths) > 0:
+                           if path in config.paths:
+                               unusedPaths.remove(path)
+                               changed = True;
+                           else:
+                               continue
+                       conanfile_path = f + os.sep + 'conanfile.py'
+                       name = Util.get_package_attr(conanfile_path, 'name')
+                       version = Util.get_package_attr(conanfile_path, 'version')
+                       ref = ConanPackage.make_ref(name, version, config.userchannel)
+                       changed = changed and not Util.exists_package(ref)
+                       _tempPath = path.replace('\\', '/')
+                       changed = changed or config.build_all \
+                           or config.export_all \
+                           or any(_tempPath in s for s in config.changed_paths)
+                       package = ConanPackage(conanfile_path, name, version,
+                                              config.userchannel, path, changed)
+                       packages.append(package)
+                       log('Reading package %s \t %s' % (package.ref(),
+                                                      '[MODIFIED]' if changed else ''))
+        else:
+            print('WARNING: package_paths_order.txt not found.  Using file system order.  Dependency order issues may ensue.')
+            return self.get_packages(config)
+        if unusedPaths:
+            log('Error: Unable to find valid packages in the following paths: {}'.format(unusedPaths))
+            sys.exit(1)
         return packages
 
     # Generates conanfile.txt with the references of all selected packages.
@@ -723,9 +772,9 @@ class Install(Job):
             bb = '--build=%s' % package.name if package.changed else ''
             up = '-u' if not package.changed else ''
 
-#            cmd = 'conan install %s %s %s %s %s %s' % (package.ref(),  --> Used to work in Conan 1
-#                                                       bt, bm, bo,
-#                                                       bb, up)
+#           cmd = 'conan install %s %s %s %s %s %s' % (package.ref(),  --> Used to work in Conan 1
+#                                                      bt, bm, bo,
+#                                                      bb, up)
             cmd = 'conan install %s %s %s %s %s %s' % (package.path,
                                                        bt, bm, bo,
                                                        bb, up)
@@ -812,7 +861,8 @@ def main():
         config.changed_paths = Util.get_changed_paths(config)
 
     # Retrieves candidate packages with their information.
-    config.packages = Util.get_packages(config)
+    config.packages = Util.get_packages_order(config)
+    #config.packages = Util.get_packages(config)
 
     # Generates conanfile.txt with all packages.
     if config.generate_bundle_conanfile is not None:
@@ -825,6 +875,7 @@ def main():
     # Export only modified packages or all if build_all was
     # informed. If skip_build was informed, it does not export anything.
     if config.export_all or (not config.skip_build and config.has_packages_changes()):
+        print('Exporting packages...')
         failures['Exported'] = Export().run_all(config)
 
     if VERBOSE_MODE:
