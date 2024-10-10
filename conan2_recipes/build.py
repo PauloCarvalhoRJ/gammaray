@@ -454,7 +454,12 @@ class Util:
     # Checks if the package exists locally.
     @classmethod
     def exists_package(self, ref: str):
-        res = subprocess.run('conan search %s -o' % ref,
+        #res = subprocess.run('conan search %s -o' % ref,  --> Conan 1 way
+        #                     shell=True,
+        #                     stderr=subprocess.PIPE,
+        #                     stdout=subprocess.DEVNULL).stderr.decode('utf-8')
+        #return 'ERROR' not in res
+        res = subprocess.run('conan list %s'  % ref,
                              shell=True,
                              stderr=subprocess.PIPE,
                              stdout=subprocess.DEVNULL).stderr.decode('utf-8')
