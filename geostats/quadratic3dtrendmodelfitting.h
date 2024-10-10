@@ -5,6 +5,7 @@
 #include <cassert>
 #include <vector>
 #include <limits>
+#include <cmath>
 
 class DataFile;
 class Attribute;
