@@ -17,23 +17,6 @@ set(CMAKE_AUTOUIC ON)
 # Find Qt's libraries and headers.
 find_package(Qt5 REQUIRED Core CONFIG)
 
-
-# Get a list of Qt include diretcories (the INCLUDE_DIRECTORIES property is set in
-# Qt[5|6]CoreMacros.cmake in Qt install dir).
-get_property(QT_CORE_INCLUDE_DIRS TARGET Qt5::Core PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-# Get the first entry in the QT_CORE_INCLUDE_DIRS list.
-list(GET QT_CORE_INCLUDE_DIRS 0 QT_CORE_MAIN_INCLUDE_DIR)
-# Get where Qt is installed by getting the parent directory of one of the Qt's include dirs.
-get_filename_component(QT_MAIN_DIR ${QT_CORE_MAIN_INCLUDE_DIR}/.. ABSOLUTE)
-# Sanity check.
-if(NOT EXISTS ${QT_MAIN_DIR})
-   message( FATAL_ERROR "Qt installation directory not found: ${QT_MAIN_DIR}" )
-else()
-   message( STATUS "----> Qt installation directory found: ${QT_MAIN_DIR}" )
-endif()
-
-
-
 # The calculator script engine is put into a separate CalcScripting.dll/.so library as it 
 # takes too long to rebuild due to the large number of symbols.
 add_library( CalcScripting SHARED
@@ -45,6 +28,48 @@ target_link_libraries(CalcScripting PRIVATE Qt5::Core Qt5::Gui)
 target_compile_features(CalcScripting PRIVATE cxx_std_14)
 
 # Next, configure GammaRay itself.
+
+# Function to get all propreties that cmake supports. (used to debug script)
+if(NOT CMAKE_PROPERTY_LIST)
+    execute_process(COMMAND cmake --help-property-list OUTPUT_VARIABLE CMAKE_PROPERTY_LIST)
+    # Convert command output into a CMake list
+    string(REGEX REPLACE ";" "\\\\;" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+    string(REGEX REPLACE "\n" ";" CMAKE_PROPERTY_LIST "${CMAKE_PROPERTY_LIST}")
+    list(REMOVE_DUPLICATES CMAKE_PROPERTY_LIST)
+endif()
+    
+# This can be used during script debugging to get a list of all CMake properties (normally not used).
+function(print_properties)
+    message("CMAKE_PROPERTY_LIST = ${CMAKE_PROPERTY_LIST}")
+endfunction()
+#print_properties()
+    
+# This function lists all properties for a given target (e.g. Qt::Core).
+# This is normally used during script debugging, especially when figuring out configuration
+# properties of dependencies.
+# Credit: https://stackoverflow.com/a/34292622/2153955
+function(print_target_properties target)
+    if(NOT TARGET ${target})
+      message(STATUS "There is no target named '${target}'")
+      return()
+    endif()
+
+    foreach(property ${CMAKE_PROPERTY_LIST})
+        string(REPLACE "<CONFIG>" "${CMAKE_BUILD_TYPE}" property ${property})
+
+        # Fix https://stackoverflow.com/questions/32197663/how-can-i-remove-the-the-location-property-may-not-be-read-from-target-error-i
+        if(property STREQUAL "LOCATION" OR property MATCHES "^LOCATION_" OR property MATCHES "_LOCATION$")
+            continue()
+        endif()
+
+        get_property(was_set TARGET ${target} PROPERTY ${property} SET)
+        if(was_set)
+            get_target_property(value ${target} ${property})
+            message("${target} ${property} = ${value}")
+        endif()
+    endforeach()
+endfunction()
+# print_target_properties(Qt5::Core)
 
 # This is the name used to identify the software in Windows registry, for example.
 # This is not the executable name.
@@ -529,15 +554,29 @@ target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_14)
     #target_compile_options(${PROJECT_NAME} PRIVATE -fPIC)
 #endif()
 
+# Get Qt's installation directory.
+# ATTENTION: This assumes Qt has only one directory where the DLLs/SOs are (normally 
+#            <Qt's install prefix>/lib).
+# ATTENTION 2: The returned QT_LIB_DIR may contain generator expressions ($<...> syntax),
+#              which are evaluated into valid information AFTER generation time. That is,
+#              trying to evaluate it during configuration or generation time may result into
+#              invalid values (e.g. trying to do a message(...)).
+#              Functions such as install() are executed AFTER generation time, hence it is safe
+#              to use the QT_LIB_DIR local variable with them.
+get_target_property(QT_LIB_DIR Qt5::Core INTERFACE_LINK_DIRECTORIES)
+
 # Declare what is to be distributed to users (program executable and required .DLLs/.SOs).
 install(TARGETS CalcScripting DESTINATION .) #default dest. is lib subdirectory
 install(TARGETS ${PROJECT_NAME} RUNTIME_DEPENDENCIES DESTINATION .)
-#install(DIRECTORY   ${QT_MAIN_DIR}/lib/   --> the main Qt libs are already installed by the above command
+#install(DIRECTORY   ${QT_LIB_DIR}/../lib/   --> the main Qt libs are already installed by the above install() commands.
 #        DESTINATION ${CMAKE_INSTALL_FULL_LIBDIR}
 #        USE_SOURCE_PERMISSIONS)    
-install(DIRECTORY   ${QT_MAIN_DIR}/plugins/imageformats/
-        DESTINATION ./imageformats
+# It is necessary to copy some of the Qt plug-in DLLs/SOs too.  These libraries are not linked
+# against GammaRay executable but loaded during runtime by Qt. Hence, they are not figured out by CMake
+# in a install( ... RUNTIME_DEPENDENCIES ...) command.
+install(DIRECTORY   ${QT_LIB_DIR}/../plugins/imageformats/
+        DESTINATION imageformats
         USE_SOURCE_PERMISSIONS) 
-install(DIRECTORY   ${QT_MAIN_DIR}/plugins/platforms/
-        DESTINATION ./platforms
+install(DIRECTORY   ${QT_LIB_DIR}/../plugins/platforms/
+        DESTINATION platforms
         USE_SOURCE_PERMISSIONS) 
